@@ -1,2 +1,6 @@
 # code-browser
-codebrowser.dev 在国内被墙了，梯子也不太好使，因此搭建一个自己的源代码浏览网站.
+
+有一个非常好用的源代码浏览网站：[codebrowser.dev](codebrowser.dev)
+
+但是在国内被墙了，就算是梯子也不太好使，因此决定搭建一个自己的源代码浏览网站.
+
