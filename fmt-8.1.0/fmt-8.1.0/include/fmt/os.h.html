@@ -1,0 +1,546 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>os.h source code [fmt-8.1.0/include/fmt/os.h] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="fmt::basic_cstring_view,fmt::buffered_file,fmt::detail::buffer_size,fmt::detail::ostream_params,fmt::file,fmt::formatter,fmt::locale,fmt::ostream "/>
+<link rel="stylesheet" href="../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'fmt-8.1.0/include/fmt/os.h'; var root_path = '../../..'; var data_path = '../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../..'>fmt-8.1.0</a>/<a href='..'>include</a>/<a href='./'>fmt</a>/<a href='os.h.html'>os.h</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>// Formatting library for C++ - optional OS-specific functionality</i></td></tr>
+<tr><th id="2">2</th><td><i>//</i></td></tr>
+<tr><th id="3">3</th><td><i>// Copyright (c) 2012 - present, Victor Zverovich</i></td></tr>
+<tr><th id="4">4</th><td><i>// All rights reserved.</i></td></tr>
+<tr><th id="5">5</th><td><i>//</i></td></tr>
+<tr><th id="6">6</th><td><i>// For the license information refer to format.h.</i></td></tr>
+<tr><th id="7">7</th><td></td></tr>
+<tr><th id="8">8</th><td><u>#<span data-ppcond="8">ifndef</span> <span class="macro" data-ref="_M/FMT_OS_H_">FMT_OS_H_</span></u></td></tr>
+<tr><th id="9">9</th><td><u>#define <dfn class="macro" id="_M/FMT_OS_H_" data-ref="_M/FMT_OS_H_">FMT_OS_H_</dfn></u></td></tr>
+<tr><th id="10">10</th><td></td></tr>
+<tr><th id="11">11</th><td><u>#include <a href="../../../include/c++/9/cerrno.html">&lt;cerrno&gt;</a></u></td></tr>
+<tr><th id="12">12</th><td><u>#include <a href="../../../include/c++/9/clocale.html">&lt;clocale&gt;</a>  // locale_t</u></td></tr>
+<tr><th id="13">13</th><td><u>#include <a href="../../../include/c++/9/cstddef.html">&lt;cstddef&gt;</a></u></td></tr>
+<tr><th id="14">14</th><td><u>#include <a href="../../../include/c++/9/cstdio.html">&lt;cstdio&gt;</a></u></td></tr>
+<tr><th id="15">15</th><td><u>#include <a href="../../../include/c++/9/cstdlib.html">&lt;cstdlib&gt;</a>       // strtod_l</u></td></tr>
+<tr><th id="16">16</th><td><u>#include <a href="../../../include/c++/9/system_error.html">&lt;system_error&gt;</a>  // std::system_error</u></td></tr>
+<tr><th id="17">17</th><td></td></tr>
+<tr><th id="18">18</th><td><u>#<span data-ppcond="18">if</span> defined <span class="macro" data-ref="_M/__APPLE__">__APPLE__</span> || defined(<span class="macro" data-ref="_M/__FreeBSD__">__FreeBSD__</span>)</u></td></tr>
+<tr><th id="19">19</th><td><u>#  include &lt;xlocale.h&gt;  // for LC_NUMERIC_MASK on OS X</u></td></tr>
+<tr><th id="20">20</th><td><u>#<span data-ppcond="18">endif</span></u></td></tr>
+<tr><th id="21">21</th><td></td></tr>
+<tr><th id="22">22</th><td><u>#include <a href="format.h.html">"format.h"</a></u></td></tr>
+<tr><th id="23">23</th><td></td></tr>
+<tr><th id="24">24</th><td><u>#<span data-ppcond="24">ifndef</span> <span class="macro" data-ref="_M/FMT_USE_FCNTL">FMT_USE_FCNTL</span></u></td></tr>
+<tr><th id="25">25</th><td><i>// UWP doesn't provide _pipe.</i></td></tr>
+<tr><th id="26">26</th><td><u>#  <span data-ppcond="26">if</span> <a class="macro" href="core.h.html#75" title="0" data-ref="_M/FMT_HAS_INCLUDE">FMT_HAS_INCLUDE</a>("winapifamily.h")</u></td></tr>
+<tr><th id="27">27</th><td><u>#    include &lt;winapifamily.h&gt;</u></td></tr>
+<tr><th id="28">28</th><td><u>#  <span data-ppcond="26">endif</span></u></td></tr>
+<tr><th id="29">29</th><td><u>#  <span data-ppcond="29">if</span> (<a class="macro" href="core.h.html#75" title="1" data-ref="_M/FMT_HAS_INCLUDE">FMT_HAS_INCLUDE</a>(&lt;fcntl.h&gt;) || defined(<span class="macro" data-ref="_M/__APPLE__">__APPLE__</span>) || \</u></td></tr>
+<tr><th id="30">30</th><td><u>       defined(<span class="macro" data-ref="_M/__linux__">__linux__</span>)) &amp;&amp;                              \</u></td></tr>
+<tr><th id="31">31</th><td><u>      (!defined(<span class="macro" data-ref="_M/WINAPI_FAMILY">WINAPI_FAMILY</span>) ||                          \</u></td></tr>
+<tr><th id="32">32</th><td><u>       (WINAPI_FAMILY == WINAPI_FAMILY_DESKTOP_APP))</u></td></tr>
+<tr><th id="33">33</th><td><u>#    include <a href="../../../include/fcntl.h.html">&lt;fcntl.h&gt;</a>  // for O_RDONLY</u></td></tr>
+<tr><th id="34">34</th><td><u>#    define <dfn class="macro" id="_M/FMT_USE_FCNTL" data-ref="_M/FMT_USE_FCNTL">FMT_USE_FCNTL</dfn> 1</u></td></tr>
+<tr><th id="35">35</th><td><u>#  <span data-ppcond="29">else</span></u></td></tr>
+<tr><th id="36">36</th><td><u>#    define FMT_USE_FCNTL 0</u></td></tr>
+<tr><th id="37">37</th><td><u>#  <span data-ppcond="29">endif</span></u></td></tr>
+<tr><th id="38">38</th><td><u>#<span data-ppcond="24">endif</span></u></td></tr>
+<tr><th id="39">39</th><td></td></tr>
+<tr><th id="40">40</th><td><u>#<span data-ppcond="40">ifndef</span> <span class="macro" data-ref="_M/FMT_POSIX">FMT_POSIX</span></u></td></tr>
+<tr><th id="41">41</th><td><u>#  <span data-ppcond="41">if</span> defined(<span class="macro" data-ref="_M/_WIN32">_WIN32</span>) &amp;&amp; !defined(<span class="macro" data-ref="_M/__MINGW32__">__MINGW32__</span>)</u></td></tr>
+<tr><th id="42">42</th><td><i>// Fix warnings about deprecated symbols.</i></td></tr>
+<tr><th id="43">43</th><td><u>#    define FMT_POSIX(call) _##call</u></td></tr>
+<tr><th id="44">44</th><td><u>#  <span data-ppcond="41">else</span></u></td></tr>
+<tr><th id="45">45</th><td><u>#    define <dfn class="macro" id="_M/FMT_POSIX" data-ref="_M/FMT_POSIX">FMT_POSIX</dfn>(call) call</u></td></tr>
+<tr><th id="46">46</th><td><u>#  <span data-ppcond="41">endif</span></u></td></tr>
+<tr><th id="47">47</th><td><u>#<span data-ppcond="40">endif</span></u></td></tr>
+<tr><th id="48">48</th><td></td></tr>
+<tr><th id="49">49</th><td><i>// Calls to system functions are wrapped in FMT_SYSTEM for testability.</i></td></tr>
+<tr><th id="50">50</th><td><u>#<span data-ppcond="50">ifdef</span> <span class="macro" data-ref="_M/FMT_SYSTEM">FMT_SYSTEM</span></u></td></tr>
+<tr><th id="51">51</th><td><u>#  define FMT_POSIX_CALL(call) FMT_SYSTEM(call)</u></td></tr>
+<tr><th id="52">52</th><td><u>#<span data-ppcond="50">else</span></u></td></tr>
+<tr><th id="53">53</th><td><u>#  define <dfn class="macro" id="_M/FMT_SYSTEM" data-ref="_M/FMT_SYSTEM">FMT_SYSTEM</dfn>(call) ::call</u></td></tr>
+<tr><th id="54">54</th><td><u>#  <span data-ppcond="54">ifdef</span> <span class="macro" data-ref="_M/_WIN32">_WIN32</span></u></td></tr>
+<tr><th id="55">55</th><td><i>// Fix warnings about deprecated symbols.</i></td></tr>
+<tr><th id="56">56</th><td><u>#    define FMT_POSIX_CALL(call) ::_##call</u></td></tr>
+<tr><th id="57">57</th><td><u>#  <span data-ppcond="54">else</span></u></td></tr>
+<tr><th id="58">58</th><td><u>#    define <dfn class="macro" id="_M/FMT_POSIX_CALL" data-ref="_M/FMT_POSIX_CALL">FMT_POSIX_CALL</dfn>(call) ::call</u></td></tr>
+<tr><th id="59">59</th><td><u>#  <span data-ppcond="54">endif</span></u></td></tr>
+<tr><th id="60">60</th><td><u>#<span data-ppcond="50">endif</span></u></td></tr>
+<tr><th id="61">61</th><td></td></tr>
+<tr><th id="62">62</th><td><i>// Retries the expression while it evaluates to error_result and errno</i></td></tr>
+<tr><th id="63">63</th><td><i>// equals to EINTR.</i></td></tr>
+<tr><th id="64">64</th><td><u>#<span data-ppcond="64">ifndef</span> <span class="macro" data-ref="_M/_WIN32">_WIN32</span></u></td></tr>
+<tr><th id="65">65</th><td><u>#  define <dfn class="macro" id="_M/FMT_RETRY_VAL" data-ref="_M/FMT_RETRY_VAL">FMT_RETRY_VAL</dfn>(result, expression, error_result) \</u></td></tr>
+<tr><th id="66">66</th><td><u>    do {                                                  \</u></td></tr>
+<tr><th id="67">67</th><td><u>      (result) = (expression);                            \</u></td></tr>
+<tr><th id="68">68</th><td><u>    } while ((result) == (error_result) &amp;&amp; errno == EINTR)</u></td></tr>
+<tr><th id="69">69</th><td><u>#<span data-ppcond="64">else</span></u></td></tr>
+<tr><th id="70">70</th><td><u>#  define FMT_RETRY_VAL(result, expression, error_result) result = (expression)</u></td></tr>
+<tr><th id="71">71</th><td><u>#<span data-ppcond="64">endif</span></u></td></tr>
+<tr><th id="72">72</th><td></td></tr>
+<tr><th id="73">73</th><td><u>#define <dfn class="macro" id="_M/FMT_RETRY" data-ref="_M/FMT_RETRY">FMT_RETRY</dfn>(result, expression) FMT_RETRY_VAL(result, expression, -1)</u></td></tr>
+<tr><th id="74">74</th><td></td></tr>
+<tr><th id="75">75</th><td><a class="macro" href="core.h.html#223" title="namespace fmt { inline namespace v8 {" data-ref="_M/FMT_BEGIN_NAMESPACE">FMT_BEGIN_NAMESPACE</a></td></tr>
+<tr><th id="76">76</th><td><a class="macro" href="core.h.html#233" title="" data-ref="_M/FMT_MODULE_EXPORT_BEGIN">FMT_MODULE_EXPORT_BEGIN</a></td></tr>
+<tr><th id="77">77</th><td></td></tr>
+<tr><th id="78">78</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="79">79</th><td><i class="doc"> <span class="command"> \rst</span></i></td></tr>
+<tr><th id="80">80</th><td><i class="doc">  A reference to a null-terminated string. It can be constructed from a C</i></td></tr>
+<tr><th id="81">81</th><td><i class="doc">  string or ``std::string``.</i></td></tr>
+<tr><th id="82">82</th><td><i class="doc"></i></td></tr>
+<tr><th id="83">83</th><td><i class="doc">  You can use one of the following type aliases for common character types:</i></td></tr>
+<tr><th id="84">84</th><td><i class="doc"></i></td></tr>
+<tr><th id="85">85</th><td><i class="doc">  +---------------+-----------------------------+</i></td></tr>
+<tr><th id="86">86</th><td><i class="doc">  | Type          | Definition                  |</i></td></tr>
+<tr><th id="87">87</th><td><i class="doc">  +===============+=============================+</i></td></tr>
+<tr><th id="88">88</th><td><i class="doc">  | cstring_view  | basic_cstring_view&lt;char&gt;    |</i></td></tr>
+<tr><th id="89">89</th><td><i class="doc">  +---------------+-----------------------------+</i></td></tr>
+<tr><th id="90">90</th><td><i class="doc">  | wcstring_view | basic_cstring_view&lt;wchar_t&gt; |</i></td></tr>
+<tr><th id="91">91</th><td><i class="doc">  +---------------+-----------------------------+</i></td></tr>
+<tr><th id="92">92</th><td><i class="doc"></i></td></tr>
+<tr><th id="93">93</th><td><i class="doc">  This class is most useful as a parameter type to allow passing</i></td></tr>
+<tr><th id="94">94</th><td><i class="doc">  different types of strings to a function, for example::</i></td></tr>
+<tr><th id="95">95</th><td><i class="doc"></i></td></tr>
+<tr><th id="96">96</th><td><i class="doc">    template &lt;typename... Args&gt;</i></td></tr>
+<tr><th id="97">97</th><td><i class="doc">    std::string format(cstring_view format_str, const Args &amp; ... args);</i></td></tr>
+<tr><th id="98">98</th><td><i class="doc"></i></td></tr>
+<tr><th id="99">99</th><td><i class="doc">    format("{}", 42);</i></td></tr>
+<tr><th id="100">100</th><td><i class="doc">    format(std::string("{}"), 42);</i></td></tr>
+<tr><th id="101">101</th><td><i class="doc"> <span class="command"> \endrst</span></i></td></tr>
+<tr><th id="102">102</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="103">103</th><td><b>template</b> &lt;<b>typename</b> Char&gt; <b>class</b> <dfn class="type def" id="fmt::basic_cstring_view" title='fmt::basic_cstring_view' data-ref="fmt::basic_cstring_view">basic_cstring_view</dfn> {</td></tr>
+<tr><th id="104">104</th><td> <b>private</b>:</td></tr>
+<tr><th id="105">105</th><td>  <em>const</em> Char* <dfn class="decl field" id="fmt::basic_cstring_view::data_" title='fmt::basic_cstring_view::data_' data-ref="fmt::basic_cstring_view::data_">data_</dfn>;</td></tr>
+<tr><th id="106">106</th><td></td></tr>
+<tr><th id="107">107</th><td> <b>public</b>:</td></tr>
+<tr><th id="108">108</th><td>  <i class="doc">/** Constructs a string reference object from a C string. */</i></td></tr>
+<tr><th id="109">109</th><td>  <dfn class="decl def fn" id="_ZN3fmt2v818basic_cstring_viewC1EPKT_" title='fmt::basic_cstring_view::basic_cstring_view&lt;Char&gt;' data-ref="_ZN3fmt2v818basic_cstring_viewC1EPKT_">basic_cstring_view</dfn>(<em>const</em> Char* <dfn class="local col6 decl" id="76s" title='s' data-type='const Char *' data-ref="76s">s</dfn>) : <a class="member field" href="#fmt::basic_cstring_view::data_" title='fmt::basic_cstring_view::data_' data-ref="fmt::basic_cstring_view::data_">data_</a>(<a class="local col6 ref" href="#76s" title='s' data-ref="76s">s</a>) {}</td></tr>
+<tr><th id="110">110</th><td></td></tr>
+<tr><th id="111">111</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="112">112</th><td><i class="doc">   <span class="command"> \rst</span></i></td></tr>
+<tr><th id="113">113</th><td><i class="doc">    Constructs a string reference from an ``std::string`` object.</i></td></tr>
+<tr><th id="114">114</th><td><i class="doc">   <span class="command"> \endrst</span></i></td></tr>
+<tr><th id="115">115</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="116">116</th><td>  <dfn class="decl def fn" id="_ZN3fmt2v818basic_cstring_viewC1ERKNSt7__cxx1112basic_stringIT_St11char_traitsIS4_ESaIS4_EEE" title='fmt::basic_cstring_view::basic_cstring_view&lt;Char&gt;' data-ref="_ZN3fmt2v818basic_cstring_viewC1ERKNSt7__cxx1112basic_stringIT_St11char_traitsIS4_ESaIS4_EEE">basic_cstring_view</dfn>(<em>const</em> <span class="namespace">std::</span><a class="type" href="../../../include/c++/9/bits/stringfwd.h.html#std::basic_string" title='std::basic_string' data-ref="std::basic_string">basic_string</a>&lt;Char&gt;&amp; <dfn class="local col7 decl" id="77s" title='s' data-type='const std::basic_string&lt;Char&gt; &amp;' data-ref="77s">s</dfn>) : <a class="member field" href="#fmt::basic_cstring_view::data_" title='fmt::basic_cstring_view::data_' data-ref="fmt::basic_cstring_view::data_">data_</a>(<a class="local col7 ref" href="#77s" title='s' data-ref="77s">s</a>.c_str()) {}</td></tr>
+<tr><th id="117">117</th><td></td></tr>
+<tr><th id="118">118</th><td>  <i class="doc">/** Returns the pointer to a C string. */</i></td></tr>
+<tr><th id="119">119</th><td>  <em>const</em> Char* <dfn class="decl def fn" id="_ZNK3fmt2v818basic_cstring_view5c_strEv" title='fmt::basic_cstring_view::c_str' data-ref="_ZNK3fmt2v818basic_cstring_view5c_strEv">c_str</dfn>() <em>const</em> { <b>return</b> <a class="member field" href="#fmt::basic_cstring_view::data_" title='fmt::basic_cstring_view::data_' data-ref="fmt::basic_cstring_view::data_">data_</a>; }</td></tr>
+<tr><th id="120">120</th><td>};</td></tr>
+<tr><th id="121">121</th><td></td></tr>
+<tr><th id="122">122</th><td><b>using</b> <dfn class="typedef" id="fmt::cstring_view" title='fmt::cstring_view' data-type='basic_cstring_view&lt;char&gt;' data-ref="fmt::cstring_view">cstring_view</dfn> = <a class="type" href="#fmt::basic_cstring_view" title='fmt::basic_cstring_view' data-ref="fmt::basic_cstring_view">basic_cstring_view</a>&lt;<em>char</em>&gt;;</td></tr>
+<tr><th id="123">123</th><td><b>using</b> <dfn class="typedef" id="fmt::wcstring_view" title='fmt::wcstring_view' data-type='basic_cstring_view&lt;wchar_t&gt;' data-ref="fmt::wcstring_view">wcstring_view</dfn> = <a class="type" href="#fmt::basic_cstring_view" title='fmt::basic_cstring_view' data-ref="fmt::basic_cstring_view">basic_cstring_view</a>&lt;<em>wchar_t</em>&gt;;</td></tr>
+<tr><th id="124">124</th><td></td></tr>
+<tr><th id="125">125</th><td><b>template</b> &lt;<b>typename</b> Char&gt; <b>struct</b> <dfn class="type def" id="fmt::formatter" title='fmt::formatter' data-ref="fmt::formatter">formatter</dfn>&lt;<span class="namespace">std::</span><a class="type" href="../../../include/c++/9/system_error.html#std::error_code" title='std::error_code' data-ref="std::error_code">error_code</a>, Char&gt; {</td></tr>
+<tr><th id="126">126</th><td>  <b>template</b> &lt;<b>typename</b> ParseContext&gt;</td></tr>
+<tr><th id="127">127</th><td>  <a class="macro" href="core.h.html#110" title="" data-ref="_M/FMT_CONSTEXPR">FMT_CONSTEXPR</a> <em>auto</em> <dfn class="decl def fn" id="_ZN3fmt2v89formatterISt10error_codeT_vE5parseERTL0__" title='fmt::formatter&lt;std::error_code, type-parameter-0-0&gt;::parse' data-ref="_ZN3fmt2v89formatterISt10error_codeT_vE5parseERTL0__">parse</dfn>(ParseContext&amp; <dfn class="local col8 decl" id="78ctx" title='ctx' data-type='ParseContext &amp;' data-ref="78ctx">ctx</dfn>) -&gt; <b>decltype</b>(<a class="local col8 ref" href="#78ctx" title='ctx' data-ref="78ctx">ctx</a>.begin()) {</td></tr>
+<tr><th id="128">128</th><td>    <b>return</b> <a class="local col8 ref" href="#78ctx" title='ctx' data-ref="78ctx">ctx</a>.begin();</td></tr>
+<tr><th id="129">129</th><td>  }</td></tr>
+<tr><th id="130">130</th><td></td></tr>
+<tr><th id="131">131</th><td>  <b>template</b> &lt;<b>typename</b> FormatContext&gt;</td></tr>
+<tr><th id="132">132</th><td>  <a class="macro" href="core.h.html#110" title="" data-ref="_M/FMT_CONSTEXPR">FMT_CONSTEXPR</a> <em>auto</em> <dfn class="decl def fn" id="_ZNK3fmt2v89formatterISt10error_codeT_vE6formatERKS2_RTL0__" title='fmt::formatter&lt;std::error_code, type-parameter-0-0&gt;::format' data-ref="_ZNK3fmt2v89formatterISt10error_codeT_vE6formatERKS2_RTL0__">format</dfn>(<em>const</em> <span class="namespace">std::</span><a class="type" href="../../../include/c++/9/system_error.html#std::error_code" title='std::error_code' data-ref="std::error_code">error_code</a>&amp; <dfn class="local col0 decl" id="80ec" title='ec' data-type='const std::error_code &amp;' data-ref="80ec">ec</dfn>, FormatContext&amp; <dfn class="local col9 decl" id="79ctx" title='ctx' data-type='FormatContext &amp;' data-ref="79ctx">ctx</dfn>) <em>const</em></td></tr>
+<tr><th id="133">133</th><td>      -&gt; <b>decltype</b>(<a class="local col9 ref" href="#79ctx" title='ctx' data-ref="79ctx">ctx</a>.out()) {</td></tr>
+<tr><th id="134">134</th><td>    <em>auto</em> <dfn class="local col1 decl" id="81out" title='out' data-type='auto' data-ref="81out">out</dfn> = <a class="local col9 ref" href="#79ctx" title='ctx' data-ref="79ctx">ctx</a>.out();</td></tr>
+<tr><th id="135">135</th><td>    <a class="local col1 ref" href="#81out" title='out' data-ref="81out">out</a> = <span class="namespace">detail::</span>write_bytes(<a class="local col1 ref" href="#81out" title='out' data-ref="81out">out</a>, <a class="local col0 ref" href="#80ec" title='ec' data-ref="80ec">ec</a>.<a class="ref fn" href="../../../include/c++/9/system_error.html#_ZNKSt10error_code8categoryEv" title='std::error_code::category' data-ref="_ZNKSt10error_code8categoryEv">category</a>().<a class="virtual ref fn" href="../../../include/c++/9/system_error.html#_ZNKSt3_V214error_category4nameEv" title='std::error_category::name' data-ref="_ZNKSt3_V214error_category4nameEv">name</a>(),</td></tr>
+<tr><th id="136">136</th><td>                              <a class="type" href="core.h.html#fmt::basic_format_specs" title='fmt::basic_format_specs' data-ref="fmt::basic_format_specs">basic_format_specs</a>&lt;Char&gt;());</td></tr>
+<tr><th id="137">137</th><td>    <a class="local col1 ref" href="#81out" title='out' data-ref="81out">out</a> = <span class="namespace">detail::</span>write&lt;Char&gt;(<a class="local col1 ref" href="#81out" title='out' data-ref="81out">out</a>, Char(<kbd>':'</kbd>));</td></tr>
+<tr><th id="138">138</th><td>    <a class="local col1 ref" href="#81out" title='out' data-ref="81out">out</a> = <span class="namespace">detail::</span>write&lt;Char&gt;(<a class="local col1 ref" href="#81out" title='out' data-ref="81out">out</a>, <a class="local col0 ref" href="#80ec" title='ec' data-ref="80ec">ec</a>.<a class="ref fn" href="../../../include/c++/9/system_error.html#_ZNKSt10error_code5valueEv" title='std::error_code::value' data-ref="_ZNKSt10error_code5valueEv">value</a>());</td></tr>
+<tr><th id="139">139</th><td>    <b>return</b> <a class="local col1 ref" href="#81out" title='out' data-ref="81out">out</a>;</td></tr>
+<tr><th id="140">140</th><td>  }</td></tr>
+<tr><th id="141">141</th><td>};</td></tr>
+<tr><th id="142">142</th><td></td></tr>
+<tr><th id="143">143</th><td><u>#<span data-ppcond="143">ifdef</span> <span class="macro" data-ref="_M/_WIN32">_WIN32</span></u></td></tr>
+<tr><th id="144">144</th><td>FMT_API <em>const</em> std::error_category&amp; system_category() FMT_NOEXCEPT;</td></tr>
+<tr><th id="145">145</th><td></td></tr>
+<tr><th id="146">146</th><td>FMT_BEGIN_DETAIL_NAMESPACE</td></tr>
+<tr><th id="147">147</th><td><i>// A converter from UTF-16 to UTF-8.</i></td></tr>
+<tr><th id="148">148</th><td><i>// It is only provided for Windows since other systems support UTF-8 natively.</i></td></tr>
+<tr><th id="149">149</th><td><b>class</b> utf16_to_utf8 {</td></tr>
+<tr><th id="150">150</th><td> <b>private</b>:</td></tr>
+<tr><th id="151">151</th><td>  memory_buffer buffer_;</td></tr>
+<tr><th id="152">152</th><td></td></tr>
+<tr><th id="153">153</th><td> <b>public</b>:</td></tr>
+<tr><th id="154">154</th><td>  utf16_to_utf8() {}</td></tr>
+<tr><th id="155">155</th><td>  FMT_API <b>explicit</b> utf16_to_utf8(basic_string_view&lt;<em>wchar_t</em>&gt; s);</td></tr>
+<tr><th id="156">156</th><td>  <b>operator</b> string_view() <em>const</em> { <b>return</b> string_view(&amp;buffer_[<var>0</var>], size()); }</td></tr>
+<tr><th id="157">157</th><td>  size_t size() <em>const</em> { <b>return</b> buffer_.size() - <var>1</var>; }</td></tr>
+<tr><th id="158">158</th><td>  <em>const</em> <em>char</em>* c_str() <em>const</em> { <b>return</b> &amp;buffer_[<var>0</var>]; }</td></tr>
+<tr><th id="159">159</th><td>  std::string str() <em>const</em> { <b>return</b> std::string(&amp;buffer_[<var>0</var>], size()); }</td></tr>
+<tr><th id="160">160</th><td></td></tr>
+<tr><th id="161">161</th><td>  <i>// Performs conversion returning a system error code instead of</i></td></tr>
+<tr><th id="162">162</th><td><i>  // throwing exception on conversion error. This method may still throw</i></td></tr>
+<tr><th id="163">163</th><td><i>  // in case of memory allocation error.</i></td></tr>
+<tr><th id="164">164</th><td>  FMT_API <em>int</em> convert(basic_string_view&lt;<em>wchar_t</em>&gt; s);</td></tr>
+<tr><th id="165">165</th><td>};</td></tr>
+<tr><th id="166">166</th><td></td></tr>
+<tr><th id="167">167</th><td>FMT_API <em>void</em> format_windows_error(buffer&lt;<em>char</em>&gt;&amp; out, <em>int</em> error_code,</td></tr>
+<tr><th id="168">168</th><td>                                  <em>const</em> <em>char</em>* message) FMT_NOEXCEPT;</td></tr>
+<tr><th id="169">169</th><td>FMT_END_DETAIL_NAMESPACE</td></tr>
+<tr><th id="170">170</th><td></td></tr>
+<tr><th id="171">171</th><td>FMT_API std::system_error vwindows_error(<em>int</em> error_code, string_view format_str,</td></tr>
+<tr><th id="172">172</th><td>                                         format_args args);</td></tr>
+<tr><th id="173">173</th><td></td></tr>
+<tr><th id="174">174</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="175">175</th><td><i class="doc"><span class="command"> \rst</span></i></td></tr>
+<tr><th id="176">176</th><td><i class="doc"> Constructs a :class:`std::system_error` object with the description</i></td></tr>
+<tr><th id="177">177</th><td><i class="doc"> of the form</i></td></tr>
+<tr><th id="178">178</th><td><i class="doc"></i></td></tr>
+<tr><th id="179">179</th><td><i class="doc"> .. parsed-literal::</i></td></tr>
+<tr><th id="180">180</th><td><i class="doc">   *&lt;message&gt;*: *&lt;system-message&gt;*</i></td></tr>
+<tr><th id="181">181</th><td><i class="doc"></i></td></tr>
+<tr><th id="182">182</th><td><i class="doc"> where *&lt;message&gt;* is the formatted message and *&lt;system-message&gt;* is the</i></td></tr>
+<tr><th id="183">183</th><td><i class="doc"> system message corresponding to the error code.</i></td></tr>
+<tr><th id="184">184</th><td><i class="doc"> *error_code* is a Windows error code as given by ``GetLastError``.</i></td></tr>
+<tr><th id="185">185</th><td><i class="doc"> If *error_code* is not a valid error code such as -1, the system message</i></td></tr>
+<tr><th id="186">186</th><td><i class="doc"> will look like "error -1".</i></td></tr>
+<tr><th id="187">187</th><td><i class="doc"></i></td></tr>
+<tr><th id="188">188</th><td><i class="doc"> **Example**::</i></td></tr>
+<tr><th id="189">189</th><td><i class="doc"></i></td></tr>
+<tr><th id="190">190</th><td><i class="doc">   // This throws a system_error with the description</i></td></tr>
+<tr><th id="191">191</th><td><i class="doc">   //   cannot open file 'madeup': The system cannot find the file specified.</i></td></tr>
+<tr><th id="192">192</th><td><i class="doc">   // or similar (system message may vary).</i></td></tr>
+<tr><th id="193">193</th><td><i class="doc">   const char *filename = "madeup";</i></td></tr>
+<tr><th id="194">194</th><td><i class="doc">   LPOFSTRUCT of = LPOFSTRUCT();</i></td></tr>
+<tr><th id="195">195</th><td><i class="doc">   HFILE file = OpenFile(filename, &amp;of, OF_READ);</i></td></tr>
+<tr><th id="196">196</th><td><i class="doc">   if (file == HFILE_ERROR) {</i></td></tr>
+<tr><th id="197">197</th><td><i class="doc">     throw fmt::windows_error(GetLastError(),</i></td></tr>
+<tr><th id="198">198</th><td><i class="doc">                              "cannot open file '{}'", filename);</i></td></tr>
+<tr><th id="199">199</th><td><i class="doc">   }</i></td></tr>
+<tr><th id="200">200</th><td><i class="doc"><span class="command"> \endrst</span></i></td></tr>
+<tr><th id="201">201</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="202">202</th><td><b>template</b> &lt;<b>typename</b>... Args&gt;</td></tr>
+<tr><th id="203">203</th><td>std::system_error windows_error(<em>int</em> error_code, string_view message,</td></tr>
+<tr><th id="204">204</th><td>                                <em>const</em> Args&amp;... args) {</td></tr>
+<tr><th id="205">205</th><td>  <b>return</b> vwindows_error(error_code, message, fmt::make_format_args(args...));</td></tr>
+<tr><th id="206">206</th><td>}</td></tr>
+<tr><th id="207">207</th><td></td></tr>
+<tr><th id="208">208</th><td><i>// Reports a Windows error without throwing an exception.</i></td></tr>
+<tr><th id="209">209</th><td><i>// Can be used to report errors from destructors.</i></td></tr>
+<tr><th id="210">210</th><td>FMT_API <em>void</em> report_windows_error(<em>int</em> error_code,</td></tr>
+<tr><th id="211">211</th><td>                                  <em>const</em> <em>char</em>* message) FMT_NOEXCEPT;</td></tr>
+<tr><th id="212">212</th><td><u>#<span data-ppcond="143">else</span></u></td></tr>
+<tr><th id="213">213</th><td><b>inline</b> <em>const</em> <span class="namespace">std::</span><a class="type" href="../../../include/c++/9/system_error.html#std::error_category" title='std::error_category' data-ref="std::error_category">error_category</a>&amp; <dfn class="decl def fn" id="_ZN3fmt2v815system_categoryEv" title='fmt::system_category' data-ref="_ZN3fmt2v815system_categoryEv">system_category</dfn>() <a class="macro" href="core.h.html#164" title="noexcept" data-ref="_M/FMT_NOEXCEPT">FMT_NOEXCEPT</a> {</td></tr>
+<tr><th id="214">214</th><td>  <b>return</b> <span class="namespace">std::</span><a class="ref fn" href="../../../include/c++/9/system_error.html#_ZNSt3_V215system_categoryEv" title='std::system_category' data-ref="_ZNSt3_V215system_categoryEv">system_category</a>();</td></tr>
+<tr><th id="215">215</th><td>}</td></tr>
+<tr><th id="216">216</th><td><u>#<span data-ppcond="143">endif</span>  // _WIN32</u></td></tr>
+<tr><th id="217">217</th><td></td></tr>
+<tr><th id="218">218</th><td><i>// std::system is not available on some platforms such as iOS (#2248).</i></td></tr>
+<tr><th id="219">219</th><td><u>#<span data-ppcond="219">ifdef</span> <span class="macro" data-ref="_M/__OSX__">__OSX__</span></u></td></tr>
+<tr><th id="220">220</th><td><b>template</b> &lt;<b>typename</b> S, <b>typename</b>... Args, <b>typename</b> Char = char_t&lt;S&gt;&gt;</td></tr>
+<tr><th id="221">221</th><td><em>void</em> say(<em>const</em> S&amp; format_str, Args&amp;&amp;... args) {</td></tr>
+<tr><th id="222">222</th><td>  std::system(format(<q>"say \"{}\""</q>, format(format_str, args...)).c_str());</td></tr>
+<tr><th id="223">223</th><td>}</td></tr>
+<tr><th id="224">224</th><td><u>#<span data-ppcond="219">endif</span></u></td></tr>
+<tr><th id="225">225</th><td></td></tr>
+<tr><th id="226">226</th><td><i>// A buffered file.</i></td></tr>
+<tr><th id="227">227</th><td><b>class</b> <dfn class="type def" id="fmt::buffered_file" title='fmt::buffered_file' data-ref="fmt::buffered_file">buffered_file</dfn> {</td></tr>
+<tr><th id="228">228</th><td> <b>private</b>:</td></tr>
+<tr><th id="229">229</th><td>  <a class="typedef" href="../../../include/x86_64-linux-gnu/bits/types/FILE.h.html#FILE" title='FILE' data-type='struct _IO_FILE' data-ref="FILE">FILE</a>* <dfn class="decl field" id="fmt::buffered_file::file_" title='fmt::buffered_file::file_' data-ref="fmt::buffered_file::file_">file_</dfn>;</td></tr>
+<tr><th id="230">230</th><td></td></tr>
+<tr><th id="231">231</th><td>  <b>friend</b> <b>class</b> <a class="type" href="#fmt::file" title='fmt::file' data-ref="fmt::file">file</a>;</td></tr>
+<tr><th id="232">232</th><td></td></tr>
+<tr><th id="233">233</th><td>  <b>explicit</b> <dfn class="decl def fn" id="_ZN3fmt2v813buffered_fileC1EP8_IO_FILE" title='fmt::buffered_file::buffered_file' data-ref="_ZN3fmt2v813buffered_fileC1EP8_IO_FILE">buffered_file</dfn>(<a class="typedef" href="../../../include/x86_64-linux-gnu/bits/types/FILE.h.html#FILE" title='FILE' data-type='struct _IO_FILE' data-ref="FILE">FILE</a>* <dfn class="local col2 decl" id="82f" title='f' data-type='FILE *' data-ref="82f">f</dfn>) : <a class="member field" href="#fmt::buffered_file::file_" title='fmt::buffered_file::file_' data-ref="fmt::buffered_file::file_">file_</a>(<a class="local col2 ref" href="#82f" title='f' data-ref="82f">f</a>) {}</td></tr>
+<tr><th id="234">234</th><td></td></tr>
+<tr><th id="235">235</th><td> <b>public</b>:</td></tr>
+<tr><th id="236">236</th><td>  <dfn class="decl def fn" id="_ZN3fmt2v813buffered_fileC1ERKS1_" title='fmt::buffered_file::buffered_file' data-ref="_ZN3fmt2v813buffered_fileC1ERKS1_">buffered_file</dfn>(<em>const</em> <a class="type" href="#fmt::buffered_file" title='fmt::buffered_file' data-ref="fmt::buffered_file">buffered_file</a>&amp;) = <b>delete</b>;</td></tr>
+<tr><th id="237">237</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN3fmt2v813buffered_fileaSERKS1_" title='fmt::buffered_file::operator=' data-ref="_ZN3fmt2v813buffered_fileaSERKS1_"><b>operator</b>=</dfn>(<em>const</em> <a class="type" href="#fmt::buffered_file" title='fmt::buffered_file' data-ref="fmt::buffered_file">buffered_file</a>&amp;) = <b>delete</b>;</td></tr>
+<tr><th id="238">238</th><td></td></tr>
+<tr><th id="239">239</th><td>  <i>// Constructs a buffered_file object which doesn't represent any file.</i></td></tr>
+<tr><th id="240">240</th><td>  <dfn class="decl def fn" id="_ZN3fmt2v813buffered_fileC1Ev" title='fmt::buffered_file::buffered_file' data-ref="_ZN3fmt2v813buffered_fileC1Ev">buffered_file</dfn>() <a class="macro" href="core.h.html#164" title="noexcept" data-ref="_M/FMT_NOEXCEPT">FMT_NOEXCEPT</a> : <a class="member field" href="#fmt::buffered_file::file_" title='fmt::buffered_file::file_' data-ref="fmt::buffered_file::file_">file_</a>(<b>nullptr</b>) {}</td></tr>
+<tr><th id="241">241</th><td></td></tr>
+<tr><th id="242">242</th><td>  <i>// Destroys the object closing the file it represents if any.</i></td></tr>
+<tr><th id="243">243</th><td>  <a class="macro" href="core.h.html#255" title="" data-ref="_M/FMT_API">FMT_API</a> <a class="decl fn" href="../../src/os.cc.html#_ZN3fmt2v813buffered_fileD1Ev" title='fmt::buffered_file::~buffered_file' data-ref="_ZN3fmt2v813buffered_fileD1Ev" id="_ZN3fmt2v813buffered_fileD1Ev">~buffered_file</a>() <a class="macro" href="core.h.html#164" title="noexcept" data-ref="_M/FMT_NOEXCEPT">FMT_NOEXCEPT</a>;</td></tr>
+<tr><th id="244">244</th><td></td></tr>
+<tr><th id="245">245</th><td> <b>public</b>:</td></tr>
+<tr><th id="246">246</th><td>  <dfn class="decl def fn" id="_ZN3fmt2v813buffered_fileC1EOS1_" title='fmt::buffered_file::buffered_file' data-ref="_ZN3fmt2v813buffered_fileC1EOS1_">buffered_file</dfn>(<a class="type" href="#fmt::buffered_file" title='fmt::buffered_file' data-ref="fmt::buffered_file">buffered_file</a>&amp;&amp; <dfn class="local col3 decl" id="83other" title='other' data-type='fmt::buffered_file &amp;&amp;' data-ref="83other">other</dfn>) <a class="macro" href="core.h.html#164" title="noexcept" data-ref="_M/FMT_NOEXCEPT">FMT_NOEXCEPT</a> : <a class="member field" href="#fmt::buffered_file::file_" title='fmt::buffered_file::file_' data-ref="fmt::buffered_file::file_">file_</a>(<a class="local col3 ref" href="#83other" title='other' data-ref="83other">other</a>.<a class="member field" href="#fmt::buffered_file::file_" title='fmt::buffered_file::file_' data-ref="fmt::buffered_file::file_">file_</a>) {</td></tr>
+<tr><th id="247">247</th><td>    <a class="local col3 ref" href="#83other" title='other' data-ref="83other">other</a>.<a class="member field" href="#fmt::buffered_file::file_" title='fmt::buffered_file::file_' data-ref="fmt::buffered_file::file_">file_</a> = <b>nullptr</b>;</td></tr>
+<tr><th id="248">248</th><td>  }</td></tr>
+<tr><th id="249">249</th><td></td></tr>
+<tr><th id="250">250</th><td>  <a class="type" href="#fmt::buffered_file" title='fmt::buffered_file' data-ref="fmt::buffered_file">buffered_file</a>&amp; <dfn class="decl def fn" id="_ZN3fmt2v813buffered_fileaSEOS1_" title='fmt::buffered_file::operator=' data-ref="_ZN3fmt2v813buffered_fileaSEOS1_"><b>operator</b>=</dfn>(<a class="type" href="#fmt::buffered_file" title='fmt::buffered_file' data-ref="fmt::buffered_file">buffered_file</a>&amp;&amp; <dfn class="local col4 decl" id="84other" title='other' data-type='fmt::buffered_file &amp;&amp;' data-ref="84other">other</dfn>) {</td></tr>
+<tr><th id="251">251</th><td>    <a class="member fn" href="../../src/os.cc.html#_ZN3fmt2v813buffered_file5closeEv" title='fmt::buffered_file::close' data-ref="_ZN3fmt2v813buffered_file5closeEv">close</a>();</td></tr>
+<tr><th id="252">252</th><td>    <a class="member field" href="#fmt::buffered_file::file_" title='fmt::buffered_file::file_' data-ref="fmt::buffered_file::file_">file_</a> = <a class="local col4 ref" href="#84other" title='other' data-ref="84other">other</a>.<a class="member field" href="#fmt::buffered_file::file_" title='fmt::buffered_file::file_' data-ref="fmt::buffered_file::file_">file_</a>;</td></tr>
+<tr><th id="253">253</th><td>    <a class="local col4 ref" href="#84other" title='other' data-ref="84other">other</a>.<a class="member field" href="#fmt::buffered_file::file_" title='fmt::buffered_file::file_' data-ref="fmt::buffered_file::file_">file_</a> = <b>nullptr</b>;</td></tr>
+<tr><th id="254">254</th><td>    <b>return</b> *<b>this</b>;</td></tr>
+<tr><th id="255">255</th><td>  }</td></tr>
+<tr><th id="256">256</th><td></td></tr>
+<tr><th id="257">257</th><td>  <i>// Opens a file.</i></td></tr>
+<tr><th id="258">258</th><td>  <a class="macro" href="core.h.html#255" title="" data-ref="_M/FMT_API">FMT_API</a> <a class="decl fn" href="../../src/os.cc.html#_ZN3fmt2v813buffered_fileC1ENS0_18basic_cstring_viewIcEES3_" title='fmt::buffered_file::buffered_file' data-ref="_ZN3fmt2v813buffered_fileC1ENS0_18basic_cstring_viewIcEES3_" id="_ZN3fmt2v813buffered_fileC1ENS0_18basic_cstring_viewIcEES3_">buffered_file</a>(<a class="typedef" href="#fmt::cstring_view" title='fmt::cstring_view' data-type='basic_cstring_view&lt;char&gt;' data-ref="fmt::cstring_view">cstring_view</a> <dfn class="local col5 decl" id="85filename" title='filename' data-type='fmt::cstring_view' data-ref="85filename">filename</dfn>, <a class="typedef" href="#fmt::cstring_view" title='fmt::cstring_view' data-type='basic_cstring_view&lt;char&gt;' data-ref="fmt::cstring_view">cstring_view</a> <dfn class="local col6 decl" id="86mode" title='mode' data-type='fmt::cstring_view' data-ref="86mode">mode</dfn>);</td></tr>
+<tr><th id="259">259</th><td></td></tr>
+<tr><th id="260">260</th><td>  <i>// Closes the file.</i></td></tr>
+<tr><th id="261">261</th><td>  <a class="macro" href="core.h.html#255" title="" data-ref="_M/FMT_API">FMT_API</a> <em>void</em> <a class="decl fn" href="../../src/os.cc.html#_ZN3fmt2v813buffered_file5closeEv" title='fmt::buffered_file::close' data-ref="_ZN3fmt2v813buffered_file5closeEv" id="_ZN3fmt2v813buffered_file5closeEv">close</a>();</td></tr>
+<tr><th id="262">262</th><td></td></tr>
+<tr><th id="263">263</th><td>  <i>// Returns the pointer to a FILE object representing this file.</i></td></tr>
+<tr><th id="264">264</th><td>  <a class="typedef" href="../../../include/x86_64-linux-gnu/bits/types/FILE.h.html#FILE" title='FILE' data-type='struct _IO_FILE' data-ref="FILE">FILE</a>* <dfn class="decl def fn" id="_ZNK3fmt2v813buffered_file3getEv" title='fmt::buffered_file::get' data-ref="_ZNK3fmt2v813buffered_file3getEv">get</dfn>() <em>const</em> <a class="macro" href="core.h.html#164" title="noexcept" data-ref="_M/FMT_NOEXCEPT">FMT_NOEXCEPT</a> { <b>return</b> <a class="member field" href="#fmt::buffered_file::file_" title='fmt::buffered_file::file_' data-ref="fmt::buffered_file::file_">file_</a>; }</td></tr>
+<tr><th id="265">265</th><td></td></tr>
+<tr><th id="266">266</th><td>  <i>// We place parentheses around fileno to workaround a bug in some versions</i></td></tr>
+<tr><th id="267">267</th><td><i>  // of MinGW that define fileno as a macro.</i></td></tr>
+<tr><th id="268">268</th><td>  <a class="macro" href="core.h.html#255" title="" data-ref="_M/FMT_API">FMT_API</a> <em>int</em>(<a class="decl fn" href="../../src/os.cc.html#_ZNK3fmt2v813buffered_file6filenoEv" title='fmt::buffered_file::fileno' data-ref="_ZNK3fmt2v813buffered_file6filenoEv" id="_ZNK3fmt2v813buffered_file6filenoEv">fileno</a>)() <em>const</em>;</td></tr>
+<tr><th id="269">269</th><td></td></tr>
+<tr><th id="270">270</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN3fmt2v813buffered_file6vprintENS0_17basic_string_viewIcEENS0_17basic_format_argsINS0_20basic_format_contextINS0_8appenderEcEEEE" title='fmt::buffered_file::vprint' data-ref="_ZN3fmt2v813buffered_file6vprintENS0_17basic_string_viewIcEENS0_17basic_format_argsINS0_20basic_format_contextINS0_8appenderEcEEEE">vprint</dfn>(<a class="typedef" href="core.h.html#fmt::string_view" title='fmt::string_view' data-type='basic_string_view&lt;char&gt;' data-ref="fmt::string_view">string_view</a> <dfn class="local col7 decl" id="87format_str" title='format_str' data-type='fmt::string_view' data-ref="87format_str">format_str</dfn>, <a class="typedef" href="core.h.html#fmt::format_args" title='fmt::format_args' data-type='basic_format_args&lt;fmt::format_context&gt;' data-ref="fmt::format_args">format_args</a> <dfn class="local col8 decl" id="88args" title='args' data-type='fmt::format_args' data-ref="88args">args</dfn>) {</td></tr>
+<tr><th id="271">271</th><td>    <span class="namespace">fmt::</span><a class="ref fn" href="core.h.html#_ZN3fmt2v86vprintEP8_IO_FILENS0_17basic_string_viewIcEENS0_17basic_format_argsINS0_20basic_format_contextINS0_8appenderEcEEEE" title='fmt::vprint' data-ref="_ZN3fmt2v86vprintEP8_IO_FILENS0_17basic_string_viewIcEENS0_17basic_format_argsINS0_20basic_format_contextINS0_8appenderEcEEEE">vprint</a>(<span class='inlayHint'>f:&nbsp;</span><a class="member field" href="#fmt::buffered_file::file_" title='fmt::buffered_file::file_' data-ref="fmt::buffered_file::file_">file_</a>, <a class="ref fn fake" href="core.h.html#434" title='fmt::basic_string_view&lt;char&gt;::basic_string_view' data-ref="_ZN3fmt2v817basic_string_viewIcEC1ERKS2_"></a><span class='inlayHint'>fmt:&nbsp;</span><a class="local col7 ref" href="#87format_str" title='format_str' data-ref="87format_str">format_str</a>, <a class="ref fn fake" href="core.h.html#1889" title='fmt::basic_format_args&lt;fmt::basic_format_context&lt;fmt::appender, char&gt;&gt;::basic_format_args' data-ref="_ZN3fmt2v817basic_format_argsINS0_20basic_format_contextINS0_8appenderEcEEEC1ERKS5_"></a><a class="local col8 ref" href="#88args" title='args' data-ref="88args">args</a>);</td></tr>
+<tr><th id="272">272</th><td>  }</td></tr>
+<tr><th id="273">273</th><td></td></tr>
+<tr><th id="274">274</th><td>  <b>template</b> &lt;<b>typename</b>... Args&gt;</td></tr>
+<tr><th id="275">275</th><td>  <b>inline</b> <em>void</em> <dfn class="decl def fn" id="_ZN3fmt2v813buffered_file5printENS0_17basic_string_viewIcEEDpRKT_" title='fmt::buffered_file::print' data-ref="_ZN3fmt2v813buffered_file5printENS0_17basic_string_viewIcEEDpRKT_">print</dfn>(<a class="typedef" href="core.h.html#fmt::string_view" title='fmt::string_view' data-type='basic_string_view&lt;char&gt;' data-ref="fmt::string_view">string_view</a> <dfn class="local col9 decl" id="89format_str" title='format_str' data-type='fmt::string_view' data-ref="89format_str">format_str</dfn>, <em>const</em> Args&amp;... <dfn class="local col0 decl" id="90args" title='args' data-type='const Args &amp;...' data-ref="90args">args</dfn>) {</td></tr>
+<tr><th id="276">276</th><td>    <a class="member fn" href="#_ZN3fmt2v813buffered_file6vprintENS0_17basic_string_viewIcEENS0_17basic_format_argsINS0_20basic_format_contextINS0_8appenderEcEEEE" title='fmt::buffered_file::vprint' data-ref="_ZN3fmt2v813buffered_file6vprintENS0_17basic_string_viewIcEENS0_17basic_format_argsINS0_20basic_format_contextINS0_8appenderEcEEEE">vprint</a>(<a class="local col9 ref" href="#89format_str" title='format_str' data-ref="89format_str">format_str</a>, <span class='inlayHint'>args:&nbsp;</span><span class="namespace">fmt::</span>make_format_args(<a class="local col0 ref" href="#90args" title='args' data-ref="90args">args</a>...));</td></tr>
+<tr><th id="277">277</th><td>  }</td></tr>
+<tr><th id="278">278</th><td>};</td></tr>
+<tr><th id="279">279</th><td></td></tr>
+<tr><th id="280">280</th><td><u>#<span data-ppcond="280">if</span> <a class="macro" href="#34" title="1" data-ref="_M/FMT_USE_FCNTL">FMT_USE_FCNTL</a></u></td></tr>
+<tr><th id="281">281</th><td><i>// A file. Closed file is represented by a file object with descriptor -1.</i></td></tr>
+<tr><th id="282">282</th><td><i>// Methods that are not declared with FMT_NOEXCEPT may throw</i></td></tr>
+<tr><th id="283">283</th><td><i>// fmt::system_error in case of failure. Note that some errors such as</i></td></tr>
+<tr><th id="284">284</th><td><i>// closing the file multiple times will cause a crash on Windows rather</i></td></tr>
+<tr><th id="285">285</th><td><i>// than an exception. You can get standard behavior by overriding the</i></td></tr>
+<tr><th id="286">286</th><td><i>// invalid parameter handler with _set_invalid_parameter_handler.</i></td></tr>
+<tr><th id="287">287</th><td><b>class</b> <dfn class="type def" id="fmt::file" title='fmt::file' data-ref="fmt::file">file</dfn> {</td></tr>
+<tr><th id="288">288</th><td> <b>private</b>:</td></tr>
+<tr><th id="289">289</th><td>  <em>int</em> <dfn class="decl field" id="fmt::file::fd_" title='fmt::file::fd_' data-ref="fmt::file::fd_">fd_</dfn>;  <i>// File descriptor.</i></td></tr>
+<tr><th id="290">290</th><td></td></tr>
+<tr><th id="291">291</th><td>  <i>// Constructs a file object with a given descriptor.</i></td></tr>
+<tr><th id="292">292</th><td>  <b>explicit</b> <dfn class="decl def fn" id="_ZN3fmt2v84fileC1Ei" title='fmt::file::file' data-ref="_ZN3fmt2v84fileC1Ei">file</dfn>(<em>int</em> <dfn class="local col1 decl" id="91fd" title='fd' data-type='int' data-ref="91fd">fd</dfn>) : <a class="member field" href="#fmt::file::fd_" title='fmt::file::fd_' data-ref="fmt::file::fd_">fd_</a>(<a class="local col1 ref" href="#91fd" title='fd' data-ref="91fd">fd</a>) {}</td></tr>
+<tr><th id="293">293</th><td></td></tr>
+<tr><th id="294">294</th><td> <b>public</b>:</td></tr>
+<tr><th id="295">295</th><td>  <i>// Possible values for the oflag argument to the constructor.</i></td></tr>
+<tr><th id="296">296</th><td>  <b>enum</b> {</td></tr>
+<tr><th id="297">297</th><td>    <dfn class="enum" id="fmt::file::RDONLY" title='fmt::file::RDONLY' data-ref="fmt::file::RDONLY">RDONLY</dfn> = <a class="macro" href="#45" title="00" data-ref="_M/FMT_POSIX">FMT_POSIX</a>(<a class="macro" href="../../../include/x86_64-linux-gnu/bits/fcntl-linux.h.html#43" title="00" data-ref="_M/O_RDONLY">O_RDONLY</a>),  <i>// Open for reading only.</i></td></tr>
+<tr><th id="298">298</th><td>    <dfn class="enum" id="fmt::file::WRONLY" title='fmt::file::WRONLY' data-ref="fmt::file::WRONLY">WRONLY</dfn> = <a class="macro" href="#45" title="01" data-ref="_M/FMT_POSIX">FMT_POSIX</a>(<a class="macro" href="../../../include/x86_64-linux-gnu/bits/fcntl-linux.h.html#44" title="01" data-ref="_M/O_WRONLY">O_WRONLY</a>),  <i>// Open for writing only.</i></td></tr>
+<tr><th id="299">299</th><td>    <dfn class="enum" id="fmt::file::RDWR" title='fmt::file::RDWR' data-ref="fmt::file::RDWR">RDWR</dfn> = <a class="macro" href="#45" title="02" data-ref="_M/FMT_POSIX">FMT_POSIX</a>(<a class="macro" href="../../../include/x86_64-linux-gnu/bits/fcntl-linux.h.html#45" title="02" data-ref="_M/O_RDWR">O_RDWR</a>),      <i>// Open for reading and writing.</i></td></tr>
+<tr><th id="300">300</th><td>    <dfn class="enum" id="fmt::file::CREATE" title='fmt::file::CREATE' data-ref="fmt::file::CREATE">CREATE</dfn> = <a class="macro" href="#45" title="0100" data-ref="_M/FMT_POSIX">FMT_POSIX</a>(<a class="macro" href="../../../include/x86_64-linux-gnu/bits/fcntl-linux.h.html#47" title="0100" data-ref="_M/O_CREAT">O_CREAT</a>),   <i>// Create if the file doesn't exist.</i></td></tr>
+<tr><th id="301">301</th><td>    <dfn class="enum" id="fmt::file::APPEND" title='fmt::file::APPEND' data-ref="fmt::file::APPEND">APPEND</dfn> = <a class="macro" href="#45" title="02000" data-ref="_M/FMT_POSIX">FMT_POSIX</a>(<a class="macro" href="../../../include/x86_64-linux-gnu/bits/fcntl-linux.h.html#59" title="02000" data-ref="_M/O_APPEND">O_APPEND</a>),  <i>// Open in append mode.</i></td></tr>
+<tr><th id="302">302</th><td>    <dfn class="enum" id="fmt::file::TRUNC" title='fmt::file::TRUNC' data-ref="fmt::file::TRUNC">TRUNC</dfn> = <a class="macro" href="#45" title="01000" data-ref="_M/FMT_POSIX">FMT_POSIX</a>(<a class="macro" href="../../../include/x86_64-linux-gnu/bits/fcntl-linux.h.html#56" title="01000" data-ref="_M/O_TRUNC">O_TRUNC</a>)     <i>// Truncate the content of the file.</i></td></tr>
+<tr><th id="303">303</th><td>  };</td></tr>
+<tr><th id="304">304</th><td></td></tr>
+<tr><th id="305">305</th><td>  <i>// Constructs a file object which doesn't represent any file.</i></td></tr>
+<tr><th id="306">306</th><td>  <dfn class="decl def fn" id="_ZN3fmt2v84fileC1Ev" title='fmt::file::file' data-ref="_ZN3fmt2v84fileC1Ev">file</dfn>() <a class="macro" href="core.h.html#164" title="noexcept" data-ref="_M/FMT_NOEXCEPT">FMT_NOEXCEPT</a> : <a class="member field" href="#fmt::file::fd_" title='fmt::file::fd_' data-ref="fmt::file::fd_">fd_</a>(-<var>1</var>) {}</td></tr>
+<tr><th id="307">307</th><td></td></tr>
+<tr><th id="308">308</th><td>  <i>// Opens a file and constructs a file object representing this file.</i></td></tr>
+<tr><th id="309">309</th><td>  <a class="macro" href="core.h.html#255" title="" data-ref="_M/FMT_API">FMT_API</a> <a class="decl fn" href="../../src/os.cc.html#_ZN3fmt2v84fileC1ENS0_18basic_cstring_viewIcEEi" title='fmt::file::file' data-ref="_ZN3fmt2v84fileC1ENS0_18basic_cstring_viewIcEEi" id="_ZN3fmt2v84fileC1ENS0_18basic_cstring_viewIcEEi">file</a>(<a class="typedef" href="#fmt::cstring_view" title='fmt::cstring_view' data-type='basic_cstring_view&lt;char&gt;' data-ref="fmt::cstring_view">cstring_view</a> <dfn class="local col2 decl" id="92path" title='path' data-type='fmt::cstring_view' data-ref="92path">path</dfn>, <em>int</em> <dfn class="local col3 decl" id="93oflag" title='oflag' data-type='int' data-ref="93oflag">oflag</dfn>);</td></tr>
+<tr><th id="310">310</th><td></td></tr>
+<tr><th id="311">311</th><td> <b>public</b>:</td></tr>
+<tr><th id="312">312</th><td>  <dfn class="decl def fn" id="_ZN3fmt2v84fileC1ERKS1_" title='fmt::file::file' data-ref="_ZN3fmt2v84fileC1ERKS1_">file</dfn>(<em>const</em> <a class="type" href="#fmt::file" title='fmt::file' data-ref="fmt::file">file</a>&amp;) = <b>delete</b>;</td></tr>
+<tr><th id="313">313</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN3fmt2v84fileaSERKS1_" title='fmt::file::operator=' data-ref="_ZN3fmt2v84fileaSERKS1_"><b>operator</b>=</dfn>(<em>const</em> <a class="type" href="#fmt::file" title='fmt::file' data-ref="fmt::file">file</a>&amp;) = <b>delete</b>;</td></tr>
+<tr><th id="314">314</th><td></td></tr>
+<tr><th id="315">315</th><td>  <dfn class="decl def fn" id="_ZN3fmt2v84fileC1EOS1_" title='fmt::file::file' data-ref="_ZN3fmt2v84fileC1EOS1_">file</dfn>(<a class="type" href="#fmt::file" title='fmt::file' data-ref="fmt::file">file</a>&amp;&amp; <dfn class="local col4 decl" id="94other" title='other' data-type='fmt::file &amp;&amp;' data-ref="94other">other</dfn>) <a class="macro" href="core.h.html#164" title="noexcept" data-ref="_M/FMT_NOEXCEPT">FMT_NOEXCEPT</a> : <a class="member field" href="#fmt::file::fd_" title='fmt::file::fd_' data-ref="fmt::file::fd_">fd_</a>(<a class="local col4 ref" href="#94other" title='other' data-ref="94other">other</a>.<a class="member field" href="#fmt::file::fd_" title='fmt::file::fd_' data-ref="fmt::file::fd_">fd_</a>) { <a class="local col4 ref" href="#94other" title='other' data-ref="94other">other</a>.<a class="member field" href="#fmt::file::fd_" title='fmt::file::fd_' data-ref="fmt::file::fd_">fd_</a> = -<var>1</var>; }</td></tr>
+<tr><th id="316">316</th><td></td></tr>
+<tr><th id="317">317</th><td>  <i>// Move assignment is not noexcept because close may throw.</i></td></tr>
+<tr><th id="318">318</th><td>  <a class="type" href="#fmt::file" title='fmt::file' data-ref="fmt::file">file</a>&amp; <dfn class="decl def fn" id="_ZN3fmt2v84fileaSEOS1_" title='fmt::file::operator=' data-ref="_ZN3fmt2v84fileaSEOS1_"><b>operator</b>=</dfn>(<a class="type" href="#fmt::file" title='fmt::file' data-ref="fmt::file">file</a>&amp;&amp; <dfn class="local col5 decl" id="95other" title='other' data-type='fmt::file &amp;&amp;' data-ref="95other">other</dfn>) {</td></tr>
+<tr><th id="319">319</th><td>    <a class="member fn" href="../../src/os.cc.html#_ZN3fmt2v84file5closeEv" title='fmt::file::close' data-ref="_ZN3fmt2v84file5closeEv">close</a>();</td></tr>
+<tr><th id="320">320</th><td>    <a class="member field" href="#fmt::file::fd_" title='fmt::file::fd_' data-ref="fmt::file::fd_">fd_</a> = <a class="local col5 ref" href="#95other" title='other' data-ref="95other">other</a>.<a class="member field" href="#fmt::file::fd_" title='fmt::file::fd_' data-ref="fmt::file::fd_">fd_</a>;</td></tr>
+<tr><th id="321">321</th><td>    <a class="local col5 ref" href="#95other" title='other' data-ref="95other">other</a>.<a class="member field" href="#fmt::file::fd_" title='fmt::file::fd_' data-ref="fmt::file::fd_">fd_</a> = -<var>1</var>;</td></tr>
+<tr><th id="322">322</th><td>    <b>return</b> *<b>this</b>;</td></tr>
+<tr><th id="323">323</th><td>  }</td></tr>
+<tr><th id="324">324</th><td></td></tr>
+<tr><th id="325">325</th><td>  <i>// Destroys the object closing the file it represents if any.</i></td></tr>
+<tr><th id="326">326</th><td>  <a class="macro" href="core.h.html#255" title="" data-ref="_M/FMT_API">FMT_API</a> <a class="decl fn" href="../../src/os.cc.html#_ZN3fmt2v84fileD1Ev" title='fmt::file::~file' data-ref="_ZN3fmt2v84fileD1Ev" id="_ZN3fmt2v84fileD1Ev">~file</a>() <a class="macro" href="core.h.html#164" title="noexcept" data-ref="_M/FMT_NOEXCEPT">FMT_NOEXCEPT</a>;</td></tr>
+<tr><th id="327">327</th><td></td></tr>
+<tr><th id="328">328</th><td>  <i>// Returns the file descriptor.</i></td></tr>
+<tr><th id="329">329</th><td>  <em>int</em> <dfn class="decl def fn" id="_ZNK3fmt2v84file10descriptorEv" title='fmt::file::descriptor' data-ref="_ZNK3fmt2v84file10descriptorEv">descriptor</dfn>() <em>const</em> <a class="macro" href="core.h.html#164" title="noexcept" data-ref="_M/FMT_NOEXCEPT">FMT_NOEXCEPT</a> { <b>return</b> <a class="member field" href="#fmt::file::fd_" title='fmt::file::fd_' data-ref="fmt::file::fd_">fd_</a>; }</td></tr>
+<tr><th id="330">330</th><td></td></tr>
+<tr><th id="331">331</th><td>  <i>// Closes the file.</i></td></tr>
+<tr><th id="332">332</th><td>  <a class="macro" href="core.h.html#255" title="" data-ref="_M/FMT_API">FMT_API</a> <em>void</em> <a class="decl fn" href="../../src/os.cc.html#_ZN3fmt2v84file5closeEv" title='fmt::file::close' data-ref="_ZN3fmt2v84file5closeEv" id="_ZN3fmt2v84file5closeEv">close</a>();</td></tr>
+<tr><th id="333">333</th><td></td></tr>
+<tr><th id="334">334</th><td>  <i>// Returns the file size. The size has signed type for consistency with</i></td></tr>
+<tr><th id="335">335</th><td><i>  // stat::st_size.</i></td></tr>
+<tr><th id="336">336</th><td>  <a class="macro" href="core.h.html#255" title="" data-ref="_M/FMT_API">FMT_API</a> <em>long</em> <em>long</em> <a class="decl fn" href="../../src/os.cc.html#_ZNK3fmt2v84file4sizeEv" title='fmt::file::size' data-ref="_ZNK3fmt2v84file4sizeEv" id="_ZNK3fmt2v84file4sizeEv">size</a>() <em>const</em>;</td></tr>
+<tr><th id="337">337</th><td></td></tr>
+<tr><th id="338">338</th><td>  <i>// Attempts to read count bytes from the file into the specified buffer.</i></td></tr>
+<tr><th id="339">339</th><td>  <a class="macro" href="core.h.html#255" title="" data-ref="_M/FMT_API">FMT_API</a> <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <a class="decl fn" href="../../src/os.cc.html#_ZN3fmt2v84file4readEPvm" title='fmt::file::read' data-ref="_ZN3fmt2v84file4readEPvm" id="_ZN3fmt2v84file4readEPvm">read</a>(<em>void</em>* <dfn class="local col6 decl" id="96buffer" title='buffer' data-type='void *' data-ref="96buffer">buffer</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col7 decl" id="97count" title='count' data-type='size_t' data-ref="97count">count</dfn>);</td></tr>
+<tr><th id="340">340</th><td></td></tr>
+<tr><th id="341">341</th><td>  <i>// Attempts to write count bytes from the specified buffer to the file.</i></td></tr>
+<tr><th id="342">342</th><td>  <a class="macro" href="core.h.html#255" title="" data-ref="_M/FMT_API">FMT_API</a> <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <a class="decl fn" href="../../src/os.cc.html#_ZN3fmt2v84file5writeEPKvm" title='fmt::file::write' data-ref="_ZN3fmt2v84file5writeEPKvm" id="_ZN3fmt2v84file5writeEPKvm">write</a>(<em>const</em> <em>void</em>* <dfn class="local col8 decl" id="98buffer" title='buffer' data-type='const void *' data-ref="98buffer">buffer</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col9 decl" id="99count" title='count' data-type='size_t' data-ref="99count">count</dfn>);</td></tr>
+<tr><th id="343">343</th><td></td></tr>
+<tr><th id="344">344</th><td>  <i>// Duplicates a file descriptor with the dup function and returns</i></td></tr>
+<tr><th id="345">345</th><td><i>  // the duplicate as a file object.</i></td></tr>
+<tr><th id="346">346</th><td>  <a class="macro" href="core.h.html#255" title="" data-ref="_M/FMT_API">FMT_API</a> <em>static</em> <a class="type" href="#fmt::file" title='fmt::file' data-ref="fmt::file">file</a> <a class="decl fn" href="../../src/os.cc.html#_ZN3fmt2v84file3dupEi" title='fmt::file::dup' data-ref="_ZN3fmt2v84file3dupEi" id="_ZN3fmt2v84file3dupEi">dup</a>(<em>int</em> <dfn class="local col0 decl" id="100fd" title='fd' data-type='int' data-ref="100fd">fd</dfn>);</td></tr>
+<tr><th id="347">347</th><td></td></tr>
+<tr><th id="348">348</th><td>  <i>// Makes fd be the copy of this file descriptor, closing fd first if</i></td></tr>
+<tr><th id="349">349</th><td><i>  // necessary.</i></td></tr>
+<tr><th id="350">350</th><td>  <a class="macro" href="core.h.html#255" title="" data-ref="_M/FMT_API">FMT_API</a> <em>void</em> <a class="decl fn" href="../../src/os.cc.html#_ZN3fmt2v84file4dup2Ei" title='fmt::file::dup2' data-ref="_ZN3fmt2v84file4dup2Ei" id="_ZN3fmt2v84file4dup2Ei">dup2</a>(<em>int</em> <dfn class="local col1 decl" id="101fd" title='fd' data-type='int' data-ref="101fd">fd</dfn>);</td></tr>
+<tr><th id="351">351</th><td></td></tr>
+<tr><th id="352">352</th><td>  <i>// Makes fd be the copy of this file descriptor, closing fd first if</i></td></tr>
+<tr><th id="353">353</th><td><i>  // necessary.</i></td></tr>
+<tr><th id="354">354</th><td>  <a class="macro" href="core.h.html#255" title="" data-ref="_M/FMT_API">FMT_API</a> <em>void</em> <a class="decl fn" href="../../src/os.cc.html#_ZN3fmt2v84file4dup2EiRSt10error_code" title='fmt::file::dup2' data-ref="_ZN3fmt2v84file4dup2EiRSt10error_code" id="_ZN3fmt2v84file4dup2EiRSt10error_code">dup2</a>(<em>int</em> <dfn class="local col2 decl" id="102fd" title='fd' data-type='int' data-ref="102fd">fd</dfn>, <span class="namespace">std::</span><a class="type" href="../../../include/c++/9/system_error.html#std::error_code" title='std::error_code' data-ref="std::error_code">error_code</a>&amp; <dfn class="local col3 decl" id="103ec" title='ec' data-type='std::error_code &amp;' data-ref="103ec">ec</dfn>) <a class="macro" href="core.h.html#164" title="noexcept" data-ref="_M/FMT_NOEXCEPT">FMT_NOEXCEPT</a>;</td></tr>
+<tr><th id="355">355</th><td></td></tr>
+<tr><th id="356">356</th><td>  <i>// Creates a pipe setting up read_end and write_end file objects for reading</i></td></tr>
+<tr><th id="357">357</th><td><i>  // and writing respectively.</i></td></tr>
+<tr><th id="358">358</th><td>  <a class="macro" href="core.h.html#255" title="" data-ref="_M/FMT_API">FMT_API</a> <em>static</em> <em>void</em> <a class="decl fn" href="../../src/os.cc.html#_ZN3fmt2v84file4pipeERS1_S2_" title='fmt::file::pipe' data-ref="_ZN3fmt2v84file4pipeERS1_S2_" id="_ZN3fmt2v84file4pipeERS1_S2_">pipe</a>(<a class="type" href="#fmt::file" title='fmt::file' data-ref="fmt::file">file</a>&amp; <dfn class="local col4 decl" id="104read_end" title='read_end' data-type='fmt::file &amp;' data-ref="104read_end">read_end</dfn>, <a class="type" href="#fmt::file" title='fmt::file' data-ref="fmt::file">file</a>&amp; <dfn class="local col5 decl" id="105write_end" title='write_end' data-type='fmt::file &amp;' data-ref="105write_end">write_end</dfn>);</td></tr>
+<tr><th id="359">359</th><td></td></tr>
+<tr><th id="360">360</th><td>  <i>// Creates a buffered_file object associated with this file and detaches</i></td></tr>
+<tr><th id="361">361</th><td><i>  // this file object from the file.</i></td></tr>
+<tr><th id="362">362</th><td>  <a class="macro" href="core.h.html#255" title="" data-ref="_M/FMT_API">FMT_API</a> <a class="type" href="#fmt::buffered_file" title='fmt::buffered_file' data-ref="fmt::buffered_file">buffered_file</a> <a class="decl fn" href="../../src/os.cc.html#_ZN3fmt2v84file6fdopenEPKc" title='fmt::file::fdopen' data-ref="_ZN3fmt2v84file6fdopenEPKc" id="_ZN3fmt2v84file6fdopenEPKc">fdopen</a>(<em>const</em> <em>char</em>* <dfn class="local col6 decl" id="106mode" title='mode' data-type='const char *' data-ref="106mode">mode</dfn>);</td></tr>
+<tr><th id="363">363</th><td>};</td></tr>
+<tr><th id="364">364</th><td></td></tr>
+<tr><th id="365">365</th><td><i>// Returns the memory page size.</i></td></tr>
+<tr><th id="366">366</th><td><em>long</em> <a class="decl fn" href="../../src/os.cc.html#_ZN3fmt2v811getpagesizeEv" title='fmt::getpagesize' data-ref="_ZN3fmt2v811getpagesizeEv" id="_ZN3fmt2v811getpagesizeEv">getpagesize</a>();</td></tr>
+<tr><th id="367">367</th><td></td></tr>
+<tr><th id="368">368</th><td><a class="macro" href="core.h.html#235" title="namespace detail {" data-ref="_M/FMT_BEGIN_DETAIL_NAMESPACE">FMT_BEGIN_DETAIL_NAMESPACE</a></td></tr>
+<tr><th id="369">369</th><td></td></tr>
+<tr><th id="370">370</th><td><b>struct</b> <dfn class="type def" id="fmt::detail::buffer_size" title='fmt::detail::buffer_size' data-ref="fmt::detail::buffer_size">buffer_size</dfn> {</td></tr>
+<tr><th id="371">371</th><td>  <dfn class="decl def fn" id="_ZN3fmt2v86detail11buffer_sizeC1Ev" title='fmt::detail::buffer_size::buffer_size' data-ref="_ZN3fmt2v86detail11buffer_sizeC1Ev">buffer_size</dfn>() = <b>default</b>;</td></tr>
+<tr><th id="372">372</th><td>  <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="decl field" id="fmt::detail::buffer_size::value" title='fmt::detail::buffer_size::value' data-ref="fmt::detail::buffer_size::value">value</dfn> = <var>0</var>;</td></tr>
+<tr><th id="373">373</th><td>  <a class="type" href="#fmt::detail::buffer_size" title='fmt::detail::buffer_size' data-ref="fmt::detail::buffer_size">buffer_size</a> <dfn class="decl def fn" id="_ZNK3fmt2v86detail11buffer_sizeaSEm" title='fmt::detail::buffer_size::operator=' data-ref="_ZNK3fmt2v86detail11buffer_sizeaSEm"><b>operator</b>=</dfn>(<span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col7 decl" id="107val" title='val' data-type='size_t' data-ref="107val">val</dfn>) <em>const</em> {</td></tr>
+<tr><th id="374">374</th><td>    <em>auto</em> <dfn class="local col8 decl" id="108bs" title='bs' data-type='fmt::detail::buffer_size' data-ref="108bs">bs</dfn> = <a class="type" href="#fmt::detail::buffer_size" title='fmt::detail::buffer_size' data-ref="fmt::detail::buffer_size">buffer_size</a><a class="ref fn" href="#_ZN3fmt2v86detail11buffer_sizeC1Ev" title='fmt::detail::buffer_size::buffer_size' data-ref="_ZN3fmt2v86detail11buffer_sizeC1Ev">(</a>);</td></tr>
+<tr><th id="375">375</th><td>    <a class="local col8 ref" href="#108bs" title='bs' data-ref="108bs">bs</a>.<a class="member field" href="#fmt::detail::buffer_size::value" title='fmt::detail::buffer_size::value' data-ref="fmt::detail::buffer_size::value">value</a> = <a class="local col7 ref" href="#107val" title='val' data-ref="107val">val</a>;</td></tr>
+<tr><th id="376">376</th><td>    <b>return</b> <a class="ref fn fake" href="#370" title='fmt::detail::buffer_size::buffer_size' data-ref="_ZN3fmt2v86detail11buffer_sizeC1EOS2_"></a><a class="local col8 ref" href="#108bs" title='bs' data-ref="108bs">bs</a>;</td></tr>
+<tr><th id="377">377</th><td>  }</td></tr>
+<tr><th id="378">378</th><td>};</td></tr>
+<tr><th id="379">379</th><td></td></tr>
+<tr><th id="380">380</th><td><b>struct</b> <dfn class="type def" id="fmt::detail::ostream_params" title='fmt::detail::ostream_params' data-ref="fmt::detail::ostream_params">ostream_params</dfn> {</td></tr>
+<tr><th id="381">381</th><td>  <em>int</em> <dfn class="decl field" id="fmt::detail::ostream_params::oflag" title='fmt::detail::ostream_params::oflag' data-ref="fmt::detail::ostream_params::oflag">oflag</dfn> = <a class="type" href="#fmt::file" title='fmt::file' data-ref="fmt::file">file</a>::<a class="enum" href="#fmt::file::WRONLY" title='fmt::file::WRONLY' data-ref="fmt::file::WRONLY">WRONLY</a> | <a class="type" href="#fmt::file" title='fmt::file' data-ref="fmt::file">file</a>::<a class="enum" href="#fmt::file::CREATE" title='fmt::file::CREATE' data-ref="fmt::file::CREATE">CREATE</a> | <a class="type" href="#fmt::file" title='fmt::file' data-ref="fmt::file">file</a>::<a class="enum" href="#fmt::file::TRUNC" title='fmt::file::TRUNC' data-ref="fmt::file::TRUNC">TRUNC</a>;</td></tr>
+<tr><th id="382">382</th><td>  <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="decl field" id="fmt::detail::ostream_params::buffer_size" title='fmt::detail::ostream_params::buffer_size' data-ref="fmt::detail::ostream_params::buffer_size">buffer_size</dfn> = <a class="macro" href="../../../include/stdio.h.html#99" title="8192" data-ref="_M/BUFSIZ">BUFSIZ</a> &gt; <var>32768</var> ? <a class="macro" href="../../../include/stdio.h.html#99" title="8192" data-ref="_M/BUFSIZ">BUFSIZ</a> : <var>32768</var>;</td></tr>
+<tr><th id="383">383</th><td></td></tr>
+<tr><th id="384">384</th><td>  <dfn class="decl def fn" id="_ZN3fmt2v86detail14ostream_paramsC1Ev" title='fmt::detail::ostream_params::ostream_params' data-ref="_ZN3fmt2v86detail14ostream_paramsC1Ev">ostream_params</dfn>() {}</td></tr>
+<tr><th id="385">385</th><td></td></tr>
+<tr><th id="386">386</th><td>  <b>template</b> &lt;<b>typename</b>... T&gt;</td></tr>
+<tr><th id="387">387</th><td>  <dfn class="decl def fn" id="_ZN3fmt2v86detail14ostream_paramsC1EDpT_i" title='fmt::detail::ostream_params::ostream_params' data-ref="_ZN3fmt2v86detail14ostream_paramsC1EDpT_i">ostream_params</dfn>(T... <dfn class="local col9 decl" id="109params" title='params' data-type='T...' data-ref="109params">params</dfn>, <em>int</em> <dfn class="local col0 decl" id="110new_oflag" title='new_oflag' data-type='int' data-ref="110new_oflag">new_oflag</dfn>) : <a class="type" href="#fmt::detail::ostream_params" title='fmt::detail::ostream_params' data-ref="fmt::detail::ostream_params">ostream_params</a>(<a class="local col9 ref" href="#109params" title='params' data-ref="109params">params</a>...) {</td></tr>
+<tr><th id="388">388</th><td>    <a class="member field" href="#fmt::detail::ostream_params::oflag" title='fmt::detail::ostream_params::oflag' data-ref="fmt::detail::ostream_params::oflag">oflag</a> = <a class="local col0 ref" href="#110new_oflag" title='new_oflag' data-ref="110new_oflag">new_oflag</a>;</td></tr>
+<tr><th id="389">389</th><td>  }</td></tr>
+<tr><th id="390">390</th><td></td></tr>
+<tr><th id="391">391</th><td>  <b>template</b> &lt;<b>typename</b>... T&gt;</td></tr>
+<tr><th id="392">392</th><td>  <dfn class="decl def fn" id="_ZN3fmt2v86detail14ostream_paramsC1EDpT_NS1_11buffer_sizeE" title='fmt::detail::ostream_params::ostream_params' data-ref="_ZN3fmt2v86detail14ostream_paramsC1EDpT_NS1_11buffer_sizeE">ostream_params</dfn>(T... <dfn class="local col1 decl" id="111params" title='params' data-type='T...' data-ref="111params">params</dfn>, <span class="namespace">detail::</span><a class="type" href="#fmt::detail::buffer_size" title='fmt::detail::buffer_size' data-ref="fmt::detail::buffer_size">buffer_size</a> <dfn class="local col2 decl" id="112bs" title='bs' data-type='detail::buffer_size' data-ref="112bs">bs</dfn>)</td></tr>
+<tr><th id="393">393</th><td>      : <a class="type" href="#fmt::detail::ostream_params" title='fmt::detail::ostream_params' data-ref="fmt::detail::ostream_params">ostream_params</a>(<a class="local col1 ref" href="#111params" title='params' data-ref="111params">params</a>...) {</td></tr>
+<tr><th id="394">394</th><td>    <b>this</b>-&gt;<a class="member field" href="#fmt::detail::ostream_params::buffer_size" title='fmt::detail::ostream_params::buffer_size' data-ref="fmt::detail::ostream_params::buffer_size">buffer_size</a> = <a class="local col2 ref" href="#112bs" title='bs' data-ref="112bs">bs</a>.<a class="ref field" href="#fmt::detail::buffer_size::value" title='fmt::detail::buffer_size::value' data-ref="fmt::detail::buffer_size::value">value</a>;</td></tr>
+<tr><th id="395">395</th><td>  }</td></tr>
+<tr><th id="396">396</th><td></td></tr>
+<tr><th id="397">397</th><td><i>// Intel has a bug that results in failure to deduce a constructor</i></td></tr>
+<tr><th id="398">398</th><td><i>// for empty parameter packs.</i></td></tr>
+<tr><th id="399">399</th><td><u>#  <span data-ppcond="399">if</span> defined(<span class="macro" data-ref="_M/__INTEL_COMPILER">__INTEL_COMPILER</span>) &amp;&amp; __INTEL_COMPILER &lt; 2000</u></td></tr>
+<tr><th id="400">400</th><td>  ostream_params(<em>int</em> new_oflag) : oflag(new_oflag) {}</td></tr>
+<tr><th id="401">401</th><td>  ostream_params(detail::buffer_size bs) : buffer_size(bs.value) {}</td></tr>
+<tr><th id="402">402</th><td><u>#  <span data-ppcond="399">endif</span></u></td></tr>
+<tr><th id="403">403</th><td>};</td></tr>
+<tr><th id="404">404</th><td></td></tr>
+<tr><th id="405">405</th><td><a class="macro" href="core.h.html#236" title="}" data-ref="_M/FMT_END_DETAIL_NAMESPACE">FMT_END_DETAIL_NAMESPACE</a></td></tr>
+<tr><th id="406">406</th><td></td></tr>
+<tr><th id="407">407</th><td><i>// Added {} below to work around default constructor error known to</i></td></tr>
+<tr><th id="408">408</th><td><i>// occur in Xcode versions 7.2.1 and 8.2.1.</i></td></tr>
+<tr><th id="409">409</th><td><b>constexpr</b> <span class="namespace">detail::</span><a class="type" href="#fmt::detail::buffer_size" title='fmt::detail::buffer_size' data-ref="fmt::detail::buffer_size">buffer_size</a> <dfn class="decl def" id="fmt::buffer_size" title='fmt::buffer_size' data-ref="fmt::buffer_size">buffer_size</dfn><a class="ref fn" href="#_ZN3fmt2v86detail11buffer_sizeC1Ev" title='fmt::detail::buffer_size::buffer_size' data-ref="_ZN3fmt2v86detail11buffer_sizeC1Ev">{</a>};</td></tr>
+<tr><th id="410">410</th><td></td></tr>
+<tr><th id="411">411</th><td><i class="doc">/** A fast output stream which is not thread-safe. */</i></td></tr>
+<tr><th id="412">412</th><td><b>class</b> <a class="macro" href="core.h.html#255" title="" data-ref="_M/FMT_API">FMT_API</a> <dfn class="type def" id="fmt::ostream" title='fmt::ostream' data-ref="fmt::ostream">ostream</dfn> final : <b>private</b> <span class="namespace">detail::</span><a class="type" href="core.h.html#fmt::detail::buffer" title='fmt::detail::buffer' data-ref="fmt::detail::buffer">buffer</a>&lt;<em>char</em>&gt; {</td></tr>
+<tr><th id="413">413</th><td> <b>private</b>:</td></tr>
+<tr><th id="414">414</th><td>  <a class="type" href="#fmt::file" title='fmt::file' data-ref="fmt::file">file</a> <dfn class="decl field" id="fmt::ostream::file_" title='fmt::ostream::file_' data-ref="fmt::ostream::file_">file_</dfn>;</td></tr>
+<tr><th id="415">415</th><td></td></tr>
+<tr><th id="416">416</th><td>  <em>void</em> <a class="virtual decl fn" href="../../src/os.cc.html#_ZN3fmt2v87ostream4growEm" title='fmt::ostream::grow' data-ref="_ZN3fmt2v87ostream4growEm" id="_ZN3fmt2v87ostream4growEm">grow</a>(<span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span>) override;</td></tr>
+<tr><th id="417">417</th><td></td></tr>
+<tr><th id="418">418</th><td>  <dfn class="decl def fn" id="_ZN3fmt2v87ostreamC1ENS0_18basic_cstring_viewIcEERKNS0_6detail14ostream_paramsE" title='fmt::ostream::ostream' data-ref="_ZN3fmt2v87ostreamC1ENS0_18basic_cstring_viewIcEERKNS0_6detail14ostream_paramsE">ostream</dfn>(<a class="typedef" href="#fmt::cstring_view" title='fmt::cstring_view' data-type='basic_cstring_view&lt;char&gt;' data-ref="fmt::cstring_view">cstring_view</a> <dfn class="local col3 decl" id="113path" title='path' data-type='fmt::cstring_view' data-ref="113path">path</dfn>, <em>const</em> <span class="namespace">detail::</span><a class="type" href="#fmt::detail::ostream_params" title='fmt::detail::ostream_params' data-ref="fmt::detail::ostream_params">ostream_params</a>&amp; <dfn class="local col4 decl" id="114params" title='params' data-type='const detail::ostream_params &amp;' data-ref="114params">params</dfn>)</td></tr>
+<tr><th id="419">419</th><td>      : <a class="member field" href="#fmt::ostream::file_" title='fmt::ostream::file_' data-ref="fmt::ostream::file_">file_</a><a class="ref fn" href="../../src/os.cc.html#_ZN3fmt2v84fileC1ENS0_18basic_cstring_viewIcEEi" title='fmt::file::file' data-ref="_ZN3fmt2v84fileC1ENS0_18basic_cstring_viewIcEEi">(</a><a class="ref fn fake" href="#103" title='fmt::basic_cstring_view&lt;char&gt;::basic_cstring_view' data-ref="_ZN3fmt2v818basic_cstring_viewIcEC1ERKS2_"></a><a class="local col3 ref" href="#113path" title='path' data-ref="113path">path</a>, <a class="local col4 ref" href="#114params" title='params' data-ref="114params">params</a>.<a class="ref field" href="#fmt::detail::ostream_params::oflag" title='fmt::detail::ostream_params::oflag' data-ref="fmt::detail::ostream_params::oflag">oflag</a>) {</td></tr>
+<tr><th id="420">420</th><td>    <a class="member fn" href="core.h.html#_ZN3fmt2v86detail6buffer3setEPT_m" title='fmt::detail::buffer::set' data-ref="_ZN3fmt2v86detail6buffer3setEPT_m">set</a>(<span class='inlayHint'>buf_data:&nbsp;</span><b>new</b> <em>char</em>[<a class="local col4 ref" href="#114params" title='params' data-ref="114params">params</a>.<a class="ref field" href="#fmt::detail::ostream_params::buffer_size" title='fmt::detail::ostream_params::buffer_size' data-ref="fmt::detail::ostream_params::buffer_size">buffer_size</a>], <span class='inlayHint'>buf_capacity:&nbsp;</span><a class="local col4 ref" href="#114params" title='params' data-ref="114params">params</a>.<a class="ref field" href="#fmt::detail::ostream_params::buffer_size" title='fmt::detail::ostream_params::buffer_size' data-ref="fmt::detail::ostream_params::buffer_size">buffer_size</a>);</td></tr>
+<tr><th id="421">421</th><td>  }</td></tr>
+<tr><th id="422">422</th><td></td></tr>
+<tr><th id="423">423</th><td> <b>public</b>:</td></tr>
+<tr><th id="424">424</th><td>  <dfn class="decl def fn" id="_ZN3fmt2v87ostreamC1EOS1_" title='fmt::ostream::ostream' data-ref="_ZN3fmt2v87ostreamC1EOS1_">ostream</dfn>(<a class="type" href="#fmt::ostream" title='fmt::ostream' data-ref="fmt::ostream">ostream</a>&amp;&amp; <dfn class="local col5 decl" id="115other" title='other' data-type='fmt::ostream &amp;&amp;' data-ref="115other">other</dfn>)</td></tr>
+<tr><th id="425">425</th><td>      : <span class="namespace">detail::</span><a class="type" href="core.h.html#fmt::detail::buffer" title='fmt::detail::buffer' data-ref="fmt::detail::buffer">buffer</a>&lt;<em>char</em>&gt;<a class="ref fn" href="core.h.html#_ZN3fmt2v86detail6bufferC1EPT_mm" title='fmt::detail::buffer::buffer&lt;T&gt;' data-ref="_ZN3fmt2v86detail6bufferC1EPT_mm">(</a><a class="local col5 ref" href="#115other" title='other' data-ref="115other">other</a>.<a class="member fn" href="core.h.html#_ZN3fmt2v86detail6buffer4dataEv" title='fmt::detail::buffer::data' data-ref="_ZN3fmt2v86detail6buffer4dataEv">data</a>(), <a class="local col5 ref" href="#115other" title='other' data-ref="115other">other</a>.<a class="member fn" href="core.h.html#_ZNK3fmt2v86detail6buffer4sizeEv" title='fmt::detail::buffer::size' data-ref="_ZNK3fmt2v86detail6buffer4sizeEv">size</a>(), <a class="local col5 ref" href="#115other" title='other' data-ref="115other">other</a>.<a class="member fn" href="core.h.html#_ZNK3fmt2v86detail6buffer8capacityEv" title='fmt::detail::buffer::capacity' data-ref="_ZNK3fmt2v86detail6buffer8capacityEv">capacity</a>()),</td></tr>
+<tr><th id="426">426</th><td>        <a class="member field" href="#fmt::ostream::file_" title='fmt::ostream::file_' data-ref="fmt::ostream::file_">file_</a><a class="ref fn" href="#_ZN3fmt2v84fileC1EOS1_" title='fmt::file::file' data-ref="_ZN3fmt2v84fileC1EOS1_">(</a><span class="namespace">std::</span><a class="ref fn" href="../../../include/c++/9/bits/move.h.html#_ZSt4moveOT_" title='std::move' data-ref="_ZSt4moveOT_">move</a>(<span class='refarg'><a class="local col5 ref" href="#115other" title='other' data-ref="115other">other</a>.<a class="member field" href="#fmt::ostream::file_" title='fmt::ostream::file_' data-ref="fmt::ostream::file_">file_</a></span>)) {</td></tr>
+<tr><th id="427">427</th><td>    <a class="local col5 ref" href="#115other" title='other' data-ref="115other">other</a>.<a class="member fn" href="core.h.html#_ZN3fmt2v86detail6buffer5clearEv" title='fmt::detail::buffer::clear' data-ref="_ZN3fmt2v86detail6buffer5clearEv">clear</a>();</td></tr>
+<tr><th id="428">428</th><td>    <a class="local col5 ref" href="#115other" title='other' data-ref="115other">other</a>.<a class="member fn" href="core.h.html#_ZN3fmt2v86detail6buffer3setEPT_m" title='fmt::detail::buffer::set' data-ref="_ZN3fmt2v86detail6buffer3setEPT_m">set</a>(<span class='inlayHint'>buf_data:&nbsp;</span><b>nullptr</b>, <span class='inlayHint'>buf_capacity:&nbsp;</span><var>0</var>);</td></tr>
+<tr><th id="429">429</th><td>  }</td></tr>
+<tr><th id="430">430</th><td>  <dfn class="decl def fn" id="_ZN3fmt2v87ostreamD1Ev" title='fmt::ostream::~ostream' data-ref="_ZN3fmt2v87ostreamD1Ev">~ostream</dfn>() {</td></tr>
+<tr><th id="431">431</th><td>    <a class="member fn" href="#_ZN3fmt2v87ostream5flushEv" title='fmt::ostream::flush' data-ref="_ZN3fmt2v87ostream5flushEv">flush</a>();</td></tr>
+<tr><th id="432">432</th><td>    <b>delete</b>[] <a class="member fn" href="core.h.html#_ZN3fmt2v86detail6buffer4dataEv" title='fmt::detail::buffer::data' data-ref="_ZN3fmt2v86detail6buffer4dataEv">data</a>();</td></tr>
+<tr><th id="433">433</th><td>  }</td></tr>
+<tr><th id="434">434</th><td></td></tr>
+<tr><th id="435">435</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN3fmt2v87ostream5flushEv" title='fmt::ostream::flush' data-ref="_ZN3fmt2v87ostream5flushEv">flush</dfn>() {</td></tr>
+<tr><th id="436">436</th><td>    <b>if</b> (<a class="member fn" href="core.h.html#_ZNK3fmt2v86detail6buffer4sizeEv" title='fmt::detail::buffer::size' data-ref="_ZNK3fmt2v86detail6buffer4sizeEv">size</a>() == <var>0</var>) <b>return</b>;</td></tr>
+<tr><th id="437">437</th><td>    <a class="member field" href="#fmt::ostream::file_" title='fmt::ostream::file_' data-ref="fmt::ostream::file_">file_</a>.<a class="ref fn" href="../../src/os.cc.html#_ZN3fmt2v84file5writeEPKvm" title='fmt::file::write' data-ref="_ZN3fmt2v84file5writeEPKvm">write</a>(<span class='inlayHint'>buffer:&nbsp;</span><a class="member fn" href="core.h.html#_ZN3fmt2v86detail6buffer4dataEv" title='fmt::detail::buffer::data' data-ref="_ZN3fmt2v86detail6buffer4dataEv">data</a>(), <span class='inlayHint'>count:&nbsp;</span><a class="member fn" href="core.h.html#_ZNK3fmt2v86detail6buffer4sizeEv" title='fmt::detail::buffer::size' data-ref="_ZNK3fmt2v86detail6buffer4sizeEv">size</a>());</td></tr>
+<tr><th id="438">438</th><td>    <a class="member fn" href="core.h.html#_ZN3fmt2v86detail6buffer5clearEv" title='fmt::detail::buffer::clear' data-ref="_ZN3fmt2v86detail6buffer5clearEv">clear</a>();</td></tr>
+<tr><th id="439">439</th><td>  }</td></tr>
+<tr><th id="440">440</th><td></td></tr>
+<tr><th id="441">441</th><td>  <b>template</b> &lt;<b>typename</b>... T&gt;</td></tr>
+<tr><th id="442">442</th><td>  <b>friend</b> <a class="type" href="#fmt::ostream" title='fmt::ostream' data-ref="fmt::ostream">ostream</a> <a class="decl fn" href="#_ZN3fmt2v811output_fileENS0_18basic_cstring_viewIcEEDpT_" title='fmt::output_file' data-ref="_ZN3fmt2v811output_fileENS0_18basic_cstring_viewIcEEDpT_">output_file</a>(<a class="typedef" href="#fmt::cstring_view" title='fmt::cstring_view' data-type='basic_cstring_view&lt;char&gt;' data-ref="fmt::cstring_view">cstring_view</a> <dfn class="local col6 decl" id="116path" title='path' data-type='fmt::cstring_view' data-ref="116path">path</dfn>, T... <dfn class="local col7 decl" id="117params" title='params' data-type='T...' data-ref="117params">params</dfn>);</td></tr>
+<tr><th id="443">443</th><td></td></tr>
+<tr><th id="444">444</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN3fmt2v87ostream5closeEv" title='fmt::ostream::close' data-ref="_ZN3fmt2v87ostream5closeEv">close</dfn>() {</td></tr>
+<tr><th id="445">445</th><td>    <a class="member fn" href="#_ZN3fmt2v87ostream5flushEv" title='fmt::ostream::flush' data-ref="_ZN3fmt2v87ostream5flushEv">flush</a>();</td></tr>
+<tr><th id="446">446</th><td>    <a class="member field" href="#fmt::ostream::file_" title='fmt::ostream::file_' data-ref="fmt::ostream::file_">file_</a>.<a class="ref fn" href="../../src/os.cc.html#_ZN3fmt2v84file5closeEv" title='fmt::file::close' data-ref="_ZN3fmt2v84file5closeEv">close</a>();</td></tr>
+<tr><th id="447">447</th><td>  }</td></tr>
+<tr><th id="448">448</th><td></td></tr>
+<tr><th id="449">449</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="450">450</th><td><i class="doc">    Formats ``args`` according to specifications in ``fmt`` and writes the</i></td></tr>
+<tr><th id="451">451</th><td><i class="doc">    output to the file.</i></td></tr>
+<tr><th id="452">452</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="453">453</th><td>  <b>template</b> &lt;<b>typename</b>... T&gt; <em>void</em> <dfn class="decl def fn" id="_ZN3fmt2v87ostream5printENS0_19basic_format_stringIcJDpNS0_13type_identityIT_E4typeEEEEDpOS4_" title='fmt::ostream::print' data-ref="_ZN3fmt2v87ostream5printENS0_19basic_format_stringIcJDpNS0_13type_identityIT_E4typeEEEEDpOS4_">print</dfn>(<a class="type" href="core.h.html#fmt::format_string" title='fmt::format_string' data-ref="fmt::format_string">format_string</a>&lt;T...&gt; <dfn class="local col8 decl" id="118fmt" title='fmt' data-type='format_string&lt;T...&gt;' data-ref="118fmt">fmt</dfn>, T&amp;&amp;... <dfn class="local col9 decl" id="119args" title='args' data-type='T &amp;&amp;...' data-ref="119args">args</dfn>) {</td></tr>
+<tr><th id="454">454</th><td>    vformat_to(<span class="namespace">detail::</span><a class="type" href="core.h.html#fmt::detail::buffer_appender" title='fmt::detail::buffer_appender' data-ref="fmt::detail::buffer_appender">buffer_appender</a>&lt;<em>char</em>&gt;<a class="ref fn" href="core.h.html#1502" title='fmt::appender::back_insert_iterator' data-ref="_ZN3fmt2v88appenderCI1St20back_insert_iteratorINS0_6detail6bufferIcEEEERS5_">(</a>*<b>this</b>), <a class="local col8 ref" href="#118fmt" title='fmt' data-ref="118fmt">fmt</a>,</td></tr>
+<tr><th id="455">455</th><td>               <span class="namespace">fmt::</span>make_format_args(<a class="local col9 ref" href="#119args" title='args' data-ref="119args">args</a>...));</td></tr>
+<tr><th id="456">456</th><td>  }</td></tr>
+<tr><th id="457">457</th><td>};</td></tr>
+<tr><th id="458">458</th><td></td></tr>
+<tr><th id="459">459</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="460">460</th><td><i class="doc"> <span class="command"> \rst</span></i></td></tr>
+<tr><th id="461">461</th><td><i class="doc">  Opens a file for writing. Supported parameters passed in *params*:</i></td></tr>
+<tr><th id="462">462</th><td><i class="doc"></i></td></tr>
+<tr><th id="463">463</th><td><i class="doc">  * ``&lt;integer&gt;``: Flags passed to `open</i></td></tr>
+<tr><th id="464">464</th><td><i class="doc">    &lt;<a href="https://pubs.opengroup.org/onlinepubs/007904875/functions/open.html">https://pubs.opengroup.org/onlinepubs/007904875/functions/open.html</a>&gt;`_</i></td></tr>
+<tr><th id="465">465</th><td><i class="doc">    (``file::WRONLY | file::CREATE`` by default)</i></td></tr>
+<tr><th id="466">466</th><td><i class="doc">  * ``buffer_size=&lt;integer&gt;``: Output buffer size</i></td></tr>
+<tr><th id="467">467</th><td><i class="doc"></i></td></tr>
+<tr><th id="468">468</th><td><i class="doc">  **Example**::</i></td></tr>
+<tr><th id="469">469</th><td><i class="doc"></i></td></tr>
+<tr><th id="470">470</th><td><i class="doc">    auto out = fmt::output_file("guide.txt");</i></td></tr>
+<tr><th id="471">471</th><td><i class="doc">    out.print("Don't {}", "Panic");</i></td></tr>
+<tr><th id="472">472</th><td><i class="doc"> <span class="command"> \endrst</span></i></td></tr>
+<tr><th id="473">473</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="474">474</th><td><b>template</b> &lt;<b>typename</b>... T&gt;</td></tr>
+<tr><th id="475">475</th><td><b>inline</b> <a class="type" href="#fmt::ostream" title='fmt::ostream' data-ref="fmt::ostream">ostream</a> <dfn class="decl def fn" id="_ZN3fmt2v811output_fileENS0_18basic_cstring_viewIcEEDpT_" title='fmt::output_file' data-ref="_ZN3fmt2v811output_fileENS0_18basic_cstring_viewIcEEDpT_">output_file</dfn>(<a class="typedef" href="#fmt::cstring_view" title='fmt::cstring_view' data-type='basic_cstring_view&lt;char&gt;' data-ref="fmt::cstring_view">cstring_view</a> <dfn class="local col0 decl" id="120path" title='path' data-type='fmt::cstring_view' data-ref="120path">path</dfn>, T... <dfn class="local col1 decl" id="121params" title='params' data-type='T...' data-ref="121params">params</dfn>) {</td></tr>
+<tr><th id="476">476</th><td>  <b>return</b> <a class="ref fn" href="#_ZN3fmt2v87ostreamC1ENS0_18basic_cstring_viewIcEERKNS0_6detail14ostream_paramsE" title='fmt::ostream::ostream' data-ref="_ZN3fmt2v87ostreamC1ENS0_18basic_cstring_viewIcEERKNS0_6detail14ostream_paramsE">{</a><a class="ref fn fake" href="#103" title='fmt::basic_cstring_view&lt;char&gt;::basic_cstring_view' data-ref="_ZN3fmt2v818basic_cstring_viewIcEC1ERKS2_"></a><a class="local col0 ref" href="#120path" title='path' data-ref="120path">path</a>, <span class="namespace">detail::</span><a class="type" href="#fmt::detail::ostream_params" title='fmt::detail::ostream_params' data-ref="fmt::detail::ostream_params">ostream_params</a>(<a class="local col1 ref" href="#121params" title='params' data-ref="121params">params</a>...)};</td></tr>
+<tr><th id="477">477</th><td>}</td></tr>
+<tr><th id="478">478</th><td><u>#<span data-ppcond="280">endif</span>  // FMT_USE_FCNTL</u></td></tr>
+<tr><th id="479">479</th><td></td></tr>
+<tr><th id="480">480</th><td><u>#<span data-ppcond="480">ifdef</span> <span class="macro" data-ref="_M/FMT_LOCALE">FMT_LOCALE</span></u></td></tr>
+<tr><th id="481">481</th><td><i>// A "C" numeric locale.</i></td></tr>
+<tr><th id="482">482</th><td><b>class</b> <dfn class="type def" id="fmt::locale" title='fmt::locale' data-ref="fmt::locale">locale</dfn> {</td></tr>
+<tr><th id="483">483</th><td> <b>private</b>:</td></tr>
+<tr><th id="484">484</th><td><u>#  <span data-ppcond="484">ifdef</span> <span class="macro" data-ref="_M/_WIN32">_WIN32</span></u></td></tr>
+<tr><th id="485">485</th><td>  <b>using</b> locale_t = _locale_t;</td></tr>
+<tr><th id="486">486</th><td></td></tr>
+<tr><th id="487">487</th><td>  <em>static</em> <em>void</em> freelocale(locale_t loc) { _free_locale(loc); }</td></tr>
+<tr><th id="488">488</th><td></td></tr>
+<tr><th id="489">489</th><td>  <em>static</em> <em>double</em> strtod_l(<em>const</em> <em>char</em>* nptr, <em>char</em>** endptr, _locale_t loc) {</td></tr>
+<tr><th id="490">490</th><td>    <b>return</b> _strtod_l(nptr, endptr, loc);</td></tr>
+<tr><th id="491">491</th><td>  }</td></tr>
+<tr><th id="492">492</th><td><u>#  <span data-ppcond="484">endif</span></u></td></tr>
+<tr><th id="493">493</th><td></td></tr>
+<tr><th id="494">494</th><td>  <a class="typedef" href="../../../include/x86_64-linux-gnu/bits/types/locale_t.h.html#locale_t" title='locale_t' data-type='__locale_t' data-ref="locale_t">locale_t</a> <dfn class="decl field" id="fmt::locale::locale_" title='fmt::locale::locale_' data-ref="fmt::locale::locale_">locale_</dfn>;</td></tr>
+<tr><th id="495">495</th><td></td></tr>
+<tr><th id="496">496</th><td> <b>public</b>:</td></tr>
+<tr><th id="497">497</th><td>  <b>using</b> <dfn class="typedef" id="fmt::locale::type" title='fmt::locale::type' data-type='locale_t' data-ref="fmt::locale::type">type</dfn> = <a class="typedef" href="../../../include/x86_64-linux-gnu/bits/types/locale_t.h.html#locale_t" title='locale_t' data-type='__locale_t' data-ref="locale_t">locale_t</a>;</td></tr>
+<tr><th id="498">498</th><td>  <dfn class="decl def fn" id="_ZN3fmt2v86localeC1ERKS1_" title='fmt::locale::locale' data-ref="_ZN3fmt2v86localeC1ERKS1_">locale</dfn>(<em>const</em> <a class="type" href="#fmt::locale" title='fmt::locale' data-ref="fmt::locale">locale</a>&amp;) = <b>delete</b>;</td></tr>
+<tr><th id="499">499</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN3fmt2v86localeaSERKS1_" title='fmt::locale::operator=' data-ref="_ZN3fmt2v86localeaSERKS1_"><b>operator</b>=</dfn>(<em>const</em> <a class="type" href="#fmt::locale" title='fmt::locale' data-ref="fmt::locale">locale</a>&amp;) = <b>delete</b>;</td></tr>
+<tr><th id="500">500</th><td></td></tr>
+<tr><th id="501">501</th><td>  <dfn class="decl def fn" id="_ZN3fmt2v86localeC1Ev" title='fmt::locale::locale' data-ref="_ZN3fmt2v86localeC1Ev">locale</dfn>() {</td></tr>
+<tr><th id="502">502</th><td><u>#  <span data-ppcond="502">ifndef</span> <span class="macro" data-ref="_M/_WIN32">_WIN32</span></u></td></tr>
+<tr><th id="503">503</th><td>    <a class="member field" href="#fmt::locale::locale_" title='fmt::locale::locale_' data-ref="fmt::locale::locale_">locale_</a> = <a class="macro" href="#53" title="::newlocale((1 &lt;&lt; 1), &quot;C&quot;, nullptr)" data-ref="_M/FMT_SYSTEM">FMT_SYSTEM</a>(<a class="ref fn" href="../../../include/locale.h.html#newlocale" title='newlocale' data-ref="newlocale">newlocale</a>(<a class="macro" href="../../../include/locale.h.html#149" title="(1 &lt;&lt; 1)" data-ref="_M/LC_NUMERIC_MASK">LC_NUMERIC_MASK</a>, <q>"C"</q>, <b>nullptr</b>));</td></tr>
+<tr><th id="504">504</th><td><u>#  <span data-ppcond="502">else</span></u></td></tr>
+<tr><th id="505">505</th><td>    locale_ = _create_locale(LC_NUMERIC, <q>"C"</q>);</td></tr>
+<tr><th id="506">506</th><td><u>#  <span data-ppcond="502">endif</span></u></td></tr>
+<tr><th id="507">507</th><td>    <b>if</b> (!<a class="member field" href="#fmt::locale::locale_" title='fmt::locale::locale_' data-ref="fmt::locale::locale_">locale_</a>) <a class="macro" href="format.h.html#95" title="throw system_error((*__errno_location ()), &quot;cannot create locale&quot;)" data-ref="_M/FMT_THROW">FMT_THROW</a>(<a class="ref fn" href="format.h.html#_ZN3fmt2v812system_errorEiNS0_19basic_format_stringIcJDpNS0_13type_identityIT_E4typeEEEEDpOS3_" title='fmt::system_error' data-ref="_ZN3fmt2v812system_errorEiNS0_19basic_format_stringIcJDpNS0_13type_identityIT_E4typeEEEEDpOS3_">system_error</a>(<a class="macro" href="../../../include/errno.h.html#38" title="(*__errno_location ())" data-ref="_M/errno">errno</a>, <a class="ref fn fake" href="core.h.html#_ZN3fmt2v819basic_format_stringC1ERKTL0__" title='fmt::basic_format_string::basic_format_string&lt;Char, Args...&gt;' data-ref="_ZN3fmt2v819basic_format_stringC1ERKTL0__"></a><q>"cannot create locale"</q>));</td></tr>
+<tr><th id="508">508</th><td>  }</td></tr>
+<tr><th id="509">509</th><td>  <dfn class="decl def fn" id="_ZN3fmt2v86localeD1Ev" title='fmt::locale::~locale' data-ref="_ZN3fmt2v86localeD1Ev">~locale</dfn>() { <a class="ref fn" href="../../../include/locale.h.html#freelocale" title='freelocale' data-ref="freelocale">freelocale</a>(<span class='inlayHint'>dataset:&nbsp;</span><a class="member field" href="#fmt::locale::locale_" title='fmt::locale::locale_' data-ref="fmt::locale::locale_">locale_</a>); }</td></tr>
+<tr><th id="510">510</th><td></td></tr>
+<tr><th id="511">511</th><td>  <a class="typedef" href="#fmt::locale::type" title='fmt::locale::type' data-type='locale_t' data-ref="fmt::locale::type">type</a> <dfn class="decl def fn" id="_ZNK3fmt2v86locale3getEv" title='fmt::locale::get' data-ref="_ZNK3fmt2v86locale3getEv">get</dfn>() <em>const</em> { <b>return</b> <a class="member field" href="#fmt::locale::locale_" title='fmt::locale::locale_' data-ref="fmt::locale::locale_">locale_</a>; }</td></tr>
+<tr><th id="512">512</th><td></td></tr>
+<tr><th id="513">513</th><td>  <i>// Converts string to floating-point number and advances str past the end</i></td></tr>
+<tr><th id="514">514</th><td><i>  // of the parsed input.</i></td></tr>
+<tr><th id="515">515</th><td>  <a class="macro" href="format.h.html#118" title="__attribute__((deprecated))" data-ref="_M/FMT_DEPRECATED">FMT_DEPRECATED</a> <em>double</em> <dfn class="decl def fn" id="_ZNK3fmt2v86locale6strtodERPKc" title='fmt::locale::strtod' data-ref="_ZNK3fmt2v86locale6strtodERPKc">strtod</dfn>(<em>const</em> <em>char</em>*&amp; <dfn class="local col2 decl" id="122str" title='str' data-type='const char *&amp;' data-ref="122str">str</dfn>) <em>const</em> {</td></tr>
+<tr><th id="516">516</th><td>    <em>char</em>* <dfn class="local col3 decl" id="123end" title='end' data-type='char *' data-ref="123end">end</dfn> = <b>nullptr</b>;</td></tr>
+<tr><th id="517">517</th><td>    <em>double</em> <dfn class="local col4 decl" id="124result" title='result' data-type='double' data-ref="124result">result</dfn> = <a class="ref fn" href="../../../include/stdlib.h.html#strtod_l" title='strtod_l' data-ref="strtod_l">strtod_l</a>(<span class='inlayHint'>nptr:&nbsp;</span><a class="local col2 ref" href="#122str" title='str' data-ref="122str">str</a>, <span class='inlayHint'>endptr:&nbsp;</span>&amp;<a class="local col3 ref" href="#123end" title='end' data-ref="123end">end</a>, <span class='inlayHint'>loc:&nbsp;</span><a class="member field" href="#fmt::locale::locale_" title='fmt::locale::locale_' data-ref="fmt::locale::locale_">locale_</a>);</td></tr>
+<tr><th id="518">518</th><td>    <a class="local col2 ref" href="#122str" title='str' data-ref="122str">str</a> = <a class="local col3 ref" href="#123end" title='end' data-ref="123end">end</a>;</td></tr>
+<tr><th id="519">519</th><td>    <b>return</b> <a class="local col4 ref" href="#124result" title='result' data-ref="124result">result</a>;</td></tr>
+<tr><th id="520">520</th><td>  }</td></tr>
+<tr><th id="521">521</th><td>};</td></tr>
+<tr><th id="522">522</th><td><b>using</b> <dfn class="typedef" id="fmt::Locale" title='fmt::Locale' data-type='fmt::locale' data-ref="fmt::Locale">Locale</dfn> <a class="macro" href="format.h.html#139" title="__attribute__((deprecated))" data-ref="_M/FMT_DEPRECATED_ALIAS">FMT_DEPRECATED_ALIAS</a> = <a class="type" href="#fmt::locale" title='fmt::locale' data-ref="fmt::locale">locale</a>;</td></tr>
+<tr><th id="523">523</th><td><u>#<span data-ppcond="480">endif</span>  // FMT_LOCALE</u></td></tr>
+<tr><th id="524">524</th><td><a class="macro" href="core.h.html#234" title="" data-ref="_M/FMT_MODULE_EXPORT_END">FMT_MODULE_EXPORT_END</a></td></tr>
+<tr><th id="525">525</th><td><a class="macro" href="core.h.html#226" title="} }" data-ref="_M/FMT_END_NAMESPACE">FMT_END_NAMESPACE</a></td></tr>
+<tr><th id="526">526</th><td></td></tr>
+<tr><th id="527">527</th><td><u>#<span data-ppcond="8">endif</span>  // FMT_OS_H_</u></td></tr>
+<tr><th id="528">528</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../../src/os.cc.html'>fmt-8.1.0/src/os.cc</a><br/>Generated on <em>2024-Jun-13</em> from project fmt-8.1.0 revision <em>8.1.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

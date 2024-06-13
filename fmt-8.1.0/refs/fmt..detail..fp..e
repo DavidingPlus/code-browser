@@ -1,0 +1,33 @@
+<dec f='fmt-8.1.0/include/fmt/format-inl.h' l='239' type='int'/>
+<use f='fmt-8.1.0/include/fmt/format-inl.h' l='243' u='w' c='_ZN3fmt2v86detail2fpC1Ev'/>
+<use f='fmt-8.1.0/include/fmt/format-inl.h' l='244' u='w' c='_ZN3fmt2v86detail2fpC1Emi'/>
+<use f='fmt-8.1.0/include/fmt/format-inl.h' l='276' u='w' c='_ZN3fmt2v86detail2fp6assignET_'/>
+<use f='fmt-8.1.0/include/fmt/format-inl.h' l='294' u='w' c='_ZN3fmt2v86detail9normalizeENS1_2fpE'/>
+<use f='fmt-8.1.0/include/fmt/format-inl.h' l='300' u='w' c='_ZN3fmt2v86detail9normalizeENS1_2fpE'/>
+<use f='fmt-8.1.0/include/fmt/format-inl.h' l='304' u='r' c='_ZN3fmt2v86detaileqENS1_2fpES2_'/>
+<use f='fmt-8.1.0/include/fmt/format-inl.h' l='304' u='r' c='_ZN3fmt2v86detaileqENS1_2fpES2_'/>
+<use f='fmt-8.1.0/include/fmt/format-inl.h' l='325' u='r' c='_ZN3fmt2v86detailmlENS1_2fpES2_'/>
+<use f='fmt-8.1.0/include/fmt/format-inl.h' l='325' u='r' c='_ZN3fmt2v86detailmlENS1_2fpES2_'/>
+<use f='fmt-8.1.0/include/fmt/format-inl.h' l='693' u='r' c='_ZN3fmt2v86detail16grisu_gen_digitsENS1_2fpEmRiRNS1_18gen_digits_handlerE'/>
+<use f='fmt-8.1.0/include/fmt/format-inl.h' l='693' u='r' c='_ZN3fmt2v86detail16grisu_gen_digitsENS1_2fpEmRiRNS1_18gen_digits_handlerE'/>
+<use f='fmt-8.1.0/include/fmt/format-inl.h' l='697' u='r' c='_ZN3fmt2v86detail16grisu_gen_digitsENS1_2fpEmRiRNS1_18gen_digits_handlerE'/>
+<use f='fmt-8.1.0/include/fmt/format-inl.h' l='699' u='r' c='_ZN3fmt2v86detail16grisu_gen_digitsENS1_2fpEmRiRNS1_18gen_digits_handlerE'/>
+<use f='fmt-8.1.0/include/fmt/format-inl.h' l='718' u='r' c='_ZN3fmt2v86detail16grisu_gen_digitsENS1_2fpEmRiRNS1_18gen_digits_handlerE'/>
+<use f='fmt-8.1.0/include/fmt/format-inl.h' l='770' u='r' c='_ZN3fmt2v86detail16grisu_gen_digitsENS1_2fpEmRiRNS1_18gen_digits_handlerE'/>
+<use f='fmt-8.1.0/include/fmt/format-inl.h' l='772' u='r' c='_ZN3fmt2v86detail16grisu_gen_digitsENS1_2fpEmRiRNS1_18gen_digits_handlerE'/>
+<use f='fmt-8.1.0/include/fmt/format-inl.h' l='780' u='r' c='_ZN3fmt2v86detail16grisu_gen_digitsENS1_2fpEmRiRNS1_18gen_digits_handlerE'/>
+<use f='fmt-8.1.0/include/fmt/format-inl.h' l='2239' u='r' c='_ZN3fmt2v86detail13format_dragonENS1_2fpEbiRNS1_6bufferIcEERi'/>
+<use f='fmt-8.1.0/include/fmt/format-inl.h' l='2241' u='r' c='_ZN3fmt2v86detail13format_dragonENS1_2fpEbiRNS1_6bufferIcEERi'/>
+<use f='fmt-8.1.0/include/fmt/format-inl.h' l='2243' u='r' c='_ZN3fmt2v86detail13format_dragonENS1_2fpEbiRNS1_6bufferIcEERi'/>
+<use f='fmt-8.1.0/include/fmt/format-inl.h' l='2246' u='r' c='_ZN3fmt2v86detail13format_dragonENS1_2fpEbiRNS1_6bufferIcEERi'/>
+<use f='fmt-8.1.0/include/fmt/format-inl.h' l='2261' u='r' c='_ZN3fmt2v86detail13format_dragonENS1_2fpEbiRNS1_6bufferIcEERi'/>
+<use f='fmt-8.1.0/include/fmt/format-inl.h' l='2265' u='r' c='_ZN3fmt2v86detail13format_dragonENS1_2fpEbiRNS1_6bufferIcEERi'/>
+<use f='fmt-8.1.0/include/fmt/format-inl.h' l='2381' u='r' c='_ZN3fmt2v86detail12format_floatET_iNS1_11float_specsERNS1_6bufferIcEE'/>
+<offset>64</offset>
+<use f='fmt-8.1.0/test/format-impl-test.cc' l='194' u='r' c='_ZN22fp_test_normalize_Test8TestBodyEv'/>
+<use f='fmt-8.1.0/test/format-impl-test.cc' l='200' u='r' c='_ZN21fp_test_multiply_Test8TestBodyEv'/>
+<use f='fmt-8.1.0/test/format-impl-test.cc' l='203' u='r' c='_ZN21fp_test_multiply_Test8TestBodyEv'/>
+<use f='fmt-8.1.0/test/format-impl-test.cc' l='214' u='r' c='_ZN29fp_test_get_cached_power_Test8TestBodyEv'/>
+<use f='fmt-8.1.0/test/format-impl-test.cc' l='215' u='r' c='_ZN29fp_test_get_cached_power_Test8TestBodyEv'/>
+<use f='fmt-8.1.0/test/format-impl-test.cc' l='217' u='r' c='_ZN29fp_test_get_cached_power_Test8TestBodyEv'/>
+<use f='fmt-8.1.0/test/format-impl-test.cc' l='233' u='r' c='_ZN29fp_test_get_cached_power_Test8TestBodyEv'/>
