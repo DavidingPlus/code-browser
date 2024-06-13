@@ -1,0 +1,68 @@
+<use f='googletest-1.12.1/googlemock/include/gmock/gmock-actions.h' l='990' u='w' c='_ZN7testing8internal12ReturnAction4Impl5StateC1ERKT_'/>
+<use f='googletest-1.12.1/googlemock/include/gmock/gmock-actions.h' l='1002' u='w' c='_ZN7testing8internal12ReturnAction4Impl5StateC1EOT_'/>
+<dec f='googletest-1.12.1/googlemock/include/gmock/gmock-actions.h' l='1075' type='U'/>
+<doc f='googletest-1.12.1/googlemock/include/gmock/gmock-actions.h' l='1010'>// The value we actually return, as the type returned by the mock function
+      // itself.
+      //
+      // We eagerly initialize this here, rather than lazily doing the implicit
+      // conversion automatically each time Perform is called, for historical
+      // reasons: in 2009-11, commit a070cbd91c (Google changelist 13540126)
+      // made the Action&lt;U()&gt; conversion operator eagerly convert the R value to
+      // U, but without keeping the R alive. This broke the use case discussed
+      // in the documentation for Return, making reference-like types such as
+      // std::string_view not safe to use as U where the input type R is a
+      // value-like type such as std::string.
+      //
+      // The example the commit gave was not very clear, nor was the issue
+      // thread (https://github.com/google/googlemock/issues/86), but it seems
+      // the worry was about reference-like input types R that flatten to a
+      // value-like type U when being implicitly converted. An example of this
+      // is std::vector&lt;bool&gt;::reference, which is often a proxy type with an
+      // reference to the underlying vector:
+      //
+      //     // Helper method: have the mock function return bools according
+      //     // to the supplied script.
+      //     void SetActions(MockFunction&lt;bool(size_t)&gt;&amp; mock,
+      //                     const std::vector&lt;bool&gt;&amp; script) {
+      //       for (size_t i = 0; i &lt; script.size(); ++i) {
+      //         EXPECT_CALL(mock, Call(i)).WillOnce(Return(script[i]));
+      //       }
+      //     }
+      //
+      //     TEST(Foo, Bar) {
+      //       // Set actions using a temporary vector, whose operator[]
+      //       // returns proxy objects that references that will be
+      //       // dangling once the call to SetActions finishes and the
+      //       // vector is destroyed.
+      //       MockFunction&lt;bool(size_t)&gt; mock;
+      //       SetActions(mock, {false, true});
+      //
+      //       EXPECT_FALSE(mock.AsStdFunction()(0));
+      //       EXPECT_TRUE(mock.AsStdFunction()(1));
+      //     }
+      //
+      // This eager conversion helps with a simple case like this, but doesn&apos;t
+      // fully make these types work in general. For example the following still
+      // uses a dangling reference:
+      //
+      //     TEST(Foo, Baz) {
+      //       MockFunction&lt;std::vector&lt;std::string&gt;()&gt; mock;
+      //
+      //       // Return the same vector twice, and then the empty vector
+      //       // thereafter.
+      //       auto action = Return(std::initializer_list&lt;std::string&gt;{
+      //           &quot;taco&quot;, &quot;burrito&quot;,
+      //       });
+      //
+      //       EXPECT_CALL(mock, Call)
+      //           .WillOnce(action)
+      //           .WillOnce(action)
+      //           .WillRepeatedly(Return(std::vector&lt;std::string&gt;{}));
+      //
+      //       EXPECT_THAT(mock.AsStdFunction()(),
+      //                   ElementsAre(&quot;taco&quot;, &quot;burrito&quot;));
+      //       EXPECT_THAT(mock.AsStdFunction()(),
+      //                   ElementsAre(&quot;taco&quot;, &quot;burrito&quot;));
+      //       EXPECT_THAT(mock.AsStdFunction()(), IsEmpty());
+      //     }
+      //</doc>

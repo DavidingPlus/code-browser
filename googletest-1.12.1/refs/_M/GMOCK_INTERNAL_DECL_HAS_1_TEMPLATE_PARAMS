@@ -1,0 +1,83 @@
+<dec f='googletest-1.12.1/googlemock/include/gmock/gmock-more-actions.h' l='131'/>
+<doc f='googletest-1.12.1/googlemock/include/gmock/gmock-more-actions.h' l='49'>// Sometimes you want to give an action explicit template parameters
+// that cannot be inferred from its value parameters.  ACTION() and
+// ACTION_P*() don&apos;t support that.  ACTION_TEMPLATE() remedies that
+// and can be viewed as an extension to ACTION() and ACTION_P*().
+//
+// The syntax:
+//
+//   ACTION_TEMPLATE(ActionName,
+//                   HAS_m_TEMPLATE_PARAMS(kind1, name1, ..., kind_m, name_m),
+//                   AND_n_VALUE_PARAMS(p1, ..., p_n)) { statements; }
+//
+// defines an action template that takes m explicit template
+// parameters and n value parameters.  name_i is the name of the i-th
+// template parameter, and kind_i specifies whether it&apos;s a typename,
+// an integral constant, or a template.  p_i is the name of the i-th
+// value parameter.
+//
+// Example:
+//
+//   // DuplicateArg&lt;k, T&gt;(output) converts the k-th argument of the mock
+//   // function to type T and copies it to *output.
+//   ACTION_TEMPLATE(DuplicateArg,
+//                   HAS_2_TEMPLATE_PARAMS(int, k, typename, T),
+//                   AND_1_VALUE_PARAMS(output)) {
+//     *output = T(::std::get&lt;k&gt;(args));
+//   }
+//   ...
+//     int n;
+//     EXPECT_CALL(mock, Foo(_, _))
+//         .WillOnce(DuplicateArg&lt;1, unsigned char&gt;(&amp;n));
+//
+// To create an instance of an action template, write:
+//
+//   ActionName&lt;t1, ..., t_m&gt;(v1, ..., v_n)
+//
+// where the ts are the template arguments and the vs are the value
+// arguments.  The value argument types are inferred by the compiler.
+// If you want to explicitly specify the value argument types, you can
+// provide additional template arguments:
+//
+//   ActionName&lt;t1, ..., t_m, u1, ..., u_k&gt;(v1, ..., v_n)
+//
+// where u_i is the desired type of v_i.
+//
+// ACTION_TEMPLATE and ACTION/ACTION_P* can be overloaded on the
+// number of value parameters, but not on the number of template
+// parameters.  Without the restriction, the meaning of the following
+// is unclear:
+//
+//   OverloadedAction&lt;int, bool&gt;(x);
+//
+// Are we using a single-template-parameter action where &apos;bool&apos; refers
+// to the type of x, or are we using a two-template-parameter action
+// where the compiler is asked to infer the type of x?
+//
+// Implementation notes:
+//
+// GMOCK_INTERNAL_*_HAS_m_TEMPLATE_PARAMS and
+// GMOCK_INTERNAL_*_AND_n_VALUE_PARAMS are internal macros for
+// implementing ACTION_TEMPLATE.  The main trick we use is to create
+// new macro invocations when expanding a macro.  For example, we have
+//
+//   #define ACTION_TEMPLATE(name, template_params, value_params)
+//       ... GMOCK_INTERNAL_DECL_##template_params ...
+//
+// which causes ACTION_TEMPLATE(..., HAS_1_TEMPLATE_PARAMS(typename, T), ...)
+// to expand to
+//
+//       ... GMOCK_INTERNAL_DECL_HAS_1_TEMPLATE_PARAMS(typename, T) ...
+//
+// Since GMOCK_INTERNAL_DECL_HAS_1_TEMPLATE_PARAMS is a macro, the
+// preprocessor will continue to expand it to
+//
+//       ... typename T ...
+//
+// This technique conforms to the C++ standard and is portable.  It
+// allows us to implement action templates using O(N) code, where N is
+// the maximum number of template/value parameters supported.  Without
+// using it, we&apos;d have to devote O(N^2) amount of code to implement all
+// combinations of m and n.
+
+// Declares the template parameters.</doc>
