@@ -1,0 +1,278 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>qplatformsharedgraphicscache.cpp source code [qtbase-6.5.0/src/gui/kernel/qplatformsharedgraphicscache.cpp] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'qtbase-6.5.0/src/gui/kernel/qplatformsharedgraphicscache.cpp'; var root_path = '../../../..'; var data_path = '../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>qtbase-6.5.0</a>/<a href='../..'>src</a>/<a href='..'>gui</a>/<a href='./'>kernel</a>/<a href='qplatformsharedgraphicscache.cpp.html'>qplatformsharedgraphicscache.cpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>// Copyright (C) 2016 The Qt Company Ltd.</i></td></tr>
+<tr><th id="2">2</th><td><i>// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only</i></td></tr>
+<tr><th id="3">3</th><td></td></tr>
+<tr><th id="4">4</th><td><u>#include <a href="qplatformsharedgraphicscache.h.html">"qplatformsharedgraphicscache.h"</a></u></td></tr>
+<tr><th id="5">5</th><td></td></tr>
+<tr><th id="6">6</th><td><a class="macro" href="../../corelib/global/qtconfigmacros.h.html#103" title="" data-ref="_M/QT_BEGIN_NAMESPACE">QT_BEGIN_NAMESPACE</a></td></tr>
+<tr><th id="7">7</th><td></td></tr>
+<tr><th id="8">8</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="9">9</th><td><i class="doc">    <span class="command">\class</span> <span class="verb" data-ref="QPlatformSharedGraphicsCache">QPlatformSharedGraphicsCache</span></i></td></tr>
+<tr><th id="10">10</th><td><i class="doc">    <span class="command">\since</span> 5.0</i></td></tr>
+<tr><th id="11">11</th><td><i class="doc">    <span class="command">\internal</span></i></td></tr>
+<tr><th id="12">12</th><td><i class="doc"><span class="verb">    \preliminary</span></i></td></tr>
+<tr><th id="13">13</th><td><i class="doc"><span class="verb"></span><span class="verb">    \ingroup qpa</span></i></td></tr>
+<tr><th id="14">14</th><td><i class="doc"><span class="verb"></span><span class="verb">    \brief The QPlatformSharedGraphicsCache is an abstraction of a cross-process graphics cache.</span></i></td></tr>
+<tr><th id="15">15</th><td><i class="doc"><span class="verb"></span><span class="verb"></span></i></td></tr>
+<tr><th id="16">16</th><td><i class="doc"><span class="verb"></span><span class="verb">    If supported, it is possible to retrieve a QPlatformSharedGraphicsCache object from the</span></i></td></tr>
+<tr><th id="17">17</th><td><i class="doc"><span class="verb"></span><span class="verb">    platform integration. This is typically used to store graphical items which should be shared</span></i></td></tr>
+<tr><th id="18">18</th><td><i class="doc"><span class="verb"></span><span class="verb">    between several processes.</span></i></td></tr>
+<tr><th id="19">19</th><td><i class="doc"><span class="verb"></span><span class="verb"></span></i></td></tr>
+<tr><th id="20">20</th><td><i class="doc"><span class="verb"></span><span class="verb">    Items are requested from the cache by calling requestItems(). If the cache contains the</span></i></td></tr>
+<tr><th id="21">21</th><td><i class="doc"><span class="verb"></span><span class="verb">    requested items in the requested cache, the itemsAvailable() signal is emitted with the ID of</span></i></td></tr>
+<tr><th id="22">22</th><td><i class="doc"><span class="verb"></span><span class="verb">    the graphical buffer and each item's coordinates inside the buffer. Before requesting items</span></i></td></tr>
+<tr><th id="23">23</th><td><i class="doc"><span class="verb"></span><span class="verb">    from a cache, the user must call ensureCacheInitialized() to set the correct parameters for</span></i></td></tr>
+<tr><th id="24">24</th><td><i class="doc"><span class="verb"></span><span class="verb">    the cache.</span></i></td></tr>
+<tr><th id="25">25</th><td><i class="doc"><span class="verb"></span><span class="verb"></span></i></td></tr>
+<tr><th id="26">26</th><td><i class="doc"><span class="verb"></span><span class="verb">    If the cache does not yet contain the requested items, it will emit a similar itemsMissing()</span></i></td></tr>
+<tr><th id="27">27</th><td><i class="doc"><span class="verb"></span><span class="verb">    signal. The client can then call updateItems() with rasterizations of the items and they will be</span></i></td></tr>
+<tr><th id="28">28</th><td><i class="doc"><span class="verb"></span><span class="verb">    entered into the shared cache. As the items are rendered into the cache, itemsAvailable() signals</span></i></td></tr>
+<tr><th id="29">29</th><td><i class="doc"><span class="verb"></span><span class="verb">    will be emitted for each of the items which have previously been requested and which have not</span></i></td></tr>
+<tr><th id="30">30</th><td><i class="doc"><span class="verb"></span><span class="verb">    yet been reported as ready.</span></i></td></tr>
+<tr><th id="31">31</th><td><i class="doc"><span class="verb"></span><span class="verb"></span></i></td></tr>
+<tr><th id="32">32</th><td><i class="doc"><span class="verb"></span><span class="verb">    Using beginRequestBatch() and endRequestBatch(), it's possible to batch glyph requests, which</span></i></td></tr>
+<tr><th id="33">33</th><td><i class="doc"><span class="verb"></span><span class="verb">    could improve performance in cases where you have a sequence of requests pending, and you</span></i></td></tr>
+<tr><th id="34">34</th><td><i class="doc"><span class="verb"></span><span class="verb">    do not need the results during this sequence.</span></i></td></tr>
+<tr><th id="35">35</th><td><i class="doc"><span class="verb"></span>*/</i><span class="verb"></span></td></tr>
+<tr><th id="36">36</th><td><span class="verb"></span></td></tr>
+<tr><th id="37">37</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="38">38</th><td><i class="doc">    <span class="command">\enum</span> <span class="verb" data-ref="QPlatformSharedGraphicsCache::BufferType">QPlatformSharedGraphicsCache::BufferType</span></i></td></tr>
+<tr><th id="39">39</th><td><i class="doc"></i></td></tr>
+<tr><th id="40">40</th><td><i class="doc">    Defines how the type of buffer required to contain a cache.</i></td></tr>
+<tr><th id="41">41</th><td><i class="doc"></i></td></tr>
+<tr><th id="42">42</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QPlatformSharedGraphicsCache::OpenGLTexture">OpenGLTexture </span>The buffer will be allocated in graphics memory, and an OpenGL texture</i></td></tr>
+<tr><th id="43">43</th><td><i class="doc">                         for a buffer belonging to the cache can be requested using</i></td></tr>
+<tr><th id="44">44</th><td><i class="doc">                         textureIdForBuffer().</i></td></tr>
+<tr><th id="45">45</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="46">46</th><td></td></tr>
+<tr><th id="47">47</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="48">48</th><td><i class="doc">    <span class="command">\enum</span> <span class="verb" data-ref="QPlatformSharedGraphicsCache::PixelFormat">QPlatformSharedGraphicsCache::PixelFormat</span></i></td></tr>
+<tr><th id="49">49</th><td><i class="doc"></i></td></tr>
+<tr><th id="50">50</th><td><i class="doc">    Defines the pixel format of a cache.</i></td></tr>
+<tr><th id="51">51</th><td><i class="doc"></i></td></tr>
+<tr><th id="52">52</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QPlatformSharedGraphicsCache::Alpha8">Alpha8 </span>The cache will use 8 bits to represent the alpha value of each pixel. If an</i></td></tr>
+<tr><th id="53">53</th><td><i class="doc">                  OpenGL texture is created for a buffer belong to the cache, it will have the</i></td></tr>
+<tr><th id="54">54</th><td><i class="doc">                  pixel format GL_ALPHA.</i></td></tr>
+<tr><th id="55">55</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="56">56</th><td></td></tr>
+<tr><th id="57">57</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="58">58</th><td><i class="doc">   <span class="command">\fn</span> <span class="verb" data-ref="_ZN28QPlatformSharedGraphicsCache22ensureCacheInitializedERK10QByteArrayNS_10BufferTypeENS_11PixelFormatE">void QPlatformSharedGraphicsCache::ensureCacheInitialized(const QByteArray &amp;cacheId, BufferType bufferType, PixelFormat pixelFormat)</span></i></td></tr>
+<tr><th id="59">59</th><td><i class="doc"></i></td></tr>
+<tr><th id="60">60</th><td><i class="doc">   Initializes a cache named<span class="command"> \a</span> <span class="arg">cacheId</span> if it has not yet been initialized. The<span class="command"> \a</span> <span class="arg">bufferType</span> and</i></td></tr>
+<tr><th id="61">61</th><td><i class="doc">  <span class="command"> \a</span> <span class="arg">pixelFormat</span> gives the format of the buffers that will be used to contain the items in the</i></td></tr>
+<tr><th id="62">62</th><td><i class="doc">   cache. If a cache with the same<span class="command"> \a</span> <span class="arg">cacheId</span> has previously been initialized, the call will be</i></td></tr>
+<tr><th id="63">63</th><td><i class="doc">   ignored. The cache will keep its previously set buffer type and pixel format.</i></td></tr>
+<tr><th id="64">64</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="65">65</th><td></td></tr>
+<tr><th id="66">66</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="67">67</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb" data-ref="_ZN28QPlatformSharedGraphicsCache12requestItemsERK10QByteArrayRK5QListIjE">void QPlatformSharedGraphicsCache::requestItems(const QByteArray &amp;cacheId, const QList&lt;quint32&gt; &amp;itemIds)</span></i></td></tr>
+<tr><th id="68">68</th><td><i class="doc"></i></td></tr>
+<tr><th id="69">69</th><td><i class="doc">    Requests all the items in<span class="command"> \a</span> <span class="arg">itemIds</span> from the cache with the name<span class="command"> \a</span> <span class="arg">cacheId.</span></i></td></tr>
+<tr><th id="70">70</th><td><i class="doc"></i></td></tr>
+<tr><th id="71">71</th><td><i class="doc">    If any or all of the items are available in the cache, one or more itemsAvailable() signals will be</i></td></tr>
+<tr><th id="72">72</th><td><i class="doc">    emitted corresponding to the items. If the cache does not contain all of the items in question,</i></td></tr>
+<tr><th id="73">73</th><td><i class="doc">    then an itemsMissing() signal will be emitted corresponding to the missing items. The user</i></td></tr>
+<tr><th id="74">74</th><td><i class="doc">    is at this point expected to call insertItems() to insert the missing items into the cache. If</i></td></tr>
+<tr><th id="75">75</th><td><i class="doc">    the inserted items have previously been requested by the user, at which point an itemsAvailable()</i></td></tr>
+<tr><th id="76">76</th><td><i class="doc">    signal will be emitted corresponding to the items.</i></td></tr>
+<tr><th id="77">77</th><td><i class="doc"></i></td></tr>
+<tr><th id="78">78</th><td><i class="doc">    Before requesting items from a cache, the user must call ensureCacheInitialized() with the</i></td></tr>
+<tr><th id="79">79</th><td><i class="doc">    correct parameters for the cache.</i></td></tr>
+<tr><th id="80">80</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="81">81</th><td></td></tr>
+<tr><th id="82">82</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="83">83</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb" data-ref="_ZN28QPlatformSharedGraphicsCache11insertItemsERK10QByteArrayRK5QListIjERKS3_I6QImageE">void QPlatformSharedGraphicsCache::insertItems(const QByteArray &amp;cacheId, const QList&lt;quint32&gt; &amp;itemIds, const QList&lt;QImage&gt; &amp;items)</span></i></td></tr>
+<tr><th id="84">84</th><td><i class="doc"></i></td></tr>
+<tr><th id="85">85</th><td><i class="doc">    Inserts the items in<span class="command"> \a</span> <span class="arg">itemIds</span> into the cache named<span class="command"> \a</span> <span class="arg">cacheId.</span> The appearance of</i></td></tr>
+<tr><th id="86">86</th><td><i class="doc">    each item is stored in<span class="command"> \a</span> <span class="arg">items.</span> The format of the QImage objects is expected to match the</i></td></tr>
+<tr><th id="87">87</th><td><i class="doc">    pixel format of the cache as it was initialized in ensureCacheInitialized().</i></td></tr>
+<tr><th id="88">88</th><td><i class="doc"></i></td></tr>
+<tr><th id="89">89</th><td><i class="doc">    When the items have been successfully entered into the cache, one or more itemsAvailable() signals</i></td></tr>
+<tr><th id="90">90</th><td><i class="doc">    will be emitted for the items.</i></td></tr>
+<tr><th id="91">91</th><td><i class="doc"></i></td></tr>
+<tr><th id="92">92</th><td><i class="doc">    If the cache already contains the items, the behavior is implementation-specific. The</i></td></tr>
+<tr><th id="93">93</th><td><i class="doc">    implementation may choose to ignore the items or it may overwrite the existing instances in</i></td></tr>
+<tr><th id="94">94</th><td><i class="doc">    the cache. Either way, itemsAvailable() signals corresponding to the inserted items will be</i></td></tr>
+<tr><th id="95">95</th><td><i class="doc">    emitted.</i></td></tr>
+<tr><th id="96">96</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="97">97</th><td></td></tr>
+<tr><th id="98">98</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="99">99</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb" data-ref="_ZN28QPlatformSharedGraphicsCache12releaseItemsERK10QByteArrayRK5QListIjE">void QPlatformSharedGraphicsCache::releaseItems(const QByteArray &amp;cacheId, const QList&lt;quint32&gt; &amp;itemIds)</span></i></td></tr>
+<tr><th id="100">100</th><td><i class="doc"></i></td></tr>
+<tr><th id="101">101</th><td><i class="doc">    Releases the reference to the items in<span class="command"> \a</span> <span class="arg">itemIds</span> from the cache named<span class="command"> \a</span> <span class="arg">cacheId.</span> This should</i></td></tr>
+<tr><th id="102">102</th><td><i class="doc">    only be called when all references to the items have been released by the user, and they are no</i></td></tr>
+<tr><th id="103">103</th><td><i class="doc">    longer needed.</i></td></tr>
+<tr><th id="104">104</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="105">105</th><td></td></tr>
+<tr><th id="106">106</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="107">107</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb" data-ref="_ZN28QPlatformSharedGraphicsCache12itemsMissingERK10QByteArrayRK5QListIjE">void QPlatformSharedGraphicsCache::itemsMissing(const QByteArray &amp;cacheId, const QList&lt;quint32&gt; &amp;itemIds)</span></i></td></tr>
+<tr><th id="108">108</th><td><i class="doc"></i></td></tr>
+<tr><th id="109">109</th><td><i class="doc">    This signal is emitted when requestItems() has been called for one or more items in the</i></td></tr>
+<tr><th id="110">110</th><td><i class="doc">    cache named<span class="command"> \a</span> <span class="arg">cacheId</span> which are not yet available in the cache. The user is then expected to</i></td></tr>
+<tr><th id="111">111</th><td><i class="doc">    call insertItems() to update the cache with the respective items, at which point they will</i></td></tr>
+<tr><th id="112">112</th><td><i class="doc">    become available to all clients of the shared cache.</i></td></tr>
+<tr><th id="113">113</th><td><i class="doc"></i></td></tr>
+<tr><th id="114">114</th><td><i class="doc">    The<span class="command"> \a</span> <span class="arg">itemIds</span> list contains the IDs of the items that need to be inserted into the cache.</i></td></tr>
+<tr><th id="115">115</th><td><i class="doc"></i></td></tr>
+<tr><th id="116">116</th><td><i class="doc">    <span class="command">\sa</span> itemsAvailable(), insertItems(), requestItems()</i></td></tr>
+<tr><th id="117">117</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="118">118</th><td></td></tr>
+<tr><th id="119">119</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="120">120</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb" data-ref="_ZN28QPlatformSharedGraphicsCache14itemsAvailableERK10QByteArrayPvRK5QListIjERKS4_I6QPointE">void QPlatformSharedGraphicsCache::itemsAvailable(const QByteArray &amp;cacheId, void *bufferId, const QList&lt;quint32&gt; &amp;itemIds, const QList&lt;QPoint&gt; &amp;positionsInBuffer)</span></i></td></tr>
+<tr><th id="121">121</th><td><i class="doc"></i></td></tr>
+<tr><th id="122">122</th><td><i class="doc">    This signal can be emitted at any time when either requestItems() or insertItems() has been</i></td></tr>
+<tr><th id="123">123</th><td><i class="doc">    called by the application for one or more items in the cache named<span class="command"> \a</span> <span class="arg">cacheId,</span> as long as</i></td></tr>
+<tr><th id="124">124</th><td><i class="doc">    releaseItems() has not subsequently been called for the same items. It instructs the application</i></td></tr>
+<tr><th id="125">125</th><td><i class="doc">    on where to find the items that have been entered into the cache. When the application receives</i></td></tr>
+<tr><th id="126">126</th><td><i class="doc">    a buffer, it is expected to reference it using referenceBuffer() on it if it keeps a reference</i></td></tr>
+<tr><th id="127">127</th><td><i class="doc">    to the buffer.</i></td></tr>
+<tr><th id="128">128</th><td><i class="doc"></i></td></tr>
+<tr><th id="129">129</th><td><i class="doc">    The<span class="command"> \a</span> <span class="arg">bufferId</span> is an ID for the buffer that contains the items. The<span class="command"> \a</span> <span class="arg">bufferId</span> can be</i></td></tr>
+<tr><th id="130">130</th><td><i class="doc">    converted to a format usable by the application depending on which format it was given at</i></td></tr>
+<tr><th id="131">131</th><td><i class="doc">    initialization. If it is a OpenGLTexture, its texture ID can be requested using the</i></td></tr>
+<tr><th id="132">132</th><td><i class="doc">    textureIdForBuffer() function. The dimensions of the buffer are given by<span class="command"> \a</span> <span class="arg">bufferSize.</span></i></td></tr>
+<tr><th id="133">133</th><td><i class="doc"></i></td></tr>
+<tr><th id="134">134</th><td><i class="doc">    The items provided by the cache are identified in the<span class="command"> \a</span> <span class="arg">itemIds</span> list. The</i></td></tr>
+<tr><th id="135">135</th><td><i class="doc">   <span class="command"> \a</span> <span class="arg">positionsInBuffer</span> list contains the locations inside the buffer of each item. Each entry in</i></td></tr>
+<tr><th id="136">136</th><td><i class="doc">   <span class="command"> \a</span> <span class="arg">positionsInBuffer</span> corresponds to an item in<span class="command"> \a</span> <span class="arg">itemIds.</span></i></td></tr>
+<tr><th id="137">137</th><td><i class="doc"></i></td></tr>
+<tr><th id="138">138</th><td><i class="doc">    The buffer and the items' locations within the buffer can be considered valid until an</i></td></tr>
+<tr><th id="139">139</th><td><i class="doc">    itemsInvalidated() signal has been emitted for the items, or until releaseItems() is called</i></td></tr>
+<tr><th id="140">140</th><td><i class="doc">    for the items.</i></td></tr>
+<tr><th id="141">141</th><td><i class="doc"></i></td></tr>
+<tr><th id="142">142</th><td><i class="doc">    <span class="command">\sa</span> itemsMissing(), requestItems(), bufferType()</i></td></tr>
+<tr><th id="143">143</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="144">144</th><td></td></tr>
+<tr><th id="145">145</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="146">146</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb" data-ref="_ZN28QPlatformSharedGraphicsCache12itemsUpdatedERK10QByteArrayPvRK5QListIjERKS4_I6QPointE">void QPlatformSharedGraphicsCache::itemsUpdated(const QByteArray &amp;cacheId, void *bufferId, const QList&lt;quint32&gt; &amp;itemIds, const QList&lt;QPoint&gt; &amp;positionsInBuffer)</span></i></td></tr>
+<tr><th id="147">147</th><td><i class="doc"></i></td></tr>
+<tr><th id="148">148</th><td><i class="doc">    This signal is similar in usage to the itemsAvailable() signal, but will be emitted when</i></td></tr>
+<tr><th id="149">149</th><td><i class="doc">    the location of a previously requested or inserted item has been updated. The application</i></td></tr>
+<tr><th id="150">150</th><td><i class="doc">    must update its data for the respective items and release any references to old buffers held</i></td></tr>
+<tr><th id="151">151</th><td><i class="doc">    by the items.</i></td></tr>
+<tr><th id="152">152</th><td><i class="doc"></i></td></tr>
+<tr><th id="153">153</th><td><i class="doc">    If the application no longer holds any references to previously referenced items in a given</i></td></tr>
+<tr><th id="154">154</th><td><i class="doc">    cache, it should call releaseItems() for these items, at which point it will no longer receive</i></td></tr>
+<tr><th id="155">155</th><td><i class="doc">    any itemsUpdated() signal for these items.</i></td></tr>
+<tr><th id="156">156</th><td><i class="doc"></i></td></tr>
+<tr><th id="157">157</th><td><i class="doc">    <span class="command">\sa</span> requestItems(), insertItems(), itemsAvailable()</i></td></tr>
+<tr><th id="158">158</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="159">159</th><td></td></tr>
+<tr><th id="160">160</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="161">161</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb" data-ref="_ZN28QPlatformSharedGraphicsCache16itemsInvalidatedERK10QByteArrayRK5QListIjE">void QPlatformSharedGraphicsCache::itemsInvalidated(const QByteArray &amp;cacheId, const QList&lt;quint32&gt; &amp;itemIds)</span></i></td></tr>
+<tr><th id="162">162</th><td><i class="doc"></i></td></tr>
+<tr><th id="163">163</th><td><i class="doc">    This signal is emitted when the items given by<span class="command"> \a</span> <span class="arg">itemIds</span> in the cache named<span class="command"> \a</span> <span class="arg">cacheId</span> have</i></td></tr>
+<tr><th id="164">164</th><td><i class="doc">    been removed from the cache and the previously reported information about them is considered</i></td></tr>
+<tr><th id="165">165</th><td><i class="doc">    invalid. It will only be emitted for items for which a buffer has previously been identified</i></td></tr>
+<tr><th id="166">166</th><td><i class="doc">    through the itemsAvailable() signal (either as response to a requestItems() call or an</i></td></tr>
+<tr><th id="167">167</th><td><i class="doc">    insertItems() call.)</i></td></tr>
+<tr><th id="168">168</th><td><i class="doc"></i></td></tr>
+<tr><th id="169">169</th><td><i class="doc">    The application is expected to throw away information about the items in the<span class="command"> \a</span> <span class="arg">itemIds</span> array</i></td></tr>
+<tr><th id="170">170</th><td><i class="doc">    and drop any references it might have to the memory held by the buffer. If the items are still</i></td></tr>
+<tr><th id="171">171</th><td><i class="doc">    required by the application, it can re-commit them to the cache using the insertItems() function.</i></td></tr>
+<tr><th id="172">172</th><td><i class="doc"></i></td></tr>
+<tr><th id="173">173</th><td><i class="doc">    If the application no longer holds any references to previously referenced items in a given</i></td></tr>
+<tr><th id="174">174</th><td><i class="doc">    cache, it should call releaseItems() for these items, at which point it will no longer receive</i></td></tr>
+<tr><th id="175">175</th><td><i class="doc">    any itemsInvalidated() signal for these items.</i></td></tr>
+<tr><th id="176">176</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="177">177</th><td></td></tr>
+<tr><th id="178">178</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="179">179</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb" data-ref="_ZN28QPlatformSharedGraphicsCache17beginRequestBatchEv">void QPlatformSharedGraphicsCache::beginRequestBatch()</span></i></td></tr>
+<tr><th id="180">180</th><td><i class="doc"></i></td></tr>
+<tr><th id="181">181</th><td><i class="doc">    This is a hint to the cache that a burst of requests is pending. In some implementations, this</i></td></tr>
+<tr><th id="182">182</th><td><i class="doc">    will improve performance, as the cache can focus on handling the requests and wait with the</i></td></tr>
+<tr><th id="183">183</th><td><i class="doc">    results until it is done. It should typically be called prior to a sequence of calls to</i></td></tr>
+<tr><th id="184">184</th><td><i class="doc">    requestItems() and releaseItems().</i></td></tr>
+<tr><th id="185">185</th><td><i class="doc"></i></td></tr>
+<tr><th id="186">186</th><td><i class="doc">    Any call to beginRequestBatch() must be followed at some point by a call to endRequestBatch().</i></td></tr>
+<tr><th id="187">187</th><td><i class="doc">    Failing to do this may lead to the results of requests never being emitted.</i></td></tr>
+<tr><th id="188">188</th><td><i class="doc"></i></td></tr>
+<tr><th id="189">189</th><td><i class="doc">    <span class="command">\note</span> beginRequestBatch() and endRequestBatch() have no stacking logic. Calling</i></td></tr>
+<tr><th id="190">190</th><td><i class="doc">    beginRequestBatch() twice in a row has no effect, and the single existing batch will be ended</i></td></tr>
+<tr><th id="191">191</th><td><i class="doc">    by the earliest call to endRequestBatch().</i></td></tr>
+<tr><th id="192">192</th><td><i class="doc"></i></td></tr>
+<tr><th id="193">193</th><td><i class="doc">    <span class="command">\sa</span> endRequestBatch(), requestBatchStarted()</i></td></tr>
+<tr><th id="194">194</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="195">195</th><td></td></tr>
+<tr><th id="196">196</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="197">197</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb" data-ref="_ZN28QPlatformSharedGraphicsCache15endRequestBatchEv">void QPlatformSharedGraphicsCache::endRequestBatch()</span></i></td></tr>
+<tr><th id="198">198</th><td><i class="doc"></i></td></tr>
+<tr><th id="199">199</th><td><i class="doc">    Signals to the cache that the request sequence which has previously been commenced using</i></td></tr>
+<tr><th id="200">200</th><td><i class="doc">    beginRequestBatch() has now finished.</i></td></tr>
+<tr><th id="201">201</th><td><i class="doc"></i></td></tr>
+<tr><th id="202">202</th><td><i class="doc">    <span class="command">\sa</span> beginRequestBatch(), requestBatchStarted()</i></td></tr>
+<tr><th id="203">203</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="204">204</th><td></td></tr>
+<tr><th id="205">205</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="206">206</th><td><i class="doc">   <span class="command">\fn</span> <span class="verb" data-ref="_ZNK28QPlatformSharedGraphicsCache19requestBatchStartedEv">bool QPlatformSharedGraphicsCache::requestBatchStarted() const</span></i></td></tr>
+<tr><th id="207">207</th><td><i class="doc"></i></td></tr>
+<tr><th id="208">208</th><td><i class="doc">   Returns<span class="command"> \c</span> <span class="arg">true</span> if a request batch has previously been started using beginRequestBatch()</i></td></tr>
+<tr><th id="209">209</th><td><i class="doc">   and not yet stopped using endRequestBatch().</i></td></tr>
+<tr><th id="210">210</th><td><i class="doc"></i></td></tr>
+<tr><th id="211">211</th><td><i class="doc">   <span class="command">\sa</span> beginRequestBatch(), endRequestBatch()</i></td></tr>
+<tr><th id="212">212</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="213">213</th><td></td></tr>
+<tr><th id="214">214</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="215">215</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb" data-ref="_ZN28QPlatformSharedGraphicsCache18textureIdForBufferEPv">uint QPlatformSharedGraphicsCache::textureIdForBuffer(void *bufferId)</span></i></td></tr>
+<tr><th id="216">216</th><td><i class="doc"></i></td></tr>
+<tr><th id="217">217</th><td><i class="doc">    Returns an OpenGL texture ID corresponding to the buffer<span class="command"> \a</span> <span class="arg">bufferId,</span> which has previously</i></td></tr>
+<tr><th id="218">218</th><td><i class="doc">    been passed through signals itemsAvailable() or itemsUpdated(). The relevant OpenGL context</i></td></tr>
+<tr><th id="219">219</th><td><i class="doc">    should be current when calling this function.</i></td></tr>
+<tr><th id="220">220</th><td><i class="doc"></i></td></tr>
+<tr><th id="221">221</th><td><i class="doc">    <span class="command">\sa</span> eglImageForBuffer(), sizeOfBuffer()</i></td></tr>
+<tr><th id="222">222</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="223">223</th><td></td></tr>
+<tr><th id="224">224</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="225">225</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb" data-ref="_ZN28QPlatformSharedGraphicsCache17eglImageForBufferEPv">void *QPlatformSharedGraphicsCache::eglImageForBuffer(void *bufferId)</span></i></td></tr>
+<tr><th id="226">226</th><td><i class="doc"></i></td></tr>
+<tr><th id="227">227</th><td><i class="doc">    Returns an EGLImageKHR image corresponding to the buffer<span class="command"> \a</span> <span class="arg">bufferId.</span></i></td></tr>
+<tr><th id="228">228</th><td><i class="doc"></i></td></tr>
+<tr><th id="229">229</th><td><i class="doc">    <span class="command">\sa</span> textureIdForBuffer(), sizeOfBuffer()</i></td></tr>
+<tr><th id="230">230</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="231">231</th><td></td></tr>
+<tr><th id="232">232</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="233">233</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb" data-ref="_ZN28QPlatformSharedGraphicsCache15referenceBufferEPv">void QPlatformSharedGraphicsCache::referenceBuffer(void *bufferId)</span></i></td></tr>
+<tr><th id="234">234</th><td><i class="doc"></i></td></tr>
+<tr><th id="235">235</th><td><i class="doc">    Registers a reference to the buffer<span class="command"> \a</span> <span class="arg">bufferId.</span></i></td></tr>
+<tr><th id="236">236</th><td><i class="doc"></i></td></tr>
+<tr><th id="237">237</th><td><i class="doc">    <span class="command">\sa</span> dereferenceBuffer()</i></td></tr>
+<tr><th id="238">238</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="239">239</th><td></td></tr>
+<tr><th id="240">240</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="241">241</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb" data-ref="_ZN28QPlatformSharedGraphicsCache17dereferenceBufferEPv">bool QPlatformSharedGraphicsCache::dereferenceBuffer(void *bufferId)</span></i></td></tr>
+<tr><th id="242">242</th><td><i class="doc"></i></td></tr>
+<tr><th id="243">243</th><td><i class="doc">    Removed a previously registered reference to the buffer<span class="command"> \a</span> <span class="arg">bufferId.</span> Returns<span class="command"> \c</span> <span class="arg">true</span> if there</i></td></tr>
+<tr><th id="244">244</th><td><i class="doc">    are still more references to the buffer in question, or false if this was the last reference</i></td></tr>
+<tr><th id="245">245</th><td><i class="doc">    (in which case the buffer may have been deleted in the cache.)</i></td></tr>
+<tr><th id="246">246</th><td><i class="doc"></i></td></tr>
+<tr><th id="247">247</th><td><i class="doc">    <span class="command">\sa</span> dereferenceBuffer()</i></td></tr>
+<tr><th id="248">248</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="249">249</th><td></td></tr>
+<tr><th id="250">250</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="251">251</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb" data-ref="_ZN28QPlatformSharedGraphicsCache12sizeOfBufferEPv">QSize QPlatformSharedGraphicsCache::sizeOfBuffer(void *bufferId)</span></i></td></tr>
+<tr><th id="252">252</th><td><i class="doc"></i></td></tr>
+<tr><th id="253">253</th><td><i class="doc">    Returns the size of the buffer<span class="command"> \a</span> <span class="arg">bufferId.</span></i></td></tr>
+<tr><th id="254">254</th><td><i class="doc"></i></td></tr>
+<tr><th id="255">255</th><td><i class="doc">    <span class="command">\sa</span> textureIdForBuffer(), eglImageForBuffer()</i></td></tr>
+<tr><th id="256">256</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="257">257</th><td></td></tr>
+<tr><th id="258">258</th><td><a class="macro" href="../../corelib/global/qtconfigmacros.h.html#104" title="" data-ref="_M/QT_END_NAMESPACE">QT_END_NAMESPACE</a></td></tr>
+<tr><th id="259">259</th><td></td></tr>
+<tr><th id="260">260</th><td><u>#include <span class='error' title="&apos;moc_qplatformsharedgraphicscache.cpp&apos; file not found">"moc_qplatformsharedgraphicscache.cpp"</span></u></td></tr>
+<tr><th id="261">261</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2024-Jun-13</em> from project qtbase-6.5.0 revision <em>6.5.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

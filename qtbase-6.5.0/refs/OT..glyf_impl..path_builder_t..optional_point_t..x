@@ -1,0 +1,30 @@
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/OT/glyf/path-builder.hh' l='20' u='w' c='_ZN2OT9glyf_impl14path_builder_t16optional_point_tC1Eff'/>
+<dec f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/OT/glyf/path-builder.hh' l='24' type='float'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/OT/glyf/path-builder.hh' l='28' u='r' c='_ZN2OT9glyf_impl14path_builder_t16optional_point_t4lerpES2_f'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/OT/glyf/path-builder.hh' l='28' u='r' c='_ZN2OT9glyf_impl14path_builder_t16optional_point_t4lerpES2_f'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/OT/glyf/path-builder.hh' l='28' u='r' c='_ZN2OT9glyf_impl14path_builder_t16optional_point_t4lerpES2_f'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/OT/glyf/path-builder.hh' l='58' u='r' c='_ZN2OT9glyf_impl14path_builder_t13consume_pointERKNS_15contour_point_tE'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/OT/glyf/path-builder.hh' l='67' u='r' c='_ZN2OT9glyf_impl14path_builder_t13consume_pointERKNS_15contour_point_tE'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/OT/glyf/path-builder.hh' l='81' u='r' c='_ZN2OT9glyf_impl14path_builder_t13consume_pointERKNS_15contour_point_tE'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/OT/glyf/path-builder.hh' l='82' u='r' c='_ZN2OT9glyf_impl14path_builder_t13consume_pointERKNS_15contour_point_tE'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/OT/glyf/path-builder.hh' l='83' u='r' c='_ZN2OT9glyf_impl14path_builder_t13consume_pointERKNS_15contour_point_tE'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/OT/glyf/path-builder.hh' l='87' u='r' c='_ZN2OT9glyf_impl14path_builder_t13consume_pointERKNS_15contour_point_tE'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/OT/glyf/path-builder.hh' l='88' u='r' c='_ZN2OT9glyf_impl14path_builder_t13consume_pointERKNS_15contour_point_tE'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/OT/glyf/path-builder.hh' l='104' u='r' c='_ZN2OT9glyf_impl14path_builder_t13consume_pointERKNS_15contour_point_tE'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/OT/glyf/path-builder.hh' l='105' u='r' c='_ZN2OT9glyf_impl14path_builder_t13consume_pointERKNS_15contour_point_tE'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/OT/glyf/path-builder.hh' l='106' u='r' c='_ZN2OT9glyf_impl14path_builder_t13consume_pointERKNS_15contour_point_tE'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/OT/glyf/path-builder.hh' l='110' u='r' c='_ZN2OT9glyf_impl14path_builder_t13consume_pointERKNS_15contour_point_tE'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/OT/glyf/path-builder.hh' l='111' u='r' c='_ZN2OT9glyf_impl14path_builder_t13consume_pointERKNS_15contour_point_tE'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/OT/glyf/path-builder.hh' l='119' u='r' c='_ZN2OT9glyf_impl14path_builder_t13consume_pointERKNS_15contour_point_tE'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/OT/glyf/path-builder.hh' l='130' u='r' c='_ZN2OT9glyf_impl14path_builder_t13consume_pointERKNS_15contour_point_tE'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/OT/glyf/path-builder.hh' l='131' u='r' c='_ZN2OT9glyf_impl14path_builder_t13consume_pointERKNS_15contour_point_tE'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/OT/glyf/path-builder.hh' l='137' u='r' c='_ZN2OT9glyf_impl14path_builder_t13consume_pointERKNS_15contour_point_tE'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/OT/glyf/path-builder.hh' l='138' u='r' c='_ZN2OT9glyf_impl14path_builder_t13consume_pointERKNS_15contour_point_tE'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/OT/glyf/path-builder.hh' l='142' u='r' c='_ZN2OT9glyf_impl14path_builder_t13consume_pointERKNS_15contour_point_tE'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/OT/glyf/path-builder.hh' l='143' u='r' c='_ZN2OT9glyf_impl14path_builder_t13consume_pointERKNS_15contour_point_tE'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/OT/glyf/path-builder.hh' l='144' u='r' c='_ZN2OT9glyf_impl14path_builder_t13consume_pointERKNS_15contour_point_tE'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/OT/glyf/path-builder.hh' l='146' u='r' c='_ZN2OT9glyf_impl14path_builder_t13consume_pointERKNS_15contour_point_tE'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/OT/glyf/path-builder.hh' l='147' u='r' c='_ZN2OT9glyf_impl14path_builder_t13consume_pointERKNS_15contour_point_tE'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/OT/glyf/path-builder.hh' l='150' u='r' c='_ZN2OT9glyf_impl14path_builder_t13consume_pointERKNS_15contour_point_tE'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/OT/glyf/path-builder.hh' l='153' u='r' c='_ZN2OT9glyf_impl14path_builder_t13consume_pointERKNS_15contour_point_tE'/>
+<offset>32</offset>

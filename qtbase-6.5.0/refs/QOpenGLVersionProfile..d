@@ -1,0 +1,27 @@
+<dec f='qtbase-6.5.0/src/opengl/qopenglversionprofile.h' l='40' type='QOpenGLVersionProfilePrivate *'/>
+<offset>0</offset>
+<use f='qtbase-6.5.0/src/opengl/qopenglversionprofile.cpp' l='42' u='w' c='_ZN21QOpenGLVersionProfileC1Ev'/>
+<use f='qtbase-6.5.0/src/opengl/qopenglversionprofile.cpp' l='51' u='w' c='_ZN21QOpenGLVersionProfileC1ERK14QSurfaceFormat'/>
+<use f='qtbase-6.5.0/src/opengl/qopenglversionprofile.cpp' l='53' u='r' c='_ZN21QOpenGLVersionProfileC1ERK14QSurfaceFormat'/>
+<use f='qtbase-6.5.0/src/opengl/qopenglversionprofile.cpp' l='54' u='r' c='_ZN21QOpenGLVersionProfileC1ERK14QSurfaceFormat'/>
+<use f='qtbase-6.5.0/src/opengl/qopenglversionprofile.cpp' l='55' u='r' c='_ZN21QOpenGLVersionProfileC1ERK14QSurfaceFormat'/>
+<use f='qtbase-6.5.0/src/opengl/qopenglversionprofile.cpp' l='62' u='w' c='_ZN21QOpenGLVersionProfileC1ERKS_'/>
+<use f='qtbase-6.5.0/src/opengl/qopenglversionprofile.cpp' l='64' u='r' c='_ZN21QOpenGLVersionProfileC1ERKS_'/>
+<use f='qtbase-6.5.0/src/opengl/qopenglversionprofile.cpp' l='64' u='r' c='_ZN21QOpenGLVersionProfileC1ERKS_'/>
+<use f='qtbase-6.5.0/src/opengl/qopenglversionprofile.cpp' l='72' u='r' c='_ZN21QOpenGLVersionProfileD1Ev'/>
+<use f='qtbase-6.5.0/src/opengl/qopenglversionprofile.cpp' l='82' u='r' c='_ZN21QOpenGLVersionProfileaSERKS_'/>
+<use f='qtbase-6.5.0/src/opengl/qopenglversionprofile.cpp' l='82' u='r' c='_ZN21QOpenGLVersionProfileaSERKS_'/>
+<use f='qtbase-6.5.0/src/opengl/qopenglversionprofile.cpp' l='94' u='r' c='_ZNK21QOpenGLVersionProfile7versionEv'/>
+<use f='qtbase-6.5.0/src/opengl/qopenglversionprofile.cpp' l='94' u='r' c='_ZNK21QOpenGLVersionProfile7versionEv'/>
+<use f='qtbase-6.5.0/src/opengl/qopenglversionprofile.cpp' l='104' u='r' c='_ZN21QOpenGLVersionProfile10setVersionEii'/>
+<use f='qtbase-6.5.0/src/opengl/qopenglversionprofile.cpp' l='105' u='r' c='_ZN21QOpenGLVersionProfile10setVersionEii'/>
+<use f='qtbase-6.5.0/src/opengl/qopenglversionprofile.cpp' l='115' u='r' c='_ZNK21QOpenGLVersionProfile7profileEv'/>
+<use f='qtbase-6.5.0/src/opengl/qopenglversionprofile.cpp' l='126' u='r' c='_ZN21QOpenGLVersionProfile10setProfileEN14QSurfaceFormat20OpenGLContextProfileE'/>
+<use f='qtbase-6.5.0/src/opengl/qopenglversionprofile.cpp' l='137' u='r' c='_ZNK21QOpenGLVersionProfile11hasProfilesEv'/>
+<use f='qtbase-6.5.0/src/opengl/qopenglversionprofile.cpp' l='138' u='r' c='_ZNK21QOpenGLVersionProfile11hasProfilesEv'/>
+<use f='qtbase-6.5.0/src/opengl/qopenglversionprofile.cpp' l='138' u='r' c='_ZNK21QOpenGLVersionProfile11hasProfilesEv'/>
+<use f='qtbase-6.5.0/src/opengl/qopenglversionprofile.cpp' l='147' u='r' c='_ZNK21QOpenGLVersionProfile15isLegacyVersionEv'/>
+<use f='qtbase-6.5.0/src/opengl/qopenglversionprofile.cpp' l='147' u='r' c='_ZNK21QOpenGLVersionProfile15isLegacyVersionEv'/>
+<use f='qtbase-6.5.0/src/opengl/qopenglversionprofile.cpp' l='147' u='r' c='_ZNK21QOpenGLVersionProfile15isLegacyVersionEv'/>
+<use f='qtbase-6.5.0/src/opengl/qopenglversionprofile.cpp' l='158' u='r' c='_ZNK21QOpenGLVersionProfile7isValidEv'/>
+<use f='qtbase-6.5.0/src/opengl/qopenglversionprofile.cpp' l='158' u='r' c='_ZNK21QOpenGLVersionProfile7isValidEv'/>

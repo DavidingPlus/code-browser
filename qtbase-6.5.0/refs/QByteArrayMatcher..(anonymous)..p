@@ -1,0 +1,33 @@
+<use f='qtbase-6.5.0/src/corelib/text/qbytearraymatcher.h' l='46' u='m' c='_ZNK17QByteArrayMatcher7patternEv'/>
+<use f='qtbase-6.5.0/src/corelib/text/qbytearraymatcher.h' l='46' u='m' c='_ZNK17QByteArrayMatcher7patternEv'/>
+<dec f='qtbase-6.5.0/src/corelib/text/qbytearraymatcher.h' l='60' type='QByteArrayMatcher::Data'/>
+<offset>0</offset>
+<use f='qtbase-6.5.0/src/corelib/text/qbytearraymatcher.cpp' l='85' u='m' c='_ZN17QByteArrayMatcherC1Ev'/>
+<use f='qtbase-6.5.0/src/corelib/text/qbytearraymatcher.cpp' l='86' u='m' c='_ZN17QByteArrayMatcherC1Ev'/>
+<use f='qtbase-6.5.0/src/corelib/text/qbytearraymatcher.cpp' l='87' u='m' c='_ZN17QByteArrayMatcherC1Ev'/>
+<use f='qtbase-6.5.0/src/corelib/text/qbytearraymatcher.cpp' l='87' u='m' c='_ZN17QByteArrayMatcherC1Ev'/>
+<use f='qtbase-6.5.0/src/corelib/text/qbytearraymatcher.cpp' l='99' u='m' c='_ZN17QByteArrayMatcherC1EPKcx'/>
+<use f='qtbase-6.5.0/src/corelib/text/qbytearraymatcher.cpp' l='101' u='m' c='_ZN17QByteArrayMatcherC1EPKcx'/>
+<use f='qtbase-6.5.0/src/corelib/text/qbytearraymatcher.cpp' l='103' u='m' c='_ZN17QByteArrayMatcherC1EPKcx'/>
+<use f='qtbase-6.5.0/src/corelib/text/qbytearraymatcher.cpp' l='104' u='m' c='_ZN17QByteArrayMatcherC1EPKcx'/>
+<use f='qtbase-6.5.0/src/corelib/text/qbytearraymatcher.cpp' l='104' u='m' c='_ZN17QByteArrayMatcherC1EPKcx'/>
+<use f='qtbase-6.5.0/src/corelib/text/qbytearraymatcher.cpp' l='104' u='m' c='_ZN17QByteArrayMatcherC1EPKcx'/>
+<use f='qtbase-6.5.0/src/corelib/text/qbytearraymatcher.cpp' l='114' u='m' c='_ZN17QByteArrayMatcherC1ERK10QByteArray'/>
+<use f='qtbase-6.5.0/src/corelib/text/qbytearraymatcher.cpp' l='115' u='m' c='_ZN17QByteArrayMatcherC1ERK10QByteArray'/>
+<use f='qtbase-6.5.0/src/corelib/text/qbytearraymatcher.cpp' l='116' u='m' c='_ZN17QByteArrayMatcherC1ERK10QByteArray'/>
+<use f='qtbase-6.5.0/src/corelib/text/qbytearraymatcher.cpp' l='116' u='m' c='_ZN17QByteArrayMatcherC1ERK10QByteArray'/>
+<use f='qtbase-6.5.0/src/corelib/text/qbytearraymatcher.cpp' l='116' u='m' c='_ZN17QByteArrayMatcherC1ERK10QByteArray'/>
+<use f='qtbase-6.5.0/src/corelib/text/qbytearraymatcher.cpp' l='154' u='a' c='_ZN17QByteArrayMatcheraSERKS_'/>
+<use f='qtbase-6.5.0/src/corelib/text/qbytearraymatcher.cpp' l='154' u='a' c='_ZN17QByteArrayMatcheraSERKS_'/>
+<use f='qtbase-6.5.0/src/corelib/text/qbytearraymatcher.cpp' l='154' u='r' c='_ZN17QByteArrayMatcheraSERKS_'/>
+<use f='qtbase-6.5.0/src/corelib/text/qbytearraymatcher.cpp' l='167' u='m' c='_ZN17QByteArrayMatcher10setPatternERK10QByteArray'/>
+<use f='qtbase-6.5.0/src/corelib/text/qbytearraymatcher.cpp' l='168' u='m' c='_ZN17QByteArrayMatcher10setPatternERK10QByteArray'/>
+<use f='qtbase-6.5.0/src/corelib/text/qbytearraymatcher.cpp' l='169' u='m' c='_ZN17QByteArrayMatcher10setPatternERK10QByteArray'/>
+<use f='qtbase-6.5.0/src/corelib/text/qbytearraymatcher.cpp' l='169' u='m' c='_ZN17QByteArrayMatcher10setPatternERK10QByteArray'/>
+<use f='qtbase-6.5.0/src/corelib/text/qbytearraymatcher.cpp' l='169' u='m' c='_ZN17QByteArrayMatcher10setPatternERK10QByteArray'/>
+<use f='qtbase-6.5.0/src/corelib/text/qbytearraymatcher.cpp' l='184' u='m' c='_ZNK17QByteArrayMatcher7indexInEPKcxx'/>
+<use f='qtbase-6.5.0/src/corelib/text/qbytearraymatcher.cpp' l='184' u='m' c='_ZNK17QByteArrayMatcher7indexInEPKcxx'/>
+<use f='qtbase-6.5.0/src/corelib/text/qbytearraymatcher.cpp' l='184' u='m' c='_ZNK17QByteArrayMatcher7indexInEPKcxx'/>
+<use f='qtbase-6.5.0/src/corelib/text/qbytearraymatcher.cpp' l='203' u='m' c='_ZNK17QByteArrayMatcher7indexInE14QByteArrayViewx'/>
+<use f='qtbase-6.5.0/src/corelib/text/qbytearraymatcher.cpp' l='203' u='m' c='_ZNK17QByteArrayMatcher7indexInE14QByteArrayViewx'/>
+<use f='qtbase-6.5.0/src/corelib/text/qbytearraymatcher.cpp' l='203' u='m' c='_ZNK17QByteArrayMatcher7indexInE14QByteArrayViewx'/>

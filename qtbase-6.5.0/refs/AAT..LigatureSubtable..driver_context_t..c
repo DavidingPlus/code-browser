@@ -1,0 +1,5 @@
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/hb-aat-layout-morx-table.hh' l='455' u='w' c='_ZN3AAT16LigatureSubtable16driver_context_tC1EPKNS_16LigatureSubtableIT_EEPNS_22hb_aat_apply_context_tE'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/hb-aat-layout-morx-table.hh' l='515' u='r' c='_ZN3AAT16LigatureSubtable16driver_context_t10transitionEPNS_16StateTableDriverIT_NS_13LigatureEntryIXsrS3_8extendedEE9EntryDataEEERKNS_5EntryIS6_EE'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/hb-aat-layout-morx-table.hh' l='525' u='r' c='_ZN3AAT16LigatureSubtable16driver_context_t10transitionEPNS_16StateTableDriverIT_NS_13LigatureEntryIXsrS3_8extendedEE9EntryDataEEERKNS_5EntryIS6_EE'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/hb-aat-layout-morx-table.hh' l='535' u='r' c='_ZN3AAT16LigatureSubtable16driver_context_t10transitionEPNS_16StateTableDriverIT_NS_13LigatureEntryIXsrS3_8extendedEE9EntryDataEEERKNS_5EntryIS6_EE'/>
+<dec f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/hb-aat-layout-morx-table.hh' l='564' type='AAT::hb_aat_apply_context_t *'/>

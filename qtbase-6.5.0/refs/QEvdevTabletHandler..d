@@ -1,0 +1,23 @@
+<dec f='qtbase-6.5.0/src/platformsupport/input/evdevtablet/qevdevtablethandler_p.h' l='44' type='QEvdevTabletData *'/>
+<use f='qtbase-6.5.0/src/platformsupport/input/evdevtablet/qevdevtablethandler.cpp' l='136' u='w' c='_ZN19QEvdevTabletHandlerC1ERK7QStringS2_P7QObject'/>
+<use f='qtbase-6.5.0/src/platformsupport/input/evdevtablet/qevdevtablethandler.cpp' l='156' u='w' c='_ZN19QEvdevTabletHandlerC1ERK7QStringS2_P7QObject'/>
+<use f='qtbase-6.5.0/src/platformsupport/input/evdevtablet/qevdevtablethandler.cpp' l='169' u='r' c='_ZN19QEvdevTabletHandlerD1Ev'/>
+<use f='qtbase-6.5.0/src/platformsupport/input/evdevtablet/qevdevtablethandler.cpp' l='184' u='r' c='_ZN19QEvdevTabletHandler11queryLimitsEv'/>
+<use f='qtbase-6.5.0/src/platformsupport/input/evdevtablet/qevdevtablethandler.cpp' l='185' u='r' c='_ZN19QEvdevTabletHandler11queryLimitsEv'/>
+<use f='qtbase-6.5.0/src/platformsupport/input/evdevtablet/qevdevtablethandler.cpp' l='187' u='r' c='_ZN19QEvdevTabletHandler11queryLimitsEv'/>
+<use f='qtbase-6.5.0/src/platformsupport/input/evdevtablet/qevdevtablethandler.cpp' l='187' u='r' c='_ZN19QEvdevTabletHandler11queryLimitsEv'/>
+<use f='qtbase-6.5.0/src/platformsupport/input/evdevtablet/qevdevtablethandler.cpp' l='191' u='r' c='_ZN19QEvdevTabletHandler11queryLimitsEv'/>
+<use f='qtbase-6.5.0/src/platformsupport/input/evdevtablet/qevdevtablethandler.cpp' l='192' u='r' c='_ZN19QEvdevTabletHandler11queryLimitsEv'/>
+<use f='qtbase-6.5.0/src/platformsupport/input/evdevtablet/qevdevtablethandler.cpp' l='194' u='r' c='_ZN19QEvdevTabletHandler11queryLimitsEv'/>
+<use f='qtbase-6.5.0/src/platformsupport/input/evdevtablet/qevdevtablethandler.cpp' l='194' u='r' c='_ZN19QEvdevTabletHandler11queryLimitsEv'/>
+<use f='qtbase-6.5.0/src/platformsupport/input/evdevtablet/qevdevtablethandler.cpp' l='197' u='r' c='_ZN19QEvdevTabletHandler11queryLimitsEv'/>
+<use f='qtbase-6.5.0/src/platformsupport/input/evdevtablet/qevdevtablethandler.cpp' l='198' u='r' c='_ZN19QEvdevTabletHandler11queryLimitsEv'/>
+<use f='qtbase-6.5.0/src/platformsupport/input/evdevtablet/qevdevtablethandler.cpp' l='200' u='r' c='_ZN19QEvdevTabletHandler11queryLimitsEv'/>
+<use f='qtbase-6.5.0/src/platformsupport/input/evdevtablet/qevdevtablethandler.cpp' l='200' u='r' c='_ZN19QEvdevTabletHandler11queryLimitsEv'/>
+<use f='qtbase-6.5.0/src/platformsupport/input/evdevtablet/qevdevtablethandler.cpp' l='203' u='r' c='_ZN19QEvdevTabletHandler11queryLimitsEv'/>
+<use f='qtbase-6.5.0/src/platformsupport/input/evdevtablet/qevdevtablethandler.cpp' l='204' u='r' c='_ZN19QEvdevTabletHandler11queryLimitsEv'/>
+<use f='qtbase-6.5.0/src/platformsupport/input/evdevtablet/qevdevtablethandler.cpp' l='206' u='r' c='_ZN19QEvdevTabletHandler11queryLimitsEv'/>
+<use f='qtbase-6.5.0/src/platformsupport/input/evdevtablet/qevdevtablethandler.cpp' l='206' u='r' c='_ZN19QEvdevTabletHandler11queryLimitsEv'/>
+<use f='qtbase-6.5.0/src/platformsupport/input/evdevtablet/qevdevtablethandler.cpp' l='210' u='r' c='_ZN19QEvdevTabletHandler11queryLimitsEv'/>
+<use f='qtbase-6.5.0/src/platformsupport/input/evdevtablet/qevdevtablethandler.cpp' l='246' u='r' c='_ZN19QEvdevTabletHandler8readDataEv'/>
+<offset>448</offset>

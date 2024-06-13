@@ -1,0 +1,35 @@
+<dec f='qtbase-6.5.0/src/gui/rhi/qrhigles2_p_p.h' l='341' type='QGles2CommandBuffer::Command::Cmd'/>
+<offset>0</offset>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhigles2.cpp' l='1591' u='w' c='_ZN9QRhiGles219setGraphicsPipelineEP17QRhiCommandBufferP20QRhiGraphicsPipeline'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhigles2.cpp' l='1702' u='w' c='_ZN9QRhiGles218setShaderResourcesEP17QRhiCommandBufferP26QRhiShaderResourceBindingsiPKSt4pairIijE'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhigles2.cpp' l='1739' u='w' c='_ZN9QRhiGles214setVertexInputEP17QRhiCommandBufferiiPKSt4pairIP10QRhiBufferjES4_jNS0_11IndexFormatE'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhigles2.cpp' l='1756' u='w' c='_ZN9QRhiGles214setVertexInputEP17QRhiCommandBufferiiPKSt4pairIP10QRhiBufferjES4_jNS0_11IndexFormatE'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhigles2.cpp' l='1779' u='w' c='_ZN9QRhiGles211setViewportEP17QRhiCommandBufferRK12QRhiViewport'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhigles2.cpp' l='1799' u='w' c='_ZN9QRhiGles210setScissorEP17QRhiCommandBufferRK11QRhiScissor'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhigles2.cpp' l='1812' u='w' c='_ZN9QRhiGles217setBlendConstantsEP17QRhiCommandBufferRK6QColor'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhigles2.cpp' l='1825' u='w' c='_ZN9QRhiGles213setStencilRefEP17QRhiCommandBufferj'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhigles2.cpp' l='1837' u='w' c='_ZN9QRhiGles24drawEP17QRhiCommandBufferjjjj'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhigles2.cpp' l='1852' u='w' c='_ZN9QRhiGles211drawIndexedEP17QRhiCommandBufferjjjij'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhigles2.cpp' l='1896' u='w' c='_ZL18addBoundaryCommandP19QGles2CommandBufferNS_7Command3CmdE'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhigles2.cpp' l='1917' u='w' c='_ZN9QRhiGles213beginExternalEP17QRhiCommandBuffer'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhigles2.cpp' l='2116' u='w' c='_ZN9QRhiGles220trackedBufferBarrierEP19QGles2CommandBufferP12QGles2BufferNS2_6AccessE'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhigles2.cpp' l='2135' u='w' c='_ZN9QRhiGles219trackedImageBarrierEP19QGles2CommandBufferP13QGles2TextureNS2_6AccessE'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhigles2.cpp' l='2159' u='w' c='_ZN9QRhiGles219enqueueSubresUploadEP13QGles2TextureP19QGles2CommandBufferiiRK39QRhiTextureSubresourceUploadDescription'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhigles2.cpp' l='2197' u='w' c='_ZN9QRhiGles219enqueueSubresUploadEP13QGles2TextureP19QGles2CommandBufferiiRK39QRhiTextureSubresourceUploadDescription'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhigles2.cpp' l='2216' u='w' c='_ZN9QRhiGles219enqueueSubresUploadEP13QGles2TextureP19QGles2CommandBufferiiRK39QRhiTextureSubresourceUploadDescription'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhigles2.cpp' l='2231' u='w' c='_ZN9QRhiGles219enqueueSubresUploadEP13QGles2TextureP19QGles2CommandBufferiiRK39QRhiTextureSubresourceUploadDescription'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhigles2.cpp' l='2250' u='w' c='_ZN9QRhiGles219enqueueSubresUploadEP13QGles2TextureP19QGles2CommandBufferiiRK39QRhiTextureSubresourceUploadDescription'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhigles2.cpp' l='2291' u='w' c='_ZN9QRhiGles222enqueueResourceUpdatesEP17QRhiCommandBufferP23QRhiResourceUpdateBatch'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhigles2.cpp' l='2307' u='w' c='_ZN9QRhiGles222enqueueResourceUpdatesEP17QRhiCommandBufferP23QRhiResourceUpdateBatch'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhigles2.cpp' l='2323' u='w' c='_ZN9QRhiGles222enqueueResourceUpdatesEP17QRhiCommandBufferP23QRhiResourceUpdateBatch'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhigles2.cpp' l='2364' u='w' c='_ZN9QRhiGles222enqueueResourceUpdatesEP17QRhiCommandBufferP23QRhiResourceUpdateBatch'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhigles2.cpp' l='2391' u='w' c='_ZN9QRhiGles222enqueueResourceUpdatesEP17QRhiCommandBufferP23QRhiResourceUpdateBatch'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhigles2.cpp' l='2419' u='w' c='_ZN9QRhiGles222enqueueResourceUpdatesEP17QRhiCommandBufferP23QRhiResourceUpdateBatch'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhigles2.cpp' l='2787' u='r' c='_ZN9QRhiGles220executeCommandBufferEP17QRhiCommandBuffer'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhigles2.cpp' l='4072' u='w' c='_ZN9QRhiGles222enqueueBindFramebufferEP16QRhiRenderTargetP19QGles2CommandBufferPbS4_'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhigles2.cpp' l='4143' u='w' c='_ZN9QRhiGles222enqueueBarriersForPassEP19QGles2CommandBuffer'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhigles2.cpp' l='4174' u='w' c='_ZN9QRhiGles29beginPassEP17QRhiCommandBufferP16QRhiRenderTargetRK6QColorRK26QRhiDepthStencilClearValueP23QRhiResourceUpdateBatch6QFlagsINS0_13BeginPassFlagEE'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhigles2.cpp' l='4213' u='w' c='_ZN9QRhiGles27endPassEP17QRhiCommandBufferP23QRhiResourceUpdateBatch'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhigles2.cpp' l='4279' u='w' c='_ZN9QRhiGles218setComputePipelineEP17QRhiCommandBufferP19QRhiComputePipeline'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhigles2.cpp' l='4368' u='w' c='_ZN9QRhiGles28dispatchEP17QRhiCommandBufferiii'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhigles2.cpp' l='4374' u='w' c='_ZN9QRhiGles28dispatchEP17QRhiCommandBufferiii'/>

@@ -1,0 +1,307 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>qthreadstorage.cpp source code [qtbase-6.5.0/src/corelib/thread/qthreadstorage.cpp] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'qtbase-6.5.0/src/corelib/thread/qthreadstorage.cpp'; var root_path = '../../../..'; var data_path = '../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>qtbase-6.5.0</a>/<a href='../..'>src</a>/<a href='..'>corelib</a>/<a href='./'>thread</a>/<a href='qthreadstorage.cpp.html'>qthreadstorage.cpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>// Copyright (C) 2016 The Qt Company Ltd.</i></td></tr>
+<tr><th id="2">2</th><td><i>// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only</i></td></tr>
+<tr><th id="3">3</th><td></td></tr>
+<tr><th id="4">4</th><td><u>#include <a href="qthreadstorage.h.html">"qthreadstorage.h"</a></u></td></tr>
+<tr><th id="5">5</th><td></td></tr>
+<tr><th id="6">6</th><td><u>#include <a href="qthread.h.html">"qthread.h"</a></u></td></tr>
+<tr><th id="7">7</th><td><u>#include <a href="qthread_p.h.html">"qthread_p.h"</a></u></td></tr>
+<tr><th id="8">8</th><td><u>#include <a href="qmutex.h.html">"qmutex.h"</a></u></td></tr>
+<tr><th id="9">9</th><td></td></tr>
+<tr><th id="10">10</th><td><u>#include <a href="../../../../include/string.h.html">&lt;string.h&gt;</a></u></td></tr>
+<tr><th id="11">11</th><td></td></tr>
+<tr><th id="12">12</th><td><a class="macro" href="../global/qtconfigmacros.h.html#103" title="" data-ref="_M/QT_BEGIN_NAMESPACE">QT_BEGIN_NAMESPACE</a></td></tr>
+<tr><th id="13">13</th><td></td></tr>
+<tr><th id="14">14</th><td><i>// #define THREADSTORAGE_DEBUG</i></td></tr>
+<tr><th id="15">15</th><td><u>#<span data-ppcond="15">ifdef</span> <span class="macro" data-ref="_M/THREADSTORAGE_DEBUG">THREADSTORAGE_DEBUG</span></u></td></tr>
+<tr><th id="16">16</th><td><u>#  define DEBUG_MSG qtsDebug</u></td></tr>
+<tr><th id="17">17</th><td></td></tr>
+<tr><th id="18">18</th><td><u>#  include &lt;stdio.h&gt;</u></td></tr>
+<tr><th id="19">19</th><td><u>#  include &lt;stdarg.h&gt;</u></td></tr>
+<tr><th id="20">20</th><td><em>void</em> qtsDebug(<em>const</em> <em>char</em> *fmt, ...)</td></tr>
+<tr><th id="21">21</th><td>{</td></tr>
+<tr><th id="22">22</th><td>    va_list va;</td></tr>
+<tr><th id="23">23</th><td>    va_start(va, fmt);</td></tr>
+<tr><th id="24">24</th><td></td></tr>
+<tr><th id="25">25</th><td>    fprintf(stderr, <q>"QThreadStorage: "</q>);</td></tr>
+<tr><th id="26">26</th><td>    vfprintf(stderr, fmt, va);</td></tr>
+<tr><th id="27">27</th><td>    fprintf(stderr, <q>"\n"</q>);</td></tr>
+<tr><th id="28">28</th><td></td></tr>
+<tr><th id="29">29</th><td>    va_end(va);</td></tr>
+<tr><th id="30">30</th><td>}</td></tr>
+<tr><th id="31">31</th><td><u>#<span data-ppcond="15">else</span></u></td></tr>
+<tr><th id="32">32</th><td><u>#  define <dfn class="macro" id="_M/DEBUG_MSG" data-ref="_M/DEBUG_MSG">DEBUG_MSG</dfn> if (false)qDebug</u></td></tr>
+<tr><th id="33">33</th><td><u>#<span data-ppcond="15">endif</span></u></td></tr>
+<tr><th id="34">34</th><td></td></tr>
+<tr><th id="35">35</th><td><a class="macro" href="../global/qcompilerdetection.h.html#1306" title="[[clang::require_constant_initialization]]" data-ref="_M/Q_CONSTINIT">Q_CONSTINIT</a> <em>static</em> <a class="type" href="qmutex.h.html#QBasicMutex" title='QBasicMutex' data-ref="QBasicMutex">QBasicMutex</a> <a class="ref fn fake" href="qmutex.h.html#_ZN11QBasicMutexC1Ev" title='QBasicMutex::QBasicMutex' data-ref="_ZN11QBasicMutexC1Ev"></a><dfn class="tu decl def" id="destructorsMutex" title='destructorsMutex' data-type='QBasicMutex' data-ref="destructorsMutex">destructorsMutex</dfn>;</td></tr>
+<tr><th id="36">36</th><td><b>typedef</b> <a class="type" href="../tools/qcontainerfwd.h.html#QList" title='QList' data-ref="QList">QList</a>&lt;<em>void</em> (*)(<em>void</em> *)&gt; <dfn class="typedef" id="DestructorMap" title='DestructorMap' data-type='QList&lt;void (*)(void *)&gt;' data-ref="DestructorMap">DestructorMap</dfn>;</td></tr>
+<tr><th id="37">37</th><td><a class="macro" href="../global/qglobalstatic.h.html#115" title=" namespace { struct Q_QGS_destructors { typedef DestructorMap QGS_Type; static void innerFunction(void *pointer) noexcept(noexcept(std::remove_cv_t&lt;QGS_Type&gt; ())) { new (pointer) QGS_Type (); } }; } [[clang::require_constant_initialization]] static QGlobalStatic&lt;QtGlobalStatic::Holder&lt;Q_QGS_destructors&gt;&gt; destructors;" data-ref="_M/Q_GLOBAL_STATIC">Q_GLOBAL_STATIC</a>(<a class="typedef" href="#DestructorMap" title='DestructorMap' data-type='QList&lt;void (*)(void *)&gt;' data-ref="DestructorMap">DestructorMap</a>, <a class="tu ref fn fake" href="../global/qglobalstatic.h.html#57" title='QGlobalStatic&lt;QtGlobalStatic::Holder&lt;(anonymous namespace)::Q_QGS_destructors&gt;&gt;::QGlobalStatic' data-use='c' data-ref="_ZN13QGlobalStaticIN14QtGlobalStatic6HolderIN12_GLOBAL__N_117Q_QGS_destructorsEEEEC1Ev"></a><dfn class="decl def" id="destructors" title='destructors' data-ref="destructors">destructors</dfn>)</td></tr>
+<tr><th id="38">38</th><td></td></tr>
+<tr><th id="39">39</th><td><a class="type" href="qthreadstorage.h.html#QThreadStorageData" title='QThreadStorageData' data-ref="QThreadStorageData">QThreadStorageData</a>::<dfn class="decl def fn" id="_ZN18QThreadStorageDataC1EPFvPvE" title='QThreadStorageData::QThreadStorageData' data-ref="_ZN18QThreadStorageDataC1EPFvPvE">QThreadStorageData</dfn>(<em>void</em> (*<dfn class="local col1 decl" id="1func" title='func' data-type='void (*)(void *)' data-ref="1func">func</dfn>)(<em>void</em> *))</td></tr>
+<tr><th id="40">40</th><td>{</td></tr>
+<tr><th id="41">41</th><td>    QMutexLocker <dfn class="local col2 decl" id="2locker" title='locker' data-type='QMutexLocker&lt;QBasicMutex&gt;' data-ref="2locker">locker</dfn><a class="ref fn" href="qmutex.h.html#_ZN12QMutexLockerC1EPT_" title='QMutexLocker::QMutexLocker&lt;Mutex&gt;' data-ref="_ZN12QMutexLockerC1EPT_">(</a>&amp;<a class="tu ref" href="#destructorsMutex" title='destructorsMutex' data-use='a' data-ref="destructorsMutex">destructorsMutex</a>);</td></tr>
+<tr><th id="42">42</th><td>    <a class="typedef" href="#DestructorMap" title='DestructorMap' data-type='QList&lt;void (*)(void *)&gt;' data-ref="DestructorMap">DestructorMap</a> *<dfn class="local col3 decl" id="3destr" title='destr' data-type='DestructorMap *' data-ref="3destr">destr</dfn> = <a class="ref" href="#37" title='destructors' data-ref="destructors">destructors</a><a class="tu ref fn" href="../global/qglobalstatic.h.html#_ZN13QGlobalStaticclEv" title='QGlobalStatic::operator()' data-use='c' data-ref="_ZN13QGlobalStaticclEv">()</a>;</td></tr>
+<tr><th id="43">43</th><td>    <b>if</b> (!<a class="local col3 ref" href="#3destr" title='destr' data-ref="3destr">destr</a>) {</td></tr>
+<tr><th id="44">44</th><td>        <i>/*</i></td></tr>
+<tr><th id="45">45</th><td><i>         the destructors vector has already been destroyed, yet a new</i></td></tr>
+<tr><th id="46">46</th><td><i>         QThreadStorage is being allocated. this can only happen during global</i></td></tr>
+<tr><th id="47">47</th><td><i>         destruction, at which point we assume that there is only one thread.</i></td></tr>
+<tr><th id="48">48</th><td><i>         in order to keep QThreadStorage working, we need somewhere to store</i></td></tr>
+<tr><th id="49">49</th><td><i>         the data, best place we have in this situation is at the tail of the</i></td></tr>
+<tr><th id="50">50</th><td><i>         current thread's tls vector. the destructor is ignored, since we have</i></td></tr>
+<tr><th id="51">51</th><td><i>         no where to store it, and no way to actually call it.</i></td></tr>
+<tr><th id="52">52</th><td><i>         */</i></td></tr>
+<tr><th id="53">53</th><td>        <a class="type" href="qthread_p.h.html#QThreadData" title='QThreadData' data-ref="QThreadData">QThreadData</a> *<dfn class="local col4 decl" id="4data" title='data' data-type='QThreadData *' data-ref="4data">data</dfn> = <a class="type" href="qthread_p.h.html#QThreadData" title='QThreadData' data-ref="QThreadData">QThreadData</a>::<a class="ref fn" href="qthread_p.h.html#_ZN11QThreadData7currentEb" title='QThreadData::current' data-ref="_ZN11QThreadData7currentEb">current</a>();</td></tr>
+<tr><th id="54">54</th><td>        <a class="member field" href="qthreadstorage.h.html#QThreadStorageData::id" title='QThreadStorageData::id' data-ref="QThreadStorageData::id">id</a> = <a class="local col4 ref" href="#4data" title='data' data-ref="4data">data</a>-&gt;<a class="ref field" href="qthread_p.h.html#QThreadData::tls" title='QThreadData::tls' data-ref="QThreadData::tls">tls</a>.<a class="ref fn" href="../tools/qlist.h.html#_ZNK5QList4sizeEv" title='QList::size' data-ref="_ZNK5QList4sizeEv">size</a>();</td></tr>
+<tr><th id="55">55</th><td>        <a class="macro" href="#32" title="if (false)QMessageLogger(nullptr, 0, nullptr).debug" data-ref="_M/DEBUG_MSG">DEBUG_MSG</a>(<span class='inlayHint'>msg:&nbsp;</span><q>"QThreadStorageData: Allocated id %d, destructor %p cannot be stored"</q>, <a class="member field" href="qthreadstorage.h.html#QThreadStorageData::id" title='QThreadStorageData::id' data-ref="QThreadStorageData::id">id</a>, <a class="local col1 ref" href="#1func" title='func' data-ref="1func">func</a>);</td></tr>
+<tr><th id="56">56</th><td>        <b>return</b>;</td></tr>
+<tr><th id="57">57</th><td>    }</td></tr>
+<tr><th id="58">58</th><td>    <b>for</b> (<a class="member field" href="qthreadstorage.h.html#QThreadStorageData::id" title='QThreadStorageData::id' data-ref="QThreadStorageData::id">id</a> = <var>0</var>; <a class="member field" href="qthreadstorage.h.html#QThreadStorageData::id" title='QThreadStorageData::id' data-ref="QThreadStorageData::id">id</a> &lt; <a class="local col3 ref" href="#3destr" title='destr' data-ref="3destr">destr</a>-&gt;<a class="ref fn" href="../tools/qlist.h.html#_ZNK5QList4sizeEv" title='QList::size' data-ref="_ZNK5QList4sizeEv">size</a>(); <a class="member field" href="qthreadstorage.h.html#QThreadStorageData::id" title='QThreadStorageData::id' data-ref="QThreadStorageData::id">id</a>++) {</td></tr>
+<tr><th id="59">59</th><td>        <b>if</b> (<a class="local col3 ref" href="#3destr" title='destr' data-ref="3destr">destr</a>-&gt;<a class="ref fn" href="../tools/qlist.h.html#_ZNK5QList2atEx" title='QList::at' data-ref="_ZNK5QList2atEx">at</a>(<span class='inlayHint'>i:&nbsp;</span><a class="member field" href="qthreadstorage.h.html#QThreadStorageData::id" title='QThreadStorageData::id' data-ref="QThreadStorageData::id">id</a>) == <b>nullptr</b>)</td></tr>
+<tr><th id="60">60</th><td>            <b>break</b>;</td></tr>
+<tr><th id="61">61</th><td>    }</td></tr>
+<tr><th id="62">62</th><td>    <b>if</b> (<a class="member field" href="qthreadstorage.h.html#QThreadStorageData::id" title='QThreadStorageData::id' data-ref="QThreadStorageData::id">id</a> == <a class="local col3 ref" href="#3destr" title='destr' data-ref="3destr">destr</a>-&gt;<a class="ref fn" href="../tools/qlist.h.html#_ZNK5QList4sizeEv" title='QList::size' data-ref="_ZNK5QList4sizeEv">size</a>()) {</td></tr>
+<tr><th id="63">63</th><td>        <a class="local col3 ref" href="#3destr" title='destr' data-ref="3destr">destr</a>-&gt;<a class="ref fn" href="../tools/qlist.h.html#_ZN5QList6appendEN17QArrayDataPointerIT_E14parameter_typeE" title='QList::append' data-ref="_ZN5QList6appendEN17QArrayDataPointerIT_E14parameter_typeE">append</a>(<span class='inlayHint'>t:&nbsp;</span><a class="local col1 ref" href="#1func" title='func' data-ref="1func">func</a>);</td></tr>
+<tr><th id="64">64</th><td>    } <b>else</b> {</td></tr>
+<tr><th id="65">65</th><td>        (*<a class="local col3 ref" href="#3destr" title='destr' data-ref="3destr">destr</a>)<a class="ref fn" href="../tools/qlist.h.html#_ZN5QListixEx" title='QList::operator[]' data-ref="_ZN5QListixEx">[<a class="member field" href="qthreadstorage.h.html#QThreadStorageData::id" title='QThreadStorageData::id' data-ref="QThreadStorageData::id">id</a>]</a> = <a class="local col1 ref" href="#1func" title='func' data-ref="1func">func</a>;</td></tr>
+<tr><th id="66">66</th><td>    }</td></tr>
+<tr><th id="67">67</th><td>    <a class="macro" href="#32" title="if (false)QMessageLogger(nullptr, 0, nullptr).debug" data-ref="_M/DEBUG_MSG">DEBUG_MSG</a>(<span class='inlayHint'>msg:&nbsp;</span><q>"QThreadStorageData: Allocated id %d, destructor %p"</q>, <a class="member field" href="qthreadstorage.h.html#QThreadStorageData::id" title='QThreadStorageData::id' data-ref="QThreadStorageData::id">id</a>, <a class="local col1 ref" href="#1func" title='func' data-ref="1func">func</a>);</td></tr>
+<tr><th id="68">68</th><td>}</td></tr>
+<tr><th id="69">69</th><td></td></tr>
+<tr><th id="70">70</th><td><a class="type" href="qthreadstorage.h.html#QThreadStorageData" title='QThreadStorageData' data-ref="QThreadStorageData">QThreadStorageData</a>::<dfn class="decl def fn" id="_ZN18QThreadStorageDataD1Ev" title='QThreadStorageData::~QThreadStorageData' data-ref="_ZN18QThreadStorageDataD1Ev">~QThreadStorageData</dfn>()</td></tr>
+<tr><th id="71">71</th><td>{</td></tr>
+<tr><th id="72">72</th><td>    <a class="macro" href="#32" title="if (false)QMessageLogger(nullptr, 0, nullptr).debug" data-ref="_M/DEBUG_MSG">DEBUG_MSG</a>(<span class='inlayHint'>msg:&nbsp;</span><q>"QThreadStorageData: Released id %d"</q>, <a class="member field" href="qthreadstorage.h.html#QThreadStorageData::id" title='QThreadStorageData::id' data-ref="QThreadStorageData::id">id</a>);</td></tr>
+<tr><th id="73">73</th><td>    QMutexLocker <dfn class="local col5 decl" id="5locker" title='locker' data-type='QMutexLocker&lt;QBasicMutex&gt;' data-ref="5locker">locker</dfn><a class="ref fn" href="qmutex.h.html#_ZN12QMutexLockerC1EPT_" title='QMutexLocker::QMutexLocker&lt;Mutex&gt;' data-ref="_ZN12QMutexLockerC1EPT_">(</a>&amp;<a class="tu ref" href="#destructorsMutex" title='destructorsMutex' data-use='a' data-ref="destructorsMutex">destructorsMutex</a>);</td></tr>
+<tr><th id="74">74</th><td>    <b>if</b> (<a class="ref" href="#37" title='destructors' data-ref="destructors">destructors</a><a class="tu ref fn" href="../global/qglobalstatic.h.html#_ZN13QGlobalStaticclEv" title='QGlobalStatic::operator()' data-use='c' data-ref="_ZN13QGlobalStaticclEv">()</a>)</td></tr>
+<tr><th id="75">75</th><td>        (*<a class="ref" href="#37" title='destructors' data-ref="destructors">destructors</a><a class="tu ref fn" href="../global/qglobalstatic.h.html#_ZN13QGlobalStaticclEv" title='QGlobalStatic::operator()' data-use='c' data-ref="_ZN13QGlobalStaticclEv">()</a>)<a class="ref fn" href="../tools/qlist.h.html#_ZN5QListixEx" title='QList::operator[]' data-ref="_ZN5QListixEx">[<a class="member field" href="qthreadstorage.h.html#QThreadStorageData::id" title='QThreadStorageData::id' data-ref="QThreadStorageData::id">id</a>]</a> = <b>nullptr</b>;</td></tr>
+<tr><th id="76">76</th><td>}</td></tr>
+<tr><th id="77">77</th><td></td></tr>
+<tr><th id="78">78</th><td><em>void</em> **<a class="type" href="qthreadstorage.h.html#QThreadStorageData" title='QThreadStorageData' data-ref="QThreadStorageData">QThreadStorageData</a>::<dfn class="decl def fn" id="_ZNK18QThreadStorageData3getEv" title='QThreadStorageData::get' data-ref="_ZNK18QThreadStorageData3getEv">get</dfn>() <em>const</em></td></tr>
+<tr><th id="79">79</th><td>{</td></tr>
+<tr><th id="80">80</th><td>    <a class="type" href="qthread_p.h.html#QThreadData" title='QThreadData' data-ref="QThreadData">QThreadData</a> *<dfn class="local col6 decl" id="6data" title='data' data-type='QThreadData *' data-ref="6data">data</dfn> = <a class="type" href="qthread_p.h.html#QThreadData" title='QThreadData' data-ref="QThreadData">QThreadData</a>::<a class="ref fn" href="qthread_p.h.html#_ZN11QThreadData7currentEb" title='QThreadData::current' data-ref="_ZN11QThreadData7currentEb">current</a>();</td></tr>
+<tr><th id="81">81</th><td>    <b>if</b> (!<a class="local col6 ref" href="#6data" title='data' data-ref="6data">data</a>) {</td></tr>
+<tr><th id="82">82</th><td>        <a class="macro" href="../global/qlogging.h.html#158" title="QMessageLogger(nullptr, 0, nullptr).warning" data-ref="_M/qWarning">qWarning</a>(<span class='inlayHint'>msg:&nbsp;</span><q>"QThreadStorage::get: QThreadStorage can only be used with threads started with QThread"</q>);</td></tr>
+<tr><th id="83">83</th><td>        <b>return</b> <b>nullptr</b>;</td></tr>
+<tr><th id="84">84</th><td>    }</td></tr>
+<tr><th id="85">85</th><td>    <a class="type" href="../tools/qcontainerfwd.h.html#QList" title='QList' data-ref="QList">QList</a>&lt;<em>void</em> *&gt; &amp;<dfn class="local col7 decl" id="7tls" title='tls' data-type='QList&lt;void *&gt; &amp;' data-ref="7tls">tls</dfn> = <a class="local col6 ref" href="#6data" title='data' data-ref="6data">data</a>-&gt;<a class="ref field" href="qthread_p.h.html#QThreadData::tls" title='QThreadData::tls' data-ref="QThreadData::tls">tls</a>;</td></tr>
+<tr><th id="86">86</th><td>    <b>if</b> (<a class="local col7 ref" href="#7tls" title='tls' data-ref="7tls">tls</a>.<a class="ref fn" href="../tools/qlist.h.html#_ZNK5QList4sizeEv" title='QList::size' data-ref="_ZNK5QList4sizeEv">size</a>() &lt;= <a class="member field" href="qthreadstorage.h.html#QThreadStorageData::id" title='QThreadStorageData::id' data-ref="QThreadStorageData::id">id</a>)</td></tr>
+<tr><th id="87">87</th><td>        <a class="local col7 ref" href="#7tls" title='tls' data-ref="7tls">tls</a>.<a class="ref fn" href="../tools/qlist.h.html#_ZN5QList6resizeEx" title='QList::resize' data-ref="_ZN5QList6resizeEx">resize</a>(<span class='inlayHint'>size:&nbsp;</span><a class="member field" href="qthreadstorage.h.html#QThreadStorageData::id" title='QThreadStorageData::id' data-ref="QThreadStorageData::id">id</a> + <var>1</var>);</td></tr>
+<tr><th id="88">88</th><td>    <em>void</em> **<dfn class="local col8 decl" id="8v" title='v' data-type='void **' data-ref="8v">v</dfn> = &amp;<a class="local col7 ref" href="#7tls" title='tls' data-ref="7tls">tls</a><a class="ref fn" href="../tools/qlist.h.html#_ZN5QListixEx" title='QList::operator[]' data-ref="_ZN5QListixEx">[<a class="member field" href="qthreadstorage.h.html#QThreadStorageData::id" title='QThreadStorageData::id' data-ref="QThreadStorageData::id">id</a>]</a>;</td></tr>
+<tr><th id="89">89</th><td></td></tr>
+<tr><th id="90">90</th><td>    <a class="macro" href="#32" title="if (false)QMessageLogger(nullptr, 0, nullptr).debug" data-ref="_M/DEBUG_MSG">DEBUG_MSG</a>(<span class='inlayHint'>msg:&nbsp;</span><q>"QThreadStorageData: Returning storage %d, data %p, for thread %p"</q>,</td></tr>
+<tr><th id="91">91</th><td>          <a class="member field" href="qthreadstorage.h.html#QThreadStorageData::id" title='QThreadStorageData::id' data-ref="QThreadStorageData::id">id</a>,</td></tr>
+<tr><th id="92">92</th><td>          *<a class="local col8 ref" href="#8v" title='v' data-ref="8v">v</a>,</td></tr>
+<tr><th id="93">93</th><td>          <a class="local col6 ref" href="#6data" title='data' data-ref="6data">data</a>-&gt;<a class="ref field" href="qthread_p.h.html#QThreadData::thread" title='QThreadData::thread' data-ref="QThreadData::thread">thread</a>.<a class="ref fn" href="qbasicatomic.h.html#_ZNK19QBasicAtomicPointer11loadRelaxedEv" title='QBasicAtomicPointer::loadRelaxed' data-ref="_ZNK19QBasicAtomicPointer11loadRelaxedEv">loadRelaxed</a>());</td></tr>
+<tr><th id="94">94</th><td></td></tr>
+<tr><th id="95">95</th><td>    <b>return</b> *<a class="local col8 ref" href="#8v" title='v' data-ref="8v">v</a> ? <a class="local col8 ref" href="#8v" title='v' data-ref="8v">v</a> : <b>nullptr</b>;</td></tr>
+<tr><th id="96">96</th><td>}</td></tr>
+<tr><th id="97">97</th><td></td></tr>
+<tr><th id="98">98</th><td><em>void</em> **<a class="type" href="qthreadstorage.h.html#QThreadStorageData" title='QThreadStorageData' data-ref="QThreadStorageData">QThreadStorageData</a>::<dfn class="decl def fn" id="_ZN18QThreadStorageData3setEPv" title='QThreadStorageData::set' data-ref="_ZN18QThreadStorageData3setEPv">set</dfn>(<em>void</em> *<dfn class="local col9 decl" id="9p" title='p' data-type='void *' data-ref="9p">p</dfn>)</td></tr>
+<tr><th id="99">99</th><td>{</td></tr>
+<tr><th id="100">100</th><td>    <a class="type" href="qthread_p.h.html#QThreadData" title='QThreadData' data-ref="QThreadData">QThreadData</a> *<dfn class="local col0 decl" id="10data" title='data' data-type='QThreadData *' data-ref="10data">data</dfn> = <a class="type" href="qthread_p.h.html#QThreadData" title='QThreadData' data-ref="QThreadData">QThreadData</a>::<a class="ref fn" href="qthread_p.h.html#_ZN11QThreadData7currentEb" title='QThreadData::current' data-ref="_ZN11QThreadData7currentEb">current</a>();</td></tr>
+<tr><th id="101">101</th><td>    <b>if</b> (!<a class="local col0 ref" href="#10data" title='data' data-ref="10data">data</a>) {</td></tr>
+<tr><th id="102">102</th><td>        <a class="macro" href="../global/qlogging.h.html#158" title="QMessageLogger(nullptr, 0, nullptr).warning" data-ref="_M/qWarning">qWarning</a>(<span class='inlayHint'>msg:&nbsp;</span><q>"QThreadStorage::set: QThreadStorage can only be used with threads started with QThread"</q>);</td></tr>
+<tr><th id="103">103</th><td>        <b>return</b> <b>nullptr</b>;</td></tr>
+<tr><th id="104">104</th><td>    }</td></tr>
+<tr><th id="105">105</th><td>    <a class="type" href="../tools/qcontainerfwd.h.html#QList" title='QList' data-ref="QList">QList</a>&lt;<em>void</em> *&gt; &amp;<dfn class="local col1 decl" id="11tls" title='tls' data-type='QList&lt;void *&gt; &amp;' data-ref="11tls">tls</dfn> = <a class="local col0 ref" href="#10data" title='data' data-ref="10data">data</a>-&gt;<a class="ref field" href="qthread_p.h.html#QThreadData::tls" title='QThreadData::tls' data-ref="QThreadData::tls">tls</a>;</td></tr>
+<tr><th id="106">106</th><td>    <b>if</b> (<a class="local col1 ref" href="#11tls" title='tls' data-ref="11tls">tls</a>.<a class="ref fn" href="../tools/qlist.h.html#_ZNK5QList4sizeEv" title='QList::size' data-ref="_ZNK5QList4sizeEv">size</a>() &lt;= <a class="member field" href="qthreadstorage.h.html#QThreadStorageData::id" title='QThreadStorageData::id' data-ref="QThreadStorageData::id">id</a>)</td></tr>
+<tr><th id="107">107</th><td>        <a class="local col1 ref" href="#11tls" title='tls' data-ref="11tls">tls</a>.<a class="ref fn" href="../tools/qlist.h.html#_ZN5QList6resizeEx" title='QList::resize' data-ref="_ZN5QList6resizeEx">resize</a>(<span class='inlayHint'>size:&nbsp;</span><a class="member field" href="qthreadstorage.h.html#QThreadStorageData::id" title='QThreadStorageData::id' data-ref="QThreadStorageData::id">id</a> + <var>1</var>);</td></tr>
+<tr><th id="108">108</th><td></td></tr>
+<tr><th id="109">109</th><td>    <em>void</em> *&amp;<dfn class="local col2 decl" id="12value" title='value' data-type='void *&amp;' data-ref="12value">value</dfn> = <a class="local col1 ref" href="#11tls" title='tls' data-ref="11tls">tls</a><a class="ref fn" href="../tools/qlist.h.html#_ZN5QListixEx" title='QList::operator[]' data-ref="_ZN5QListixEx">[<a class="member field" href="qthreadstorage.h.html#QThreadStorageData::id" title='QThreadStorageData::id' data-ref="QThreadStorageData::id">id</a>]</a>;</td></tr>
+<tr><th id="110">110</th><td>    <i>// delete any previous data</i></td></tr>
+<tr><th id="111">111</th><td>    <b>if</b> (<a class="local col2 ref" href="#12value" title='value' data-ref="12value">value</a> != <b>nullptr</b>) {</td></tr>
+<tr><th id="112">112</th><td>        <a class="macro" href="#32" title="if (false)QMessageLogger(nullptr, 0, nullptr).debug" data-ref="_M/DEBUG_MSG">DEBUG_MSG</a>(<span class='inlayHint'>msg:&nbsp;</span><q>"QThreadStorageData: Deleting previous storage %d, data %p, for thread %p"</q>,</td></tr>
+<tr><th id="113">113</th><td>                <a class="member field" href="qthreadstorage.h.html#QThreadStorageData::id" title='QThreadStorageData::id' data-ref="QThreadStorageData::id">id</a>,</td></tr>
+<tr><th id="114">114</th><td>                <a class="local col2 ref" href="#12value" title='value' data-ref="12value">value</a>,</td></tr>
+<tr><th id="115">115</th><td>                <a class="local col0 ref" href="#10data" title='data' data-ref="10data">data</a>-&gt;<a class="ref field" href="qthread_p.h.html#QThreadData::thread" title='QThreadData::thread' data-ref="QThreadData::thread">thread</a>.<a class="ref fn" href="qbasicatomic.h.html#_ZNK19QBasicAtomicPointer11loadRelaxedEv" title='QBasicAtomicPointer::loadRelaxed' data-ref="_ZNK19QBasicAtomicPointer11loadRelaxedEv">loadRelaxed</a>());</td></tr>
+<tr><th id="116">116</th><td></td></tr>
+<tr><th id="117">117</th><td>        QMutexLocker <dfn class="local col3 decl" id="13locker" title='locker' data-type='QMutexLocker&lt;QBasicMutex&gt;' data-ref="13locker">locker</dfn><a class="ref fn" href="qmutex.h.html#_ZN12QMutexLockerC1EPT_" title='QMutexLocker::QMutexLocker&lt;Mutex&gt;' data-ref="_ZN12QMutexLockerC1EPT_">(</a>&amp;<a class="tu ref" href="#destructorsMutex" title='destructorsMutex' data-use='a' data-ref="destructorsMutex">destructorsMutex</a>);</td></tr>
+<tr><th id="118">118</th><td>        <a class="typedef" href="#DestructorMap" title='DestructorMap' data-type='QList&lt;void (*)(void *)&gt;' data-ref="DestructorMap">DestructorMap</a> *<dfn class="local col4 decl" id="14destr" title='destr' data-type='DestructorMap *' data-ref="14destr">destr</dfn> = <a class="ref" href="#37" title='destructors' data-ref="destructors">destructors</a><a class="tu ref fn" href="../global/qglobalstatic.h.html#_ZN13QGlobalStaticclEv" title='QGlobalStatic::operator()' data-use='c' data-ref="_ZN13QGlobalStaticclEv">()</a>;</td></tr>
+<tr><th id="119">119</th><td>        <em>void</em> (*<dfn class="local col5 decl" id="15destructor" title='destructor' data-type='void (*)(void *)' data-ref="15destructor">destructor</dfn>)(<em>void</em> *) = <a class="local col4 ref" href="#14destr" title='destr' data-ref="14destr">destr</a> ? <a class="local col4 ref" href="#14destr" title='destr' data-ref="14destr">destr</a>-&gt;<a class="ref fn" href="../tools/qlist.h.html#_ZNK5QList5valueEx" title='QList::value' data-ref="_ZNK5QList5valueEx">value</a>(<span class='inlayHint'>i:&nbsp;</span><a class="member field" href="qthreadstorage.h.html#QThreadStorageData::id" title='QThreadStorageData::id' data-ref="QThreadStorageData::id">id</a>) : <b>nullptr</b>;</td></tr>
+<tr><th id="120">120</th><td>        <a class="local col3 ref" href="#13locker" title='locker' data-ref="13locker">locker</a>.<a class="ref fn" href="qmutex.h.html#_ZN12QMutexLocker6unlockEv" title='QMutexLocker::unlock' data-ref="_ZN12QMutexLocker6unlockEv">unlock</a>();</td></tr>
+<tr><th id="121">121</th><td></td></tr>
+<tr><th id="122">122</th><td>        <em>void</em> *<dfn class="local col6 decl" id="16q" title='q' data-type='void *' data-ref="16q">q</dfn> = <a class="local col2 ref" href="#12value" title='value' data-ref="12value">value</a>;</td></tr>
+<tr><th id="123">123</th><td>        <a class="local col2 ref" href="#12value" title='value' data-ref="12value">value</a> = <b>nullptr</b>;</td></tr>
+<tr><th id="124">124</th><td></td></tr>
+<tr><th id="125">125</th><td>        <b>if</b> (<a class="local col5 ref" href="#15destructor" title='destructor' data-ref="15destructor">destructor</a>)</td></tr>
+<tr><th id="126">126</th><td>            <a class="local col5 ref" href="#15destructor" title='destructor' data-ref="15destructor">destructor</a>(<a class="local col6 ref" href="#16q" title='q' data-ref="16q">q</a>);</td></tr>
+<tr><th id="127">127</th><td>    }</td></tr>
+<tr><th id="128">128</th><td></td></tr>
+<tr><th id="129">129</th><td>    <i>// store new data</i></td></tr>
+<tr><th id="130">130</th><td>    <a class="local col2 ref" href="#12value" title='value' data-ref="12value">value</a> = <a class="local col9 ref" href="#9p" title='p' data-ref="9p">p</a>;</td></tr>
+<tr><th id="131">131</th><td>    <a class="macro" href="#32" title="if (false)QMessageLogger(nullptr, 0, nullptr).debug" data-ref="_M/DEBUG_MSG">DEBUG_MSG</a>(<span class='inlayHint'>msg:&nbsp;</span><q>"QThreadStorageData: Set storage %d for thread %p to %p"</q>, <a class="member field" href="qthreadstorage.h.html#QThreadStorageData::id" title='QThreadStorageData::id' data-ref="QThreadStorageData::id">id</a>, <a class="local col0 ref" href="#10data" title='data' data-ref="10data">data</a>-&gt;<a class="ref field" href="qthread_p.h.html#QThreadData::thread" title='QThreadData::thread' data-ref="QThreadData::thread">thread</a>.<a class="ref fn" href="qbasicatomic.h.html#_ZNK19QBasicAtomicPointer11loadRelaxedEv" title='QBasicAtomicPointer::loadRelaxed' data-ref="_ZNK19QBasicAtomicPointer11loadRelaxedEv">loadRelaxed</a>(), <a class="local col9 ref" href="#9p" title='p' data-ref="9p">p</a>);</td></tr>
+<tr><th id="132">132</th><td>    <b>return</b> &amp;<a class="local col2 ref" href="#12value" title='value' data-ref="12value">value</a>;</td></tr>
+<tr><th id="133">133</th><td>}</td></tr>
+<tr><th id="134">134</th><td></td></tr>
+<tr><th id="135">135</th><td><em>void</em> <a class="type" href="qthreadstorage.h.html#QThreadStorageData" title='QThreadStorageData' data-ref="QThreadStorageData">QThreadStorageData</a>::<dfn class="decl def fn" id="_ZN18QThreadStorageData6finishEPPv" title='QThreadStorageData::finish' data-ref="_ZN18QThreadStorageData6finishEPPv">finish</dfn>(<em>void</em> **<dfn class="local col7 decl" id="17p" title='p' data-type='void **' data-ref="17p">p</dfn>)</td></tr>
+<tr><th id="136">136</th><td>{</td></tr>
+<tr><th id="137">137</th><td>    <a class="type" href="../tools/qcontainerfwd.h.html#QList" title='QList' data-ref="QList">QList</a>&lt;<em>void</em> *&gt; *<dfn class="local col8 decl" id="18tls" title='tls' data-type='QList&lt;void *&gt; *' data-ref="18tls">tls</dfn> = <b>reinterpret_cast</b>&lt;<a class="type" href="../tools/qcontainerfwd.h.html#QList" title='QList' data-ref="QList">QList</a>&lt;<em>void</em> *&gt; *&gt;(<a class="local col7 ref" href="#17p" title='p' data-ref="17p">p</a>);</td></tr>
+<tr><th id="138">138</th><td>    <b>if</b> (!<a class="local col8 ref" href="#18tls" title='tls' data-ref="18tls">tls</a> || <a class="local col8 ref" href="#18tls" title='tls' data-ref="18tls">tls</a>-&gt;<a class="ref fn" href="../tools/qlist.h.html#_ZNK5QList7isEmptyEv" title='QList::isEmpty' data-ref="_ZNK5QList7isEmptyEv">isEmpty</a>() || !<a class="ref" href="#37" title='destructors' data-ref="destructors">destructors</a><a class="tu ref fn" href="../global/qglobalstatic.h.html#_ZN13QGlobalStaticclEv" title='QGlobalStatic::operator()' data-use='c' data-ref="_ZN13QGlobalStaticclEv">()</a>)</td></tr>
+<tr><th id="139">139</th><td>        <b>return</b>; <i>// nothing to do</i></td></tr>
+<tr><th id="140">140</th><td></td></tr>
+<tr><th id="141">141</th><td>    <a class="macro" href="#32" title="if (false)QMessageLogger(nullptr, 0, nullptr).debug" data-ref="_M/DEBUG_MSG">DEBUG_MSG</a>(<span class='inlayHint'>msg:&nbsp;</span><q>"QThreadStorageData: Destroying storage for thread %p"</q>, <a class="type" href="qthread.h.html#QThread" title='QThread' data-ref="QThread">QThread</a>::<a class="ref fn" href="qthread.h.html#_ZN7QThread13currentThreadEv" title='QThread::currentThread' data-ref="_ZN7QThread13currentThreadEv">currentThread</a>());</td></tr>
+<tr><th id="142">142</th><td>    <b>while</b> (!<a class="local col8 ref" href="#18tls" title='tls' data-ref="18tls">tls</a>-&gt;<a class="ref fn" href="../tools/qlist.h.html#_ZNK5QList7isEmptyEv" title='QList::isEmpty' data-ref="_ZNK5QList7isEmptyEv">isEmpty</a>()) {</td></tr>
+<tr><th id="143">143</th><td>        <em>void</em> *&amp;<dfn class="local col9 decl" id="19value" title='value' data-type='void *&amp;' data-ref="19value">value</dfn> = <a class="local col8 ref" href="#18tls" title='tls' data-ref="18tls">tls</a>-&gt;<a class="ref fn" href="../tools/qlist.h.html#_ZN5QList4lastEv" title='QList::last' data-ref="_ZN5QList4lastEv">last</a>();</td></tr>
+<tr><th id="144">144</th><td>        <em>void</em> *<dfn class="local col0 decl" id="20q" title='q' data-type='void *' data-ref="20q">q</dfn> = <a class="local col9 ref" href="#19value" title='value' data-ref="19value">value</a>;</td></tr>
+<tr><th id="145">145</th><td>        <a class="local col9 ref" href="#19value" title='value' data-ref="19value">value</a> = <b>nullptr</b>;</td></tr>
+<tr><th id="146">146</th><td>        <em>int</em> <dfn class="local col1 decl" id="21i" title='i' data-type='int' data-ref="21i">i</dfn> = <a class="local col8 ref" href="#18tls" title='tls' data-ref="18tls">tls</a>-&gt;<a class="ref fn" href="../tools/qlist.h.html#_ZNK5QList4sizeEv" title='QList::size' data-ref="_ZNK5QList4sizeEv">size</a>() - <var>1</var>;</td></tr>
+<tr><th id="147">147</th><td>        <a class="local col8 ref" href="#18tls" title='tls' data-ref="18tls">tls</a>-&gt;<a class="ref fn" href="../tools/qlist.h.html#_ZN5QList6resizeEx" title='QList::resize' data-ref="_ZN5QList6resizeEx">resize</a>(<span class='inlayHint'>size:&nbsp;</span><a class="local col1 ref" href="#21i" title='i' data-ref="21i">i</a>);</td></tr>
+<tr><th id="148">148</th><td></td></tr>
+<tr><th id="149">149</th><td>        <b>if</b> (!<a class="local col0 ref" href="#20q" title='q' data-ref="20q">q</a>) {</td></tr>
+<tr><th id="150">150</th><td>            <i>// data already deleted</i></td></tr>
+<tr><th id="151">151</th><td>            <b>continue</b>;</td></tr>
+<tr><th id="152">152</th><td>        }</td></tr>
+<tr><th id="153">153</th><td></td></tr>
+<tr><th id="154">154</th><td>        QMutexLocker <dfn class="local col2 decl" id="22locker" title='locker' data-type='QMutexLocker&lt;QBasicMutex&gt;' data-ref="22locker">locker</dfn><a class="ref fn" href="qmutex.h.html#_ZN12QMutexLockerC1EPT_" title='QMutexLocker::QMutexLocker&lt;Mutex&gt;' data-ref="_ZN12QMutexLockerC1EPT_">(</a>&amp;<a class="tu ref" href="#destructorsMutex" title='destructorsMutex' data-use='a' data-ref="destructorsMutex">destructorsMutex</a>);</td></tr>
+<tr><th id="155">155</th><td>        <em>void</em> (*<dfn class="local col3 decl" id="23destructor" title='destructor' data-type='void (*)(void *)' data-ref="23destructor">destructor</dfn>)(<em>void</em> *) = <a class="ref" href="#37" title='destructors' data-ref="destructors">destructors</a><a class="tu ref fn" href="../global/qglobalstatic.h.html#_ZN13QGlobalStaticclEv" title='QGlobalStatic::operator()' data-use='c' data-ref="_ZN13QGlobalStaticclEv">()</a>-&gt;<a class="ref fn" href="../tools/qlist.h.html#_ZNK5QList5valueEx" title='QList::value' data-ref="_ZNK5QList5valueEx">value</a>(<a class="local col1 ref" href="#21i" title='i' data-ref="21i">i</a>);</td></tr>
+<tr><th id="156">156</th><td>        <a class="local col2 ref" href="#22locker" title='locker' data-ref="22locker">locker</a>.<a class="ref fn" href="qmutex.h.html#_ZN12QMutexLocker6unlockEv" title='QMutexLocker::unlock' data-ref="_ZN12QMutexLocker6unlockEv">unlock</a>();</td></tr>
+<tr><th id="157">157</th><td></td></tr>
+<tr><th id="158">158</th><td>        <b>if</b> (!<a class="local col3 ref" href="#23destructor" title='destructor' data-ref="23destructor">destructor</a>) {</td></tr>
+<tr><th id="159">159</th><td>            <b>if</b> (<a class="type" href="qthread.h.html#QThread" title='QThread' data-ref="QThread">QThread</a>::<a class="ref fn" href="qthread.h.html#_ZN7QThread13currentThreadEv" title='QThread::currentThread' data-ref="_ZN7QThread13currentThreadEv">currentThread</a>())</td></tr>
+<tr><th id="160">160</th><td>                <a class="macro" href="../global/qlogging.h.html#158" title="QMessageLogger(nullptr, 0, nullptr).warning" data-ref="_M/qWarning">qWarning</a>(<span class='inlayHint'>msg:&nbsp;</span><q>"QThreadStorage: Thread %p exited after QThreadStorage %d destroyed"</q>,</td></tr>
+<tr><th id="161">161</th><td>                         <a class="type" href="qthread.h.html#QThread" title='QThread' data-ref="QThread">QThread</a>::<a class="ref fn" href="qthread.h.html#_ZN7QThread13currentThreadEv" title='QThread::currentThread' data-ref="_ZN7QThread13currentThreadEv">currentThread</a>(), <a class="local col1 ref" href="#21i" title='i' data-ref="21i">i</a>);</td></tr>
+<tr><th id="162">162</th><td>            <b>continue</b>;</td></tr>
+<tr><th id="163">163</th><td>        }</td></tr>
+<tr><th id="164">164</th><td>        <a class="local col3 ref" href="#23destructor" title='destructor' data-ref="23destructor">destructor</a>(<a class="local col0 ref" href="#20q" title='q' data-ref="20q">q</a>); <i>//crash here might mean the thread exited after qthreadstorage was destroyed</i></td></tr>
+<tr><th id="165">165</th><td></td></tr>
+<tr><th id="166">166</th><td>        <b>if</b> (<a class="local col8 ref" href="#18tls" title='tls' data-ref="18tls">tls</a>-&gt;<a class="ref fn" href="../tools/qlist.h.html#_ZNK5QList4sizeEv" title='QList::size' data-ref="_ZNK5QList4sizeEv">size</a>() &gt; <a class="local col1 ref" href="#21i" title='i' data-ref="21i">i</a>) {</td></tr>
+<tr><th id="167">167</th><td>            <i>//re reset the tls in case it has been recreated by its own destructor.</i></td></tr>
+<tr><th id="168">168</th><td>            (*<a class="local col8 ref" href="#18tls" title='tls' data-ref="18tls">tls</a>)<a class="ref fn" href="../tools/qlist.h.html#_ZN5QListixEx" title='QList::operator[]' data-ref="_ZN5QListixEx">[<a class="local col1 ref" href="#21i" title='i' data-ref="21i">i</a>]</a> = <b>nullptr</b>;</td></tr>
+<tr><th id="169">169</th><td>        }</td></tr>
+<tr><th id="170">170</th><td>    }</td></tr>
+<tr><th id="171">171</th><td>    <a class="local col8 ref" href="#18tls" title='tls' data-ref="18tls">tls</a>-&gt;<a class="ref fn" href="../tools/qlist.h.html#_ZN5QList5clearEv" title='QList::clear' data-ref="_ZN5QList5clearEv">clear</a>();</td></tr>
+<tr><th id="172">172</th><td>}</td></tr>
+<tr><th id="173">173</th><td></td></tr>
+<tr><th id="174">174</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="175">175</th><td><i class="doc">    <span class="command">\class</span> <span class="verb" data-ref="QThreadStorage">QThreadStorage</span></i></td></tr>
+<tr><th id="176">176</th><td><i class="doc">   <span class="command"> \inmodule</span> QtCore</i></td></tr>
+<tr><th id="177">177</th><td><i class="doc">    <span class="command">\brief</span> The QThreadStorage class provides per-thread data storage.</i></td></tr>
+<tr><th id="178">178</th><td><i class="doc"></i></td></tr>
+<tr><th id="179">179</th><td><i class="doc">   <span class="command"> \threadsafe</span></i></td></tr>
+<tr><th id="180">180</th><td><i class="doc"></i></td></tr>
+<tr><th id="181">181</th><td><i class="doc">    <span class="command">\ingroup</span> <span class="verb">thread</span></i></td></tr>
+<tr><th id="182">182</th><td><i class="doc"></i></td></tr>
+<tr><th id="183">183</th><td><i class="doc">    QThreadStorage is a template class that provides per-thread data</i></td></tr>
+<tr><th id="184">184</th><td><i class="doc">    storage.</i></td></tr>
+<tr><th id="185">185</th><td><i class="doc"></i></td></tr>
+<tr><th id="186">186</th><td><i class="doc">    The setLocalData() function stores a single thread-specific value</i></td></tr>
+<tr><th id="187">187</th><td><i class="doc">    for the calling thread. The data can be accessed later using</i></td></tr>
+<tr><th id="188">188</th><td><i class="doc">    localData().</i></td></tr>
+<tr><th id="189">189</th><td><i class="doc"></i></td></tr>
+<tr><th id="190">190</th><td><i class="doc">    The hasLocalData() function allows the programmer to determine if</i></td></tr>
+<tr><th id="191">191</th><td><i class="doc">    data has previously been set using the setLocalData() function.</i></td></tr>
+<tr><th id="192">192</th><td><i class="doc">    This is also useful for lazy initialization.</i></td></tr>
+<tr><th id="193">193</th><td><i class="doc"></i></td></tr>
+<tr><th id="194">194</th><td><i class="doc">    If T is a pointer type, QThreadStorage takes ownership of the data</i></td></tr>
+<tr><th id="195">195</th><td><i class="doc">    (which must be created on the heap with<span class="command"> \c</span> <span class="arg">new)</span> and deletes it when</i></td></tr>
+<tr><th id="196">196</th><td><i class="doc">    the thread exits, either normally or via termination.</i></td></tr>
+<tr><th id="197">197</th><td><i class="doc"></i></td></tr>
+<tr><th id="198">198</th><td><i class="doc">    For example, the following code uses QThreadStorage to store a</i></td></tr>
+<tr><th id="199">199</th><td><i class="doc">    single cache for each thread that calls the cacheObject() and</i></td></tr>
+<tr><th id="200">200</th><td><i class="doc">    removeFromCache() functions. The cache is automatically</i></td></tr>
+<tr><th id="201">201</th><td><i class="doc">    deleted when the calling thread exits.</i></td></tr>
+<tr><th id="202">202</th><td><i class="doc"></i></td></tr>
+<tr><th id="203">203</th><td><i class="doc">    <span class="command">\snippet</span> <span class="verb">threads/threads.cpp 7</span></i></td></tr>
+<tr><th id="204">204</th><td><i class="doc">    <span class="command">\snippet</span> <span class="verb">threads/threads.cpp 8</span></i></td></tr>
+<tr><th id="205">205</th><td><i class="doc">    <span class="command">\snippet</span> <span class="verb">threads/threads.cpp 9</span></i></td></tr>
+<tr><th id="206">206</th><td><i class="doc"></i></td></tr>
+<tr><th id="207">207</th><td><i class="doc">    <span class="command">\section</span>1 <span class="verb">Caveats</span></i></td></tr>
+<tr><th id="208">208</th><td><i class="doc"></i></td></tr>
+<tr><th id="209">209</th><td><i class="doc">   <span class="command"> \list</span></i></td></tr>
+<tr><th id="210">210</th><td><i class="doc"></i></td></tr>
+<tr><th id="211">211</th><td><i class="doc">    <span class="command">\li</span> The QThreadStorage destructor does not delete per-thread data.</i></td></tr>
+<tr><th id="212">212</th><td><i class="doc">    QThreadStorage only deletes per-thread data when the thread exits</i></td></tr>
+<tr><th id="213">213</th><td><i class="doc">    or when setLocalData() is called multiple times.</i></td></tr>
+<tr><th id="214">214</th><td><i class="doc"></i></td></tr>
+<tr><th id="215">215</th><td><i class="doc">    <span class="command">\li</span> QThreadStorage can be used to store data for the<span class="command"> \c</span> <span class="arg">main()</span></i></td></tr>
+<tr><th id="216">216</th><td><i class="doc">    thread. QThreadStorage deletes all data set for the<span class="command"> \c</span> <span class="arg">main()</span></i></td></tr>
+<tr><th id="217">217</th><td><i class="doc">    thread when QApplication is destroyed, regardless of whether or</i></td></tr>
+<tr><th id="218">218</th><td><i class="doc">    not the<span class="command"> \c</span> <span class="arg">main()</span> thread has actually finished.</i></td></tr>
+<tr><th id="219">219</th><td><i class="doc"></i></td></tr>
+<tr><th id="220">220</th><td><i class="doc">   <span class="command"> \endlist</span></i></td></tr>
+<tr><th id="221">221</th><td><i class="doc"></i></td></tr>
+<tr><th id="222">222</th><td><i class="doc">    <span class="command">\sa</span> QThread</i></td></tr>
+<tr><th id="223">223</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="224">224</th><td></td></tr>
+<tr><th id="225">225</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="226">226</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">template &lt;class T&gt; QThreadStorage&lt;T&gt;::QThreadStorage()</span></i></td></tr>
+<tr><th id="227">227</th><td><i class="doc"></i></td></tr>
+<tr><th id="228">228</th><td><i class="doc">    Constructs a new per-thread data storage object.</i></td></tr>
+<tr><th id="229">229</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="230">230</th><td></td></tr>
+<tr><th id="231">231</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="232">232</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">template &lt;class T&gt; QThreadStorage&lt;T&gt;::~QThreadStorage()</span></i></td></tr>
+<tr><th id="233">233</th><td><i class="doc"></i></td></tr>
+<tr><th id="234">234</th><td><i class="doc">    Destroys the per-thread data storage object.</i></td></tr>
+<tr><th id="235">235</th><td><i class="doc"></i></td></tr>
+<tr><th id="236">236</th><td><i class="doc">    Note: The per-thread data stored is not deleted. Any data left</i></td></tr>
+<tr><th id="237">237</th><td><i class="doc">    in QThreadStorage is leaked. Make sure that all threads using</i></td></tr>
+<tr><th id="238">238</th><td><i class="doc">    QThreadStorage have exited before deleting the QThreadStorage.</i></td></tr>
+<tr><th id="239">239</th><td><i class="doc"></i></td></tr>
+<tr><th id="240">240</th><td><i class="doc">    <span class="command">\sa</span> hasLocalData()</i></td></tr>
+<tr><th id="241">241</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="242">242</th><td></td></tr>
+<tr><th id="243">243</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="244">244</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">template &lt;class T&gt; bool QThreadStorage&lt;T&gt;::hasLocalData() const</span></i></td></tr>
+<tr><th id="245">245</th><td><i class="doc"></i></td></tr>
+<tr><th id="246">246</th><td><i class="doc">    If T is a pointer type, returns<span class="command"> \c</span> <span class="arg">true</span> if the calling thread has</i></td></tr>
+<tr><th id="247">247</th><td><i class="doc">    non-zero data available.</i></td></tr>
+<tr><th id="248">248</th><td><i class="doc"></i></td></tr>
+<tr><th id="249">249</th><td><i class="doc">    If T is a value type, returns whether the data has already been</i></td></tr>
+<tr><th id="250">250</th><td><i class="doc">    constructed by calling setLocalData or localData.</i></td></tr>
+<tr><th id="251">251</th><td><i class="doc"></i></td></tr>
+<tr><th id="252">252</th><td><i class="doc">    <span class="command">\sa</span> localData()</i></td></tr>
+<tr><th id="253">253</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="254">254</th><td></td></tr>
+<tr><th id="255">255</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="256">256</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">template &lt;class T&gt; T &amp;QThreadStorage&lt;T&gt;::localData()</span></i></td></tr>
+<tr><th id="257">257</th><td><i class="doc"></i></td></tr>
+<tr><th id="258">258</th><td><i class="doc">    Returns a reference to the data that was set by the calling</i></td></tr>
+<tr><th id="259">259</th><td><i class="doc">    thread.</i></td></tr>
+<tr><th id="260">260</th><td><i class="doc"></i></td></tr>
+<tr><th id="261">261</th><td><i class="doc">    If no data has been set, this will create a default constructed</i></td></tr>
+<tr><th id="262">262</th><td><i class="doc">    instance of type T.</i></td></tr>
+<tr><th id="263">263</th><td><i class="doc"></i></td></tr>
+<tr><th id="264">264</th><td><i class="doc">    <span class="command">\sa</span> hasLocalData()</i></td></tr>
+<tr><th id="265">265</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="266">266</th><td></td></tr>
+<tr><th id="267">267</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="268">268</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">template &lt;class T&gt; const T QThreadStorage&lt;T&gt;::localData() const</span></i></td></tr>
+<tr><th id="269">269</th><td><i class="doc">    <span class="command">\overload</span></i></td></tr>
+<tr><th id="270">270</th><td><i class="doc"></i></td></tr>
+<tr><th id="271">271</th><td><i class="doc">    Returns a copy of the data that was set by the calling thread.</i></td></tr>
+<tr><th id="272">272</th><td><i class="doc"></i></td></tr>
+<tr><th id="273">273</th><td><i class="doc">    <span class="command">\sa</span> hasLocalData()</i></td></tr>
+<tr><th id="274">274</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="275">275</th><td></td></tr>
+<tr><th id="276">276</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="277">277</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">template &lt;class T&gt; void QThreadStorage&lt;T&gt;::setLocalData(T data)</span></i></td></tr>
+<tr><th id="278">278</th><td><i class="doc"></i></td></tr>
+<tr><th id="279">279</th><td><i class="doc">    Sets the local data for the calling thread to<span class="command"> \a</span> <span class="arg">data.</span> It can be</i></td></tr>
+<tr><th id="280">280</th><td><i class="doc">    accessed later using the localData() functions.</i></td></tr>
+<tr><th id="281">281</th><td><i class="doc"></i></td></tr>
+<tr><th id="282">282</th><td><i class="doc">    If T is a pointer type, QThreadStorage takes ownership of the data</i></td></tr>
+<tr><th id="283">283</th><td><i class="doc">    and deletes it automatically either when the thread exits (either</i></td></tr>
+<tr><th id="284">284</th><td><i class="doc">    normally or via termination) or when setLocalData() is called again.</i></td></tr>
+<tr><th id="285">285</th><td><i class="doc"></i></td></tr>
+<tr><th id="286">286</th><td><i class="doc">    <span class="command">\sa</span> localData(), hasLocalData()</i></td></tr>
+<tr><th id="287">287</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="288">288</th><td></td></tr>
+<tr><th id="289">289</th><td><a class="macro" href="../global/qtconfigmacros.h.html#104" title="" data-ref="_M/QT_END_NAMESPACE">QT_END_NAMESPACE</a></td></tr>
+<tr><th id="290">290</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2024-Jun-13</em> from project qtbase-6.5.0 revision <em>6.5.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

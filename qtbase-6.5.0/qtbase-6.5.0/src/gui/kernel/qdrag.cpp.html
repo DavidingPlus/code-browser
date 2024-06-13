@@ -1,0 +1,378 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>qdrag.cpp source code [qtbase-6.5.0/src/gui/kernel/qdrag.cpp] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'qtbase-6.5.0/src/gui/kernel/qdrag.cpp'; var root_path = '../../../..'; var data_path = '../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>qtbase-6.5.0</a>/<a href='../..'>src</a>/<a href='..'>gui</a>/<a href='./'>kernel</a>/<a href='qdrag.cpp.html'>qdrag.cpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>// Copyright (C) 2016 The Qt Company Ltd.</i></td></tr>
+<tr><th id="2">2</th><td><i>// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only</i></td></tr>
+<tr><th id="3">3</th><td></td></tr>
+<tr><th id="4">4</th><td><u>#include <a href="../../../build/include/QtGui/qdrag.h.html">&lt;qdrag.h&gt;</a></u></td></tr>
+<tr><th id="5">5</th><td><u>#include <a href="../../../build/include/QtGui/6.5.0/QtGui/private/qguiapplication_p.h.html">"private/qguiapplication_p.h"</a></u></td></tr>
+<tr><th id="6">6</th><td><u>#include <a href="../../../build/include/QtGui/6.5.0/QtGui/qpa/qplatformintegration.h.html">"qpa/qplatformintegration.h"</a></u></td></tr>
+<tr><th id="7">7</th><td><u>#include <a href="../../../build/include/QtGui/6.5.0/QtGui/qpa/qplatformdrag.h.html">"qpa/qplatformdrag.h"</a></u></td></tr>
+<tr><th id="8">8</th><td><u>#include <a href="../../../build/include/QtGui/qpixmap.h.html">&lt;qpixmap.h&gt;</a></u></td></tr>
+<tr><th id="9">9</th><td><u>#include <a href="../../../build/include/QtCore/qpoint.h.html">&lt;qpoint.h&gt;</a></u></td></tr>
+<tr><th id="10">10</th><td><u>#include <a href="qdnd_p.h.html">"qdnd_p.h"</a></u></td></tr>
+<tr><th id="11">11</th><td></td></tr>
+<tr><th id="12">12</th><td><a class="macro" href="../../corelib/global/qtconfigmacros.h.html#103" title="" data-ref="_M/QT_BEGIN_NAMESPACE">QT_BEGIN_NAMESPACE</a></td></tr>
+<tr><th id="13">13</th><td></td></tr>
+<tr><th id="14">14</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="15">15</th><td><i class="doc">    <span class="command">\class</span> <span class="verb" data-ref="QDrag">QDrag</span></i></td></tr>
+<tr><th id="16">16</th><td><i class="doc">   <span class="command"> \inmodule</span> QtGui</i></td></tr>
+<tr><th id="17">17</th><td><i class="doc">    <span class="command">\ingroup</span> <span class="verb">draganddrop</span></i></td></tr>
+<tr><th id="18">18</th><td><i class="doc">    <span class="command">\brief</span> The QDrag class provides support for MIME-based drag and drop data</i></td></tr>
+<tr><th id="19">19</th><td><i class="doc">    transfer.</i></td></tr>
+<tr><th id="20">20</th><td><i class="doc"></i></td></tr>
+<tr><th id="21">21</th><td><i class="doc">    Drag and drop is an intuitive way for users to copy or move data around in an</i></td></tr>
+<tr><th id="22">22</th><td><i class="doc">    application, and is used in many desktop environments as a mechanism for copying</i></td></tr>
+<tr><th id="23">23</th><td><i class="doc">    data between applications. Drag and drop support in Qt is centered around the</i></td></tr>
+<tr><th id="24">24</th><td><i class="doc">    QDrag class that handles most of the details of a drag and drop operation.</i></td></tr>
+<tr><th id="25">25</th><td><i class="doc"></i></td></tr>
+<tr><th id="26">26</th><td><i class="doc">    The data to be transferred by the drag and drop operation is contained in a</i></td></tr>
+<tr><th id="27">27</th><td><i class="doc">    QMimeData object. This is specified with the setMimeData() function in the</i></td></tr>
+<tr><th id="28">28</th><td><i class="doc">    following way:</i></td></tr>
+<tr><th id="29">29</th><td><i class="doc"></i></td></tr>
+<tr><th id="30">30</th><td><i class="doc">    <span class="command">\snippet</span> <span class="verb">dragging/mainwindow.cpp 1</span></i></td></tr>
+<tr><th id="31">31</th><td><i class="doc"></i></td></tr>
+<tr><th id="32">32</th><td><i class="doc">    Note that setMimeData() assigns ownership of the QMimeData object to the</i></td></tr>
+<tr><th id="33">33</th><td><i class="doc">    QDrag object. The QDrag must be constructed on the heap with a parent QObject</i></td></tr>
+<tr><th id="34">34</th><td><i class="doc">    to ensure that Qt can clean up after the drag and drop operation has been</i></td></tr>
+<tr><th id="35">35</th><td><i class="doc">    completed.</i></td></tr>
+<tr><th id="36">36</th><td><i class="doc"></i></td></tr>
+<tr><th id="37">37</th><td><i class="doc">    A pixmap can be used to represent the data while the drag is in</i></td></tr>
+<tr><th id="38">38</th><td><i class="doc">    progress, and will move with the cursor to the drop target. This</i></td></tr>
+<tr><th id="39">39</th><td><i class="doc">    pixmap typically shows an icon that represents the MIME type of</i></td></tr>
+<tr><th id="40">40</th><td><i class="doc">    the data being transferred, but any pixmap can be set with</i></td></tr>
+<tr><th id="41">41</th><td><i class="doc">    setPixmap(). The cursor's hot spot can be given a position</i></td></tr>
+<tr><th id="42">42</th><td><i class="doc">    relative to the top-left corner of the pixmap with the</i></td></tr>
+<tr><th id="43">43</th><td><i class="doc">    setHotSpot() function. The following code positions the pixmap so</i></td></tr>
+<tr><th id="44">44</th><td><i class="doc">    that the cursor's hot spot points to the center of its bottom</i></td></tr>
+<tr><th id="45">45</th><td><i class="doc">    edge:</i></td></tr>
+<tr><th id="46">46</th><td><i class="doc"></i></td></tr>
+<tr><th id="47">47</th><td><i class="doc">    <span class="command">\snippet</span> <span class="verb">separations/finalwidget.cpp 2</span></i></td></tr>
+<tr><th id="48">48</th><td><i class="doc"></i></td></tr>
+<tr><th id="49">49</th><td><i class="doc">    <span class="command">\note</span> On X11, the pixmap may not be able to keep up with the mouse</i></td></tr>
+<tr><th id="50">50</th><td><i class="doc">    movements if the hot spot causes the pixmap to be displayed</i></td></tr>
+<tr><th id="51">51</th><td><i class="doc">    directly under the cursor.</i></td></tr>
+<tr><th id="52">52</th><td><i class="doc"></i></td></tr>
+<tr><th id="53">53</th><td><i class="doc">    The source and target widgets can be found with source() and target().</i></td></tr>
+<tr><th id="54">54</th><td><i class="doc">    These functions are often used to determine whether drag and drop operations</i></td></tr>
+<tr><th id="55">55</th><td><i class="doc">    started and finished at the same widget, so that special behavior can be</i></td></tr>
+<tr><th id="56">56</th><td><i class="doc">    implemented.</i></td></tr>
+<tr><th id="57">57</th><td><i class="doc"></i></td></tr>
+<tr><th id="58">58</th><td><i class="doc">    QDrag only deals with the drag and drop operation itself. It is up to the</i></td></tr>
+<tr><th id="59">59</th><td><i class="doc">    developer to decide when a drag operation begins, and how a QDrag object should</i></td></tr>
+<tr><th id="60">60</th><td><i class="doc">    be constructed and used. For a given widget, it is often necessary to</i></td></tr>
+<tr><th id="61">61</th><td><i class="doc">    reimplement<span class="command"> \l</span>{QWidget::mousePressEvent()}{mousePressEvent()} to determine</i></td></tr>
+<tr><th id="62">62</th><td><i class="doc">    whether the user has pressed a mouse button, and reimplement</i></td></tr>
+<tr><th id="63">63</th><td><i class="doc">   <span class="command"> \l</span>{QWidget::mouseMoveEvent()}{mouseMoveEvent()} to check whether a QDrag is</i></td></tr>
+<tr><th id="64">64</th><td><i class="doc">    required.</i></td></tr>
+<tr><th id="65">65</th><td><i class="doc"></i></td></tr>
+<tr><th id="66">66</th><td><i class="doc">    <span class="command">\sa</span> {Drag and Drop}, QClipboard, QMimeData, {Draggable Icons Example},</i></td></tr>
+<tr><th id="67">67</th><td><i class="doc">        {Draggable Text Example}, {Drop Site Example}, {Fridge Magnets Example}</i></td></tr>
+<tr><th id="68">68</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="69">69</th><td></td></tr>
+<tr><th id="70">70</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="71">71</th><td><i class="doc">    Constructs a new drag object for the widget specified by<span class="command"> \a</span> <span class="arg">dragSource.</span></i></td></tr>
+<tr><th id="72">72</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="73">73</th><td><a class="type" href="qdrag.h.html#QDrag" title='QDrag' data-ref="QDrag">QDrag</a>::<dfn class="decl def fn" id="_ZN5QDragC1EP7QObject" title='QDrag::QDrag' data-ref="_ZN5QDragC1EP7QObject">QDrag</dfn>(<a class="type" href="../../corelib/kernel/qobject.h.html#QObject" title='QObject' data-ref="QObject">QObject</a> *<dfn class="local col1 decl" id="1dragSource" title='dragSource' data-type='QObject *' data-ref="1dragSource">dragSource</dfn>)</td></tr>
+<tr><th id="74">74</th><td>    : <a class="type" href="../../corelib/kernel/qobject.h.html#QObject" title='QObject' data-ref="QObject">QObject</a><a class="ref fn" href="../../corelib/kernel/qobject.h.html#_ZN7QObjectC1ER14QObjectPrivatePS_" title='QObject::QObject' data-ref="_ZN7QObjectC1ER14QObjectPrivatePS_">(</a>*<b>new</b> <a class="ref fn fake" href="qdnd_p.h.html#_ZN12QDragPrivateC1Ev" title='QDragPrivate::QDragPrivate' data-ref="_ZN12QDragPrivateC1Ev"></a><a class="type" href="qdnd_p.h.html#QDragPrivate" title='QDragPrivate' data-ref="QDragPrivate">QDragPrivate</a>, <a class="local col1 ref" href="#1dragSource" title='dragSource' data-ref="1dragSource">dragSource</a>)</td></tr>
+<tr><th id="75">75</th><td>{</td></tr>
+<tr><th id="76">76</th><td>    <a class="macro" href="../../corelib/global/qtclasshelpermacros.h.html#109" title="QDragPrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(QDrag);</td></tr>
+<tr><th id="77">77</th><td>    <a class="local col2 ref" href="#76" title='d' data-ref="2d">d</a>-&gt;<a class="ref field" href="qdnd_p.h.html#QDragPrivate::source" title='QDragPrivate::source' data-ref="QDragPrivate::source">source</a> = <a class="local col1 ref" href="#1dragSource" title='dragSource' data-ref="1dragSource">dragSource</a>;</td></tr>
+<tr><th id="78">78</th><td>    <a class="local col2 ref" href="#76" title='d' data-ref="2d">d</a>-&gt;<a class="ref field" href="qdnd_p.h.html#QDragPrivate::target" title='QDragPrivate::target' data-ref="QDragPrivate::target">target</a> = <b>nullptr</b>;</td></tr>
+<tr><th id="79">79</th><td>    <a class="local col2 ref" href="#76" title='d' data-ref="2d">d</a>-&gt;<a class="ref field" href="qdnd_p.h.html#QDragPrivate::data" title='QDragPrivate::data' data-ref="QDragPrivate::data">data</a> = <b>nullptr</b>;</td></tr>
+<tr><th id="80">80</th><td>    <a class="local col2 ref" href="#76" title='d' data-ref="2d">d</a>-&gt;<a class="ref field" href="qdnd_p.h.html#QDragPrivate::hotspot" title='QDragPrivate::hotspot' data-ref="QDragPrivate::hotspot">hotspot</a> <a class="ref fn" href="../../corelib/tools/qpoint.h.html#17" title='QPoint::operator=' data-ref="_ZN6QPointaSEOS_">=</a> <a class="type" href="../../corelib/tools/qpoint.h.html#QPoint" title='QPoint' data-ref="QPoint">QPoint</a><a class="ref fn" href="../../corelib/tools/qpoint.h.html#_ZN6QPointC1Eii" title='QPoint::QPoint' data-ref="_ZN6QPointC1Eii">(</a>-<var>10</var>, -<var>10</var>);</td></tr>
+<tr><th id="81">81</th><td>    <a class="local col2 ref" href="#76" title='d' data-ref="2d">d</a>-&gt;<a class="ref field" href="qdnd_p.h.html#QDragPrivate::executed_action" title='QDragPrivate::executed_action' data-ref="QDragPrivate::executed_action">executed_action</a> = <span class="namespace">Qt::</span><a class="enum" href="../../corelib/global/qnamespace.h.html#Qt::IgnoreAction" title='Qt::IgnoreAction' data-ref="Qt::IgnoreAction">IgnoreAction</a>;</td></tr>
+<tr><th id="82">82</th><td>    <a class="local col2 ref" href="#76" title='d' data-ref="2d">d</a>-&gt;<a class="ref field" href="qdnd_p.h.html#QDragPrivate::supported_actions" title='QDragPrivate::supported_actions' data-ref="QDragPrivate::supported_actions">supported_actions</a> <a class="ref fn" href="../../corelib/global/qflags.h.html#52" title='QFlags&lt;Qt::DropAction&gt;::operator=' data-ref="_ZN6QFlagsIN2Qt10DropActionEEaSEOS2_">=</a> <a class="ref fn fake" href="../../corelib/global/qflags.h.html#_ZN6QFlagsC1ET_" title='QFlags::QFlags&lt;T&gt;' data-ref="_ZN6QFlagsC1ET_"></a><span class="namespace">Qt::</span><a class="enum" href="../../corelib/global/qnamespace.h.html#Qt::IgnoreAction" title='Qt::IgnoreAction' data-ref="Qt::IgnoreAction">IgnoreAction</a>;</td></tr>
+<tr><th id="83">83</th><td>    <a class="local col2 ref" href="#76" title='d' data-ref="2d">d</a>-&gt;<a class="ref field" href="qdnd_p.h.html#QDragPrivate::default_action" title='QDragPrivate::default_action' data-ref="QDragPrivate::default_action">default_action</a> = <span class="namespace">Qt::</span><a class="enum" href="../../corelib/global/qnamespace.h.html#Qt::IgnoreAction" title='Qt::IgnoreAction' data-ref="Qt::IgnoreAction">IgnoreAction</a>;</td></tr>
+<tr><th id="84">84</th><td>}</td></tr>
+<tr><th id="85">85</th><td></td></tr>
+<tr><th id="86">86</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="87">87</th><td><i class="doc">    Destroys the drag object.</i></td></tr>
+<tr><th id="88">88</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="89">89</th><td><a class="type" href="qdrag.h.html#QDrag" title='QDrag' data-ref="QDrag">QDrag</a>::<dfn class="virtual decl def fn" id="_ZN5QDragD1Ev" title='QDrag::~QDrag' data-ref="_ZN5QDragD1Ev">~QDrag</dfn>()</td></tr>
+<tr><th id="90">90</th><td>{</td></tr>
+<tr><th id="91">91</th><td>    <a class="macro" href="../../corelib/global/qtclasshelpermacros.h.html#109" title="QDragPrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(QDrag);</td></tr>
+<tr><th id="92">92</th><td>    <b>delete</b> <a class="local col3 ref" href="#91" title='d' data-ref="3d">d</a>-&gt;<a class="ref field" href="qdnd_p.h.html#QDragPrivate::data" title='QDragPrivate::data' data-ref="QDragPrivate::data">data</a>;</td></tr>
+<tr><th id="93">93</th><td>}</td></tr>
+<tr><th id="94">94</th><td></td></tr>
+<tr><th id="95">95</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="96">96</th><td><i class="doc">    Sets the data to be sent to the given MIME<span class="command"> \a</span> <span class="arg">data.</span> Ownership of the data is</i></td></tr>
+<tr><th id="97">97</th><td><i class="doc">    transferred to the QDrag object.</i></td></tr>
+<tr><th id="98">98</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="99">99</th><td><em>void</em> <a class="type" href="qdrag.h.html#QDrag" title='QDrag' data-ref="QDrag">QDrag</a>::<dfn class="decl def fn" id="_ZN5QDrag11setMimeDataEP9QMimeData" title='QDrag::setMimeData' data-ref="_ZN5QDrag11setMimeDataEP9QMimeData">setMimeData</dfn>(<a class="type" href="../../corelib/kernel/qmimedata.h.html#QMimeData" title='QMimeData' data-ref="QMimeData">QMimeData</a> *<dfn class="local col4 decl" id="4data" title='data' data-type='QMimeData *' data-ref="4data">data</dfn>)</td></tr>
+<tr><th id="100">100</th><td>{</td></tr>
+<tr><th id="101">101</th><td>    <a class="macro" href="../../corelib/global/qtclasshelpermacros.h.html#109" title="QDragPrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(QDrag);</td></tr>
+<tr><th id="102">102</th><td>    <b>if</b> (<a class="local col5 ref" href="#101" title='d' data-ref="5d">d</a>-&gt;<a class="ref field" href="qdnd_p.h.html#QDragPrivate::data" title='QDragPrivate::data' data-ref="QDragPrivate::data">data</a> == <a class="local col4 ref" href="#4data" title='data' data-ref="4data">data</a>)</td></tr>
+<tr><th id="103">103</th><td>        <b>return</b>;</td></tr>
+<tr><th id="104">104</th><td>    <b>if</b> (<a class="local col5 ref" href="#101" title='d' data-ref="5d">d</a>-&gt;<a class="ref field" href="qdnd_p.h.html#QDragPrivate::data" title='QDragPrivate::data' data-ref="QDragPrivate::data">data</a> != <b>nullptr</b>)</td></tr>
+<tr><th id="105">105</th><td>        <b>delete</b> <a class="local col5 ref" href="#101" title='d' data-ref="5d">d</a>-&gt;<a class="ref field" href="qdnd_p.h.html#QDragPrivate::data" title='QDragPrivate::data' data-ref="QDragPrivate::data">data</a>;</td></tr>
+<tr><th id="106">106</th><td>    <a class="local col5 ref" href="#101" title='d' data-ref="5d">d</a>-&gt;<a class="ref field" href="qdnd_p.h.html#QDragPrivate::data" title='QDragPrivate::data' data-ref="QDragPrivate::data">data</a> = <a class="local col4 ref" href="#4data" title='data' data-ref="4data">data</a>;</td></tr>
+<tr><th id="107">107</th><td>}</td></tr>
+<tr><th id="108">108</th><td></td></tr>
+<tr><th id="109">109</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="110">110</th><td><i class="doc">    Returns the MIME data that is encapsulated by the drag object.</i></td></tr>
+<tr><th id="111">111</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="112">112</th><td><a class="type" href="../../corelib/kernel/qmimedata.h.html#QMimeData" title='QMimeData' data-ref="QMimeData">QMimeData</a> *<a class="type" href="qdrag.h.html#QDrag" title='QDrag' data-ref="QDrag">QDrag</a>::<dfn class="decl def fn" id="_ZNK5QDrag8mimeDataEv" title='QDrag::mimeData' data-ref="_ZNK5QDrag8mimeDataEv">mimeData</dfn>() <em>const</em></td></tr>
+<tr><th id="113">113</th><td>{</td></tr>
+<tr><th id="114">114</th><td>    <a class="macro" href="../../corelib/global/qtclasshelpermacros.h.html#109" title="const QDragPrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(<em>const</em> QDrag);</td></tr>
+<tr><th id="115">115</th><td>    <b>return</b> <a class="local col6 ref" href="#114" title='d' data-ref="6d">d</a>-&gt;<a class="ref field" href="qdnd_p.h.html#QDragPrivate::data" title='QDragPrivate::data' data-ref="QDragPrivate::data">data</a>;</td></tr>
+<tr><th id="116">116</th><td>}</td></tr>
+<tr><th id="117">117</th><td></td></tr>
+<tr><th id="118">118</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="119">119</th><td><i class="doc">    Sets<span class="command"> \a</span> <span class="arg">pixmap</span> as the pixmap used to represent the data in a drag</i></td></tr>
+<tr><th id="120">120</th><td><i class="doc">    and drop operation. You can only set a pixmap before the drag is</i></td></tr>
+<tr><th id="121">121</th><td><i class="doc">    started.</i></td></tr>
+<tr><th id="122">122</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="123">123</th><td><em>void</em> <a class="type" href="qdrag.h.html#QDrag" title='QDrag' data-ref="QDrag">QDrag</a>::<dfn class="decl def fn" id="_ZN5QDrag9setPixmapERK7QPixmap" title='QDrag::setPixmap' data-ref="_ZN5QDrag9setPixmapERK7QPixmap">setPixmap</dfn>(<em>const</em> <a class="type" href="../image/qpixmap.h.html#QPixmap" title='QPixmap' data-ref="QPixmap">QPixmap</a> &amp;<dfn class="local col7 decl" id="7pixmap" title='pixmap' data-type='const QPixmap &amp;' data-ref="7pixmap">pixmap</dfn>)</td></tr>
+<tr><th id="124">124</th><td>{</td></tr>
+<tr><th id="125">125</th><td>    <a class="macro" href="../../corelib/global/qtclasshelpermacros.h.html#109" title="QDragPrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(QDrag);</td></tr>
+<tr><th id="126">126</th><td>    <a class="local col8 ref" href="#125" title='d' data-ref="8d">d</a>-&gt;<a class="ref field" href="qdnd_p.h.html#QDragPrivate::pixmap" title='QDragPrivate::pixmap' data-ref="QDragPrivate::pixmap">pixmap</a> <a class="ref fn" href="../image/qpixmap.h.html#_ZN7QPixmapaSERKS_" title='QPixmap::operator=' data-ref="_ZN7QPixmapaSERKS_">=</a> <a class="local col7 ref" href="#7pixmap" title='pixmap' data-ref="7pixmap">pixmap</a>;</td></tr>
+<tr><th id="127">127</th><td>}</td></tr>
+<tr><th id="128">128</th><td></td></tr>
+<tr><th id="129">129</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="130">130</th><td><i class="doc">    Returns the pixmap used to represent the data in a drag and drop operation.</i></td></tr>
+<tr><th id="131">131</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="132">132</th><td><a class="type" href="../image/qpixmap.h.html#QPixmap" title='QPixmap' data-ref="QPixmap">QPixmap</a> <a class="type" href="qdrag.h.html#QDrag" title='QDrag' data-ref="QDrag">QDrag</a>::<dfn class="decl def fn" id="_ZNK5QDrag6pixmapEv" title='QDrag::pixmap' data-ref="_ZNK5QDrag6pixmapEv">pixmap</dfn>() <em>const</em></td></tr>
+<tr><th id="133">133</th><td>{</td></tr>
+<tr><th id="134">134</th><td>    <a class="macro" href="../../corelib/global/qtclasshelpermacros.h.html#109" title="const QDragPrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(<em>const</em> QDrag);</td></tr>
+<tr><th id="135">135</th><td>    <b>return</b> <a class="ref fn fake" href="../image/qpixmap.h.html#_ZN7QPixmapC1ERKS_" title='QPixmap::QPixmap' data-ref="_ZN7QPixmapC1ERKS_"></a><a class="local col9 ref" href="#134" title='d' data-ref="9d">d</a>-&gt;<a class="ref field" href="qdnd_p.h.html#QDragPrivate::pixmap" title='QDragPrivate::pixmap' data-ref="QDragPrivate::pixmap">pixmap</a>;</td></tr>
+<tr><th id="136">136</th><td>}</td></tr>
+<tr><th id="137">137</th><td></td></tr>
+<tr><th id="138">138</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="139">139</th><td><i class="doc">    Sets the position of the hot spot relative to the top-left corner of the</i></td></tr>
+<tr><th id="140">140</th><td><i class="doc">    pixmap used to the point specified by<span class="command"> \a</span> <span class="arg">hotspot.</span></i></td></tr>
+<tr><th id="141">141</th><td><i class="doc"></i></td></tr>
+<tr><th id="142">142</th><td><i class="doc">   <span class="command"> \b</span><span class="arg">{Note:}</span> on X11, the pixmap may not be able to keep up with the mouse</i></td></tr>
+<tr><th id="143">143</th><td><i class="doc">    movements if the hot spot causes the pixmap to be displayed</i></td></tr>
+<tr><th id="144">144</th><td><i class="doc">    directly under the cursor.</i></td></tr>
+<tr><th id="145">145</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="146">146</th><td><em>void</em> <a class="type" href="qdrag.h.html#QDrag" title='QDrag' data-ref="QDrag">QDrag</a>::<dfn class="decl def fn" id="_ZN5QDrag10setHotSpotERK6QPoint" title='QDrag::setHotSpot' data-ref="_ZN5QDrag10setHotSpotERK6QPoint">setHotSpot</dfn>(<em>const</em> <a class="type" href="../../corelib/tools/qpoint.h.html#QPoint" title='QPoint' data-ref="QPoint">QPoint</a>&amp; <dfn class="local col0 decl" id="10hotspot" title='hotspot' data-type='const QPoint &amp;' data-ref="10hotspot">hotspot</dfn>)</td></tr>
+<tr><th id="147">147</th><td>{</td></tr>
+<tr><th id="148">148</th><td>    <a class="macro" href="../../corelib/global/qtclasshelpermacros.h.html#109" title="QDragPrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(QDrag);</td></tr>
+<tr><th id="149">149</th><td>    <a class="local col1 ref" href="#148" title='d' data-ref="11d">d</a>-&gt;<a class="ref field" href="qdnd_p.h.html#QDragPrivate::hotspot" title='QDragPrivate::hotspot' data-ref="QDragPrivate::hotspot">hotspot</a> <a class="ref fn" href="../../corelib/tools/qpoint.h.html#17" title='QPoint::operator=' data-ref="_ZN6QPointaSERKS_">=</a> <a class="local col0 ref" href="#10hotspot" title='hotspot' data-ref="10hotspot">hotspot</a>;</td></tr>
+<tr><th id="150">150</th><td>}</td></tr>
+<tr><th id="151">151</th><td></td></tr>
+<tr><th id="152">152</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="153">153</th><td><i class="doc">    Returns the position of the hot spot relative to the top-left corner of the</i></td></tr>
+<tr><th id="154">154</th><td><i class="doc">    cursor.</i></td></tr>
+<tr><th id="155">155</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="156">156</th><td><a class="type" href="../../corelib/tools/qpoint.h.html#QPoint" title='QPoint' data-ref="QPoint">QPoint</a> <a class="type" href="qdrag.h.html#QDrag" title='QDrag' data-ref="QDrag">QDrag</a>::<dfn class="decl def fn" id="_ZNK5QDrag7hotSpotEv" title='QDrag::hotSpot' data-ref="_ZNK5QDrag7hotSpotEv">hotSpot</dfn>() <em>const</em></td></tr>
+<tr><th id="157">157</th><td>{</td></tr>
+<tr><th id="158">158</th><td>    <a class="macro" href="../../corelib/global/qtclasshelpermacros.h.html#109" title="const QDragPrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(<em>const</em> QDrag);</td></tr>
+<tr><th id="159">159</th><td>    <b>return</b> <a class="ref fn fake" href="../../corelib/tools/qpoint.h.html#17" title='QPoint::QPoint' data-ref="_ZN6QPointC1ERKS_"></a><a class="local col2 ref" href="#158" title='d' data-ref="12d">d</a>-&gt;<a class="ref field" href="qdnd_p.h.html#QDragPrivate::hotspot" title='QDragPrivate::hotspot' data-ref="QDragPrivate::hotspot">hotspot</a>;</td></tr>
+<tr><th id="160">160</th><td>}</td></tr>
+<tr><th id="161">161</th><td></td></tr>
+<tr><th id="162">162</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="163">163</th><td><i class="doc">    Returns the source of the drag object. This is the widget where the drag</i></td></tr>
+<tr><th id="164">164</th><td><i class="doc">    and drop operation originated.</i></td></tr>
+<tr><th id="165">165</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="166">166</th><td><a class="type" href="../../corelib/kernel/qobject.h.html#QObject" title='QObject' data-ref="QObject">QObject</a> *<a class="type" href="qdrag.h.html#QDrag" title='QDrag' data-ref="QDrag">QDrag</a>::<dfn class="decl def fn" id="_ZNK5QDrag6sourceEv" title='QDrag::source' data-ref="_ZNK5QDrag6sourceEv">source</dfn>() <em>const</em></td></tr>
+<tr><th id="167">167</th><td>{</td></tr>
+<tr><th id="168">168</th><td>    <a class="macro" href="../../corelib/global/qtclasshelpermacros.h.html#109" title="const QDragPrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(<em>const</em> QDrag);</td></tr>
+<tr><th id="169">169</th><td>    <b>return</b> <a class="local col3 ref" href="#168" title='d' data-ref="13d">d</a>-&gt;<a class="ref field" href="qdnd_p.h.html#QDragPrivate::source" title='QDragPrivate::source' data-ref="QDragPrivate::source">source</a>;</td></tr>
+<tr><th id="170">170</th><td>}</td></tr>
+<tr><th id="171">171</th><td></td></tr>
+<tr><th id="172">172</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="173">173</th><td><i class="doc">    Returns the target of the drag and drop operation. This is the widget where</i></td></tr>
+<tr><th id="174">174</th><td><i class="doc">    the drag object was dropped.</i></td></tr>
+<tr><th id="175">175</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="176">176</th><td><a class="type" href="../../corelib/kernel/qobject.h.html#QObject" title='QObject' data-ref="QObject">QObject</a> *<a class="type" href="qdrag.h.html#QDrag" title='QDrag' data-ref="QDrag">QDrag</a>::<dfn class="decl def fn" id="_ZNK5QDrag6targetEv" title='QDrag::target' data-ref="_ZNK5QDrag6targetEv">target</dfn>() <em>const</em></td></tr>
+<tr><th id="177">177</th><td>{</td></tr>
+<tr><th id="178">178</th><td>    <a class="macro" href="../../corelib/global/qtclasshelpermacros.h.html#109" title="const QDragPrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(<em>const</em> QDrag);</td></tr>
+<tr><th id="179">179</th><td>    <b>return</b> <a class="local col4 ref" href="#178" title='d' data-ref="14d">d</a>-&gt;<a class="ref field" href="qdnd_p.h.html#QDragPrivate::target" title='QDragPrivate::target' data-ref="QDragPrivate::target">target</a>;</td></tr>
+<tr><th id="180">180</th><td>}</td></tr>
+<tr><th id="181">181</th><td></td></tr>
+<tr><th id="182">182</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="183">183</th><td><i class="doc">    <span class="command">\since</span> 4.3</i></td></tr>
+<tr><th id="184">184</th><td><i class="doc"></i></td></tr>
+<tr><th id="185">185</th><td><i class="doc">    Starts the drag and drop operation and returns a value indicating the requested</i></td></tr>
+<tr><th id="186">186</th><td><i class="doc">    drop action when it is completed. The drop actions that the user can choose</i></td></tr>
+<tr><th id="187">187</th><td><i class="doc">    from are specified in<span class="command"> \a</span> <span class="arg">supportedActions.</span> The default proposed action will be selected</i></td></tr>
+<tr><th id="188">188</th><td><i class="doc">    among the allowed actions in the following order: Move, Copy and Link.</i></td></tr>
+<tr><th id="189">189</th><td><i class="doc"></i></td></tr>
+<tr><th id="190">190</th><td><i class="doc">   <span class="command"> \b</span><span class="arg">{Note:}</span> On Linux and<span class="command"> \macos</span>, the drag and drop operation</i></td></tr>
+<tr><th id="191">191</th><td><i class="doc">    can take some time, but this function does not block the event</i></td></tr>
+<tr><th id="192">192</th><td><i class="doc">    loop. Other events are still delivered to the application while</i></td></tr>
+<tr><th id="193">193</th><td><i class="doc">    the operation is performed. On Windows, the Qt event loop is</i></td></tr>
+<tr><th id="194">194</th><td><i class="doc">    blocked during the operation.</i></td></tr>
+<tr><th id="195">195</th><td><i class="doc"></i></td></tr>
+<tr><th id="196">196</th><td><i class="doc">    <span class="command">\sa</span> cancel()</i></td></tr>
+<tr><th id="197">197</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="198">198</th><td></td></tr>
+<tr><th id="199">199</th><td><span class="namespace">Qt::</span><a class="type" href="../../corelib/global/qnamespace.h.html#Qt::DropAction" title='Qt::DropAction' data-ref="Qt::DropAction">DropAction</a> <a class="type" href="qdrag.h.html#QDrag" title='QDrag' data-ref="QDrag">QDrag</a>::<dfn class="decl def fn" id="_ZN5QDrag4execE6QFlagsIN2Qt10DropActionEE" title='QDrag::exec' data-ref="_ZN5QDrag4execE6QFlagsIN2Qt10DropActionEE">exec</dfn>(<span class="namespace">Qt::</span><a class="typedef" href="../../corelib/global/qnamespace.h.html#1466" title='Qt::DropActions' data-type='QFlags&lt;Qt::DropAction&gt;' data-ref="Qt::DropActions">DropActions</a> <dfn class="local col5 decl" id="15supportedActions" title='supportedActions' data-type='Qt::DropActions' data-ref="15supportedActions">supportedActions</dfn>)</td></tr>
+<tr><th id="200">200</th><td>{</td></tr>
+<tr><th id="201">201</th><td>    <b>return</b> <a class="member fn" href="#_ZN5QDrag4execE6QFlagsIN2Qt10DropActionEES2_" title='QDrag::exec' data-ref="_ZN5QDrag4execE6QFlagsIN2Qt10DropActionEES2_">exec</a>(<a class="ref fn fake" href="../../corelib/global/qflags.h.html#52" title='QFlags&lt;Qt::DropAction&gt;::QFlags' data-ref="_ZN6QFlagsIN2Qt10DropActionEEC1ERKS2_"></a><a class="local col5 ref" href="#15supportedActions" title='supportedActions' data-ref="15supportedActions">supportedActions</a>, <span class='inlayHint'>defaultAction:&nbsp;</span><span class="namespace">Qt::</span><a class="enum" href="../../corelib/global/qnamespace.h.html#Qt::IgnoreAction" title='Qt::IgnoreAction' data-ref="Qt::IgnoreAction">IgnoreAction</a>);</td></tr>
+<tr><th id="202">202</th><td>}</td></tr>
+<tr><th id="203">203</th><td></td></tr>
+<tr><th id="204">204</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="205">205</th><td><i class="doc">    <span class="command">\since</span> 4.3</i></td></tr>
+<tr><th id="206">206</th><td><i class="doc"></i></td></tr>
+<tr><th id="207">207</th><td><i class="doc">    Starts the drag and drop operation and returns a value indicating the requested</i></td></tr>
+<tr><th id="208">208</th><td><i class="doc">    drop action when it is completed. The drop actions that the user can choose</i></td></tr>
+<tr><th id="209">209</th><td><i class="doc">    from are specified in<span class="command"> \a</span> <span class="arg">supportedActions.</span></i></td></tr>
+<tr><th id="210">210</th><td><i class="doc"></i></td></tr>
+<tr><th id="211">211</th><td><i class="doc">    The<span class="command"> \a</span> <span class="arg">defaultDropAction</span> determines which action will be proposed when the user performs a</i></td></tr>
+<tr><th id="212">212</th><td><i class="doc">    drag without using modifier keys.</i></td></tr>
+<tr><th id="213">213</th><td><i class="doc"></i></td></tr>
+<tr><th id="214">214</th><td><i class="doc">   <span class="command"> \b</span><span class="arg">{Note:}</span> On Linux and<span class="command"> \macos</span>, the drag and drop operation</i></td></tr>
+<tr><th id="215">215</th><td><i class="doc">    can take some time, but this function does not block the event</i></td></tr>
+<tr><th id="216">216</th><td><i class="doc">    loop. Other events are still delivered to the application while</i></td></tr>
+<tr><th id="217">217</th><td><i class="doc">    the operation is performed. On Windows, the Qt event loop is</i></td></tr>
+<tr><th id="218">218</th><td><i class="doc">    blocked during the operation. However, QDrag::exec() on</i></td></tr>
+<tr><th id="219">219</th><td><i class="doc">    Windows causes processEvents() to be called frequently to keep the GUI responsive.</i></td></tr>
+<tr><th id="220">220</th><td><i class="doc">    If any loops or operations are called while a drag operation is active, it will block the drag operation.</i></td></tr>
+<tr><th id="221">221</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="222">222</th><td></td></tr>
+<tr><th id="223">223</th><td><span class="namespace">Qt::</span><a class="type" href="../../corelib/global/qnamespace.h.html#Qt::DropAction" title='Qt::DropAction' data-ref="Qt::DropAction">DropAction</a> <a class="type" href="qdrag.h.html#QDrag" title='QDrag' data-ref="QDrag">QDrag</a>::<dfn class="decl def fn" id="_ZN5QDrag4execE6QFlagsIN2Qt10DropActionEES2_" title='QDrag::exec' data-ref="_ZN5QDrag4execE6QFlagsIN2Qt10DropActionEES2_">exec</dfn>(<span class="namespace">Qt::</span><a class="typedef" href="../../corelib/global/qnamespace.h.html#1466" title='Qt::DropActions' data-type='QFlags&lt;Qt::DropAction&gt;' data-ref="Qt::DropActions">DropActions</a> <dfn class="local col6 decl" id="16supportedActions" title='supportedActions' data-type='Qt::DropActions' data-ref="16supportedActions">supportedActions</dfn>, <span class="namespace">Qt::</span><a class="type" href="../../corelib/global/qnamespace.h.html#Qt::DropAction" title='Qt::DropAction' data-ref="Qt::DropAction">DropAction</a> <dfn class="local col7 decl" id="17defaultDropAction" title='defaultDropAction' data-type='Qt::DropAction' data-ref="17defaultDropAction">defaultDropAction</dfn>)</td></tr>
+<tr><th id="224">224</th><td>{</td></tr>
+<tr><th id="225">225</th><td>    <a class="macro" href="../../corelib/global/qtclasshelpermacros.h.html#109" title="QDragPrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(QDrag);</td></tr>
+<tr><th id="226">226</th><td>    <b>if</b> (!<a class="local col8 ref" href="#225" title='d' data-ref="18d">d</a>-&gt;<a class="ref field" href="qdnd_p.h.html#QDragPrivate::data" title='QDragPrivate::data' data-ref="QDragPrivate::data">data</a>) {</td></tr>
+<tr><th id="227">227</th><td>        <a class="macro" href="../../corelib/global/qlogging.h.html#158" title="QMessageLogger(nullptr, 0, nullptr).warning" data-ref="_M/qWarning">qWarning</a>(<span class='inlayHint'>msg:&nbsp;</span><q>"QDrag: No mimedata set before starting the drag"</q>);</td></tr>
+<tr><th id="228">228</th><td>        <b>return</b> <a class="local col8 ref" href="#225" title='d' data-ref="18d">d</a>-&gt;<a class="ref field" href="qdnd_p.h.html#QDragPrivate::executed_action" title='QDragPrivate::executed_action' data-ref="QDragPrivate::executed_action">executed_action</a>;</td></tr>
+<tr><th id="229">229</th><td>    }</td></tr>
+<tr><th id="230">230</th><td>    <span class="namespace">Qt::</span><a class="type" href="../../corelib/global/qnamespace.h.html#Qt::DropAction" title='Qt::DropAction' data-ref="Qt::DropAction">DropAction</a> <dfn class="local col9 decl" id="19transformedDefaultDropAction" title='transformedDefaultDropAction' data-type='Qt::DropAction' data-ref="19transformedDefaultDropAction">transformedDefaultDropAction</dfn> = <span class="namespace">Qt::</span><a class="enum" href="../../corelib/global/qnamespace.h.html#Qt::IgnoreAction" title='Qt::IgnoreAction' data-ref="Qt::IgnoreAction">IgnoreAction</a>;</td></tr>
+<tr><th id="231">231</th><td></td></tr>
+<tr><th id="232">232</th><td>    <b>if</b> (<a class="local col7 ref" href="#17defaultDropAction" title='defaultDropAction' data-ref="17defaultDropAction">defaultDropAction</a> == <span class="namespace">Qt::</span><a class="enum" href="../../corelib/global/qnamespace.h.html#Qt::IgnoreAction" title='Qt::IgnoreAction' data-ref="Qt::IgnoreAction">IgnoreAction</a>) {</td></tr>
+<tr><th id="233">233</th><td>        <b>if</b> (<a class="ref fn fake" href="../../corelib/global/qflags.h.html#_ZNK6QFlagscvNSt11conditionalIXsr3std11is_unsignedINSt15underlying_typeIT_E4typeEEE5valueEjiE4typeEEv" title='QFlags::operator typename conditional&lt;std::is_unsigned&lt;typename std::underlying_type&lt;Enum&gt;::type&gt;::value, unsigned int, int&gt;::type' data-ref="_ZNK6QFlagscvNSt11conditionalIXsr3std11is_unsignedINSt15underlying_typeIT_E4typeEEE5valueEjiE4typeEEv"></a><a class="local col6 ref" href="#16supportedActions" title='supportedActions' data-ref="16supportedActions">supportedActions</a> <a class="ref fn" href="../../corelib/global/qflags.h.html#_ZNK6QFlagsanET_" title='QFlags::operator&amp;' data-ref="_ZNK6QFlagsanET_">&amp;</a> <span class="namespace">Qt::</span><a class="enum" href="../../corelib/global/qnamespace.h.html#Qt::MoveAction" title='Qt::MoveAction' data-ref="Qt::MoveAction">MoveAction</a>) {</td></tr>
+<tr><th id="234">234</th><td>            <a class="local col9 ref" href="#19transformedDefaultDropAction" title='transformedDefaultDropAction' data-ref="19transformedDefaultDropAction">transformedDefaultDropAction</a> = <span class="namespace">Qt::</span><a class="enum" href="../../corelib/global/qnamespace.h.html#Qt::MoveAction" title='Qt::MoveAction' data-ref="Qt::MoveAction">MoveAction</a>;</td></tr>
+<tr><th id="235">235</th><td>        } <b>else</b> <b>if</b> (<a class="ref fn fake" href="../../corelib/global/qflags.h.html#_ZNK6QFlagscvNSt11conditionalIXsr3std11is_unsignedINSt15underlying_typeIT_E4typeEEE5valueEjiE4typeEEv" title='QFlags::operator typename conditional&lt;std::is_unsigned&lt;typename std::underlying_type&lt;Enum&gt;::type&gt;::value, unsigned int, int&gt;::type' data-ref="_ZNK6QFlagscvNSt11conditionalIXsr3std11is_unsignedINSt15underlying_typeIT_E4typeEEE5valueEjiE4typeEEv"></a><a class="local col6 ref" href="#16supportedActions" title='supportedActions' data-ref="16supportedActions">supportedActions</a> <a class="ref fn" href="../../corelib/global/qflags.h.html#_ZNK6QFlagsanET_" title='QFlags::operator&amp;' data-ref="_ZNK6QFlagsanET_">&amp;</a> <span class="namespace">Qt::</span><a class="enum" href="../../corelib/global/qnamespace.h.html#Qt::CopyAction" title='Qt::CopyAction' data-ref="Qt::CopyAction">CopyAction</a>) {</td></tr>
+<tr><th id="236">236</th><td>            <a class="local col9 ref" href="#19transformedDefaultDropAction" title='transformedDefaultDropAction' data-ref="19transformedDefaultDropAction">transformedDefaultDropAction</a> = <span class="namespace">Qt::</span><a class="enum" href="../../corelib/global/qnamespace.h.html#Qt::CopyAction" title='Qt::CopyAction' data-ref="Qt::CopyAction">CopyAction</a>;</td></tr>
+<tr><th id="237">237</th><td>        } <b>else</b> <b>if</b> (<a class="ref fn fake" href="../../corelib/global/qflags.h.html#_ZNK6QFlagscvNSt11conditionalIXsr3std11is_unsignedINSt15underlying_typeIT_E4typeEEE5valueEjiE4typeEEv" title='QFlags::operator typename conditional&lt;std::is_unsigned&lt;typename std::underlying_type&lt;Enum&gt;::type&gt;::value, unsigned int, int&gt;::type' data-ref="_ZNK6QFlagscvNSt11conditionalIXsr3std11is_unsignedINSt15underlying_typeIT_E4typeEEE5valueEjiE4typeEEv"></a><a class="local col6 ref" href="#16supportedActions" title='supportedActions' data-ref="16supportedActions">supportedActions</a> <a class="ref fn" href="../../corelib/global/qflags.h.html#_ZNK6QFlagsanET_" title='QFlags::operator&amp;' data-ref="_ZNK6QFlagsanET_">&amp;</a> <span class="namespace">Qt::</span><a class="enum" href="../../corelib/global/qnamespace.h.html#Qt::LinkAction" title='Qt::LinkAction' data-ref="Qt::LinkAction">LinkAction</a>) {</td></tr>
+<tr><th id="238">238</th><td>            <a class="local col9 ref" href="#19transformedDefaultDropAction" title='transformedDefaultDropAction' data-ref="19transformedDefaultDropAction">transformedDefaultDropAction</a> = <span class="namespace">Qt::</span><a class="enum" href="../../corelib/global/qnamespace.h.html#Qt::LinkAction" title='Qt::LinkAction' data-ref="Qt::LinkAction">LinkAction</a>;</td></tr>
+<tr><th id="239">239</th><td>        }</td></tr>
+<tr><th id="240">240</th><td>    } <b>else</b> {</td></tr>
+<tr><th id="241">241</th><td>        <a class="local col9 ref" href="#19transformedDefaultDropAction" title='transformedDefaultDropAction' data-ref="19transformedDefaultDropAction">transformedDefaultDropAction</a> = <a class="local col7 ref" href="#17defaultDropAction" title='defaultDropAction' data-ref="17defaultDropAction">defaultDropAction</a>;</td></tr>
+<tr><th id="242">242</th><td>    }</td></tr>
+<tr><th id="243">243</th><td>    <a class="local col8 ref" href="#225" title='d' data-ref="18d">d</a>-&gt;<a class="ref field" href="qdnd_p.h.html#QDragPrivate::supported_actions" title='QDragPrivate::supported_actions' data-ref="QDragPrivate::supported_actions">supported_actions</a> <a class="ref fn" href="../../corelib/global/qflags.h.html#52" title='QFlags&lt;Qt::DropAction&gt;::operator=' data-ref="_ZN6QFlagsIN2Qt10DropActionEEaSERKS2_">=</a> <a class="local col6 ref" href="#16supportedActions" title='supportedActions' data-ref="16supportedActions">supportedActions</a>;</td></tr>
+<tr><th id="244">244</th><td>    <a class="local col8 ref" href="#225" title='d' data-ref="18d">d</a>-&gt;<a class="ref field" href="qdnd_p.h.html#QDragPrivate::default_action" title='QDragPrivate::default_action' data-ref="QDragPrivate::default_action">default_action</a> = <a class="local col9 ref" href="#19transformedDefaultDropAction" title='transformedDefaultDropAction' data-ref="19transformedDefaultDropAction">transformedDefaultDropAction</a>;</td></tr>
+<tr><th id="245">245</th><td>    <a class="type" href="../../corelib/kernel/qmetatype.h.html#842" title='QPointer' data-ref="QPointer">QPointer</a>&lt;<a class="type" href="qdrag.h.html#QDrag" title='QDrag' data-ref="QDrag">QDrag</a>&gt; <dfn class="local col0 decl" id="20self" title='self' data-type='QPointer&lt;QDrag&gt;' data-ref="20self">self</dfn> = <a class="ref fn fake" href="../../corelib/kernel/qpointer.h.html#_ZN8QPointerC1EPT_" title='QPointer::QPointer&lt;T&gt;' data-ref="_ZN8QPointerC1EPT_"></a><b>this</b>;</td></tr>
+<tr><th id="246">246</th><td>    <em>auto</em> <dfn class="local col1 decl" id="21executed_action" title='executed_action' data-type='Qt::DropAction' data-ref="21executed_action">executed_action</dfn> = <a class="type" href="qdnd_p.h.html#QDragManager" title='QDragManager' data-ref="QDragManager">QDragManager</a>::<a class="ref fn" href="qdnd_p.h.html#_ZN12QDragManager4selfEv" title='QDragManager::self' data-ref="_ZN12QDragManager4selfEv">self</a>()-&gt;<a class="ref fn" href="qdnd_p.h.html#_ZN12QDragManager4dragEP5QDrag" title='QDragManager::drag' data-ref="_ZN12QDragManager4dragEP5QDrag">drag</a>(<a class="local col0 ref" href="#20self" title='self' data-ref="20self">self</a>.<a class="ref fn" href="../../corelib/kernel/qpointer.h.html#_ZNK8QPointer4dataEv" title='QPointer::data' data-ref="_ZNK8QPointer4dataEv">data</a>());</td></tr>
+<tr><th id="247">247</th><td>    <b>if</b> (<a class="local col0 ref" href="#20self" title='self' data-ref="20self">self</a>.<a class="ref fn" href="../../corelib/kernel/qpointer.h.html#_ZNK8QPointer6isNullEv" title='QPointer::isNull' data-ref="_ZNK8QPointer6isNullEv">isNull</a>())</td></tr>
+<tr><th id="248">248</th><td>        <b>return</b> <span class="namespace">Qt::</span><a class="enum" href="../../corelib/global/qnamespace.h.html#Qt::IgnoreAction" title='Qt::IgnoreAction' data-ref="Qt::IgnoreAction">IgnoreAction</a>;</td></tr>
+<tr><th id="249">249</th><td>    <a class="local col8 ref" href="#225" title='d' data-ref="18d">d</a>-&gt;<a class="ref field" href="qdnd_p.h.html#QDragPrivate::executed_action" title='QDragPrivate::executed_action' data-ref="QDragPrivate::executed_action">executed_action</a> = <a class="local col1 ref" href="#21executed_action" title='executed_action' data-ref="21executed_action">executed_action</a>;</td></tr>
+<tr><th id="250">250</th><td>    <b>return</b> <a class="local col8 ref" href="#225" title='d' data-ref="18d">d</a>-&gt;<a class="ref field" href="qdnd_p.h.html#QDragPrivate::executed_action" title='QDragPrivate::executed_action' data-ref="QDragPrivate::executed_action">executed_action</a>;</td></tr>
+<tr><th id="251">251</th><td>}</td></tr>
+<tr><th id="252">252</th><td></td></tr>
+<tr><th id="253">253</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="254">254</th><td><i class="doc">    Sets the drag<span class="command"> \a</span> <span class="arg">cursor</span> for the<span class="command"> \a</span> <span class="arg">action.</span> This allows you</i></td></tr>
+<tr><th id="255">255</th><td><i class="doc">    to override the default native cursors. To revert to using the</i></td></tr>
+<tr><th id="256">256</th><td><i class="doc">    native cursor for<span class="command"> \a</span> <span class="arg">action</span> pass in a null QPixmap as<span class="command"> \a</span> <span class="arg">cursor.</span></i></td></tr>
+<tr><th id="257">257</th><td><i class="doc"></i></td></tr>
+<tr><th id="258">258</th><td><i class="doc">    Note: setting the drag cursor for IgnoreAction may not work on</i></td></tr>
+<tr><th id="259">259</th><td><i class="doc">    all platforms. X11 and macOS has been tested to work. Windows</i></td></tr>
+<tr><th id="260">260</th><td><i class="doc">    does not support it.</i></td></tr>
+<tr><th id="261">261</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="262">262</th><td><em>void</em> <a class="type" href="qdrag.h.html#QDrag" title='QDrag' data-ref="QDrag">QDrag</a>::<dfn class="decl def fn" id="_ZN5QDrag13setDragCursorERK7QPixmapN2Qt10DropActionE" title='QDrag::setDragCursor' data-ref="_ZN5QDrag13setDragCursorERK7QPixmapN2Qt10DropActionE">setDragCursor</dfn>(<em>const</em> <a class="type" href="../image/qpixmap.h.html#QPixmap" title='QPixmap' data-ref="QPixmap">QPixmap</a> &amp;<dfn class="local col2 decl" id="22cursor" title='cursor' data-type='const QPixmap &amp;' data-ref="22cursor">cursor</dfn>, <span class="namespace">Qt::</span><a class="type" href="../../corelib/global/qnamespace.h.html#Qt::DropAction" title='Qt::DropAction' data-ref="Qt::DropAction">DropAction</a> <dfn class="local col3 decl" id="23action" title='action' data-type='Qt::DropAction' data-ref="23action">action</dfn>)</td></tr>
+<tr><th id="263">263</th><td>{</td></tr>
+<tr><th id="264">264</th><td>    <a class="macro" href="../../corelib/global/qtclasshelpermacros.h.html#109" title="QDragPrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(QDrag);</td></tr>
+<tr><th id="265">265</th><td>    <b>if</b> (<a class="local col2 ref" href="#22cursor" title='cursor' data-ref="22cursor">cursor</a>.<a class="ref fn" href="../image/qpixmap.h.html#_ZNK7QPixmap6isNullEv" title='QPixmap::isNull' data-ref="_ZNK7QPixmap6isNullEv">isNull</a>())</td></tr>
+<tr><th id="266">266</th><td>        <a class="local col4 ref" href="#264" title='d' data-ref="24d">d</a>-&gt;<a class="ref field" href="qdnd_p.h.html#QDragPrivate::customCursors" title='QDragPrivate::customCursors' data-ref="QDragPrivate::customCursors">customCursors</a>.<a class="ref fn" href="../../corelib/tools/qmap.h.html#_ZN4QMap6removeERKT_" title='QMap::remove' data-ref="_ZN4QMap6removeERKT_">remove</a>(<span class='inlayHint'>key:&nbsp;</span><a class="local col3 ref" href="#23action" title='action' data-ref="23action">action</a>);</td></tr>
+<tr><th id="267">267</th><td>    <b>else</b></td></tr>
+<tr><th id="268">268</th><td>        <a class="local col4 ref" href="#264" title='d' data-ref="24d">d</a>-&gt;<a class="ref field" href="qdnd_p.h.html#QDragPrivate::customCursors" title='QDragPrivate::customCursors' data-ref="QDragPrivate::customCursors">customCursors</a><a class="ref fn" href="../../corelib/tools/qmap.h.html#_ZN4QMapixERKT_" title='QMap::operator[]' data-ref="_ZN4QMapixERKT_">[<a class="local col3 ref" href="#23action" title='action' data-ref="23action">action</a>]</a> <a class="ref fn" href="../image/qpixmap.h.html#_ZN7QPixmapaSERKS_" title='QPixmap::operator=' data-ref="_ZN7QPixmapaSERKS_">=</a> <a class="local col2 ref" href="#22cursor" title='cursor' data-ref="22cursor">cursor</a>;</td></tr>
+<tr><th id="269">269</th><td>}</td></tr>
+<tr><th id="270">270</th><td></td></tr>
+<tr><th id="271">271</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="272">272</th><td><i class="doc">    Returns the drag cursor for the<span class="command"> \a</span> <span class="arg">action.</span></i></td></tr>
+<tr><th id="273">273</th><td><i class="doc"></i></td></tr>
+<tr><th id="274">274</th><td><i class="doc">    <span class="command">\since</span> 5.0</i></td></tr>
+<tr><th id="275">275</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="276">276</th><td></td></tr>
+<tr><th id="277">277</th><td><a class="type" href="../image/qpixmap.h.html#QPixmap" title='QPixmap' data-ref="QPixmap">QPixmap</a> <a class="type" href="qdrag.h.html#QDrag" title='QDrag' data-ref="QDrag">QDrag</a>::<dfn class="decl def fn" id="_ZNK5QDrag10dragCursorEN2Qt10DropActionE" title='QDrag::dragCursor' data-ref="_ZNK5QDrag10dragCursorEN2Qt10DropActionE">dragCursor</dfn>(<span class="namespace">Qt::</span><a class="type" href="../../corelib/global/qnamespace.h.html#Qt::DropAction" title='Qt::DropAction' data-ref="Qt::DropAction">DropAction</a> <dfn class="local col5 decl" id="25action" title='action' data-type='Qt::DropAction' data-ref="25action">action</dfn>) <em>const</em></td></tr>
+<tr><th id="278">278</th><td>{</td></tr>
+<tr><th id="279">279</th><td>    <b>typedef</b> <a class="type" href="../../corelib/tools/qcontainerfwd.h.html#QMap" title='QMap' data-ref="QMap">QMap</a>&lt;<span class="namespace">Qt::</span><a class="type" href="../../corelib/global/qnamespace.h.html#Qt::DropAction" title='Qt::DropAction' data-ref="Qt::DropAction">DropAction</a>, <a class="type" href="../image/qpixmap.h.html#QPixmap" title='QPixmap' data-ref="QPixmap">QPixmap</a>&gt;::<a class="type" href="../../corelib/tools/qmap.h.html#QMap::const_iterator" title='QMap::const_iterator' data-ref="QMap::const_iterator">const_iterator</a> <dfn class="local col6 typedef" id="26Iterator" title='Iterator' data-type='QMap&lt;Qt::DropAction, QPixmap&gt;::const_iterator' data-ref="26Iterator">Iterator</dfn>;</td></tr>
+<tr><th id="280">280</th><td></td></tr>
+<tr><th id="281">281</th><td>    <a class="macro" href="../../corelib/global/qtclasshelpermacros.h.html#109" title="const QDragPrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(<em>const</em> QDrag);</td></tr>
+<tr><th id="282">282</th><td>    <em>const</em> <a class="local col6 typedef" href="#26Iterator" title='Iterator' data-type='QMap&lt;Qt::DropAction, QPixmap&gt;::const_iterator' data-ref="26Iterator">Iterator</a> <dfn class="local col7 decl" id="27it" title='it' data-type='const Iterator' data-ref="27it">it</dfn> = <a class="local col8 ref" href="#281" title='d' data-ref="28d">d</a>-&gt;<a class="ref field" href="qdnd_p.h.html#QDragPrivate::customCursors" title='QDragPrivate::customCursors' data-ref="QDragPrivate::customCursors">customCursors</a>.<a class="ref fn" href="../../corelib/tools/qmap.h.html#_ZNK4QMap9constFindERKT_" title='QMap::constFind' data-ref="_ZNK4QMap9constFindERKT_">constFind</a>(<span class='inlayHint'>key:&nbsp;</span><a class="local col5 ref" href="#25action" title='action' data-ref="25action">action</a>);</td></tr>
+<tr><th id="283">283</th><td>    <b>if</b> (<a class="local col7 ref" href="#27it" title='it' data-ref="27it">it</a> <a class="ref fn" href="../../corelib/tools/qmap.h.html#_ZneRKN4QMap14const_iteratorES2_" title='operator!=' data-ref="_ZneRKN4QMap14const_iteratorES2_">!=</a> <a class="local col8 ref" href="#281" title='d' data-ref="28d">d</a>-&gt;<a class="ref field" href="qdnd_p.h.html#QDragPrivate::customCursors" title='QDragPrivate::customCursors' data-ref="QDragPrivate::customCursors">customCursors</a>.<a class="ref fn" href="../../corelib/tools/qmap.h.html#_ZNK4QMap8constEndEv" title='QMap::constEnd' data-ref="_ZNK4QMap8constEndEv">constEnd</a>())</td></tr>
+<tr><th id="284">284</th><td>        <b>return</b> <a class="ref fn fake" href="../image/qpixmap.h.html#_ZN7QPixmapC1ERKS_" title='QPixmap::QPixmap' data-ref="_ZN7QPixmapC1ERKS_"></a><a class="local col7 ref" href="#27it" title='it' data-ref="27it">it</a>.<a class="ref fn" href="../../corelib/tools/qmap.h.html#_ZNK4QMap14const_iterator5valueEv" title='QMap::const_iterator::value' data-ref="_ZNK4QMap14const_iterator5valueEv">value</a>();</td></tr>
+<tr><th id="285">285</th><td></td></tr>
+<tr><th id="286">286</th><td>    <span class="namespace">Qt::</span><a class="type" href="../../corelib/global/qnamespace.h.html#Qt::CursorShape" title='Qt::CursorShape' data-ref="Qt::CursorShape">CursorShape</a> <dfn class="local col9 decl" id="29shape" title='shape' data-type='Qt::CursorShape' data-ref="29shape">shape</dfn> = <span class="namespace">Qt::</span><a class="enum" href="../../corelib/global/qnamespace.h.html#Qt::ForbiddenCursor" title='Qt::ForbiddenCursor' data-ref="Qt::ForbiddenCursor">ForbiddenCursor</a>;</td></tr>
+<tr><th id="287">287</th><td>    <b>switch</b> (<a class="local col5 ref" href="#25action" title='action' data-ref="25action">action</a>) {</td></tr>
+<tr><th id="288">288</th><td>    <b>case</b> <span class="namespace">Qt::</span><a class="enum" href="../../corelib/global/qnamespace.h.html#Qt::MoveAction" title='Qt::MoveAction' data-ref="Qt::MoveAction">MoveAction</a>:</td></tr>
+<tr><th id="289">289</th><td>        <a class="local col9 ref" href="#29shape" title='shape' data-ref="29shape">shape</a> = <span class="namespace">Qt::</span><a class="enum" href="../../corelib/global/qnamespace.h.html#Qt::DragMoveCursor" title='Qt::DragMoveCursor' data-ref="Qt::DragMoveCursor">DragMoveCursor</a>;</td></tr>
+<tr><th id="290">290</th><td>        <b>break</b>;</td></tr>
+<tr><th id="291">291</th><td>    <b>case</b> <span class="namespace">Qt::</span><a class="enum" href="../../corelib/global/qnamespace.h.html#Qt::CopyAction" title='Qt::CopyAction' data-ref="Qt::CopyAction">CopyAction</a>:</td></tr>
+<tr><th id="292">292</th><td>        <a class="local col9 ref" href="#29shape" title='shape' data-ref="29shape">shape</a> = <span class="namespace">Qt::</span><a class="enum" href="../../corelib/global/qnamespace.h.html#Qt::DragCopyCursor" title='Qt::DragCopyCursor' data-ref="Qt::DragCopyCursor">DragCopyCursor</a>;</td></tr>
+<tr><th id="293">293</th><td>        <b>break</b>;</td></tr>
+<tr><th id="294">294</th><td>    <b>case</b> <span class="namespace">Qt::</span><a class="enum" href="../../corelib/global/qnamespace.h.html#Qt::LinkAction" title='Qt::LinkAction' data-ref="Qt::LinkAction">LinkAction</a>:</td></tr>
+<tr><th id="295">295</th><td>        <a class="local col9 ref" href="#29shape" title='shape' data-ref="29shape">shape</a> = <span class="namespace">Qt::</span><a class="enum" href="../../corelib/global/qnamespace.h.html#Qt::DragLinkCursor" title='Qt::DragLinkCursor' data-ref="Qt::DragLinkCursor">DragLinkCursor</a>;</td></tr>
+<tr><th id="296">296</th><td>        <b>break</b>;</td></tr>
+<tr><th id="297">297</th><td>    <b>default</b>:</td></tr>
+<tr><th id="298">298</th><td>        <a class="local col9 ref" href="#29shape" title='shape' data-ref="29shape">shape</a> = <span class="namespace">Qt::</span><a class="enum" href="../../corelib/global/qnamespace.h.html#Qt::ForbiddenCursor" title='Qt::ForbiddenCursor' data-ref="Qt::ForbiddenCursor">ForbiddenCursor</a>;</td></tr>
+<tr><th id="299">299</th><td>    }</td></tr>
+<tr><th id="300">300</th><td>    <b>return</b> <a class="type" href="qguiapplication_p.h.html#QGuiApplicationPrivate" title='QGuiApplicationPrivate' data-ref="QGuiApplicationPrivate">QGuiApplicationPrivate</a>::<a class="ref fn" href="qguiapplication_p.h.html#_ZN22QGuiApplicationPrivate8instanceEv" title='QGuiApplicationPrivate::instance' data-ref="_ZN22QGuiApplicationPrivate8instanceEv">instance</a>()-&gt;<a class="ref fn" href="qguiapplication_p.h.html#_ZN22QGuiApplicationPrivate15getPixmapCursorEN2Qt11CursorShapeE" title='QGuiApplicationPrivate::getPixmapCursor' data-ref="_ZN22QGuiApplicationPrivate15getPixmapCursorEN2Qt11CursorShapeE">getPixmapCursor</a>(<span class='inlayHint'>cshape:&nbsp;</span><a class="local col9 ref" href="#29shape" title='shape' data-ref="29shape">shape</a>);</td></tr>
+<tr><th id="301">301</th><td>}</td></tr>
+<tr><th id="302">302</th><td></td></tr>
+<tr><th id="303">303</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="304">304</th><td><i class="doc">    Returns the set of possible drop actions for this drag operation.</i></td></tr>
+<tr><th id="305">305</th><td><i class="doc"></i></td></tr>
+<tr><th id="306">306</th><td><i class="doc">    <span class="command">\sa</span> exec(), defaultAction()</i></td></tr>
+<tr><th id="307">307</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="308">308</th><td><span class="namespace">Qt::</span><a class="typedef" href="../../corelib/global/qnamespace.h.html#1466" title='Qt::DropActions' data-type='QFlags&lt;Qt::DropAction&gt;' data-ref="Qt::DropActions">DropActions</a> <a class="type" href="qdrag.h.html#QDrag" title='QDrag' data-ref="QDrag">QDrag</a>::<dfn class="decl def fn" id="_ZNK5QDrag16supportedActionsEv" title='QDrag::supportedActions' data-ref="_ZNK5QDrag16supportedActionsEv">supportedActions</dfn>() <em>const</em></td></tr>
+<tr><th id="309">309</th><td>{</td></tr>
+<tr><th id="310">310</th><td>    <a class="macro" href="../../corelib/global/qtclasshelpermacros.h.html#109" title="const QDragPrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(<em>const</em> QDrag);</td></tr>
+<tr><th id="311">311</th><td>    <b>return</b> <a class="ref fn fake" href="../../corelib/global/qflags.h.html#52" title='QFlags&lt;Qt::DropAction&gt;::QFlags' data-ref="_ZN6QFlagsIN2Qt10DropActionEEC1ERKS2_"></a><a class="local col0 ref" href="#310" title='d' data-ref="30d">d</a>-&gt;<a class="ref field" href="qdnd_p.h.html#QDragPrivate::supported_actions" title='QDragPrivate::supported_actions' data-ref="QDragPrivate::supported_actions">supported_actions</a>;</td></tr>
+<tr><th id="312">312</th><td>}</td></tr>
+<tr><th id="313">313</th><td></td></tr>
+<tr><th id="314">314</th><td></td></tr>
+<tr><th id="315">315</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="316">316</th><td><i class="doc">    Returns the default proposed drop action for this drag operation.</i></td></tr>
+<tr><th id="317">317</th><td><i class="doc"></i></td></tr>
+<tr><th id="318">318</th><td><i class="doc">    <span class="command">\sa</span> exec(), supportedActions()</i></td></tr>
+<tr><th id="319">319</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="320">320</th><td><span class="namespace">Qt::</span><a class="type" href="../../corelib/global/qnamespace.h.html#Qt::DropAction" title='Qt::DropAction' data-ref="Qt::DropAction">DropAction</a> <a class="type" href="qdrag.h.html#QDrag" title='QDrag' data-ref="QDrag">QDrag</a>::<dfn class="decl def fn" id="_ZNK5QDrag13defaultActionEv" title='QDrag::defaultAction' data-ref="_ZNK5QDrag13defaultActionEv">defaultAction</dfn>() <em>const</em></td></tr>
+<tr><th id="321">321</th><td>{</td></tr>
+<tr><th id="322">322</th><td>    <a class="macro" href="../../corelib/global/qtclasshelpermacros.h.html#109" title="const QDragPrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(<em>const</em> QDrag);</td></tr>
+<tr><th id="323">323</th><td>    <b>return</b> <a class="local col1 ref" href="#322" title='d' data-ref="31d">d</a>-&gt;<a class="ref field" href="qdnd_p.h.html#QDragPrivate::default_action" title='QDragPrivate::default_action' data-ref="QDragPrivate::default_action">default_action</a>;</td></tr>
+<tr><th id="324">324</th><td>}</td></tr>
+<tr><th id="325">325</th><td></td></tr>
+<tr><th id="326">326</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="327">327</th><td><i class="doc">    Cancels a drag operation initiated by Qt.</i></td></tr>
+<tr><th id="328">328</th><td><i class="doc"></i></td></tr>
+<tr><th id="329">329</th><td><i class="doc">    <span class="command">\note</span> This is currently implemented on Windows and X11.</i></td></tr>
+<tr><th id="330">330</th><td><i class="doc"></i></td></tr>
+<tr><th id="331">331</th><td><i class="doc">    <span class="command">\since</span> 5.7</i></td></tr>
+<tr><th id="332">332</th><td><i class="doc">    <span class="command">\sa</span> exec()</i></td></tr>
+<tr><th id="333">333</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="334">334</th><td><em>void</em> <a class="type" href="qdrag.h.html#QDrag" title='QDrag' data-ref="QDrag">QDrag</a>::<dfn class="decl def fn" id="_ZN5QDrag6cancelEv" title='QDrag::cancel' data-ref="_ZN5QDrag6cancelEv">cancel</dfn>()</td></tr>
+<tr><th id="335">335</th><td>{</td></tr>
+<tr><th id="336">336</th><td>    <b>if</b> (<a class="type" href="qplatformdrag.h.html#QPlatformDrag" title='QPlatformDrag' data-ref="QPlatformDrag">QPlatformDrag</a> *<dfn class="local col2 decl" id="32platformDrag" title='platformDrag' data-type='QPlatformDrag *' data-ref="32platformDrag"><a class="local col2 ref" href="#32platformDrag" title='platformDrag' data-ref="32platformDrag">platformDrag</a></dfn> = <a class="type" href="qguiapplication_p.h.html#QGuiApplicationPrivate" title='QGuiApplicationPrivate' data-ref="QGuiApplicationPrivate">QGuiApplicationPrivate</a>::<a class="ref fn" href="qguiapplication_p.h.html#_ZN22QGuiApplicationPrivate19platformIntegrationEv" title='QGuiApplicationPrivate::platformIntegration' data-ref="_ZN22QGuiApplicationPrivate19platformIntegrationEv">platformIntegration</a>()-&gt;<a class="virtual ref fn" href="qplatformintegration.h.html#_ZNK20QPlatformIntegration4dragEv" title='QPlatformIntegration::drag' data-ref="_ZNK20QPlatformIntegration4dragEv">drag</a>())</td></tr>
+<tr><th id="337">337</th><td>        <a class="local col2 ref" href="#32platformDrag" title='platformDrag' data-ref="32platformDrag">platformDrag</a>-&gt;<a class="virtual ref fn" href="qplatformdrag.h.html#_ZN13QPlatformDrag10cancelDragEv" title='QPlatformDrag::cancelDrag' data-ref="_ZN13QPlatformDrag10cancelDragEv">cancelDrag</a>();</td></tr>
+<tr><th id="338">338</th><td>}</td></tr>
+<tr><th id="339">339</th><td></td></tr>
+<tr><th id="340">340</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="341">341</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb" data-ref="_ZN5QDrag13actionChangedEN2Qt10DropActionE">void QDrag::actionChanged(Qt::DropAction action)</span></i></td></tr>
+<tr><th id="342">342</th><td><i class="doc"></i></td></tr>
+<tr><th id="343">343</th><td><i class="doc">    This signal is emitted when the<span class="command"> \a</span> <span class="arg">action</span> associated with the</i></td></tr>
+<tr><th id="344">344</th><td><i class="doc">    drag changes.</i></td></tr>
+<tr><th id="345">345</th><td><i class="doc"></i></td></tr>
+<tr><th id="346">346</th><td><i class="doc">    <span class="command">\sa</span> targetChanged()</i></td></tr>
+<tr><th id="347">347</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="348">348</th><td></td></tr>
+<tr><th id="349">349</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="350">350</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb" data-ref="_ZN5QDrag13targetChangedEP7QObject">void QDrag::targetChanged(QObject *newTarget)</span></i></td></tr>
+<tr><th id="351">351</th><td><i class="doc"></i></td></tr>
+<tr><th id="352">352</th><td><i class="doc">    This signal is emitted when the target of the drag and drop</i></td></tr>
+<tr><th id="353">353</th><td><i class="doc">    operation changes, with<span class="command"> \a</span> <span class="arg">newTarget</span> the new target.</i></td></tr>
+<tr><th id="354">354</th><td><i class="doc"></i></td></tr>
+<tr><th id="355">355</th><td><i class="doc">    <span class="command">\sa</span> target(), actionChanged()</i></td></tr>
+<tr><th id="356">356</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="357">357</th><td></td></tr>
+<tr><th id="358">358</th><td><a class="macro" href="../../corelib/global/qtconfigmacros.h.html#104" title="" data-ref="_M/QT_END_NAMESPACE">QT_END_NAMESPACE</a></td></tr>
+<tr><th id="359">359</th><td></td></tr>
+<tr><th id="360">360</th><td><u>#include <span class='error' title="&apos;moc_qdrag.cpp&apos; file not found">"moc_qdrag.cpp"</span></u></td></tr>
+<tr><th id="361">361</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2024-Jun-13</em> from project qtbase-6.5.0 revision <em>6.5.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

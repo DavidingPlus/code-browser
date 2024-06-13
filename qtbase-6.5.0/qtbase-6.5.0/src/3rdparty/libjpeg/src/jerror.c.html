@@ -1,0 +1,269 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>jerror.c source code [qtbase-6.5.0/src/3rdparty/libjpeg/src/jerror.c] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'qtbase-6.5.0/src/3rdparty/libjpeg/src/jerror.c'; var root_path = '../../../../..'; var data_path = '../../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../..'>qtbase-6.5.0</a>/<a href='../../..'>src</a>/<a href='../..'>3rdparty</a>/<a href='..'>libjpeg</a>/<a href='./'>src</a>/<a href='jerror.c.html'>jerror.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*</i></td></tr>
+<tr><th id="2">2</th><td><i> * jerror.c</i></td></tr>
+<tr><th id="3">3</th><td><i> *</i></td></tr>
+<tr><th id="4">4</th><td><i> * This file was part of the Independent JPEG Group's software:</i></td></tr>
+<tr><th id="5">5</th><td><i> * Copyright (C) 1991-1998, Thomas G. Lane.</i></td></tr>
+<tr><th id="6">6</th><td><i> * libjpeg-turbo Modifications:</i></td></tr>
+<tr><th id="7">7</th><td><i> * Copyright (C) 2022, D. R. Commander.</i></td></tr>
+<tr><th id="8">8</th><td><i> * For conditions of distribution and use, see the accompanying README.ijg</i></td></tr>
+<tr><th id="9">9</th><td><i> * file.</i></td></tr>
+<tr><th id="10">10</th><td><i> *</i></td></tr>
+<tr><th id="11">11</th><td><i> * This file contains simple error-reporting and trace-message routines.</i></td></tr>
+<tr><th id="12">12</th><td><i> * These are suitable for Unix-like systems and others where writing to</i></td></tr>
+<tr><th id="13">13</th><td><i> * stderr is the right thing to do.  Many applications will want to replace</i></td></tr>
+<tr><th id="14">14</th><td><i> * some or all of these routines.</i></td></tr>
+<tr><th id="15">15</th><td><i> *</i></td></tr>
+<tr><th id="16">16</th><td><i> * If you define USE_WINDOWS_MESSAGEBOX in jconfig.h or in the makefile,</i></td></tr>
+<tr><th id="17">17</th><td><i> * you get a Windows-specific hack to display error messages in a dialog box.</i></td></tr>
+<tr><th id="18">18</th><td><i> * It ain't much, but it beats dropping error messages into the bit bucket,</i></td></tr>
+<tr><th id="19">19</th><td><i> * which is what happens to output to stderr under most Windows C compilers.</i></td></tr>
+<tr><th id="20">20</th><td><i> *</i></td></tr>
+<tr><th id="21">21</th><td><i> * These routines are used by both the compression and decompression code.</i></td></tr>
+<tr><th id="22">22</th><td><i> */</i></td></tr>
+<tr><th id="23">23</th><td></td></tr>
+<tr><th id="24">24</th><td><i>/* this is not a core library module, so it doesn't define JPEG_INTERNALS */</i></td></tr>
+<tr><th id="25">25</th><td><u>#include <a href="jinclude.h.html">"jinclude.h"</a></u></td></tr>
+<tr><th id="26">26</th><td><u>#include <a href="jpeglib.h.html">"jpeglib.h"</a></u></td></tr>
+<tr><th id="27">27</th><td><u>#include <a href="jversion.h.html">"jversion.h"</a></u></td></tr>
+<tr><th id="28">28</th><td><u>#include <a href="jerror.h.html">"jerror.h"</a></u></td></tr>
+<tr><th id="29">29</th><td></td></tr>
+<tr><th id="30">30</th><td><u>#<span data-ppcond="30">ifdef</span> <span class="macro" data-ref="_M/USE_WINDOWS_MESSAGEBOX">USE_WINDOWS_MESSAGEBOX</span></u></td></tr>
+<tr><th id="31">31</th><td><u>#include &lt;windows.h&gt;</u></td></tr>
+<tr><th id="32">32</th><td><u>#<span data-ppcond="30">endif</span></u></td></tr>
+<tr><th id="33">33</th><td></td></tr>
+<tr><th id="34">34</th><td><u>#<span data-ppcond="34">ifndef</span> <a class="macro" href="../../../../../include/stdlib.h.html#91" data-ref="_M/EXIT_FAILURE">EXIT_FAILURE</a>            /* define exit() codes if not provided */</u></td></tr>
+<tr><th id="35">35</th><td><u>#define EXIT_FAILURE  1</u></td></tr>
+<tr><th id="36">36</th><td><u>#<span data-ppcond="34">endif</span></u></td></tr>
+<tr><th id="37">37</th><td></td></tr>
+<tr><th id="38">38</th><td></td></tr>
+<tr><th id="39">39</th><td><i>/*</i></td></tr>
+<tr><th id="40">40</th><td><i> * Create the message string table.</i></td></tr>
+<tr><th id="41">41</th><td><i> * We do this from the master message list in jerror.h by re-reading</i></td></tr>
+<tr><th id="42">42</th><td><i> * jerror.h with a suitable definition for macro JMESSAGE.</i></td></tr>
+<tr><th id="43">43</th><td><i> * The message table is made an external symbol just in case any applications</i></td></tr>
+<tr><th id="44">44</th><td><i> * want to refer to it directly.</i></td></tr>
+<tr><th id="45">45</th><td><i> */</i></td></tr>
+<tr><th id="46">46</th><td></td></tr>
+<tr><th id="47">47</th><td><u>#define <dfn class="macro" id="_M/JMESSAGE" data-ref="_M/JMESSAGE">JMESSAGE</dfn>(code, string)  string,</u></td></tr>
+<tr><th id="48">48</th><td></td></tr>
+<tr><th id="49">49</th><td><em>const</em> <em>char</em> * <em>const</em> <dfn class="decl def" id="jpeg_std_message_table" title='jpeg_std_message_table' data-ref="jpeg_std_message_table">jpeg_std_message_table</dfn>[] = {</td></tr>
+<tr><th id="50">50</th><td><u>#include <a href="jerror.h.html">"jerror.h"</a></u></td></tr>
+<tr><th id="51">51</th><td>  <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span></td></tr>
+<tr><th id="52">52</th><td>};</td></tr>
+<tr><th id="53">53</th><td></td></tr>
+<tr><th id="54">54</th><td></td></tr>
+<tr><th id="55">55</th><td><i>/*</i></td></tr>
+<tr><th id="56">56</th><td><i> * Error exit handler: must not return to caller.</i></td></tr>
+<tr><th id="57">57</th><td><i> *</i></td></tr>
+<tr><th id="58">58</th><td><i> * Applications may override this if they want to get control back after</i></td></tr>
+<tr><th id="59">59</th><td><i> * an error.  Typically one would longjmp somewhere instead of exiting.</i></td></tr>
+<tr><th id="60">60</th><td><i> * The setjmp buffer can be made a private field within an expanded error</i></td></tr>
+<tr><th id="61">61</th><td><i> * handler object.  Note that the info needed to generate an error message</i></td></tr>
+<tr><th id="62">62</th><td><i> * is stored in the error object, so you can generate the message now or</i></td></tr>
+<tr><th id="63">63</th><td><i> * later, at your convenience.</i></td></tr>
+<tr><th id="64">64</th><td><i> * You should make sure that the JPEG object is cleaned up (with jpeg_abort</i></td></tr>
+<tr><th id="65">65</th><td><i> * or jpeg_destroy) at some point.</i></td></tr>
+<tr><th id="66">66</th><td><i> */</i></td></tr>
+<tr><th id="67">67</th><td></td></tr>
+<tr><th id="68">68</th><td><a class="macro" href="jmorecfg.h.html#168" title="static void" data-ref="_M/METHODDEF">METHODDEF</a>(<em>void</em>)</td></tr>
+<tr><th id="69">69</th><td><dfn class="decl def fn" id="error_exit" title='error_exit' data-ref="error_exit">error_exit</dfn>(<a class="typedef" href="jpeglib.h.html#j_common_ptr" title='j_common_ptr' data-type='struct jpeg_common_struct *' data-ref="j_common_ptr">j_common_ptr</a> <dfn class="local col1 decl" id="1cinfo" title='cinfo' data-type='j_common_ptr' data-ref="1cinfo">cinfo</dfn>)</td></tr>
+<tr><th id="70">70</th><td>{</td></tr>
+<tr><th id="71">71</th><td>  <i>/* Always display the message */</i></td></tr>
+<tr><th id="72">72</th><td>  (*<a class="local col1 ref" href="#1cinfo" title='cinfo' data-ref="1cinfo">cinfo</a>-&gt;<a class="ref field" href="jpeglib.h.html#283" title='jpeg_common_struct::err' data-ref="jpeg_common_struct::err">err</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::output_message" title='jpeg_error_mgr::output_message' data-ref="jpeg_error_mgr::output_message">output_message</a>) (<a class="local col1 ref" href="#1cinfo" title='cinfo' data-ref="1cinfo">cinfo</a>);</td></tr>
+<tr><th id="73">73</th><td></td></tr>
+<tr><th id="74">74</th><td>  <i>/* Let the memory manager delete any temp files before we die */</i></td></tr>
+<tr><th id="75">75</th><td>  <a class="ref fn" href="jpeglib.h.html#jpeg_destroy" title='jpeg_destroy' data-ref="jpeg_destroy">jpeg_destroy</a>(<a class="local col1 ref" href="#1cinfo" title='cinfo' data-ref="1cinfo">cinfo</a>);</td></tr>
+<tr><th id="76">76</th><td></td></tr>
+<tr><th id="77">77</th><td>  <a class="ref fn" href="../../../../../include/stdlib.h.html#exit" title='exit' data-ref="exit">exit</a>(<a class="macro" href="../../../../../include/stdlib.h.html#91" title="1" data-ref="_M/EXIT_FAILURE">EXIT_FAILURE</a>);</td></tr>
+<tr><th id="78">78</th><td>}</td></tr>
+<tr><th id="79">79</th><td></td></tr>
+<tr><th id="80">80</th><td></td></tr>
+<tr><th id="81">81</th><td><i>/*</i></td></tr>
+<tr><th id="82">82</th><td><i> * Actual output of an error or trace message.</i></td></tr>
+<tr><th id="83">83</th><td><i> * Applications may override this method to send JPEG messages somewhere</i></td></tr>
+<tr><th id="84">84</th><td><i> * other than stderr.</i></td></tr>
+<tr><th id="85">85</th><td><i> *</i></td></tr>
+<tr><th id="86">86</th><td><i> * On Windows, printing to stderr is generally completely useless,</i></td></tr>
+<tr><th id="87">87</th><td><i> * so we provide optional code to produce an error-dialog popup.</i></td></tr>
+<tr><th id="88">88</th><td><i> * Most Windows applications will still prefer to override this routine,</i></td></tr>
+<tr><th id="89">89</th><td><i> * but if they don't, it'll do something at least marginally useful.</i></td></tr>
+<tr><th id="90">90</th><td><i> *</i></td></tr>
+<tr><th id="91">91</th><td><i> * NOTE: to use the library in an environment that doesn't support the</i></td></tr>
+<tr><th id="92">92</th><td><i> * C stdio library, you may have to delete the call to fprintf() entirely,</i></td></tr>
+<tr><th id="93">93</th><td><i> * not just not use this routine.</i></td></tr>
+<tr><th id="94">94</th><td><i> */</i></td></tr>
+<tr><th id="95">95</th><td></td></tr>
+<tr><th id="96">96</th><td><a class="macro" href="jmorecfg.h.html#168" title="static void" data-ref="_M/METHODDEF">METHODDEF</a>(<em>void</em>)</td></tr>
+<tr><th id="97">97</th><td><dfn class="decl def fn" id="output_message" title='output_message' data-ref="output_message">output_message</dfn>(<a class="typedef" href="jpeglib.h.html#j_common_ptr" title='j_common_ptr' data-type='struct jpeg_common_struct *' data-ref="j_common_ptr">j_common_ptr</a> <dfn class="local col2 decl" id="2cinfo" title='cinfo' data-type='j_common_ptr' data-ref="2cinfo">cinfo</dfn>)</td></tr>
+<tr><th id="98">98</th><td>{</td></tr>
+<tr><th id="99">99</th><td>  <em>char</em> <dfn class="local col3 decl" id="3buffer" title='buffer' data-type='char[200]' data-ref="3buffer">buffer</dfn>[<a class="macro" href="jpeglib.h.html#729" title="200" data-ref="_M/JMSG_LENGTH_MAX">JMSG_LENGTH_MAX</a>];</td></tr>
+<tr><th id="100">100</th><td></td></tr>
+<tr><th id="101">101</th><td>  <i>/* Create the message */</i></td></tr>
+<tr><th id="102">102</th><td>  (*<a class="local col2 ref" href="#2cinfo" title='cinfo' data-ref="2cinfo">cinfo</a>-&gt;<a class="ref field" href="jpeglib.h.html#283" title='jpeg_common_struct::err' data-ref="jpeg_common_struct::err">err</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::format_message" title='jpeg_error_mgr::format_message' data-ref="jpeg_error_mgr::format_message">format_message</a>) (<a class="local col2 ref" href="#2cinfo" title='cinfo' data-ref="2cinfo">cinfo</a>, <a class="local col3 ref" href="#3buffer" title='buffer' data-ref="3buffer">buffer</a>);</td></tr>
+<tr><th id="103">103</th><td></td></tr>
+<tr><th id="104">104</th><td><u>#<span data-ppcond="104">ifdef</span> <span class="macro" data-ref="_M/USE_WINDOWS_MESSAGEBOX">USE_WINDOWS_MESSAGEBOX</span></u></td></tr>
+<tr><th id="105">105</th><td>  <i>/* Display it in a message dialog box */</i></td></tr>
+<tr><th id="106">106</th><td>  MessageBox(GetActiveWindow(), buffer, <q>"JPEG Library Error"</q>,</td></tr>
+<tr><th id="107">107</th><td>             MB_OK | MB_ICONERROR);</td></tr>
+<tr><th id="108">108</th><td><u>#<span data-ppcond="104">else</span></u></td></tr>
+<tr><th id="109">109</th><td>  <i>/* Send it to stderr, adding a newline */</i></td></tr>
+<tr><th id="110">110</th><td>  <a class="ref fn" href="../../../../../include/stdio.h.html#fprintf" title='fprintf' data-ref="fprintf">fprintf</a>(<a class="macro" href="../../../../../include/stdio.h.html#143" title="stderr" data-ref="_M/stderr">stderr</a>, <span class='inlayHint'>format:&nbsp;</span><q>"%s\n"</q>, <a class="local col3 ref" href="#3buffer" title='buffer' data-ref="3buffer">buffer</a>);</td></tr>
+<tr><th id="111">111</th><td><u>#<span data-ppcond="104">endif</span></u></td></tr>
+<tr><th id="112">112</th><td>}</td></tr>
+<tr><th id="113">113</th><td></td></tr>
+<tr><th id="114">114</th><td></td></tr>
+<tr><th id="115">115</th><td><i>/*</i></td></tr>
+<tr><th id="116">116</th><td><i> * Decide whether to emit a trace or warning message.</i></td></tr>
+<tr><th id="117">117</th><td><i> * msg_level is one of:</i></td></tr>
+<tr><th id="118">118</th><td><i> *   -1: recoverable corrupt-data warning, may want to abort.</i></td></tr>
+<tr><th id="119">119</th><td><i> *    0: important advisory messages (always display to user).</i></td></tr>
+<tr><th id="120">120</th><td><i> *    1: first level of tracing detail.</i></td></tr>
+<tr><th id="121">121</th><td><i> *    2,3,...: successively more detailed tracing messages.</i></td></tr>
+<tr><th id="122">122</th><td><i> * An application might override this method if it wanted to abort on warnings</i></td></tr>
+<tr><th id="123">123</th><td><i> * or change the policy about which messages to display.</i></td></tr>
+<tr><th id="124">124</th><td><i> */</i></td></tr>
+<tr><th id="125">125</th><td></td></tr>
+<tr><th id="126">126</th><td><a class="macro" href="jmorecfg.h.html#168" title="static void" data-ref="_M/METHODDEF">METHODDEF</a>(<em>void</em>)</td></tr>
+<tr><th id="127">127</th><td><dfn class="decl def fn" id="emit_message" title='emit_message' data-ref="emit_message">emit_message</dfn>(<a class="typedef" href="jpeglib.h.html#j_common_ptr" title='j_common_ptr' data-type='struct jpeg_common_struct *' data-ref="j_common_ptr">j_common_ptr</a> <dfn class="local col4 decl" id="4cinfo" title='cinfo' data-type='j_common_ptr' data-ref="4cinfo">cinfo</dfn>, <em>int</em> <dfn class="local col5 decl" id="5msg_level" title='msg_level' data-type='int' data-ref="5msg_level">msg_level</dfn>)</td></tr>
+<tr><th id="128">128</th><td>{</td></tr>
+<tr><th id="129">129</th><td>  <b>struct</b> <a class="type" href="jpeglib.h.html#jpeg_error_mgr" title='jpeg_error_mgr' data-ref="jpeg_error_mgr">jpeg_error_mgr</a> *<dfn class="local col6 decl" id="6err" title='err' data-type='struct jpeg_error_mgr *' data-ref="6err">err</dfn> = <a class="local col4 ref" href="#4cinfo" title='cinfo' data-ref="4cinfo">cinfo</a>-&gt;<a class="ref field" href="jpeglib.h.html#283" title='jpeg_common_struct::err' data-ref="jpeg_common_struct::err">err</a>;</td></tr>
+<tr><th id="130">130</th><td></td></tr>
+<tr><th id="131">131</th><td>  <b>if</b> (<a class="local col5 ref" href="#5msg_level" title='msg_level' data-ref="5msg_level">msg_level</a> &lt; <var>0</var>) {</td></tr>
+<tr><th id="132">132</th><td>    <i>/* It's a warning message.  Since corrupt files may generate many warnings,</i></td></tr>
+<tr><th id="133">133</th><td><i>     * the policy implemented here is to show only the first warning,</i></td></tr>
+<tr><th id="134">134</th><td><i>     * unless trace_level &gt;= 3.</i></td></tr>
+<tr><th id="135">135</th><td><i>     */</i></td></tr>
+<tr><th id="136">136</th><td>    <b>if</b> (<a class="local col6 ref" href="#6err" title='err' data-ref="6err">err</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::num_warnings" title='jpeg_error_mgr::num_warnings' data-ref="jpeg_error_mgr::num_warnings">num_warnings</a> == <var>0</var> || <a class="local col6 ref" href="#6err" title='err' data-ref="6err">err</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::trace_level" title='jpeg_error_mgr::trace_level' data-ref="jpeg_error_mgr::trace_level">trace_level</a> &gt;= <var>3</var>)</td></tr>
+<tr><th id="137">137</th><td>      (*<a class="local col6 ref" href="#6err" title='err' data-ref="6err">err</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::output_message" title='jpeg_error_mgr::output_message' data-ref="jpeg_error_mgr::output_message">output_message</a>) (<a class="local col4 ref" href="#4cinfo" title='cinfo' data-ref="4cinfo">cinfo</a>);</td></tr>
+<tr><th id="138">138</th><td>    <i>/* Always count warnings in num_warnings. */</i></td></tr>
+<tr><th id="139">139</th><td>    <a class="local col6 ref" href="#6err" title='err' data-ref="6err">err</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::num_warnings" title='jpeg_error_mgr::num_warnings' data-ref="jpeg_error_mgr::num_warnings">num_warnings</a>++;</td></tr>
+<tr><th id="140">140</th><td>  } <b>else</b> {</td></tr>
+<tr><th id="141">141</th><td>    <i>/* It's a trace message.  Show it if trace_level &gt;= msg_level. */</i></td></tr>
+<tr><th id="142">142</th><td>    <b>if</b> (<a class="local col6 ref" href="#6err" title='err' data-ref="6err">err</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::trace_level" title='jpeg_error_mgr::trace_level' data-ref="jpeg_error_mgr::trace_level">trace_level</a> &gt;= <a class="local col5 ref" href="#5msg_level" title='msg_level' data-ref="5msg_level">msg_level</a>)</td></tr>
+<tr><th id="143">143</th><td>      (*<a class="local col6 ref" href="#6err" title='err' data-ref="6err">err</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::output_message" title='jpeg_error_mgr::output_message' data-ref="jpeg_error_mgr::output_message">output_message</a>) (<a class="local col4 ref" href="#4cinfo" title='cinfo' data-ref="4cinfo">cinfo</a>);</td></tr>
+<tr><th id="144">144</th><td>  }</td></tr>
+<tr><th id="145">145</th><td>}</td></tr>
+<tr><th id="146">146</th><td></td></tr>
+<tr><th id="147">147</th><td></td></tr>
+<tr><th id="148">148</th><td><i>/*</i></td></tr>
+<tr><th id="149">149</th><td><i> * Format a message string for the most recent JPEG error or message.</i></td></tr>
+<tr><th id="150">150</th><td><i> * The message is stored into buffer, which should be at least JMSG_LENGTH_MAX</i></td></tr>
+<tr><th id="151">151</th><td><i> * characters.  Note that no '\n' character is added to the string.</i></td></tr>
+<tr><th id="152">152</th><td><i> * Few applications should need to override this method.</i></td></tr>
+<tr><th id="153">153</th><td><i> */</i></td></tr>
+<tr><th id="154">154</th><td></td></tr>
+<tr><th id="155">155</th><td><a class="macro" href="jmorecfg.h.html#168" title="static void" data-ref="_M/METHODDEF">METHODDEF</a>(<em>void</em>)</td></tr>
+<tr><th id="156">156</th><td><dfn class="decl def fn" id="format_message" title='format_message' data-ref="format_message">format_message</dfn>(<a class="typedef" href="jpeglib.h.html#j_common_ptr" title='j_common_ptr' data-type='struct jpeg_common_struct *' data-ref="j_common_ptr">j_common_ptr</a> <dfn class="local col7 decl" id="7cinfo" title='cinfo' data-type='j_common_ptr' data-ref="7cinfo">cinfo</dfn>, <em>char</em> *<dfn class="local col8 decl" id="8buffer" title='buffer' data-type='char *' data-ref="8buffer">buffer</dfn>)</td></tr>
+<tr><th id="157">157</th><td>{</td></tr>
+<tr><th id="158">158</th><td>  <b>struct</b> <a class="type" href="jpeglib.h.html#jpeg_error_mgr" title='jpeg_error_mgr' data-ref="jpeg_error_mgr">jpeg_error_mgr</a> *<dfn class="local col9 decl" id="9err" title='err' data-type='struct jpeg_error_mgr *' data-ref="9err">err</dfn> = <a class="local col7 ref" href="#7cinfo" title='cinfo' data-ref="7cinfo">cinfo</a>-&gt;<a class="ref field" href="jpeglib.h.html#283" title='jpeg_common_struct::err' data-ref="jpeg_common_struct::err">err</a>;</td></tr>
+<tr><th id="159">159</th><td>  <em>int</em> <dfn class="local col0 decl" id="10msg_code" title='msg_code' data-type='int' data-ref="10msg_code">msg_code</dfn> = <a class="local col9 ref" href="#9err" title='err' data-ref="9err">err</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::msg_code" title='jpeg_error_mgr::msg_code' data-ref="jpeg_error_mgr::msg_code">msg_code</a>;</td></tr>
+<tr><th id="160">160</th><td>  <em>const</em> <em>char</em> *<dfn class="local col1 decl" id="11msgtext" title='msgtext' data-type='const char *' data-ref="11msgtext">msgtext</dfn> = <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="161">161</th><td>  <em>const</em> <em>char</em> *<dfn class="local col2 decl" id="12msgptr" title='msgptr' data-type='const char *' data-ref="12msgptr">msgptr</dfn>;</td></tr>
+<tr><th id="162">162</th><td>  <em>char</em> <dfn class="local col3 decl" id="13ch" title='ch' data-type='char' data-ref="13ch">ch</dfn>;</td></tr>
+<tr><th id="163">163</th><td>  <a class="typedef" href="jmorecfg.h.html#boolean" title='boolean' data-type='int' data-ref="boolean">boolean</a> <dfn class="local col4 decl" id="14isstring" title='isstring' data-type='boolean' data-ref="14isstring">isstring</dfn>;</td></tr>
+<tr><th id="164">164</th><td></td></tr>
+<tr><th id="165">165</th><td>  <i>/* Look up message string in proper table */</i></td></tr>
+<tr><th id="166">166</th><td>  <b>if</b> (<a class="local col0 ref" href="#10msg_code" title='msg_code' data-ref="10msg_code">msg_code</a> &gt; <var>0</var> &amp;&amp; <a class="local col0 ref" href="#10msg_code" title='msg_code' data-ref="10msg_code">msg_code</a> &lt;= <a class="local col9 ref" href="#9err" title='err' data-ref="9err">err</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::last_jpeg_message" title='jpeg_error_mgr::last_jpeg_message' data-ref="jpeg_error_mgr::last_jpeg_message">last_jpeg_message</a>) {</td></tr>
+<tr><th id="167">167</th><td>    <a class="local col1 ref" href="#11msgtext" title='msgtext' data-ref="11msgtext">msgtext</a> = <a class="local col9 ref" href="#9err" title='err' data-ref="9err">err</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::jpeg_message_table" title='jpeg_error_mgr::jpeg_message_table' data-ref="jpeg_error_mgr::jpeg_message_table">jpeg_message_table</a>[<a class="local col0 ref" href="#10msg_code" title='msg_code' data-ref="10msg_code">msg_code</a>];</td></tr>
+<tr><th id="168">168</th><td>  } <b>else</b> <b>if</b> (<a class="local col9 ref" href="#9err" title='err' data-ref="9err">err</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::addon_message_table" title='jpeg_error_mgr::addon_message_table' data-ref="jpeg_error_mgr::addon_message_table">addon_message_table</a> != <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span> &amp;&amp;</td></tr>
+<tr><th id="169">169</th><td>             <a class="local col0 ref" href="#10msg_code" title='msg_code' data-ref="10msg_code">msg_code</a> &gt;= <a class="local col9 ref" href="#9err" title='err' data-ref="9err">err</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::first_addon_message" title='jpeg_error_mgr::first_addon_message' data-ref="jpeg_error_mgr::first_addon_message">first_addon_message</a> &amp;&amp;</td></tr>
+<tr><th id="170">170</th><td>             <a class="local col0 ref" href="#10msg_code" title='msg_code' data-ref="10msg_code">msg_code</a> &lt;= <a class="local col9 ref" href="#9err" title='err' data-ref="9err">err</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::last_addon_message" title='jpeg_error_mgr::last_addon_message' data-ref="jpeg_error_mgr::last_addon_message">last_addon_message</a>) {</td></tr>
+<tr><th id="171">171</th><td>    <a class="local col1 ref" href="#11msgtext" title='msgtext' data-ref="11msgtext">msgtext</a> = <a class="local col9 ref" href="#9err" title='err' data-ref="9err">err</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::addon_message_table" title='jpeg_error_mgr::addon_message_table' data-ref="jpeg_error_mgr::addon_message_table">addon_message_table</a>[<a class="local col0 ref" href="#10msg_code" title='msg_code' data-ref="10msg_code">msg_code</a> - <a class="local col9 ref" href="#9err" title='err' data-ref="9err">err</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::first_addon_message" title='jpeg_error_mgr::first_addon_message' data-ref="jpeg_error_mgr::first_addon_message">first_addon_message</a>];</td></tr>
+<tr><th id="172">172</th><td>  }</td></tr>
+<tr><th id="173">173</th><td></td></tr>
+<tr><th id="174">174</th><td>  <i>/* Defend against bogus message number */</i></td></tr>
+<tr><th id="175">175</th><td>  <b>if</b> (<a class="local col1 ref" href="#11msgtext" title='msgtext' data-ref="11msgtext">msgtext</a> == <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>) {</td></tr>
+<tr><th id="176">176</th><td>    <a class="local col9 ref" href="#9err" title='err' data-ref="9err">err</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::msg_parm" title='jpeg_error_mgr::msg_parm' data-ref="jpeg_error_mgr::msg_parm">msg_parm</a>.<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::(anonymous)::i" title='jpeg_error_mgr::(anonymous union)::i' data-ref="jpeg_error_mgr::(anonymous)::i">i</a>[<var>0</var>] = <a class="local col0 ref" href="#10msg_code" title='msg_code' data-ref="10msg_code">msg_code</a>;</td></tr>
+<tr><th id="177">177</th><td>    <a class="local col1 ref" href="#11msgtext" title='msgtext' data-ref="11msgtext">msgtext</a> = <a class="local col9 ref" href="#9err" title='err' data-ref="9err">err</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::jpeg_message_table" title='jpeg_error_mgr::jpeg_message_table' data-ref="jpeg_error_mgr::jpeg_message_table">jpeg_message_table</a>[<var>0</var>];</td></tr>
+<tr><th id="178">178</th><td>  }</td></tr>
+<tr><th id="179">179</th><td></td></tr>
+<tr><th id="180">180</th><td>  <i>/* Check for string parameter, as indicated by %s in the message text */</i></td></tr>
+<tr><th id="181">181</th><td>  <a class="local col4 ref" href="#14isstring" title='isstring' data-ref="14isstring">isstring</a> = <a class="macro" href="jmorecfg.h.html#206" title="0" data-ref="_M/FALSE">FALSE</a>;</td></tr>
+<tr><th id="182">182</th><td>  <a class="local col2 ref" href="#12msgptr" title='msgptr' data-ref="12msgptr">msgptr</a> = <a class="local col1 ref" href="#11msgtext" title='msgtext' data-ref="11msgtext">msgtext</a>;</td></tr>
+<tr><th id="183">183</th><td>  <b>while</b> ((<a class="local col3 ref" href="#13ch" title='ch' data-ref="13ch">ch</a> = *<a class="local col2 ref" href="#12msgptr" title='msgptr' data-ref="12msgptr">msgptr</a>++) != <kbd>'\0'</kbd>) {</td></tr>
+<tr><th id="184">184</th><td>    <b>if</b> (<a class="local col3 ref" href="#13ch" title='ch' data-ref="13ch">ch</a> == <kbd>'%'</kbd>) {</td></tr>
+<tr><th id="185">185</th><td>      <b>if</b> (*<a class="local col2 ref" href="#12msgptr" title='msgptr' data-ref="12msgptr">msgptr</a> == <kbd>'s'</kbd>) <a class="local col4 ref" href="#14isstring" title='isstring' data-ref="14isstring">isstring</a> = <a class="macro" href="jmorecfg.h.html#209" title="1" data-ref="_M/TRUE">TRUE</a>;</td></tr>
+<tr><th id="186">186</th><td>      <b>break</b>;</td></tr>
+<tr><th id="187">187</th><td>    }</td></tr>
+<tr><th id="188">188</th><td>  }</td></tr>
+<tr><th id="189">189</th><td></td></tr>
+<tr><th id="190">190</th><td>  <i>/* Format the message into the passed buffer */</i></td></tr>
+<tr><th id="191">191</th><td>  <b>if</b> (<a class="local col4 ref" href="#14isstring" title='isstring' data-ref="14isstring">isstring</a>)</td></tr>
+<tr><th id="192">192</th><td>    <a class="macro" href="jinclude.h.html#55" title="snprintf" data-ref="_M/SNPRINTF">SNPRINTF</a>(<span class='inlayHint'>s:&nbsp;</span><a class="local col8 ref" href="#8buffer" title='buffer' data-ref="8buffer">buffer</a>, <a class="macro" href="jpeglib.h.html#729" title="200" data-ref="_M/JMSG_LENGTH_MAX">JMSG_LENGTH_MAX</a>, <span class='inlayHint'>format:&nbsp;</span><a class="local col1 ref" href="#11msgtext" title='msgtext' data-ref="11msgtext">msgtext</a>, <a class="local col9 ref" href="#9err" title='err' data-ref="9err">err</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::msg_parm" title='jpeg_error_mgr::msg_parm' data-ref="jpeg_error_mgr::msg_parm">msg_parm</a>.<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::(anonymous)::s" title='jpeg_error_mgr::(anonymous union)::s' data-ref="jpeg_error_mgr::(anonymous)::s">s</a>);</td></tr>
+<tr><th id="193">193</th><td>  <b>else</b></td></tr>
+<tr><th id="194">194</th><td>    <a class="macro" href="jinclude.h.html#55" title="snprintf" data-ref="_M/SNPRINTF">SNPRINTF</a>(<span class='inlayHint'>s:&nbsp;</span><a class="local col8 ref" href="#8buffer" title='buffer' data-ref="8buffer">buffer</a>, <a class="macro" href="jpeglib.h.html#729" title="200" data-ref="_M/JMSG_LENGTH_MAX">JMSG_LENGTH_MAX</a>, <span class='inlayHint'>format:&nbsp;</span><a class="local col1 ref" href="#11msgtext" title='msgtext' data-ref="11msgtext">msgtext</a>,</td></tr>
+<tr><th id="195">195</th><td>             <a class="local col9 ref" href="#9err" title='err' data-ref="9err">err</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::msg_parm" title='jpeg_error_mgr::msg_parm' data-ref="jpeg_error_mgr::msg_parm">msg_parm</a>.<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::(anonymous)::i" title='jpeg_error_mgr::(anonymous union)::i' data-ref="jpeg_error_mgr::(anonymous)::i">i</a>[<var>0</var>], <a class="local col9 ref" href="#9err" title='err' data-ref="9err">err</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::msg_parm" title='jpeg_error_mgr::msg_parm' data-ref="jpeg_error_mgr::msg_parm">msg_parm</a>.<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::(anonymous)::i" title='jpeg_error_mgr::(anonymous union)::i' data-ref="jpeg_error_mgr::(anonymous)::i">i</a>[<var>1</var>],</td></tr>
+<tr><th id="196">196</th><td>             <a class="local col9 ref" href="#9err" title='err' data-ref="9err">err</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::msg_parm" title='jpeg_error_mgr::msg_parm' data-ref="jpeg_error_mgr::msg_parm">msg_parm</a>.<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::(anonymous)::i" title='jpeg_error_mgr::(anonymous union)::i' data-ref="jpeg_error_mgr::(anonymous)::i">i</a>[<var>2</var>], <a class="local col9 ref" href="#9err" title='err' data-ref="9err">err</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::msg_parm" title='jpeg_error_mgr::msg_parm' data-ref="jpeg_error_mgr::msg_parm">msg_parm</a>.<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::(anonymous)::i" title='jpeg_error_mgr::(anonymous union)::i' data-ref="jpeg_error_mgr::(anonymous)::i">i</a>[<var>3</var>],</td></tr>
+<tr><th id="197">197</th><td>             <a class="local col9 ref" href="#9err" title='err' data-ref="9err">err</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::msg_parm" title='jpeg_error_mgr::msg_parm' data-ref="jpeg_error_mgr::msg_parm">msg_parm</a>.<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::(anonymous)::i" title='jpeg_error_mgr::(anonymous union)::i' data-ref="jpeg_error_mgr::(anonymous)::i">i</a>[<var>4</var>], <a class="local col9 ref" href="#9err" title='err' data-ref="9err">err</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::msg_parm" title='jpeg_error_mgr::msg_parm' data-ref="jpeg_error_mgr::msg_parm">msg_parm</a>.<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::(anonymous)::i" title='jpeg_error_mgr::(anonymous union)::i' data-ref="jpeg_error_mgr::(anonymous)::i">i</a>[<var>5</var>],</td></tr>
+<tr><th id="198">198</th><td>             <a class="local col9 ref" href="#9err" title='err' data-ref="9err">err</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::msg_parm" title='jpeg_error_mgr::msg_parm' data-ref="jpeg_error_mgr::msg_parm">msg_parm</a>.<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::(anonymous)::i" title='jpeg_error_mgr::(anonymous union)::i' data-ref="jpeg_error_mgr::(anonymous)::i">i</a>[<var>6</var>], <a class="local col9 ref" href="#9err" title='err' data-ref="9err">err</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::msg_parm" title='jpeg_error_mgr::msg_parm' data-ref="jpeg_error_mgr::msg_parm">msg_parm</a>.<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::(anonymous)::i" title='jpeg_error_mgr::(anonymous union)::i' data-ref="jpeg_error_mgr::(anonymous)::i">i</a>[<var>7</var>]);</td></tr>
+<tr><th id="199">199</th><td>}</td></tr>
+<tr><th id="200">200</th><td></td></tr>
+<tr><th id="201">201</th><td></td></tr>
+<tr><th id="202">202</th><td><i>/*</i></td></tr>
+<tr><th id="203">203</th><td><i> * Reset error state variables at start of a new image.</i></td></tr>
+<tr><th id="204">204</th><td><i> * This is called during compression startup to reset trace/error</i></td></tr>
+<tr><th id="205">205</th><td><i> * processing to default state, without losing any application-specific</i></td></tr>
+<tr><th id="206">206</th><td><i> * method pointers.  An application might possibly want to override</i></td></tr>
+<tr><th id="207">207</th><td><i> * this method if it has additional error processing state.</i></td></tr>
+<tr><th id="208">208</th><td><i> */</i></td></tr>
+<tr><th id="209">209</th><td></td></tr>
+<tr><th id="210">210</th><td><a class="macro" href="jmorecfg.h.html#168" title="static void" data-ref="_M/METHODDEF">METHODDEF</a>(<em>void</em>)</td></tr>
+<tr><th id="211">211</th><td><dfn class="decl def fn" id="reset_error_mgr" title='reset_error_mgr' data-ref="reset_error_mgr">reset_error_mgr</dfn>(<a class="typedef" href="jpeglib.h.html#j_common_ptr" title='j_common_ptr' data-type='struct jpeg_common_struct *' data-ref="j_common_ptr">j_common_ptr</a> <dfn class="local col5 decl" id="15cinfo" title='cinfo' data-type='j_common_ptr' data-ref="15cinfo">cinfo</dfn>)</td></tr>
+<tr><th id="212">212</th><td>{</td></tr>
+<tr><th id="213">213</th><td>  <a class="local col5 ref" href="#15cinfo" title='cinfo' data-ref="15cinfo">cinfo</a>-&gt;<a class="ref field" href="jpeglib.h.html#283" title='jpeg_common_struct::err' data-ref="jpeg_common_struct::err">err</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::num_warnings" title='jpeg_error_mgr::num_warnings' data-ref="jpeg_error_mgr::num_warnings">num_warnings</a> = <var>0</var>;</td></tr>
+<tr><th id="214">214</th><td>  <i>/* trace_level is not reset since it is an application-supplied parameter */</i></td></tr>
+<tr><th id="215">215</th><td>  <a class="local col5 ref" href="#15cinfo" title='cinfo' data-ref="15cinfo">cinfo</a>-&gt;<a class="ref field" href="jpeglib.h.html#283" title='jpeg_common_struct::err' data-ref="jpeg_common_struct::err">err</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::msg_code" title='jpeg_error_mgr::msg_code' data-ref="jpeg_error_mgr::msg_code">msg_code</a> = <var>0</var>;     <i>/* may be useful as a flag for "no error" */</i></td></tr>
+<tr><th id="216">216</th><td>}</td></tr>
+<tr><th id="217">217</th><td></td></tr>
+<tr><th id="218">218</th><td></td></tr>
+<tr><th id="219">219</th><td><i>/*</i></td></tr>
+<tr><th id="220">220</th><td><i> * Fill in the standard error-handling methods in a jpeg_error_mgr object.</i></td></tr>
+<tr><th id="221">221</th><td><i> * Typical call is:</i></td></tr>
+<tr><th id="222">222</th><td><i> *      struct jpeg_compress_struct cinfo;</i></td></tr>
+<tr><th id="223">223</th><td><i> *      struct jpeg_error_mgr err;</i></td></tr>
+<tr><th id="224">224</th><td><i> *</i></td></tr>
+<tr><th id="225">225</th><td><i> *      cinfo.err = jpeg_std_error(&amp;err);</i></td></tr>
+<tr><th id="226">226</th><td><i> * after which the application may override some of the methods.</i></td></tr>
+<tr><th id="227">227</th><td><i> */</i></td></tr>
+<tr><th id="228">228</th><td></td></tr>
+<tr><th id="229">229</th><td><a class="macro" href="jmorecfg.h.html#172" title="struct jpeg_error_mgr *" data-ref="_M/GLOBAL">GLOBAL</a>(<b>struct</b> <a class="type" href="jpeglib.h.html#jpeg_error_mgr" title='jpeg_error_mgr' data-ref="jpeg_error_mgr">jpeg_error_mgr</a> *)</td></tr>
+<tr><th id="230">230</th><td><dfn class="decl def fn" id="jpeg_std_error" title='jpeg_std_error' data-ref="jpeg_std_error">jpeg_std_error</dfn>(<b>struct</b> <a class="type" href="jpeglib.h.html#jpeg_error_mgr" title='jpeg_error_mgr' data-ref="jpeg_error_mgr">jpeg_error_mgr</a> *<dfn class="local col6 decl" id="16err" title='err' data-type='struct jpeg_error_mgr *' data-ref="16err">err</dfn>)</td></tr>
+<tr><th id="231">231</th><td>{</td></tr>
+<tr><th id="232">232</th><td>  <a class="local col6 ref" href="#16err" title='err' data-ref="16err">err</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::error_exit" title='jpeg_error_mgr::error_exit' data-ref="jpeg_error_mgr::error_exit">error_exit</a> = <a class="ref fn" href="#error_exit" title='error_exit' data-ref="error_exit">error_exit</a>;</td></tr>
+<tr><th id="233">233</th><td>  <a class="local col6 ref" href="#16err" title='err' data-ref="16err">err</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::emit_message" title='jpeg_error_mgr::emit_message' data-ref="jpeg_error_mgr::emit_message">emit_message</a> = <a class="ref fn" href="#emit_message" title='emit_message' data-ref="emit_message">emit_message</a>;</td></tr>
+<tr><th id="234">234</th><td>  <a class="local col6 ref" href="#16err" title='err' data-ref="16err">err</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::output_message" title='jpeg_error_mgr::output_message' data-ref="jpeg_error_mgr::output_message">output_message</a> = <a class="ref fn" href="#output_message" title='output_message' data-ref="output_message">output_message</a>;</td></tr>
+<tr><th id="235">235</th><td>  <a class="local col6 ref" href="#16err" title='err' data-ref="16err">err</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::format_message" title='jpeg_error_mgr::format_message' data-ref="jpeg_error_mgr::format_message">format_message</a> = <a class="ref fn" href="#format_message" title='format_message' data-ref="format_message">format_message</a>;</td></tr>
+<tr><th id="236">236</th><td>  <a class="local col6 ref" href="#16err" title='err' data-ref="16err">err</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::reset_error_mgr" title='jpeg_error_mgr::reset_error_mgr' data-ref="jpeg_error_mgr::reset_error_mgr">reset_error_mgr</a> = <a class="ref fn" href="#reset_error_mgr" title='reset_error_mgr' data-ref="reset_error_mgr">reset_error_mgr</a>;</td></tr>
+<tr><th id="237">237</th><td></td></tr>
+<tr><th id="238">238</th><td>  <a class="local col6 ref" href="#16err" title='err' data-ref="16err">err</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::trace_level" title='jpeg_error_mgr::trace_level' data-ref="jpeg_error_mgr::trace_level">trace_level</a> = <var>0</var>;         <i>/* default = no tracing */</i></td></tr>
+<tr><th id="239">239</th><td>  <a class="local col6 ref" href="#16err" title='err' data-ref="16err">err</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::num_warnings" title='jpeg_error_mgr::num_warnings' data-ref="jpeg_error_mgr::num_warnings">num_warnings</a> = <var>0</var>;        <i>/* no warnings emitted yet */</i></td></tr>
+<tr><th id="240">240</th><td>  <a class="local col6 ref" href="#16err" title='err' data-ref="16err">err</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::msg_code" title='jpeg_error_mgr::msg_code' data-ref="jpeg_error_mgr::msg_code">msg_code</a> = <var>0</var>;            <i>/* may be useful as a flag for "no error" */</i></td></tr>
+<tr><th id="241">241</th><td></td></tr>
+<tr><th id="242">242</th><td>  <i>/* Initialize message table pointers */</i></td></tr>
+<tr><th id="243">243</th><td>  <a class="local col6 ref" href="#16err" title='err' data-ref="16err">err</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::jpeg_message_table" title='jpeg_error_mgr::jpeg_message_table' data-ref="jpeg_error_mgr::jpeg_message_table">jpeg_message_table</a> = <a class="ref" href="#jpeg_std_message_table" title='jpeg_std_message_table' data-ref="jpeg_std_message_table">jpeg_std_message_table</a>;</td></tr>
+<tr><th id="244">244</th><td>  <a class="local col6 ref" href="#16err" title='err' data-ref="16err">err</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::last_jpeg_message" title='jpeg_error_mgr::last_jpeg_message' data-ref="jpeg_error_mgr::last_jpeg_message">last_jpeg_message</a> = (<em>int</em>)<a class="enum" href="jerror.h.html#JMSG_LASTMSGCODE" title='JMSG_LASTMSGCODE' data-ref="JMSG_LASTMSGCODE">JMSG_LASTMSGCODE</a> - <var>1</var>;</td></tr>
+<tr><th id="245">245</th><td></td></tr>
+<tr><th id="246">246</th><td>  <a class="local col6 ref" href="#16err" title='err' data-ref="16err">err</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::addon_message_table" title='jpeg_error_mgr::addon_message_table' data-ref="jpeg_error_mgr::addon_message_table">addon_message_table</a> = <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="247">247</th><td>  <a class="local col6 ref" href="#16err" title='err' data-ref="16err">err</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::first_addon_message" title='jpeg_error_mgr::first_addon_message' data-ref="jpeg_error_mgr::first_addon_message">first_addon_message</a> = <var>0</var>; <i>/* for safety */</i></td></tr>
+<tr><th id="248">248</th><td>  <a class="local col6 ref" href="#16err" title='err' data-ref="16err">err</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_error_mgr::last_addon_message" title='jpeg_error_mgr::last_addon_message' data-ref="jpeg_error_mgr::last_addon_message">last_addon_message</a> = <var>0</var>;</td></tr>
+<tr><th id="249">249</th><td></td></tr>
+<tr><th id="250">250</th><td>  <b>return</b> <a class="local col6 ref" href="#16err" title='err' data-ref="16err">err</a>;</td></tr>
+<tr><th id="251">251</th><td>}</td></tr>
+<tr><th id="252">252</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2024-Jun-13</em> from project qtbase-6.5.0 revision <em>6.5.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

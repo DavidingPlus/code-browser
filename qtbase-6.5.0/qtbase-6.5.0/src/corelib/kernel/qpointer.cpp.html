@@ -1,0 +1,267 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>qpointer.cpp source code [qtbase-6.5.0/src/corelib/kernel/qpointer.cpp] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'qtbase-6.5.0/src/corelib/kernel/qpointer.cpp'; var root_path = '../../../..'; var data_path = '../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>qtbase-6.5.0</a>/<a href='../..'>src</a>/<a href='..'>corelib</a>/<a href='./'>kernel</a>/<a href='qpointer.cpp.html'>qpointer.cpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>// Copyright (C) 2016 The Qt Company Ltd.</i></td></tr>
+<tr><th id="2">2</th><td><i>// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only</i></td></tr>
+<tr><th id="3">3</th><td></td></tr>
+<tr><th id="4">4</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="5">5</th><td><i class="doc">    <span class="command">\class</span> <span class="verb" data-ref="QPointer">QPointer</span></i></td></tr>
+<tr><th id="6">6</th><td><i class="doc">   <span class="command"> \inmodule</span> QtCore</i></td></tr>
+<tr><th id="7">7</th><td><i class="doc">    <span class="command">\brief</span> The QPointer class is a template class that provides guarded pointers to QObject.</i></td></tr>
+<tr><th id="8">8</th><td><i class="doc"></i></td></tr>
+<tr><th id="9">9</th><td><i class="doc">    <span class="command">\ingroup</span> <span class="verb">objectmodel</span></i></td></tr>
+<tr><th id="10">10</th><td><i class="doc"></i></td></tr>
+<tr><th id="11">11</th><td><i class="doc">    A guarded pointer, QPointer&lt;T&gt;, behaves like a normal C++</i></td></tr>
+<tr><th id="12">12</th><td><i class="doc">    pointer<span class="command"> \c</span><span class="arg">{T</span> *}, except that it is automatically cleared when the</i></td></tr>
+<tr><th id="13">13</th><td><i class="doc">    referenced object is destroyed (unlike normal C++ pointers, which</i></td></tr>
+<tr><th id="14">14</th><td><i class="doc">    become "dangling pointers" in such cases).<span class="command"> \c</span> <span class="arg">T</span> must be a</i></td></tr>
+<tr><th id="15">15</th><td><i class="doc">    subclass of QObject.</i></td></tr>
+<tr><th id="16">16</th><td><i class="doc"></i></td></tr>
+<tr><th id="17">17</th><td><i class="doc">    Guarded pointers are useful whenever you need to store a pointer</i></td></tr>
+<tr><th id="18">18</th><td><i class="doc">    to a QObject that is owned by someone else, and therefore might be</i></td></tr>
+<tr><th id="19">19</th><td><i class="doc">    destroyed while you still hold a reference to it. You can safely</i></td></tr>
+<tr><th id="20">20</th><td><i class="doc">    test the pointer for validity.</i></td></tr>
+<tr><th id="21">21</th><td><i class="doc"></i></td></tr>
+<tr><th id="22">22</th><td><i class="doc">    Note that Qt 5 introduces a slight change in behavior when using QPointer.</i></td></tr>
+<tr><th id="23">23</th><td><i class="doc"></i></td></tr>
+<tr><th id="24">24</th><td><i class="doc">   <span class="command"> \list</span></i></td></tr>
+<tr><th id="25">25</th><td><i class="doc"></i></td></tr>
+<tr><th id="26">26</th><td><i class="doc">    <span class="command">\li</span> When using QPointer on a QWidget (or a subclass of QWidget), previously</i></td></tr>
+<tr><th id="27">27</th><td><i class="doc">    the QPointer would be cleared by the QWidget destructor. Now, the QPointer</i></td></tr>
+<tr><th id="28">28</th><td><i class="doc">    is cleared by the QObject destructor (since this is when QWeakPointer objects are</i></td></tr>
+<tr><th id="29">29</th><td><i class="doc">    cleared). Any QPointers tracking a widget will<span class="command"> \b</span> <span class="arg">NOT</span> be cleared before the</i></td></tr>
+<tr><th id="30">30</th><td><i class="doc">    QWidget destructor destroys the children for the widget being tracked.</i></td></tr>
+<tr><th id="31">31</th><td><i class="doc"></i></td></tr>
+<tr><th id="32">32</th><td><i class="doc">   <span class="command"> \endlist</span></i></td></tr>
+<tr><th id="33">33</th><td><i class="doc"></i></td></tr>
+<tr><th id="34">34</th><td><i class="doc">    Qt also provides QSharedPointer, an implementation of a reference-counted</i></td></tr>
+<tr><th id="35">35</th><td><i class="doc">    shared pointer object, which can be used to maintain a collection of</i></td></tr>
+<tr><th id="36">36</th><td><i class="doc">    references to an individual pointer.</i></td></tr>
+<tr><th id="37">37</th><td><i class="doc"></i></td></tr>
+<tr><th id="38">38</th><td><i class="doc">    Example:</i></td></tr>
+<tr><th id="39">39</th><td><i class="doc"></i></td></tr>
+<tr><th id="40">40</th><td><i class="doc">    <span class="command">\snippet</span> <span class="verb">pointer/pointer.cpp 0</span></i></td></tr>
+<tr><th id="41">41</th><td><i class="doc">    <span class="command">\dot</span>s</i></td></tr>
+<tr><th id="42">42</th><td><i class="doc"><span class="verb">    \snippet pointer/pointer.cpp 1</span></i></td></tr>
+<tr><th id="43">43</th><td><i class="doc"><span class="verb"></span><span class="verb">    \snippet pointer/pointer.cpp 2</span></i></td></tr>
+<tr><th id="44">44</th><td><i class="doc"><span class="verb"></span><span class="verb"></span></i></td></tr>
+<tr><th id="45">45</th><td><i class="doc"><span class="verb"></span><span class="verb">    If the QLabel is deleted in the meantime, the \c label variable</span></i></td></tr>
+<tr><th id="46">46</th><td><i class="doc"><span class="verb"></span><span class="verb">    will hold \nullptr instead of an invalid address, and the last line will</span></i></td></tr>
+<tr><th id="47">47</th><td><i class="doc"><span class="verb"></span><span class="verb">    never be executed.</span></i></td></tr>
+<tr><th id="48">48</th><td><i class="doc"><span class="verb"></span><span class="verb"></span></i></td></tr>
+<tr><th id="49">49</th><td><i class="doc"><span class="verb"></span><span class="verb">    The functions and operators available with a QPointer are the</span></i></td></tr>
+<tr><th id="50">50</th><td><i class="doc"><span class="verb"></span><span class="verb">    same as those available with a normal unguarded pointer, except</span></i></td></tr>
+<tr><th id="51">51</th><td><i class="doc"><span class="verb"></span><span class="verb">    the pointer arithmetic operators (\c{+}, \c{-}, \c{++}, and</span></i></td></tr>
+<tr><th id="52">52</th><td><i class="doc"><span class="verb"></span><span class="verb">    \c{--}), which are normally used only with arrays of objects.</span></i></td></tr>
+<tr><th id="53">53</th><td><i class="doc"><span class="verb"></span><span class="verb"></span></i></td></tr>
+<tr><th id="54">54</th><td><i class="doc"><span class="verb"></span><span class="verb">    Use QPointers like normal pointers and you will not need to read</span></i></td></tr>
+<tr><th id="55">55</th><td><i class="doc"><span class="verb"></span><span class="verb">    this class documentation.</span></i></td></tr>
+<tr><th id="56">56</th><td><i class="doc"><span class="verb"></span><span class="verb"></span></i></td></tr>
+<tr><th id="57">57</th><td><i class="doc"><span class="verb"></span><span class="verb">    For creating guarded pointers, you can construct or assign to them</span></i></td></tr>
+<tr><th id="58">58</th><td><i class="doc"><span class="verb"></span><span class="verb">    from a T* or from another guarded pointer of the same type. You</span></i></td></tr>
+<tr><th id="59">59</th><td><i class="doc"><span class="verb"></span><span class="verb">    can compare them with each other using operator==() and</span></i></td></tr>
+<tr><th id="60">60</th><td><i class="doc"><span class="verb"></span><span class="verb">    operator!=(), or test for \nullptr with isNull(). You can dereference</span></i></td></tr>
+<tr><th id="61">61</th><td><i class="doc"><span class="verb"></span><span class="verb">    them using either the \c *x or the \c x-&gt;member notation.</span></i></td></tr>
+<tr><th id="62">62</th><td><i class="doc"><span class="verb"></span><span class="verb"></span></i></td></tr>
+<tr><th id="63">63</th><td><i class="doc"><span class="verb"></span><span class="verb">    A guarded pointer will automatically cast to a \c T *, so you can</span></i></td></tr>
+<tr><th id="64">64</th><td><i class="doc"><span class="verb"></span><span class="verb">    freely mix guarded and unguarded pointers. This means that if you</span></i></td></tr>
+<tr><th id="65">65</th><td><i class="doc"><span class="verb"></span><span class="verb">    have a QPointer&lt;QWidget&gt;, you can pass it to a function that</span></i></td></tr>
+<tr><th id="66">66</th><td><i class="doc"><span class="verb"></span><span class="verb">    requires a QWidget *. For this reason, it is of little value to</span></i></td></tr>
+<tr><th id="67">67</th><td><i class="doc"><span class="verb"></span><span class="verb">    declare functions to take a QPointer as a parameter; just use</span></i></td></tr>
+<tr><th id="68">68</th><td><i class="doc"><span class="verb"></span><span class="verb">    normal pointers. Use a QPointer when you are storing a pointer</span></i></td></tr>
+<tr><th id="69">69</th><td><i class="doc"><span class="verb"></span><span class="verb">    over time.</span></i></td></tr>
+<tr><th id="70">70</th><td><i class="doc"><span class="verb"></span><span class="verb"></span></i></td></tr>
+<tr><th id="71">71</th><td><i class="doc"><span class="verb"></span><span class="verb">    Note that class \c T must inherit QObject, or a compilation or</span></i></td></tr>
+<tr><th id="72">72</th><td><i class="doc"><span class="verb"></span><span class="verb">    link error will result.</span></i></td></tr>
+<tr><th id="73">73</th><td><i class="doc"><span class="verb"></span><span class="verb"></span></i></td></tr>
+<tr><th id="74">74</th><td><i class="doc"><span class="verb"></span><span class="verb">    \sa QSharedPointer, QObject, QObjectCleanupHandler</span></i></td></tr>
+<tr><th id="75">75</th><td><i class="doc"><span class="verb"></span>*/</i><span class="verb"></span></td></tr>
+<tr><th id="76">76</th><td><span class="verb"></span></td></tr>
+<tr><th id="77">77</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="78">78</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">template &lt;class T&gt; QPointer&lt;T&gt;::QPointer()</span></i></td></tr>
+<tr><th id="79">79</th><td><i class="doc"></i></td></tr>
+<tr><th id="80">80</th><td><i class="doc">    Constructs a guarded pointer with value<span class="command"> \nullptr</span>.</i></td></tr>
+<tr><th id="81">81</th><td><i class="doc"></i></td></tr>
+<tr><th id="82">82</th><td><i class="doc">    <span class="command">\sa</span> isNull()</i></td></tr>
+<tr><th id="83">83</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="84">84</th><td></td></tr>
+<tr><th id="85">85</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="86">86</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">template &lt;class T&gt; QPointer&lt;T&gt;::QPointer(T* p)</span></i></td></tr>
+<tr><th id="87">87</th><td><i class="doc"></i></td></tr>
+<tr><th id="88">88</th><td><i class="doc">    Constructs a guarded pointer that points to the same object that<span class="command"> \a</span> <span class="arg">p</span></i></td></tr>
+<tr><th id="89">89</th><td><i class="doc">    points to.</i></td></tr>
+<tr><th id="90">90</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="91">91</th><td></td></tr>
+<tr><th id="92">92</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="93">93</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">template &lt;class T&gt; QPointer&lt;T&gt;::~QPointer()</span></i></td></tr>
+<tr><th id="94">94</th><td><i class="doc"></i></td></tr>
+<tr><th id="95">95</th><td><i class="doc">    Destroys the guarded pointer. Just like a normal pointer,</i></td></tr>
+<tr><th id="96">96</th><td><i class="doc">    destroying a guarded pointer does<span class="command"> \e</span> <span class="arg">not</span> destroy the object being</i></td></tr>
+<tr><th id="97">97</th><td><i class="doc">    pointed to.</i></td></tr>
+<tr><th id="98">98</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="99">99</th><td></td></tr>
+<tr><th id="100">100</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="101">101</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">template &lt;class T&gt; void QPointer&lt;T&gt;::swap(QPointer &amp;other)</span></i></td></tr>
+<tr><th id="102">102</th><td><i class="doc">    <span class="command">\since</span> 5.6</i></td></tr>
+<tr><th id="103">103</th><td><i class="doc"></i></td></tr>
+<tr><th id="104">104</th><td><i class="doc">    Swaps the contents of this QPointer with the contents of<span class="command"> \a</span> <span class="arg">other.</span></i></td></tr>
+<tr><th id="105">105</th><td><i class="doc">    This operation is very fast and never fails.</i></td></tr>
+<tr><th id="106">106</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="107">107</th><td></td></tr>
+<tr><th id="108">108</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="109">109</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">template &lt;class T&gt; QPointer&lt;T&gt; &amp; QPointer&lt;T&gt;::operator=(T* p)</span></i></td></tr>
+<tr><th id="110">110</th><td><i class="doc"></i></td></tr>
+<tr><th id="111">111</th><td><i class="doc">    Assignment operator. This guarded pointer will now point to the</i></td></tr>
+<tr><th id="112">112</th><td><i class="doc">    same object that<span class="command"> \a</span> <span class="arg">p</span> points to.</i></td></tr>
+<tr><th id="113">113</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="114">114</th><td></td></tr>
+<tr><th id="115">115</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="116">116</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">template &lt;class T&gt; T* QPointer&lt;T&gt;::data() const</span></i></td></tr>
+<tr><th id="117">117</th><td><i class="doc">    <span class="command">\since</span> 4.4</i></td></tr>
+<tr><th id="118">118</th><td><i class="doc"></i></td></tr>
+<tr><th id="119">119</th><td><i class="doc">    Returns the pointer to the object being guarded.</i></td></tr>
+<tr><th id="120">120</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="121">121</th><td></td></tr>
+<tr><th id="122">122</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="123">123</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">template &lt;class T&gt; T* QPointer&lt;T&gt;::get() const</span></i></td></tr>
+<tr><th id="124">124</th><td><i class="doc">    <span class="command">\since</span> 6.0</i></td></tr>
+<tr><th id="125">125</th><td><i class="doc"></i></td></tr>
+<tr><th id="126">126</th><td><i class="doc">    Same as data(). This function is provided for STL compatibility.</i></td></tr>
+<tr><th id="127">127</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="128">128</th><td></td></tr>
+<tr><th id="129">129</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="130">130</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">template &lt;class T&gt; bool QPointer&lt;T&gt;::isNull() const</span></i></td></tr>
+<tr><th id="131">131</th><td><i class="doc"></i></td></tr>
+<tr><th id="132">132</th><td><i class="doc">    Returns<span class="command"> \c</span> <span class="arg">true</span> if the referenced object has been destroyed or if</i></td></tr>
+<tr><th id="133">133</th><td><i class="doc">    there is no referenced object; otherwise returns<span class="command"> \c</span> <span class="arg">false.</span></i></td></tr>
+<tr><th id="134">134</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="135">135</th><td></td></tr>
+<tr><th id="136">136</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="137">137</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">template &lt;class T&gt; void QPointer&lt;T&gt;::clear()</span></i></td></tr>
+<tr><th id="138">138</th><td><i class="doc">    <span class="command">\since</span> 5.0</i></td></tr>
+<tr><th id="139">139</th><td><i class="doc"></i></td></tr>
+<tr><th id="140">140</th><td><i class="doc">    Clears this QPointer object.</i></td></tr>
+<tr><th id="141">141</th><td><i class="doc"></i></td></tr>
+<tr><th id="142">142</th><td><i class="doc">    <span class="command">\sa</span> isNull()</i></td></tr>
+<tr><th id="143">143</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="144">144</th><td></td></tr>
+<tr><th id="145">145</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="146">146</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">template &lt;class T&gt; T* QPointer&lt;T&gt;::operator-&gt;() const</span></i></td></tr>
+<tr><th id="147">147</th><td><i class="doc"></i></td></tr>
+<tr><th id="148">148</th><td><i class="doc">    Overloaded arrow operator; implements pointer semantics. Just use</i></td></tr>
+<tr><th id="149">149</th><td><i class="doc">    this operator as you would with a normal C++ pointer.</i></td></tr>
+<tr><th id="150">150</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="151">151</th><td></td></tr>
+<tr><th id="152">152</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="153">153</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">template &lt;class T&gt; T&amp; QPointer&lt;T&gt;::operator*() const</span></i></td></tr>
+<tr><th id="154">154</th><td><i class="doc"></i></td></tr>
+<tr><th id="155">155</th><td><i class="doc">    Dereference operator; implements pointer semantics. Just use this</i></td></tr>
+<tr><th id="156">156</th><td><i class="doc">    operator as you would with a normal C++ pointer.</i></td></tr>
+<tr><th id="157">157</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="158">158</th><td></td></tr>
+<tr><th id="159">159</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="160">160</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">template &lt;class T&gt; QPointer&lt;T&gt;::operator T*() const</span></i></td></tr>
+<tr><th id="161">161</th><td><i class="doc"></i></td></tr>
+<tr><th id="162">162</th><td><i class="doc">    Cast operator; implements pointer semantics. Because of this</i></td></tr>
+<tr><th id="163">163</th><td><i class="doc">    function you can pass a QPointer\&lt;T\&gt; to a function where a T*</i></td></tr>
+<tr><th id="164">164</th><td><i class="doc">    is required.</i></td></tr>
+<tr><th id="165">165</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="166">166</th><td></td></tr>
+<tr><th id="167">167</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="168">168</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">template &lt;typename T, typename X&gt; bool QPointer&lt;T&gt;::operator==(X *o, const QPointer&lt;T&gt; &amp;p)</span></i></td></tr>
+<tr><th id="169">169</th><td><i class="doc"></i></td></tr>
+<tr><th id="170">170</th><td><i class="doc">    Equality operator. Returns<span class="command"> \c</span> <span class="arg">true</span> if<span class="command"> \a</span> <span class="arg">o</span> and the guarded</i></td></tr>
+<tr><th id="171">171</th><td><i class="doc">    pointer<span class="command"> \a</span> <span class="arg">p</span> are pointing to the same object, otherwise</i></td></tr>
+<tr><th id="172">172</th><td><i class="doc">    returns<span class="command"> \c</span> <span class="arg">false.</span></i></td></tr>
+<tr><th id="173">173</th><td><i class="doc"></i></td></tr>
+<tr><th id="174">174</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="175">175</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="176">176</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">template &lt;typename T, typename X&gt; bool QPointer&lt;T&gt;::operator==(const QPointer&lt;T&gt; &amp;p, X *o)</span></i></td></tr>
+<tr><th id="177">177</th><td><i class="doc"></i></td></tr>
+<tr><th id="178">178</th><td><i class="doc">    Equality operator. Returns<span class="command"> \c</span> <span class="arg">true</span> if<span class="command"> \a</span> <span class="arg">o</span> and the guarded</i></td></tr>
+<tr><th id="179">179</th><td><i class="doc">    pointer<span class="command"> \a</span> <span class="arg">p</span> are pointing to the same object, otherwise</i></td></tr>
+<tr><th id="180">180</th><td><i class="doc">    returns<span class="command"> \c</span> <span class="arg">false.</span></i></td></tr>
+<tr><th id="181">181</th><td><i class="doc"></i></td></tr>
+<tr><th id="182">182</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="183">183</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="184">184</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">template &lt;typename T, typename X&gt; bool QPointer&lt;T&gt;::operator==(const QPointer&lt;T&gt; &amp;p1, const QPointer&lt;X&gt; &amp;p2)</span></i></td></tr>
+<tr><th id="185">185</th><td><i class="doc"></i></td></tr>
+<tr><th id="186">186</th><td><i class="doc">    Equality operator. Returns<span class="command"> \c</span> <span class="arg">true</span> if the guarded pointers<span class="command"> \a</span> <span class="arg">p1</span> and<span class="command"> \a</span> <span class="arg">p2</span></i></td></tr>
+<tr><th id="187">187</th><td><i class="doc">    are pointing to the same object, otherwise</i></td></tr>
+<tr><th id="188">188</th><td><i class="doc">    returns<span class="command"> \c</span> <span class="arg">false.</span></i></td></tr>
+<tr><th id="189">189</th><td><i class="doc"></i></td></tr>
+<tr><th id="190">190</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="191">191</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="192">192</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">template &lt;typename T&gt; bool QPointer&lt;T&gt;::operator==(std::nullptr_t, const QPointer&lt;T&gt; &amp;rhs)</span></i></td></tr>
+<tr><th id="193">193</th><td><i class="doc"></i></td></tr>
+<tr><th id="194">194</th><td><i class="doc">    Equality operator. Returns<span class="command"> \c</span> <span class="arg">true</span> if the pointer guarded by<span class="command"> \a</span> <span class="arg">rhs</span></i></td></tr>
+<tr><th id="195">195</th><td><i class="doc">    is<span class="command"> \nullptr</span>, otherwise</i></td></tr>
+<tr><th id="196">196</th><td><i class="doc">    returns<span class="command"> \c</span> <span class="arg">false.</span></i></td></tr>
+<tr><th id="197">197</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="198">198</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="199">199</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">template &lt;typename T&gt; bool QPointer&lt;T&gt;::operator==(const QPointer&lt;T&gt; &amp;lhs, std::nullptr_t)</span></i></td></tr>
+<tr><th id="200">200</th><td><i class="doc"></i></td></tr>
+<tr><th id="201">201</th><td><i class="doc">    Equality operator. Returns<span class="command"> \c</span> <span class="arg">true</span> if the pointer guarded by<span class="command"> \a</span> <span class="arg">lhs</span></i></td></tr>
+<tr><th id="202">202</th><td><i class="doc">    is<span class="command"> \nullptr</span>, otherwise</i></td></tr>
+<tr><th id="203">203</th><td><i class="doc">    returns<span class="command"> \c</span> <span class="arg">false.</span></i></td></tr>
+<tr><th id="204">204</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="205">205</th><td></td></tr>
+<tr><th id="206">206</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="207">207</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">template &lt;typename T, typename X&gt; bool QPointer&lt;T&gt;::operator!=(const QPointer&lt;T&gt; &amp;p, X *o)</span></i></td></tr>
+<tr><th id="208">208</th><td><i class="doc"></i></td></tr>
+<tr><th id="209">209</th><td><i class="doc">    Inequality operator. Returns<span class="command"> \c</span> <span class="arg">true</span> if<span class="command"> \a</span> <span class="arg">o</span> and the guarded</i></td></tr>
+<tr><th id="210">210</th><td><i class="doc">    pointer<span class="command"> \a</span> <span class="arg">p</span> are not pointing to the same object, otherwise</i></td></tr>
+<tr><th id="211">211</th><td><i class="doc">    returns<span class="command"> \c</span> <span class="arg">false.</span></i></td></tr>
+<tr><th id="212">212</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="213">213</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="214">214</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">template &lt;typename T, typename X&gt; bool QPointer&lt;T&gt;::operator!=(X *o, const QPointer&lt;T&gt; &amp;p)</span></i></td></tr>
+<tr><th id="215">215</th><td><i class="doc"></i></td></tr>
+<tr><th id="216">216</th><td><i class="doc">    Inequality operator. Returns<span class="command"> \c</span> <span class="arg">true</span> if<span class="command"> \a</span> <span class="arg">o</span> and the guarded</i></td></tr>
+<tr><th id="217">217</th><td><i class="doc">    pointer<span class="command"> \a</span> <span class="arg">p</span> are not pointing to the same object, otherwise</i></td></tr>
+<tr><th id="218">218</th><td><i class="doc">    returns<span class="command"> \c</span> <span class="arg">false.</span></i></td></tr>
+<tr><th id="219">219</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="220">220</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="221">221</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">template &lt;typename T, typename X&gt; bool QPointer&lt;T&gt;::operator!=(const QPointer&lt;T&gt; &amp;p1, const QPointer&lt;X&gt; &amp;p2)</span></i></td></tr>
+<tr><th id="222">222</th><td><i class="doc"></i></td></tr>
+<tr><th id="223">223</th><td><i class="doc">    Inequality operator. Returns<span class="command"> \c</span> <span class="arg">true</span> if  the guarded pointers<span class="command"> \a</span> <span class="arg">p1</span> and</i></td></tr>
+<tr><th id="224">224</th><td><i class="doc">   <span class="command"> \a</span> <span class="arg">p2</span> are not pointing to the same object, otherwise</i></td></tr>
+<tr><th id="225">225</th><td><i class="doc">    returns<span class="command"> \c</span> <span class="arg">false.</span></i></td></tr>
+<tr><th id="226">226</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="227">227</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="228">228</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">template &lt;typename T&gt; bool QPointer&lt;T&gt;::operator!=(std::nullptr_t, const QPointer&lt;T&gt; &amp;rhs)</span></i></td></tr>
+<tr><th id="229">229</th><td><i class="doc"></i></td></tr>
+<tr><th id="230">230</th><td><i class="doc">    Inequality operator. Returns<span class="command"> \c</span> <span class="arg">true</span> if the pointer guarded by<span class="command"> \a</span> <span class="arg">rhs</span> is</i></td></tr>
+<tr><th id="231">231</th><td><i class="doc">    a valid (ie not<span class="command"> \nullptr</span>) pointer, otherwise</i></td></tr>
+<tr><th id="232">232</th><td><i class="doc">    returns<span class="command"> \c</span> <span class="arg">false.</span></i></td></tr>
+<tr><th id="233">233</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="234">234</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="235">235</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">template &lt;typename T&gt; bool QPointer&lt;T&gt;::operator!=(const QPointer&lt;T&gt; &amp;lhs, std::nullptr_t)</span></i></td></tr>
+<tr><th id="236">236</th><td><i class="doc"></i></td></tr>
+<tr><th id="237">237</th><td><i class="doc">    Inequality operator. Returns<span class="command"> \c</span> <span class="arg">true</span> if the pointer guarded by<span class="command"> \a</span> <span class="arg">lhs</span> is</i></td></tr>
+<tr><th id="238">238</th><td><i class="doc">    a valid (ie not<span class="command"> \nullptr</span>) pointer, otherwise</i></td></tr>
+<tr><th id="239">239</th><td><i class="doc">    returns<span class="command"> \c</span> <span class="arg">false.</span></i></td></tr>
+<tr><th id="240">240</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="241">241</th><td></td></tr>
+<tr><th id="242">242</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="243">243</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">template &lt;typename T&gt; QPointer&lt;T&gt; qPointerFromVariant(const QVariant &amp;variant)</span></i></td></tr>
+<tr><th id="244">244</th><td><i class="doc"></i></td></tr>
+<tr><th id="245">245</th><td><i class="doc">    <span class="command">\internal</span></i></td></tr>
+<tr><th id="246">246</th><td><i class="doc"><span class="verb"></span></i></td></tr>
+<tr><th id="247">247</th><td><i class="doc"><span class="verb"></span><span class="verb">    Returns a guarded pointer that points to the same object that</span></i></td></tr>
+<tr><th id="248">248</th><td><i class="doc"><span class="verb"></span><span class="verb">    \a variant holds.</span></i></td></tr>
+<tr><th id="249">249</th><td><i class="doc"><span class="verb"></span>*/</i><span class="verb"></span></td></tr>
+<tr><th id="250">250</th><td><span class="verb"></span></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2024-Jun-13</em> from project qtbase-6.5.0 revision <em>6.5.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

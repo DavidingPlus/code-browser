@@ -1,0 +1,31 @@
+<use f='qtbase-6.5.0/src/widgets/kernel/qgridlayout.cpp' l='86' u='r' c='_ZNK18QGridLayoutPrivate7numColsEv'/>
+<use f='qtbase-6.5.0/src/widgets/kernel/qgridlayout.cpp' l='88' u='r' c='_ZN18QGridLayoutPrivate6expandEii'/>
+<use f='qtbase-6.5.0/src/widgets/kernel/qgridlayout.cpp' l='154' u='r' c='_ZNK18QGridLayoutPrivate15getItemPositionEiPiS0_S0_S0_'/>
+<dec f='qtbase-6.5.0/src/widgets/kernel/qgridlayout.cpp' l='178' type='int'/>
+<use f='qtbase-6.5.0/src/widgets/kernel/qgridlayout.cpp' l='307' u='w' c='_ZN18QGridLayoutPrivateC1Ev'/>
+<use f='qtbase-6.5.0/src/widgets/kernel/qgridlayout.cpp' l='384' u='r' c='_ZN18QGridLayoutPrivate14heightForWidthEiii'/>
+<use f='qtbase-6.5.0/src/widgets/kernel/qgridlayout.cpp' l='410' u='r' c='_ZNK18QGridLayoutPrivate8findSizeEM13QLayoutStructiii'/>
+<use f='qtbase-6.5.0/src/widgets/kernel/qgridlayout.cpp' l='431' u='r' c='_ZNK18QGridLayoutPrivate19expandingDirectionsEii'/>
+<use f='qtbase-6.5.0/src/widgets/kernel/qgridlayout.cpp' l='472' u='r' c='_ZN18QGridLayoutPrivate7setSizeEii'/>
+<use f='qtbase-6.5.0/src/widgets/kernel/qgridlayout.cpp' l='476' u='r' c='_ZN18QGridLayoutPrivate7setSizeEii'/>
+<use f='qtbase-6.5.0/src/widgets/kernel/qgridlayout.cpp' l='492' u='w' c='_ZN18QGridLayoutPrivate7setSizeEii'/>
+<use f='qtbase-6.5.0/src/widgets/kernel/qgridlayout.cpp' l='510' u='r' c='_ZN18QGridLayoutPrivate15setNextPosAfterEii'/>
+<use f='qtbase-6.5.0/src/widgets/kernel/qgridlayout.cpp' l='548' u='r' c='_ZN18QGridLayoutPrivate3addEP8QGridBoxiiii'/>
+<use f='qtbase-6.5.0/src/widgets/kernel/qgridlayout.cpp' l='670' u='r' c='_ZN18QGridLayoutPrivate13setupSpacingsER5QListI13QLayoutStructEPP8QGridBoxiN2Qt11OrientationE'/>
+<use f='qtbase-6.5.0/src/widgets/kernel/qgridlayout.cpp' l='690' u='r' c='_ZN18QGridLayoutPrivate13setupSpacingsER5QListI13QLayoutStructEPP8QGridBoxiN2Qt11OrientationE'/>
+<use f='qtbase-6.5.0/src/widgets/kernel/qgridlayout.cpp' l='750' u='r' c='_ZN18QGridLayoutPrivate15setupLayoutDataEii'/>
+<use f='qtbase-6.5.0/src/widgets/kernel/qgridlayout.cpp' l='764' u='r' c='_ZN18QGridLayoutPrivate15setupLayoutDataEii'/>
+<use f='qtbase-6.5.0/src/widgets/kernel/qgridlayout.cpp' l='765' u='r' c='_ZN18QGridLayoutPrivate15setupLayoutDataEii'/>
+<use f='qtbase-6.5.0/src/widgets/kernel/qgridlayout.cpp' l='787' u='r' c='_ZN18QGridLayoutPrivate15setupLayoutDataEii'/>
+<use f='qtbase-6.5.0/src/widgets/kernel/qgridlayout.cpp' l='790' u='r' c='_ZN18QGridLayoutPrivate15setupLayoutDataEii'/>
+<use f='qtbase-6.5.0/src/widgets/kernel/qgridlayout.cpp' l='795' u='r' c='_ZN18QGridLayoutPrivate15setupLayoutDataEii'/>
+<use f='qtbase-6.5.0/src/widgets/kernel/qgridlayout.cpp' l='796' u='r' c='_ZN18QGridLayoutPrivate15setupLayoutDataEii'/>
+<use f='qtbase-6.5.0/src/widgets/kernel/qgridlayout.cpp' l='816' u='r' c='_ZN18QGridLayoutPrivate15setupLayoutDataEii'/>
+<use f='qtbase-6.5.0/src/widgets/kernel/qgridlayout.cpp' l='817' u='r' c='_ZN18QGridLayoutPrivate15setupLayoutDataEii'/>
+<use f='qtbase-6.5.0/src/widgets/kernel/qgridlayout.cpp' l='824' u='r' c='_ZN18QGridLayoutPrivate15setupLayoutDataEii'/>
+<use f='qtbase-6.5.0/src/widgets/kernel/qgridlayout.cpp' l='866' u='r' c='_ZN18QGridLayoutPrivate18setupHfwLayoutDataEv'/>
+<use f='qtbase-6.5.0/src/widgets/kernel/qgridlayout.cpp' l='909' u='r' c='_ZN18QGridLayoutPrivate10distributeE5QRectii'/>
+<use f='qtbase-6.5.0/src/widgets/kernel/qgridlayout.cpp' l='928' u='r' c='_ZN18QGridLayoutPrivate10distributeE5QRectii'/>
+<use f='qtbase-6.5.0/src/widgets/kernel/qgridlayout.cpp' l='948' u='r' c='_ZNK18QGridLayoutPrivate8cellRectEii'/>
+<use f='qtbase-6.5.0/src/widgets/kernel/qgridlayout.cpp' l='1301' u='r' c='_ZNK11QGridLayout14itemAtPositionEii'/>
+<offset>1440</offset>

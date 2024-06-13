@@ -1,0 +1,492 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>qfilesystemwatcher.cpp source code [qtbase-6.5.0/src/corelib/io/qfilesystemwatcher.cpp] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'qtbase-6.5.0/src/corelib/io/qfilesystemwatcher.cpp'; var root_path = '../../../..'; var data_path = '../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>qtbase-6.5.0</a>/<a href='../..'>src</a>/<a href='..'>corelib</a>/<a href='./'>io</a>/<a href='qfilesystemwatcher.cpp.html'>qfilesystemwatcher.cpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>// Copyright (C) 2016 The Qt Company Ltd.</i></td></tr>
+<tr><th id="2">2</th><td><i>// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only</i></td></tr>
+<tr><th id="3">3</th><td></td></tr>
+<tr><th id="4">4</th><td><u>#include <a href="qfilesystemwatcher.h.html">"qfilesystemwatcher.h"</a></u></td></tr>
+<tr><th id="5">5</th><td><u>#include <a href="qfilesystemwatcher_p.h.html">"qfilesystemwatcher_p.h"</a></u></td></tr>
+<tr><th id="6">6</th><td></td></tr>
+<tr><th id="7">7</th><td><u>#include <a href="../../../build/include/QtCore/qdatetime.h.html">&lt;qdatetime.h&gt;</a></u></td></tr>
+<tr><th id="8">8</th><td><u>#include <a href="../../../build/include/QtCore/qdir.h.html">&lt;qdir.h&gt;</a></u></td></tr>
+<tr><th id="9">9</th><td><u>#include <a href="../../../build/include/QtCore/qfileinfo.h.html">&lt;qfileinfo.h&gt;</a></u></td></tr>
+<tr><th id="10">10</th><td><u>#include <a href="../../../build/include/QtCore/qloggingcategory.h.html">&lt;qloggingcategory.h&gt;</a></u></td></tr>
+<tr><th id="11">11</th><td><u>#include <a href="../../../build/include/QtCore/qset.h.html">&lt;qset.h&gt;</a></u></td></tr>
+<tr><th id="12">12</th><td><u>#include <a href="../../../build/include/QtCore/qtimer.h.html">&lt;qtimer.h&gt;</a></u></td></tr>
+<tr><th id="13">13</th><td></td></tr>
+<tr><th id="14">14</th><td><u>#<span data-ppcond="14">if</span> (defined(<a class="macro" href="../global/qsystemdetection.h.html#106" data-ref="_M/Q_OS_LINUX">Q_OS_LINUX</a>) || defined(<span class="macro" data-ref="_M/Q_OS_QNX">Q_OS_QNX</span>)) &amp;&amp; <a class="macro" href="../global/qtconfigmacros.h.html#67" title="(1/1 == 1)" data-ref="_M/QT_CONFIG">QT_CONFIG</a>(inotify)</u></td></tr>
+<tr><th id="15">15</th><td><u>#define <dfn class="macro" id="_M/USE_INOTIFY" data-ref="_M/USE_INOTIFY">USE_INOTIFY</dfn></u></td></tr>
+<tr><th id="16">16</th><td><u>#<span data-ppcond="14">endif</span></u></td></tr>
+<tr><th id="17">17</th><td></td></tr>
+<tr><th id="18">18</th><td><u>#include <a href="qfilesystemwatcher_polling_p.h.html">"qfilesystemwatcher_polling_p.h"</a></u></td></tr>
+<tr><th id="19">19</th><td><u>#<span data-ppcond="19">if</span> defined(<span class="macro" data-ref="_M/Q_OS_WIN">Q_OS_WIN</span>)</u></td></tr>
+<tr><th id="20">20</th><td><u>#  include "qfilesystemwatcher_win_p.h"</u></td></tr>
+<tr><th id="21">21</th><td><u>#<span data-ppcond="19">elif</span> defined(<a class="macro" href="#15" data-ref="_M/USE_INOTIFY">USE_INOTIFY</a>)</u></td></tr>
+<tr><th id="22">22</th><td><u>#  include <a href="qfilesystemwatcher_inotify_p.h.html">"qfilesystemwatcher_inotify_p.h"</a></u></td></tr>
+<tr><th id="23">23</th><td><u>#<span data-ppcond="19">elif</span> defined(Q_OS_FREEBSD) || defined(Q_OS_NETBSD) || defined(Q_OS_OPENBSD) || defined(QT_PLATFORM_UIKIT)</u></td></tr>
+<tr><th id="24">24</th><td><u>#  include "qfilesystemwatcher_kqueue_p.h"</u></td></tr>
+<tr><th id="25">25</th><td><u>#elif defined(Q_OS_MACOS)</u></td></tr>
+<tr><th id="26">26</th><td><u>#  include "qfilesystemwatcher_fsevents_p.h"</u></td></tr>
+<tr><th id="27">27</th><td><u>#<span data-ppcond="19">endif</span></u></td></tr>
+<tr><th id="28">28</th><td></td></tr>
+<tr><th id="29">29</th><td><u>#include <a href="../../../../include/c++/9/algorithm.html">&lt;algorithm&gt;</a></u></td></tr>
+<tr><th id="30">30</th><td><u>#include <a href="../../../../include/c++/9/iterator.html">&lt;iterator&gt;</a></u></td></tr>
+<tr><th id="31">31</th><td></td></tr>
+<tr><th id="32">32</th><td><a class="macro" href="../global/qtconfigmacros.h.html#103" title="" data-ref="_M/QT_BEGIN_NAMESPACE">QT_BEGIN_NAMESPACE</a></td></tr>
+<tr><th id="33">33</th><td></td></tr>
+<tr><th id="34">34</th><td><b>using</b> <b>namespace</b> <span class="namespace">Qt::StringLiterals</span>;</td></tr>
+<tr><th id="35">35</th><td></td></tr>
+<tr><th id="36">36</th><td><a class="macro" href="qloggingcategory.h.html#117" title="const QLoggingCategory &amp;lcWatcher() { static const QLoggingCategory category(&quot;qt.core.filesystemwatcher&quot;); return category; }" data-ref="_M/Q_LOGGING_CATEGORY">Q_LOGGING_CATEGORY</a>(<dfn class="decl def fn" id="_Z9lcWatcherv" title='lcWatcher' data-ref="_Z9lcWatcherv">lcWatcher</dfn>, <q>"qt.core.filesystemwatcher"</q>)</td></tr>
+<tr><th id="37">37</th><td></td></tr>
+<tr><th id="38">38</th><td><a class="type" href="qfilesystemwatcher_p.h.html#QFileSystemWatcherEngine" title='QFileSystemWatcherEngine' data-ref="QFileSystemWatcherEngine">QFileSystemWatcherEngine</a> *<a class="type" href="qfilesystemwatcher_p.h.html#QFileSystemWatcherPrivate" title='QFileSystemWatcherPrivate' data-ref="QFileSystemWatcherPrivate">QFileSystemWatcherPrivate</a>::<dfn class="decl def fn" id="_ZN25QFileSystemWatcherPrivate18createNativeEngineEP7QObject" title='QFileSystemWatcherPrivate::createNativeEngine' data-ref="_ZN25QFileSystemWatcherPrivate18createNativeEngineEP7QObject">createNativeEngine</dfn>(<a class="type" href="../kernel/qobject.h.html#QObject" title='QObject' data-ref="QObject">QObject</a> *<dfn class="local col7 decl" id="37parent" title='parent' data-type='QObject *' data-ref="37parent">parent</dfn>)</td></tr>
+<tr><th id="39">39</th><td>{</td></tr>
+<tr><th id="40">40</th><td><u>#<span data-ppcond="40">if</span> defined(<span class="macro" data-ref="_M/Q_OS_WIN">Q_OS_WIN</span>)</u></td></tr>
+<tr><th id="41">41</th><td>    <b>return</b> <b>new</b> QWindowsFileSystemWatcherEngine(parent);</td></tr>
+<tr><th id="42">42</th><td><u>#<span data-ppcond="40">elif</span> defined(<a class="macro" href="#15" data-ref="_M/USE_INOTIFY">USE_INOTIFY</a>)</u></td></tr>
+<tr><th id="43">43</th><td>    <i>// there is a chance that inotify may fail on Linux pre-2.6.13 (August</i></td></tr>
+<tr><th id="44">44</th><td><i>    // 2005), so we can't just new inotify directly.</i></td></tr>
+<tr><th id="45">45</th><td>    <b>return</b> <a class="type" href="qfilesystemwatcher_inotify_p.h.html#QInotifyFileSystemWatcherEngine" title='QInotifyFileSystemWatcherEngine' data-ref="QInotifyFileSystemWatcherEngine">QInotifyFileSystemWatcherEngine</a>::<a class="ref fn" href="qfilesystemwatcher_inotify_p.h.html#_ZN31QInotifyFileSystemWatcherEngine6createEP7QObject" title='QInotifyFileSystemWatcherEngine::create' data-ref="_ZN31QInotifyFileSystemWatcherEngine6createEP7QObject">create</a>(<a class="local col7 ref" href="#37parent" title='parent' data-ref="37parent">parent</a>);</td></tr>
+<tr><th id="46">46</th><td><u>#<span data-ppcond="40">elif</span> defined(Q_OS_FREEBSD) || defined(Q_OS_NETBSD) || defined(Q_OS_OPENBSD) || defined(QT_PLATFORM_UIKIT)</u></td></tr>
+<tr><th id="47">47</th><td>    <b>return</b> QKqueueFileSystemWatcherEngine::create(parent);</td></tr>
+<tr><th id="48">48</th><td><u>#elif defined(Q_OS_MACOS)</u></td></tr>
+<tr><th id="49">49</th><td>    <b>return</b> QFseventsFileSystemWatcherEngine::create(parent);</td></tr>
+<tr><th id="50">50</th><td><u>#else</u></td></tr>
+<tr><th id="51">51</th><td>    Q_UNUSED(parent);</td></tr>
+<tr><th id="52">52</th><td>    <b>return</b> <var>0</var>;</td></tr>
+<tr><th id="53">53</th><td><u>#<span data-ppcond="40">endif</span></u></td></tr>
+<tr><th id="54">54</th><td>}</td></tr>
+<tr><th id="55">55</th><td></td></tr>
+<tr><th id="56">56</th><td><a class="type" href="qfilesystemwatcher_p.h.html#QFileSystemWatcherPrivate" title='QFileSystemWatcherPrivate' data-ref="QFileSystemWatcherPrivate">QFileSystemWatcherPrivate</a>::<dfn class="decl def fn" id="_ZN25QFileSystemWatcherPrivateC1Ev" title='QFileSystemWatcherPrivate::QFileSystemWatcherPrivate' data-ref="_ZN25QFileSystemWatcherPrivateC1Ev">QFileSystemWatcherPrivate</dfn>()</td></tr>
+<tr><th id="57">57</th><td>    : <a class="member field" href="qfilesystemwatcher_p.h.html#QFileSystemWatcherPrivate::native" title='QFileSystemWatcherPrivate::native' data-ref="QFileSystemWatcherPrivate::native">native</a>(<b>nullptr</b>), <a class="member field" href="qfilesystemwatcher_p.h.html#QFileSystemWatcherPrivate::poller" title='QFileSystemWatcherPrivate::poller' data-ref="QFileSystemWatcherPrivate::poller">poller</a>(<b>nullptr</b>)</td></tr>
+<tr><th id="58">58</th><td>{</td></tr>
+<tr><th id="59">59</th><td>}</td></tr>
+<tr><th id="60">60</th><td></td></tr>
+<tr><th id="61">61</th><td><em>void</em> <a class="type" href="qfilesystemwatcher_p.h.html#QFileSystemWatcherPrivate" title='QFileSystemWatcherPrivate' data-ref="QFileSystemWatcherPrivate">QFileSystemWatcherPrivate</a>::<dfn class="decl def fn" id="_ZN25QFileSystemWatcherPrivate4initEv" title='QFileSystemWatcherPrivate::init' data-ref="_ZN25QFileSystemWatcherPrivate4initEv">init</dfn>()</td></tr>
+<tr><th id="62">62</th><td>{</td></tr>
+<tr><th id="63">63</th><td>    <a class="macro" href="../global/qtclasshelpermacros.h.html#110" title="QFileSystemWatcher * const q = q_func()" data-ref="_M/Q_Q">Q_Q</a>(<a class="type" href="qfilesystemwatcher.h.html#QFileSystemWatcher" title='QFileSystemWatcher' data-ref="QFileSystemWatcher">QFileSystemWatcher</a>);</td></tr>
+<tr><th id="64">64</th><td>    <a class="member field" href="qfilesystemwatcher_p.h.html#QFileSystemWatcherPrivate::native" title='QFileSystemWatcherPrivate::native' data-ref="QFileSystemWatcherPrivate::native">native</a> = <a class="member fn" href="#_ZN25QFileSystemWatcherPrivate18createNativeEngineEP7QObject" title='QFileSystemWatcherPrivate::createNativeEngine' data-ref="_ZN25QFileSystemWatcherPrivate18createNativeEngineEP7QObject">createNativeEngine</a>(<span class='inlayHint'>parent:&nbsp;</span><a class="local col8 ref" href="#63" title='q' data-ref="38q">q</a>);</td></tr>
+<tr><th id="65">65</th><td>    <b>if</b> (<a class="member field" href="qfilesystemwatcher_p.h.html#QFileSystemWatcherPrivate::native" title='QFileSystemWatcherPrivate::native' data-ref="QFileSystemWatcherPrivate::native">native</a>) {</td></tr>
+<tr><th id="66">66</th><td>        <a class="type" href="../kernel/qobject.h.html#QObject" title='QObject' data-ref="QObject">QObject</a>::<a class="ref fn" href="../kernel/qobject.h.html#_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE" title='QObject::connect' data-ref="_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE">connect</a>(<span class='inlayHint'>sender:&nbsp;</span><a class="member field" href="qfilesystemwatcher_p.h.html#QFileSystemWatcherPrivate::native" title='QFileSystemWatcherPrivate::native' data-ref="QFileSystemWatcherPrivate::native">native</a>,</td></tr>
+<tr><th id="67">67</th><td>                         <a class="macro" href="../kernel/qobjectdefs.h.html#58" title="&quot;2&quot; &quot;fileChanged(QString,bool)&quot;" data-ref="_M/SIGNAL">SIGNAL</a>(fileChanged(QString,<em>bool</em>)),</td></tr>
+<tr><th id="68">68</th><td>                         <span class='inlayHint'>receiver:&nbsp;</span><a class="local col8 ref" href="#63" title='q' data-ref="38q">q</a>,</td></tr>
+<tr><th id="69">69</th><td>                         <a class="macro" href="../kernel/qobjectdefs.h.html#57" title="&quot;1&quot; &quot;_q_fileChanged(QString,bool)&quot;" data-ref="_M/SLOT">SLOT</a>(_q_fileChanged(QString,<em>bool</em>)));</td></tr>
+<tr><th id="70">70</th><td>        <a class="type" href="../kernel/qobject.h.html#QObject" title='QObject' data-ref="QObject">QObject</a>::<a class="ref fn" href="../kernel/qobject.h.html#_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE" title='QObject::connect' data-ref="_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE">connect</a>(<span class='inlayHint'>sender:&nbsp;</span><a class="member field" href="qfilesystemwatcher_p.h.html#QFileSystemWatcherPrivate::native" title='QFileSystemWatcherPrivate::native' data-ref="QFileSystemWatcherPrivate::native">native</a>,</td></tr>
+<tr><th id="71">71</th><td>                         <a class="macro" href="../kernel/qobjectdefs.h.html#58" title="&quot;2&quot; &quot;directoryChanged(QString,bool)&quot;" data-ref="_M/SIGNAL">SIGNAL</a>(directoryChanged(QString,<em>bool</em>)),</td></tr>
+<tr><th id="72">72</th><td>                         <span class='inlayHint'>receiver:&nbsp;</span><a class="local col8 ref" href="#63" title='q' data-ref="38q">q</a>,</td></tr>
+<tr><th id="73">73</th><td>                         <a class="macro" href="../kernel/qobjectdefs.h.html#57" title="&quot;1&quot; &quot;_q_directoryChanged(QString,bool)&quot;" data-ref="_M/SLOT">SLOT</a>(_q_directoryChanged(QString,<em>bool</em>)));</td></tr>
+<tr><th id="74">74</th><td><u>#<span data-ppcond="74">if</span> defined(<span class="macro" data-ref="_M/Q_OS_WIN">Q_OS_WIN</span>)</u></td></tr>
+<tr><th id="75">75</th><td>        QObject::connect(<b>static_cast</b>&lt;QWindowsFileSystemWatcherEngine *&gt;(native),</td></tr>
+<tr><th id="76">76</th><td>                         &amp;QWindowsFileSystemWatcherEngine::driveLockForRemoval,</td></tr>
+<tr><th id="77">77</th><td>                         q, [<b>this</b>] (<em>const</em> QString &amp;p) { _q_winDriveLockForRemoval(p); });</td></tr>
+<tr><th id="78">78</th><td>        QObject::connect(<b>static_cast</b>&lt;QWindowsFileSystemWatcherEngine *&gt;(native),</td></tr>
+<tr><th id="79">79</th><td>                         &amp;QWindowsFileSystemWatcherEngine::driveLockForRemovalFailed,</td></tr>
+<tr><th id="80">80</th><td>                         q, [<b>this</b>] (<em>const</em> QString &amp;p) { _q_winDriveLockForRemovalFailed(p); });</td></tr>
+<tr><th id="81">81</th><td>        QObject::connect(<b>static_cast</b>&lt;QWindowsFileSystemWatcherEngine *&gt;(native),</td></tr>
+<tr><th id="82">82</th><td>                         &amp;QWindowsFileSystemWatcherEngine::driveRemoved,</td></tr>
+<tr><th id="83">83</th><td>                         q, [<b>this</b>] (<em>const</em> QString &amp;p) { _q_winDriveRemoved(p); });</td></tr>
+<tr><th id="84">84</th><td><u>#<span data-ppcond="74">endif</span>  // Q_OS_WIN</u></td></tr>
+<tr><th id="85">85</th><td>    }</td></tr>
+<tr><th id="86">86</th><td>}</td></tr>
+<tr><th id="87">87</th><td></td></tr>
+<tr><th id="88">88</th><td><em>void</em> <a class="type" href="qfilesystemwatcher_p.h.html#QFileSystemWatcherPrivate" title='QFileSystemWatcherPrivate' data-ref="QFileSystemWatcherPrivate">QFileSystemWatcherPrivate</a>::<dfn class="decl def fn" id="_ZN25QFileSystemWatcherPrivate16initPollerEngineEv" title='QFileSystemWatcherPrivate::initPollerEngine' data-ref="_ZN25QFileSystemWatcherPrivate16initPollerEngineEv">initPollerEngine</dfn>()</td></tr>
+<tr><th id="89">89</th><td>{</td></tr>
+<tr><th id="90">90</th><td>    <b>if</b> (<a class="member field" href="qfilesystemwatcher_p.h.html#QFileSystemWatcherPrivate::poller" title='QFileSystemWatcherPrivate::poller' data-ref="QFileSystemWatcherPrivate::poller">poller</a>)</td></tr>
+<tr><th id="91">91</th><td>        <b>return</b>;</td></tr>
+<tr><th id="92">92</th><td></td></tr>
+<tr><th id="93">93</th><td>    <a class="macro" href="../global/qtclasshelpermacros.h.html#110" title="QFileSystemWatcher * const q = q_func()" data-ref="_M/Q_Q">Q_Q</a>(<a class="type" href="qfilesystemwatcher.h.html#QFileSystemWatcher" title='QFileSystemWatcher' data-ref="QFileSystemWatcher">QFileSystemWatcher</a>);</td></tr>
+<tr><th id="94">94</th><td>    <a class="member field" href="qfilesystemwatcher_p.h.html#QFileSystemWatcherPrivate::poller" title='QFileSystemWatcherPrivate::poller' data-ref="QFileSystemWatcherPrivate::poller">poller</a> = <b>new</b> <a class="type" href="qfilesystemwatcher_polling_p.h.html#QPollingFileSystemWatcherEngine" title='QPollingFileSystemWatcherEngine' data-ref="QPollingFileSystemWatcherEngine">QPollingFileSystemWatcherEngine</a><a class="ref fn" href="qfilesystemwatcher_polling_p.h.html#_ZN31QPollingFileSystemWatcherEngineC1EP7QObject" title='QPollingFileSystemWatcherEngine::QPollingFileSystemWatcherEngine' data-ref="_ZN31QPollingFileSystemWatcherEngineC1EP7QObject">(</a><a class="local col9 ref" href="#93" title='q' data-ref="39q">q</a>); <i>// that was a mouthful</i></td></tr>
+<tr><th id="95">95</th><td>    <a class="type" href="../kernel/qobject.h.html#QObject" title='QObject' data-ref="QObject">QObject</a>::<a class="ref fn" href="../kernel/qobject.h.html#_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE" title='QObject::connect' data-ref="_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE">connect</a>(<span class='inlayHint'>sender:&nbsp;</span><a class="member field" href="qfilesystemwatcher_p.h.html#QFileSystemWatcherPrivate::poller" title='QFileSystemWatcherPrivate::poller' data-ref="QFileSystemWatcherPrivate::poller">poller</a>,</td></tr>
+<tr><th id="96">96</th><td>                     <a class="macro" href="../kernel/qobjectdefs.h.html#58" title="&quot;2&quot; &quot;fileChanged(QString,bool)&quot;" data-ref="_M/SIGNAL">SIGNAL</a>(fileChanged(QString,<em>bool</em>)),</td></tr>
+<tr><th id="97">97</th><td>                     <span class='inlayHint'>receiver:&nbsp;</span><a class="local col9 ref" href="#93" title='q' data-ref="39q">q</a>,</td></tr>
+<tr><th id="98">98</th><td>                     <a class="macro" href="../kernel/qobjectdefs.h.html#57" title="&quot;1&quot; &quot;_q_fileChanged(QString,bool)&quot;" data-ref="_M/SLOT">SLOT</a>(_q_fileChanged(QString,<em>bool</em>)));</td></tr>
+<tr><th id="99">99</th><td>    <a class="type" href="../kernel/qobject.h.html#QObject" title='QObject' data-ref="QObject">QObject</a>::<a class="ref fn" href="../kernel/qobject.h.html#_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE" title='QObject::connect' data-ref="_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE">connect</a>(<span class='inlayHint'>sender:&nbsp;</span><a class="member field" href="qfilesystemwatcher_p.h.html#QFileSystemWatcherPrivate::poller" title='QFileSystemWatcherPrivate::poller' data-ref="QFileSystemWatcherPrivate::poller">poller</a>,</td></tr>
+<tr><th id="100">100</th><td>                     <a class="macro" href="../kernel/qobjectdefs.h.html#58" title="&quot;2&quot; &quot;directoryChanged(QString,bool)&quot;" data-ref="_M/SIGNAL">SIGNAL</a>(directoryChanged(QString,<em>bool</em>)),</td></tr>
+<tr><th id="101">101</th><td>                     <span class='inlayHint'>receiver:&nbsp;</span><a class="local col9 ref" href="#93" title='q' data-ref="39q">q</a>,</td></tr>
+<tr><th id="102">102</th><td>                     <a class="macro" href="../kernel/qobjectdefs.h.html#57" title="&quot;1&quot; &quot;_q_directoryChanged(QString,bool)&quot;" data-ref="_M/SLOT">SLOT</a>(_q_directoryChanged(QString,<em>bool</em>)));</td></tr>
+<tr><th id="103">103</th><td>}</td></tr>
+<tr><th id="104">104</th><td></td></tr>
+<tr><th id="105">105</th><td><em>void</em> <a class="type" href="qfilesystemwatcher_p.h.html#QFileSystemWatcherPrivate" title='QFileSystemWatcherPrivate' data-ref="QFileSystemWatcherPrivate">QFileSystemWatcherPrivate</a>::<dfn class="decl def fn" id="_ZN25QFileSystemWatcherPrivate14_q_fileChangedERK7QStringb" title='QFileSystemWatcherPrivate::_q_fileChanged' data-ref="_ZN25QFileSystemWatcherPrivate14_q_fileChangedERK7QStringb">_q_fileChanged</dfn>(<em>const</em> <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> &amp;<dfn class="local col0 decl" id="40path" title='path' data-type='const QString &amp;' data-ref="40path">path</dfn>, <em>bool</em> <dfn class="local col1 decl" id="41removed" title='removed' data-type='bool' data-ref="41removed">removed</dfn>)</td></tr>
+<tr><th id="106">106</th><td>{</td></tr>
+<tr><th id="107">107</th><td>    <a class="macro" href="../global/qtclasshelpermacros.h.html#110" title="QFileSystemWatcher * const q = q_func()" data-ref="_M/Q_Q">Q_Q</a>(<a class="type" href="qfilesystemwatcher.h.html#QFileSystemWatcher" title='QFileSystemWatcher' data-ref="QFileSystemWatcher">QFileSystemWatcher</a>);</td></tr>
+<tr><th id="108">108</th><td>    <a class="macro" href="qloggingcategory.h.html#128" title="for (QLoggingCategoryMacroHolder&lt;QtDebugMsg&gt; qt_category(lcWatcher); qt_category; qt_category.control = false) QMessageLogger(nullptr, 0, nullptr, qt_category.name()).debug()" data-ref="_M/qCDebug">qCDebug</a>(<a class="ref fn" href="#36" title='lcWatcher' data-ref="_Z9lcWatcherv">lcWatcher</a>) <a class="ref fn" href="qdebug.h.html#_ZN6QDebuglsEPKc" title='QDebug::operator&lt;&lt;' data-ref="_ZN6QDebuglsEPKc">&lt;&lt;</a> <q>"file changed"</q> <a class="ref fn" href="qdebug.h.html#_ZN6QDebuglsERK7QString" title='QDebug::operator&lt;&lt;' data-ref="_ZN6QDebuglsERK7QString">&lt;&lt;</a> <a class="local col0 ref" href="#40path" title='path' data-ref="40path">path</a> <a class="ref fn" href="qdebug.h.html#_ZN6QDebuglsEPKc" title='QDebug::operator&lt;&lt;' data-ref="_ZN6QDebuglsEPKc">&lt;&lt;</a> <q>"removed?"</q> <a class="ref fn" href="qdebug.h.html#_ZN6QDebuglsEb" title='QDebug::operator&lt;&lt;' data-ref="_ZN6QDebuglsEb">&lt;&lt;</a> <a class="local col1 ref" href="#41removed" title='removed' data-ref="41removed">removed</a> <a class="ref fn" href="qdebug.h.html#_ZN6QDebuglsEPKc" title='QDebug::operator&lt;&lt;' data-ref="_ZN6QDebuglsEPKc">&lt;&lt;</a> <q>"watching?"</q> <a class="ref fn" href="qdebug.h.html#_ZN6QDebuglsEb" title='QDebug::operator&lt;&lt;' data-ref="_ZN6QDebuglsEb">&lt;&lt;</a> <a class="member field" href="qfilesystemwatcher_p.h.html#QFileSystemWatcherPrivate::files" title='QFileSystemWatcherPrivate::files' data-ref="QFileSystemWatcherPrivate::files">files</a>.<a class="ref fn" href="../text/qstringlist.h.html#_ZNK19QListSpecialMethodsI7QStringE8containsERKS0_N2Qt15CaseSensitivityE" title='QListSpecialMethods&lt;QString&gt;::contains' data-ref="_ZNK19QListSpecialMethodsI7QStringE8containsERKS0_N2Qt15CaseSensitivityE">contains</a>(<span class='inlayHint'>str:&nbsp;</span><a class="local col0 ref" href="#40path" title='path' data-ref="40path">path</a>);</td></tr>
+<tr><th id="109">109</th><td>    <b>if</b> (!<a class="member field" href="qfilesystemwatcher_p.h.html#QFileSystemWatcherPrivate::files" title='QFileSystemWatcherPrivate::files' data-ref="QFileSystemWatcherPrivate::files">files</a>.<a class="ref fn" href="../text/qstringlist.h.html#_ZNK19QListSpecialMethodsI7QStringE8containsERKS0_N2Qt15CaseSensitivityE" title='QListSpecialMethods&lt;QString&gt;::contains' data-ref="_ZNK19QListSpecialMethodsI7QStringE8containsERKS0_N2Qt15CaseSensitivityE">contains</a>(<span class='inlayHint'>str:&nbsp;</span><a class="local col0 ref" href="#40path" title='path' data-ref="40path">path</a>)) {</td></tr>
+<tr><th id="110">110</th><td>        <i>// the path was removed after a change was detected, but before we delivered the signal</i></td></tr>
+<tr><th id="111">111</th><td>        <b>return</b>;</td></tr>
+<tr><th id="112">112</th><td>    }</td></tr>
+<tr><th id="113">113</th><td>    <b>if</b> (<a class="local col1 ref" href="#41removed" title='removed' data-ref="41removed">removed</a>)</td></tr>
+<tr><th id="114">114</th><td>        <a class="member field" href="qfilesystemwatcher_p.h.html#QFileSystemWatcherPrivate::files" title='QFileSystemWatcherPrivate::files' data-ref="QFileSystemWatcherPrivate::files">files</a>.<a class="ref fn" href="../tools/qlist.h.html#_ZN5QList9removeAllERKTL0__" title='QList::removeAll' data-ref="_ZN5QList9removeAllERKTL0__">removeAll</a>(<span class='inlayHint'>t:&nbsp;</span><a class="local col0 ref" href="#40path" title='path' data-ref="40path">path</a>);</td></tr>
+<tr><th id="115">115</th><td>    <a class="macro" href="../kernel/qtmetamacros.h.html#49" title="" data-ref="_M/emit">emit</a> <a class="local col2 ref" href="#107" title='q' data-ref="42q">q</a>-&gt;<a class="ref fn" href="qfilesystemwatcher.h.html#_ZN18QFileSystemWatcher11fileChangedERK7QStringNS_14QPrivateSignalE" title='QFileSystemWatcher::fileChanged' data-ref="_ZN18QFileSystemWatcher11fileChangedERK7QStringNS_14QPrivateSignalE">fileChanged</a>(<a class="local col0 ref" href="#40path" title='path' data-ref="40path">path</a>, <a class="type" href="qfilesystemwatcher.h.html#QFileSystemWatcher" title='QFileSystemWatcher' data-ref="QFileSystemWatcher">QFileSystemWatcher</a>::<a class="type" href="qfilesystemwatcher.h.html#18" title='QFileSystemWatcher::QPrivateSignal' data-ref="QFileSystemWatcher::QPrivateSignal">QPrivateSignal</a><a class="ref fn" href="qfilesystemwatcher.h.html#18" title='QFileSystemWatcher::QPrivateSignal::QPrivateSignal' data-ref="_ZN18QFileSystemWatcher14QPrivateSignalC1Ev">(</a>));</td></tr>
+<tr><th id="116">116</th><td>}</td></tr>
+<tr><th id="117">117</th><td></td></tr>
+<tr><th id="118">118</th><td><em>void</em> <a class="type" href="qfilesystemwatcher_p.h.html#QFileSystemWatcherPrivate" title='QFileSystemWatcherPrivate' data-ref="QFileSystemWatcherPrivate">QFileSystemWatcherPrivate</a>::<dfn class="decl def fn" id="_ZN25QFileSystemWatcherPrivate19_q_directoryChangedERK7QStringb" title='QFileSystemWatcherPrivate::_q_directoryChanged' data-ref="_ZN25QFileSystemWatcherPrivate19_q_directoryChangedERK7QStringb">_q_directoryChanged</dfn>(<em>const</em> <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> &amp;<dfn class="local col3 decl" id="43path" title='path' data-type='const QString &amp;' data-ref="43path">path</dfn>, <em>bool</em> <dfn class="local col4 decl" id="44removed" title='removed' data-type='bool' data-ref="44removed">removed</dfn>)</td></tr>
+<tr><th id="119">119</th><td>{</td></tr>
+<tr><th id="120">120</th><td>    <a class="macro" href="../global/qtclasshelpermacros.h.html#110" title="QFileSystemWatcher * const q = q_func()" data-ref="_M/Q_Q">Q_Q</a>(<a class="type" href="qfilesystemwatcher.h.html#QFileSystemWatcher" title='QFileSystemWatcher' data-ref="QFileSystemWatcher">QFileSystemWatcher</a>);</td></tr>
+<tr><th id="121">121</th><td>    <a class="macro" href="qloggingcategory.h.html#128" title="for (QLoggingCategoryMacroHolder&lt;QtDebugMsg&gt; qt_category(lcWatcher); qt_category; qt_category.control = false) QMessageLogger(nullptr, 0, nullptr, qt_category.name()).debug()" data-ref="_M/qCDebug">qCDebug</a>(<a class="ref fn" href="#36" title='lcWatcher' data-ref="_Z9lcWatcherv">lcWatcher</a>) <a class="ref fn" href="qdebug.h.html#_ZN6QDebuglsEPKc" title='QDebug::operator&lt;&lt;' data-ref="_ZN6QDebuglsEPKc">&lt;&lt;</a> <q>"directory changed"</q> <a class="ref fn" href="qdebug.h.html#_ZN6QDebuglsERK7QString" title='QDebug::operator&lt;&lt;' data-ref="_ZN6QDebuglsERK7QString">&lt;&lt;</a> <a class="local col3 ref" href="#43path" title='path' data-ref="43path">path</a> <a class="ref fn" href="qdebug.h.html#_ZN6QDebuglsEPKc" title='QDebug::operator&lt;&lt;' data-ref="_ZN6QDebuglsEPKc">&lt;&lt;</a> <q>"removed?"</q> <a class="ref fn" href="qdebug.h.html#_ZN6QDebuglsEb" title='QDebug::operator&lt;&lt;' data-ref="_ZN6QDebuglsEb">&lt;&lt;</a> <a class="local col4 ref" href="#44removed" title='removed' data-ref="44removed">removed</a> <a class="ref fn" href="qdebug.h.html#_ZN6QDebuglsEPKc" title='QDebug::operator&lt;&lt;' data-ref="_ZN6QDebuglsEPKc">&lt;&lt;</a> <q>"watching?"</q> <a class="ref fn" href="qdebug.h.html#_ZN6QDebuglsEb" title='QDebug::operator&lt;&lt;' data-ref="_ZN6QDebuglsEb">&lt;&lt;</a> <a class="member field" href="qfilesystemwatcher_p.h.html#QFileSystemWatcherPrivate::directories" title='QFileSystemWatcherPrivate::directories' data-ref="QFileSystemWatcherPrivate::directories">directories</a>.<a class="ref fn" href="../text/qstringlist.h.html#_ZNK19QListSpecialMethodsI7QStringE8containsERKS0_N2Qt15CaseSensitivityE" title='QListSpecialMethods&lt;QString&gt;::contains' data-ref="_ZNK19QListSpecialMethodsI7QStringE8containsERKS0_N2Qt15CaseSensitivityE">contains</a>(<span class='inlayHint'>str:&nbsp;</span><a class="local col3 ref" href="#43path" title='path' data-ref="43path">path</a>);</td></tr>
+<tr><th id="122">122</th><td>    <b>if</b> (!<a class="member field" href="qfilesystemwatcher_p.h.html#QFileSystemWatcherPrivate::directories" title='QFileSystemWatcherPrivate::directories' data-ref="QFileSystemWatcherPrivate::directories">directories</a>.<a class="ref fn" href="../text/qstringlist.h.html#_ZNK19QListSpecialMethodsI7QStringE8containsERKS0_N2Qt15CaseSensitivityE" title='QListSpecialMethods&lt;QString&gt;::contains' data-ref="_ZNK19QListSpecialMethodsI7QStringE8containsERKS0_N2Qt15CaseSensitivityE">contains</a>(<span class='inlayHint'>str:&nbsp;</span><a class="local col3 ref" href="#43path" title='path' data-ref="43path">path</a>)) {</td></tr>
+<tr><th id="123">123</th><td>        <i>// perhaps the path was removed after a change was detected, but before we delivered the signal</i></td></tr>
+<tr><th id="124">124</th><td>        <b>return</b>;</td></tr>
+<tr><th id="125">125</th><td>    }</td></tr>
+<tr><th id="126">126</th><td>    <b>if</b> (<a class="local col4 ref" href="#44removed" title='removed' data-ref="44removed">removed</a>)</td></tr>
+<tr><th id="127">127</th><td>        <a class="member field" href="qfilesystemwatcher_p.h.html#QFileSystemWatcherPrivate::directories" title='QFileSystemWatcherPrivate::directories' data-ref="QFileSystemWatcherPrivate::directories">directories</a>.<a class="ref fn" href="../tools/qlist.h.html#_ZN5QList9removeAllERKTL0__" title='QList::removeAll' data-ref="_ZN5QList9removeAllERKTL0__">removeAll</a>(<span class='inlayHint'>t:&nbsp;</span><a class="local col3 ref" href="#43path" title='path' data-ref="43path">path</a>);</td></tr>
+<tr><th id="128">128</th><td>    <a class="macro" href="../kernel/qtmetamacros.h.html#49" title="" data-ref="_M/emit">emit</a> <a class="local col5 ref" href="#120" title='q' data-ref="45q">q</a>-&gt;<a class="ref fn" href="qfilesystemwatcher.h.html#_ZN18QFileSystemWatcher16directoryChangedERK7QStringNS_14QPrivateSignalE" title='QFileSystemWatcher::directoryChanged' data-ref="_ZN18QFileSystemWatcher16directoryChangedERK7QStringNS_14QPrivateSignalE">directoryChanged</a>(<a class="local col3 ref" href="#43path" title='path' data-ref="43path">path</a>, <a class="type" href="qfilesystemwatcher.h.html#QFileSystemWatcher" title='QFileSystemWatcher' data-ref="QFileSystemWatcher">QFileSystemWatcher</a>::<a class="type" href="qfilesystemwatcher.h.html#18" title='QFileSystemWatcher::QPrivateSignal' data-ref="QFileSystemWatcher::QPrivateSignal">QPrivateSignal</a><a class="ref fn" href="qfilesystemwatcher.h.html#18" title='QFileSystemWatcher::QPrivateSignal::QPrivateSignal' data-ref="_ZN18QFileSystemWatcher14QPrivateSignalC1Ev">(</a>));</td></tr>
+<tr><th id="129">129</th><td>}</td></tr>
+<tr><th id="130">130</th><td></td></tr>
+<tr><th id="131">131</th><td><u>#<span data-ppcond="131">if</span> defined(<span class="macro" data-ref="_M/Q_OS_WIN">Q_OS_WIN</span>)</u></td></tr>
+<tr><th id="132">132</th><td></td></tr>
+<tr><th id="133">133</th><td><em>void</em> QFileSystemWatcherPrivate::_q_winDriveLockForRemoval(<em>const</em> QString &amp;path)</td></tr>
+<tr><th id="134">134</th><td>{</td></tr>
+<tr><th id="135">135</th><td>    <i>// Windows: Request to lock a (removable/USB) drive for removal, release</i></td></tr>
+<tr><th id="136">136</th><td><i>    // its paths under watch, temporarily storing them should the lock fail.</i></td></tr>
+<tr><th id="137">137</th><td>    Q_Q(QFileSystemWatcher);</td></tr>
+<tr><th id="138">138</th><td>    QStringList pathsToBeRemoved;</td></tr>
+<tr><th id="139">139</th><td>    <em>auto</em> pred = [&amp;path] (<em>const</em> QString &amp;f) { <b>return</b> !f.startsWith(path, Qt::CaseInsensitive); };</td></tr>
+<tr><th id="140">140</th><td>    std::remove_copy_if(files.cbegin(), files.cend(),</td></tr>
+<tr><th id="141">141</th><td>                        std::back_inserter(pathsToBeRemoved), pred);</td></tr>
+<tr><th id="142">142</th><td>    std::remove_copy_if(directories.cbegin(), directories.cend(),</td></tr>
+<tr><th id="143">143</th><td>                        std::back_inserter(pathsToBeRemoved), pred);</td></tr>
+<tr><th id="144">144</th><td>    <b>if</b> (!pathsToBeRemoved.isEmpty()) {</td></tr>
+<tr><th id="145">145</th><td>        q-&gt;removePaths(pathsToBeRemoved);</td></tr>
+<tr><th id="146">146</th><td>        temporarilyRemovedPaths.insert(path.at(<var>0</var>), pathsToBeRemoved);</td></tr>
+<tr><th id="147">147</th><td>    }</td></tr>
+<tr><th id="148">148</th><td>}</td></tr>
+<tr><th id="149">149</th><td></td></tr>
+<tr><th id="150">150</th><td><em>void</em> QFileSystemWatcherPrivate::_q_winDriveLockForRemovalFailed(<em>const</em> QString &amp;path)</td></tr>
+<tr><th id="151">151</th><td>{</td></tr>
+<tr><th id="152">152</th><td>    <i>// Windows: Request to lock a (removable/USB) drive failed (blocked by other</i></td></tr>
+<tr><th id="153">153</th><td><i>    // application), restore the watched paths.</i></td></tr>
+<tr><th id="154">154</th><td>    Q_Q(QFileSystemWatcher);</td></tr>
+<tr><th id="155">155</th><td>    <b>if</b> (!path.isEmpty()) {</td></tr>
+<tr><th id="156">156</th><td>        <em>const</em> <em>auto</em> it = temporarilyRemovedPaths.find(path.at(<var>0</var>));</td></tr>
+<tr><th id="157">157</th><td>        <b>if</b> (it != temporarilyRemovedPaths.end()) {</td></tr>
+<tr><th id="158">158</th><td>            q-&gt;addPaths(it.value());</td></tr>
+<tr><th id="159">159</th><td>            temporarilyRemovedPaths.erase(it);</td></tr>
+<tr><th id="160">160</th><td>        }</td></tr>
+<tr><th id="161">161</th><td>    }</td></tr>
+<tr><th id="162">162</th><td>}</td></tr>
+<tr><th id="163">163</th><td></td></tr>
+<tr><th id="164">164</th><td><em>void</em>  QFileSystemWatcherPrivate::_q_winDriveRemoved(<em>const</em> QString &amp;path)</td></tr>
+<tr><th id="165">165</th><td>{</td></tr>
+<tr><th id="166">166</th><td>    <i>// Windows: Drive finally removed, clear out paths stored in lock request.</i></td></tr>
+<tr><th id="167">167</th><td>    <b>if</b> (!path.isEmpty())</td></tr>
+<tr><th id="168">168</th><td>        temporarilyRemovedPaths.remove(path.at(<var>0</var>));</td></tr>
+<tr><th id="169">169</th><td>}</td></tr>
+<tr><th id="170">170</th><td><u>#<span data-ppcond="131">endif</span> // Q_OS_WIN</u></td></tr>
+<tr><th id="171">171</th><td></td></tr>
+<tr><th id="172">172</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="173">173</th><td><i class="doc">    <span class="command">\class</span> <span class="verb" data-ref="QFileSystemWatcher">QFileSystemWatcher</span></i></td></tr>
+<tr><th id="174">174</th><td><i class="doc">   <span class="command"> \inmodule</span> QtCore</i></td></tr>
+<tr><th id="175">175</th><td><i class="doc">    <span class="command">\brief</span> The QFileSystemWatcher class provides an interface for monitoring files and directories for modifications.</i></td></tr>
+<tr><th id="176">176</th><td><i class="doc">    <span class="command">\ingroup</span> <span class="verb">io</span></i></td></tr>
+<tr><th id="177">177</th><td><i class="doc">    <span class="command">\since</span> 4.2</i></td></tr>
+<tr><th id="178">178</th><td><i class="doc">   <span class="command"> \reentrant</span></i></td></tr>
+<tr><th id="179">179</th><td><i class="doc"></i></td></tr>
+<tr><th id="180">180</th><td><i class="doc">    QFileSystemWatcher monitors the file system for changes to files</i></td></tr>
+<tr><th id="181">181</th><td><i class="doc">    and directories by watching a list of specified paths.</i></td></tr>
+<tr><th id="182">182</th><td><i class="doc"></i></td></tr>
+<tr><th id="183">183</th><td><i class="doc">    Call addPath() to watch a particular file or directory. Multiple</i></td></tr>
+<tr><th id="184">184</th><td><i class="doc">    paths can be added using the addPaths() function. Existing paths can</i></td></tr>
+<tr><th id="185">185</th><td><i class="doc">    be removed by using the removePath() and removePaths() functions.</i></td></tr>
+<tr><th id="186">186</th><td><i class="doc"></i></td></tr>
+<tr><th id="187">187</th><td><i class="doc">    QFileSystemWatcher examines each path added to it. Files that have</i></td></tr>
+<tr><th id="188">188</th><td><i class="doc">    been added to the QFileSystemWatcher can be accessed using the</i></td></tr>
+<tr><th id="189">189</th><td><i class="doc">    files() function, and directories using the directories() function.</i></td></tr>
+<tr><th id="190">190</th><td><i class="doc"></i></td></tr>
+<tr><th id="191">191</th><td><i class="doc">    The fileChanged() signal is emitted when a file has been modified,</i></td></tr>
+<tr><th id="192">192</th><td><i class="doc">    renamed or removed from disk. Similarly, the directoryChanged()</i></td></tr>
+<tr><th id="193">193</th><td><i class="doc">    signal is emitted when a directory or its contents is modified or</i></td></tr>
+<tr><th id="194">194</th><td><i class="doc">    removed.  Note that QFileSystemWatcher stops monitoring files once</i></td></tr>
+<tr><th id="195">195</th><td><i class="doc">    they have been renamed or removed from disk, and directories once</i></td></tr>
+<tr><th id="196">196</th><td><i class="doc">    they have been removed from disk.</i></td></tr>
+<tr><th id="197">197</th><td><i class="doc"></i></td></tr>
+<tr><th id="198">198</th><td><i class="doc">   <span class="command"> \list</span></i></td></tr>
+<tr><th id="199">199</th><td><i class="doc">    <span class="command">\li</span><span class="command"> \b</span> <span class="arg">Notes:</span></i></td></tr>
+<tr><th id="200">200</th><td><i class="doc">   <span class="command"> \list</span></i></td></tr>
+<tr><th id="201">201</th><td><i class="doc">        <span class="command">\li</span> On systems running a Linux kernel without inotify support,</i></td></tr>
+<tr><th id="202">202</th><td><i class="doc">        file systems that contain watched paths cannot be unmounted.</i></td></tr>
+<tr><th id="203">203</th><td><i class="doc"></i></td></tr>
+<tr><th id="204">204</th><td><i class="doc">         <span class="command">\li</span> The act of monitoring files and directories for</i></td></tr>
+<tr><th id="205">205</th><td><i class="doc">         modifications consumes system resources. This implies there is a</i></td></tr>
+<tr><th id="206">206</th><td><i class="doc">         limit to the number of files and directories your process can</i></td></tr>
+<tr><th id="207">207</th><td><i class="doc">         monitor simultaneously. On all BSD variants, for</i></td></tr>
+<tr><th id="208">208</th><td><i class="doc">         example, an open file descriptor is required for each monitored</i></td></tr>
+<tr><th id="209">209</th><td><i class="doc">         file. Some system limits the number of open file descriptors to 256</i></td></tr>
+<tr><th id="210">210</th><td><i class="doc">         by default. This means that addPath() and addPaths() will fail if</i></td></tr>
+<tr><th id="211">211</th><td><i class="doc">         your process tries to add more than 256 files or directories to</i></td></tr>
+<tr><th id="212">212</th><td><i class="doc">         the file system monitor. Also note that your process may have</i></td></tr>
+<tr><th id="213">213</th><td><i class="doc">         other file descriptors open in addition to the ones for files</i></td></tr>
+<tr><th id="214">214</th><td><i class="doc">         being monitored, and these other open descriptors also count in</i></td></tr>
+<tr><th id="215">215</th><td><i class="doc">         the total.<span class="command"> \macos</span> uses a different backend and does not</i></td></tr>
+<tr><th id="216">216</th><td><i class="doc">         suffer from this issue.</i></td></tr>
+<tr><th id="217">217</th><td><i class="doc">   <span class="command"> \endlist</span></i></td></tr>
+<tr><th id="218">218</th><td><i class="doc">   <span class="command"> \endlist</span></i></td></tr>
+<tr><th id="219">219</th><td><i class="doc"></i></td></tr>
+<tr><th id="220">220</th><td><i class="doc">    <span class="command">\sa</span> QFile, QDir</i></td></tr>
+<tr><th id="221">221</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="222">222</th><td></td></tr>
+<tr><th id="223">223</th><td></td></tr>
+<tr><th id="224">224</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="225">225</th><td><i class="doc">    Constructs a new file system watcher object with the given<span class="command"> \a</span> <span class="arg">parent.</span></i></td></tr>
+<tr><th id="226">226</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="227">227</th><td><a class="type" href="qfilesystemwatcher.h.html#QFileSystemWatcher" title='QFileSystemWatcher' data-ref="QFileSystemWatcher">QFileSystemWatcher</a>::<dfn class="decl def fn" id="_ZN18QFileSystemWatcherC1EP7QObject" title='QFileSystemWatcher::QFileSystemWatcher' data-ref="_ZN18QFileSystemWatcherC1EP7QObject">QFileSystemWatcher</dfn>(<a class="type" href="../kernel/qobject.h.html#QObject" title='QObject' data-ref="QObject">QObject</a> *<dfn class="local col6 decl" id="46parent" title='parent' data-type='QObject *' data-ref="46parent">parent</dfn>)</td></tr>
+<tr><th id="228">228</th><td>    : <a class="type" href="../kernel/qobject.h.html#QObject" title='QObject' data-ref="QObject">QObject</a><a class="ref fn" href="../kernel/qobject.h.html#_ZN7QObjectC1ER14QObjectPrivatePS_" title='QObject::QObject' data-ref="_ZN7QObjectC1ER14QObjectPrivatePS_">(</a>*<b>new</b> <a class="ref fn fake" href="#_ZN25QFileSystemWatcherPrivateC1Ev" title='QFileSystemWatcherPrivate::QFileSystemWatcherPrivate' data-ref="_ZN25QFileSystemWatcherPrivateC1Ev"></a><a class="type" href="qfilesystemwatcher_p.h.html#QFileSystemWatcherPrivate" title='QFileSystemWatcherPrivate' data-ref="QFileSystemWatcherPrivate">QFileSystemWatcherPrivate</a>, <a class="local col6 ref" href="#46parent" title='parent' data-ref="46parent">parent</a>)</td></tr>
+<tr><th id="229">229</th><td>{</td></tr>
+<tr><th id="230">230</th><td>    <a class="member fn" href="qfilesystemwatcher.h.html#19" title='QFileSystemWatcher::d_func' data-ref="_ZN18QFileSystemWatcher6d_funcEv">d_func</a>()-&gt;<a class="ref fn" href="#_ZN25QFileSystemWatcherPrivate4initEv" title='QFileSystemWatcherPrivate::init' data-ref="_ZN25QFileSystemWatcherPrivate4initEv">init</a>();</td></tr>
+<tr><th id="231">231</th><td>}</td></tr>
+<tr><th id="232">232</th><td></td></tr>
+<tr><th id="233">233</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="234">234</th><td><i class="doc">    Constructs a new file system watcher object with the given<span class="command"> \a</span> <span class="arg">parent</span></i></td></tr>
+<tr><th id="235">235</th><td><i class="doc">    which monitors the specified<span class="command"> \a</span> <span class="arg">paths</span> list.</i></td></tr>
+<tr><th id="236">236</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="237">237</th><td><a class="type" href="qfilesystemwatcher.h.html#QFileSystemWatcher" title='QFileSystemWatcher' data-ref="QFileSystemWatcher">QFileSystemWatcher</a>::<dfn class="decl def fn" id="_ZN18QFileSystemWatcherC1ERK5QListI7QStringEP7QObject" title='QFileSystemWatcher::QFileSystemWatcher' data-ref="_ZN18QFileSystemWatcherC1ERK5QListI7QStringEP7QObject">QFileSystemWatcher</dfn>(<em>const</em> <a class="typedef" href="../tools/qcontainerfwd.h.html#QStringList" title='QStringList' data-type='QList&lt;QString&gt;' data-ref="QStringList">QStringList</a> &amp;<dfn class="local col7 decl" id="47paths" title='paths' data-type='const QStringList &amp;' data-ref="47paths">paths</dfn>, <a class="type" href="../kernel/qobject.h.html#QObject" title='QObject' data-ref="QObject">QObject</a> *<dfn class="local col8 decl" id="48parent" title='parent' data-type='QObject *' data-ref="48parent">parent</dfn>)</td></tr>
+<tr><th id="238">238</th><td>    : <a class="type" href="../kernel/qobject.h.html#QObject" title='QObject' data-ref="QObject">QObject</a><a class="ref fn" href="../kernel/qobject.h.html#_ZN7QObjectC1ER14QObjectPrivatePS_" title='QObject::QObject' data-ref="_ZN7QObjectC1ER14QObjectPrivatePS_">(</a>*<b>new</b> <a class="ref fn fake" href="#_ZN25QFileSystemWatcherPrivateC1Ev" title='QFileSystemWatcherPrivate::QFileSystemWatcherPrivate' data-ref="_ZN25QFileSystemWatcherPrivateC1Ev"></a><a class="type" href="qfilesystemwatcher_p.h.html#QFileSystemWatcherPrivate" title='QFileSystemWatcherPrivate' data-ref="QFileSystemWatcherPrivate">QFileSystemWatcherPrivate</a>, <a class="local col8 ref" href="#48parent" title='parent' data-ref="48parent">parent</a>)</td></tr>
+<tr><th id="239">239</th><td>{</td></tr>
+<tr><th id="240">240</th><td>    <a class="member fn" href="qfilesystemwatcher.h.html#19" title='QFileSystemWatcher::d_func' data-ref="_ZN18QFileSystemWatcher6d_funcEv">d_func</a>()-&gt;<a class="ref fn" href="#_ZN25QFileSystemWatcherPrivate4initEv" title='QFileSystemWatcherPrivate::init' data-ref="_ZN25QFileSystemWatcherPrivate4initEv">init</a>();</td></tr>
+<tr><th id="241">241</th><td>    <a class="member fn" href="#_ZN18QFileSystemWatcher8addPathsERK5QListI7QStringE" title='QFileSystemWatcher::addPaths' data-ref="_ZN18QFileSystemWatcher8addPathsERK5QListI7QStringE">addPaths</a>(<span class='inlayHint'>files:&nbsp;</span><a class="local col7 ref" href="#47paths" title='paths' data-ref="47paths">paths</a>);</td></tr>
+<tr><th id="242">242</th><td>}</td></tr>
+<tr><th id="243">243</th><td></td></tr>
+<tr><th id="244">244</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="245">245</th><td><i class="doc">    Destroys the file system watcher.</i></td></tr>
+<tr><th id="246">246</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="247">247</th><td><a class="type" href="qfilesystemwatcher.h.html#QFileSystemWatcher" title='QFileSystemWatcher' data-ref="QFileSystemWatcher">QFileSystemWatcher</a>::<dfn class="virtual decl def fn" id="_ZN18QFileSystemWatcherD1Ev" title='QFileSystemWatcher::~QFileSystemWatcher' data-ref="_ZN18QFileSystemWatcherD1Ev">~QFileSystemWatcher</dfn>()</td></tr>
+<tr><th id="248">248</th><td>{ }</td></tr>
+<tr><th id="249">249</th><td></td></tr>
+<tr><th id="250">250</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="251">251</th><td><i class="doc">    Adds<span class="command"> \a</span> <span class="arg">path</span> to the file system watcher if<span class="command"> \a</span> <span class="arg">path</span> exists. The</i></td></tr>
+<tr><th id="252">252</th><td><i class="doc">    path is not added if it does not exist, or if it is already being</i></td></tr>
+<tr><th id="253">253</th><td><i class="doc">    monitored by the file system watcher.</i></td></tr>
+<tr><th id="254">254</th><td><i class="doc"></i></td></tr>
+<tr><th id="255">255</th><td><i class="doc">    If<span class="command"> \a</span> <span class="arg">path</span> specifies a directory, the directoryChanged() signal</i></td></tr>
+<tr><th id="256">256</th><td><i class="doc">    will be emitted when<span class="command"> \a</span> <span class="arg">path</span> is modified or removed from disk;</i></td></tr>
+<tr><th id="257">257</th><td><i class="doc">    otherwise the fileChanged() signal is emitted when<span class="command"> \a</span> <span class="arg">path</span> is</i></td></tr>
+<tr><th id="258">258</th><td><i class="doc">    modified, renamed or removed.</i></td></tr>
+<tr><th id="259">259</th><td><i class="doc"></i></td></tr>
+<tr><th id="260">260</th><td><i class="doc">    If the watch was successful, true is returned.</i></td></tr>
+<tr><th id="261">261</th><td><i class="doc"></i></td></tr>
+<tr><th id="262">262</th><td><i class="doc">    Reasons for a watch failure are generally system-dependent, but</i></td></tr>
+<tr><th id="263">263</th><td><i class="doc">    may include the resource not existing, access failures, or the</i></td></tr>
+<tr><th id="264">264</th><td><i class="doc">    total watch count limit, if the platform has one.</i></td></tr>
+<tr><th id="265">265</th><td><i class="doc"></i></td></tr>
+<tr><th id="266">266</th><td><i class="doc">    <span class="command">\note</span> There may be a system dependent limit to the number of</i></td></tr>
+<tr><th id="267">267</th><td><i class="doc">    files and directories that can be monitored simultaneously.</i></td></tr>
+<tr><th id="268">268</th><td><i class="doc">    If this limit is been reached,<span class="command"> \a</span> <span class="arg">path</span> will not be monitored,</i></td></tr>
+<tr><th id="269">269</th><td><i class="doc">    and false is returned.</i></td></tr>
+<tr><th id="270">270</th><td><i class="doc"></i></td></tr>
+<tr><th id="271">271</th><td><i class="doc">    <span class="command">\sa</span> addPaths(), removePath()</i></td></tr>
+<tr><th id="272">272</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="273">273</th><td><em>bool</em> <a class="type" href="qfilesystemwatcher.h.html#QFileSystemWatcher" title='QFileSystemWatcher' data-ref="QFileSystemWatcher">QFileSystemWatcher</a>::<dfn class="decl def fn" id="_ZN18QFileSystemWatcher7addPathERK7QString" title='QFileSystemWatcher::addPath' data-ref="_ZN18QFileSystemWatcher7addPathERK7QString">addPath</dfn>(<em>const</em> <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> &amp;<dfn class="local col9 decl" id="49path" title='path' data-type='const QString &amp;' data-ref="49path">path</dfn>)</td></tr>
+<tr><th id="274">274</th><td>{</td></tr>
+<tr><th id="275">275</th><td>    <b>if</b> (<a class="local col9 ref" href="#49path" title='path' data-ref="49path">path</a>.<a class="ref fn" href="../text/qstring.h.html#_ZNK7QString7isEmptyEv" title='QString::isEmpty' data-ref="_ZNK7QString7isEmptyEv">isEmpty</a>()) {</td></tr>
+<tr><th id="276">276</th><td>        <a class="macro" href="../global/qlogging.h.html#158" title="QMessageLogger(nullptr, 0, nullptr).warning" data-ref="_M/qWarning">qWarning</a>(<span class='inlayHint'>msg:&nbsp;</span><q>"QFileSystemWatcher::addPath: path is empty"</q>);</td></tr>
+<tr><th id="277">277</th><td>        <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="278">278</th><td>    }</td></tr>
+<tr><th id="279">279</th><td></td></tr>
+<tr><th id="280">280</th><td>    <a class="typedef" href="../tools/qcontainerfwd.h.html#QStringList" title='QStringList' data-type='QList&lt;QString&gt;' data-ref="QStringList">QStringList</a> <dfn class="local col0 decl" id="50paths" title='paths' data-type='QStringList' data-ref="50paths">paths</dfn> = <a class="member fn" href="#_ZN18QFileSystemWatcher8addPathsERK5QListI7QStringE" title='QFileSystemWatcher::addPaths' data-ref="_ZN18QFileSystemWatcher8addPathsERK5QListI7QStringE">addPaths</a>(<span class='inlayHint'>files:&nbsp;</span><a class="typedef" href="../tools/qcontainerfwd.h.html#QStringList" title='QStringList' data-type='QList&lt;QString&gt;' data-ref="QStringList">QStringList</a><a class="ref fn" href="../tools/qlist.h.html#_ZN5QListC1ERKTL0__" title='QList::QList&lt;T&gt;' data-ref="_ZN5QListC1ERKTL0__">(</a><a class="local col9 ref" href="#49path" title='path' data-ref="49path">path</a>));</td></tr>
+<tr><th id="281">281</th><td>    <b>return</b> <a class="local col0 ref" href="#50paths" title='paths' data-ref="50paths">paths</a>.<a class="ref fn" href="../tools/qlist.h.html#_ZNK5QList7isEmptyEv" title='QList::isEmpty' data-ref="_ZNK5QList7isEmptyEv">isEmpty</a>();</td></tr>
+<tr><th id="282">282</th><td>}</td></tr>
+<tr><th id="283">283</th><td></td></tr>
+<tr><th id="284">284</th><td><em>static</em> <a class="typedef" href="../tools/qcontainerfwd.h.html#QStringList" title='QStringList' data-type='QList&lt;QString&gt;' data-ref="QStringList">QStringList</a> <dfn class="tu decl def fn" id="_ZL18empty_paths_prunedRK5QListI7QStringE" title='empty_paths_pruned' data-type='QStringList empty_paths_pruned(const QStringList &amp; paths)' data-ref="_ZL18empty_paths_prunedRK5QListI7QStringE">empty_paths_pruned</dfn>(<em>const</em> <a class="typedef" href="../tools/qcontainerfwd.h.html#QStringList" title='QStringList' data-type='QList&lt;QString&gt;' data-ref="QStringList">QStringList</a> &amp;<dfn class="local col1 decl" id="51paths" title='paths' data-type='const QStringList &amp;' data-ref="51paths">paths</dfn>)</td></tr>
+<tr><th id="285">285</th><td>{</td></tr>
+<tr><th id="286">286</th><td>    <a class="typedef" href="../tools/qcontainerfwd.h.html#QStringList" title='QStringList' data-type='QList&lt;QString&gt;' data-ref="QStringList">QStringList</a> <a class="ref fn fake" href="../tools/qlist.h.html#_ZN5QListC1Ev" title='QList::QList&lt;T&gt;' data-ref="_ZN5QListC1Ev"></a><dfn class="local col2 decl" id="52p" title='p' data-type='QStringList' data-ref="52p">p</dfn>;</td></tr>
+<tr><th id="287">287</th><td>    <a class="local col2 ref" href="#52p" title='p' data-ref="52p">p</a>.<a class="ref fn" href="../tools/qlist.h.html#_ZN5QList7reserveEx" title='QList::reserve' data-ref="_ZN5QList7reserveEx">reserve</a>(<span class='inlayHint'>size:&nbsp;</span><a class="local col1 ref" href="#51paths" title='paths' data-ref="51paths">paths</a>.<a class="ref fn" href="../tools/qlist.h.html#_ZNK5QList4sizeEv" title='QList::size' data-ref="_ZNK5QList4sizeEv">size</a>());</td></tr>
+<tr><th id="288">288</th><td>    <em>const</em> <em>auto</em> <dfn class="local col3 decl" id="53isEmpty" title='isEmpty' data-type='const (lambda at /home/lzx0626/DavidingPlus/qtbase/src/corelib/io/qfilesystemwatcher.cpp:288:26)' data-ref="53isEmpty">isEmpty</dfn> = [](<em>const</em> <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> &amp;<dfn class="local col4 decl" id="54s" title='s' data-type='const QString &amp;' data-ref="54s">s</dfn>) { <b>return</b> <a class="local col4 ref" href="#54s" title='s' data-ref="54s">s</a>.<a class="ref fn" href="../text/qstring.h.html#_ZNK7QString7isEmptyEv" title='QString::isEmpty' data-ref="_ZNK7QString7isEmptyEv">isEmpty</a>(); };</td></tr>
+<tr><th id="289">289</th><td>    <span class="namespace">std::</span><a class="tu ref fn" href="../../../../include/c++/9/bits/stl_algo.h.html#_ZSt14remove_copy_ifT_S_T0_T1_" title='std::remove_copy_if' data-use='c' data-ref="_ZSt14remove_copy_ifT_S_T0_T1_">remove_copy_if</a>(<span class='inlayHint'>first:&nbsp;</span><a class="local col1 ref" href="#51paths" title='paths' data-ref="51paths">paths</a>.<a class="ref fn" href="../tools/qlist.h.html#_ZNK5QList5beginEv" title='QList::begin' data-ref="_ZNK5QList5beginEv">begin</a>(), <span class='inlayHint'>last:&nbsp;</span><a class="local col1 ref" href="#51paths" title='paths' data-ref="51paths">paths</a>.<a class="ref fn" href="../tools/qlist.h.html#_ZNK5QList3endEv" title='QList::end' data-ref="_ZNK5QList3endEv">end</a>(),</td></tr>
+<tr><th id="290">290</th><td>                        <span class='inlayHint'>result:&nbsp;</span><span class="namespace">std::</span><a class="ref fn" href="../../../../include/c++/9/bits/stl_iterator.h.html#_ZSt13back_inserterRT_" title='std::back_inserter' data-ref="_ZSt13back_inserterRT_">back_inserter</a>(<span class='inlayHint'>x&amp;:&nbsp;</span><span class='refarg'><a class="local col2 ref" href="#52p" title='p' data-ref="52p">p</a></span>),</td></tr>
+<tr><th id="291">291</th><td>                        <a class="tu ref fn fake" href="#288" title='empty_paths_pruned(const QStringList &amp;)::(anonymous class)::' data-use='c' data-ref="_ZZL18empty_paths_prunedRK5QListI7QStringEEN3$_0C1ERKS4_"></a><span class='inlayHint'>pred:&nbsp;</span><a class="local col3 ref" href="#53isEmpty" title='isEmpty' data-ref="53isEmpty">isEmpty</a>);</td></tr>
+<tr><th id="292">292</th><td>    <b>return</b> <a class="ref fn fake" href="../tools/qcontainerfwd.h.html#29" title='QList&lt;QString&gt;::QList' data-ref="_ZN5QListI7QStringEC1EOS1_"></a><a class="local col2 ref" href="#52p" title='p' data-ref="52p">p</a>;</td></tr>
+<tr><th id="293">293</th><td>}</td></tr>
+<tr><th id="294">294</th><td></td></tr>
+<tr><th id="295">295</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="296">296</th><td><i class="doc">    Adds each path in<span class="command"> \a</span> <span class="arg">paths</span> to the file system watcher. Paths are</i></td></tr>
+<tr><th id="297">297</th><td><i class="doc">    not added if they not exist, or if they are already being</i></td></tr>
+<tr><th id="298">298</th><td><i class="doc">    monitored by the file system watcher.</i></td></tr>
+<tr><th id="299">299</th><td><i class="doc"></i></td></tr>
+<tr><th id="300">300</th><td><i class="doc">    If a path specifies a directory, the directoryChanged() signal</i></td></tr>
+<tr><th id="301">301</th><td><i class="doc">    will be emitted when the path is modified or removed from disk;</i></td></tr>
+<tr><th id="302">302</th><td><i class="doc">    otherwise the fileChanged() signal is emitted when the path is</i></td></tr>
+<tr><th id="303">303</th><td><i class="doc">    modified, renamed, or removed.</i></td></tr>
+<tr><th id="304">304</th><td><i class="doc"></i></td></tr>
+<tr><th id="305">305</th><td><i class="doc">    The return value is a list of paths that could not be watched.</i></td></tr>
+<tr><th id="306">306</th><td><i class="doc"></i></td></tr>
+<tr><th id="307">307</th><td><i class="doc">    Reasons for a watch failure are generally system-dependent, but</i></td></tr>
+<tr><th id="308">308</th><td><i class="doc">    may include the resource not existing, access failures, or the</i></td></tr>
+<tr><th id="309">309</th><td><i class="doc">    total watch count limit, if the platform has one.</i></td></tr>
+<tr><th id="310">310</th><td><i class="doc"></i></td></tr>
+<tr><th id="311">311</th><td><i class="doc">    <span class="command">\note</span> There may be a system dependent limit to the number of</i></td></tr>
+<tr><th id="312">312</th><td><i class="doc">    files and directories that can be monitored simultaneously.</i></td></tr>
+<tr><th id="313">313</th><td><i class="doc">    If this limit has been reached, the excess<span class="command"> \a</span> <span class="arg">paths</span> will not</i></td></tr>
+<tr><th id="314">314</th><td><i class="doc">    be monitored, and they will be added to the returned QStringList.</i></td></tr>
+<tr><th id="315">315</th><td><i class="doc"></i></td></tr>
+<tr><th id="316">316</th><td><i class="doc">    <span class="command">\sa</span> addPath(), removePaths()</i></td></tr>
+<tr><th id="317">317</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="318">318</th><td><a class="typedef" href="../tools/qcontainerfwd.h.html#QStringList" title='QStringList' data-type='QList&lt;QString&gt;' data-ref="QStringList">QStringList</a> <a class="type" href="qfilesystemwatcher.h.html#QFileSystemWatcher" title='QFileSystemWatcher' data-ref="QFileSystemWatcher">QFileSystemWatcher</a>::<dfn class="decl def fn" id="_ZN18QFileSystemWatcher8addPathsERK5QListI7QStringE" title='QFileSystemWatcher::addPaths' data-ref="_ZN18QFileSystemWatcher8addPathsERK5QListI7QStringE">addPaths</dfn>(<em>const</em> <a class="typedef" href="../tools/qcontainerfwd.h.html#QStringList" title='QStringList' data-type='QList&lt;QString&gt;' data-ref="QStringList">QStringList</a> &amp;<dfn class="local col5 decl" id="55paths" title='paths' data-type='const QStringList &amp;' data-ref="55paths">paths</dfn>)</td></tr>
+<tr><th id="319">319</th><td>{</td></tr>
+<tr><th id="320">320</th><td>    <a class="macro" href="../global/qtclasshelpermacros.h.html#109" title="QFileSystemWatcherPrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(QFileSystemWatcher);</td></tr>
+<tr><th id="321">321</th><td></td></tr>
+<tr><th id="322">322</th><td>    <a class="typedef" href="../tools/qcontainerfwd.h.html#QStringList" title='QStringList' data-type='QList&lt;QString&gt;' data-ref="QStringList">QStringList</a> <dfn class="local col6 decl" id="56p" title='p' data-type='QStringList' data-ref="56p">p</dfn> = <a class="tu ref fn" href="#_ZL18empty_paths_prunedRK5QListI7QStringE" title='empty_paths_pruned' data-use='c' data-ref="_ZL18empty_paths_prunedRK5QListI7QStringE">empty_paths_pruned</a>(<a class="local col5 ref" href="#55paths" title='paths' data-ref="55paths">paths</a>);</td></tr>
+<tr><th id="323">323</th><td></td></tr>
+<tr><th id="324">324</th><td>    <b>if</b> (<a class="local col6 ref" href="#56p" title='p' data-ref="56p">p</a>.<a class="ref fn" href="../tools/qlist.h.html#_ZNK5QList7isEmptyEv" title='QList::isEmpty' data-ref="_ZNK5QList7isEmptyEv">isEmpty</a>()) {</td></tr>
+<tr><th id="325">325</th><td>        <a class="macro" href="../global/qlogging.h.html#158" title="QMessageLogger(nullptr, 0, nullptr).warning" data-ref="_M/qWarning">qWarning</a>(<span class='inlayHint'>msg:&nbsp;</span><q>"QFileSystemWatcher::addPaths: list is empty"</q>);</td></tr>
+<tr><th id="326">326</th><td>        <b>return</b> <a class="ref fn fake" href="../tools/qcontainerfwd.h.html#29" title='QList&lt;QString&gt;::QList' data-ref="_ZN5QListI7QStringEC1EOS1_"></a><a class="local col6 ref" href="#56p" title='p' data-ref="56p">p</a>;</td></tr>
+<tr><th id="327">327</th><td>    }</td></tr>
+<tr><th id="328">328</th><td>    <a class="macro" href="qloggingcategory.h.html#128" title="for (QLoggingCategoryMacroHolder&lt;QtDebugMsg&gt; qt_category(lcWatcher); qt_category; qt_category.control = false) QMessageLogger(nullptr, 0, nullptr, qt_category.name()).debug()" data-ref="_M/qCDebug">qCDebug</a>(<a class="ref fn" href="#36" title='lcWatcher' data-ref="_Z9lcWatcherv">lcWatcher</a>) <a class="ref fn" href="qdebug.h.html#_ZN6QDebuglsEPKc" title='QDebug::operator&lt;&lt;' data-ref="_ZN6QDebuglsEPKc">&lt;&lt;</a> <q>"adding"</q> <a class="ref fn" href="qdebug.h.html#_Zls6QDebugRK5QListIT_E" title='operator&lt;&lt;' data-ref="_Zls6QDebugRK5QListIT_E">&lt;&lt;</a> <a class="local col5 ref" href="#55paths" title='paths' data-ref="55paths">paths</a>;</td></tr>
+<tr><th id="329">329</th><td>    <em>const</em> <em>auto</em> <dfn class="local col7 decl" id="57selectEngine" title='selectEngine' data-type='const (lambda at /home/lzx0626/DavidingPlus/qtbase/src/corelib/io/qfilesystemwatcher.cpp:329:31)' data-ref="57selectEngine">selectEngine</dfn> = [<b>this</b>, <a class="local col8 ref" href="#320" title='d' data-ref="58d">d</a>]() -&gt; <a class="type" href="qfilesystemwatcher_p.h.html#QFileSystemWatcherEngine" title='QFileSystemWatcherEngine' data-ref="QFileSystemWatcherEngine">QFileSystemWatcherEngine</a>* {</td></tr>
+<tr><th id="330">330</th><td><u>#<span data-ppcond="330">ifdef</span> <span class="macro" data-ref="_M/QT_BUILD_INTERNAL">QT_BUILD_INTERNAL</span></u></td></tr>
+<tr><th id="331">331</th><td>        <em>const</em> QString on = objectName();</td></tr>
+<tr><th id="332">332</th><td></td></tr>
+<tr><th id="333">333</th><td>        <b>if</b> (Q_UNLIKELY(on.startsWith(<q>"_qt_autotest_force_engine_"_L1</q>))) {</td></tr>
+<tr><th id="334">334</th><td>            <i>// Autotest override case - use the explicitly selected engine only</i></td></tr>
+<tr><th id="335">335</th><td>            <em>const</em> <em>auto</em> forceName = QStringView{on}.mid(<var>26</var>);</td></tr>
+<tr><th id="336">336</th><td>            <b>if</b> (forceName == <q>"poller"_L1</q>) {</td></tr>
+<tr><th id="337">337</th><td>                qCDebug(lcWatcher, <q>"QFileSystemWatcher: skipping native engine, using only polling engine"</q>);</td></tr>
+<tr><th id="338">338</th><td>                d_func()-&gt;initPollerEngine();</td></tr>
+<tr><th id="339">339</th><td>                <b>return</b> d-&gt;poller;</td></tr>
+<tr><th id="340">340</th><td>            } <b>else</b> <b>if</b> (forceName == <q>"native"_L1</q>) {</td></tr>
+<tr><th id="341">341</th><td>                qCDebug(lcWatcher, <q>"QFileSystemWatcher: skipping polling engine, using only native engine"</q>);</td></tr>
+<tr><th id="342">342</th><td>                <b>return</b> d-&gt;native;</td></tr>
+<tr><th id="343">343</th><td>            }</td></tr>
+<tr><th id="344">344</th><td>            <b>return</b> <b>nullptr</b>;</td></tr>
+<tr><th id="345">345</th><td>        }</td></tr>
+<tr><th id="346">346</th><td><u>#<span data-ppcond="330">endif</span></u></td></tr>
+<tr><th id="347">347</th><td>        <i>// Normal runtime case - search intelligently for best engine</i></td></tr>
+<tr><th id="348">348</th><td>        <b>if</b> (<a class="local col8 ref" href="#320" title='d' data-ref="58d">d</a>-&gt;<a class="ref field" href="qfilesystemwatcher_p.h.html#QFileSystemWatcherPrivate::native" title='QFileSystemWatcherPrivate::native' data-ref="QFileSystemWatcherPrivate::native">native</a>) {</td></tr>
+<tr><th id="349">349</th><td>            <b>return</b> <a class="local col8 ref" href="#320" title='d' data-ref="58d">d</a>-&gt;<a class="ref field" href="qfilesystemwatcher_p.h.html#QFileSystemWatcherPrivate::native" title='QFileSystemWatcherPrivate::native' data-ref="QFileSystemWatcherPrivate::native">native</a>;</td></tr>
+<tr><th id="350">350</th><td>        } <b>else</b> {</td></tr>
+<tr><th id="351">351</th><td>            <a class="member fn" href="qfilesystemwatcher.h.html#19" title='QFileSystemWatcher::d_func' data-ref="_ZN18QFileSystemWatcher6d_funcEv">d_func</a>()-&gt;<a class="ref fn" href="#_ZN25QFileSystemWatcherPrivate16initPollerEngineEv" title='QFileSystemWatcherPrivate::initPollerEngine' data-ref="_ZN25QFileSystemWatcherPrivate16initPollerEngineEv">initPollerEngine</a>();</td></tr>
+<tr><th id="352">352</th><td>            <b>return</b> <a class="local col8 ref" href="#320" title='d' data-ref="58d">d</a>-&gt;<a class="ref field" href="qfilesystemwatcher_p.h.html#QFileSystemWatcherPrivate::poller" title='QFileSystemWatcherPrivate::poller' data-ref="QFileSystemWatcherPrivate::poller">poller</a>;</td></tr>
+<tr><th id="353">353</th><td>        }</td></tr>
+<tr><th id="354">354</th><td>    };</td></tr>
+<tr><th id="355">355</th><td></td></tr>
+<tr><th id="356">356</th><td>    <b>if</b> (<em>auto</em> <dfn class="local col9 decl" id="59engine" title='engine' data-type='QFileSystemWatcherEngine *' data-ref="59engine"><a class="local col9 ref" href="#59engine" title='engine' data-ref="59engine">engine</a></dfn> = <a class="local col7 ref" href="#57selectEngine" title='selectEngine' data-ref="57selectEngine">selectEngine</a><a class="tu ref fn" href="#_ZZN18QFileSystemWatcher8addPathsERK5QListI7QStringEENK3$_1clEv" title='QFileSystemWatcher::addPaths(const QStringList &amp;)::(anonymous class)::operator()' data-use='c' data-ref="_ZZN18QFileSystemWatcher8addPathsERK5QListI7QStringEENK3$_1clEv">()</a>)</td></tr>
+<tr><th id="357">357</th><td>        <a class="local col6 ref" href="#56p" title='p' data-ref="56p">p</a> <a class="ref fn" href="../tools/qcontainerfwd.h.html#29" title='QList&lt;QString&gt;::operator=' data-ref="_ZN5QListI7QStringEaSEOS1_">=</a> <a class="local col9 ref" href="#59engine" title='engine' data-ref="59engine">engine</a>-&gt;<a class="virtual ref fn" href="qfilesystemwatcher_p.h.html#_ZN24QFileSystemWatcherEngine8addPathsERK5QListI7QStringEPS2_S5_" title='QFileSystemWatcherEngine::addPaths' data-ref="_ZN24QFileSystemWatcherEngine8addPathsERK5QListI7QStringEPS2_S5_">addPaths</a>(<span class='inlayHint'>paths:&nbsp;</span><a class="local col6 ref" href="#56p" title='p' data-ref="56p">p</a>, <span class='inlayHint'>files:&nbsp;</span>&amp;<a class="local col8 ref" href="#320" title='d' data-ref="58d">d</a>-&gt;<a class="ref field" href="qfilesystemwatcher_p.h.html#QFileSystemWatcherPrivate::files" title='QFileSystemWatcherPrivate::files' data-ref="QFileSystemWatcherPrivate::files">files</a>, <span class='inlayHint'>directories:&nbsp;</span>&amp;<a class="local col8 ref" href="#320" title='d' data-ref="58d">d</a>-&gt;<a class="ref field" href="qfilesystemwatcher_p.h.html#QFileSystemWatcherPrivate::directories" title='QFileSystemWatcherPrivate::directories' data-ref="QFileSystemWatcherPrivate::directories">directories</a>);</td></tr>
+<tr><th id="358">358</th><td></td></tr>
+<tr><th id="359">359</th><td>    <b>return</b> <a class="ref fn fake" href="../tools/qcontainerfwd.h.html#29" title='QList&lt;QString&gt;::QList' data-ref="_ZN5QListI7QStringEC1EOS1_"></a><a class="local col6 ref" href="#56p" title='p' data-ref="56p">p</a>;</td></tr>
+<tr><th id="360">360</th><td>}</td></tr>
+<tr><th id="361">361</th><td></td></tr>
+<tr><th id="362">362</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="363">363</th><td><i class="doc">    Removes the specified<span class="command"> \a</span> <span class="arg">path</span> from the file system watcher.</i></td></tr>
+<tr><th id="364">364</th><td><i class="doc"></i></td></tr>
+<tr><th id="365">365</th><td><i class="doc">    If the watch is successfully removed, true is returned.</i></td></tr>
+<tr><th id="366">366</th><td><i class="doc"></i></td></tr>
+<tr><th id="367">367</th><td><i class="doc">    Reasons for watch removal failing are generally system-dependent,</i></td></tr>
+<tr><th id="368">368</th><td><i class="doc">    but may be due to the path having already been deleted, for example.</i></td></tr>
+<tr><th id="369">369</th><td><i class="doc"></i></td></tr>
+<tr><th id="370">370</th><td><i class="doc">    <span class="command">\sa</span> removePaths(), addPath()</i></td></tr>
+<tr><th id="371">371</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="372">372</th><td><em>bool</em> <a class="type" href="qfilesystemwatcher.h.html#QFileSystemWatcher" title='QFileSystemWatcher' data-ref="QFileSystemWatcher">QFileSystemWatcher</a>::<dfn class="decl def fn" id="_ZN18QFileSystemWatcher10removePathERK7QString" title='QFileSystemWatcher::removePath' data-ref="_ZN18QFileSystemWatcher10removePathERK7QString">removePath</dfn>(<em>const</em> <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> &amp;<dfn class="local col0 decl" id="60path" title='path' data-type='const QString &amp;' data-ref="60path">path</dfn>)</td></tr>
+<tr><th id="373">373</th><td>{</td></tr>
+<tr><th id="374">374</th><td>    <b>if</b> (<a class="local col0 ref" href="#60path" title='path' data-ref="60path">path</a>.<a class="ref fn" href="../text/qstring.h.html#_ZNK7QString7isEmptyEv" title='QString::isEmpty' data-ref="_ZNK7QString7isEmptyEv">isEmpty</a>()) {</td></tr>
+<tr><th id="375">375</th><td>        <a class="macro" href="../global/qlogging.h.html#158" title="QMessageLogger(nullptr, 0, nullptr).warning" data-ref="_M/qWarning">qWarning</a>(<span class='inlayHint'>msg:&nbsp;</span><q>"QFileSystemWatcher::removePath: path is empty"</q>);</td></tr>
+<tr><th id="376">376</th><td>        <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="377">377</th><td>    }</td></tr>
+<tr><th id="378">378</th><td></td></tr>
+<tr><th id="379">379</th><td>    <a class="typedef" href="../tools/qcontainerfwd.h.html#QStringList" title='QStringList' data-type='QList&lt;QString&gt;' data-ref="QStringList">QStringList</a> <dfn class="local col1 decl" id="61paths" title='paths' data-type='QStringList' data-ref="61paths">paths</dfn> = <a class="member fn" href="#_ZN18QFileSystemWatcher11removePathsERK5QListI7QStringE" title='QFileSystemWatcher::removePaths' data-ref="_ZN18QFileSystemWatcher11removePathsERK5QListI7QStringE">removePaths</a>(<span class='inlayHint'>files:&nbsp;</span><a class="typedef" href="../tools/qcontainerfwd.h.html#QStringList" title='QStringList' data-type='QList&lt;QString&gt;' data-ref="QStringList">QStringList</a><a class="ref fn" href="../tools/qlist.h.html#_ZN5QListC1ERKTL0__" title='QList::QList&lt;T&gt;' data-ref="_ZN5QListC1ERKTL0__">(</a><a class="local col0 ref" href="#60path" title='path' data-ref="60path">path</a>));</td></tr>
+<tr><th id="380">380</th><td>    <b>return</b> <a class="local col1 ref" href="#61paths" title='paths' data-ref="61paths">paths</a>.<a class="ref fn" href="../tools/qlist.h.html#_ZNK5QList7isEmptyEv" title='QList::isEmpty' data-ref="_ZNK5QList7isEmptyEv">isEmpty</a>();</td></tr>
+<tr><th id="381">381</th><td>}</td></tr>
+<tr><th id="382">382</th><td></td></tr>
+<tr><th id="383">383</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="384">384</th><td><i class="doc">    Removes the specified<span class="command"> \a</span> <span class="arg">paths</span> from the file system watcher.</i></td></tr>
+<tr><th id="385">385</th><td><i class="doc"></i></td></tr>
+<tr><th id="386">386</th><td><i class="doc">    The return value is a list of paths which were not able to be</i></td></tr>
+<tr><th id="387">387</th><td><i class="doc">    unwatched successfully.</i></td></tr>
+<tr><th id="388">388</th><td><i class="doc"></i></td></tr>
+<tr><th id="389">389</th><td><i class="doc">    Reasons for watch removal failing are generally system-dependent,</i></td></tr>
+<tr><th id="390">390</th><td><i class="doc">    but may be due to the path having already been deleted, for example.</i></td></tr>
+<tr><th id="391">391</th><td><i class="doc"></i></td></tr>
+<tr><th id="392">392</th><td><i class="doc">    <span class="command">\sa</span> removePath(), addPaths()</i></td></tr>
+<tr><th id="393">393</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="394">394</th><td><a class="typedef" href="../tools/qcontainerfwd.h.html#QStringList" title='QStringList' data-type='QList&lt;QString&gt;' data-ref="QStringList">QStringList</a> <a class="type" href="qfilesystemwatcher.h.html#QFileSystemWatcher" title='QFileSystemWatcher' data-ref="QFileSystemWatcher">QFileSystemWatcher</a>::<dfn class="decl def fn" id="_ZN18QFileSystemWatcher11removePathsERK5QListI7QStringE" title='QFileSystemWatcher::removePaths' data-ref="_ZN18QFileSystemWatcher11removePathsERK5QListI7QStringE">removePaths</dfn>(<em>const</em> <a class="typedef" href="../tools/qcontainerfwd.h.html#QStringList" title='QStringList' data-type='QList&lt;QString&gt;' data-ref="QStringList">QStringList</a> &amp;<dfn class="local col2 decl" id="62paths" title='paths' data-type='const QStringList &amp;' data-ref="62paths">paths</dfn>)</td></tr>
+<tr><th id="395">395</th><td>{</td></tr>
+<tr><th id="396">396</th><td>    <a class="macro" href="../global/qtclasshelpermacros.h.html#109" title="QFileSystemWatcherPrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(QFileSystemWatcher);</td></tr>
+<tr><th id="397">397</th><td></td></tr>
+<tr><th id="398">398</th><td>    <a class="typedef" href="../tools/qcontainerfwd.h.html#QStringList" title='QStringList' data-type='QList&lt;QString&gt;' data-ref="QStringList">QStringList</a> <dfn class="local col3 decl" id="63p" title='p' data-type='QStringList' data-ref="63p">p</dfn> = <a class="tu ref fn" href="#_ZL18empty_paths_prunedRK5QListI7QStringE" title='empty_paths_pruned' data-use='c' data-ref="_ZL18empty_paths_prunedRK5QListI7QStringE">empty_paths_pruned</a>(<a class="local col2 ref" href="#62paths" title='paths' data-ref="62paths">paths</a>);</td></tr>
+<tr><th id="399">399</th><td></td></tr>
+<tr><th id="400">400</th><td>    <b>if</b> (<a class="local col3 ref" href="#63p" title='p' data-ref="63p">p</a>.<a class="ref fn" href="../tools/qlist.h.html#_ZNK5QList7isEmptyEv" title='QList::isEmpty' data-ref="_ZNK5QList7isEmptyEv">isEmpty</a>()) {</td></tr>
+<tr><th id="401">401</th><td>        <a class="macro" href="../global/qlogging.h.html#158" title="QMessageLogger(nullptr, 0, nullptr).warning" data-ref="_M/qWarning">qWarning</a>(<span class='inlayHint'>msg:&nbsp;</span><q>"QFileSystemWatcher::removePaths: list is empty"</q>);</td></tr>
+<tr><th id="402">402</th><td>        <b>return</b> <a class="ref fn fake" href="../tools/qcontainerfwd.h.html#29" title='QList&lt;QString&gt;::QList' data-ref="_ZN5QListI7QStringEC1EOS1_"></a><a class="local col3 ref" href="#63p" title='p' data-ref="63p">p</a>;</td></tr>
+<tr><th id="403">403</th><td>    }</td></tr>
+<tr><th id="404">404</th><td>    <a class="macro" href="qloggingcategory.h.html#128" title="for (QLoggingCategoryMacroHolder&lt;QtDebugMsg&gt; qt_category(lcWatcher); qt_category; qt_category.control = false) QMessageLogger(nullptr, 0, nullptr, qt_category.name()).debug()" data-ref="_M/qCDebug">qCDebug</a>(<a class="ref fn" href="#36" title='lcWatcher' data-ref="_Z9lcWatcherv">lcWatcher</a>) <a class="ref fn" href="qdebug.h.html#_ZN6QDebuglsEPKc" title='QDebug::operator&lt;&lt;' data-ref="_ZN6QDebuglsEPKc">&lt;&lt;</a> <q>"removing"</q> <a class="ref fn" href="qdebug.h.html#_Zls6QDebugRK5QListIT_E" title='operator&lt;&lt;' data-ref="_Zls6QDebugRK5QListIT_E">&lt;&lt;</a> <a class="local col2 ref" href="#62paths" title='paths' data-ref="62paths">paths</a>;</td></tr>
+<tr><th id="405">405</th><td></td></tr>
+<tr><th id="406">406</th><td>    <b>if</b> (<a class="local col4 ref" href="#396" title='d' data-ref="64d">d</a>-&gt;<a class="ref field" href="qfilesystemwatcher_p.h.html#QFileSystemWatcherPrivate::native" title='QFileSystemWatcherPrivate::native' data-ref="QFileSystemWatcherPrivate::native">native</a>)</td></tr>
+<tr><th id="407">407</th><td>        <a class="local col3 ref" href="#63p" title='p' data-ref="63p">p</a> <a class="ref fn" href="../tools/qcontainerfwd.h.html#29" title='QList&lt;QString&gt;::operator=' data-ref="_ZN5QListI7QStringEaSEOS1_">=</a> <a class="local col4 ref" href="#396" title='d' data-ref="64d">d</a>-&gt;<a class="ref field" href="qfilesystemwatcher_p.h.html#QFileSystemWatcherPrivate::native" title='QFileSystemWatcherPrivate::native' data-ref="QFileSystemWatcherPrivate::native">native</a>-&gt;<a class="virtual ref fn" href="qfilesystemwatcher_p.h.html#_ZN24QFileSystemWatcherEngine11removePathsERK5QListI7QStringEPS2_S5_" title='QFileSystemWatcherEngine::removePaths' data-ref="_ZN24QFileSystemWatcherEngine11removePathsERK5QListI7QStringEPS2_S5_">removePaths</a>(<span class='inlayHint'>paths:&nbsp;</span><a class="local col3 ref" href="#63p" title='p' data-ref="63p">p</a>, <span class='inlayHint'>files:&nbsp;</span>&amp;<a class="local col4 ref" href="#396" title='d' data-ref="64d">d</a>-&gt;<a class="ref field" href="qfilesystemwatcher_p.h.html#QFileSystemWatcherPrivate::files" title='QFileSystemWatcherPrivate::files' data-ref="QFileSystemWatcherPrivate::files">files</a>, <span class='inlayHint'>directories:&nbsp;</span>&amp;<a class="local col4 ref" href="#396" title='d' data-ref="64d">d</a>-&gt;<a class="ref field" href="qfilesystemwatcher_p.h.html#QFileSystemWatcherPrivate::directories" title='QFileSystemWatcherPrivate::directories' data-ref="QFileSystemWatcherPrivate::directories">directories</a>);</td></tr>
+<tr><th id="408">408</th><td>    <b>if</b> (<a class="local col4 ref" href="#396" title='d' data-ref="64d">d</a>-&gt;<a class="ref field" href="qfilesystemwatcher_p.h.html#QFileSystemWatcherPrivate::poller" title='QFileSystemWatcherPrivate::poller' data-ref="QFileSystemWatcherPrivate::poller">poller</a>)</td></tr>
+<tr><th id="409">409</th><td>        <a class="local col3 ref" href="#63p" title='p' data-ref="63p">p</a> <a class="ref fn" href="../tools/qcontainerfwd.h.html#29" title='QList&lt;QString&gt;::operator=' data-ref="_ZN5QListI7QStringEaSEOS1_">=</a> <a class="local col4 ref" href="#396" title='d' data-ref="64d">d</a>-&gt;<a class="ref field" href="qfilesystemwatcher_p.h.html#QFileSystemWatcherPrivate::poller" title='QFileSystemWatcherPrivate::poller' data-ref="QFileSystemWatcherPrivate::poller">poller</a>-&gt;<a class="virtual ref fn" href="qfilesystemwatcher_p.h.html#_ZN24QFileSystemWatcherEngine11removePathsERK5QListI7QStringEPS2_S5_" title='QFileSystemWatcherEngine::removePaths' data-ref="_ZN24QFileSystemWatcherEngine11removePathsERK5QListI7QStringEPS2_S5_">removePaths</a>(<span class='inlayHint'>paths:&nbsp;</span><a class="local col3 ref" href="#63p" title='p' data-ref="63p">p</a>, <span class='inlayHint'>files:&nbsp;</span>&amp;<a class="local col4 ref" href="#396" title='d' data-ref="64d">d</a>-&gt;<a class="ref field" href="qfilesystemwatcher_p.h.html#QFileSystemWatcherPrivate::files" title='QFileSystemWatcherPrivate::files' data-ref="QFileSystemWatcherPrivate::files">files</a>, <span class='inlayHint'>directories:&nbsp;</span>&amp;<a class="local col4 ref" href="#396" title='d' data-ref="64d">d</a>-&gt;<a class="ref field" href="qfilesystemwatcher_p.h.html#QFileSystemWatcherPrivate::directories" title='QFileSystemWatcherPrivate::directories' data-ref="QFileSystemWatcherPrivate::directories">directories</a>);</td></tr>
+<tr><th id="410">410</th><td></td></tr>
+<tr><th id="411">411</th><td>    <b>return</b> <a class="ref fn fake" href="../tools/qcontainerfwd.h.html#29" title='QList&lt;QString&gt;::QList' data-ref="_ZN5QListI7QStringEC1EOS1_"></a><a class="local col3 ref" href="#63p" title='p' data-ref="63p">p</a>;</td></tr>
+<tr><th id="412">412</th><td>}</td></tr>
+<tr><th id="413">413</th><td></td></tr>
+<tr><th id="414">414</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="415">415</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb" data-ref="_ZN18QFileSystemWatcher11fileChangedERK7QStringNS_14QPrivateSignalE">void QFileSystemWatcher::fileChanged(const QString &amp;path)</span></i></td></tr>
+<tr><th id="416">416</th><td><i class="doc"></i></td></tr>
+<tr><th id="417">417</th><td><i class="doc">    This signal is emitted when the file at the specified<span class="command"> \a</span> <span class="arg">path</span> is</i></td></tr>
+<tr><th id="418">418</th><td><i class="doc">    modified, renamed or removed from disk.</i></td></tr>
+<tr><th id="419">419</th><td><i class="doc"></i></td></tr>
+<tr><th id="420">420</th><td><i class="doc">    <span class="command">\note</span> As a safety measure, many applications save an open file by</i></td></tr>
+<tr><th id="421">421</th><td><i class="doc">    writing a new file and then deleting the old one. In your slot</i></td></tr>
+<tr><th id="422">422</th><td><i class="doc">    function, you can check<span class="command"> \c</span> <span class="arg">watcher.files().contains(path).</span></i></td></tr>
+<tr><th id="423">423</th><td><i class="doc">    If it returns<span class="command"> \c</span> <span class="arg">false,</span> check whether the file still exists</i></td></tr>
+<tr><th id="424">424</th><td><i class="doc">    and then call<span class="command"> \c</span> <span class="arg">addPath()</span> to continue watching it.</i></td></tr>
+<tr><th id="425">425</th><td><i class="doc"></i></td></tr>
+<tr><th id="426">426</th><td><i class="doc">    <span class="command">\sa</span> directoryChanged()</i></td></tr>
+<tr><th id="427">427</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="428">428</th><td></td></tr>
+<tr><th id="429">429</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="430">430</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb" data-ref="_ZN18QFileSystemWatcher16directoryChangedERK7QStringNS_14QPrivateSignalE">void QFileSystemWatcher::directoryChanged(const QString &amp;path)</span></i></td></tr>
+<tr><th id="431">431</th><td><i class="doc"></i></td></tr>
+<tr><th id="432">432</th><td><i class="doc">    This signal is emitted when the directory at a specified<span class="command"> \a</span> <span class="arg">path</span></i></td></tr>
+<tr><th id="433">433</th><td><i class="doc">    is modified (e.g., when a file is added or deleted) or removed</i></td></tr>
+<tr><th id="434">434</th><td><i class="doc">    from disk. Note that if there are several changes during a short</i></td></tr>
+<tr><th id="435">435</th><td><i class="doc">    period of time, some of the changes might not emit this signal.</i></td></tr>
+<tr><th id="436">436</th><td><i class="doc">    However, the last change in the sequence of changes will always</i></td></tr>
+<tr><th id="437">437</th><td><i class="doc">    generate this signal.</i></td></tr>
+<tr><th id="438">438</th><td><i class="doc"></i></td></tr>
+<tr><th id="439">439</th><td><i class="doc">    <span class="command">\sa</span> fileChanged()</i></td></tr>
+<tr><th id="440">440</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="441">441</th><td></td></tr>
+<tr><th id="442">442</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="443">443</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb" data-ref="_ZNK18QFileSystemWatcher11directoriesEv">QStringList QFileSystemWatcher::directories() const</span></i></td></tr>
+<tr><th id="444">444</th><td><i class="doc"></i></td></tr>
+<tr><th id="445">445</th><td><i class="doc">    Returns a list of paths to directories that are being watched.</i></td></tr>
+<tr><th id="446">446</th><td><i class="doc"></i></td></tr>
+<tr><th id="447">447</th><td><i class="doc">    <span class="command">\sa</span> files()</i></td></tr>
+<tr><th id="448">448</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="449">449</th><td></td></tr>
+<tr><th id="450">450</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="451">451</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb" data-ref="_ZNK18QFileSystemWatcher5filesEv">QStringList QFileSystemWatcher::files() const</span></i></td></tr>
+<tr><th id="452">452</th><td><i class="doc"></i></td></tr>
+<tr><th id="453">453</th><td><i class="doc">    Returns a list of paths to files that are being watched.</i></td></tr>
+<tr><th id="454">454</th><td><i class="doc"></i></td></tr>
+<tr><th id="455">455</th><td><i class="doc">    <span class="command">\sa</span> directories()</i></td></tr>
+<tr><th id="456">456</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="457">457</th><td></td></tr>
+<tr><th id="458">458</th><td><a class="typedef" href="../tools/qcontainerfwd.h.html#QStringList" title='QStringList' data-type='QList&lt;QString&gt;' data-ref="QStringList">QStringList</a> <a class="type" href="qfilesystemwatcher.h.html#QFileSystemWatcher" title='QFileSystemWatcher' data-ref="QFileSystemWatcher">QFileSystemWatcher</a>::<dfn class="decl def fn" id="_ZNK18QFileSystemWatcher11directoriesEv" title='QFileSystemWatcher::directories' data-ref="_ZNK18QFileSystemWatcher11directoriesEv">directories</dfn>() <em>const</em></td></tr>
+<tr><th id="459">459</th><td>{</td></tr>
+<tr><th id="460">460</th><td>    <a class="macro" href="../global/qtclasshelpermacros.h.html#109" title="const QFileSystemWatcherPrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(<em>const</em> QFileSystemWatcher);</td></tr>
+<tr><th id="461">461</th><td>    <b>return</b> <a class="ref fn fake" href="../tools/qcontainerfwd.h.html#29" title='QList&lt;QString&gt;::QList' data-ref="_ZN5QListI7QStringEC1ERKS1_"></a><a class="local col5 ref" href="#460" title='d' data-ref="65d">d</a>-&gt;<a class="ref field" href="qfilesystemwatcher_p.h.html#QFileSystemWatcherPrivate::directories" title='QFileSystemWatcherPrivate::directories' data-ref="QFileSystemWatcherPrivate::directories">directories</a>;</td></tr>
+<tr><th id="462">462</th><td>}</td></tr>
+<tr><th id="463">463</th><td></td></tr>
+<tr><th id="464">464</th><td><a class="typedef" href="../tools/qcontainerfwd.h.html#QStringList" title='QStringList' data-type='QList&lt;QString&gt;' data-ref="QStringList">QStringList</a> <a class="type" href="qfilesystemwatcher.h.html#QFileSystemWatcher" title='QFileSystemWatcher' data-ref="QFileSystemWatcher">QFileSystemWatcher</a>::<dfn class="decl def fn" id="_ZNK18QFileSystemWatcher5filesEv" title='QFileSystemWatcher::files' data-ref="_ZNK18QFileSystemWatcher5filesEv">files</dfn>() <em>const</em></td></tr>
+<tr><th id="465">465</th><td>{</td></tr>
+<tr><th id="466">466</th><td>    <a class="macro" href="../global/qtclasshelpermacros.h.html#109" title="const QFileSystemWatcherPrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(<em>const</em> QFileSystemWatcher);</td></tr>
+<tr><th id="467">467</th><td>    <b>return</b> <a class="ref fn fake" href="../tools/qcontainerfwd.h.html#29" title='QList&lt;QString&gt;::QList' data-ref="_ZN5QListI7QStringEC1ERKS1_"></a><a class="local col6 ref" href="#466" title='d' data-ref="66d">d</a>-&gt;<a class="ref field" href="qfilesystemwatcher_p.h.html#QFileSystemWatcherPrivate::files" title='QFileSystemWatcherPrivate::files' data-ref="QFileSystemWatcherPrivate::files">files</a>;</td></tr>
+<tr><th id="468">468</th><td>}</td></tr>
+<tr><th id="469">469</th><td></td></tr>
+<tr><th id="470">470</th><td><a class="macro" href="../global/qtconfigmacros.h.html#104" title="" data-ref="_M/QT_END_NAMESPACE">QT_END_NAMESPACE</a></td></tr>
+<tr><th id="471">471</th><td></td></tr>
+<tr><th id="472">472</th><td><u>#include <span class='error' title="&apos;moc_qfilesystemwatcher.cpp&apos; file not found">"moc_qfilesystemwatcher.cpp"</span></u></td></tr>
+<tr><th id="473">473</th><td><u>#include "moc_qfilesystemwatcher_p.cpp"</u></td></tr>
+<tr><th id="474">474</th><td></td></tr>
+<tr><th id="475">475</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2024-Jun-13</em> from project qtbase-6.5.0 revision <em>6.5.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

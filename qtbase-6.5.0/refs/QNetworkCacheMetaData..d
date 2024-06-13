@@ -1,0 +1,29 @@
+<use f='qtbase-6.5.0/src/network/access/qabstractnetworkcache.h' l='37' u='m' c='_ZN21QNetworkCacheMetaData4swapERS_'/>
+<use f='qtbase-6.5.0/src/network/access/qabstractnetworkcache.h' l='37' u='a' c='_ZN21QNetworkCacheMetaData4swapERS_'/>
+<dec f='qtbase-6.5.0/src/network/access/qabstractnetworkcache.h' l='65' type='QSharedDataPointer&lt;QNetworkCacheMetaDataPrivate&gt;'/>
+<use f='qtbase-6.5.0/src/network/access/qabstractnetworkcache.cpp' l='86' u='w' c='_ZN21QNetworkCacheMetaDataC1Ev'/>
+<use f='qtbase-6.5.0/src/network/access/qabstractnetworkcache.cpp' l='102' u='w' c='_ZN21QNetworkCacheMetaDataC1ERKS_'/>
+<use f='qtbase-6.5.0/src/network/access/qabstractnetworkcache.cpp' l='102' u='r' c='_ZN21QNetworkCacheMetaDataC1ERKS_'/>
+<use f='qtbase-6.5.0/src/network/access/qabstractnetworkcache.cpp' l='111' u='w' c='_ZN21QNetworkCacheMetaDataaSERKS_'/>
+<use f='qtbase-6.5.0/src/network/access/qabstractnetworkcache.cpp' l='111' u='r' c='_ZN21QNetworkCacheMetaDataaSERKS_'/>
+<use f='qtbase-6.5.0/src/network/access/qabstractnetworkcache.cpp' l='130' u='r' c='_ZNK21QNetworkCacheMetaDataeqERKS_'/>
+<use f='qtbase-6.5.0/src/network/access/qabstractnetworkcache.cpp' l='130' u='r' c='_ZNK21QNetworkCacheMetaDataeqERKS_'/>
+<use f='qtbase-6.5.0/src/network/access/qabstractnetworkcache.cpp' l='132' u='m' c='_ZNK21QNetworkCacheMetaDataeqERKS_'/>
+<use f='qtbase-6.5.0/src/network/access/qabstractnetworkcache.cpp' l='132' u='m' c='_ZNK21QNetworkCacheMetaDataeqERKS_'/>
+<use f='qtbase-6.5.0/src/network/access/qabstractnetworkcache.cpp' l='133' u='m' c='_ZNK21QNetworkCacheMetaDataeqERKS_'/>
+<use f='qtbase-6.5.0/src/network/access/qabstractnetworkcache.cpp' l='133' u='m' c='_ZNK21QNetworkCacheMetaDataeqERKS_'/>
+<use f='qtbase-6.5.0/src/network/access/qabstractnetworkcache.cpp' l='150' u='m' c='_ZNK21QNetworkCacheMetaData7isValidEv'/>
+<use f='qtbase-6.5.0/src/network/access/qabstractnetworkcache.cpp' l='167' u='m' c='_ZNK21QNetworkCacheMetaData10saveToDiskEv'/>
+<use f='qtbase-6.5.0/src/network/access/qabstractnetworkcache.cpp' l='178' u='m' c='_ZN21QNetworkCacheMetaData13setSaveToDiskEb'/>
+<use f='qtbase-6.5.0/src/network/access/qabstractnetworkcache.cpp' l='188' u='m' c='_ZNK21QNetworkCacheMetaData3urlEv'/>
+<use f='qtbase-6.5.0/src/network/access/qabstractnetworkcache.cpp' l='200' u='m' c='_ZN21QNetworkCacheMetaData6setUrlERK4QUrl'/>
+<use f='qtbase-6.5.0/src/network/access/qabstractnetworkcache.cpp' l='214' u='m' c='_ZNK21QNetworkCacheMetaData10rawHeadersEv'/>
+<use f='qtbase-6.5.0/src/network/access/qabstractnetworkcache.cpp' l='224' u='m' c='_ZN21QNetworkCacheMetaData13setRawHeadersERK5QListISt4pairI10QByteArrayS2_EE'/>
+<use f='qtbase-6.5.0/src/network/access/qabstractnetworkcache.cpp' l='232' u='m' c='_ZNK21QNetworkCacheMetaData12lastModifiedEv'/>
+<use f='qtbase-6.5.0/src/network/access/qabstractnetworkcache.cpp' l='240' u='m' c='_ZN21QNetworkCacheMetaData15setLastModifiedERK9QDateTime'/>
+<use f='qtbase-6.5.0/src/network/access/qabstractnetworkcache.cpp' l='248' u='m' c='_ZNK21QNetworkCacheMetaData14expirationDateEv'/>
+<use f='qtbase-6.5.0/src/network/access/qabstractnetworkcache.cpp' l='256' u='m' c='_ZN21QNetworkCacheMetaData17setExpirationDateERK9QDateTime'/>
+<use f='qtbase-6.5.0/src/network/access/qabstractnetworkcache.cpp' l='268' u='m' c='_ZNK21QNetworkCacheMetaData10attributesEv'/>
+<use f='qtbase-6.5.0/src/network/access/qabstractnetworkcache.cpp' l='280' u='m' c='_ZN21QNetworkCacheMetaData13setAttributesERK5QHashIN15QNetworkRequest9AttributeE8QVariantE'/>
+<use f='qtbase-6.5.0/src/network/access/qabstractnetworkcache.cpp' l='364' u='m' c='_ZN28QNetworkCacheMetaDataPrivate4loadER11QDataStreamR21QNetworkCacheMetaData'/>
+<offset>0</offset>

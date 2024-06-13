@@ -1,0 +1,732 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>qsharedmemory.cpp source code [qtbase-6.5.0/src/corelib/kernel/qsharedmemory.cpp] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'qtbase-6.5.0/src/corelib/kernel/qsharedmemory.cpp'; var root_path = '../../../..'; var data_path = '../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>qtbase-6.5.0</a>/<a href='../..'>src</a>/<a href='..'>corelib</a>/<a href='./'>kernel</a>/<a href='qsharedmemory.cpp.html'>qsharedmemory.cpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>// Copyright (C) 2016 The Qt Company Ltd.</i></td></tr>
+<tr><th id="2">2</th><td><i>// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only</i></td></tr>
+<tr><th id="3">3</th><td></td></tr>
+<tr><th id="4">4</th><td><u>#include <a href="qsharedmemory.h.html">"qsharedmemory.h"</a></u></td></tr>
+<tr><th id="5">5</th><td><u>#include <a href="qsharedmemory_p.h.html">"qsharedmemory_p.h"</a></u></td></tr>
+<tr><th id="6">6</th><td><u>#include <a href="qsystemsemaphore.h.html">"qsystemsemaphore.h"</a></u></td></tr>
+<tr><th id="7">7</th><td><u>#include <a href="../../../build/include/QtCore/qdir.h.html">&lt;qdir.h&gt;</a></u></td></tr>
+<tr><th id="8">8</th><td><u>#include <a href="../../../build/include/QtCore/qcryptographichash.h.html">&lt;qcryptographichash.h&gt;</a></u></td></tr>
+<tr><th id="9">9</th><td><u>#include <a href="../../../build/include/QtCore/qdebug.h.html">&lt;qdebug.h&gt;</a></u></td></tr>
+<tr><th id="10">10</th><td><u>#<span data-ppcond="10">ifdef</span> <span class="macro" data-ref="_M/Q_OS_WIN">Q_OS_WIN</span></u></td></tr>
+<tr><th id="11">11</th><td><u>#  include &lt;qt_windows.h&gt;</u></td></tr>
+<tr><th id="12">12</th><td><u>#<span data-ppcond="10">endif</span></u></td></tr>
+<tr><th id="13">13</th><td></td></tr>
+<tr><th id="14">14</th><td><u>#<span data-ppcond="14">if</span> defined(<span class="macro" data-ref="_M/Q_OS_DARWIN">Q_OS_DARWIN</span>)</u></td></tr>
+<tr><th id="15">15</th><td><u>#  include "qcore_mac_p.h"</u></td></tr>
+<tr><th id="16">16</th><td><u>#  if !defined(SHM_NAME_MAX)</u></td></tr>
+<tr><th id="17">17</th><td>     <i>// Based on PSEMNAMLEN in XNU's posix_sem.c, which would</i></td></tr>
+<tr><th id="18">18</th><td><i>     // indicate the max length is 31, _excluding_ the zero</i></td></tr>
+<tr><th id="19">19</th><td><i>     // terminator. But in practice (possibly due to an off-</i></td></tr>
+<tr><th id="20">20</th><td><i>     // by-one bug in the kernel) the usable bytes are only 30.</i></td></tr>
+<tr><th id="21">21</th><td><u>#    define SHM_NAME_MAX 30</u></td></tr>
+<tr><th id="22">22</th><td><u>#  endif</u></td></tr>
+<tr><th id="23">23</th><td><u>#<span data-ppcond="14">endif</span></u></td></tr>
+<tr><th id="24">24</th><td></td></tr>
+<tr><th id="25">25</th><td><a class="macro" href="../global/qtconfigmacros.h.html#103" title="" data-ref="_M/QT_BEGIN_NAMESPACE">QT_BEGIN_NAMESPACE</a></td></tr>
+<tr><th id="26">26</th><td></td></tr>
+<tr><th id="27">27</th><td><b>using</b> <b>namespace</b> <span class="namespace">Qt::StringLiterals</span>;</td></tr>
+<tr><th id="28">28</th><td></td></tr>
+<tr><th id="29">29</th><td><u>#<span data-ppcond="29">if</span> <a class="macro" href="../global/qtconfigmacros.h.html#67" title="(1/1 == 1)" data-ref="_M/QT_CONFIG">QT_CONFIG</a>(sharedmemory) || <a class="macro" href="../global/qtconfigmacros.h.html#67" title="(1/1 == 1)" data-ref="_M/QT_CONFIG">QT_CONFIG</a>(systemsemaphore)</u></td></tr>
+<tr><th id="30">30</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="31">31</th><td><i class="doc">    <span class="command">\internal</span></i></td></tr>
+<tr><th id="32">32</th><td><i class="doc"><span class="verb"></span></i></td></tr>
+<tr><th id="33">33</th><td><i class="doc"><span class="verb"></span><span class="verb">    Generate a string from the key which can be any unicode string into</span></i></td></tr>
+<tr><th id="34">34</th><td><i class="doc"><span class="verb"></span><span class="verb">    the subset that the win/unix kernel allows.</span></i></td></tr>
+<tr><th id="35">35</th><td><i class="doc"><span class="verb"></span><span class="verb"></span></i></td></tr>
+<tr><th id="36">36</th><td><i class="doc"><span class="verb"></span><span class="verb">    On Unix this will be a file name</span></i></td></tr>
+<tr><th id="37">37</th><td><i class="doc"><span class="verb"></span><span class="verb">  *</span>/</i><span class="verb"></span></td></tr>
+<tr><th id="38">38</th><td><span class="verb"></span><a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a></td></tr>
+<tr><th id="39">39</th><td><a class="type" href="qsharedmemory_p.h.html#QSharedMemoryPrivate" title='QSharedMemoryPrivate' data-ref="QSharedMemoryPrivate">QSharedMemoryPrivate</a>::<dfn class="decl def fn" id="_ZN20QSharedMemoryPrivate19makePlatformSafeKeyERK7QStringS2_" title='QSharedMemoryPrivate::makePlatformSafeKey' data-ref="_ZN20QSharedMemoryPrivate19makePlatformSafeKeyERK7QStringS2_">makePlatformSafeKey</dfn>(<em>const</em> <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> &amp;<dfn class="local col3 decl" id="23key" title='key' data-type='const QString &amp;' data-ref="23key">key</dfn>,</td></tr>
+<tr><th id="40">40</th><td>                                          <em>const</em> <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> &amp;<dfn class="local col4 decl" id="24prefix" title='prefix' data-type='const QString &amp;' data-ref="24prefix">prefix</dfn>)</td></tr>
+<tr><th id="41">41</th><td>{</td></tr>
+<tr><th id="42">42</th><td>    <b>if</b> (<a class="local col3 ref" href="#23key" title='key' data-ref="23key">key</a>.<a class="ref fn" href="../text/qstring.h.html#_ZNK7QString7isEmptyEv" title='QString::isEmpty' data-ref="_ZNK7QString7isEmptyEv">isEmpty</a>())</td></tr>
+<tr><th id="43">43</th><td>        <b>return</b> <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a><a class="ref fn" href="../text/qstring.h.html#_ZN7QStringC1Ev" title='QString::QString' data-ref="_ZN7QStringC1Ev">(</a>);</td></tr>
+<tr><th id="44">44</th><td></td></tr>
+<tr><th id="45">45</th><td>    <a class="type" href="../text/qbytearray.h.html#QByteArray" title='QByteArray' data-ref="QByteArray">QByteArray</a> <dfn class="local col5 decl" id="25hex" title='hex' data-type='QByteArray' data-ref="25hex">hex</dfn> = <a class="type" href="../tools/qcryptographichash.h.html#QCryptographicHash" title='QCryptographicHash' data-ref="QCryptographicHash">QCryptographicHash</a>::<a class="ref fn" href="../tools/qcryptographichash.h.html#_ZN18QCryptographicHash4hashE14QByteArrayViewNS_9AlgorithmE" title='QCryptographicHash::hash' data-ref="_ZN18QCryptographicHash4hashE14QByteArrayViewNS_9AlgorithmE">hash</a>(<a class="ref fn fake" href="../text/qbytearrayview.h.html#_ZN14QByteArrayViewC1ERKT_" title='QByteArrayView::QByteArrayView' data-ref="_ZN14QByteArrayViewC1ERKT_"></a><span class='inlayHint'>data:&nbsp;</span><a class="local col3 ref" href="#23key" title='key' data-ref="23key">key</a>.<a class="ref fn" href="../text/qstring.h.html#_ZNKR7QString6toUtf8Ev" title='QString::toUtf8' data-ref="_ZNKR7QString6toUtf8Ev">toUtf8</a>(), <span class='inlayHint'>method:&nbsp;</span><a class="type" href="../tools/qcryptographichash.h.html#QCryptographicHash" title='QCryptographicHash' data-ref="QCryptographicHash">QCryptographicHash</a>::<a class="enum" href="../tools/qcryptographichash.h.html#QCryptographicHash::Sha1" title='QCryptographicHash::Sha1' data-ref="QCryptographicHash::Sha1">Sha1</a>).<a class="ref fn" href="../text/qbytearray.h.html#_ZNK10QByteArray5toHexEc" title='QByteArray::toHex' data-ref="_ZNK10QByteArray5toHexEc">toHex</a>();</td></tr>
+<tr><th id="46">46</th><td></td></tr>
+<tr><th id="47">47</th><td><u>#<span data-ppcond="47">if</span> defined(<span class="macro" data-ref="_M/Q_OS_DARWIN">Q_OS_DARWIN</span>) &amp;&amp; defined(<span class="macro" data-ref="_M/QT_POSIX_IPC">QT_POSIX_IPC</span>)</u></td></tr>
+<tr><th id="48">48</th><td>    <b>if</b> (qt_apple_isSandboxed()) {</td></tr>
+<tr><th id="49">49</th><td>        <i>// Sandboxed applications on Apple platforms require the shared memory name</i></td></tr>
+<tr><th id="50">50</th><td><i>        // to be in the form &lt;application group identifier&gt;/&lt;custom identifier&gt;.</i></td></tr>
+<tr><th id="51">51</th><td><i>        // Since we don't know which application group identifier the user wants</i></td></tr>
+<tr><th id="52">52</th><td><i>        // to apply, we instead document that requirement, and use the key directly.</i></td></tr>
+<tr><th id="53">53</th><td>        <b>return</b> key;</td></tr>
+<tr><th id="54">54</th><td>    } <b>else</b> {</td></tr>
+<tr><th id="55">55</th><td>        <i>// The shared memory name limit on Apple platforms is very low (30 characters),</i></td></tr>
+<tr><th id="56">56</th><td><i>        // so we can't use the logic below of combining the prefix, key, and a hash,</i></td></tr>
+<tr><th id="57">57</th><td><i>        // to ensure a unique and valid name. Instead we use the first part of the</i></td></tr>
+<tr><th id="58">58</th><td><i>        // hash, which should still long enough to avoid collisions in practice.</i></td></tr>
+<tr><th id="59">59</th><td>        <b>return</b> u<kbd>'/'</kbd> + hex.left(SHM_NAME_MAX - <var>1</var>);</td></tr>
+<tr><th id="60">60</th><td>    }</td></tr>
+<tr><th id="61">61</th><td><u>#<span data-ppcond="47">endif</span></u></td></tr>
+<tr><th id="62">62</th><td></td></tr>
+<tr><th id="63">63</th><td>    <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> <dfn class="local col6 decl" id="26result" title='result' data-type='QString' data-ref="26result">result</dfn> = <a class="ref fn fake" href="../text/qstring.h.html#_ZN7QStringC1ERKS_" title='QString::QString' data-ref="_ZN7QStringC1ERKS_"></a><a class="local col4 ref" href="#24prefix" title='prefix' data-ref="24prefix">prefix</a>;</td></tr>
+<tr><th id="64">64</th><td>    <b>for</b> (<a class="type" href="../text/qchar.h.html#QChar" title='QChar' data-ref="QChar">QChar</a> <dfn class="local col7 decl" id="27ch" title='ch' data-type='QChar' data-ref="27ch">ch</dfn> : <a class="local col3 ref" href="#23key" title='key' data-ref="23key">key</a>) {</td></tr>
+<tr><th id="65">65</th><td>        <b>if</b> ((<a class="ref fn fake" href="../text/qchar.h.html#48" title='QChar::QChar' data-ref="_ZN5QCharC1ERKS_"></a><a class="local col7 ref" href="#27ch" title='ch' data-ref="27ch">ch</a> <a class="ref fn" href="../text/qchar.h.html#_Zge5QCharS_" title='operator&gt;=' data-ref="_Zge5QCharS_">&gt;=</a> <a class="ref fn fake" href="../text/qchar.h.html#_ZN5QCharC1EDs" title='QChar::QChar' data-ref="_ZN5QCharC1EDs"></a>u<kbd>'a'</kbd> &amp;&amp; <a class="ref fn fake" href="../text/qchar.h.html#48" title='QChar::QChar' data-ref="_ZN5QCharC1ERKS_"></a><a class="local col7 ref" href="#27ch" title='ch' data-ref="27ch">ch</a> <a class="ref fn" href="../text/qchar.h.html#_Zle5QCharS_" title='operator&lt;=' data-ref="_Zle5QCharS_">&lt;=</a> <a class="ref fn fake" href="../text/qchar.h.html#_ZN5QCharC1EDs" title='QChar::QChar' data-ref="_ZN5QCharC1EDs"></a>u<kbd>'z'</kbd>) ||</td></tr>
+<tr><th id="66">66</th><td>           (<a class="ref fn fake" href="../text/qchar.h.html#48" title='QChar::QChar' data-ref="_ZN5QCharC1ERKS_"></a><a class="local col7 ref" href="#27ch" title='ch' data-ref="27ch">ch</a> <a class="ref fn" href="../text/qchar.h.html#_Zge5QCharS_" title='operator&gt;=' data-ref="_Zge5QCharS_">&gt;=</a> <a class="ref fn fake" href="../text/qchar.h.html#_ZN5QCharC1EDs" title='QChar::QChar' data-ref="_ZN5QCharC1EDs"></a>u<kbd>'A'</kbd> &amp;&amp; <a class="ref fn fake" href="../text/qchar.h.html#48" title='QChar::QChar' data-ref="_ZN5QCharC1ERKS_"></a><a class="local col7 ref" href="#27ch" title='ch' data-ref="27ch">ch</a> <a class="ref fn" href="../text/qchar.h.html#_Zle5QCharS_" title='operator&lt;=' data-ref="_Zle5QCharS_">&lt;=</a> <a class="ref fn fake" href="../text/qchar.h.html#_ZN5QCharC1EDs" title='QChar::QChar' data-ref="_ZN5QCharC1EDs"></a>u<kbd>'Z'</kbd>))</td></tr>
+<tr><th id="67">67</th><td>           <a class="local col6 ref" href="#26result" title='result' data-ref="26result">result</a> <a class="ref fn" href="../text/qstring.h.html#_ZN7QStringpLE5QChar" title='QString::operator+=' data-ref="_ZN7QStringpLE5QChar">+=</a> <a class="ref fn fake" href="../text/qchar.h.html#48" title='QChar::QChar' data-ref="_ZN5QCharC1ERKS_"></a><a class="local col7 ref" href="#27ch" title='ch' data-ref="27ch">ch</a>;</td></tr>
+<tr><th id="68">68</th><td>    }</td></tr>
+<tr><th id="69">69</th><td>    <a class="local col6 ref" href="#26result" title='result' data-ref="26result">result</a>.<a class="ref fn" href="../text/qstring.h.html#_ZN7QString6appendE13QLatin1String" title='QString::append' data-ref="_ZN7QString6appendE13QLatin1String">append</a>(<span class='inlayHint'>s:&nbsp;</span><a class="typedef" href="../text/qstringfwd.h.html#QLatin1StringView" title='QLatin1StringView' data-type='QLatin1String' data-ref="QLatin1StringView">QLatin1StringView</a><a class="ref fn" href="../text/qstring.h.html#_ZN13QLatin1StringC1ERK10QByteArray" title='QLatin1String::QLatin1String' data-ref="_ZN13QLatin1StringC1ERK10QByteArray">(</a><a class="local col5 ref" href="#25hex" title='hex' data-ref="25hex">hex</a>));</td></tr>
+<tr><th id="70">70</th><td></td></tr>
+<tr><th id="71">71</th><td><u>#<span data-ppcond="71">ifdef</span> <span class="macro" data-ref="_M/Q_OS_WIN">Q_OS_WIN</span></u></td></tr>
+<tr><th id="72">72</th><td>    <b>return</b> result;</td></tr>
+<tr><th id="73">73</th><td><u>#<span data-ppcond="71">elif</span> defined(<span class="macro" data-ref="_M/QT_POSIX_IPC">QT_POSIX_IPC</span>)</u></td></tr>
+<tr><th id="74">74</th><td>    <b>return</b> u<kbd>'/'</kbd> + result;</td></tr>
+<tr><th id="75">75</th><td><u>#<span data-ppcond="71">else</span></u></td></tr>
+<tr><th id="76">76</th><td>    <b>return</b> <a class="ref fn fake" href="../text/qstringbuilder.h.html#_ZNK14QStringBuildercvN13QConcatenableI14QStringBuilderIT_T0_EE9ConvertToEEv" title='QStringBuilder::operator typename QConcatenable&lt;QStringBuilder&lt;type-parameter-0-0, type-parameter-0-1&gt; &gt;::ConvertTo' data-ref="_ZNK14QStringBuildercvN13QConcatenableI14QStringBuilderIT_T0_EE9ConvertToEEv"></a><a class="type" href="../io/qdir.h.html#QDir" title='QDir' data-ref="QDir">QDir</a>::<a class="ref fn" href="../io/qdir.h.html#_ZN4QDir8tempPathEv" title='QDir::tempPath' data-ref="_ZN4QDir8tempPathEv">tempPath</a>() <a class="ref fn" href="../text/qstringbuilder.h.html#_ZplRKT_RKT0_" title='operator+' data-ref="_ZplRKT_RKT0_">+</a> u<kbd>'/'</kbd> <a class="ref fn" href="../text/qstringbuilder.h.html#_ZplRKT_RKT0_" title='operator+' data-ref="_ZplRKT_RKT0_">+</a> <a class="local col6 ref" href="#26result" title='result' data-ref="26result">result</a>;</td></tr>
+<tr><th id="77">77</th><td><u>#<span data-ppcond="71">endif</span></u></td></tr>
+<tr><th id="78">78</th><td>}</td></tr>
+<tr><th id="79">79</th><td><u>#<span data-ppcond="29">endif</span> // QT_CONFIG(sharedmemory) || QT_CONFIG(systemsemaphore)</u></td></tr>
+<tr><th id="80">80</th><td></td></tr>
+<tr><th id="81">81</th><td><u>#<span data-ppcond="81">if</span> <a class="macro" href="../global/qtconfigmacros.h.html#67" title="(1/1 == 1)" data-ref="_M/QT_CONFIG">QT_CONFIG</a>(sharedmemory)</u></td></tr>
+<tr><th id="82">82</th><td></td></tr>
+<tr><th id="83">83</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="84">84</th><td><i class="doc">  <span class="command">\class</span> <span class="verb" data-ref="QSharedMemory">QSharedMemory</span></i></td></tr>
+<tr><th id="85">85</th><td><i class="doc"> <span class="command"> \inmodule</span> QtCore</i></td></tr>
+<tr><th id="86">86</th><td><i class="doc">  <span class="command">\since</span> 4.4</i></td></tr>
+<tr><th id="87">87</th><td><i class="doc"></i></td></tr>
+<tr><th id="88">88</th><td><i class="doc">  <span class="command">\brief</span> The QSharedMemory class provides access to a shared memory segment.</i></td></tr>
+<tr><th id="89">89</th><td><i class="doc"></i></td></tr>
+<tr><th id="90">90</th><td><i class="doc">  QSharedMemory provides access to a shared memory segment by multiple</i></td></tr>
+<tr><th id="91">91</th><td><i class="doc">  threads and processes. It also provides a way for a single thread or</i></td></tr>
+<tr><th id="92">92</th><td><i class="doc">  process to lock the memory for exclusive access.</i></td></tr>
+<tr><th id="93">93</th><td><i class="doc"></i></td></tr>
+<tr><th id="94">94</th><td><i class="doc">  When using this class, be aware of the following platform</i></td></tr>
+<tr><th id="95">95</th><td><i class="doc">  differences:</i></td></tr>
+<tr><th id="96">96</th><td><i class="doc"></i></td></tr>
+<tr><th id="97">97</th><td><i class="doc"> <span class="command"> \list</span></i></td></tr>
+<tr><th id="98">98</th><td><i class="doc"></i></td></tr>
+<tr><th id="99">99</th><td><i class="doc">    <span class="command">\li</span> Windows: QSharedMemory does not "own" the shared memory segment.</i></td></tr>
+<tr><th id="100">100</th><td><i class="doc">    When all threads or processes that have an instance of QSharedMemory</i></td></tr>
+<tr><th id="101">101</th><td><i class="doc">    attached to a particular shared memory segment have either destroyed</i></td></tr>
+<tr><th id="102">102</th><td><i class="doc">    their instance of QSharedMemory or exited, the Windows kernel</i></td></tr>
+<tr><th id="103">103</th><td><i class="doc">    releases the shared memory segment automatically.</i></td></tr>
+<tr><th id="104">104</th><td><i class="doc"></i></td></tr>
+<tr><th id="105">105</th><td><i class="doc">    <span class="command">\li</span> Unix: QSharedMemory "owns" the shared memory segment. When the</i></td></tr>
+<tr><th id="106">106</th><td><i class="doc">    last thread or process that has an instance of QSharedMemory</i></td></tr>
+<tr><th id="107">107</th><td><i class="doc">    attached to a particular shared memory segment detaches from the</i></td></tr>
+<tr><th id="108">108</th><td><i class="doc">    segment by destroying its instance of QSharedMemory, the destructor</i></td></tr>
+<tr><th id="109">109</th><td><i class="doc">    releases the shared memory segment. But if that last thread or</i></td></tr>
+<tr><th id="110">110</th><td><i class="doc">    process crashes without running the QSharedMemory destructor, the</i></td></tr>
+<tr><th id="111">111</th><td><i class="doc">    shared memory segment survives the crash.</i></td></tr>
+<tr><th id="112">112</th><td><i class="doc"></i></td></tr>
+<tr><th id="113">113</th><td><i class="doc">    <span class="command">\li</span> Unix: QSharedMemory can be implemented by one of two different</i></td></tr>
+<tr><th id="114">114</th><td><i class="doc">    backends, selected at Qt build time: System V or POSIX. Qt defaults to</i></td></tr>
+<tr><th id="115">115</th><td><i class="doc">    using the System V API if it is available, and POSIX if not. These two</i></td></tr>
+<tr><th id="116">116</th><td><i class="doc">    backends do not interoperate, so two applications must ensure they use the</i></td></tr>
+<tr><th id="117">117</th><td><i class="doc">    same one, even if the native key (see setNativeKey()) is the same.</i></td></tr>
+<tr><th id="118">118</th><td><i class="doc"></i></td></tr>
+<tr><th id="119">119</th><td><i class="doc">    The POSIX backend can be explicitly selected using the</i></td></tr>
+<tr><th id="120">120</th><td><i class="doc">   <span class="command"> \c</span><span class="arg">{-feature-ipc_posix}</span> option to the Qt configure script. If it is enabled,</i></td></tr>
+<tr><th id="121">121</th><td><i class="doc">    the<span class="command"> \c</span><span class="arg">{QT_POSIX_IPC}</span> macro will be defined.</i></td></tr>
+<tr><th id="122">122</th><td><i class="doc"></i></td></tr>
+<tr><th id="123">123</th><td><i class="doc">    <span class="command">\li</span> Sandboxed applications on Apple platforms (including apps</i></td></tr>
+<tr><th id="124">124</th><td><i class="doc">    shipped through the Apple App Store): This environment requires</i></td></tr>
+<tr><th id="125">125</th><td><i class="doc">    the use of POSIX shared memory (instead of System V shared memory).</i></td></tr>
+<tr><th id="126">126</th><td><i class="doc"></i></td></tr>
+<tr><th id="127">127</th><td><i class="doc">    Qt for iOS is built with support for POSIX shared memory out of the box.</i></td></tr>
+<tr><th id="128">128</th><td><i class="doc">    However, Qt for<span class="command"> \macos</span> builds (including those from the Qt installer) default</i></td></tr>
+<tr><th id="129">129</th><td><i class="doc">    to System V, making them unsuitable for App Store submission if QSharedMemory</i></td></tr>
+<tr><th id="130">130</th><td><i class="doc">    is needed. See above for instructions to explicitly select the POSIX backend</i></td></tr>
+<tr><th id="131">131</th><td><i class="doc">    when building Qt.</i></td></tr>
+<tr><th id="132">132</th><td><i class="doc"></i></td></tr>
+<tr><th id="133">133</th><td><i class="doc">    In addition, in a sandboxed environment, the following caveats apply:</i></td></tr>
+<tr><th id="134">134</th><td><i class="doc"></i></td></tr>
+<tr><th id="135">135</th><td><i class="doc">   <span class="command"> \list</span></i></td></tr>
+<tr><th id="136">136</th><td><i class="doc">      <span class="command">\li</span> The key must be in the form<span class="command"> \c</span> <span class="arg">{&lt;application</span> group identifier&gt;/&lt;custom identifier&gt;},</i></td></tr>
+<tr><th id="137">137</th><td><i class="doc">      as documented<span class="command"> \l</span> {<a href="https://developer.apple.com/library/archive/documentation/Security/Conceptual/AppSandboxDesignGuide/AppSandboxInDepth/AppSandboxInDepth.html#//apple_ref/doc/uid/TP40011183-CH3-SW24">https://developer.apple.com/library/archive/documentation/Security/Conceptual/AppSandboxDesignGuide/AppSandboxInDepth/AppSandboxInDepth.html#//apple_ref/doc/uid/TP40011183-CH3-SW24</a>}</i></td></tr>
+<tr><th id="138">138</th><td><i class="doc">      {here} and<span class="command"> \l</span> {<a href="https://developer.apple.com/documentation/bundleresources/entitlements/com_apple_security_application-groups">https://developer.apple.com/documentation/bundleresources/entitlements/com_apple_security_application-groups</a>}</i></td></tr>
+<tr><th id="139">139</th><td><i class="doc">      {here}.</i></td></tr>
+<tr><th id="140">140</th><td><i class="doc"></i></td></tr>
+<tr><th id="141">141</th><td><i class="doc">      <span class="command">\li</span> The key length is limited to 30 characters.</i></td></tr>
+<tr><th id="142">142</th><td><i class="doc"></i></td></tr>
+<tr><th id="143">143</th><td><i class="doc">      <span class="command">\li</span> On process exit, the named shared memory entries are not</i></td></tr>
+<tr><th id="144">144</th><td><i class="doc">      cleaned up, so restarting the application and re-creating the</i></td></tr>
+<tr><th id="145">145</th><td><i class="doc">      shared memory under the same name will fail. To work around this,</i></td></tr>
+<tr><th id="146">146</th><td><i class="doc">      fall back to attaching to the existing shared memory entry:</i></td></tr>
+<tr><th id="147">147</th><td><i class="doc"></i></td></tr>
+<tr><th id="148">148</th><td><i class="doc">      <span class="command">\code</span></i></td></tr>
+<tr><th id="149">149</th><td><i class="doc"><span class="verb"></span></i></td></tr>
+<tr><th id="150">150</th><td><i class="doc"><span class="verb"></span><span class="verb">          QSharedMemory shm("DEVTEAMID.app-group/shared");</span></i></td></tr>
+<tr><th id="151">151</th><td><i class="doc"><span class="verb"></span><span class="verb">          if (!shm.create(42) &amp;&amp; shm.error() == QSharedMemory::AlreadyExists)</span></i></td></tr>
+<tr><th id="152">152</th><td><i class="doc"><span class="verb"></span><span class="verb">              shm.attach();</span></i></td></tr>
+<tr><th id="153">153</th><td><i class="doc"><span class="verb"></span><span class="verb"></span></i></td></tr>
+<tr><th id="154">154</th><td><i class="doc"><span class="verb"></span>      \endcode</i></td></tr>
+<tr><th id="155">155</th><td><i class="doc"></i></td></tr>
+<tr><th id="156">156</th><td><i class="doc">   <span class="command"> \endlist</span></i></td></tr>
+<tr><th id="157">157</th><td><i class="doc"></i></td></tr>
+<tr><th id="158">158</th><td><i class="doc">    <span class="command">\li</span> Android: QSharedMemory is not supported.</i></td></tr>
+<tr><th id="159">159</th><td><i class="doc"></i></td></tr>
+<tr><th id="160">160</th><td><i class="doc"> <span class="command"> \endlist</span></i></td></tr>
+<tr><th id="161">161</th><td><i class="doc"></i></td></tr>
+<tr><th id="162">162</th><td><i class="doc">  Remember to lock the shared memory with lock() before reading from</i></td></tr>
+<tr><th id="163">163</th><td><i class="doc">  or writing to the shared memory, and remember to release the lock</i></td></tr>
+<tr><th id="164">164</th><td><i class="doc">  with unlock() after you are done.</i></td></tr>
+<tr><th id="165">165</th><td><i class="doc"></i></td></tr>
+<tr><th id="166">166</th><td><i class="doc">  QSharedMemory automatically destroys the shared memory segment when</i></td></tr>
+<tr><th id="167">167</th><td><i class="doc">  the last instance of QSharedMemory is detached from the segment, and</i></td></tr>
+<tr><th id="168">168</th><td><i class="doc">  no references to the segment remain.</i></td></tr>
+<tr><th id="169">169</th><td><i class="doc"></i></td></tr>
+<tr><th id="170">170</th><td><i class="doc">  <span class="command">\warning</span> QSharedMemory changes the key in a Qt-specific way, unless otherwise</i></td></tr>
+<tr><th id="171">171</th><td><i class="doc">  specified. Interoperation with non-Qt applications is achieved by first creating</i></td></tr>
+<tr><th id="172">172</th><td><i class="doc">  a default shared memory with QSharedMemory() and then setting a native key with</i></td></tr>
+<tr><th id="173">173</th><td><i class="doc">  setNativeKey(), after ensuring they use the same low-level API (System V or</i></td></tr>
+<tr><th id="174">174</th><td><i class="doc">  POSIX). When using native keys, shared memory is not protected against multiple</i></td></tr>
+<tr><th id="175">175</th><td><i class="doc">  accesses on it (for example, unable to lock()) and a user-defined mechanism</i></td></tr>
+<tr><th id="176">176</th><td><i class="doc">  should be used to achieve such protection.</i></td></tr>
+<tr><th id="177">177</th><td><i class="doc"></i></td></tr>
+<tr><th id="178">178</th><td><i class="doc">  <span class="command">\section</span>2 <span class="verb">Alternative: Memory-Mapped File</span></i></td></tr>
+<tr><th id="179">179</th><td><i class="doc"></i></td></tr>
+<tr><th id="180">180</th><td><i class="doc">  Another way to share memory between processes is by opening the same file</i></td></tr>
+<tr><th id="181">181</th><td><i class="doc">  using<span class="command"> \l</span> QFile and mapping it into memory using QFile::map() (without</i></td></tr>
+<tr><th id="182">182</th><td><i class="doc">  specifying the QFileDevice::MapPrivateOption option). Any writes to the</i></td></tr>
+<tr><th id="183">183</th><td><i class="doc">  mapped segment will be observed by all other processes that have mapped the</i></td></tr>
+<tr><th id="184">184</th><td><i class="doc">  same file. This solution has the major advantages of being independent of the</i></td></tr>
+<tr><th id="185">185</th><td><i class="doc">  backend API and of being simpler to interoperate with from non-Qt</i></td></tr>
+<tr><th id="186">186</th><td><i class="doc">  applications. And since<span class="command"> \l</span>{QTemporaryFile} is a<span class="command"> \l</span>{QFile}, applications can</i></td></tr>
+<tr><th id="187">187</th><td><i class="doc">  use that class to achieve clean-up semantics and to create unique shared</i></td></tr>
+<tr><th id="188">188</th><td><i class="doc">  memory segments too.</i></td></tr>
+<tr><th id="189">189</th><td><i class="doc"></i></td></tr>
+<tr><th id="190">190</th><td><i class="doc">  To achieve locking of the shared memory segment, applications will need to</i></td></tr>
+<tr><th id="191">191</th><td><i class="doc">  deploy their own mechanisms. This can be achieved by using<span class="command"> \l</span></i></td></tr>
+<tr><th id="192">192</th><td><i class="doc">  QBasicAtomicInteger or<span class="command"> \c</span><span class="arg">{std::atomic}</span> in a pre-determined offset in the</i></td></tr>
+<tr><th id="193">193</th><td><i class="doc">  segment itself. Higher-level locking primitives may be available on some</i></td></tr>
+<tr><th id="194">194</th><td><i class="doc">  operating systems; for example, on Linux,<span class="command"> \c</span><span class="arg">{pthread_mutex_create()}</span> can be</i></td></tr>
+<tr><th id="195">195</th><td><i class="doc">  passed a flag to indicate that the mutex resides in a shared memory segment.</i></td></tr>
+<tr><th id="196">196</th><td><i class="doc"></i></td></tr>
+<tr><th id="197">197</th><td><i class="doc">  A major drawback of using file-backed shared memory is that the operating</i></td></tr>
+<tr><th id="198">198</th><td><i class="doc">  system will attempt to write the data to permanent storage, possibly causing</i></td></tr>
+<tr><th id="199">199</th><td><i class="doc">  noticeable performance penalties. To avoid this, applications should locate a</i></td></tr>
+<tr><th id="200">200</th><td><i class="doc">  RAM-backed filesystem, such as<span class="command"> \c</span><span class="arg">{tmpfs}</span> on Linux (see</i></td></tr>
+<tr><th id="201">201</th><td><i class="doc">  QStorageInfo::fileSystemType()), or pass a flag to the native file-opening</i></td></tr>
+<tr><th id="202">202</th><td><i class="doc">  function to inform the OS to avoid committing the contents to storage.</i></td></tr>
+<tr><th id="203">203</th><td><i class="doc"></i></td></tr>
+<tr><th id="204">204</th><td><i class="doc">  File-backed shared memory must be used with care if another process</i></td></tr>
+<tr><th id="205">205</th><td><i class="doc">  participating is untrusted. The files may be truncated/shrunk and cause</i></td></tr>
+<tr><th id="206">206</th><td><i class="doc">  applications accessing memory beyond the file's size to crash.</i></td></tr>
+<tr><th id="207">207</th><td><i class="doc"></i></td></tr>
+<tr><th id="208">208</th><td><i class="doc">  <span class="command">\section</span>3 <span class="verb">Linux hints on memory-mapped files</span></i></td></tr>
+<tr><th id="209">209</th><td><i class="doc"></i></td></tr>
+<tr><th id="210">210</th><td><i class="doc">  On modern Linux systems, while the<span class="command"> \c</span><span class="arg">{/tmp}</span> directory is often a<span class="command"> \c</span><span class="arg">{tmpfs}</span></i></td></tr>
+<tr><th id="211">211</th><td><i class="doc">  mount point, that is not a requirement. However, the<span class="command"> \c</span><span class="arg">{/dev/shm}</span> directory</i></td></tr>
+<tr><th id="212">212</th><td><i class="doc">  is required to be a<span class="command"> \c</span><span class="arg">{tmpfs}</span> and exists for this very purpose. Do note that</i></td></tr>
+<tr><th id="213">213</th><td><i class="doc">  it is world-readable and writable (like<span class="command"> \c</span><span class="arg">{/tmp}</span> and<span class="command"> \c</span><span class="arg">{/var/tmp}),</span> so one</i></td></tr>
+<tr><th id="214">214</th><td><i class="doc">  must be careful of the contents revealed there. Another alternative is to use</i></td></tr>
+<tr><th id="215">215</th><td><i class="doc">  the XDG Runtime Directory (see QStandardPaths::writableLocation() and</i></td></tr>
+<tr><th id="216">216</th><td><i class="doc"> <span class="command"> \l</span>{QStandardPaths::RuntimeLocation}), which on Linux systems using systemd is</i></td></tr>
+<tr><th id="217">217</th><td><i class="doc">  a user-specific<span class="command"> \c</span><span class="arg">{tmpfs}.</span></i></td></tr>
+<tr><th id="218">218</th><td><i class="doc"></i></td></tr>
+<tr><th id="219">219</th><td><i class="doc">  An even more secure solution is to create a "memfd" using<span class="command"> \c</span><span class="arg">{memfd_create(2)}</span></i></td></tr>
+<tr><th id="220">220</th><td><i class="doc">  and use interprocess communication to pass the file descriptor, like</i></td></tr>
+<tr><th id="221">221</th><td><i class="doc"> <span class="command"> \l</span>{QDBusUnixFileDescriptor} or by letting the child process of a<span class="command"> \l</span>{QProcess}</i></td></tr>
+<tr><th id="222">222</th><td><i class="doc">  inherit it. "memfds" can also be sealed against being shrunk, so they are</i></td></tr>
+<tr><th id="223">223</th><td><i class="doc">  safe to be used when communicating with processes with a different privilege</i></td></tr>
+<tr><th id="224">224</th><td><i class="doc">  level.</i></td></tr>
+<tr><th id="225">225</th><td><i class="doc"></i></td></tr>
+<tr><th id="226">226</th><td><i class="doc">  <span class="command">\section</span>3 <span class="verb">FreeBSD hints on memory-mapped files</span></i></td></tr>
+<tr><th id="227">227</th><td><i class="doc"></i></td></tr>
+<tr><th id="228">228</th><td><i class="doc">  FreeBSD also has<span class="command"> \c</span><span class="arg">{memfd_create(2)}</span> and can pass file descriptors to other</i></td></tr>
+<tr><th id="229">229</th><td><i class="doc">  processes using the same techniques as Linux. It does not have temporary</i></td></tr>
+<tr><th id="230">230</th><td><i class="doc">  filesystems mounted by default.</i></td></tr>
+<tr><th id="231">231</th><td><i class="doc"></i></td></tr>
+<tr><th id="232">232</th><td><i class="doc">  <span class="command">\section</span>3 <span class="verb">Windows hints on memory-mapped files</span></i></td></tr>
+<tr><th id="233">233</th><td><i class="doc"></i></td></tr>
+<tr><th id="234">234</th><td><i class="doc">  On Windows, the application can request the operating system avoid committing</i></td></tr>
+<tr><th id="235">235</th><td><i class="doc">  the file's contents to permanent storage. This request is performed by</i></td></tr>
+<tr><th id="236">236</th><td><i class="doc">  passing the<span class="command"> \c</span><span class="arg">{FILE_ATTRIBUTE_TEMPORARY}</span> flag in the<span class="command"> \c</span><span class="arg">{dwFlagsAndAttributes}</span></i></td></tr>
+<tr><th id="237">237</th><td><i class="doc"> <span class="command"> \c</span><span class="arg">{CreateFile}</span> Win32 function, the<span class="command"> \c</span><span class="arg">{_O_SHORT_LIVED}</span> flag to<span class="command"> \c</span><span class="arg">{_open()}</span></i></td></tr>
+<tr><th id="238">238</th><td><i class="doc">  low-level function, or by including the modifier "T" to the<span class="command"> \c</span><span class="arg">{fopen()}</span> C</i></td></tr>
+<tr><th id="239">239</th><td><i class="doc">  runtime function.</i></td></tr>
+<tr><th id="240">240</th><td><i class="doc"></i></td></tr>
+<tr><th id="241">241</th><td><i class="doc">  There's also a flag to inform the operating system to delete the file when</i></td></tr>
+<tr><th id="242">242</th><td><i class="doc">  the last handle to it is closed <span class="command">(\c</span><span class="arg">{FILE_FLAG_DELETE_ON_CLOSE},</span></i></td></tr>
+<tr><th id="243">243</th><td><i class="doc"> <span class="command"> \c</span><span class="arg">{_O_TEMPORARY},</span> and the "D" modifier), but do note that all processes</i></td></tr>
+<tr><th id="244">244</th><td><i class="doc">  attempting to open the file must agree on using this flag or not using it. A</i></td></tr>
+<tr><th id="245">245</th><td><i class="doc">  mismatch will likely cause a sharing violation and failure to open the file.</i></td></tr>
+<tr><th id="246">246</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="247">247</th><td></td></tr>
+<tr><th id="248">248</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="249">249</th><td><i class="doc">  <span class="command">\overload</span> <span class="verb" data-ref="QSharedMemory">QSharedMemory()</span></i></td></tr>
+<tr><th id="250">250</th><td><i class="doc"></i></td></tr>
+<tr><th id="251">251</th><td><i class="doc">  Constructs a shared memory object with the given<span class="command"> \a</span> <span class="arg">parent.</span>  The</i></td></tr>
+<tr><th id="252">252</th><td><i class="doc">  shared memory object's key is not set by the constructor, so the</i></td></tr>
+<tr><th id="253">253</th><td><i class="doc">  shared memory object does not have an underlying shared memory</i></td></tr>
+<tr><th id="254">254</th><td><i class="doc">  segment attached. The key must be set with setKey() or setNativeKey()</i></td></tr>
+<tr><th id="255">255</th><td><i class="doc">  before create() or attach() can be used.</i></td></tr>
+<tr><th id="256">256</th><td><i class="doc"></i></td></tr>
+<tr><th id="257">257</th><td><i class="doc">  <span class="command">\sa</span> setKey()</i></td></tr>
+<tr><th id="258">258</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="259">259</th><td></td></tr>
+<tr><th id="260">260</th><td><a class="type" href="qsharedmemory.h.html#QSharedMemory" title='QSharedMemory' data-ref="QSharedMemory">QSharedMemory</a>::<dfn class="decl def fn" id="_ZN13QSharedMemoryC1EP7QObject" title='QSharedMemory::QSharedMemory' data-ref="_ZN13QSharedMemoryC1EP7QObject">QSharedMemory</dfn>(<a class="type" href="qobject.h.html#QObject" title='QObject' data-ref="QObject">QObject</a> *<dfn class="local col8 decl" id="28parent" title='parent' data-type='QObject *' data-ref="28parent">parent</dfn>)</td></tr>
+<tr><th id="261">261</th><td>  : <a class="type" href="qobject.h.html#QObject" title='QObject' data-ref="QObject">QObject</a><a class="ref fn" href="qobject.h.html#_ZN7QObjectC1ER14QObjectPrivatePS_" title='QObject::QObject' data-ref="_ZN7QObjectC1ER14QObjectPrivatePS_">(</a>*<b>new</b> <a class="ref fn fake" href="qsharedmemory_p.h.html#80" title='QSharedMemoryPrivate::QSharedMemoryPrivate' data-ref="_ZN20QSharedMemoryPrivateC1Ev"></a><a class="type" href="qsharedmemory_p.h.html#QSharedMemoryPrivate" title='QSharedMemoryPrivate' data-ref="QSharedMemoryPrivate">QSharedMemoryPrivate</a>, <a class="local col8 ref" href="#28parent" title='parent' data-ref="28parent">parent</a>)</td></tr>
+<tr><th id="262">262</th><td>{</td></tr>
+<tr><th id="263">263</th><td>}</td></tr>
+<tr><th id="264">264</th><td></td></tr>
+<tr><th id="265">265</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="266">266</th><td><i class="doc">  Constructs a shared memory object with the given<span class="command"> \a</span> <span class="arg">parent</span> and with</i></td></tr>
+<tr><th id="267">267</th><td><i class="doc">  its key set to<span class="command"> \a</span> <span class="arg">key.</span> Because its key is set, its create() and</i></td></tr>
+<tr><th id="268">268</th><td><i class="doc">  attach() functions can be called.</i></td></tr>
+<tr><th id="269">269</th><td><i class="doc"></i></td></tr>
+<tr><th id="270">270</th><td><i class="doc">  <span class="command">\sa</span> setKey(), create(), attach()</i></td></tr>
+<tr><th id="271">271</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="272">272</th><td><a class="type" href="qsharedmemory.h.html#QSharedMemory" title='QSharedMemory' data-ref="QSharedMemory">QSharedMemory</a>::<dfn class="decl def fn" id="_ZN13QSharedMemoryC1ERK7QStringP7QObject" title='QSharedMemory::QSharedMemory' data-ref="_ZN13QSharedMemoryC1ERK7QStringP7QObject">QSharedMemory</dfn>(<em>const</em> <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> &amp;<dfn class="local col9 decl" id="29key" title='key' data-type='const QString &amp;' data-ref="29key">key</dfn>, <a class="type" href="qobject.h.html#QObject" title='QObject' data-ref="QObject">QObject</a> *<dfn class="local col0 decl" id="30parent" title='parent' data-type='QObject *' data-ref="30parent">parent</dfn>)</td></tr>
+<tr><th id="273">273</th><td>    : <a class="type" href="qobject.h.html#QObject" title='QObject' data-ref="QObject">QObject</a><a class="ref fn" href="qobject.h.html#_ZN7QObjectC1ER14QObjectPrivatePS_" title='QObject::QObject' data-ref="_ZN7QObjectC1ER14QObjectPrivatePS_">(</a>*<b>new</b> <a class="ref fn fake" href="qsharedmemory_p.h.html#80" title='QSharedMemoryPrivate::QSharedMemoryPrivate' data-ref="_ZN20QSharedMemoryPrivateC1Ev"></a><a class="type" href="qsharedmemory_p.h.html#QSharedMemoryPrivate" title='QSharedMemoryPrivate' data-ref="QSharedMemoryPrivate">QSharedMemoryPrivate</a>, <a class="local col0 ref" href="#30parent" title='parent' data-ref="30parent">parent</a>)</td></tr>
+<tr><th id="274">274</th><td>{</td></tr>
+<tr><th id="275">275</th><td>    <a class="member fn" href="#_ZN13QSharedMemory6setKeyERK7QString" title='QSharedMemory::setKey' data-ref="_ZN13QSharedMemory6setKeyERK7QString">setKey</a>(<a class="local col9 ref" href="#29key" title='key' data-ref="29key">key</a>);</td></tr>
+<tr><th id="276">276</th><td>}</td></tr>
+<tr><th id="277">277</th><td></td></tr>
+<tr><th id="278">278</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="279">279</th><td><i class="doc">  The destructor clears the key, which forces the shared memory object</i></td></tr>
+<tr><th id="280">280</th><td><i class="doc">  to<span class="command"> \l</span> {detach()} {detach} from its underlying shared memory</i></td></tr>
+<tr><th id="281">281</th><td><i class="doc">  segment. If this shared memory object is the last one connected to</i></td></tr>
+<tr><th id="282">282</th><td><i class="doc">  the shared memory segment, the detach() operation destroys the</i></td></tr>
+<tr><th id="283">283</th><td><i class="doc">  shared memory segment.</i></td></tr>
+<tr><th id="284">284</th><td><i class="doc"></i></td></tr>
+<tr><th id="285">285</th><td><i class="doc">  <span class="command">\sa</span> detach(), isAttached()</i></td></tr>
+<tr><th id="286">286</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="287">287</th><td><a class="type" href="qsharedmemory.h.html#QSharedMemory" title='QSharedMemory' data-ref="QSharedMemory">QSharedMemory</a>::<dfn class="virtual decl def fn" id="_ZN13QSharedMemoryD1Ev" title='QSharedMemory::~QSharedMemory' data-ref="_ZN13QSharedMemoryD1Ev">~QSharedMemory</dfn>()</td></tr>
+<tr><th id="288">288</th><td>{</td></tr>
+<tr><th id="289">289</th><td>    <a class="member fn" href="#_ZN13QSharedMemory6setKeyERK7QString" title='QSharedMemory::setKey' data-ref="_ZN13QSharedMemory6setKeyERK7QString">setKey</a>(<a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a><a class="ref fn" href="../text/qstring.h.html#_ZN7QStringC1Ev" title='QString::QString' data-ref="_ZN7QStringC1Ev">(</a>));</td></tr>
+<tr><th id="290">290</th><td>}</td></tr>
+<tr><th id="291">291</th><td></td></tr>
+<tr><th id="292">292</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="293">293</th><td><i class="doc">  Sets the platform independent<span class="command"> \a</span> <span class="arg">key</span> for this shared memory object. If<span class="command"> \a</span> <span class="arg">key</span></i></td></tr>
+<tr><th id="294">294</th><td><i class="doc">  is the same as the current key, the function returns without doing anything.</i></td></tr>
+<tr><th id="295">295</th><td><i class="doc"></i></td></tr>
+<tr><th id="296">296</th><td><i class="doc">  You can call key() to retrieve the platform independent key. Internally,</i></td></tr>
+<tr><th id="297">297</th><td><i class="doc">  QSharedMemory converts this key into a platform specific key. If you instead</i></td></tr>
+<tr><th id="298">298</th><td><i class="doc">  call nativeKey(), you will get the platform specific, converted key.</i></td></tr>
+<tr><th id="299">299</th><td><i class="doc"></i></td></tr>
+<tr><th id="300">300</th><td><i class="doc">  If the shared memory object is attached to an underlying shared memory</i></td></tr>
+<tr><th id="301">301</th><td><i class="doc">  segment, it will<span class="command"> \l</span> {detach()} {detach} from it before setting the new key.</i></td></tr>
+<tr><th id="302">302</th><td><i class="doc">  This function does not do an attach().</i></td></tr>
+<tr><th id="303">303</th><td><i class="doc"></i></td></tr>
+<tr><th id="304">304</th><td><i class="doc">  <span class="command">\sa</span> key(), nativeKey(), isAttached()</i></td></tr>
+<tr><th id="305">305</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="306">306</th><td><em>void</em> <a class="type" href="qsharedmemory.h.html#QSharedMemory" title='QSharedMemory' data-ref="QSharedMemory">QSharedMemory</a>::<dfn class="decl def fn" id="_ZN13QSharedMemory6setKeyERK7QString" title='QSharedMemory::setKey' data-ref="_ZN13QSharedMemory6setKeyERK7QString">setKey</dfn>(<em>const</em> <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> &amp;<dfn class="local col1 decl" id="31key" title='key' data-type='const QString &amp;' data-ref="31key">key</dfn>)</td></tr>
+<tr><th id="307">307</th><td>{</td></tr>
+<tr><th id="308">308</th><td>    <a class="macro" href="../global/qtclasshelpermacros.h.html#109" title="QSharedMemoryPrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(QSharedMemory);</td></tr>
+<tr><th id="309">309</th><td>    <b>if</b> (<a class="local col1 ref" href="#31key" title='key' data-ref="31key">key</a> <a class="ref fn" href="../text/qstring.h.html#_ZeqRK7QStringS1_" title='operator==' data-ref="_ZeqRK7QStringS1_">==</a> <a class="local col2 ref" href="#308" title='d' data-ref="32d">d</a>-&gt;<a class="ref field" href="qsharedmemory_p.h.html#QSharedMemoryPrivate::key" title='QSharedMemoryPrivate::key' data-ref="QSharedMemoryPrivate::key">key</a> &amp;&amp; <a class="local col2 ref" href="#308" title='d' data-ref="32d">d</a>-&gt;<a class="ref fn" href="#_ZN20QSharedMemoryPrivate19makePlatformSafeKeyERK7QStringS2_" title='QSharedMemoryPrivate::makePlatformSafeKey' data-ref="_ZN20QSharedMemoryPrivate19makePlatformSafeKeyERK7QStringS2_">makePlatformSafeKey</a>(<a class="local col1 ref" href="#31key" title='key' data-ref="31key">key</a>) <a class="ref fn" href="../text/qstring.h.html#_ZeqRK7QStringS1_" title='operator==' data-ref="_ZeqRK7QStringS1_">==</a> <a class="local col2 ref" href="#308" title='d' data-ref="32d">d</a>-&gt;<a class="ref field" href="qsharedmemory_p.h.html#QSharedMemoryPrivate::nativeKey" title='QSharedMemoryPrivate::nativeKey' data-ref="QSharedMemoryPrivate::nativeKey">nativeKey</a>)</td></tr>
+<tr><th id="310">310</th><td>        <b>return</b>;</td></tr>
+<tr><th id="311">311</th><td></td></tr>
+<tr><th id="312">312</th><td>    <b>if</b> (<a class="member fn" href="#_ZNK13QSharedMemory10isAttachedEv" title='QSharedMemory::isAttached' data-ref="_ZNK13QSharedMemory10isAttachedEv">isAttached</a>())</td></tr>
+<tr><th id="313">313</th><td>        <a class="member fn" href="#_ZN13QSharedMemory6detachEv" title='QSharedMemory::detach' data-ref="_ZN13QSharedMemory6detachEv">detach</a>();</td></tr>
+<tr><th id="314">314</th><td>    <a class="local col2 ref" href="#308" title='d' data-ref="32d">d</a>-&gt;<a class="ref fn" href="qsharedmemory_p.h.html#_ZN20QSharedMemoryPrivate11cleanHandleEv" title='QSharedMemoryPrivate::cleanHandle' data-ref="_ZN20QSharedMemoryPrivate11cleanHandleEv">cleanHandle</a>();</td></tr>
+<tr><th id="315">315</th><td>    <a class="local col2 ref" href="#308" title='d' data-ref="32d">d</a>-&gt;<a class="ref field" href="qsharedmemory_p.h.html#QSharedMemoryPrivate::key" title='QSharedMemoryPrivate::key' data-ref="QSharedMemoryPrivate::key">key</a> <a class="ref fn" href="../text/qstring.h.html#_ZN7QStringaSERKS_" title='QString::operator=' data-ref="_ZN7QStringaSERKS_">=</a> <a class="local col1 ref" href="#31key" title='key' data-ref="31key">key</a>;</td></tr>
+<tr><th id="316">316</th><td>    <a class="local col2 ref" href="#308" title='d' data-ref="32d">d</a>-&gt;<a class="ref field" href="qsharedmemory_p.h.html#QSharedMemoryPrivate::nativeKey" title='QSharedMemoryPrivate::nativeKey' data-ref="QSharedMemoryPrivate::nativeKey">nativeKey</a> <a class="ref fn" href="../text/qstring.h.html#470" title='QString::operator=' data-ref="_ZN7QStringaSEOS_">=</a> <a class="local col2 ref" href="#308" title='d' data-ref="32d">d</a>-&gt;<a class="ref fn" href="#_ZN20QSharedMemoryPrivate19makePlatformSafeKeyERK7QStringS2_" title='QSharedMemoryPrivate::makePlatformSafeKey' data-ref="_ZN20QSharedMemoryPrivate19makePlatformSafeKeyERK7QStringS2_">makePlatformSafeKey</a>(<a class="local col1 ref" href="#31key" title='key' data-ref="31key">key</a>);</td></tr>
+<tr><th id="317">317</th><td>}</td></tr>
+<tr><th id="318">318</th><td></td></tr>
+<tr><th id="319">319</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="320">320</th><td><i class="doc">  <span class="command">\since</span> 4.8</i></td></tr>
+<tr><th id="321">321</th><td><i class="doc"></i></td></tr>
+<tr><th id="322">322</th><td><i class="doc">  Sets the native, platform specific,<span class="command"> \a</span> <span class="arg">key</span> for this shared memory object. If</i></td></tr>
+<tr><th id="323">323</th><td><i class="doc"> <span class="command"> \a</span> <span class="arg">key</span> is the same as the current native key, the function returns without</i></td></tr>
+<tr><th id="324">324</th><td><i class="doc">  doing anything. If all you want is to assign a key to a segment, you should</i></td></tr>
+<tr><th id="325">325</th><td><i class="doc">  call setKey() instead.</i></td></tr>
+<tr><th id="326">326</th><td><i class="doc"></i></td></tr>
+<tr><th id="327">327</th><td><i class="doc">  You can call nativeKey() to retrieve the native key. If a native key has been</i></td></tr>
+<tr><th id="328">328</th><td><i class="doc">  assigned, calling key() will return a null string.</i></td></tr>
+<tr><th id="329">329</th><td><i class="doc"></i></td></tr>
+<tr><th id="330">330</th><td><i class="doc">  If the shared memory object is attached to an underlying shared memory</i></td></tr>
+<tr><th id="331">331</th><td><i class="doc">  segment, it will<span class="command"> \l</span> {detach()} {detach} from it before setting the new key.</i></td></tr>
+<tr><th id="332">332</th><td><i class="doc">  This function does not do an attach().</i></td></tr>
+<tr><th id="333">333</th><td><i class="doc"></i></td></tr>
+<tr><th id="334">334</th><td><i class="doc">  The application will not be portable if you set a native key.</i></td></tr>
+<tr><th id="335">335</th><td><i class="doc"></i></td></tr>
+<tr><th id="336">336</th><td><i class="doc">  <span class="command">\sa</span> nativeKey(), key(), isAttached()</i></td></tr>
+<tr><th id="337">337</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="338">338</th><td><em>void</em> <a class="type" href="qsharedmemory.h.html#QSharedMemory" title='QSharedMemory' data-ref="QSharedMemory">QSharedMemory</a>::<dfn class="decl def fn" id="_ZN13QSharedMemory12setNativeKeyERK7QString" title='QSharedMemory::setNativeKey' data-ref="_ZN13QSharedMemory12setNativeKeyERK7QString">setNativeKey</dfn>(<em>const</em> <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> &amp;<dfn class="local col3 decl" id="33key" title='key' data-type='const QString &amp;' data-ref="33key">key</dfn>)</td></tr>
+<tr><th id="339">339</th><td>{</td></tr>
+<tr><th id="340">340</th><td>    <a class="macro" href="../global/qtclasshelpermacros.h.html#109" title="QSharedMemoryPrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(QSharedMemory);</td></tr>
+<tr><th id="341">341</th><td>    <b>if</b> (<a class="local col3 ref" href="#33key" title='key' data-ref="33key">key</a> <a class="ref fn" href="../text/qstring.h.html#_ZeqRK7QStringS1_" title='operator==' data-ref="_ZeqRK7QStringS1_">==</a> <a class="local col4 ref" href="#340" title='d' data-ref="34d">d</a>-&gt;<a class="ref field" href="qsharedmemory_p.h.html#QSharedMemoryPrivate::nativeKey" title='QSharedMemoryPrivate::nativeKey' data-ref="QSharedMemoryPrivate::nativeKey">nativeKey</a> &amp;&amp; <a class="local col4 ref" href="#340" title='d' data-ref="34d">d</a>-&gt;<a class="ref field" href="qsharedmemory_p.h.html#QSharedMemoryPrivate::key" title='QSharedMemoryPrivate::key' data-ref="QSharedMemoryPrivate::key">key</a>.<a class="ref fn" href="../text/qstring.h.html#_ZNK7QString6isNullEv" title='QString::isNull' data-ref="_ZNK7QString6isNullEv">isNull</a>())</td></tr>
+<tr><th id="342">342</th><td>        <b>return</b>;</td></tr>
+<tr><th id="343">343</th><td></td></tr>
+<tr><th id="344">344</th><td>    <b>if</b> (<a class="member fn" href="#_ZNK13QSharedMemory10isAttachedEv" title='QSharedMemory::isAttached' data-ref="_ZNK13QSharedMemory10isAttachedEv">isAttached</a>())</td></tr>
+<tr><th id="345">345</th><td>        <a class="member fn" href="#_ZN13QSharedMemory6detachEv" title='QSharedMemory::detach' data-ref="_ZN13QSharedMemory6detachEv">detach</a>();</td></tr>
+<tr><th id="346">346</th><td>    <a class="local col4 ref" href="#340" title='d' data-ref="34d">d</a>-&gt;<a class="ref fn" href="qsharedmemory_p.h.html#_ZN20QSharedMemoryPrivate11cleanHandleEv" title='QSharedMemoryPrivate::cleanHandle' data-ref="_ZN20QSharedMemoryPrivate11cleanHandleEv">cleanHandle</a>();</td></tr>
+<tr><th id="347">347</th><td>    <a class="local col4 ref" href="#340" title='d' data-ref="34d">d</a>-&gt;<a class="ref field" href="qsharedmemory_p.h.html#QSharedMemoryPrivate::key" title='QSharedMemoryPrivate::key' data-ref="QSharedMemoryPrivate::key">key</a> <a class="ref fn" href="../text/qstring.h.html#470" title='QString::operator=' data-ref="_ZN7QStringaSEOS_">=</a> <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a><a class="ref fn" href="../text/qstring.h.html#_ZN7QStringC1Ev" title='QString::QString' data-ref="_ZN7QStringC1Ev">(</a>);</td></tr>
+<tr><th id="348">348</th><td>    <a class="local col4 ref" href="#340" title='d' data-ref="34d">d</a>-&gt;<a class="ref field" href="qsharedmemory_p.h.html#QSharedMemoryPrivate::nativeKey" title='QSharedMemoryPrivate::nativeKey' data-ref="QSharedMemoryPrivate::nativeKey">nativeKey</a> <a class="ref fn" href="../text/qstring.h.html#_ZN7QStringaSERKS_" title='QString::operator=' data-ref="_ZN7QStringaSERKS_">=</a> <a class="local col3 ref" href="#33key" title='key' data-ref="33key">key</a>;</td></tr>
+<tr><th id="349">349</th><td>}</td></tr>
+<tr><th id="350">350</th><td></td></tr>
+<tr><th id="351">351</th><td><em>bool</em> <a class="type" href="qsharedmemory_p.h.html#QSharedMemoryPrivate" title='QSharedMemoryPrivate' data-ref="QSharedMemoryPrivate">QSharedMemoryPrivate</a>::<dfn class="decl def fn" id="_ZN20QSharedMemoryPrivate7initKeyEv" title='QSharedMemoryPrivate::initKey' data-ref="_ZN20QSharedMemoryPrivate7initKeyEv">initKey</dfn>()</td></tr>
+<tr><th id="352">352</th><td>{</td></tr>
+<tr><th id="353">353</th><td>    <b>if</b> (!<a class="member fn" href="qsharedmemory_p.h.html#_ZN20QSharedMemoryPrivate11cleanHandleEv" title='QSharedMemoryPrivate::cleanHandle' data-ref="_ZN20QSharedMemoryPrivate11cleanHandleEv">cleanHandle</a>())</td></tr>
+<tr><th id="354">354</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="355">355</th><td><u>#<span data-ppcond="355">if</span> <a class="macro" href="../global/qtconfigmacros.h.html#67" title="(1/1 == 1)" data-ref="_M/QT_CONFIG">QT_CONFIG</a>(systemsemaphore)</u></td></tr>
+<tr><th id="356">356</th><td>    <a class="member field" href="qsharedmemory_p.h.html#QSharedMemoryPrivate::systemSemaphore" title='QSharedMemoryPrivate::systemSemaphore' data-ref="QSharedMemoryPrivate::systemSemaphore">systemSemaphore</a>.<a class="ref fn" href="qsystemsemaphore.h.html#_ZN16QSystemSemaphore6setKeyERK7QStringiNS_10AccessModeE" title='QSystemSemaphore::setKey' data-ref="_ZN16QSystemSemaphore6setKeyERK7QStringiNS_10AccessModeE">setKey</a>(<span class='inlayHint'>key:&nbsp;</span><a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a><a class="ref fn" href="../text/qstring.h.html#_ZN7QStringC1Ev" title='QString::QString' data-ref="_ZN7QStringC1Ev">(</a>), <span class='inlayHint'>initialValue:&nbsp;</span><var>1</var>);</td></tr>
+<tr><th id="357">357</th><td>    <a class="member field" href="qsharedmemory_p.h.html#QSharedMemoryPrivate::systemSemaphore" title='QSharedMemoryPrivate::systemSemaphore' data-ref="QSharedMemoryPrivate::systemSemaphore">systemSemaphore</a>.<a class="ref fn" href="qsystemsemaphore.h.html#_ZN16QSystemSemaphore6setKeyERK7QStringiNS_10AccessModeE" title='QSystemSemaphore::setKey' data-ref="_ZN16QSystemSemaphore6setKeyERK7QStringiNS_10AccessModeE">setKey</a>(<a class="member field" href="qsharedmemory_p.h.html#QSharedMemoryPrivate::key" title='QSharedMemoryPrivate::key' data-ref="QSharedMemoryPrivate::key">key</a>, <span class='inlayHint'>initialValue:&nbsp;</span><var>1</var>);</td></tr>
+<tr><th id="358">358</th><td>    <b>if</b> (<a class="member field" href="qsharedmemory_p.h.html#QSharedMemoryPrivate::systemSemaphore" title='QSharedMemoryPrivate::systemSemaphore' data-ref="QSharedMemoryPrivate::systemSemaphore">systemSemaphore</a>.<a class="ref fn" href="qsystemsemaphore.h.html#_ZNK16QSystemSemaphore5errorEv" title='QSystemSemaphore::error' data-ref="_ZNK16QSystemSemaphore5errorEv">error</a>() != <a class="type" href="qsystemsemaphore.h.html#QSystemSemaphore" title='QSystemSemaphore' data-ref="QSystemSemaphore">QSystemSemaphore</a>::<a class="enum" href="qsystemsemaphore.h.html#QSystemSemaphore::NoError" title='QSystemSemaphore::NoError' data-ref="QSystemSemaphore::NoError">NoError</a>) {</td></tr>
+<tr><th id="359">359</th><td>        <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> <dfn class="local col5 decl" id="35function" title='function' data-type='QString' data-ref="35function">function</dfn> = <a class="ref fn fake" href="../text/qstring.h.html#_ZN7QStringC1E13QLatin1String" title='QString::QString' data-ref="_ZN7QStringC1E13QLatin1String"></a><q>"QSharedMemoryPrivate::initKey"<a class="ref fn" href="../text/qstring.h.html#_ZN2Qt8Literals14StringLiteralsli3_L1EPKcm" title='Qt::operator&quot;&quot;_L1' data-ref="_ZN2Qt8Literals14StringLiteralsli3_L1EPKcm">_L1</a></q>;</td></tr>
+<tr><th id="360">360</th><td>        <a class="member field" href="qsharedmemory_p.h.html#QSharedMemoryPrivate::errorString" title='QSharedMemoryPrivate::errorString' data-ref="QSharedMemoryPrivate::errorString">errorString</a> <a class="ref fn" href="../text/qstring.h.html#470" title='QString::operator=' data-ref="_ZN7QStringaSEOS_">=</a> <a class="type" href="qsharedmemory.h.html#QSharedMemory" title='QSharedMemory' data-ref="QSharedMemory">QSharedMemory</a>::<a class="ref fn" href="qsharedmemory.h.html#24" title='QSharedMemory::tr' data-ref="_ZN13QSharedMemory2trEPKcS1_i">tr</a>(<span class='inlayHint'>s:&nbsp;</span><q>"%1: unable to set key on lock"</q>).<a class="ref fn" href="../text/qstring.h.html#_ZNK7QString3argERKS_i5QChar" title='QString::arg' data-ref="_ZNK7QString3argERKS_i5QChar">arg</a>(<span class='inlayHint'>a:&nbsp;</span><a class="local col5 ref" href="#35function" title='function' data-ref="35function">function</a>);</td></tr>
+<tr><th id="361">361</th><td>        <b>switch</b>(<a class="member field" href="qsharedmemory_p.h.html#QSharedMemoryPrivate::systemSemaphore" title='QSharedMemoryPrivate::systemSemaphore' data-ref="QSharedMemoryPrivate::systemSemaphore">systemSemaphore</a>.<a class="ref fn" href="qsystemsemaphore.h.html#_ZNK16QSystemSemaphore5errorEv" title='QSystemSemaphore::error' data-ref="_ZNK16QSystemSemaphore5errorEv">error</a>()) {</td></tr>
+<tr><th id="362">362</th><td>        <b>case</b> <a class="type" href="qsystemsemaphore.h.html#QSystemSemaphore" title='QSystemSemaphore' data-ref="QSystemSemaphore">QSystemSemaphore</a>::<a class="enum" href="qsystemsemaphore.h.html#QSystemSemaphore::PermissionDenied" title='QSystemSemaphore::PermissionDenied' data-ref="QSystemSemaphore::PermissionDenied">PermissionDenied</a>:</td></tr>
+<tr><th id="363">363</th><td>            <a class="member field" href="qsharedmemory_p.h.html#QSharedMemoryPrivate::error" title='QSharedMemoryPrivate::error' data-ref="QSharedMemoryPrivate::error">error</a> = <a class="type" href="qsharedmemory.h.html#QSharedMemory" title='QSharedMemory' data-ref="QSharedMemory">QSharedMemory</a>::<a class="enum" href="qsharedmemory.h.html#QSharedMemory::PermissionDenied" title='QSharedMemory::PermissionDenied' data-ref="QSharedMemory::PermissionDenied">PermissionDenied</a>;</td></tr>
+<tr><th id="364">364</th><td>            <b>break</b>;</td></tr>
+<tr><th id="365">365</th><td>        <b>case</b> <a class="type" href="qsystemsemaphore.h.html#QSystemSemaphore" title='QSystemSemaphore' data-ref="QSystemSemaphore">QSystemSemaphore</a>::<a class="enum" href="qsystemsemaphore.h.html#QSystemSemaphore::KeyError" title='QSystemSemaphore::KeyError' data-ref="QSystemSemaphore::KeyError">KeyError</a>:</td></tr>
+<tr><th id="366">366</th><td>            <a class="member field" href="qsharedmemory_p.h.html#QSharedMemoryPrivate::error" title='QSharedMemoryPrivate::error' data-ref="QSharedMemoryPrivate::error">error</a> = <a class="type" href="qsharedmemory.h.html#QSharedMemory" title='QSharedMemory' data-ref="QSharedMemory">QSharedMemory</a>::<a class="enum" href="qsharedmemory.h.html#QSharedMemory::KeyError" title='QSharedMemory::KeyError' data-ref="QSharedMemory::KeyError">KeyError</a>;</td></tr>
+<tr><th id="367">367</th><td>            <b>break</b>;</td></tr>
+<tr><th id="368">368</th><td>        <b>case</b> <a class="type" href="qsystemsemaphore.h.html#QSystemSemaphore" title='QSystemSemaphore' data-ref="QSystemSemaphore">QSystemSemaphore</a>::<a class="enum" href="qsystemsemaphore.h.html#QSystemSemaphore::AlreadyExists" title='QSystemSemaphore::AlreadyExists' data-ref="QSystemSemaphore::AlreadyExists">AlreadyExists</a>:</td></tr>
+<tr><th id="369">369</th><td>            <a class="member field" href="qsharedmemory_p.h.html#QSharedMemoryPrivate::error" title='QSharedMemoryPrivate::error' data-ref="QSharedMemoryPrivate::error">error</a> = <a class="type" href="qsharedmemory.h.html#QSharedMemory" title='QSharedMemory' data-ref="QSharedMemory">QSharedMemory</a>::<a class="enum" href="qsharedmemory.h.html#QSharedMemory::AlreadyExists" title='QSharedMemory::AlreadyExists' data-ref="QSharedMemory::AlreadyExists">AlreadyExists</a>;</td></tr>
+<tr><th id="370">370</th><td>            <b>break</b>;</td></tr>
+<tr><th id="371">371</th><td>        <b>case</b> <a class="type" href="qsystemsemaphore.h.html#QSystemSemaphore" title='QSystemSemaphore' data-ref="QSystemSemaphore">QSystemSemaphore</a>::<a class="enum" href="qsystemsemaphore.h.html#QSystemSemaphore::NotFound" title='QSystemSemaphore::NotFound' data-ref="QSystemSemaphore::NotFound">NotFound</a>:</td></tr>
+<tr><th id="372">372</th><td>            <a class="member field" href="qsharedmemory_p.h.html#QSharedMemoryPrivate::error" title='QSharedMemoryPrivate::error' data-ref="QSharedMemoryPrivate::error">error</a> = <a class="type" href="qsharedmemory.h.html#QSharedMemory" title='QSharedMemory' data-ref="QSharedMemory">QSharedMemory</a>::<a class="enum" href="qsharedmemory.h.html#QSharedMemory::NotFound" title='QSharedMemory::NotFound' data-ref="QSharedMemory::NotFound">NotFound</a>;</td></tr>
+<tr><th id="373">373</th><td>            <b>break</b>;</td></tr>
+<tr><th id="374">374</th><td>        <b>case</b> <a class="type" href="qsystemsemaphore.h.html#QSystemSemaphore" title='QSystemSemaphore' data-ref="QSystemSemaphore">QSystemSemaphore</a>::<a class="enum" href="qsystemsemaphore.h.html#QSystemSemaphore::OutOfResources" title='QSystemSemaphore::OutOfResources' data-ref="QSystemSemaphore::OutOfResources">OutOfResources</a>:</td></tr>
+<tr><th id="375">375</th><td>            <a class="member field" href="qsharedmemory_p.h.html#QSharedMemoryPrivate::error" title='QSharedMemoryPrivate::error' data-ref="QSharedMemoryPrivate::error">error</a> = <a class="type" href="qsharedmemory.h.html#QSharedMemory" title='QSharedMemory' data-ref="QSharedMemory">QSharedMemory</a>::<a class="enum" href="qsharedmemory.h.html#QSharedMemory::OutOfResources" title='QSharedMemory::OutOfResources' data-ref="QSharedMemory::OutOfResources">OutOfResources</a>;</td></tr>
+<tr><th id="376">376</th><td>            <b>break</b>;</td></tr>
+<tr><th id="377">377</th><td>        <b>case</b> <a class="type" href="qsystemsemaphore.h.html#QSystemSemaphore" title='QSystemSemaphore' data-ref="QSystemSemaphore">QSystemSemaphore</a>::<a class="enum" href="qsystemsemaphore.h.html#QSystemSemaphore::UnknownError" title='QSystemSemaphore::UnknownError' data-ref="QSystemSemaphore::UnknownError">UnknownError</a>:</td></tr>
+<tr><th id="378">378</th><td>        <b>default</b>:</td></tr>
+<tr><th id="379">379</th><td>            <a class="member field" href="qsharedmemory_p.h.html#QSharedMemoryPrivate::error" title='QSharedMemoryPrivate::error' data-ref="QSharedMemoryPrivate::error">error</a> = <a class="type" href="qsharedmemory.h.html#QSharedMemory" title='QSharedMemory' data-ref="QSharedMemory">QSharedMemory</a>::<a class="enum" href="qsharedmemory.h.html#QSharedMemory::UnknownError" title='QSharedMemory::UnknownError' data-ref="QSharedMemory::UnknownError">UnknownError</a>;</td></tr>
+<tr><th id="380">380</th><td>            <b>break</b>;</td></tr>
+<tr><th id="381">381</th><td>        }</td></tr>
+<tr><th id="382">382</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="383">383</th><td>    }</td></tr>
+<tr><th id="384">384</th><td><u>#<span data-ppcond="355">endif</span></u></td></tr>
+<tr><th id="385">385</th><td>    <a class="member field" href="qsharedmemory_p.h.html#QSharedMemoryPrivate::errorString" title='QSharedMemoryPrivate::errorString' data-ref="QSharedMemoryPrivate::errorString">errorString</a> <a class="ref fn" href="../text/qstring.h.html#470" title='QString::operator=' data-ref="_ZN7QStringaSEOS_">=</a> <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a><a class="ref fn" href="../text/qstring.h.html#_ZN7QStringC1Ev" title='QString::QString' data-ref="_ZN7QStringC1Ev">(</a>);</td></tr>
+<tr><th id="386">386</th><td>    <a class="member field" href="qsharedmemory_p.h.html#QSharedMemoryPrivate::error" title='QSharedMemoryPrivate::error' data-ref="QSharedMemoryPrivate::error">error</a> = <a class="type" href="qsharedmemory.h.html#QSharedMemory" title='QSharedMemory' data-ref="QSharedMemory">QSharedMemory</a>::<a class="enum" href="qsharedmemory.h.html#QSharedMemory::NoError" title='QSharedMemory::NoError' data-ref="QSharedMemory::NoError">NoError</a>;</td></tr>
+<tr><th id="387">387</th><td>    <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="388">388</th><td>}</td></tr>
+<tr><th id="389">389</th><td></td></tr>
+<tr><th id="390">390</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="391">391</th><td><i class="doc">  Returns the key assigned with setKey() to this shared memory, or a null key</i></td></tr>
+<tr><th id="392">392</th><td><i class="doc">  if no key has been assigned, or if the segment is using a nativeKey(). The</i></td></tr>
+<tr><th id="393">393</th><td><i class="doc">  key is the identifier used by Qt applications to identify the shared memory</i></td></tr>
+<tr><th id="394">394</th><td><i class="doc">  segment.</i></td></tr>
+<tr><th id="395">395</th><td><i class="doc"></i></td></tr>
+<tr><th id="396">396</th><td><i class="doc">  You can find the native, platform specific, key used by the operating system</i></td></tr>
+<tr><th id="397">397</th><td><i class="doc">  by calling nativeKey().</i></td></tr>
+<tr><th id="398">398</th><td><i class="doc"></i></td></tr>
+<tr><th id="399">399</th><td><i class="doc">  <span class="command">\sa</span> setKey(), setNativeKey()</i></td></tr>
+<tr><th id="400">400</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="401">401</th><td><a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> <a class="type" href="qsharedmemory.h.html#QSharedMemory" title='QSharedMemory' data-ref="QSharedMemory">QSharedMemory</a>::<dfn class="decl def fn" id="_ZNK13QSharedMemory3keyEv" title='QSharedMemory::key' data-ref="_ZNK13QSharedMemory3keyEv">key</dfn>() <em>const</em></td></tr>
+<tr><th id="402">402</th><td>{</td></tr>
+<tr><th id="403">403</th><td>    <a class="macro" href="../global/qtclasshelpermacros.h.html#109" title="const QSharedMemoryPrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(<em>const</em> QSharedMemory);</td></tr>
+<tr><th id="404">404</th><td>    <b>return</b> <a class="ref fn fake" href="../text/qstring.h.html#_ZN7QStringC1ERKS_" title='QString::QString' data-ref="_ZN7QStringC1ERKS_"></a><a class="local col6 ref" href="#403" title='d' data-ref="36d">d</a>-&gt;<a class="ref field" href="qsharedmemory_p.h.html#QSharedMemoryPrivate::key" title='QSharedMemoryPrivate::key' data-ref="QSharedMemoryPrivate::key">key</a>;</td></tr>
+<tr><th id="405">405</th><td>}</td></tr>
+<tr><th id="406">406</th><td></td></tr>
+<tr><th id="407">407</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="408">408</th><td><i class="doc">  <span class="command">\since</span> 4.8</i></td></tr>
+<tr><th id="409">409</th><td><i class="doc"></i></td></tr>
+<tr><th id="410">410</th><td><i class="doc">  Returns the native, platform specific, key for this shared memory object. The</i></td></tr>
+<tr><th id="411">411</th><td><i class="doc">  native key is the identifier used by the operating system to identify the</i></td></tr>
+<tr><th id="412">412</th><td><i class="doc">  shared memory segment.</i></td></tr>
+<tr><th id="413">413</th><td><i class="doc"></i></td></tr>
+<tr><th id="414">414</th><td><i class="doc">  You can use the native key to access shared memory segments that have not</i></td></tr>
+<tr><th id="415">415</th><td><i class="doc">  been created by Qt, or to grant shared memory access to non-Qt applications.</i></td></tr>
+<tr><th id="416">416</th><td><i class="doc"></i></td></tr>
+<tr><th id="417">417</th><td><i class="doc">  <span class="command">\sa</span> setKey(), setNativeKey()</i></td></tr>
+<tr><th id="418">418</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="419">419</th><td><a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> <a class="type" href="qsharedmemory.h.html#QSharedMemory" title='QSharedMemory' data-ref="QSharedMemory">QSharedMemory</a>::<dfn class="decl def fn" id="_ZNK13QSharedMemory9nativeKeyEv" title='QSharedMemory::nativeKey' data-ref="_ZNK13QSharedMemory9nativeKeyEv">nativeKey</dfn>() <em>const</em></td></tr>
+<tr><th id="420">420</th><td>{</td></tr>
+<tr><th id="421">421</th><td>    <a class="macro" href="../global/qtclasshelpermacros.h.html#109" title="const QSharedMemoryPrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(<em>const</em> QSharedMemory);</td></tr>
+<tr><th id="422">422</th><td>    <b>return</b> <a class="ref fn fake" href="../text/qstring.h.html#_ZN7QStringC1ERKS_" title='QString::QString' data-ref="_ZN7QStringC1ERKS_"></a><a class="local col7 ref" href="#421" title='d' data-ref="37d">d</a>-&gt;<a class="ref field" href="qsharedmemory_p.h.html#QSharedMemoryPrivate::nativeKey" title='QSharedMemoryPrivate::nativeKey' data-ref="QSharedMemoryPrivate::nativeKey">nativeKey</a>;</td></tr>
+<tr><th id="423">423</th><td>}</td></tr>
+<tr><th id="424">424</th><td></td></tr>
+<tr><th id="425">425</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="426">426</th><td><i class="doc">  Creates a shared memory segment of<span class="command"> \a</span> <span class="arg">size</span> bytes with the key passed to the</i></td></tr>
+<tr><th id="427">427</th><td><i class="doc">  constructor, set with setKey() or set with setNativeKey(), then attaches to</i></td></tr>
+<tr><th id="428">428</th><td><i class="doc">  the new shared memory segment with the given access<span class="command"> \a</span> <span class="arg">mode</span> and returns</i></td></tr>
+<tr><th id="429">429</th><td><i class="doc"> <span class="command"> \tt</span> true. If a shared memory segment identified by the key already exists,</i></td></tr>
+<tr><th id="430">430</th><td><i class="doc">  the attach operation is not performed and<span class="command"> \tt</span> false is returned. When the</i></td></tr>
+<tr><th id="431">431</th><td><i class="doc">  return value is<span class="command"> \tt</span> false, call error() to determine which error occurred.</i></td></tr>
+<tr><th id="432">432</th><td><i class="doc"></i></td></tr>
+<tr><th id="433">433</th><td><i class="doc">  <span class="command">\sa</span> error()</i></td></tr>
+<tr><th id="434">434</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="435">435</th><td><em>bool</em> <a class="type" href="qsharedmemory.h.html#QSharedMemory" title='QSharedMemory' data-ref="QSharedMemory">QSharedMemory</a>::<dfn class="decl def fn" id="_ZN13QSharedMemory6createExNS_10AccessModeE" title='QSharedMemory::create' data-ref="_ZN13QSharedMemory6createExNS_10AccessModeE">create</dfn>(<a class="typedef" href="../global/qtypes.h.html#qsizetype" title='qsizetype' data-type='QIntegerForSizeof&lt;std::size_t&gt;::Signed' data-ref="qsizetype">qsizetype</a> <dfn class="local col8 decl" id="38size" title='size' data-type='qsizetype' data-ref="38size">size</dfn>, <a class="type" href="qsharedmemory.h.html#QSharedMemory::AccessMode" title='QSharedMemory::AccessMode' data-ref="QSharedMemory::AccessMode">AccessMode</a> <dfn class="local col9 decl" id="39mode" title='mode' data-type='QSharedMemory::AccessMode' data-ref="39mode">mode</dfn>)</td></tr>
+<tr><th id="436">436</th><td>{</td></tr>
+<tr><th id="437">437</th><td>    <a class="macro" href="../global/qtclasshelpermacros.h.html#109" title="QSharedMemoryPrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(QSharedMemory);</td></tr>
+<tr><th id="438">438</th><td></td></tr>
+<tr><th id="439">439</th><td>    <b>if</b> (!<a class="local col0 ref" href="#437" title='d' data-ref="40d">d</a>-&gt;<a class="ref fn" href="#_ZN20QSharedMemoryPrivate7initKeyEv" title='QSharedMemoryPrivate::initKey' data-ref="_ZN20QSharedMemoryPrivate7initKeyEv">initKey</a>())</td></tr>
+<tr><th id="440">440</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="441">441</th><td></td></tr>
+<tr><th id="442">442</th><td><u>#<span data-ppcond="442">if</span> <a class="macro" href="../global/qtconfigmacros.h.html#67" title="(1/1 == 1)" data-ref="_M/QT_CONFIG">QT_CONFIG</a>(systemsemaphore)</u></td></tr>
+<tr><th id="443">443</th><td><u>#<span data-ppcond="443">ifndef</span> <span class="macro" data-ref="_M/Q_OS_WIN">Q_OS_WIN</span></u></td></tr>
+<tr><th id="444">444</th><td>    <i>// Take ownership and force set initialValue because the semaphore</i></td></tr>
+<tr><th id="445">445</th><td><i>    // might have already existed from a previous crash.</i></td></tr>
+<tr><th id="446">446</th><td>    <a class="local col0 ref" href="#437" title='d' data-ref="40d">d</a>-&gt;<a class="ref field" href="qsharedmemory_p.h.html#QSharedMemoryPrivate::systemSemaphore" title='QSharedMemoryPrivate::systemSemaphore' data-ref="QSharedMemoryPrivate::systemSemaphore">systemSemaphore</a>.<a class="ref fn" href="qsystemsemaphore.h.html#_ZN16QSystemSemaphore6setKeyERK7QStringiNS_10AccessModeE" title='QSystemSemaphore::setKey' data-ref="_ZN16QSystemSemaphore6setKeyERK7QStringiNS_10AccessModeE">setKey</a>(<span class='inlayHint'>key:&nbsp;</span><a class="local col0 ref" href="#437" title='d' data-ref="40d">d</a>-&gt;<a class="ref field" href="qsharedmemory_p.h.html#QSharedMemoryPrivate::key" title='QSharedMemoryPrivate::key' data-ref="QSharedMemoryPrivate::key">key</a>, <span class='inlayHint'>initialValue:&nbsp;</span><var>1</var>, <span class='inlayHint'>mode:&nbsp;</span><a class="type" href="qsystemsemaphore.h.html#QSystemSemaphore" title='QSystemSemaphore' data-ref="QSystemSemaphore">QSystemSemaphore</a>::<a class="enum" href="qsystemsemaphore.h.html#QSystemSemaphore::Create" title='QSystemSemaphore::Create' data-ref="QSystemSemaphore::Create">Create</a>);</td></tr>
+<tr><th id="447">447</th><td><u>#<span data-ppcond="443">endif</span></u></td></tr>
+<tr><th id="448">448</th><td><u>#<span data-ppcond="442">endif</span></u></td></tr>
+<tr><th id="449">449</th><td></td></tr>
+<tr><th id="450">450</th><td>    <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> <dfn class="local col1 decl" id="41function" title='function' data-type='QString' data-ref="41function">function</dfn> = <a class="ref fn fake" href="../text/qstring.h.html#_ZN7QStringC1E13QLatin1String" title='QString::QString' data-ref="_ZN7QStringC1E13QLatin1String"></a><q>"QSharedMemory::create"<a class="ref fn" href="../text/qstring.h.html#_ZN2Qt8Literals14StringLiteralsli3_L1EPKcm" title='Qt::operator&quot;&quot;_L1' data-ref="_ZN2Qt8Literals14StringLiteralsli3_L1EPKcm">_L1</a></q>;</td></tr>
+<tr><th id="451">451</th><td><u>#<span data-ppcond="451">if</span> <a class="macro" href="../global/qtconfigmacros.h.html#67" title="(1/1 == 1)" data-ref="_M/QT_CONFIG">QT_CONFIG</a>(systemsemaphore)</u></td></tr>
+<tr><th id="452">452</th><td>    <a class="type" href="qsharedmemory_p.h.html#QSharedMemoryLocker" title='QSharedMemoryLocker' data-ref="QSharedMemoryLocker">QSharedMemoryLocker</a> <dfn class="local col2 decl" id="42lock" title='lock' data-type='QSharedMemoryLocker' data-ref="42lock">lock</dfn><a class="ref fn" href="qsharedmemory_p.h.html#_ZN19QSharedMemoryLockerC1EP13QSharedMemory" title='QSharedMemoryLocker::QSharedMemoryLocker' data-ref="_ZN19QSharedMemoryLockerC1EP13QSharedMemory">(</a><b>this</b>);</td></tr>
+<tr><th id="453">453</th><td>    <b>if</b> (!<a class="local col0 ref" href="#437" title='d' data-ref="40d">d</a>-&gt;<a class="ref field" href="qsharedmemory_p.h.html#QSharedMemoryPrivate::key" title='QSharedMemoryPrivate::key' data-ref="QSharedMemoryPrivate::key">key</a>.<a class="ref fn" href="../text/qstring.h.html#_ZNK7QString6isNullEv" title='QString::isNull' data-ref="_ZNK7QString6isNullEv">isNull</a>() &amp;&amp; !<a class="local col0 ref" href="#437" title='d' data-ref="40d">d</a>-&gt;<a class="ref fn" href="qsharedmemory_p.h.html#_ZN20QSharedMemoryPrivate9tryLockerEP19QSharedMemoryLockerRK7QString" title='QSharedMemoryPrivate::tryLocker' data-ref="_ZN20QSharedMemoryPrivate9tryLockerEP19QSharedMemoryLockerRK7QString">tryLocker</a>(<span class='inlayHint'>locker:&nbsp;</span>&amp;<a class="local col2 ref" href="#42lock" title='lock' data-ref="42lock">lock</a>, <a class="local col1 ref" href="#41function" title='function' data-ref="41function">function</a>))</td></tr>
+<tr><th id="454">454</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="455">455</th><td><u>#<span data-ppcond="451">endif</span></u></td></tr>
+<tr><th id="456">456</th><td></td></tr>
+<tr><th id="457">457</th><td>    <b>if</b> (<a class="local col8 ref" href="#38size" title='size' data-ref="38size">size</a> &lt;= <var>0</var>) {</td></tr>
+<tr><th id="458">458</th><td>        <a class="local col0 ref" href="#437" title='d' data-ref="40d">d</a>-&gt;<a class="ref field" href="qsharedmemory_p.h.html#QSharedMemoryPrivate::error" title='QSharedMemoryPrivate::error' data-ref="QSharedMemoryPrivate::error">error</a> = <a class="type" href="qsharedmemory.h.html#QSharedMemory" title='QSharedMemory' data-ref="QSharedMemory">QSharedMemory</a>::<a class="enum" href="qsharedmemory.h.html#QSharedMemory::InvalidSize" title='QSharedMemory::InvalidSize' data-ref="QSharedMemory::InvalidSize">InvalidSize</a>;</td></tr>
+<tr><th id="459">459</th><td>        <a class="local col0 ref" href="#437" title='d' data-ref="40d">d</a>-&gt;<a class="ref field" href="qsharedmemory_p.h.html#QSharedMemoryPrivate::errorString" title='QSharedMemoryPrivate::errorString' data-ref="QSharedMemoryPrivate::errorString">errorString</a> <a class="ref fn" href="../text/qstring.h.html#470" title='QString::operator=' data-ref="_ZN7QStringaSEOS_">=</a></td></tr>
+<tr><th id="460">460</th><td>            <a class="type" href="qsharedmemory.h.html#QSharedMemory" title='QSharedMemory' data-ref="QSharedMemory">QSharedMemory</a>::<a class="member fn" href="qsharedmemory.h.html#24" title='QSharedMemory::tr' data-ref="_ZN13QSharedMemory2trEPKcS1_i">tr</a>(<span class='inlayHint'>s:&nbsp;</span><q>"%1: create size is less then 0"</q>).<a class="ref fn" href="../text/qstring.h.html#_ZNK7QString3argERKS_i5QChar" title='QString::arg' data-ref="_ZNK7QString3argERKS_i5QChar">arg</a>(<span class='inlayHint'>a:&nbsp;</span><a class="local col1 ref" href="#41function" title='function' data-ref="41function">function</a>);</td></tr>
+<tr><th id="461">461</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="462">462</th><td>    }</td></tr>
+<tr><th id="463">463</th><td></td></tr>
+<tr><th id="464">464</th><td>    <b>if</b> (!<a class="local col0 ref" href="#437" title='d' data-ref="40d">d</a>-&gt;<a class="ref fn" href="qsharedmemory_p.h.html#_ZN20QSharedMemoryPrivate6createEx" title='QSharedMemoryPrivate::create' data-ref="_ZN20QSharedMemoryPrivate6createEx">create</a>(<a class="local col8 ref" href="#38size" title='size' data-ref="38size">size</a>))</td></tr>
+<tr><th id="465">465</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="466">466</th><td></td></tr>
+<tr><th id="467">467</th><td>    <b>return</b> <a class="local col0 ref" href="#437" title='d' data-ref="40d">d</a>-&gt;<a class="ref fn" href="qsharedmemory_p.h.html#_ZN20QSharedMemoryPrivate6attachEN13QSharedMemory10AccessModeE" title='QSharedMemoryPrivate::attach' data-ref="_ZN20QSharedMemoryPrivate6attachEN13QSharedMemory10AccessModeE">attach</a>(<a class="local col9 ref" href="#39mode" title='mode' data-ref="39mode">mode</a>);</td></tr>
+<tr><th id="468">468</th><td>}</td></tr>
+<tr><th id="469">469</th><td></td></tr>
+<tr><th id="470">470</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="471">471</th><td><i class="doc">  Returns the size of the attached shared memory segment. If no shared</i></td></tr>
+<tr><th id="472">472</th><td><i class="doc">  memory segment is attached, 0 is returned.</i></td></tr>
+<tr><th id="473">473</th><td><i class="doc"></i></td></tr>
+<tr><th id="474">474</th><td><i class="doc">  <span class="command">\note</span> The size of the segment may be larger than the requested size that was</i></td></tr>
+<tr><th id="475">475</th><td><i class="doc">  passed to create().</i></td></tr>
+<tr><th id="476">476</th><td><i class="doc"></i></td></tr>
+<tr><th id="477">477</th><td><i class="doc">  <span class="command">\sa</span> create(), attach()</i></td></tr>
+<tr><th id="478">478</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="479">479</th><td><a class="typedef" href="../global/qtypes.h.html#qsizetype" title='qsizetype' data-type='QIntegerForSizeof&lt;std::size_t&gt;::Signed' data-ref="qsizetype">qsizetype</a> <a class="type" href="qsharedmemory.h.html#QSharedMemory" title='QSharedMemory' data-ref="QSharedMemory">QSharedMemory</a>::<dfn class="decl def fn" id="_ZNK13QSharedMemory4sizeEv" title='QSharedMemory::size' data-ref="_ZNK13QSharedMemory4sizeEv">size</dfn>() <em>const</em></td></tr>
+<tr><th id="480">480</th><td>{</td></tr>
+<tr><th id="481">481</th><td>    <a class="macro" href="../global/qtclasshelpermacros.h.html#109" title="const QSharedMemoryPrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(<em>const</em> QSharedMemory);</td></tr>
+<tr><th id="482">482</th><td>    <b>return</b> <a class="local col3 ref" href="#481" title='d' data-ref="43d">d</a>-&gt;<a class="ref field" href="qsharedmemory_p.h.html#QSharedMemoryPrivate::size" title='QSharedMemoryPrivate::size' data-ref="QSharedMemoryPrivate::size">size</a>;</td></tr>
+<tr><th id="483">483</th><td>}</td></tr>
+<tr><th id="484">484</th><td></td></tr>
+<tr><th id="485">485</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="486">486</th><td><i class="doc">  <span class="command">\enum</span> <span class="verb" data-ref="QSharedMemory::AccessMode">QSharedMemory::AccessMode</span></i></td></tr>
+<tr><th id="487">487</th><td><i class="doc"></i></td></tr>
+<tr><th id="488">488</th><td><i class="doc">  <span class="command">\value</span> <span class="arg" data-ref="QSharedMemory::ReadOnly">ReadOnly </span>The shared memory segment is read-only. Writing to</i></td></tr>
+<tr><th id="489">489</th><td><i class="doc">  the shared memory segment is not allowed. An attempt to write to a</i></td></tr>
+<tr><th id="490">490</th><td><i class="doc">  shared memory segment created with ReadOnly causes the program to</i></td></tr>
+<tr><th id="491">491</th><td><i class="doc">  abort.</i></td></tr>
+<tr><th id="492">492</th><td><i class="doc"></i></td></tr>
+<tr><th id="493">493</th><td><i class="doc">  <span class="command">\value</span> <span class="arg" data-ref="QSharedMemory::ReadWrite">ReadWrite </span>Reading and writing the shared memory segment are</i></td></tr>
+<tr><th id="494">494</th><td><i class="doc">  both allowed.</i></td></tr>
+<tr><th id="495">495</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="496">496</th><td></td></tr>
+<tr><th id="497">497</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="498">498</th><td><i class="doc">  Attempts to attach the process to the shared memory segment</i></td></tr>
+<tr><th id="499">499</th><td><i class="doc">  identified by the key that was passed to the constructor or to a</i></td></tr>
+<tr><th id="500">500</th><td><i class="doc">  call to setKey() or setNativeKey(). The access<span class="command"> \a</span> <span class="arg">mode</span> is<span class="command"> \l</span> {QSharedMemory::}</i></td></tr>
+<tr><th id="501">501</th><td><i class="doc">  {ReadWrite} by default. It can also be<span class="command"> \l</span> {QSharedMemory::}</i></td></tr>
+<tr><th id="502">502</th><td><i class="doc">  {ReadOnly}. Returns<span class="command"> \c</span> <span class="arg">true</span> if the attach operation is successful. If</i></td></tr>
+<tr><th id="503">503</th><td><i class="doc">  false is returned, call error() to determine which error occurred.</i></td></tr>
+<tr><th id="504">504</th><td><i class="doc">  After attaching the shared memory segment, a pointer to the shared</i></td></tr>
+<tr><th id="505">505</th><td><i class="doc">  memory can be obtained by calling data().</i></td></tr>
+<tr><th id="506">506</th><td><i class="doc"></i></td></tr>
+<tr><th id="507">507</th><td><i class="doc">  <span class="command">\sa</span> isAttached(), detach(), create()</i></td></tr>
+<tr><th id="508">508</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="509">509</th><td><em>bool</em> <a class="type" href="qsharedmemory.h.html#QSharedMemory" title='QSharedMemory' data-ref="QSharedMemory">QSharedMemory</a>::<dfn class="decl def fn" id="_ZN13QSharedMemory6attachENS_10AccessModeE" title='QSharedMemory::attach' data-ref="_ZN13QSharedMemory6attachENS_10AccessModeE">attach</dfn>(<a class="type" href="qsharedmemory.h.html#QSharedMemory::AccessMode" title='QSharedMemory::AccessMode' data-ref="QSharedMemory::AccessMode">AccessMode</a> <dfn class="local col4 decl" id="44mode" title='mode' data-type='QSharedMemory::AccessMode' data-ref="44mode">mode</dfn>)</td></tr>
+<tr><th id="510">510</th><td>{</td></tr>
+<tr><th id="511">511</th><td>    <a class="macro" href="../global/qtclasshelpermacros.h.html#109" title="QSharedMemoryPrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(QSharedMemory);</td></tr>
+<tr><th id="512">512</th><td></td></tr>
+<tr><th id="513">513</th><td>    <b>if</b> (<a class="member fn" href="#_ZNK13QSharedMemory10isAttachedEv" title='QSharedMemory::isAttached' data-ref="_ZNK13QSharedMemory10isAttachedEv">isAttached</a>() || !<a class="local col5 ref" href="#511" title='d' data-ref="45d">d</a>-&gt;<a class="ref fn" href="#_ZN20QSharedMemoryPrivate7initKeyEv" title='QSharedMemoryPrivate::initKey' data-ref="_ZN20QSharedMemoryPrivate7initKeyEv">initKey</a>())</td></tr>
+<tr><th id="514">514</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="515">515</th><td><u>#<span data-ppcond="515">if</span> <a class="macro" href="../global/qtconfigmacros.h.html#67" title="(1/1 == 1)" data-ref="_M/QT_CONFIG">QT_CONFIG</a>(systemsemaphore)</u></td></tr>
+<tr><th id="516">516</th><td>    <a class="type" href="qsharedmemory_p.h.html#QSharedMemoryLocker" title='QSharedMemoryLocker' data-ref="QSharedMemoryLocker">QSharedMemoryLocker</a> <dfn class="local col6 decl" id="46lock" title='lock' data-type='QSharedMemoryLocker' data-ref="46lock">lock</dfn><a class="ref fn" href="qsharedmemory_p.h.html#_ZN19QSharedMemoryLockerC1EP13QSharedMemory" title='QSharedMemoryLocker::QSharedMemoryLocker' data-ref="_ZN19QSharedMemoryLockerC1EP13QSharedMemory">(</a><b>this</b>);</td></tr>
+<tr><th id="517">517</th><td>    <b>if</b> (!<a class="local col5 ref" href="#511" title='d' data-ref="45d">d</a>-&gt;<a class="ref field" href="qsharedmemory_p.h.html#QSharedMemoryPrivate::key" title='QSharedMemoryPrivate::key' data-ref="QSharedMemoryPrivate::key">key</a>.<a class="ref fn" href="../text/qstring.h.html#_ZNK7QString6isNullEv" title='QString::isNull' data-ref="_ZNK7QString6isNullEv">isNull</a>() &amp;&amp; !<a class="local col5 ref" href="#511" title='d' data-ref="45d">d</a>-&gt;<a class="ref fn" href="qsharedmemory_p.h.html#_ZN20QSharedMemoryPrivate9tryLockerEP19QSharedMemoryLockerRK7QString" title='QSharedMemoryPrivate::tryLocker' data-ref="_ZN20QSharedMemoryPrivate9tryLockerEP19QSharedMemoryLockerRK7QString">tryLocker</a>(<span class='inlayHint'>locker:&nbsp;</span>&amp;<a class="local col6 ref" href="#46lock" title='lock' data-ref="46lock">lock</a>, <a class="ref fn fake" href="../text/qstring.h.html#_ZN7QStringC1E13QLatin1String" title='QString::QString' data-ref="_ZN7QStringC1E13QLatin1String"></a><span class='inlayHint'>function:&nbsp;</span><q>"QSharedMemory::attach"<a class="ref fn" href="../text/qstring.h.html#_ZN2Qt8Literals14StringLiteralsli3_L1EPKcm" title='Qt::operator&quot;&quot;_L1' data-ref="_ZN2Qt8Literals14StringLiteralsli3_L1EPKcm">_L1</a></q>))</td></tr>
+<tr><th id="518">518</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="519">519</th><td><u>#<span data-ppcond="515">endif</span></u></td></tr>
+<tr><th id="520">520</th><td></td></tr>
+<tr><th id="521">521</th><td>    <b>if</b> (<a class="member fn" href="#_ZNK13QSharedMemory10isAttachedEv" title='QSharedMemory::isAttached' data-ref="_ZNK13QSharedMemory10isAttachedEv">isAttached</a>() || !<a class="local col5 ref" href="#511" title='d' data-ref="45d">d</a>-&gt;<a class="ref fn" href="qsharedmemory_p.h.html#_ZN20QSharedMemoryPrivate6handleEv" title='QSharedMemoryPrivate::handle' data-ref="_ZN20QSharedMemoryPrivate6handleEv">handle</a>())</td></tr>
+<tr><th id="522">522</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="523">523</th><td></td></tr>
+<tr><th id="524">524</th><td>    <b>return</b> <a class="local col5 ref" href="#511" title='d' data-ref="45d">d</a>-&gt;<a class="ref fn" href="qsharedmemory_p.h.html#_ZN20QSharedMemoryPrivate6attachEN13QSharedMemory10AccessModeE" title='QSharedMemoryPrivate::attach' data-ref="_ZN20QSharedMemoryPrivate6attachEN13QSharedMemory10AccessModeE">attach</a>(<a class="local col4 ref" href="#44mode" title='mode' data-ref="44mode">mode</a>);</td></tr>
+<tr><th id="525">525</th><td>}</td></tr>
+<tr><th id="526">526</th><td></td></tr>
+<tr><th id="527">527</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="528">528</th><td><i class="doc">  Returns<span class="command"> \c</span> <span class="arg">true</span> if this process is attached to the shared memory</i></td></tr>
+<tr><th id="529">529</th><td><i class="doc">  segment.</i></td></tr>
+<tr><th id="530">530</th><td><i class="doc"></i></td></tr>
+<tr><th id="531">531</th><td><i class="doc">  <span class="command">\sa</span> attach(), detach()</i></td></tr>
+<tr><th id="532">532</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="533">533</th><td><em>bool</em> <a class="type" href="qsharedmemory.h.html#QSharedMemory" title='QSharedMemory' data-ref="QSharedMemory">QSharedMemory</a>::<dfn class="decl def fn" id="_ZNK13QSharedMemory10isAttachedEv" title='QSharedMemory::isAttached' data-ref="_ZNK13QSharedMemory10isAttachedEv">isAttached</dfn>() <em>const</em></td></tr>
+<tr><th id="534">534</th><td>{</td></tr>
+<tr><th id="535">535</th><td>    <a class="macro" href="../global/qtclasshelpermacros.h.html#109" title="const QSharedMemoryPrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(<em>const</em> QSharedMemory);</td></tr>
+<tr><th id="536">536</th><td>    <b>return</b> (<b>nullptr</b> != <a class="local col7 ref" href="#535" title='d' data-ref="47d">d</a>-&gt;<a class="ref field" href="qsharedmemory_p.h.html#QSharedMemoryPrivate::memory" title='QSharedMemoryPrivate::memory' data-ref="QSharedMemoryPrivate::memory">memory</a>);</td></tr>
+<tr><th id="537">537</th><td>}</td></tr>
+<tr><th id="538">538</th><td></td></tr>
+<tr><th id="539">539</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="540">540</th><td><i class="doc">  Detaches the process from the shared memory segment. If this was the</i></td></tr>
+<tr><th id="541">541</th><td><i class="doc">  last process attached to the shared memory segment, then the shared</i></td></tr>
+<tr><th id="542">542</th><td><i class="doc">  memory segment is released by the system, i.e., the contents are</i></td></tr>
+<tr><th id="543">543</th><td><i class="doc">  destroyed. The function returns<span class="command"> \c</span> <span class="arg">true</span> if it detaches the shared</i></td></tr>
+<tr><th id="544">544</th><td><i class="doc">  memory segment. If it returns<span class="command"> \c</span> <span class="arg">false,</span> it usually means the segment</i></td></tr>
+<tr><th id="545">545</th><td><i class="doc">  either isn't attached, or it is locked by another process.</i></td></tr>
+<tr><th id="546">546</th><td><i class="doc"></i></td></tr>
+<tr><th id="547">547</th><td><i class="doc">  <span class="command">\sa</span> attach(), isAttached()</i></td></tr>
+<tr><th id="548">548</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="549">549</th><td><em>bool</em> <a class="type" href="qsharedmemory.h.html#QSharedMemory" title='QSharedMemory' data-ref="QSharedMemory">QSharedMemory</a>::<dfn class="decl def fn" id="_ZN13QSharedMemory6detachEv" title='QSharedMemory::detach' data-ref="_ZN13QSharedMemory6detachEv">detach</dfn>()</td></tr>
+<tr><th id="550">550</th><td>{</td></tr>
+<tr><th id="551">551</th><td>    <a class="macro" href="../global/qtclasshelpermacros.h.html#109" title="QSharedMemoryPrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(QSharedMemory);</td></tr>
+<tr><th id="552">552</th><td>    <b>if</b> (!<a class="member fn" href="#_ZNK13QSharedMemory10isAttachedEv" title='QSharedMemory::isAttached' data-ref="_ZNK13QSharedMemory10isAttachedEv">isAttached</a>())</td></tr>
+<tr><th id="553">553</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="554">554</th><td></td></tr>
+<tr><th id="555">555</th><td><u>#<span data-ppcond="555">if</span> <a class="macro" href="../global/qtconfigmacros.h.html#67" title="(1/1 == 1)" data-ref="_M/QT_CONFIG">QT_CONFIG</a>(systemsemaphore)</u></td></tr>
+<tr><th id="556">556</th><td>    <a class="type" href="qsharedmemory_p.h.html#QSharedMemoryLocker" title='QSharedMemoryLocker' data-ref="QSharedMemoryLocker">QSharedMemoryLocker</a> <dfn class="local col8 decl" id="48lock" title='lock' data-type='QSharedMemoryLocker' data-ref="48lock">lock</dfn><a class="ref fn" href="qsharedmemory_p.h.html#_ZN19QSharedMemoryLockerC1EP13QSharedMemory" title='QSharedMemoryLocker::QSharedMemoryLocker' data-ref="_ZN19QSharedMemoryLockerC1EP13QSharedMemory">(</a><b>this</b>);</td></tr>
+<tr><th id="557">557</th><td>    <b>if</b> (!<a class="local col9 ref" href="#551" title='d' data-ref="49d">d</a>-&gt;<a class="ref field" href="qsharedmemory_p.h.html#QSharedMemoryPrivate::key" title='QSharedMemoryPrivate::key' data-ref="QSharedMemoryPrivate::key">key</a>.<a class="ref fn" href="../text/qstring.h.html#_ZNK7QString6isNullEv" title='QString::isNull' data-ref="_ZNK7QString6isNullEv">isNull</a>() &amp;&amp; !<a class="local col9 ref" href="#551" title='d' data-ref="49d">d</a>-&gt;<a class="ref fn" href="qsharedmemory_p.h.html#_ZN20QSharedMemoryPrivate9tryLockerEP19QSharedMemoryLockerRK7QString" title='QSharedMemoryPrivate::tryLocker' data-ref="_ZN20QSharedMemoryPrivate9tryLockerEP19QSharedMemoryLockerRK7QString">tryLocker</a>(<span class='inlayHint'>locker:&nbsp;</span>&amp;<a class="local col8 ref" href="#48lock" title='lock' data-ref="48lock">lock</a>, <a class="ref fn fake" href="../text/qstring.h.html#_ZN7QStringC1E13QLatin1String" title='QString::QString' data-ref="_ZN7QStringC1E13QLatin1String"></a><span class='inlayHint'>function:&nbsp;</span><q>"QSharedMemory::detach"<a class="ref fn" href="../text/qstring.h.html#_ZN2Qt8Literals14StringLiteralsli3_L1EPKcm" title='Qt::operator&quot;&quot;_L1' data-ref="_ZN2Qt8Literals14StringLiteralsli3_L1EPKcm">_L1</a></q>))</td></tr>
+<tr><th id="558">558</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="559">559</th><td><u>#<span data-ppcond="555">endif</span></u></td></tr>
+<tr><th id="560">560</th><td></td></tr>
+<tr><th id="561">561</th><td>    <b>return</b> <a class="local col9 ref" href="#551" title='d' data-ref="49d">d</a>-&gt;<a class="ref fn" href="qsharedmemory_p.h.html#_ZN20QSharedMemoryPrivate6detachEv" title='QSharedMemoryPrivate::detach' data-ref="_ZN20QSharedMemoryPrivate6detachEv">detach</a>();</td></tr>
+<tr><th id="562">562</th><td>}</td></tr>
+<tr><th id="563">563</th><td></td></tr>
+<tr><th id="564">564</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="565">565</th><td><i class="doc">  Returns a pointer to the contents of the shared memory segment, if</i></td></tr>
+<tr><th id="566">566</th><td><i class="doc">  one is attached. Otherwise it returns null. Remember to lock the</i></td></tr>
+<tr><th id="567">567</th><td><i class="doc">  shared memory with lock() before reading from or writing to the</i></td></tr>
+<tr><th id="568">568</th><td><i class="doc">  shared memory, and remember to release the lock with unlock() after</i></td></tr>
+<tr><th id="569">569</th><td><i class="doc">  you are done.</i></td></tr>
+<tr><th id="570">570</th><td><i class="doc"></i></td></tr>
+<tr><th id="571">571</th><td><i class="doc">  <span class="command">\sa</span> attach()</i></td></tr>
+<tr><th id="572">572</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="573">573</th><td><em>void</em> *<a class="type" href="qsharedmemory.h.html#QSharedMemory" title='QSharedMemory' data-ref="QSharedMemory">QSharedMemory</a>::<dfn class="decl def fn" id="_ZN13QSharedMemory4dataEv" title='QSharedMemory::data' data-ref="_ZN13QSharedMemory4dataEv">data</dfn>()</td></tr>
+<tr><th id="574">574</th><td>{</td></tr>
+<tr><th id="575">575</th><td>    <a class="macro" href="../global/qtclasshelpermacros.h.html#109" title="QSharedMemoryPrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(QSharedMemory);</td></tr>
+<tr><th id="576">576</th><td>    <b>return</b> <a class="local col0 ref" href="#575" title='d' data-ref="50d">d</a>-&gt;<a class="ref field" href="qsharedmemory_p.h.html#QSharedMemoryPrivate::memory" title='QSharedMemoryPrivate::memory' data-ref="QSharedMemoryPrivate::memory">memory</a>;</td></tr>
+<tr><th id="577">577</th><td>}</td></tr>
+<tr><th id="578">578</th><td></td></tr>
+<tr><th id="579">579</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="580">580</th><td><i class="doc">  Returns a const pointer to the contents of the shared memory</i></td></tr>
+<tr><th id="581">581</th><td><i class="doc">  segment, if one is attached. Otherwise it returns null. Remember to</i></td></tr>
+<tr><th id="582">582</th><td><i class="doc">  lock the shared memory with lock() before reading from or writing to</i></td></tr>
+<tr><th id="583">583</th><td><i class="doc">  the shared memory, and remember to release the lock with unlock()</i></td></tr>
+<tr><th id="584">584</th><td><i class="doc">  after you are done.</i></td></tr>
+<tr><th id="585">585</th><td><i class="doc"></i></td></tr>
+<tr><th id="586">586</th><td><i class="doc">  <span class="command">\sa</span> attach(), create()</i></td></tr>
+<tr><th id="587">587</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="588">588</th><td><em>const</em> <em>void</em> *<a class="type" href="qsharedmemory.h.html#QSharedMemory" title='QSharedMemory' data-ref="QSharedMemory">QSharedMemory</a>::<dfn class="decl def fn" id="_ZNK13QSharedMemory9constDataEv" title='QSharedMemory::constData' data-ref="_ZNK13QSharedMemory9constDataEv">constData</dfn>() <em>const</em></td></tr>
+<tr><th id="589">589</th><td>{</td></tr>
+<tr><th id="590">590</th><td>    <a class="macro" href="../global/qtclasshelpermacros.h.html#109" title="const QSharedMemoryPrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(<em>const</em> QSharedMemory);</td></tr>
+<tr><th id="591">591</th><td>    <b>return</b> <a class="local col1 ref" href="#590" title='d' data-ref="51d">d</a>-&gt;<a class="ref field" href="qsharedmemory_p.h.html#QSharedMemoryPrivate::memory" title='QSharedMemoryPrivate::memory' data-ref="QSharedMemoryPrivate::memory">memory</a>;</td></tr>
+<tr><th id="592">592</th><td>}</td></tr>
+<tr><th id="593">593</th><td></td></tr>
+<tr><th id="594">594</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="595">595</th><td><i class="doc">  <span class="command">\overload</span> <span class="verb">data()</span></i></td></tr>
+<tr><th id="596">596</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="597">597</th><td><em>const</em> <em>void</em> *<a class="type" href="qsharedmemory.h.html#QSharedMemory" title='QSharedMemory' data-ref="QSharedMemory">QSharedMemory</a>::<dfn class="decl def fn" id="_ZNK13QSharedMemory4dataEv" title='QSharedMemory::data' data-ref="_ZNK13QSharedMemory4dataEv">data</dfn>() <em>const</em></td></tr>
+<tr><th id="598">598</th><td>{</td></tr>
+<tr><th id="599">599</th><td>    <a class="macro" href="../global/qtclasshelpermacros.h.html#109" title="const QSharedMemoryPrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(<em>const</em> QSharedMemory);</td></tr>
+<tr><th id="600">600</th><td>    <b>return</b> <a class="local col2 ref" href="#599" title='d' data-ref="52d">d</a>-&gt;<a class="ref field" href="qsharedmemory_p.h.html#QSharedMemoryPrivate::memory" title='QSharedMemoryPrivate::memory' data-ref="QSharedMemoryPrivate::memory">memory</a>;</td></tr>
+<tr><th id="601">601</th><td>}</td></tr>
+<tr><th id="602">602</th><td></td></tr>
+<tr><th id="603">603</th><td><u>#<span data-ppcond="603">if</span> <a class="macro" href="../global/qtconfigmacros.h.html#67" title="(1/1 == 1)" data-ref="_M/QT_CONFIG">QT_CONFIG</a>(systemsemaphore)</u></td></tr>
+<tr><th id="604">604</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="605">605</th><td><i class="doc">  This is a semaphore that locks the shared memory segment for access</i></td></tr>
+<tr><th id="606">606</th><td><i class="doc">  by this process and returns<span class="command"> \c</span> <span class="arg">true.</span> If another process has locked the</i></td></tr>
+<tr><th id="607">607</th><td><i class="doc">  segment, this function blocks until the lock is released. Then it</i></td></tr>
+<tr><th id="608">608</th><td><i class="doc">  acquires the lock and returns<span class="command"> \c</span> <span class="arg">true.</span> If this function returns<span class="command"> \c</span> <span class="arg">false,</span></i></td></tr>
+<tr><th id="609">609</th><td><i class="doc">  it means that you have ignored a false return from create() or attach(),</i></td></tr>
+<tr><th id="610">610</th><td><i class="doc">  that you have set the key with setNativeKey() or that</i></td></tr>
+<tr><th id="611">611</th><td><i class="doc">  QSystemSemaphore::acquire() failed due to an unknown system error.</i></td></tr>
+<tr><th id="612">612</th><td><i class="doc"></i></td></tr>
+<tr><th id="613">613</th><td><i class="doc">  <span class="command">\sa</span> unlock(), data(), QSystemSemaphore::acquire()</i></td></tr>
+<tr><th id="614">614</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="615">615</th><td><em>bool</em> <a class="type" href="qsharedmemory.h.html#QSharedMemory" title='QSharedMemory' data-ref="QSharedMemory">QSharedMemory</a>::<dfn class="decl def fn" id="_ZN13QSharedMemory4lockEv" title='QSharedMemory::lock' data-ref="_ZN13QSharedMemory4lockEv">lock</dfn>()</td></tr>
+<tr><th id="616">616</th><td>{</td></tr>
+<tr><th id="617">617</th><td>    <a class="macro" href="../global/qtclasshelpermacros.h.html#109" title="QSharedMemoryPrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(QSharedMemory);</td></tr>
+<tr><th id="618">618</th><td>    <b>if</b> (<a class="local col3 ref" href="#617" title='d' data-ref="53d">d</a>-&gt;<a class="ref field" href="qsharedmemory_p.h.html#QSharedMemoryPrivate::lockedByMe" title='QSharedMemoryPrivate::lockedByMe' data-ref="QSharedMemoryPrivate::lockedByMe">lockedByMe</a>) {</td></tr>
+<tr><th id="619">619</th><td>        <a class="macro" href="../global/qlogging.h.html#158" title="QMessageLogger(nullptr, 0, nullptr).warning" data-ref="_M/qWarning">qWarning</a>(<span class='inlayHint'>msg:&nbsp;</span><q>"QSharedMemory::lock: already locked"</q>);</td></tr>
+<tr><th id="620">620</th><td>        <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="621">621</th><td>    }</td></tr>
+<tr><th id="622">622</th><td>    <b>if</b> (<a class="local col3 ref" href="#617" title='d' data-ref="53d">d</a>-&gt;<a class="ref field" href="qsharedmemory_p.h.html#QSharedMemoryPrivate::systemSemaphore" title='QSharedMemoryPrivate::systemSemaphore' data-ref="QSharedMemoryPrivate::systemSemaphore">systemSemaphore</a>.<a class="ref fn" href="qsystemsemaphore.h.html#_ZN16QSystemSemaphore7acquireEv" title='QSystemSemaphore::acquire' data-ref="_ZN16QSystemSemaphore7acquireEv">acquire</a>()) {</td></tr>
+<tr><th id="623">623</th><td>        <a class="local col3 ref" href="#617" title='d' data-ref="53d">d</a>-&gt;<a class="ref field" href="qsharedmemory_p.h.html#QSharedMemoryPrivate::lockedByMe" title='QSharedMemoryPrivate::lockedByMe' data-ref="QSharedMemoryPrivate::lockedByMe">lockedByMe</a> = <b>true</b>;</td></tr>
+<tr><th id="624">624</th><td>        <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="625">625</th><td>    }</td></tr>
+<tr><th id="626">626</th><td>    <em>const</em> <em>auto</em> <dfn class="local col4 decl" id="54function" title='function' data-type='const QLatin1StringView' data-ref="54function">function</dfn> = <q>"QSharedMemory::lock"<a class="ref fn" href="../text/qstring.h.html#_ZN2Qt8Literals14StringLiteralsli3_L1EPKcm" title='Qt::operator&quot;&quot;_L1' data-ref="_ZN2Qt8Literals14StringLiteralsli3_L1EPKcm">_L1</a></q>;</td></tr>
+<tr><th id="627">627</th><td>    <a class="local col3 ref" href="#617" title='d' data-ref="53d">d</a>-&gt;<a class="ref field" href="qsharedmemory_p.h.html#QSharedMemoryPrivate::errorString" title='QSharedMemoryPrivate::errorString' data-ref="QSharedMemoryPrivate::errorString">errorString</a> <a class="ref fn" href="../text/qstring.h.html#470" title='QString::operator=' data-ref="_ZN7QStringaSEOS_">=</a> <a class="type" href="qsharedmemory.h.html#QSharedMemory" title='QSharedMemory' data-ref="QSharedMemory">QSharedMemory</a>::<a class="member fn" href="qsharedmemory.h.html#24" title='QSharedMemory::tr' data-ref="_ZN13QSharedMemory2trEPKcS1_i">tr</a>(<span class='inlayHint'>s:&nbsp;</span><q>"%1: unable to lock"</q>).<a class="ref fn" href="../text/qstring.h.html#_ZNK7QString3argE13QLatin1Stringi5QChar" title='QString::arg' data-ref="_ZNK7QString3argE13QLatin1Stringi5QChar">arg</a>(<a class="ref fn fake" href="../text/qstring.h.html#58" title='QLatin1String::QLatin1String' data-ref="_ZN13QLatin1StringC1ERKS_"></a><span class='inlayHint'>a:&nbsp;</span><a class="local col4 ref" href="#54function" title='function' data-ref="54function">function</a>);</td></tr>
+<tr><th id="628">628</th><td>    <a class="local col3 ref" href="#617" title='d' data-ref="53d">d</a>-&gt;<a class="ref field" href="qsharedmemory_p.h.html#QSharedMemoryPrivate::error" title='QSharedMemoryPrivate::error' data-ref="QSharedMemoryPrivate::error">error</a> = <a class="type" href="qsharedmemory.h.html#QSharedMemory" title='QSharedMemory' data-ref="QSharedMemory">QSharedMemory</a>::<a class="enum" href="qsharedmemory.h.html#QSharedMemory::LockError" title='QSharedMemory::LockError' data-ref="QSharedMemory::LockError">LockError</a>;</td></tr>
+<tr><th id="629">629</th><td>    <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="630">630</th><td>}</td></tr>
+<tr><th id="631">631</th><td></td></tr>
+<tr><th id="632">632</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="633">633</th><td><i class="doc">  Releases the lock on the shared memory segment and returns<span class="command"> \c</span> <span class="arg">true,</span> if</i></td></tr>
+<tr><th id="634">634</th><td><i class="doc">  the lock is currently held by this process. If the segment is not</i></td></tr>
+<tr><th id="635">635</th><td><i class="doc">  locked, or if the lock is held by another process, nothing happens</i></td></tr>
+<tr><th id="636">636</th><td><i class="doc">  and false is returned.</i></td></tr>
+<tr><th id="637">637</th><td><i class="doc"></i></td></tr>
+<tr><th id="638">638</th><td><i class="doc">  <span class="command">\sa</span> lock()</i></td></tr>
+<tr><th id="639">639</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="640">640</th><td><em>bool</em> <a class="type" href="qsharedmemory.h.html#QSharedMemory" title='QSharedMemory' data-ref="QSharedMemory">QSharedMemory</a>::<dfn class="decl def fn" id="_ZN13QSharedMemory6unlockEv" title='QSharedMemory::unlock' data-ref="_ZN13QSharedMemory6unlockEv">unlock</dfn>()</td></tr>
+<tr><th id="641">641</th><td>{</td></tr>
+<tr><th id="642">642</th><td>    <a class="macro" href="../global/qtclasshelpermacros.h.html#109" title="QSharedMemoryPrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(QSharedMemory);</td></tr>
+<tr><th id="643">643</th><td>    <b>if</b> (!<a class="local col5 ref" href="#642" title='d' data-ref="55d">d</a>-&gt;<a class="ref field" href="qsharedmemory_p.h.html#QSharedMemoryPrivate::lockedByMe" title='QSharedMemoryPrivate::lockedByMe' data-ref="QSharedMemoryPrivate::lockedByMe">lockedByMe</a>)</td></tr>
+<tr><th id="644">644</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="645">645</th><td>    <a class="local col5 ref" href="#642" title='d' data-ref="55d">d</a>-&gt;<a class="ref field" href="qsharedmemory_p.h.html#QSharedMemoryPrivate::lockedByMe" title='QSharedMemoryPrivate::lockedByMe' data-ref="QSharedMemoryPrivate::lockedByMe">lockedByMe</a> = <b>false</b>;</td></tr>
+<tr><th id="646">646</th><td>    <b>if</b> (<a class="local col5 ref" href="#642" title='d' data-ref="55d">d</a>-&gt;<a class="ref field" href="qsharedmemory_p.h.html#QSharedMemoryPrivate::systemSemaphore" title='QSharedMemoryPrivate::systemSemaphore' data-ref="QSharedMemoryPrivate::systemSemaphore">systemSemaphore</a>.<a class="ref fn" href="qsystemsemaphore.h.html#_ZN16QSystemSemaphore7releaseEi" title='QSystemSemaphore::release' data-ref="_ZN16QSystemSemaphore7releaseEi">release</a>())</td></tr>
+<tr><th id="647">647</th><td>        <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="648">648</th><td>    <em>const</em> <em>auto</em> <dfn class="local col6 decl" id="56function" title='function' data-type='const QLatin1StringView' data-ref="56function">function</dfn> = <q>"QSharedMemory::unlock"<a class="ref fn" href="../text/qstring.h.html#_ZN2Qt8Literals14StringLiteralsli3_L1EPKcm" title='Qt::operator&quot;&quot;_L1' data-ref="_ZN2Qt8Literals14StringLiteralsli3_L1EPKcm">_L1</a></q>;</td></tr>
+<tr><th id="649">649</th><td>    <a class="local col5 ref" href="#642" title='d' data-ref="55d">d</a>-&gt;<a class="ref field" href="qsharedmemory_p.h.html#QSharedMemoryPrivate::errorString" title='QSharedMemoryPrivate::errorString' data-ref="QSharedMemoryPrivate::errorString">errorString</a> <a class="ref fn" href="../text/qstring.h.html#470" title='QString::operator=' data-ref="_ZN7QStringaSEOS_">=</a> <a class="type" href="qsharedmemory.h.html#QSharedMemory" title='QSharedMemory' data-ref="QSharedMemory">QSharedMemory</a>::<a class="member fn" href="qsharedmemory.h.html#24" title='QSharedMemory::tr' data-ref="_ZN13QSharedMemory2trEPKcS1_i">tr</a>(<span class='inlayHint'>s:&nbsp;</span><q>"%1: unable to unlock"</q>).<a class="ref fn" href="../text/qstring.h.html#_ZNK7QString3argE13QLatin1Stringi5QChar" title='QString::arg' data-ref="_ZNK7QString3argE13QLatin1Stringi5QChar">arg</a>(<a class="ref fn fake" href="../text/qstring.h.html#58" title='QLatin1String::QLatin1String' data-ref="_ZN13QLatin1StringC1ERKS_"></a><span class='inlayHint'>a:&nbsp;</span><a class="local col6 ref" href="#56function" title='function' data-ref="56function">function</a>);</td></tr>
+<tr><th id="650">650</th><td>    <a class="local col5 ref" href="#642" title='d' data-ref="55d">d</a>-&gt;<a class="ref field" href="qsharedmemory_p.h.html#QSharedMemoryPrivate::error" title='QSharedMemoryPrivate::error' data-ref="QSharedMemoryPrivate::error">error</a> = <a class="type" href="qsharedmemory.h.html#QSharedMemory" title='QSharedMemory' data-ref="QSharedMemory">QSharedMemory</a>::<a class="enum" href="qsharedmemory.h.html#QSharedMemory::LockError" title='QSharedMemory::LockError' data-ref="QSharedMemory::LockError">LockError</a>;</td></tr>
+<tr><th id="651">651</th><td>    <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="652">652</th><td>}</td></tr>
+<tr><th id="653">653</th><td><u>#<span data-ppcond="603">endif</span> // QT_CONFIG(systemsemaphore)</u></td></tr>
+<tr><th id="654">654</th><td></td></tr>
+<tr><th id="655">655</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="656">656</th><td><i class="doc">  <span class="command">\enum</span> <span class="verb" data-ref="QSharedMemory::SharedMemoryError">QSharedMemory::SharedMemoryError</span></i></td></tr>
+<tr><th id="657">657</th><td><i class="doc"></i></td></tr>
+<tr><th id="658">658</th><td><i class="doc">  <span class="command">\value</span> <span class="arg" data-ref="QSharedMemory::NoError">NoError </span>No error occurred.</i></td></tr>
+<tr><th id="659">659</th><td><i class="doc"></i></td></tr>
+<tr><th id="660">660</th><td><i class="doc">  <span class="command">\value</span> <span class="arg" data-ref="QSharedMemory::PermissionDenied">PermissionDenied </span>The operation failed because the caller</i></td></tr>
+<tr><th id="661">661</th><td><i class="doc">  didn't have the required permissions.</i></td></tr>
+<tr><th id="662">662</th><td><i class="doc"></i></td></tr>
+<tr><th id="663">663</th><td><i class="doc">  <span class="command">\value</span> <span class="arg" data-ref="QSharedMemory::InvalidSize">InvalidSize </span>A create operation failed because the requested</i></td></tr>
+<tr><th id="664">664</th><td><i class="doc">  size was invalid.</i></td></tr>
+<tr><th id="665">665</th><td><i class="doc"></i></td></tr>
+<tr><th id="666">666</th><td><i class="doc">  <span class="command">\value</span> <span class="arg" data-ref="QSharedMemory::KeyError">KeyError </span>The operation failed because of an invalid key.</i></td></tr>
+<tr><th id="667">667</th><td><i class="doc"></i></td></tr>
+<tr><th id="668">668</th><td><i class="doc">  <span class="command">\value</span> <span class="arg" data-ref="QSharedMemory::AlreadyExists">AlreadyExists </span>A create() operation failed because a shared</i></td></tr>
+<tr><th id="669">669</th><td><i class="doc">  memory segment with the specified key already existed.</i></td></tr>
+<tr><th id="670">670</th><td><i class="doc"></i></td></tr>
+<tr><th id="671">671</th><td><i class="doc">  <span class="command">\value</span> <span class="arg" data-ref="QSharedMemory::NotFound">NotFound </span>An attach() failed because a shared memory segment</i></td></tr>
+<tr><th id="672">672</th><td><i class="doc">  with the specified key could not be found.</i></td></tr>
+<tr><th id="673">673</th><td><i class="doc"></i></td></tr>
+<tr><th id="674">674</th><td><i class="doc">  <span class="command">\value</span> <span class="arg" data-ref="QSharedMemory::LockError">LockError </span>The attempt to lock() the shared memory segment</i></td></tr>
+<tr><th id="675">675</th><td><i class="doc">  failed because create() or attach() failed and returned false, or</i></td></tr>
+<tr><th id="676">676</th><td><i class="doc">  because a system error occurred in QSystemSemaphore::acquire().</i></td></tr>
+<tr><th id="677">677</th><td><i class="doc"></i></td></tr>
+<tr><th id="678">678</th><td><i class="doc">  <span class="command">\value</span> <span class="arg" data-ref="QSharedMemory::OutOfResources">OutOfResources </span>A create() operation failed because there was</i></td></tr>
+<tr><th id="679">679</th><td><i class="doc">  not enough memory available to fill the request.</i></td></tr>
+<tr><th id="680">680</th><td><i class="doc"></i></td></tr>
+<tr><th id="681">681</th><td><i class="doc">  <span class="command">\value</span> <span class="arg" data-ref="QSharedMemory::UnknownError">UnknownError </span>Something else happened and it was bad.</i></td></tr>
+<tr><th id="682">682</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="683">683</th><td></td></tr>
+<tr><th id="684">684</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="685">685</th><td><i class="doc">  Returns a value indicating whether an error occurred, and, if so,</i></td></tr>
+<tr><th id="686">686</th><td><i class="doc">  which error it was.</i></td></tr>
+<tr><th id="687">687</th><td><i class="doc"></i></td></tr>
+<tr><th id="688">688</th><td><i class="doc">  <span class="command">\sa</span> errorString()</i></td></tr>
+<tr><th id="689">689</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="690">690</th><td><a class="type" href="qsharedmemory.h.html#QSharedMemory" title='QSharedMemory' data-ref="QSharedMemory">QSharedMemory</a>::<a class="type" href="qsharedmemory.h.html#QSharedMemory::SharedMemoryError" title='QSharedMemory::SharedMemoryError' data-ref="QSharedMemory::SharedMemoryError">SharedMemoryError</a> <a class="type" href="qsharedmemory.h.html#QSharedMemory" title='QSharedMemory' data-ref="QSharedMemory">QSharedMemory</a>::<dfn class="decl def fn" id="_ZNK13QSharedMemory5errorEv" title='QSharedMemory::error' data-ref="_ZNK13QSharedMemory5errorEv">error</dfn>() <em>const</em></td></tr>
+<tr><th id="691">691</th><td>{</td></tr>
+<tr><th id="692">692</th><td>    <a class="macro" href="../global/qtclasshelpermacros.h.html#109" title="const QSharedMemoryPrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(<em>const</em> QSharedMemory);</td></tr>
+<tr><th id="693">693</th><td>    <b>return</b> <a class="local col7 ref" href="#692" title='d' data-ref="57d">d</a>-&gt;<a class="ref field" href="qsharedmemory_p.h.html#QSharedMemoryPrivate::error" title='QSharedMemoryPrivate::error' data-ref="QSharedMemoryPrivate::error">error</a>;</td></tr>
+<tr><th id="694">694</th><td>}</td></tr>
+<tr><th id="695">695</th><td></td></tr>
+<tr><th id="696">696</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="697">697</th><td><i class="doc">  Returns a text description of the last error that occurred. If</i></td></tr>
+<tr><th id="698">698</th><td><i class="doc">  error() returns an<span class="command"> \l</span> {QSharedMemory::SharedMemoryError} {error</i></td></tr>
+<tr><th id="699">699</th><td><i class="doc">  value}, call this function to get a text string that describes the</i></td></tr>
+<tr><th id="700">700</th><td><i class="doc">  error.</i></td></tr>
+<tr><th id="701">701</th><td><i class="doc"></i></td></tr>
+<tr><th id="702">702</th><td><i class="doc">  <span class="command">\sa</span> error()</i></td></tr>
+<tr><th id="703">703</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="704">704</th><td><a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> <a class="type" href="qsharedmemory.h.html#QSharedMemory" title='QSharedMemory' data-ref="QSharedMemory">QSharedMemory</a>::<dfn class="decl def fn" id="_ZNK13QSharedMemory11errorStringEv" title='QSharedMemory::errorString' data-ref="_ZNK13QSharedMemory11errorStringEv">errorString</dfn>() <em>const</em></td></tr>
+<tr><th id="705">705</th><td>{</td></tr>
+<tr><th id="706">706</th><td>    <a class="macro" href="../global/qtclasshelpermacros.h.html#109" title="const QSharedMemoryPrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(<em>const</em> QSharedMemory);</td></tr>
+<tr><th id="707">707</th><td>    <b>return</b> <a class="ref fn fake" href="../text/qstring.h.html#_ZN7QStringC1ERKS_" title='QString::QString' data-ref="_ZN7QStringC1ERKS_"></a><a class="local col8 ref" href="#706" title='d' data-ref="58d">d</a>-&gt;<a class="ref field" href="qsharedmemory_p.h.html#QSharedMemoryPrivate::errorString" title='QSharedMemoryPrivate::errorString' data-ref="QSharedMemoryPrivate::errorString">errorString</a>;</td></tr>
+<tr><th id="708">708</th><td>}</td></tr>
+<tr><th id="709">709</th><td></td></tr>
+<tr><th id="710">710</th><td><u>#<span data-ppcond="81">endif</span> // QT_CONFIG(sharedmemory)</u></td></tr>
+<tr><th id="711">711</th><td></td></tr>
+<tr><th id="712">712</th><td><a class="macro" href="../global/qtconfigmacros.h.html#104" title="" data-ref="_M/QT_END_NAMESPACE">QT_END_NAMESPACE</a></td></tr>
+<tr><th id="713">713</th><td></td></tr>
+<tr><th id="714">714</th><td><u>#include <span class='error' title="&apos;moc_qsharedmemory.cpp&apos; file not found">"moc_qsharedmemory.cpp"</span></u></td></tr>
+<tr><th id="715">715</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2024-Jun-13</em> from project qtbase-6.5.0 revision <em>6.5.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

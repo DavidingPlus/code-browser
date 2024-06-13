@@ -1,0 +1,172 @@
+<use f='qtbase-6.5.0/src/3rdparty/sqlite/sqlite3.c' l='15266'/>
+<use f='qtbase-6.5.0/src/3rdparty/sqlite/sqlite3.c' l='15817' c='sqlite3BtreePager'/>
+<def f='qtbase-6.5.0/src/3rdparty/sqlite/sqlite3.c' l='56104' ll='56188'/>
+<size>312</size>
+<doc f='qtbase-6.5.0/src/3rdparty/sqlite/sqlite3.c' l='55936'>/*
+** An open page cache is an instance of struct Pager. A description of
+** some of the more important member variables follows:
+**
+** eState
+**
+**   The current &apos;state&apos; of the pager object. See the comment and state
+**   diagram above for a description of the pager state.
+**
+** eLock
+**
+**   For a real on-disk database, the current lock held on the database file -
+**   NO_LOCK, SHARED_LOCK, RESERVED_LOCK or EXCLUSIVE_LOCK.
+**
+**   For a temporary or in-memory database (neither of which require any
+**   locks), this variable is always set to EXCLUSIVE_LOCK. Since such
+**   databases always have Pager.exclusiveMode==1, this tricks the pager
+**   logic into thinking that it already has all the locks it will ever
+**   need (and no reason to release them).
+**
+**   In some (obscure) circumstances, this variable may also be set to
+**   UNKNOWN_LOCK. See the comment above the #define of UNKNOWN_LOCK for
+**   details.
+**
+** changeCountDone
+**
+**   This boolean variable is used to make sure that the change-counter
+**   (the 4-byte header field at byte offset 24 of the database file) is
+**   not updated more often than necessary.
+**
+**   It is set to true when the change-counter field is updated, which
+**   can only happen if an exclusive lock is held on the database file.
+**   It is cleared (set to false) whenever an exclusive lock is
+**   relinquished on the database file. Each time a transaction is committed,
+**   The changeCountDone flag is inspected. If it is true, the work of
+**   updating the change-counter is omitted for the current transaction.
+**
+**   This mechanism means that when running in exclusive mode, a connection
+**   need only update the change-counter once, for the first transaction
+**   committed.
+**
+** setSuper
+**
+**   When PagerCommitPhaseOne() is called to commit a transaction, it may
+**   (or may not) specify a super-journal name to be written into the
+**   journal file before it is synced to disk.
+**
+**   Whether or not a journal file contains a super-journal pointer affects
+**   the way in which the journal file is finalized after the transaction is
+**   committed or rolled back when running in &quot;journal_mode=PERSIST&quot; mode.
+**   If a journal file does not contain a super-journal pointer, it is
+**   finalized by overwriting the first journal header with zeroes. If
+**   it does contain a super-journal pointer the journal file is finalized
+**   by truncating it to zero bytes, just as if the connection were
+**   running in &quot;journal_mode=truncate&quot; mode.
+**
+**   Journal files that contain super-journal pointers cannot be finalized
+**   simply by overwriting the first journal-header with zeroes, as the
+**   super-journal pointer could interfere with hot-journal rollback of any
+**   subsequently interrupted transaction that reuses the journal file.
+**
+**   The flag is cleared as soon as the journal file is finalized (either
+**   by PagerCommitPhaseTwo or PagerRollback). If an IO error prevents the
+**   journal file from being successfully finalized, the setSuper flag
+**   is cleared anyway (and the pager will move to ERROR state).
+**
+** doNotSpill
+**
+**   This variables control the behavior of cache-spills  (calls made by
+**   the pcache module to the pagerStress() routine to write cached data
+**   to the file-system in order to free up memory).
+**
+**   When bits SPILLFLAG_OFF or SPILLFLAG_ROLLBACK of doNotSpill are set,
+**   writing to the database from pagerStress() is disabled altogether.
+**   The SPILLFLAG_ROLLBACK case is done in a very obscure case that
+**   comes up during savepoint rollback that requires the pcache module
+**   to allocate a new page to prevent the journal file from being written
+**   while it is being traversed by code in pager_playback().  The SPILLFLAG_OFF
+**   case is a user preference.
+**
+**   If the SPILLFLAG_NOSYNC bit is set, writing to the database from
+**   pagerStress() is permitted, but syncing the journal file is not.
+**   This flag is set by sqlite3PagerWrite() when the file-system sector-size
+**   is larger than the database page-size in order to prevent a journal sync
+**   from happening in between the journalling of two pages on the same sector.
+**
+** subjInMemory
+**
+**   This is a boolean variable. If true, then any required sub-journal
+**   is opened as an in-memory journal file. If false, then in-memory
+**   sub-journals are only used for in-memory pager files.
+**
+**   This variable is updated by the upper layer each time a new
+**   write-transaction is opened.
+**
+** dbSize, dbOrigSize, dbFileSize
+**
+**   Variable dbSize is set to the number of pages in the database file.
+**   It is valid in PAGER_READER and higher states (all states except for
+**   OPEN and ERROR).
+**
+**   dbSize is set based on the size of the database file, which may be
+**   larger than the size of the database (the value stored at offset
+**   28 of the database header by the btree). If the size of the file
+**   is not an integer multiple of the page-size, the value stored in
+**   dbSize is rounded down (i.e. a 5KB file with 2K page-size has dbSize==2).
+**   Except, any file that is greater than 0 bytes in size is considered
+**   to have at least one page. (i.e. a 1KB file with 2K page-size leads
+**   to dbSize==1).
+**
+**   During a write-transaction, if pages with page-numbers greater than
+**   dbSize are modified in the cache, dbSize is updated accordingly.
+**   Similarly, if the database is truncated using PagerTruncateImage(),
+**   dbSize is updated.
+**
+**   Variables dbOrigSize and dbFileSize are valid in states
+**   PAGER_WRITER_LOCKED and higher. dbOrigSize is a copy of the dbSize
+**   variable at the start of the transaction. It is used during rollback,
+**   and to determine whether or not pages need to be journalled before
+**   being modified.
+**
+**   Throughout a write-transaction, dbFileSize contains the size of
+**   the file on disk in pages. It is set to a copy of dbSize when the
+**   write-transaction is first opened, and updated when VFS calls are made
+**   to write or truncate the database file on disk.
+**
+**   The only reason the dbFileSize variable is required is to suppress
+**   unnecessary calls to xTruncate() after committing a transaction. If,
+**   when a transaction is committed, the dbFileSize variable indicates
+**   that the database file is larger than the database image (Pager.dbSize),
+**   pager_truncate() is called. The pager_truncate() call uses xFilesize()
+**   to measure the database file on disk, and then truncates it if required.
+**   dbFileSize is not used when rolling back a transaction. In this case
+**   pager_truncate() is called unconditionally (which means there may be
+**   a call to xFilesize() that is not strictly required). In either case,
+**   pager_truncate() may cause the file to become smaller or larger.
+**
+** dbHintSize
+**
+**   The dbHintSize variable is used to limit the number of calls made to
+**   the VFS xFileControl(FCNTL_SIZE_HINT) method.
+**
+**   dbHintSize is set to a copy of the dbSize variable when a
+**   write-transaction is opened (at the same time as dbFileSize and
+**   dbOrigSize). If the xFileControl(FCNTL_SIZE_HINT) method is called,
+**   dbHintSize is increased to the number of pages that correspond to the
+**   size-hint passed to the method call. See pager_write_pagelist() for
+**   details.
+**
+** errCode
+**
+**   The Pager.errCode variable is only ever used in PAGER_ERROR state. It
+**   is set to zero in all other states. In PAGER_ERROR state, Pager.errCode
+**   is always set to SQLITE_FULL, SQLITE_IOERR or one of the SQLITE_IOERR_XXX
+**   sub-codes.
+**
+** syncFlags, walSyncFlags
+**
+**   syncFlags is either SQLITE_SYNC_NORMAL (0x02) or SQLITE_SYNC_FULL (0x03).
+**   syncFlags is used for rollback mode.  walSyncFlags is used for WAL mode
+**   and contains the flags used to sync the checkpoint operations in the
+**   lower two bits, and sync flags used for transaction commits in the WAL
+**   file in bits 0x04 and 0x08.  In other words, to get the correct sync flags
+**   for checkpoint operations, use (walSyncFlags&amp;0x03) and to get the correct
+**   sync flags for transaction commit, use ((walSyncFlags&gt;&gt;2)&amp;0x03).  Note
+**   that with synchronous=NORMAL in WAL mode, transaction commit is not synced
+**   meaning that the 0x04 and 0x08 bits are both zero.
+*/</doc>

@@ -1,0 +1,475 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>qabstracttestlogger.cpp source code [qtbase-6.5.0/src/testlib/qabstracttestlogger.cpp] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'qtbase-6.5.0/src/testlib/qabstracttestlogger.cpp'; var root_path = '../../..'; var data_path = '../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../..'>qtbase-6.5.0</a>/<a href='..'>src</a>/<a href='./'>testlib</a>/<a href='qabstracttestlogger.cpp.html'>qabstracttestlogger.cpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>// Copyright (C) 2022 The Qt Company Ltd.</i></td></tr>
+<tr><th id="2">2</th><td><i>// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only</i></td></tr>
+<tr><th id="3">3</th><td></td></tr>
+<tr><th id="4">4</th><td><u>#include <a href="../../build/include/QtTest/6.5.0/QtTest/private/qabstracttestlogger_p.h.html">&lt;QtTest/private/qabstracttestlogger_p.h&gt;</a></u></td></tr>
+<tr><th id="5">5</th><td><u>#include <a href="../../build/include/QtTest/qtestassert.h.html">&lt;QtTest/qtestassert.h&gt;</a></u></td></tr>
+<tr><th id="6">6</th><td><u>#include <a href="qbenchmark_p.h.html">&lt;qbenchmark_p.h&gt;</a></u></td></tr>
+<tr><th id="7">7</th><td><u>#include <a href="qtestresult_p.h.html">&lt;qtestresult_p.h&gt;</a></u></td></tr>
+<tr><th id="8">8</th><td></td></tr>
+<tr><th id="9">9</th><td><u>#include <a href="../../build/include/QtCore/qbytearray.h.html">&lt;QtCore/qbytearray.h&gt;</a></u></td></tr>
+<tr><th id="10">10</th><td><u>#include <a href="../../build/include/QtCore/qstring.h.html">&lt;QtCore/qstring.h&gt;</a></u></td></tr>
+<tr><th id="11">11</th><td></td></tr>
+<tr><th id="12">12</th><td><u>#include <a href="../../../include/stdio.h.html">&lt;stdio.h&gt;</a></u></td></tr>
+<tr><th id="13">13</th><td><u>#include <a href="../../../include/c++/9/stdlib.h.html">&lt;stdlib.h&gt;</a></u></td></tr>
+<tr><th id="14">14</th><td><u>#include &lt;stdarg.h&gt;</u></td></tr>
+<tr><th id="15">15</th><td></td></tr>
+<tr><th id="16">16</th><td><u>#<span data-ppcond="16">ifndef</span> <span class="macro" data-ref="_M/Q_OS_WIN">Q_OS_WIN</span></u></td></tr>
+<tr><th id="17">17</th><td><u>#include <a href="../../../include/unistd.h.html">&lt;unistd.h&gt;</a></u></td></tr>
+<tr><th id="18">18</th><td><u>#<span data-ppcond="16">endif</span></u></td></tr>
+<tr><th id="19">19</th><td></td></tr>
+<tr><th id="20">20</th><td><u>#<span data-ppcond="20">ifdef</span> <span class="macro" data-ref="_M/Q_OS_ANDROID">Q_OS_ANDROID</span></u></td></tr>
+<tr><th id="21">21</th><td><u>#include &lt;sys/stat.h&gt;</u></td></tr>
+<tr><th id="22">22</th><td><u>#<span data-ppcond="20">endif</span></u></td></tr>
+<tr><th id="23">23</th><td></td></tr>
+<tr><th id="24">24</th><td><a class="macro" href="../corelib/global/qtconfigmacros.h.html#103" title="" data-ref="_M/QT_BEGIN_NAMESPACE">QT_BEGIN_NAMESPACE</a></td></tr>
+<tr><th id="25">25</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="26">26</th><td><i class="doc">    <span class="command">\internal</span></i></td></tr>
+<tr><th id="27">27</th><td><i class="doc"><span class="verb">    \class QAbstractTestLogger</span></i></td></tr>
+<tr><th id="28">28</th><td><i class="doc"><span class="verb"></span><span class="verb">    \inmodule QtTest</span></i></td></tr>
+<tr><th id="29">29</th><td><i class="doc"><span class="verb"></span><span class="verb">    \brief Base class for test loggers</span></i></td></tr>
+<tr><th id="30">30</th><td><i class="doc"><span class="verb"></span><span class="verb"></span></i></td></tr>
+<tr><th id="31">31</th><td><i class="doc"><span class="verb"></span><span class="verb">    Implementations of logging for QtTest should implement all pure virtual</span></i></td></tr>
+<tr><th id="32">32</th><td><i class="doc"><span class="verb"></span><span class="verb">    methods of this class and may implement the other virtual methods. This</span></i></td></tr>
+<tr><th id="33">33</th><td><i class="doc"><span class="verb"></span><span class="verb">    class's documentation of each virtual method sets out how those</span></i></td></tr>
+<tr><th id="34">34</th><td><i class="doc"><span class="verb"></span><span class="verb">    implementations are invoked by the QtTest code and offers guidance on how</span></i></td></tr>
+<tr><th id="35">35</th><td><i class="doc"><span class="verb"></span><span class="verb">    the logging class should use the data. Actual implementations may have</span></i></td></tr>
+<tr><th id="36">36</th><td><i class="doc"><span class="verb"></span><span class="verb">    different requirements - such as a file format with a defined schema, or a</span></i></td></tr>
+<tr><th id="37">37</th><td><i class="doc"><span class="verb"></span><span class="verb">    target audience to serve - that affect how it interprets that guidance.</span></i></td></tr>
+<tr><th id="38">38</th><td><i class="doc"><span class="verb"></span>*/</i><span class="verb"></span></td></tr>
+<tr><th id="39">39</th><td><span class="verb"></span></td></tr>
+<tr><th id="40">40</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="41">41</th><td><i class="doc">    <span class="command">\enum</span> <span class="verb" data-ref="QAbstractTestLogger::IncidentTypes">QAbstractTestLogger::IncidentTypes</span></i></td></tr>
+<tr><th id="42">42</th><td><i class="doc"></i></td></tr>
+<tr><th id="43">43</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QAbstractTestLogger::Pass">Pass </span>The test ran to completion successfully.</i></td></tr>
+<tr><th id="44">44</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QAbstractTestLogger::XFail">XFail </span>The test failed a check that is known to fail; this failure</i></td></tr>
+<tr><th id="45">45</th><td><i class="doc">           does not prevent successful completion of the test and may be</i></td></tr>
+<tr><th id="46">46</th><td><i class="doc">           followed by further checks.</i></td></tr>
+<tr><th id="47">47</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QAbstractTestLogger::Fail">Fail </span>The test fails.</i></td></tr>
+<tr><th id="48">48</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QAbstractTestLogger::XPass">XPass </span>A check which was expected to fail actually passed. This is</i></td></tr>
+<tr><th id="49">49</th><td><i class="doc">           counted as a failure, as it means whatever caused the known failure</i></td></tr>
+<tr><th id="50">50</th><td><i class="doc">           no longer does, so the test needs an update.</i></td></tr>
+<tr><th id="51">51</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QAbstractTestLogger::Skip">Skip </span>The current test ended prematurely, skipping some checks.</i></td></tr>
+<tr><th id="52">52</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QAbstractTestLogger::BlacklistedPass">BlacklistedPass </span>As Pass but the test was blacklisted.</i></td></tr>
+<tr><th id="53">53</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QAbstractTestLogger::BlacklistedXFail">BlacklistedXFail </span>As XFail but the test was blacklisted.</i></td></tr>
+<tr><th id="54">54</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QAbstractTestLogger::BlacklistedFail">BlacklistedFail </span>As Fail but the test was blacklisted.</i></td></tr>
+<tr><th id="55">55</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QAbstractTestLogger::BlacklistedXPass">BlacklistedXPass </span>As XPass but the test was blacklisted.</i></td></tr>
+<tr><th id="56">56</th><td><i class="doc"></i></td></tr>
+<tr><th id="57">57</th><td><i class="doc">    A test may also skip (see<span class="command"> \l</span> {QAbstractTestLogger::}{MessageTypes}). The</i></td></tr>
+<tr><th id="58">58</th><td><i class="doc">    first of skip, Fail, XPass or the blacklisted equivalents of the last two to</i></td></tr>
+<tr><th id="59">59</th><td><i class="doc">    arise is decisive for the outcome of the test: loggers which should only</i></td></tr>
+<tr><th id="60">60</th><td><i class="doc">    report one outcome should thus record that as the outcome and either ignore</i></td></tr>
+<tr><th id="61">61</th><td><i class="doc">    later incidents (or skips) in the same run of the test function or map them</i></td></tr>
+<tr><th id="62">62</th><td><i class="doc">    to some form of message.</i></td></tr>
+<tr><th id="63">63</th><td><i class="doc"></i></td></tr>
+<tr><th id="64">64</th><td><i class="doc">    <span class="command">\note</span> tests can be "blacklisted" when they are known to fail</i></td></tr>
+<tr><th id="65">65</th><td><i class="doc">    unreliably. When testing is used to decide whether a change to the code</i></td></tr>
+<tr><th id="66">66</th><td><i class="doc">    under test is acceptable, such failures are not automatic grounds for</i></td></tr>
+<tr><th id="67">67</th><td><i class="doc">    rejecting the change, if the unreliable failure was known before the</i></td></tr>
+<tr><th id="68">68</th><td><i class="doc">    change. QTest::qExec(), as a result, only returns a failing status code if</i></td></tr>
+<tr><th id="69">69</th><td><i class="doc">    some non-blacklisted test failed. Logging backends may reasonably report a</i></td></tr>
+<tr><th id="70">70</th><td><i class="doc">    blacklisted result just as they would report the non-blacklisted equivalent,</i></td></tr>
+<tr><th id="71">71</th><td><i class="doc">    optionally with some annotation to indicate that the result should not be</i></td></tr>
+<tr><th id="72">72</th><td><i class="doc">    taken as damning evidence against recent changes to the code under test.</i></td></tr>
+<tr><th id="73">73</th><td><i class="doc"></i></td></tr>
+<tr><th id="74">74</th><td><i class="doc">    <span class="command">\sa</span> QAbstractTestLogger::addIncident()</i></td></tr>
+<tr><th id="75">75</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="76">76</th><td></td></tr>
+<tr><th id="77">77</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="78">78</th><td><i class="doc">    <span class="command">\enum</span> <span class="verb" data-ref="QAbstractTestLogger::MessageTypes">QAbstractTestLogger::MessageTypes</span></i></td></tr>
+<tr><th id="79">79</th><td><i class="doc"></i></td></tr>
+<tr><th id="80">80</th><td><i class="doc">    The members whose names begin with<span class="command"> \c</span> <span class="arg">Q</span> describe messages that originate in</i></td></tr>
+<tr><th id="81">81</th><td><i class="doc">    calls, by the test or code under test, to Qt logging functions (implemented</i></td></tr>
+<tr><th id="82">82</th><td><i class="doc">    as macros) whose names are similar, with a<span class="command"> \c</span> <span class="arg">q</span> in place of the leading<span class="command"> \c</span></i></td></tr>
+<tr><th id="83">83</th><td><i class="doc">    <span class="arg">Q.</span> The other members describe messages generated internally by QtTest.</i></td></tr>
+<tr><th id="84">84</th><td><i class="doc"></i></td></tr>
+<tr><th id="85">85</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QAbstractTestLogger::QInfo">QInfo </span>An informational message from qInfo().</i></td></tr>
+<tr><th id="86">86</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QAbstractTestLogger::QWarning">QWarning </span>A warning from qWarning().</i></td></tr>
+<tr><th id="87">87</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QAbstractTestLogger::QDebug">QDebug </span>A debug message from qDebug().</i></td></tr>
+<tr><th id="88">88</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QAbstractTestLogger::QCritical">QCritical </span>A critical error from qCritical().</i></td></tr>
+<tr><th id="89">89</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QAbstractTestLogger::QFatal">QFatal </span>A fatal error from qFatal(), or an unrecognised message from</i></td></tr>
+<tr><th id="90">90</th><td><i class="doc">           the Qt logging functions.</i></td></tr>
+<tr><th id="91">91</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QAbstractTestLogger::Info">Info </span>Messages QtTest generates as requested by the<span class="command"> \c</span><span class="arg">{-v1}</span> or<span class="command"> \c</span><span class="arg">{-v2}</span></i></td></tr>
+<tr><th id="92">92</th><td><i class="doc">           command-line option being specified when running the test.</i></td></tr>
+<tr><th id="93">93</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QAbstractTestLogger::Warn">Warn </span>A warning generated internally by QtTest</i></td></tr>
+<tr><th id="94">94</th><td><i class="doc"></i></td></tr>
+<tr><th id="95">95</th><td><i class="doc">    <span class="command">\note</span> For these purposes, some utilities provided by QtTestlib as helper</i></td></tr>
+<tr><th id="96">96</th><td><i class="doc">    functions to facilitate testing - such as<span class="command"> \l</span> QSignalSpy,<span class="command"> \l</span></i></td></tr>
+<tr><th id="97">97</th><td><i class="doc">    QTestAccessibility,<span class="command"> \l</span> QTest::qExtractTestData(), and the facilities to</i></td></tr>
+<tr><th id="98">98</th><td><i class="doc">    deliver artificial mouse and keyboard events - are treated as test code,</i></td></tr>
+<tr><th id="99">99</th><td><i class="doc">    rather than internal to QtTest; they call<span class="command"> \l</span> qWarning() and friends rather</i></td></tr>
+<tr><th id="100">100</th><td><i class="doc">    than using the internal logging infrastructure, so that<span class="command"> \l</span></i></td></tr>
+<tr><th id="101">101</th><td><i class="doc">    QTest::ignoreMessage() can be used to anticipate the messages.</i></td></tr>
+<tr><th id="102">102</th><td><i class="doc"></i></td></tr>
+<tr><th id="103">103</th><td><i class="doc">    <span class="command">\sa</span> QAbstractTestLogger::addMessage()</i></td></tr>
+<tr><th id="104">104</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="105">105</th><td></td></tr>
+<tr><th id="106">106</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="107">107</th><td><i class="doc">    Constructs the base-class parts of the logger.</i></td></tr>
+<tr><th id="108">108</th><td><i class="doc"></i></td></tr>
+<tr><th id="109">109</th><td><i class="doc">    Derived classes should pass this base-constructor the<span class="command"> \a</span> <span class="arg">filename</span> of the</i></td></tr>
+<tr><th id="110">110</th><td><i class="doc">    file to which they shall log test results, or<span class="command"> \nullptr</span> to write to standard</i></td></tr>
+<tr><th id="111">111</th><td><i class="doc">    output. The protected member<span class="command"> \c</span> <span class="arg">stream</span> is set to the open file descriptor.</i></td></tr>
+<tr><th id="112">112</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="113">113</th><td><a class="type" href="qabstracttestlogger_p.h.html#QAbstractTestLogger" title='QAbstractTestLogger' data-ref="QAbstractTestLogger">QAbstractTestLogger</a>::<dfn class="decl def fn" id="_ZN19QAbstractTestLoggerC1EPKc" title='QAbstractTestLogger::QAbstractTestLogger' data-ref="_ZN19QAbstractTestLoggerC1EPKc">QAbstractTestLogger</dfn>(<em>const</em> <em>char</em> *<dfn class="local col4 decl" id="174filename" title='filename' data-type='const char *' data-ref="174filename">filename</dfn>)</td></tr>
+<tr><th id="114">114</th><td>{</td></tr>
+<tr><th id="115">115</th><td>    <b>if</b> (!<a class="local col4 ref" href="#174filename" title='filename' data-ref="174filename">filename</a>) {</td></tr>
+<tr><th id="116">116</th><td>        <a class="member field" href="qabstracttestlogger_p.h.html#QAbstractTestLogger::stream" title='QAbstractTestLogger::stream' data-ref="QAbstractTestLogger::stream">stream</a> = <a class="macro" href="../../../include/stdio.h.html#142" title="stdout" data-ref="_M/stdout">stdout</a>;</td></tr>
+<tr><th id="117">117</th><td>        <b>return</b>;</td></tr>
+<tr><th id="118">118</th><td>    }</td></tr>
+<tr><th id="119">119</th><td><u>#<span data-ppcond="119">if</span> defined(<span class="macro" data-ref="_M/_MSC_VER">_MSC_VER</span>)</u></td></tr>
+<tr><th id="120">120</th><td>    <b>if</b> (::fopen_s(&amp;stream, filename, <q>"wt"</q>)) {</td></tr>
+<tr><th id="121">121</th><td><u>#<span data-ppcond="119">else</span></u></td></tr>
+<tr><th id="122">122</th><td>    <a class="member field" href="qabstracttestlogger_p.h.html#QAbstractTestLogger::stream" title='QAbstractTestLogger::stream' data-ref="QAbstractTestLogger::stream">stream</a> = ::<a class="ref fn" href="../../../include/stdio.h.html#fopen" title='fopen' data-ref="fopen">fopen</a>(<span class='inlayHint'>filename:&nbsp;</span><a class="local col4 ref" href="#174filename" title='filename' data-ref="174filename">filename</a>, <span class='inlayHint'>modes:&nbsp;</span><q>"wt"</q>);</td></tr>
+<tr><th id="123">123</th><td>    <b>if</b> (!<a class="member field" href="qabstracttestlogger_p.h.html#QAbstractTestLogger::stream" title='QAbstractTestLogger::stream' data-ref="QAbstractTestLogger::stream">stream</a>) {</td></tr>
+<tr><th id="124">124</th><td><u>#<span data-ppcond="119">endif</span></u></td></tr>
+<tr><th id="125">125</th><td>        <a class="ref fn" href="../../../include/stdio.h.html#fprintf" title='fprintf' data-ref="fprintf">fprintf</a>(<a class="macro" href="../../../include/stdio.h.html#143" title="stderr" data-ref="_M/stderr">stderr</a>, <span class='inlayHint'>format:&nbsp;</span><q>"Unable to open file for logging: %s\n"</q>, <a class="local col4 ref" href="#174filename" title='filename' data-ref="174filename">filename</a>);</td></tr>
+<tr><th id="126">126</th><td>        ::<a class="ref fn" href="../../../include/stdlib.h.html#exit" title='exit' data-ref="exit">exit</a>(<span class='inlayHint'>status:&nbsp;</span><var>1</var>);</td></tr>
+<tr><th id="127">127</th><td>    }</td></tr>
+<tr><th id="128">128</th><td><u>#<span data-ppcond="128">ifdef</span> <span class="macro" data-ref="_M/Q_OS_ANDROID">Q_OS_ANDROID</span></u></td></tr>
+<tr><th id="129">129</th><td>    <b>else</b> {</td></tr>
+<tr><th id="130">130</th><td>        <i>// Make sure output is world-readable on Android</i></td></tr>
+<tr><th id="131">131</th><td>        ::chmod(filename, <var>0666</var>);</td></tr>
+<tr><th id="132">132</th><td>    }</td></tr>
+<tr><th id="133">133</th><td><u>#<span data-ppcond="128">endif</span></u></td></tr>
+<tr><th id="134">134</th><td>}</td></tr>
+<tr><th id="135">135</th><td></td></tr>
+<tr><th id="136">136</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="137">137</th><td><i class="doc">    Destroys the logger object.</i></td></tr>
+<tr><th id="138">138</th><td><i class="doc"></i></td></tr>
+<tr><th id="139">139</th><td><i class="doc">    If the protected<span class="command"> \c</span> <span class="arg">stream</span> is not standard output, it is closed. In any</i></td></tr>
+<tr><th id="140">140</th><td><i class="doc">    case it is cleared.</i></td></tr>
+<tr><th id="141">141</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="142">142</th><td><a class="type" href="qabstracttestlogger_p.h.html#QAbstractTestLogger" title='QAbstractTestLogger' data-ref="QAbstractTestLogger">QAbstractTestLogger</a>::<dfn class="virtual decl def fn" id="_ZN19QAbstractTestLoggerD1Ev" title='QAbstractTestLogger::~QAbstractTestLogger' data-ref="_ZN19QAbstractTestLoggerD1Ev">~QAbstractTestLogger</dfn>()</td></tr>
+<tr><th id="143">143</th><td>{</td></tr>
+<tr><th id="144">144</th><td>    <a class="macro" href="qtestassert.h.html#12" title="do { if (!(stream)) qt_assert(&quot;stream&quot;,&quot;/home/lzx0626/DavidingPlus/qtbase/src/testlib/qabstracttestlogger.cpp&quot;,144); } while (false)" data-ref="_M/QTEST_ASSERT">QTEST_ASSERT</a>(<a class="member field" href="qabstracttestlogger_p.h.html#QAbstractTestLogger::stream" title='QAbstractTestLogger::stream' data-ref="QAbstractTestLogger::stream">stream</a>);</td></tr>
+<tr><th id="145">145</th><td>    <b>if</b> (<a class="member field" href="qabstracttestlogger_p.h.html#QAbstractTestLogger::stream" title='QAbstractTestLogger::stream' data-ref="QAbstractTestLogger::stream">stream</a> != <a class="macro" href="../../../include/stdio.h.html#142" title="stdout" data-ref="_M/stdout">stdout</a>)</td></tr>
+<tr><th id="146">146</th><td>        <a class="ref fn" href="../../../include/stdio.h.html#fclose" title='fclose' data-ref="fclose">fclose</a>(<span class='inlayHint'>stream:&nbsp;</span><a class="member field" href="qabstracttestlogger_p.h.html#QAbstractTestLogger::stream" title='QAbstractTestLogger::stream' data-ref="QAbstractTestLogger::stream">stream</a>);</td></tr>
+<tr><th id="147">147</th><td>    <a class="member field" href="qabstracttestlogger_p.h.html#QAbstractTestLogger::stream" title='QAbstractTestLogger::stream' data-ref="QAbstractTestLogger::stream">stream</a> = <b>nullptr</b>;</td></tr>
+<tr><th id="148">148</th><td>}</td></tr>
+<tr><th id="149">149</th><td></td></tr>
+<tr><th id="150">150</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="151">151</th><td><i class="doc">    Returns true if the<span class="command"> \c</span> <span class="arg">output</span> stream is standard output.</i></td></tr>
+<tr><th id="152">152</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="153">153</th><td><em>bool</em> <a class="type" href="qabstracttestlogger_p.h.html#QAbstractTestLogger" title='QAbstractTestLogger' data-ref="QAbstractTestLogger">QAbstractTestLogger</a>::<dfn class="decl def fn" id="_ZNK19QAbstractTestLogger17isLoggingToStdoutEv" title='QAbstractTestLogger::isLoggingToStdout' data-ref="_ZNK19QAbstractTestLogger17isLoggingToStdoutEv">isLoggingToStdout</dfn>() <em>const</em></td></tr>
+<tr><th id="154">154</th><td>{</td></tr>
+<tr><th id="155">155</th><td>    <b>return</b> <a class="member field" href="qabstracttestlogger_p.h.html#QAbstractTestLogger::stream" title='QAbstractTestLogger::stream' data-ref="QAbstractTestLogger::stream">stream</a> == <a class="macro" href="../../../include/stdio.h.html#142" title="stdout" data-ref="_M/stdout">stdout</a>;</td></tr>
+<tr><th id="156">156</th><td>}</td></tr>
+<tr><th id="157">157</th><td></td></tr>
+<tr><th id="158">158</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="159">159</th><td><i class="doc">    Helper utility to blot out unprintable characters in<span class="command"> \a</span> <span class="arg">str.</span></i></td></tr>
+<tr><th id="160">160</th><td><i class="doc"></i></td></tr>
+<tr><th id="161">161</th><td><i class="doc">    Takes a<span class="command"> \c</span><span class="arg">{'\0'}-terminated</span> mutable string and changes any characters of it</i></td></tr>
+<tr><th id="162">162</th><td><i class="doc">    that are not suitable for printing to<span class="command"> \c</span><span class="arg">{'?'}</span> characters.</i></td></tr>
+<tr><th id="163">163</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="164">164</th><td><em>void</em> <a class="type" href="qabstracttestlogger_p.h.html#QAbstractTestLogger" title='QAbstractTestLogger' data-ref="QAbstractTestLogger">QAbstractTestLogger</a>::<dfn class="decl def fn" id="_ZNK19QAbstractTestLogger17filterUnprintableEPc" title='QAbstractTestLogger::filterUnprintable' data-ref="_ZNK19QAbstractTestLogger17filterUnprintableEPc">filterUnprintable</dfn>(<em>char</em> *<dfn class="local col5 decl" id="175str" title='str' data-type='char *' data-ref="175str">str</dfn>) <em>const</em></td></tr>
+<tr><th id="165">165</th><td>{</td></tr>
+<tr><th id="166">166</th><td>    <em>unsigned</em> <em>char</em> *<dfn class="local col6 decl" id="176idx" title='idx' data-type='unsigned char *' data-ref="176idx">idx</dfn> = <b>reinterpret_cast</b>&lt;<em>unsigned</em> <em>char</em> *&gt;(<a class="local col5 ref" href="#175str" title='str' data-ref="175str">str</a>);</td></tr>
+<tr><th id="167">167</th><td>    <b>while</b> (*<a class="local col6 ref" href="#176idx" title='idx' data-ref="176idx">idx</a>) {</td></tr>
+<tr><th id="168">168</th><td>        <b>if</b> (((*<a class="local col6 ref" href="#176idx" title='idx' data-ref="176idx">idx</a> &lt; <var>0x20</var> &amp;&amp; *<a class="local col6 ref" href="#176idx" title='idx' data-ref="176idx">idx</a> != <kbd>'\n'</kbd> &amp;&amp; *<a class="local col6 ref" href="#176idx" title='idx' data-ref="176idx">idx</a> != <kbd>'\t'</kbd>) || *<a class="local col6 ref" href="#176idx" title='idx' data-ref="176idx">idx</a> == <var>0x7f</var>))</td></tr>
+<tr><th id="169">169</th><td>            *<a class="local col6 ref" href="#176idx" title='idx' data-ref="176idx">idx</a> = <kbd>'?'</kbd>;</td></tr>
+<tr><th id="170">170</th><td>        ++<a class="local col6 ref" href="#176idx" title='idx' data-ref="176idx">idx</a>;</td></tr>
+<tr><th id="171">171</th><td>    }</td></tr>
+<tr><th id="172">172</th><td>}</td></tr>
+<tr><th id="173">173</th><td></td></tr>
+<tr><th id="174">174</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="175">175</th><td><i class="doc">    Convenience method to write<span class="command"> \a</span> <span class="arg">msg</span> to the output stream.</i></td></tr>
+<tr><th id="176">176</th><td><i class="doc"></i></td></tr>
+<tr><th id="177">177</th><td><i class="doc">    The output<span class="command"> \a</span> <span class="arg">msg</span> must be a<span class="command"> \c</span><span class="arg">{'\0'}-terminated</span> string (and not<span class="command"> \nullptr</span>).</i></td></tr>
+<tr><th id="178">178</th><td><i class="doc">    A copy of it is passed to<span class="command"> \l</span> filterUnprintable() and the result written to</i></td></tr>
+<tr><th id="179">179</th><td><i class="doc">    the output<span class="command"> \c</span> <span class="arg">stream,</span> which is then flushed.</i></td></tr>
+<tr><th id="180">180</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="181">181</th><td><em>void</em> <a class="type" href="qabstracttestlogger_p.h.html#QAbstractTestLogger" title='QAbstractTestLogger' data-ref="QAbstractTestLogger">QAbstractTestLogger</a>::<dfn class="decl def fn" id="_ZN19QAbstractTestLogger12outputStringEPKc" title='QAbstractTestLogger::outputString' data-ref="_ZN19QAbstractTestLogger12outputStringEPKc">outputString</dfn>(<em>const</em> <em>char</em> *<dfn class="local col7 decl" id="177msg" title='msg' data-type='const char *' data-ref="177msg">msg</dfn>)</td></tr>
+<tr><th id="182">182</th><td>{</td></tr>
+<tr><th id="183">183</th><td>    <a class="macro" href="qtestassert.h.html#12" title="do { if (!(stream)) qt_assert(&quot;stream&quot;,&quot;/home/lzx0626/DavidingPlus/qtbase/src/testlib/qabstracttestlogger.cpp&quot;,183); } while (false)" data-ref="_M/QTEST_ASSERT">QTEST_ASSERT</a>(<a class="member field" href="qabstracttestlogger_p.h.html#QAbstractTestLogger::stream" title='QAbstractTestLogger::stream' data-ref="QAbstractTestLogger::stream">stream</a>);</td></tr>
+<tr><th id="184">184</th><td>    <a class="macro" href="qtestassert.h.html#12" title="do { if (!(msg)) qt_assert(&quot;msg&quot;,&quot;/home/lzx0626/DavidingPlus/qtbase/src/testlib/qabstracttestlogger.cpp&quot;,184); } while (false)" data-ref="_M/QTEST_ASSERT">QTEST_ASSERT</a>(<a class="local col7 ref" href="#177msg" title='msg' data-ref="177msg">msg</a>);</td></tr>
+<tr><th id="185">185</th><td></td></tr>
+<tr><th id="186">186</th><td>    <em>char</em> *<dfn class="local col8 decl" id="178filtered" title='filtered' data-type='char *' data-ref="178filtered">filtered</dfn> = <b>new</b> <em>char</em>[<a class="ref fn" href="../../../include/string.h.html#strlen" title='strlen' data-ref="strlen">strlen</a>(<span class='inlayHint'>s:&nbsp;</span><a class="local col7 ref" href="#177msg" title='msg' data-ref="177msg">msg</a>) + <var>1</var>];</td></tr>
+<tr><th id="187">187</th><td>    <a class="ref fn" href="../../../include/string.h.html#strcpy" title='strcpy' data-ref="strcpy">strcpy</a>(<span class='inlayHint'>dest:&nbsp;</span><a class="local col8 ref" href="#178filtered" title='filtered' data-ref="178filtered">filtered</a>, <span class='inlayHint'>src:&nbsp;</span><a class="local col7 ref" href="#177msg" title='msg' data-ref="177msg">msg</a>);</td></tr>
+<tr><th id="188">188</th><td>    <a class="member fn" href="#_ZNK19QAbstractTestLogger17filterUnprintableEPc" title='QAbstractTestLogger::filterUnprintable' data-ref="_ZNK19QAbstractTestLogger17filterUnprintableEPc">filterUnprintable</a>(<span class='inlayHint'>str:&nbsp;</span><a class="local col8 ref" href="#178filtered" title='filtered' data-ref="178filtered">filtered</a>);</td></tr>
+<tr><th id="189">189</th><td></td></tr>
+<tr><th id="190">190</th><td>    ::<a class="ref fn" href="../../../include/stdio.h.html#fputs" title='fputs' data-ref="fputs">fputs</a>(<span class='inlayHint'>s:&nbsp;</span><a class="local col8 ref" href="#178filtered" title='filtered' data-ref="178filtered">filtered</a>, <span class='inlayHint'>stream:&nbsp;</span><a class="member field" href="qabstracttestlogger_p.h.html#QAbstractTestLogger::stream" title='QAbstractTestLogger::stream' data-ref="QAbstractTestLogger::stream">stream</a>);</td></tr>
+<tr><th id="191">191</th><td>    ::<a class="ref fn" href="../../../include/stdio.h.html#fflush" title='fflush' data-ref="fflush">fflush</a>(<span class='inlayHint'>stream:&nbsp;</span><a class="member field" href="qabstracttestlogger_p.h.html#QAbstractTestLogger::stream" title='QAbstractTestLogger::stream' data-ref="QAbstractTestLogger::stream">stream</a>);</td></tr>
+<tr><th id="192">192</th><td></td></tr>
+<tr><th id="193">193</th><td>    <b>delete</b> [] <a class="local col8 ref" href="#178filtered" title='filtered' data-ref="178filtered">filtered</a>;</td></tr>
+<tr><th id="194">194</th><td>}</td></tr>
+<tr><th id="195">195</th><td></td></tr>
+<tr><th id="196">196</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="197">197</th><td><i class="doc">    Called before the start of a test run.</i></td></tr>
+<tr><th id="198">198</th><td><i class="doc"></i></td></tr>
+<tr><th id="199">199</th><td><i class="doc">    This virtual method is called before the first tests are run. A logging</i></td></tr>
+<tr><th id="200">200</th><td><i class="doc">    implementation might open a file, write some preamble, or prepare in other</i></td></tr>
+<tr><th id="201">201</th><td><i class="doc">    ways, such as setting up initial values of variables. It can use the usual</i></td></tr>
+<tr><th id="202">202</th><td><i class="doc">    Qt logging infrastucture, since it is also called before QtTest installs its</i></td></tr>
+<tr><th id="203">203</th><td><i class="doc">    own custom message handler.</i></td></tr>
+<tr><th id="204">204</th><td><i class="doc"></i></td></tr>
+<tr><th id="205">205</th><td><i class="doc">    <span class="command">\sa</span> stopLogging()</i></td></tr>
+<tr><th id="206">206</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="207">207</th><td><em>void</em> <a class="type" href="qabstracttestlogger_p.h.html#QAbstractTestLogger" title='QAbstractTestLogger' data-ref="QAbstractTestLogger">QAbstractTestLogger</a>::<dfn class="virtual decl def fn" id="_ZN19QAbstractTestLogger12startLoggingEv" title='QAbstractTestLogger::startLogging' data-ref="_ZN19QAbstractTestLogger12startLoggingEv">startLogging</dfn>()</td></tr>
+<tr><th id="208">208</th><td>{</td></tr>
+<tr><th id="209">209</th><td>}</td></tr>
+<tr><th id="210">210</th><td></td></tr>
+<tr><th id="211">211</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="212">212</th><td><i class="doc">    Called after the end of a test run.</i></td></tr>
+<tr><th id="213">213</th><td><i class="doc"></i></td></tr>
+<tr><th id="214">214</th><td><i class="doc">    This virtual method is called after all tests have run. A logging</i></td></tr>
+<tr><th id="215">215</th><td><i class="doc">    implementation might collate information gathered from the run, write a</i></td></tr>
+<tr><th id="216">216</th><td><i class="doc">    summary, or close a file. It can use the usual Qt logging infrastucture,</i></td></tr>
+<tr><th id="217">217</th><td><i class="doc">    since it is also called after QtTest has restored the default message</i></td></tr>
+<tr><th id="218">218</th><td><i class="doc">    handler it replaced with its own custom message handler.</i></td></tr>
+<tr><th id="219">219</th><td><i class="doc"></i></td></tr>
+<tr><th id="220">220</th><td><i class="doc">    <span class="command">\sa</span> startLogging()</i></td></tr>
+<tr><th id="221">221</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="222">222</th><td><em>void</em> <a class="type" href="qabstracttestlogger_p.h.html#QAbstractTestLogger" title='QAbstractTestLogger' data-ref="QAbstractTestLogger">QAbstractTestLogger</a>::<dfn class="virtual decl def fn" id="_ZN19QAbstractTestLogger11stopLoggingEv" title='QAbstractTestLogger::stopLogging' data-ref="_ZN19QAbstractTestLogger11stopLoggingEv">stopLogging</dfn>()</td></tr>
+<tr><th id="223">223</th><td>{</td></tr>
+<tr><th id="224">224</th><td>}</td></tr>
+<tr><th id="225">225</th><td></td></tr>
+<tr><th id="226">226</th><td><em>void</em> <a class="type" href="qabstracttestlogger_p.h.html#QAbstractTestLogger" title='QAbstractTestLogger' data-ref="QAbstractTestLogger">QAbstractTestLogger</a>::<dfn class="virtual decl def fn" id="_ZN19QAbstractTestLogger19addBenchmarkResultsERK5QListI16QBenchmarkResultE" title='QAbstractTestLogger::addBenchmarkResults' data-ref="_ZN19QAbstractTestLogger19addBenchmarkResultsERK5QListI16QBenchmarkResultE">addBenchmarkResults</dfn>(<em>const</em> <a class="type" href="../corelib/tools/qcontainerfwd.h.html#QList" title='QList' data-ref="QList">QList</a>&lt;<a class="type" href="qbenchmark_p.h.html#QBenchmarkResult" title='QBenchmarkResult' data-ref="QBenchmarkResult">QBenchmarkResult</a>&gt; &amp;<dfn class="local col9 decl" id="179result" title='result' data-type='const QList&lt;QBenchmarkResult&gt; &amp;' data-ref="179result">result</dfn>)</td></tr>
+<tr><th id="227">227</th><td>{</td></tr>
+<tr><th id="228">228</th><td>    <b>for</b> (<em>const</em> <em>auto</em> &amp;<dfn class="local col0 decl" id="180m" title='m' data-type='QBenchmarkResult const &amp;' data-ref="180m">m</dfn> : <a class="local col9 ref" href="#179result" title='result' data-ref="179result">result</a>)</td></tr>
+<tr><th id="229">229</th><td>        <a class="virtual member fn" href="qabstracttestlogger_p.h.html#_ZN19QAbstractTestLogger18addBenchmarkResultERK16QBenchmarkResult" title='QAbstractTestLogger::addBenchmarkResult' data-ref="_ZN19QAbstractTestLogger18addBenchmarkResultERK16QBenchmarkResult">addBenchmarkResult</a>(<span class='inlayHint'>result:&nbsp;</span><a class="local col0 ref" href="#180m" title='m' data-ref="180m">m</a>);</td></tr>
+<tr><th id="230">230</th><td>}</td></tr>
+<tr><th id="231">231</th><td></td></tr>
+<tr><th id="232">232</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="233">233</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb" data-ref="_ZN19QAbstractTestLogger17enterTestFunctionEPKc">void QAbstractTestLogger::enterTestFunction(const char *function)</span></i></td></tr>
+<tr><th id="234">234</th><td><i class="doc"></i></td></tr>
+<tr><th id="235">235</th><td><i class="doc">    This virtual method is called before each test function is invoked. It is</i></td></tr>
+<tr><th id="236">236</th><td><i class="doc">    passed the name of the test function (without its class prefix) as<span class="command"> \a</span></i></td></tr>
+<tr><th id="237">237</th><td><i class="doc">    <span class="arg">function.</span> It is likewise called for<span class="command"> \c</span><span class="arg">{initTestCase()}</span> at the start of</i></td></tr>
+<tr><th id="238">238</th><td><i class="doc">    testing, after<span class="command"> \l</span> startLogging(), and for<span class="command"> \c</span><span class="arg">{cleanupTestCase()}</span> at the end</i></td></tr>
+<tr><th id="239">239</th><td><i class="doc">    of testing, in each case passing the name of the function. It is also called</i></td></tr>
+<tr><th id="240">240</th><td><i class="doc">    with<span class="command"> \nullptr</span> as<span class="command"> \a</span> <span class="arg">function</span> after the last of these functions, or in the</i></td></tr>
+<tr><th id="241">241</th><td><i class="doc">    event of an early end to testing, before<span class="command"> \l</span> stopLogging().</i></td></tr>
+<tr><th id="242">242</th><td><i class="doc"></i></td></tr>
+<tr><th id="243">243</th><td><i class="doc">    For data-driven test functions, this is called only once, before the data</i></td></tr>
+<tr><th id="244">244</th><td><i class="doc">    function is called to set up the table of datasets and the test is run with</i></td></tr>
+<tr><th id="245">245</th><td><i class="doc">    its first dataset.</i></td></tr>
+<tr><th id="246">246</th><td><i class="doc"></i></td></tr>
+<tr><th id="247">247</th><td><i class="doc">    Every logging implementation must implement this method. It shall typically</i></td></tr>
+<tr><th id="248">248</th><td><i class="doc">    need to record the name of the function for later use in log messages.</i></td></tr>
+<tr><th id="249">249</th><td><i class="doc"></i></td></tr>
+<tr><th id="250">250</th><td><i class="doc">    <span class="command">\sa</span> leaveTestFunction(), enterTestData()</i></td></tr>
+<tr><th id="251">251</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="252">252</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="253">253</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb" data-ref="_ZN19QAbstractTestLogger17leaveTestFunctionEv">void QAbstractTestLogger::leaveTestFunction()</span></i></td></tr>
+<tr><th id="254">254</th><td><i class="doc"></i></td></tr>
+<tr><th id="255">255</th><td><i class="doc">    This virtual method is called after a test function has completed, to match</i></td></tr>
+<tr><th id="256">256</th><td><i class="doc">   <span class="command"> \l</span> enterTestFunction(). For data-driven test functions, this is called only</i></td></tr>
+<tr><th id="257">257</th><td><i class="doc">    once, after the test is run with its last dataset.</i></td></tr>
+<tr><th id="258">258</th><td><i class="doc"></i></td></tr>
+<tr><th id="259">259</th><td><i class="doc">    Every logging implementation must implement this method. In some cases it</i></td></tr>
+<tr><th id="260">260</th><td><i class="doc">    may be called more than once without an intervening call to<span class="command"> \l</span></i></td></tr>
+<tr><th id="261">261</th><td><i class="doc">    enterTestFunction(). In such cases, the implementation should ignore these</i></td></tr>
+<tr><th id="262">262</th><td><i class="doc">    later calls, until the next call to enterTestFunction().</i></td></tr>
+<tr><th id="263">263</th><td><i class="doc"></i></td></tr>
+<tr><th id="264">264</th><td><i class="doc">    <span class="command">\sa</span> enterTestFunction(), enterTestData()</i></td></tr>
+<tr><th id="265">265</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="266">266</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="267">267</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb" data-ref="_ZN19QAbstractTestLogger13enterTestDataEP9QTestData">void QAbstractTestLogger::enterTestData(QTestData *)</span></i></td></tr>
+<tr><th id="268">268</th><td><i class="doc"></i></td></tr>
+<tr><th id="269">269</th><td><i class="doc">    This virtual method is called before and after each call to a test</i></td></tr>
+<tr><th id="270">270</th><td><i class="doc">    function. For a data-driven test, the call before is passed the name of the</i></td></tr>
+<tr><th id="271">271</th><td><i class="doc">    test data row. This may combine a global data row name with a local data row</i></td></tr>
+<tr><th id="272">272</th><td><i class="doc">    name. For non-data-driven tests and for the call after a test function,</i></td></tr>
+<tr><th id="273">273</th><td><i class="doc">   <span class="command"> \nullptr</span> is passed</i></td></tr>
+<tr><th id="274">274</th><td><i class="doc"></i></td></tr>
+<tr><th id="275">275</th><td><i class="doc">    A logging implementation might chose to record the data row name for</i></td></tr>
+<tr><th id="276">276</th><td><i class="doc">    reporting of results from the test for that data row. It should, in such a</i></td></tr>
+<tr><th id="277">277</th><td><i class="doc">    case, clear its record of the name when called with<span class="command"> \nullptr</span>.</i></td></tr>
+<tr><th id="278">278</th><td><i class="doc"></i></td></tr>
+<tr><th id="279">279</th><td><i class="doc">    <span class="command">\sa</span> enterTestFunction(), leaveTestFunction()</i></td></tr>
+<tr><th id="280">280</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="281">281</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="282">282</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb" data-ref="_ZN19QAbstractTestLogger11addIncidentENS_13IncidentTypesEPKcS2_i">void QAbstractTestLogger::addIncident(IncidentTypes type, const char *description, const char *file, int line)</span></i></td></tr>
+<tr><th id="283">283</th><td><i class="doc"></i></td></tr>
+<tr><th id="284">284</th><td><i class="doc">    This virtual method is called when an event occurs that relates to the</i></td></tr>
+<tr><th id="285">285</th><td><i class="doc">    resolution of the test. The<span class="command"> \a</span> <span class="arg">type</span> indicates whether this was a pass, a</i></td></tr>
+<tr><th id="286">286</th><td><i class="doc">    fail or a skip, whether a failure was expected, and whether the test being</i></td></tr>
+<tr><th id="287">287</th><td><i class="doc">    run is blacklisted. The<span class="command"> \a</span> <span class="arg">description</span> may be empty (for a pass) or a</i></td></tr>
+<tr><th id="288">288</th><td><i class="doc">    message describing the nature of the incident. Where the location in code of</i></td></tr>
+<tr><th id="289">289</th><td><i class="doc">    the incident is known, it is indicated by<span class="command"> \a</span> <span class="arg">file</span> and<span class="command"> \a</span> <span class="arg">line;</span> otherwise,</i></td></tr>
+<tr><th id="290">290</th><td><i class="doc">    these are<span class="command"> \a</span> <span class="arg">nullptr</span> and 0, respectively.</i></td></tr>
+<tr><th id="291">291</th><td><i class="doc"></i></td></tr>
+<tr><th id="292">292</th><td><i class="doc">    Every logging implementation must implement this method. Note that there are</i></td></tr>
+<tr><th id="293">293</th><td><i class="doc">    circumstances where more than one incident may be reported, in this way, for</i></td></tr>
+<tr><th id="294">294</th><td><i class="doc">    a single run of a test on a single dataset. It is the implementation's</i></td></tr>
+<tr><th id="295">295</th><td><i class="doc">    responsibility to recognize such cases and decide what to do about them. For</i></td></tr>
+<tr><th id="296">296</th><td><i class="doc">    purposes of counting resolutions of tests in the "Totals" report at the end</i></td></tr>
+<tr><th id="297">297</th><td><i class="doc">    of a test run, QtTest considers the first incident (excluding XFail and its</i></td></tr>
+<tr><th id="298">298</th><td><i class="doc">    blacklisted variant) decisive.</i></td></tr>
+<tr><th id="299">299</th><td><i class="doc"></i></td></tr>
+<tr><th id="300">300</th><td><i class="doc">    <span class="command">\sa</span> addMessage(), addBenchmarkResult()</i></td></tr>
+<tr><th id="301">301</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="302">302</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="303">303</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb" data-ref="_ZN19QAbstractTestLogger18addBenchmarkResultERK16QBenchmarkResult">void QAbstractTestLogger::addBenchmarkResult(const QBenchmarkResult &amp;result)</span></i></td></tr>
+<tr><th id="304">304</th><td><i class="doc"></i></td></tr>
+<tr><th id="305">305</th><td><i class="doc">    This virtual method is called after a benchmark has been run enough times to</i></td></tr>
+<tr><th id="306">306</th><td><i class="doc">    produce usable data. It is passed the median<span class="command"> \a</span> <span class="arg">result</span> from all cycles of</i></td></tr>
+<tr><th id="307">307</th><td><i class="doc">    the code controlled by the test's QBENCHMARK loop.</i></td></tr>
+<tr><th id="308">308</th><td><i class="doc"></i></td></tr>
+<tr><th id="309">309</th><td><i class="doc">    Every logging implementation must implement this method.</i></td></tr>
+<tr><th id="310">310</th><td><i class="doc"></i></td></tr>
+<tr><th id="311">311</th><td><i class="doc">    <span class="command">\sa</span> addIncident(), addMessage()</i></td></tr>
+<tr><th id="312">312</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="313">313</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="314">314</th><td><i class="doc">    <span class="command">\overload</span></i></td></tr>
+<tr><th id="315">315</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">void QAbstractTestLogger::addMessage(MessageTypes type, const QString &amp;message, const char *file, int line)</span></i></td></tr>
+<tr><th id="316">316</th><td><i class="doc"></i></td></tr>
+<tr><th id="317">317</th><td><i class="doc">    This virtual method is called, via its<span class="command"> \c</span> <span class="arg">QtMsgType</span> overload, from the</i></td></tr>
+<tr><th id="318">318</th><td><i class="doc">    custom message handler QtTest installs. It is also used to</i></td></tr>
+<tr><th id="319">319</th><td><i class="doc">    warn about various situations detected by QtTest itself, such</i></td></tr>
+<tr><th id="320">320</th><td><i class="doc">    as<span class="command"> \e</span> <span class="arg">failure</span> to see a message anticipated by QTest::ignoreMessage() and,</i></td></tr>
+<tr><th id="321">321</th><td><i class="doc">    particularly when verbosity options have been enabled via the command-line,</i></td></tr>
+<tr><th id="322">322</th><td><i class="doc">    to log some extra information.</i></td></tr>
+<tr><th id="323">323</th><td><i class="doc"></i></td></tr>
+<tr><th id="324">324</th><td><i class="doc">    Every logging implementation must implement this method. The<span class="command"> \a</span> <span class="arg">type</span></i></td></tr>
+<tr><th id="325">325</th><td><i class="doc">    indicates the category of message and the<span class="command"> \a</span> <span class="arg">message</span> is the content to be</i></td></tr>
+<tr><th id="326">326</th><td><i class="doc">    reported. When the message is associated with specific code, the name of the</i></td></tr>
+<tr><th id="327">327</th><td><i class="doc">   <span class="command"> \a</span> <span class="arg">file</span> and<span class="command"> \a</span> <span class="arg">line</span> number within it are also supplied; otherwise, these are</i></td></tr>
+<tr><th id="328">328</th><td><i class="doc">   <span class="command"> \nullptr</span> and 0, respectively.</i></td></tr>
+<tr><th id="329">329</th><td><i class="doc"></i></td></tr>
+<tr><th id="330">330</th><td><i class="doc">    <span class="command">\sa</span> QTest::ignoreMessage(), addIncident()</i></td></tr>
+<tr><th id="331">331</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="332">332</th><td></td></tr>
+<tr><th id="333">333</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="334">334</th><td><i class="doc">    <span class="command">\overload</span></i></td></tr>
+<tr><th id="335">335</th><td><i class="doc"></i></td></tr>
+<tr><th id="336">336</th><td><i class="doc">    This virtual method is called from the custom message handler QtTest</i></td></tr>
+<tr><th id="337">337</th><td><i class="doc">    installs in place of Qt's default message handler for the duration of</i></td></tr>
+<tr><th id="338">338</th><td><i class="doc">    testing, unless QTest::ignoreMessage() was used to ignore it, or too many</i></td></tr>
+<tr><th id="339">339</th><td><i class="doc">    messages have previously been processed. (The limiting number of messages is</i></td></tr>
+<tr><th id="340">340</th><td><i class="doc">    controlled by the -maxwarnings option to a test and defaults to 2002.)</i></td></tr>
+<tr><th id="341">341</th><td><i class="doc"></i></td></tr>
+<tr><th id="342">342</th><td><i class="doc">    Logging implementations should not normally need to override this method.</i></td></tr>
+<tr><th id="343">343</th><td><i class="doc">    The base implementation converts<span class="command"> \a</span> <span class="arg">type</span> to the matching<span class="command"> \l</span> MessageType,</i></td></tr>
+<tr><th id="344">344</th><td><i class="doc">    formats the given<span class="command"> \a</span> <span class="arg">message</span> suitably for the specified<span class="command"> \a</span> <span class="arg">context,</span> and</i></td></tr>
+<tr><th id="345">345</th><td><i class="doc">    forwards the converted type and formatted message to the overload that takes</i></td></tr>
+<tr><th id="346">346</th><td><i class="doc">    MessageType and QString.</i></td></tr>
+<tr><th id="347">347</th><td><i class="doc"></i></td></tr>
+<tr><th id="348">348</th><td><i class="doc">    <span class="command">\sa</span> QTest::ignoreMessage(), addIncident()</i></td></tr>
+<tr><th id="349">349</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="350">350</th><td><em>void</em> <a class="type" href="qabstracttestlogger_p.h.html#QAbstractTestLogger" title='QAbstractTestLogger' data-ref="QAbstractTestLogger">QAbstractTestLogger</a>::<dfn class="virtual decl def fn" id="_ZN19QAbstractTestLogger10addMessageE9QtMsgTypeRK18QMessageLogContextRK7QString" title='QAbstractTestLogger::addMessage' data-ref="_ZN19QAbstractTestLogger10addMessageE9QtMsgTypeRK18QMessageLogContextRK7QString">addMessage</dfn>(<a class="type" href="../corelib/global/qlogging.h.html#QtMsgType" title='QtMsgType' data-ref="QtMsgType">QtMsgType</a> <dfn class="local col1 decl" id="181type" title='type' data-type='QtMsgType' data-ref="181type">type</dfn>, <em>const</em> <a class="type" href="../corelib/global/qlogging.h.html#QMessageLogContext" title='QMessageLogContext' data-ref="QMessageLogContext">QMessageLogContext</a> &amp;<dfn class="local col2 decl" id="182context" title='context' data-type='const QMessageLogContext &amp;' data-ref="182context">context</dfn>,</td></tr>
+<tr><th id="351">351</th><td>                                     <em>const</em> <a class="type" href="../corelib/text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> &amp;<dfn class="local col3 decl" id="183message" title='message' data-type='const QString &amp;' data-ref="183message">message</dfn>)</td></tr>
+<tr><th id="352">352</th><td>{</td></tr>
+<tr><th id="353">353</th><td>    <a class="type" href="qabstracttestlogger_p.h.html#QAbstractTestLogger" title='QAbstractTestLogger' data-ref="QAbstractTestLogger">QAbstractTestLogger</a>::<a class="type" href="qabstracttestlogger_p.h.html#QAbstractTestLogger::MessageTypes" title='QAbstractTestLogger::MessageTypes' data-ref="QAbstractTestLogger::MessageTypes">MessageTypes</a> <dfn class="local col4 decl" id="184messageType" title='messageType' data-type='QAbstractTestLogger::MessageTypes' data-ref="184messageType">messageType</dfn> = [=]() {</td></tr>
+<tr><th id="354">354</th><td>        <b>switch</b> (<a class="local col1 ref" href="#181type" title='type' data-ref="181type">type</a>) {</td></tr>
+<tr><th id="355">355</th><td>        <b>case</b> <a class="enum" href="../corelib/global/qlogging.h.html#QtDebugMsg" title='QtDebugMsg' data-ref="QtDebugMsg">QtDebugMsg</a>: <b>return</b> <a class="type" href="qabstracttestlogger_p.h.html#QAbstractTestLogger" title='QAbstractTestLogger' data-ref="QAbstractTestLogger">QAbstractTestLogger</a>::<a class="enum" href="qabstracttestlogger_p.h.html#QAbstractTestLogger::QDebug" title='QAbstractTestLogger::QDebug' data-ref="QAbstractTestLogger::QDebug">QDebug</a>;</td></tr>
+<tr><th id="356">356</th><td>        <b>case</b> <a class="enum" href="../corelib/global/qlogging.h.html#QtInfoMsg" title='QtInfoMsg' data-ref="QtInfoMsg">QtInfoMsg</a>: <b>return</b> <a class="type" href="qabstracttestlogger_p.h.html#QAbstractTestLogger" title='QAbstractTestLogger' data-ref="QAbstractTestLogger">QAbstractTestLogger</a>::<a class="enum" href="qabstracttestlogger_p.h.html#QAbstractTestLogger::QInfo" title='QAbstractTestLogger::QInfo' data-ref="QAbstractTestLogger::QInfo">QInfo</a>;</td></tr>
+<tr><th id="357">357</th><td>        <b>case</b> <a class="enum" href="../corelib/global/qlogging.h.html#QtCriticalMsg" title='QtCriticalMsg' data-ref="QtCriticalMsg">QtCriticalMsg</a>: <b>return</b> <a class="type" href="qabstracttestlogger_p.h.html#QAbstractTestLogger" title='QAbstractTestLogger' data-ref="QAbstractTestLogger">QAbstractTestLogger</a>::<a class="enum" href="qabstracttestlogger_p.h.html#QAbstractTestLogger::QCritical" title='QAbstractTestLogger::QCritical' data-ref="QAbstractTestLogger::QCritical">QCritical</a>;</td></tr>
+<tr><th id="358">358</th><td>        <b>case</b> <a class="enum" href="../corelib/global/qlogging.h.html#QtWarningMsg" title='QtWarningMsg' data-ref="QtWarningMsg">QtWarningMsg</a>: <b>return</b> <a class="type" href="qabstracttestlogger_p.h.html#QAbstractTestLogger" title='QAbstractTestLogger' data-ref="QAbstractTestLogger">QAbstractTestLogger</a>::<a class="enum" href="qabstracttestlogger_p.h.html#QAbstractTestLogger::QWarning" title='QAbstractTestLogger::QWarning' data-ref="QAbstractTestLogger::QWarning">QWarning</a>;</td></tr>
+<tr><th id="359">359</th><td>        <b>case</b> <a class="enum" href="../corelib/global/qlogging.h.html#QtFatalMsg" title='QtFatalMsg' data-ref="QtFatalMsg">QtFatalMsg</a>: <b>return</b> <a class="type" href="qabstracttestlogger_p.h.html#QAbstractTestLogger" title='QAbstractTestLogger' data-ref="QAbstractTestLogger">QAbstractTestLogger</a>::<a class="enum" href="qabstracttestlogger_p.h.html#QAbstractTestLogger::QFatal" title='QAbstractTestLogger::QFatal' data-ref="QAbstractTestLogger::QFatal">QFatal</a>;</td></tr>
+<tr><th id="360">360</th><td>        }</td></tr>
+<tr><th id="361">361</th><td>        <a class="macro" href="../corelib/global/qassert.h.html#77" title="do { do { static_cast&lt;void&gt;(false &amp;&amp; (false)); __builtin_unreachable(); } while (false); return QAbstractTestLogger::QFatal; } while (0)" data-ref="_M/Q_UNREACHABLE_RETURN">Q_UNREACHABLE_RETURN</a>(<a class="type" href="qabstracttestlogger_p.h.html#QAbstractTestLogger" title='QAbstractTestLogger' data-ref="QAbstractTestLogger">QAbstractTestLogger</a>::<a class="enum" href="qabstracttestlogger_p.h.html#QAbstractTestLogger::QFatal" title='QAbstractTestLogger::QFatal' data-ref="QAbstractTestLogger::QFatal">QFatal</a>);</td></tr>
+<tr><th id="362">362</th><td>    }<a class="tu ref fn" href="#_ZZN19QAbstractTestLogger10addMessageE9QtMsgTypeRK18QMessageLogContextRK7QStringENK3$_0clEv" title='QAbstractTestLogger::addMessage(QtMsgType, const QMessageLogContext &amp;, const QString &amp;)::(anonymous class)::operator()' data-use='c' data-ref="_ZZN19QAbstractTestLogger10addMessageE9QtMsgTypeRK18QMessageLogContextRK7QStringENK3$_0clEv">()</a>;</td></tr>
+<tr><th id="363">363</th><td></td></tr>
+<tr><th id="364">364</th><td>    <a class="type" href="../corelib/text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> <dfn class="local col5 decl" id="185formattedMessage" title='formattedMessage' data-type='QString' data-ref="185formattedMessage">formattedMessage</dfn> = <a class="ref fn" href="../corelib/global/qlogging.h.html#_Z17qFormatLogMessage9QtMsgTypeRK18QMessageLogContextRK7QString" title='qFormatLogMessage' data-ref="_Z17qFormatLogMessage9QtMsgTypeRK18QMessageLogContextRK7QString">qFormatLogMessage</a>(<a class="local col1 ref" href="#181type" title='type' data-ref="181type">type</a>, <a class="local col2 ref" href="#182context" title='context' data-ref="182context">context</a>, <span class='inlayHint'>buf:&nbsp;</span><a class="local col3 ref" href="#183message" title='message' data-ref="183message">message</a>);</td></tr>
+<tr><th id="365">365</th><td></td></tr>
+<tr><th id="366">366</th><td>    <i>// Note that we explicitly ignore the file and line of the context here,</i></td></tr>
+<tr><th id="367">367</th><td><i>    // as that's what QTest::messageHandler used to do when calling the same</i></td></tr>
+<tr><th id="368">368</th><td><i>    // overload directly.</i></td></tr>
+<tr><th id="369">369</th><td>    <a class="virtual member fn" href="qabstracttestlogger_p.h.html#_ZN19QAbstractTestLogger10addMessageENS_12MessageTypesERK7QStringPKci" title='QAbstractTestLogger::addMessage' data-ref="_ZN19QAbstractTestLogger10addMessageENS_12MessageTypesERK7QStringPKci">addMessage</a>(<span class='inlayHint'>type:&nbsp;</span><a class="local col4 ref" href="#184messageType" title='messageType' data-ref="184messageType">messageType</a>, <span class='inlayHint'>message:&nbsp;</span><a class="local col5 ref" href="#185formattedMessage" title='formattedMessage' data-ref="185formattedMessage">formattedMessage</a>);</td></tr>
+<tr><th id="370">370</th><td>}</td></tr>
+<tr><th id="371">371</th><td></td></tr>
+<tr><th id="372">372</th><td><b>namespace</b></td></tr>
+<tr><th id="373">373</th><td>{</td></tr>
+<tr><th id="374">374</th><td>    <b>constexpr</b> <em>int</em> <dfn class="tu decl def" id="(anonymousnamespace)::MAXSIZE" title='(anonymous namespace)::MAXSIZE' data-type='const int' data-ref="(anonymousnamespace)::MAXSIZE">MAXSIZE</dfn> = <var>1024</var> * <var>1024</var> * <var>2</var>;</td></tr>
+<tr><th id="375">375</th><td>}</td></tr>
+<tr><th id="376">376</th><td></td></tr>
+<tr><th id="377">377</th><td><b>namespace</b> <span class="namespace">QTest</span></td></tr>
+<tr><th id="378">378</th><td>{</td></tr>
+<tr><th id="379">379</th><td></td></tr>
+<tr><th id="380">380</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="381">381</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb" data-ref="_ZN5QTest11qt_asprintfEP15QTestCharBufferPKcz">int QTest::qt_asprintf(QTestCharBuffer *buf, const char *format, ...);</span></i></td></tr>
+<tr><th id="382">382</th><td><i class="doc">    <span class="command">\internal</span></i></td></tr>
+<tr><th id="383">383</th><td><i class="doc"><span class="verb"> *</span>/</i><span class="verb"></span></td></tr>
+<tr><th id="384">384</th><td><span class="verb"></span><em>int</em> <dfn class="decl def fn" id="_ZN5QTest11qt_asprintfEP15QTestCharBufferPKcz" title='QTest::qt_asprintf' data-ref="_ZN5QTest11qt_asprintfEP15QTestCharBufferPKcz">qt_asprintf</dfn>(<a class="type" href="qabstracttestlogger_p.h.html#QTestCharBuffer" title='QTestCharBuffer' data-ref="QTestCharBuffer">QTestCharBuffer</a> *<dfn class="local col6 decl" id="186str" title='str' data-type='QTestCharBuffer *' data-ref="186str">str</dfn>, <em>const</em> <em>char</em> *<dfn class="local col7 decl" id="187format" title='format' data-type='const char *' data-ref="187format">format</dfn>, ...)</td></tr>
+<tr><th id="385">385</th><td>{</td></tr>
+<tr><th id="386">386</th><td>    <a class="macro" href="../corelib/global/qassert.h.html#28" title="static_cast&lt;void&gt;(false &amp;&amp; (str))" data-ref="_M/Q_ASSERT">Q_ASSERT</a>(<a class="local col6 ref" href="#186str" title='str' data-ref="186str">str</a>);</td></tr>
+<tr><th id="387">387</th><td>    <em>int</em> <dfn class="local col8 decl" id="188size" title='size' data-type='int' data-ref="188size">size</dfn> = <a class="local col6 ref" href="#186str" title='str' data-ref="186str">str</a>-&gt;<a class="ref fn" href="qabstracttestlogger_p.h.html#_ZNK15QTestCharBuffer4sizeEv" title='QTestCharBuffer::size' data-ref="_ZNK15QTestCharBuffer4sizeEv">size</a>();</td></tr>
+<tr><th id="388">388</th><td>    <a class="macro" href="../corelib/global/qassert.h.html#28" title="static_cast&lt;void&gt;(false &amp;&amp; (size &gt; 0))" data-ref="_M/Q_ASSERT">Q_ASSERT</a>(<a class="local col8 ref" href="#188size" title='size' data-ref="188size">size</a> &gt; <var>0</var>);</td></tr>
+<tr><th id="389">389</th><td></td></tr>
+<tr><th id="390">390</th><td>    <span class='typedef' title='va_list' data-type='__gnuc_va_list' data-ref="va_list">va_list</span> <span class='ref fn fake' title='__va_list_tag::__va_list_tag' data-ref="__va_list_tag::__va_list_tag"></span><dfn class="local col9 decl" id="189ap" title='ap' data-type='va_list' data-ref="189ap">ap</dfn>;</td></tr>
+<tr><th id="391">391</th><td>    <em>int</em> <dfn class="local col0 decl" id="190res" title='res' data-type='int' data-ref="190res">res</dfn> = <var>0</var>;</td></tr>
+<tr><th id="392">392</th><td></td></tr>
+<tr><th id="393">393</th><td>    <b>do</b> {</td></tr>
+<tr><th id="394">394</th><td>        <span class="macro" title="__builtin_va_start(ap, format)" data-ref="_M/va_start">va_start</span>(<a class="local col9 ref" href="#189ap" title='ap' data-ref="189ap">ap</a>, <a class="local col7 ref" href="#187format" title='format' data-ref="187format">format</a>);</td></tr>
+<tr><th id="395">395</th><td>        <a class="local col0 ref" href="#190res" title='res' data-ref="190res">res</a> = <a class="ref fn" href="../corelib/text/qbytearrayalgorithms.h.html#_Z10qvsnprintfPcmPKcP13__va_list_tag" title='qvsnprintf' data-ref="_Z10qvsnprintfPcmPKcP13__va_list_tag">qvsnprintf</a>(<span class='inlayHint'>str:&nbsp;</span><a class="local col6 ref" href="#186str" title='str' data-ref="186str">str</a>-&gt;<a class="ref fn" href="qabstracttestlogger_p.h.html#_ZN15QTestCharBuffer4dataEv" title='QTestCharBuffer::data' data-ref="_ZN15QTestCharBuffer4dataEv">data</a>(), <span class='inlayHint'>n:&nbsp;</span><a class="local col8 ref" href="#188size" title='size' data-ref="188size">size</a>, <span class='inlayHint'>fmt:&nbsp;</span><a class="local col7 ref" href="#187format" title='format' data-ref="187format">format</a>, <a class="local col9 ref" href="#189ap" title='ap' data-ref="189ap">ap</a>);</td></tr>
+<tr><th id="396">396</th><td>        <span class="macro" title="__builtin_va_end(ap)" data-ref="_M/va_end">va_end</span>(<a class="local col9 ref" href="#189ap" title='ap' data-ref="189ap">ap</a>);</td></tr>
+<tr><th id="397">397</th><td>        <i>// vsnprintf() reliably '\0'-terminates</i></td></tr>
+<tr><th id="398">398</th><td>        <a class="macro" href="../corelib/global/qassert.h.html#28" title="static_cast&lt;void&gt;(false &amp;&amp; (res &lt; 0 || str-&gt;data()[res &lt; size ? res : size - 1] == &apos;\0&apos;))" data-ref="_M/Q_ASSERT">Q_ASSERT</a>(<a class="local col0 ref" href="#190res" title='res' data-ref="190res">res</a> &lt; <var>0</var> || <a class="local col6 ref" href="#186str" title='str' data-ref="186str">str</a>-&gt;<a class="ref fn" href="qabstracttestlogger_p.h.html#_ZN15QTestCharBuffer4dataEv" title='QTestCharBuffer::data' data-ref="_ZN15QTestCharBuffer4dataEv">data</a>()[<a class="local col0 ref" href="#190res" title='res' data-ref="190res">res</a> &lt; <a class="local col8 ref" href="#188size" title='size' data-ref="188size">size</a> ? <a class="local col0 ref" href="#190res" title='res' data-ref="190res">res</a> : <a class="local col8 ref" href="#188size" title='size' data-ref="188size">size</a> - <var>1</var>] == <kbd>'\0'</kbd>);</td></tr>
+<tr><th id="399">399</th><td>        <i>// Note, we're assuming that a result of -1 is always due to running out of space.</i></td></tr>
+<tr><th id="400">400</th><td>        <b>if</b> (<a class="local col0 ref" href="#190res" title='res' data-ref="190res">res</a> &gt;= <var>0</var> &amp;&amp; <a class="local col0 ref" href="#190res" title='res' data-ref="190res">res</a> &lt; <a class="local col8 ref" href="#188size" title='size' data-ref="188size">size</a>) <i>// Success</i></td></tr>
+<tr><th id="401">401</th><td>            <b>break</b>;</td></tr>
+<tr><th id="402">402</th><td></td></tr>
+<tr><th id="403">403</th><td>        <i>// Buffer wasn't big enough, try again:</i></td></tr>
+<tr><th id="404">404</th><td>        <a class="local col8 ref" href="#188size" title='size' data-ref="188size">size</a> *= <var>2</var>;</td></tr>
+<tr><th id="405">405</th><td>        <i>// If too large or out of memory, take what we have:</i></td></tr>
+<tr><th id="406">406</th><td>    } <b>while</b> (<a class="local col8 ref" href="#188size" title='size' data-ref="188size">size</a> &lt;= <a class="tu ref" href="#(anonymousnamespace)::MAXSIZE" title='(anonymous namespace)::MAXSIZE' data-use='r' data-ref="(anonymousnamespace)::MAXSIZE">MAXSIZE</a> &amp;&amp; <a class="local col6 ref" href="#186str" title='str' data-ref="186str">str</a>-&gt;<a class="ref fn" href="qabstracttestlogger_p.h.html#_ZN15QTestCharBuffer5resetEib" title='QTestCharBuffer::reset' data-ref="_ZN15QTestCharBuffer5resetEib">reset</a>(<span class='inlayHint'>newSize:&nbsp;</span><a class="local col8 ref" href="#188size" title='size' data-ref="188size">size</a>));</td></tr>
+<tr><th id="407">407</th><td></td></tr>
+<tr><th id="408">408</th><td>    <b>return</b> <a class="local col0 ref" href="#190res" title='res' data-ref="190res">res</a>;</td></tr>
+<tr><th id="409">409</th><td>}</td></tr>
+<tr><th id="410">410</th><td></td></tr>
+<tr><th id="411">411</th><td>}</td></tr>
+<tr><th id="412">412</th><td></td></tr>
+<tr><th id="413">413</th><td><b>namespace</b> <span class="namespace">QTestPrivate</span></td></tr>
+<tr><th id="414">414</th><td>{</td></tr>
+<tr><th id="415">415</th><td></td></tr>
+<tr><th id="416">416</th><td><em>void</em> <dfn class="decl def fn" id="_ZN12QTestPrivate22generateTestIdentifierEP15QTestCharBufferi" title='QTestPrivate::generateTestIdentifier' data-ref="_ZN12QTestPrivate22generateTestIdentifierEP15QTestCharBufferi">generateTestIdentifier</dfn>(<a class="type" href="qabstracttestlogger_p.h.html#QTestCharBuffer" title='QTestCharBuffer' data-ref="QTestCharBuffer">QTestCharBuffer</a> *<dfn class="local col1 decl" id="191identifier" title='identifier' data-type='QTestCharBuffer *' data-ref="191identifier">identifier</dfn>, <em>int</em> <dfn class="local col2 decl" id="192parts" title='parts' data-type='int' data-ref="192parts">parts</dfn>)</td></tr>
+<tr><th id="417">417</th><td>{</td></tr>
+<tr><th id="418">418</th><td>    <em>const</em> <em>char</em> *<dfn class="local col3 decl" id="193testObject" title='testObject' data-type='const char *' data-ref="193testObject">testObject</dfn> = <a class="local col2 ref" href="#192parts" title='parts' data-ref="192parts">parts</a> &amp; <a class="enum" href="qabstracttestlogger_p.h.html#QTestPrivate::TestObject" title='QTestPrivate::TestObject' data-ref="QTestPrivate::TestObject">TestObject</a> ? <a class="type" href="qtestresult_p.h.html#QTestResult" title='QTestResult' data-ref="QTestResult">QTestResult</a>::<a class="ref fn" href="qtestresult_p.h.html#_ZN11QTestResult21currentTestObjectNameEv" title='QTestResult::currentTestObjectName' data-ref="_ZN11QTestResult21currentTestObjectNameEv">currentTestObjectName</a>() : <q>""</q>;</td></tr>
+<tr><th id="419">419</th><td>    <em>const</em> <em>char</em> *<dfn class="local col4 decl" id="194testFunction" title='testFunction' data-type='const char *' data-ref="194testFunction">testFunction</dfn> = <a class="local col2 ref" href="#192parts" title='parts' data-ref="192parts">parts</a> &amp; <a class="enum" href="qabstracttestlogger_p.h.html#QTestPrivate::TestFunction" title='QTestPrivate::TestFunction' data-ref="QTestPrivate::TestFunction">TestFunction</a> ? (<a class="type" href="qtestresult_p.h.html#QTestResult" title='QTestResult' data-ref="QTestResult">QTestResult</a>::<a class="ref fn" href="qtestresult_p.h.html#_ZN11QTestResult19currentTestFunctionEv" title='QTestResult::currentTestFunction' data-ref="_ZN11QTestResult19currentTestFunctionEv">currentTestFunction</a>() ? <a class="type" href="qtestresult_p.h.html#QTestResult" title='QTestResult' data-ref="QTestResult">QTestResult</a>::<a class="ref fn" href="qtestresult_p.h.html#_ZN11QTestResult19currentTestFunctionEv" title='QTestResult::currentTestFunction' data-ref="_ZN11QTestResult19currentTestFunctionEv">currentTestFunction</a>() : <q>"UnknownTestFunc"</q>) : <q>""</q>;</td></tr>
+<tr><th id="420">420</th><td>    <em>const</em> <em>char</em> *<dfn class="local col5 decl" id="195objectFunctionFiller" title='objectFunctionFiller' data-type='const char *' data-ref="195objectFunctionFiller">objectFunctionFiller</dfn> = <a class="local col2 ref" href="#192parts" title='parts' data-ref="192parts">parts</a> &amp; <a class="enum" href="qabstracttestlogger_p.h.html#QTestPrivate::TestObject" title='QTestPrivate::TestObject' data-ref="QTestPrivate::TestObject">TestObject</a> &amp;&amp; <a class="local col2 ref" href="#192parts" title='parts' data-ref="192parts">parts</a> &amp; (<a class="enum" href="qabstracttestlogger_p.h.html#QTestPrivate::TestFunction" title='QTestPrivate::TestFunction' data-ref="QTestPrivate::TestFunction">TestFunction</a> | <a class="enum" href="qabstracttestlogger_p.h.html#QTestPrivate::TestDataTag" title='QTestPrivate::TestDataTag' data-ref="QTestPrivate::TestDataTag">TestDataTag</a>) ? <q>"::"</q> : <q>""</q>;</td></tr>
+<tr><th id="421">421</th><td>    <em>const</em> <em>char</em> *<dfn class="local col6 decl" id="196testFuctionStart" title='testFuctionStart' data-type='const char *' data-ref="196testFuctionStart">testFuctionStart</dfn> = <a class="local col2 ref" href="#192parts" title='parts' data-ref="192parts">parts</a> &amp; <a class="enum" href="qabstracttestlogger_p.h.html#QTestPrivate::TestFunction" title='QTestPrivate::TestFunction' data-ref="QTestPrivate::TestFunction">TestFunction</a> ? <q>"("</q> : <q>""</q>;</td></tr>
+<tr><th id="422">422</th><td>    <em>const</em> <em>char</em> *<dfn class="local col7 decl" id="197testFuctionEnd" title='testFuctionEnd' data-type='const char *' data-ref="197testFuctionEnd">testFuctionEnd</dfn> = <a class="local col2 ref" href="#192parts" title='parts' data-ref="192parts">parts</a> &amp; <a class="enum" href="qabstracttestlogger_p.h.html#QTestPrivate::TestFunction" title='QTestPrivate::TestFunction' data-ref="QTestPrivate::TestFunction">TestFunction</a> ? <q>")"</q> : <q>""</q>;</td></tr>
+<tr><th id="423">423</th><td></td></tr>
+<tr><th id="424">424</th><td>    <em>const</em> <em>char</em> *<dfn class="local col8 decl" id="198dataTag" title='dataTag' data-type='const char *' data-ref="198dataTag">dataTag</dfn> = (<a class="local col2 ref" href="#192parts" title='parts' data-ref="192parts">parts</a> &amp; <a class="enum" href="qabstracttestlogger_p.h.html#QTestPrivate::TestDataTag" title='QTestPrivate::TestDataTag' data-ref="QTestPrivate::TestDataTag">TestDataTag</a>) &amp;&amp; <a class="type" href="qtestresult_p.h.html#QTestResult" title='QTestResult' data-ref="QTestResult">QTestResult</a>::<a class="ref fn" href="qtestresult_p.h.html#_ZN11QTestResult14currentDataTagEv" title='QTestResult::currentDataTag' data-ref="_ZN11QTestResult14currentDataTagEv">currentDataTag</a>() ? <a class="type" href="qtestresult_p.h.html#QTestResult" title='QTestResult' data-ref="QTestResult">QTestResult</a>::<a class="ref fn" href="qtestresult_p.h.html#_ZN11QTestResult14currentDataTagEv" title='QTestResult::currentDataTag' data-ref="_ZN11QTestResult14currentDataTagEv">currentDataTag</a>() : <q>""</q>;</td></tr>
+<tr><th id="425">425</th><td>    <em>const</em> <em>char</em> *<dfn class="local col9 decl" id="199globalDataTag" title='globalDataTag' data-type='const char *' data-ref="199globalDataTag">globalDataTag</dfn> = (<a class="local col2 ref" href="#192parts" title='parts' data-ref="192parts">parts</a> &amp; <a class="enum" href="qabstracttestlogger_p.h.html#QTestPrivate::TestDataTag" title='QTestPrivate::TestDataTag' data-ref="QTestPrivate::TestDataTag">TestDataTag</a>) &amp;&amp; <a class="type" href="qtestresult_p.h.html#QTestResult" title='QTestResult' data-ref="QTestResult">QTestResult</a>::<a class="ref fn" href="qtestresult_p.h.html#_ZN11QTestResult20currentGlobalDataTagEv" title='QTestResult::currentGlobalDataTag' data-ref="_ZN11QTestResult20currentGlobalDataTagEv">currentGlobalDataTag</a>() ? <a class="type" href="qtestresult_p.h.html#QTestResult" title='QTestResult' data-ref="QTestResult">QTestResult</a>::<a class="ref fn" href="qtestresult_p.h.html#_ZN11QTestResult20currentGlobalDataTagEv" title='QTestResult::currentGlobalDataTag' data-ref="_ZN11QTestResult20currentGlobalDataTagEv">currentGlobalDataTag</a>() : <q>""</q>;</td></tr>
+<tr><th id="426">426</th><td>    <em>const</em> <em>char</em> *<dfn class="local col0 decl" id="200tagFiller" title='tagFiller' data-type='const char *' data-ref="200tagFiller">tagFiller</dfn> = (<a class="local col8 ref" href="#198dataTag" title='dataTag' data-ref="198dataTag">dataTag</a>[<var>0</var>] &amp;&amp; <a class="local col9 ref" href="#199globalDataTag" title='globalDataTag' data-ref="199globalDataTag">globalDataTag</a>[<var>0</var>]) ? <q>":"</q> : <q>""</q>;</td></tr>
+<tr><th id="427">427</th><td></td></tr>
+<tr><th id="428">428</th><td>    <span class="namespace">QTest::</span><a class="ref fn" href="#_ZN5QTest11qt_asprintfEP15QTestCharBufferPKcz" title='QTest::qt_asprintf' data-ref="_ZN5QTest11qt_asprintfEP15QTestCharBufferPKcz">qt_asprintf</a>(<span class='inlayHint'>str:&nbsp;</span><a class="local col1 ref" href="#191identifier" title='identifier' data-ref="191identifier">identifier</a>, <span class='inlayHint'>format:&nbsp;</span><q>"%s%s%s%s%s%s%s%s"</q>,</td></tr>
+<tr><th id="429">429</th><td>        <a class="local col3 ref" href="#193testObject" title='testObject' data-ref="193testObject">testObject</a>, <a class="local col5 ref" href="#195objectFunctionFiller" title='objectFunctionFiller' data-ref="195objectFunctionFiller">objectFunctionFiller</a>, <a class="local col4 ref" href="#194testFunction" title='testFunction' data-ref="194testFunction">testFunction</a>, <a class="local col6 ref" href="#196testFuctionStart" title='testFuctionStart' data-ref="196testFuctionStart">testFuctionStart</a>,</td></tr>
+<tr><th id="430">430</th><td>        <a class="local col9 ref" href="#199globalDataTag" title='globalDataTag' data-ref="199globalDataTag">globalDataTag</a>, <a class="local col0 ref" href="#200tagFiller" title='tagFiller' data-ref="200tagFiller">tagFiller</a>, <a class="local col8 ref" href="#198dataTag" title='dataTag' data-ref="198dataTag">dataTag</a>, <a class="local col7 ref" href="#197testFuctionEnd" title='testFuctionEnd' data-ref="197testFuctionEnd">testFuctionEnd</a>);</td></tr>
+<tr><th id="431">431</th><td>}</td></tr>
+<tr><th id="432">432</th><td></td></tr>
+<tr><th id="433">433</th><td><i>// strcat() for QTestCharBuffer objects:</i></td></tr>
+<tr><th id="434">434</th><td><em>bool</em> <dfn class="decl def fn" id="_ZN12QTestPrivate16appendCharBufferEP15QTestCharBufferRKS0_" title='QTestPrivate::appendCharBuffer' data-ref="_ZN12QTestPrivate16appendCharBufferEP15QTestCharBufferRKS0_">appendCharBuffer</dfn>(<a class="type" href="qabstracttestlogger_p.h.html#QTestCharBuffer" title='QTestCharBuffer' data-ref="QTestCharBuffer">QTestCharBuffer</a> *<dfn class="local col1 decl" id="201accumulator" title='accumulator' data-type='QTestCharBuffer *' data-ref="201accumulator">accumulator</dfn>, <em>const</em> <a class="type" href="qabstracttestlogger_p.h.html#QTestCharBuffer" title='QTestCharBuffer' data-ref="QTestCharBuffer">QTestCharBuffer</a> &amp;<dfn class="local col2 decl" id="202more" title='more' data-type='const QTestCharBuffer &amp;' data-ref="202more">more</dfn>)</td></tr>
+<tr><th id="435">435</th><td>{</td></tr>
+<tr><th id="436">436</th><td>    <em>const</em> <em>auto</em> <dfn class="local col3 decl" id="203bufsize" title='bufsize' data-type='const (lambda at /home/lzx0626/DavidingPlus/qtbase/src/testlib/qabstracttestlogger.cpp:436:26)' data-ref="203bufsize">bufsize</dfn> = [](<em>const</em> <a class="type" href="qabstracttestlogger_p.h.html#QTestCharBuffer" title='QTestCharBuffer' data-ref="QTestCharBuffer">QTestCharBuffer</a> &amp;<dfn class="local col4 decl" id="204buf" title='buf' data-type='const QTestCharBuffer &amp;' data-ref="204buf">buf</dfn>) -&gt; <em>int</em> {</td></tr>
+<tr><th id="437">437</th><td>        <em>const</em> <em>int</em> <dfn class="local col5 decl" id="205max" title='max' data-type='const int' data-ref="205max">max</dfn> = <a class="local col4 ref" href="#204buf" title='buf' data-ref="204buf">buf</a>.<a class="ref fn" href="qabstracttestlogger_p.h.html#_ZNK15QTestCharBuffer4sizeEv" title='QTestCharBuffer::size' data-ref="_ZNK15QTestCharBuffer4sizeEv">size</a>();</td></tr>
+<tr><th id="438">438</th><td>        <b>return</b> <a class="local col5 ref" href="#205max" title='max' data-ref="205max">max</a> &gt; <var>0</var> ? <em>int</em>(<a class="ref fn" href="../corelib/text/qbytearrayalgorithms.h.html#_Z8qstrnlenPKcm" title='qstrnlen' data-ref="_Z8qstrnlenPKcm">qstrnlen</a>(<span class='inlayHint'>str:&nbsp;</span><a class="local col4 ref" href="#204buf" title='buf' data-ref="204buf">buf</a>.<a class="ref fn" href="qabstracttestlogger_p.h.html#_ZNK15QTestCharBuffer9constDataEv" title='QTestCharBuffer::constData' data-ref="_ZNK15QTestCharBuffer9constDataEv">constData</a>(), <span class='inlayHint'>maxlen:&nbsp;</span><a class="local col5 ref" href="#205max" title='max' data-ref="205max">max</a>)) : <var>0</var>;</td></tr>
+<tr><th id="439">439</th><td>    };</td></tr>
+<tr><th id="440">440</th><td>    <em>const</em> <em>int</em> <dfn class="local col6 decl" id="206extra" title='extra' data-type='const int' data-ref="206extra">extra</dfn> = <a class="local col3 ref" href="#203bufsize" title='bufsize' data-ref="203bufsize">bufsize</a><a class="tu ref fn" href="#_ZZN12QTestPrivate16appendCharBufferEP15QTestCharBufferRKS0_ENK3$_1clES3_" title='QTestPrivate::appendCharBuffer(QTestCharBuffer *, const QTestCharBuffer &amp;)::(anonymous class)::operator()' data-use='c' data-ref="_ZZN12QTestPrivate16appendCharBufferEP15QTestCharBufferRKS0_ENK3$_1clES3_">(<a class="local col2 ref" href="#202more" title='more' data-ref="202more">more</a>)</a>;</td></tr>
+<tr><th id="441">441</th><td>    <b>if</b> (<a class="local col6 ref" href="#206extra" title='extra' data-ref="206extra">extra</a> &lt;= <var>0</var>)</td></tr>
+<tr><th id="442">442</th><td>        <b>return</b> <b>true</b>; <i>// Nothing to do, fatuous success</i></td></tr>
+<tr><th id="443">443</th><td></td></tr>
+<tr><th id="444">444</th><td>    <em>const</em> <em>int</em> <dfn class="local col7 decl" id="207oldsize" title='oldsize' data-type='const int' data-ref="207oldsize">oldsize</dfn> = <a class="local col3 ref" href="#203bufsize" title='bufsize' data-ref="203bufsize">bufsize</a><a class="tu ref fn" href="#_ZZN12QTestPrivate16appendCharBufferEP15QTestCharBufferRKS0_ENK3$_1clES3_" title='QTestPrivate::appendCharBuffer(QTestCharBuffer *, const QTestCharBuffer &amp;)::(anonymous class)::operator()' data-use='c' data-ref="_ZZN12QTestPrivate16appendCharBufferEP15QTestCharBufferRKS0_ENK3$_1clES3_">(*<a class="local col1 ref" href="#201accumulator" title='accumulator' data-ref="201accumulator">accumulator</a>)</a>;</td></tr>
+<tr><th id="445">445</th><td>    <em>const</em> <em>int</em> <dfn class="local col8 decl" id="208newsize" title='newsize' data-type='const int' data-ref="208newsize">newsize</dfn> = <a class="local col7 ref" href="#207oldsize" title='oldsize' data-ref="207oldsize">oldsize</a> + <a class="local col6 ref" href="#206extra" title='extra' data-ref="206extra">extra</a> + <var>1</var>; <i>// 1 for final '\0'</i></td></tr>
+<tr><th id="446">446</th><td>    <b>if</b> (<a class="local col8 ref" href="#208newsize" title='newsize' data-ref="208newsize">newsize</a> &gt; <a class="tu ref" href="#(anonymousnamespace)::MAXSIZE" title='(anonymous namespace)::MAXSIZE' data-use='r' data-ref="(anonymousnamespace)::MAXSIZE">MAXSIZE</a> || !<a class="local col1 ref" href="#201accumulator" title='accumulator' data-ref="201accumulator">accumulator</a>-&gt;<a class="ref fn" href="qabstracttestlogger_p.h.html#_ZN15QTestCharBuffer6resizeEi" title='QTestCharBuffer::resize' data-ref="_ZN15QTestCharBuffer6resizeEi">resize</a>(<span class='inlayHint'>newSize:&nbsp;</span><a class="local col8 ref" href="#208newsize" title='newsize' data-ref="208newsize">newsize</a>))</td></tr>
+<tr><th id="447">447</th><td>        <b>return</b> <b>false</b>; <i>// too big or unable to grow</i></td></tr>
+<tr><th id="448">448</th><td></td></tr>
+<tr><th id="449">449</th><td>    <em>char</em> *<dfn class="local col9 decl" id="209tail" title='tail' data-type='char *' data-ref="209tail">tail</dfn> = <a class="local col1 ref" href="#201accumulator" title='accumulator' data-ref="201accumulator">accumulator</a>-&gt;<a class="ref fn" href="qabstracttestlogger_p.h.html#_ZN15QTestCharBuffer4dataEv" title='QTestCharBuffer::data' data-ref="_ZN15QTestCharBuffer4dataEv">data</a>() + <a class="local col7 ref" href="#207oldsize" title='oldsize' data-ref="207oldsize">oldsize</a>;</td></tr>
+<tr><th id="450">450</th><td>    <a class="ref fn" href="../../../include/string.h.html#memcpy" title='memcpy' data-ref="memcpy">memcpy</a>(<span class='inlayHint'>dest:&nbsp;</span><a class="local col9 ref" href="#209tail" title='tail' data-ref="209tail">tail</a>, <span class='inlayHint'>src:&nbsp;</span><a class="local col2 ref" href="#202more" title='more' data-ref="202more">more</a>.<a class="ref fn" href="qabstracttestlogger_p.h.html#_ZNK15QTestCharBuffer9constDataEv" title='QTestCharBuffer::constData' data-ref="_ZNK15QTestCharBuffer9constDataEv">constData</a>(), <span class='inlayHint'>n:&nbsp;</span><a class="local col6 ref" href="#206extra" title='extra' data-ref="206extra">extra</a>);</td></tr>
+<tr><th id="451">451</th><td>    <a class="local col9 ref" href="#209tail" title='tail' data-ref="209tail">tail</a>[<a class="local col6 ref" href="#206extra" title='extra' data-ref="206extra">extra</a>] = <kbd>'\0'</kbd>;</td></tr>
+<tr><th id="452">452</th><td>    <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="453">453</th><td>}</td></tr>
+<tr><th id="454">454</th><td></td></tr>
+<tr><th id="455">455</th><td>}</td></tr>
+<tr><th id="456">456</th><td></td></tr>
+<tr><th id="457">457</th><td><a class="macro" href="../corelib/global/qtconfigmacros.h.html#104" title="" data-ref="_M/QT_END_NAMESPACE">QT_END_NAMESPACE</a></td></tr>
+<tr><th id="458">458</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2024-Jun-13</em> from project qtbase-6.5.0 revision <em>6.5.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

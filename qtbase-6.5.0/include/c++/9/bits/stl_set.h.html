@@ -1,0 +1,1077 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>stl_set.h source code [include/c++/9/bits/stl_set.h] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="std::_Rb_tree_merge_helper,std::set "/>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'include/c++/9/bits/stl_set.h'; var root_path = '../../../..'; var data_path = '../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>include</a>/<a href='../..'>c++</a>/<a href='..'>9</a>/<a href='./'>bits</a>/<a href='stl_set.h.html'>stl_set.h</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>// Set implementation -*- C++ -*-</i></td></tr>
+<tr><th id="2">2</th><td><i></i></td></tr>
+<tr><th id="3">3</th><td><i>// Copyright (C) 2001-2019 Free Software Foundation, Inc.</i></td></tr>
+<tr><th id="4">4</th><td><i>//</i></td></tr>
+<tr><th id="5">5</th><td><i>// This file is part of the GNU ISO C++ Library.  This library is free</i></td></tr>
+<tr><th id="6">6</th><td><i>// software; you can redistribute it and/or modify it under the</i></td></tr>
+<tr><th id="7">7</th><td><i>// terms of the GNU General Public License as published by the</i></td></tr>
+<tr><th id="8">8</th><td><i>// Free Software Foundation; either version 3, or (at your option)</i></td></tr>
+<tr><th id="9">9</th><td><i>// any later version.</i></td></tr>
+<tr><th id="10">10</th><td><i></i></td></tr>
+<tr><th id="11">11</th><td><i>// This library is distributed in the hope that it will be useful,</i></td></tr>
+<tr><th id="12">12</th><td><i>// but WITHOUT ANY WARRANTY; without even the implied warranty of</i></td></tr>
+<tr><th id="13">13</th><td><i>// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</i></td></tr>
+<tr><th id="14">14</th><td><i>// GNU General Public License for more details.</i></td></tr>
+<tr><th id="15">15</th><td><i></i></td></tr>
+<tr><th id="16">16</th><td><i>// Under Section 7 of GPL version 3, you are granted additional</i></td></tr>
+<tr><th id="17">17</th><td><i>// permissions described in the GCC Runtime Library Exception, version</i></td></tr>
+<tr><th id="18">18</th><td><i>// 3.1, as published by the Free Software Foundation.</i></td></tr>
+<tr><th id="19">19</th><td><i></i></td></tr>
+<tr><th id="20">20</th><td><i>// You should have received a copy of the GNU General Public License and</i></td></tr>
+<tr><th id="21">21</th><td><i>// a copy of the GCC Runtime Library Exception along with this program;</i></td></tr>
+<tr><th id="22">22</th><td><i>// see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see</i></td></tr>
+<tr><th id="23">23</th><td><i>// &lt;<a href="http://www.gnu.org/licenses/">http://www.gnu.org/licenses/</a>&gt;.</i></td></tr>
+<tr><th id="24">24</th><td></td></tr>
+<tr><th id="25">25</th><td><i>/*</i></td></tr>
+<tr><th id="26">26</th><td><i> *</i></td></tr>
+<tr><th id="27">27</th><td><i> * Copyright (c) 1994</i></td></tr>
+<tr><th id="28">28</th><td><i> * Hewlett-Packard Company</i></td></tr>
+<tr><th id="29">29</th><td><i> *</i></td></tr>
+<tr><th id="30">30</th><td><i> * Permission to use, copy, modify, distribute and sell this software</i></td></tr>
+<tr><th id="31">31</th><td><i> * and its documentation for any purpose is hereby granted without fee,</i></td></tr>
+<tr><th id="32">32</th><td><i> * provided that the above copyright notice appear in all copies and</i></td></tr>
+<tr><th id="33">33</th><td><i> * that both that copyright notice and this permission notice appear</i></td></tr>
+<tr><th id="34">34</th><td><i> * in supporting documentation.  Hewlett-Packard Company makes no</i></td></tr>
+<tr><th id="35">35</th><td><i> * representations about the suitability of this software for any</i></td></tr>
+<tr><th id="36">36</th><td><i> * purpose.  It is provided "as is" without express or implied warranty.</i></td></tr>
+<tr><th id="37">37</th><td><i> *</i></td></tr>
+<tr><th id="38">38</th><td><i> *</i></td></tr>
+<tr><th id="39">39</th><td><i> * Copyright (c) 1996,1997</i></td></tr>
+<tr><th id="40">40</th><td><i> * Silicon Graphics Computer Systems, Inc.</i></td></tr>
+<tr><th id="41">41</th><td><i> *</i></td></tr>
+<tr><th id="42">42</th><td><i> * Permission to use, copy, modify, distribute and sell this software</i></td></tr>
+<tr><th id="43">43</th><td><i> * and its documentation for any purpose is hereby granted without fee,</i></td></tr>
+<tr><th id="44">44</th><td><i> * provided that the above copyright notice appear in all copies and</i></td></tr>
+<tr><th id="45">45</th><td><i> * that both that copyright notice and this permission notice appear</i></td></tr>
+<tr><th id="46">46</th><td><i> * in supporting documentation.  Silicon Graphics makes no</i></td></tr>
+<tr><th id="47">47</th><td><i> * representations about the suitability of this software for any</i></td></tr>
+<tr><th id="48">48</th><td><i> * purpose.  It is provided "as is" without express or implied warranty.</i></td></tr>
+<tr><th id="49">49</th><td><i> */</i></td></tr>
+<tr><th id="50">50</th><td></td></tr>
+<tr><th id="51">51</th><td><i class="doc">/** <span class="command">@file</span> <span class="verb">bits/stl_set.h</span></i></td></tr>
+<tr><th id="52">52</th><td><i class="doc"> *  This is an internal header file, included by other library headers.</i></td></tr>
+<tr><th id="53">53</th><td><i class="doc"> *  Do not attempt to use it directly.<span class="command"> @headername</span>{set}</i></td></tr>
+<tr><th id="54">54</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="55">55</th><td></td></tr>
+<tr><th id="56">56</th><td><u>#<span data-ppcond="56">ifndef</span> <span class="macro" data-ref="_M/_STL_SET_H">_STL_SET_H</span></u></td></tr>
+<tr><th id="57">57</th><td><u>#define <dfn class="macro" id="_M/_STL_SET_H" data-ref="_M/_STL_SET_H">_STL_SET_H</dfn> 1</u></td></tr>
+<tr><th id="58">58</th><td></td></tr>
+<tr><th id="59">59</th><td><u>#include <a href="concept_check.h.html">&lt;bits/concept_check.h&gt;</a></u></td></tr>
+<tr><th id="60">60</th><td><u>#<span data-ppcond="60">if</span> <span class="macro" title="201703L" data-ref="_M/__cplusplus">__cplusplus</span> &gt;= 201103L</u></td></tr>
+<tr><th id="61">61</th><td><u>#include <a href="../initializer_list.html">&lt;initializer_list&gt;</a></u></td></tr>
+<tr><th id="62">62</th><td><u>#<span data-ppcond="60">endif</span></u></td></tr>
+<tr><th id="63">63</th><td></td></tr>
+<tr><th id="64">64</th><td><b>namespace</b> <span class="namespace">std</span> <a class="macro" href="../../../x86_64-linux-gnu/c++/9/bits/c++config.h.html#70" title="__attribute__ ((__visibility__ (&quot;default&quot;)))" data-ref="_M/_GLIBCXX_VISIBILITY">_GLIBCXX_VISIBILITY</a>(<b>default</b>)</td></tr>
+<tr><th id="65">65</th><td>{</td></tr>
+<tr><th id="66">66</th><td><a class="macro" href="../../../x86_64-linux-gnu/c++/9/bits/c++config.h.html#328" title="" data-ref="_M/_GLIBCXX_BEGIN_NAMESPACE_VERSION">_GLIBCXX_BEGIN_NAMESPACE_VERSION</a></td></tr>
+<tr><th id="67">67</th><td><a class="macro" href="../../../x86_64-linux-gnu/c++/9/bits/c++config.h.html#400" title="" data-ref="_M/_GLIBCXX_BEGIN_NAMESPACE_CONTAINER">_GLIBCXX_BEGIN_NAMESPACE_CONTAINER</a></td></tr>
+<tr><th id="68">68</th><td></td></tr>
+<tr><th id="69">69</th><td>  <b>template</b>&lt;<b>typename</b> _Key, <b>typename</b> _Compare, <b>typename</b> _Alloc&gt;</td></tr>
+<tr><th id="70">70</th><td>    <b>class</b> <a class="type" href="stl_multiset.h.html#std::multiset" title='std::multiset' data-ref="std::multiset" id="std::multiset">multiset</a>;</td></tr>
+<tr><th id="71">71</th><td></td></tr>
+<tr><th id="72">72</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="73">73</th><td><i class="doc">   *  <span class="command">@brief</span> A standard container made up of unique keys, which can be</i></td></tr>
+<tr><th id="74">74</th><td><i class="doc">   *  retrieved in logarithmic time.</i></td></tr>
+<tr><th id="75">75</th><td><i class="doc">   *</i></td></tr>
+<tr><th id="76">76</th><td><i class="doc">   *  <span class="command">@ingroup</span> <span class="verb">associative_containers</span></i></td></tr>
+<tr><th id="77">77</th><td><i class="doc">   *</i></td></tr>
+<tr><th id="78">78</th><td><i class="doc">   *  <span class="command">@tparam</span> <span class="arg">_Key</span>  Type of key objects.</i></td></tr>
+<tr><th id="79">79</th><td><i class="doc">   *  <span class="command">@tparam</span> <span class="arg">_Compare</span>  Comparison function object type, defaults to less&lt;_Key&gt;.</i></td></tr>
+<tr><th id="80">80</th><td><i class="doc">   *  <span class="command">@tparam</span> <span class="arg">_Alloc</span>  Allocator type, defaults to allocator&lt;_Key&gt;.</i></td></tr>
+<tr><th id="81">81</th><td><i class="doc">   *</i></td></tr>
+<tr><th id="82">82</th><td><i class="doc">   *  Meets the requirements of a <span class="tag">&lt;a href="tables.html#65"&gt;</span>container<span class="tag">&lt;/a&gt;</span>, a</i></td></tr>
+<tr><th id="83">83</th><td><i class="doc">   *  <span class="tag">&lt;a href="tables.html#66"&gt;</span>reversible container<span class="tag">&lt;/a&gt;</span>, and an</i></td></tr>
+<tr><th id="84">84</th><td><i class="doc">   *  <span class="tag">&lt;a href="tables.html#69"&gt;</span>associative container<span class="tag">&lt;/a&gt;</span> (using unique keys).</i></td></tr>
+<tr><th id="85">85</th><td><i class="doc">   *</i></td></tr>
+<tr><th id="86">86</th><td><i class="doc">   *  Sets support bidirectional iterators.</i></td></tr>
+<tr><th id="87">87</th><td><i class="doc">   *</i></td></tr>
+<tr><th id="88">88</th><td><i class="doc">   *  The private tree data is declared exactly the same way for set and</i></td></tr>
+<tr><th id="89">89</th><td><i class="doc">   *  multiset; the distinction is made entirely in how the tree functions are</i></td></tr>
+<tr><th id="90">90</th><td><i class="doc">   *  called (*_unique versus *_equal, same as the standard).</i></td></tr>
+<tr><th id="91">91</th><td><i class="doc">  */</i></td></tr>
+<tr><th id="92">92</th><td>  <b>template</b>&lt;<b>typename</b> _Key, <b>typename</b> _Compare = <span class="namespace">std::</span><a class="type" href="stl_function.h.html#std::less" title='std::less' data-ref="std::less">less</a>&lt;_Key&gt;,</td></tr>
+<tr><th id="93">93</th><td>	   <b>typename</b> _Alloc = <span class="namespace">std::</span><a class="type" href="memoryfwd.h.html#std::allocator" title='std::allocator' data-ref="std::allocator">allocator</a>&lt;_Key&gt; &gt;</td></tr>
+<tr><th id="94">94</th><td>    <b>class</b> <dfn class="type def" id="std::set" title='std::set' data-ref="std::set">set</dfn></td></tr>
+<tr><th id="95">95</th><td>    {</td></tr>
+<tr><th id="96">96</th><td><u>#<span data-ppcond="96">ifdef</span> <span class="macro" data-ref="_M/_GLIBCXX_CONCEPT_CHECKS">_GLIBCXX_CONCEPT_CHECKS</span></u></td></tr>
+<tr><th id="97">97</th><td>      <i>// concept requirements</i></td></tr>
+<tr><th id="98">98</th><td>      <b>typedef</b> <b>typename</b> _Alloc::value_type		_Alloc_value_type;</td></tr>
+<tr><th id="99">99</th><td><u># if __cplusplus &lt; 201103L</u></td></tr>
+<tr><th id="100">100</th><td>      __glibcxx_class_requires(_Key, _SGIAssignableConcept)</td></tr>
+<tr><th id="101">101</th><td><u># endif</u></td></tr>
+<tr><th id="102">102</th><td>      __glibcxx_class_requires4(_Compare, <em>bool</em>, _Key, _Key,</td></tr>
+<tr><th id="103">103</th><td>				_BinaryFunctionConcept)</td></tr>
+<tr><th id="104">104</th><td>      __glibcxx_class_requires2(_Key, _Alloc_value_type, _SameTypeConcept)</td></tr>
+<tr><th id="105">105</th><td><u>#<span data-ppcond="96">endif</span></u></td></tr>
+<tr><th id="106">106</th><td></td></tr>
+<tr><th id="107">107</th><td><u>#<span data-ppcond="107">if</span> <span class="macro" title="201703L" data-ref="_M/__cplusplus">__cplusplus</span> &gt;= 201103L</u></td></tr>
+<tr><th id="108">108</th><td>      <b>static_assert</b>(<a class="type" href="../type_traits.html#std::is_same" title='std::is_same' data-ref="std::is_same">is_same</a>&lt;<b>typename</b> <a class="type" href="../type_traits.html#std::remove_cv" title='std::remove_cv' data-ref="std::remove_cv">remove_cv</a>&lt;_Key&gt;::type, _Key&gt;::value,</td></tr>
+<tr><th id="109">109</th><td>	  <q>"std::set must have a non-const, non-volatile value_type"</q>);</td></tr>
+<tr><th id="110">110</th><td><u># <span data-ppcond="110">ifdef</span> <span class="macro" data-ref="_M/__STRICT_ANSI__">__STRICT_ANSI__</span></u></td></tr>
+<tr><th id="111">111</th><td>      <b>static_assert</b>(<a class="type" href="../type_traits.html#std::is_same" title='std::is_same' data-ref="std::is_same">is_same</a>&lt;<b>typename</b> _Alloc::value_type, _Key&gt;::value,</td></tr>
+<tr><th id="112">112</th><td>	  <q>"std::set must have the same value_type as its allocator"</q>);</td></tr>
+<tr><th id="113">113</th><td><u># <span data-ppcond="110">endif</span></u></td></tr>
+<tr><th id="114">114</th><td><u>#<span data-ppcond="107">endif</span></u></td></tr>
+<tr><th id="115">115</th><td></td></tr>
+<tr><th id="116">116</th><td>    <b>public</b>:</td></tr>
+<tr><th id="117">117</th><td>      <i>// typedefs:</i></td></tr>
+<tr><th id="118">118</th><td><i>      ///@{</i></td></tr>
+<tr><th id="119">119</th><td><i>      /// Public typedefs.</i></td></tr>
+<tr><th id="120">120</th><td>      <b>typedef</b> _Key     <dfn class="typedef" id="std::set::key_type" title='std::set::key_type' data-type='_Key' data-ref="std::set::key_type">key_type</dfn>;</td></tr>
+<tr><th id="121">121</th><td>      <b>typedef</b> _Key     <dfn class="typedef" id="std::set::value_type" title='std::set::value_type' data-type='_Key' data-ref="std::set::value_type">value_type</dfn>;</td></tr>
+<tr><th id="122">122</th><td>      <b>typedef</b> _Compare <dfn class="typedef" id="std::set::key_compare" title='std::set::key_compare' data-type='_Compare' data-ref="std::set::key_compare">key_compare</dfn>;</td></tr>
+<tr><th id="123">123</th><td>      <b>typedef</b> _Compare <dfn class="typedef" id="std::set::value_compare" title='std::set::value_compare' data-type='_Compare' data-ref="std::set::value_compare">value_compare</dfn>;</td></tr>
+<tr><th id="124">124</th><td>      <b>typedef</b> _Alloc   <dfn class="typedef" id="std::set::allocator_type" title='std::set::allocator_type' data-type='_Alloc' data-ref="std::set::allocator_type">allocator_type</dfn>;</td></tr>
+<tr><th id="125">125</th><td>      <i class="doc">///@}</i></td></tr>
+<tr><th id="126">126</th><td></td></tr>
+<tr><th id="127">127</th><td>    <b>private</b>:</td></tr>
+<tr><th id="128">128</th><td>      <b>typedef</b> <b>typename</b> <span class="namespace">__gnu_cxx::</span><a class="type" href="../ext/alloc_traits.h.html#__gnu_cxx::__alloc_traits" title='__gnu_cxx::__alloc_traits' data-ref="__gnu_cxx::__alloc_traits">__alloc_traits</a>&lt;_Alloc&gt;::<b>template</b></td></tr>
+<tr><th id="129">129</th><td>	rebind&lt;_Key&gt;::other <dfn class="typedef" id="std::set::_Key_alloc_type" title='std::set::_Key_alloc_type' data-type='typename __gnu_cxx::__alloc_traits&lt;_Alloc&gt;::template rebind&lt;_Key&gt;::other' data-ref="std::set::_Key_alloc_type">_Key_alloc_type</dfn>;</td></tr>
+<tr><th id="130">130</th><td></td></tr>
+<tr><th id="131">131</th><td>      <b>typedef</b> <a class="type" href="stl_tree.h.html#std::_Rb_tree" title='std::_Rb_tree' data-ref="std::_Rb_tree">_Rb_tree</a>&lt;<a class="typedef" href="#std::set::key_type" title='std::set::key_type' data-type='_Key' data-ref="std::set::key_type">key_type</a>, <a class="typedef" href="#std::set::value_type" title='std::set::value_type' data-type='_Key' data-ref="std::set::value_type">value_type</a>, <a class="type" href="stl_function.h.html#std::_Identity" title='std::_Identity' data-ref="std::_Identity">_Identity</a>&lt;<a class="typedef" href="#std::set::value_type" title='std::set::value_type' data-type='_Key' data-ref="std::set::value_type">value_type</a>&gt;,</td></tr>
+<tr><th id="132">132</th><td>		       <a class="typedef" href="#std::set::key_compare" title='std::set::key_compare' data-type='_Compare' data-ref="std::set::key_compare">key_compare</a>, <a class="typedef" href="#std::set::_Key_alloc_type" title='std::set::_Key_alloc_type' data-type='typename __gnu_cxx::__alloc_traits&lt;_Alloc&gt;::template rebind&lt;_Key&gt;::other' data-ref="std::set::_Key_alloc_type">_Key_alloc_type</a>&gt; <dfn class="typedef" id="std::set::_Rep_type" title='std::set::_Rep_type' data-type='_Rb_tree&lt;std::set::key_type, std::set::value_type, _Identity&lt;std::set::value_type&gt;, std::set::key_compare, std::set::_Key_alloc_type&gt;' data-ref="std::set::_Rep_type">_Rep_type</dfn>;</td></tr>
+<tr><th id="133">133</th><td>      <a class="typedef" href="#std::set::_Rep_type" title='std::set::_Rep_type' data-type='_Rb_tree&lt;std::set::key_type, std::set::value_type, _Identity&lt;std::set::value_type&gt;, std::set::key_compare, std::set::_Key_alloc_type&gt;' data-ref="std::set::_Rep_type">_Rep_type</a> <dfn class="decl field" id="std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</dfn>;  <i>// Red-black tree representing set.</i></td></tr>
+<tr><th id="134">134</th><td></td></tr>
+<tr><th id="135">135</th><td>      <b>typedef</b> <span class="namespace">__gnu_cxx::</span><a class="type" href="../ext/alloc_traits.h.html#__gnu_cxx::__alloc_traits" title='__gnu_cxx::__alloc_traits' data-ref="__gnu_cxx::__alloc_traits">__alloc_traits</a>&lt;<a class="typedef" href="#std::set::_Key_alloc_type" title='std::set::_Key_alloc_type' data-type='typename __gnu_cxx::__alloc_traits&lt;_Alloc&gt;::template rebind&lt;_Key&gt;::other' data-ref="std::set::_Key_alloc_type">_Key_alloc_type</a>&gt; <dfn class="typedef" id="std::set::_Alloc_traits" title='std::set::_Alloc_traits' data-type='__gnu_cxx::__alloc_traits&lt;_Key_alloc_type&gt;' data-ref="std::set::_Alloc_traits">_Alloc_traits</dfn>;</td></tr>
+<tr><th id="136">136</th><td></td></tr>
+<tr><th id="137">137</th><td>    <b>public</b>:</td></tr>
+<tr><th id="138">138</th><td>      <i class="doc">///@{</i></td></tr>
+<tr><th id="139">139</th><td><i class="doc">      ///  Iterator-related typedefs.</i></td></tr>
+<tr><th id="140">140</th><td>      <b>typedef</b> <b>typename</b> <a class="typedef" href="#std::set::_Alloc_traits" title='std::set::_Alloc_traits' data-type='__gnu_cxx::__alloc_traits&lt;_Key_alloc_type&gt;' data-ref="std::set::_Alloc_traits">_Alloc_traits</a>::pointer		 <dfn class="typedef" id="std::set::pointer" title='std::set::pointer' data-type='typename _Alloc_traits::pointer' data-ref="std::set::pointer">pointer</dfn>;</td></tr>
+<tr><th id="141">141</th><td>      <b>typedef</b> <b>typename</b> <a class="typedef" href="#std::set::_Alloc_traits" title='std::set::_Alloc_traits' data-type='__gnu_cxx::__alloc_traits&lt;_Key_alloc_type&gt;' data-ref="std::set::_Alloc_traits">_Alloc_traits</a>::const_pointer	 <dfn class="typedef" id="std::set::const_pointer" title='std::set::const_pointer' data-type='typename _Alloc_traits::const_pointer' data-ref="std::set::const_pointer">const_pointer</dfn>;</td></tr>
+<tr><th id="142">142</th><td>      <b>typedef</b> <b>typename</b> <a class="typedef" href="#std::set::_Alloc_traits" title='std::set::_Alloc_traits' data-type='__gnu_cxx::__alloc_traits&lt;_Key_alloc_type&gt;' data-ref="std::set::_Alloc_traits">_Alloc_traits</a>::reference		 <dfn class="typedef" id="std::set::reference" title='std::set::reference' data-type='typename _Alloc_traits::reference' data-ref="std::set::reference">reference</dfn>;</td></tr>
+<tr><th id="143">143</th><td>      <b>typedef</b> <b>typename</b> <a class="typedef" href="#std::set::_Alloc_traits" title='std::set::_Alloc_traits' data-type='__gnu_cxx::__alloc_traits&lt;_Key_alloc_type&gt;' data-ref="std::set::_Alloc_traits">_Alloc_traits</a>::const_reference	 <dfn class="typedef" id="std::set::const_reference" title='std::set::const_reference' data-type='typename _Alloc_traits::const_reference' data-ref="std::set::const_reference">const_reference</dfn>;</td></tr>
+<tr><th id="144">144</th><td>      <i>// _GLIBCXX_RESOLVE_LIB_DEFECTS</i></td></tr>
+<tr><th id="145">145</th><td><i>      // DR 103. set::iterator is required to be modifiable,</i></td></tr>
+<tr><th id="146">146</th><td><i>      // but this allows modification of keys.</i></td></tr>
+<tr><th id="147">147</th><td>      <b>typedef</b> <b>typename</b> <a class="typedef" href="#std::set::_Rep_type" title='std::set::_Rep_type' data-type='_Rb_tree&lt;std::set::key_type, std::set::value_type, _Identity&lt;std::set::value_type&gt;, std::set::key_compare, std::set::_Key_alloc_type&gt;' data-ref="std::set::_Rep_type">_Rep_type</a>::const_iterator	 <dfn class="typedef" id="std::set::iterator" title='std::set::iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::iterator">iterator</dfn>;</td></tr>
+<tr><th id="148">148</th><td>      <b>typedef</b> <b>typename</b> <a class="typedef" href="#std::set::_Rep_type" title='std::set::_Rep_type' data-type='_Rb_tree&lt;std::set::key_type, std::set::value_type, _Identity&lt;std::set::value_type&gt;, std::set::key_compare, std::set::_Key_alloc_type&gt;' data-ref="std::set::_Rep_type">_Rep_type</a>::const_iterator	 <dfn class="typedef" id="std::set::const_iterator" title='std::set::const_iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::const_iterator">const_iterator</dfn>;</td></tr>
+<tr><th id="149">149</th><td>      <b>typedef</b> <b>typename</b> <a class="typedef" href="#std::set::_Rep_type" title='std::set::_Rep_type' data-type='_Rb_tree&lt;std::set::key_type, std::set::value_type, _Identity&lt;std::set::value_type&gt;, std::set::key_compare, std::set::_Key_alloc_type&gt;' data-ref="std::set::_Rep_type">_Rep_type</a>::const_reverse_iterator <dfn class="typedef" id="std::set::reverse_iterator" title='std::set::reverse_iterator' data-type='typename _Rep_type::const_reverse_iterator' data-ref="std::set::reverse_iterator">reverse_iterator</dfn>;</td></tr>
+<tr><th id="150">150</th><td>      <b>typedef</b> <b>typename</b> <a class="typedef" href="#std::set::_Rep_type" title='std::set::_Rep_type' data-type='_Rb_tree&lt;std::set::key_type, std::set::value_type, _Identity&lt;std::set::value_type&gt;, std::set::key_compare, std::set::_Key_alloc_type&gt;' data-ref="std::set::_Rep_type">_Rep_type</a>::const_reverse_iterator <dfn class="typedef" id="std::set::const_reverse_iterator" title='std::set::const_reverse_iterator' data-type='typename _Rep_type::const_reverse_iterator' data-ref="std::set::const_reverse_iterator">const_reverse_iterator</dfn>;</td></tr>
+<tr><th id="151">151</th><td>      <b>typedef</b> <b>typename</b> <a class="typedef" href="#std::set::_Rep_type" title='std::set::_Rep_type' data-type='_Rb_tree&lt;std::set::key_type, std::set::value_type, _Identity&lt;std::set::value_type&gt;, std::set::key_compare, std::set::_Key_alloc_type&gt;' data-ref="std::set::_Rep_type">_Rep_type</a>::size_type		 <dfn class="typedef" id="std::set::size_type" title='std::set::size_type' data-type='typename _Rep_type::size_type' data-ref="std::set::size_type">size_type</dfn>;</td></tr>
+<tr><th id="152">152</th><td>      <b>typedef</b> <b>typename</b> <a class="typedef" href="#std::set::_Rep_type" title='std::set::_Rep_type' data-type='_Rb_tree&lt;std::set::key_type, std::set::value_type, _Identity&lt;std::set::value_type&gt;, std::set::key_compare, std::set::_Key_alloc_type&gt;' data-ref="std::set::_Rep_type">_Rep_type</a>::difference_type	 <dfn class="typedef" id="std::set::difference_type" title='std::set::difference_type' data-type='typename _Rep_type::difference_type' data-ref="std::set::difference_type">difference_type</dfn>;</td></tr>
+<tr><th id="153">153</th><td>      <i class="doc">///@}</i></td></tr>
+<tr><th id="154">154</th><td></td></tr>
+<tr><th id="155">155</th><td><u>#<span data-ppcond="155">if</span> <span class="macro" title="201703L" data-ref="_M/__cplusplus">__cplusplus</span> &gt; 201402L</u></td></tr>
+<tr><th id="156">156</th><td>      <b>using</b> <dfn class="typedef" id="std::set::node_type" title='std::set::node_type' data-type='typename _Rep_type::node_type' data-ref="std::set::node_type">node_type</dfn> = <b>typename</b> <a class="typedef" href="#std::set::_Rep_type" title='std::set::_Rep_type' data-type='_Rb_tree&lt;std::set::key_type, std::set::value_type, _Identity&lt;std::set::value_type&gt;, std::set::key_compare, std::set::_Key_alloc_type&gt;' data-ref="std::set::_Rep_type">_Rep_type</a>::node_type;</td></tr>
+<tr><th id="157">157</th><td>      <b>using</b> <dfn class="typedef" id="std::set::insert_return_type" title='std::set::insert_return_type' data-type='typename _Rep_type::insert_return_type' data-ref="std::set::insert_return_type">insert_return_type</dfn> = <b>typename</b> <a class="typedef" href="#std::set::_Rep_type" title='std::set::_Rep_type' data-type='_Rb_tree&lt;std::set::key_type, std::set::value_type, _Identity&lt;std::set::value_type&gt;, std::set::key_compare, std::set::_Key_alloc_type&gt;' data-ref="std::set::_Rep_type">_Rep_type</a>::insert_return_type;</td></tr>
+<tr><th id="158">158</th><td><u>#<span data-ppcond="155">endif</span></u></td></tr>
+<tr><th id="159">159</th><td></td></tr>
+<tr><th id="160">160</th><td>      <i>// allocation/deallocation</i></td></tr>
+<tr><th id="161">161</th><td>      <i class="doc">/**</i></td></tr>
+<tr><th id="162">162</th><td><i class="doc">       *  <span class="command">@brief</span>  Default constructor creates no elements.</i></td></tr>
+<tr><th id="163">163</th><td><i class="doc">       */</i></td></tr>
+<tr><th id="164">164</th><td><u>#<span data-ppcond="164">if</span> <span class="macro" title="201703L" data-ref="_M/__cplusplus">__cplusplus</span> &lt; 201103L</u></td></tr>
+<tr><th id="165">165</th><td>      set() : _M_t() { }</td></tr>
+<tr><th id="166">166</th><td><u>#<span data-ppcond="164">else</span></u></td></tr>
+<tr><th id="167">167</th><td>      <dfn class="decl def fn" id="_ZNSt3setC1Ev" title='std::set::set&lt;_Key, _Compare, _Alloc&gt;' data-ref="_ZNSt3setC1Ev">set</dfn>() = <b>default</b>;</td></tr>
+<tr><th id="168">168</th><td><u>#<span data-ppcond="164">endif</span></u></td></tr>
+<tr><th id="169">169</th><td></td></tr>
+<tr><th id="170">170</th><td>      <i class="doc">/**</i></td></tr>
+<tr><th id="171">171</th><td><i class="doc">       *  <span class="command">@brief</span>  Creates a %set with no elements.</i></td></tr>
+<tr><th id="172">172</th><td><i class="doc">       *  <span class="command">@param</span>  <span class="arg">__comp</span>  Comparator to use.</i></td></tr>
+<tr><th id="173">173</th><td><i class="doc">       *  <span class="command">@param</span>  <span class="arg">__a</span>  An allocator object.</i></td></tr>
+<tr><th id="174">174</th><td><i class="doc">       */</i></td></tr>
+<tr><th id="175">175</th><td>      <b>explicit</b></td></tr>
+<tr><th id="176">176</th><td>      <dfn class="decl def fn" id="_ZNSt3setC1ERKT0_RKT1_" title='std::set::set&lt;_Key, _Compare, _Alloc&gt;' data-ref="_ZNSt3setC1ERKT0_RKT1_">set</dfn>(<em>const</em> _Compare&amp; <dfn class="local col1 decl" id="1__comp" title='__comp' data-type='const _Compare &amp;' data-ref="1__comp">__comp</dfn>,</td></tr>
+<tr><th id="177">177</th><td>	  <em>const</em> <a class="typedef" href="#std::set::allocator_type" title='std::set::allocator_type' data-type='_Alloc' data-ref="std::set::allocator_type">allocator_type</a>&amp; <dfn class="local col2 decl" id="2__a" title='__a' data-type='const std::set::allocator_type &amp;' data-ref="2__a">__a</dfn> = <a class="typedef" href="#std::set::allocator_type" title='std::set::allocator_type' data-type='_Alloc' data-ref="std::set::allocator_type">allocator_type</a>())</td></tr>
+<tr><th id="178">178</th><td>      : <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>(<a class="local col1 ref" href="#1__comp" title='__comp' data-ref="1__comp">__comp</a>, <a class="typedef" href="#std::set::_Key_alloc_type" title='std::set::_Key_alloc_type' data-type='typename __gnu_cxx::__alloc_traits&lt;_Alloc&gt;::template rebind&lt;_Key&gt;::other' data-ref="std::set::_Key_alloc_type">_Key_alloc_type</a>(<a class="local col2 ref" href="#2__a" title='__a' data-ref="2__a">__a</a>)) { }</td></tr>
+<tr><th id="179">179</th><td></td></tr>
+<tr><th id="180">180</th><td>      <i class="doc">/**</i></td></tr>
+<tr><th id="181">181</th><td><i class="doc">       *  <span class="command">@brief</span>  Builds a %set from a range.</i></td></tr>
+<tr><th id="182">182</th><td><i class="doc">       *  <span class="command">@param</span>  <span class="arg">__first</span>  An input iterator.</i></td></tr>
+<tr><th id="183">183</th><td><i class="doc">       *  <span class="command">@param</span>  <span class="arg">__last</span>  An input iterator.</i></td></tr>
+<tr><th id="184">184</th><td><i class="doc">       *</i></td></tr>
+<tr><th id="185">185</th><td><i class="doc">       *  Create a %set consisting of copies of the elements from</i></td></tr>
+<tr><th id="186">186</th><td><i class="doc">       *  [__first,__last).  This is linear in N if the range is</i></td></tr>
+<tr><th id="187">187</th><td><i class="doc">       *  already sorted, and NlogN otherwise (where N is</i></td></tr>
+<tr><th id="188">188</th><td><i class="doc">       *  distance(__first,__last)).</i></td></tr>
+<tr><th id="189">189</th><td><i class="doc">       */</i></td></tr>
+<tr><th id="190">190</th><td>      <b>template</b>&lt;<b>typename</b> _InputIterator&gt;</td></tr>
+<tr><th id="191">191</th><td>	<dfn class="decl def fn" id="_ZNSt3setC1ETL0__S0_" title='std::set::set&lt;_Key, _Compare, _Alloc&gt;' data-ref="_ZNSt3setC1ETL0__S0_">set</dfn>(_InputIterator <dfn class="local col3 decl" id="3__first" title='__first' data-type='_InputIterator' data-ref="3__first">__first</dfn>, _InputIterator <dfn class="local col4 decl" id="4__last" title='__last' data-type='_InputIterator' data-ref="4__last">__last</dfn>)</td></tr>
+<tr><th id="192">192</th><td>	: <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>()</td></tr>
+<tr><th id="193">193</th><td>	{ <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>._M_insert_range_unique(<a class="local col3 ref" href="#3__first" title='__first' data-ref="3__first">__first</a>, <a class="local col4 ref" href="#4__last" title='__last' data-ref="4__last">__last</a>); }</td></tr>
+<tr><th id="194">194</th><td></td></tr>
+<tr><th id="195">195</th><td>      <i class="doc">/**</i></td></tr>
+<tr><th id="196">196</th><td><i class="doc">       *  <span class="command">@brief</span>  Builds a %set from a range.</i></td></tr>
+<tr><th id="197">197</th><td><i class="doc">       *  <span class="command">@param</span>  <span class="arg">__first</span>  An input iterator.</i></td></tr>
+<tr><th id="198">198</th><td><i class="doc">       *  <span class="command">@param</span>  <span class="arg">__last</span>  An input iterator.</i></td></tr>
+<tr><th id="199">199</th><td><i class="doc">       *  <span class="command">@param</span>  <span class="arg">__comp</span>  A comparison functor.</i></td></tr>
+<tr><th id="200">200</th><td><i class="doc">       *  <span class="command">@param</span>  <span class="arg">__a</span>  An allocator object.</i></td></tr>
+<tr><th id="201">201</th><td><i class="doc">       *</i></td></tr>
+<tr><th id="202">202</th><td><i class="doc">       *  Create a %set consisting of copies of the elements from</i></td></tr>
+<tr><th id="203">203</th><td><i class="doc">       *  [__first,__last).  This is linear in N if the range is</i></td></tr>
+<tr><th id="204">204</th><td><i class="doc">       *  already sorted, and NlogN otherwise (where N is</i></td></tr>
+<tr><th id="205">205</th><td><i class="doc">       *  distance(__first,__last)).</i></td></tr>
+<tr><th id="206">206</th><td><i class="doc">       */</i></td></tr>
+<tr><th id="207">207</th><td>      <b>template</b>&lt;<b>typename</b> _InputIterator&gt;</td></tr>
+<tr><th id="208">208</th><td>	<dfn class="decl def fn" id="_ZNSt3setC1ETL0__S0_RKT0_RKT1_" title='std::set::set&lt;_Key, _Compare, _Alloc&gt;' data-ref="_ZNSt3setC1ETL0__S0_RKT0_RKT1_">set</dfn>(_InputIterator <dfn class="local col5 decl" id="5__first" title='__first' data-type='_InputIterator' data-ref="5__first">__first</dfn>, _InputIterator <dfn class="local col6 decl" id="6__last" title='__last' data-type='_InputIterator' data-ref="6__last">__last</dfn>,</td></tr>
+<tr><th id="209">209</th><td>	    <em>const</em> _Compare&amp; <dfn class="local col7 decl" id="7__comp" title='__comp' data-type='const _Compare &amp;' data-ref="7__comp">__comp</dfn>,</td></tr>
+<tr><th id="210">210</th><td>	    <em>const</em> <a class="typedef" href="#std::set::allocator_type" title='std::set::allocator_type' data-type='_Alloc' data-ref="std::set::allocator_type">allocator_type</a>&amp; <dfn class="local col8 decl" id="8__a" title='__a' data-type='const std::set::allocator_type &amp;' data-ref="8__a">__a</dfn> = <a class="typedef" href="#std::set::allocator_type" title='std::set::allocator_type' data-type='_Alloc' data-ref="std::set::allocator_type">allocator_type</a>())</td></tr>
+<tr><th id="211">211</th><td>	: <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>(<a class="local col7 ref" href="#7__comp" title='__comp' data-ref="7__comp">__comp</a>, <a class="typedef" href="#std::set::_Key_alloc_type" title='std::set::_Key_alloc_type' data-type='typename __gnu_cxx::__alloc_traits&lt;_Alloc&gt;::template rebind&lt;_Key&gt;::other' data-ref="std::set::_Key_alloc_type">_Key_alloc_type</a>(<a class="local col8 ref" href="#8__a" title='__a' data-ref="8__a">__a</a>))</td></tr>
+<tr><th id="212">212</th><td>	{ <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>._M_insert_range_unique(<a class="local col5 ref" href="#5__first" title='__first' data-ref="5__first">__first</a>, <a class="local col6 ref" href="#6__last" title='__last' data-ref="6__last">__last</a>); }</td></tr>
+<tr><th id="213">213</th><td></td></tr>
+<tr><th id="214">214</th><td>      <i class="doc">/**</i></td></tr>
+<tr><th id="215">215</th><td><i class="doc">       *  <span class="command">@brief</span>  %Set copy constructor.</i></td></tr>
+<tr><th id="216">216</th><td><i class="doc">       *</i></td></tr>
+<tr><th id="217">217</th><td><i class="doc">       *  Whether the allocator is copied depends on the allocator traits.</i></td></tr>
+<tr><th id="218">218</th><td><i class="doc">       */</i></td></tr>
+<tr><th id="219">219</th><td><u>#<span data-ppcond="219">if</span> <span class="macro" title="201703L" data-ref="_M/__cplusplus">__cplusplus</span> &lt; 201103L</u></td></tr>
+<tr><th id="220">220</th><td>      set(<em>const</em> set&amp; __x)</td></tr>
+<tr><th id="221">221</th><td>      : _M_t(__x._M_t) { }</td></tr>
+<tr><th id="222">222</th><td><u>#<span data-ppcond="219">else</span></u></td></tr>
+<tr><th id="223">223</th><td>      <dfn class="decl def fn" id="_ZNSt3setC1ERKSt3setIT_T0_T1_E" title='std::set::set&lt;_Key, _Compare, _Alloc&gt;' data-ref="_ZNSt3setC1ERKSt3setIT_T0_T1_E">set</dfn>(<em>const</em> set&amp;) = <b>default</b>;</td></tr>
+<tr><th id="224">224</th><td></td></tr>
+<tr><th id="225">225</th><td>     <i class="doc">/**</i></td></tr>
+<tr><th id="226">226</th><td><i class="doc">       *  <span class="command">@brief</span> %Set move constructor</i></td></tr>
+<tr><th id="227">227</th><td><i class="doc">       *</i></td></tr>
+<tr><th id="228">228</th><td><i class="doc">       *  The newly-created %set contains the exact contents of the moved</i></td></tr>
+<tr><th id="229">229</th><td><i class="doc">       *  instance. The moved instance is a valid, but unspecified, %set.</i></td></tr>
+<tr><th id="230">230</th><td><i class="doc">       */</i></td></tr>
+<tr><th id="231">231</th><td>      <dfn class="decl def fn" id="_ZNSt3setC1EOSt3setIT_T0_T1_E" title='std::set::set&lt;_Key, _Compare, _Alloc&gt;' data-ref="_ZNSt3setC1EOSt3setIT_T0_T1_E">set</dfn>(set&amp;&amp;) = <b>default</b>;</td></tr>
+<tr><th id="232">232</th><td></td></tr>
+<tr><th id="233">233</th><td>      <i class="doc">/**</i></td></tr>
+<tr><th id="234">234</th><td><i class="doc">       *  <span class="command">@brief</span>  Builds a %set from an initializer_list.</i></td></tr>
+<tr><th id="235">235</th><td><i class="doc">       *  <span class="command">@param</span>  <span class="arg">__l</span>  An initializer_list.</i></td></tr>
+<tr><th id="236">236</th><td><i class="doc">       *  <span class="command">@param</span>  <span class="arg">__comp</span>  A comparison functor.</i></td></tr>
+<tr><th id="237">237</th><td><i class="doc">       *  <span class="command">@param</span>  <span class="arg">__a</span>  An allocator object.</i></td></tr>
+<tr><th id="238">238</th><td><i class="doc">       *</i></td></tr>
+<tr><th id="239">239</th><td><i class="doc">       *  Create a %set consisting of copies of the elements in the list.</i></td></tr>
+<tr><th id="240">240</th><td><i class="doc">       *  This is linear in N if the list is already sorted, and NlogN</i></td></tr>
+<tr><th id="241">241</th><td><i class="doc">       *  otherwise (where N is<span class="command"> @a</span> <span class="arg">__l.size()).</span></i></td></tr>
+<tr><th id="242">242</th><td><i class="doc">       */</i></td></tr>
+<tr><th id="243">243</th><td>      <dfn class="decl def fn" id="_ZNSt3setC1ESt16initializer_listIT_ERKT0_RKT1_" title='std::set::set&lt;_Key, _Compare, _Alloc&gt;' data-ref="_ZNSt3setC1ESt16initializer_listIT_ERKT0_RKT1_">set</dfn>(<a class="type" href="../initializer_list.html#std::initializer_list" title='std::initializer_list' data-ref="std::initializer_list">initializer_list</a>&lt;<a class="typedef" href="#std::set::value_type" title='std::set::value_type' data-type='_Key' data-ref="std::set::value_type">value_type</a>&gt; <dfn class="local col9 decl" id="9__l" title='__l' data-type='initializer_list&lt;std::set::value_type&gt;' data-ref="9__l">__l</dfn>,</td></tr>
+<tr><th id="244">244</th><td>	  <em>const</em> _Compare&amp; <dfn class="local col0 decl" id="10__comp" title='__comp' data-type='const _Compare &amp;' data-ref="10__comp">__comp</dfn> = _Compare(),</td></tr>
+<tr><th id="245">245</th><td>	  <em>const</em> <a class="typedef" href="#std::set::allocator_type" title='std::set::allocator_type' data-type='_Alloc' data-ref="std::set::allocator_type">allocator_type</a>&amp; <dfn class="local col1 decl" id="11__a" title='__a' data-type='const std::set::allocator_type &amp;' data-ref="11__a">__a</dfn> = <a class="typedef" href="#std::set::allocator_type" title='std::set::allocator_type' data-type='_Alloc' data-ref="std::set::allocator_type">allocator_type</a>())</td></tr>
+<tr><th id="246">246</th><td>      : <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>(<a class="local col0 ref" href="#10__comp" title='__comp' data-ref="10__comp">__comp</a>, <a class="typedef" href="#std::set::_Key_alloc_type" title='std::set::_Key_alloc_type' data-type='typename __gnu_cxx::__alloc_traits&lt;_Alloc&gt;::template rebind&lt;_Key&gt;::other' data-ref="std::set::_Key_alloc_type">_Key_alloc_type</a>(<a class="local col1 ref" href="#11__a" title='__a' data-ref="11__a">__a</a>))</td></tr>
+<tr><th id="247">247</th><td>      { <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>._M_insert_range_unique(<a class="local col9 ref" href="#9__l" title='__l' data-ref="9__l">__l</a>.begin(), <a class="local col9 ref" href="#9__l" title='__l' data-ref="9__l">__l</a>.end()); }</td></tr>
+<tr><th id="248">248</th><td></td></tr>
+<tr><th id="249">249</th><td>      <i class="doc">/// Allocator-extended default constructor.</i></td></tr>
+<tr><th id="250">250</th><td>      <b>explicit</b></td></tr>
+<tr><th id="251">251</th><td>      <dfn class="decl def fn" id="_ZNSt3setC1ERKT1_" title='std::set::set&lt;_Key, _Compare, _Alloc&gt;' data-ref="_ZNSt3setC1ERKT1_">set</dfn>(<em>const</em> <a class="typedef" href="#std::set::allocator_type" title='std::set::allocator_type' data-type='_Alloc' data-ref="std::set::allocator_type">allocator_type</a>&amp; <dfn class="local col2 decl" id="12__a" title='__a' data-type='const std::set::allocator_type &amp;' data-ref="12__a">__a</dfn>)</td></tr>
+<tr><th id="252">252</th><td>      : <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>(<a class="typedef" href="#std::set::_Key_alloc_type" title='std::set::_Key_alloc_type' data-type='typename __gnu_cxx::__alloc_traits&lt;_Alloc&gt;::template rebind&lt;_Key&gt;::other' data-ref="std::set::_Key_alloc_type">_Key_alloc_type</a>(<a class="local col2 ref" href="#12__a" title='__a' data-ref="12__a">__a</a>)) { }</td></tr>
+<tr><th id="253">253</th><td></td></tr>
+<tr><th id="254">254</th><td>      <i class="doc">/// Allocator-extended copy constructor.</i></td></tr>
+<tr><th id="255">255</th><td>      <dfn class="decl def fn" id="_ZNSt3setC1ERKSt3setIT_T0_T1_ERKS3_" title='std::set::set&lt;_Key, _Compare, _Alloc&gt;' data-ref="_ZNSt3setC1ERKSt3setIT_T0_T1_ERKS3_">set</dfn>(<em>const</em> set&amp; <dfn class="local col3 decl" id="13__x" title='__x' data-type='const set&lt;_Key, _Compare, _Alloc&gt; &amp;' data-ref="13__x">__x</dfn>, <em>const</em> <a class="typedef" href="#std::set::allocator_type" title='std::set::allocator_type' data-type='_Alloc' data-ref="std::set::allocator_type">allocator_type</a>&amp; <dfn class="local col4 decl" id="14__a" title='__a' data-type='const std::set::allocator_type &amp;' data-ref="14__a">__a</dfn>)</td></tr>
+<tr><th id="256">256</th><td>      : <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>(<a class="local col3 ref" href="#13__x" title='__x' data-ref="13__x">__x</a>._M_t, <a class="typedef" href="#std::set::_Key_alloc_type" title='std::set::_Key_alloc_type' data-type='typename __gnu_cxx::__alloc_traits&lt;_Alloc&gt;::template rebind&lt;_Key&gt;::other' data-ref="std::set::_Key_alloc_type">_Key_alloc_type</a>(<a class="local col4 ref" href="#14__a" title='__a' data-ref="14__a">__a</a>)) { }</td></tr>
+<tr><th id="257">257</th><td></td></tr>
+<tr><th id="258">258</th><td>      <i class="doc">/// Allocator-extended move constructor.</i></td></tr>
+<tr><th id="259">259</th><td>      <dfn class="decl def fn" id="_ZNSt3setC1EOSt3setIT_T0_T1_ERKS3_" title='std::set::set&lt;_Key, _Compare, _Alloc&gt;' data-ref="_ZNSt3setC1EOSt3setIT_T0_T1_ERKS3_">set</dfn>(set&amp;&amp; <dfn class="local col5 decl" id="15__x" title='__x' data-type='set&lt;_Key, _Compare, _Alloc&gt; &amp;&amp;' data-ref="15__x">__x</dfn>, <em>const</em> <a class="typedef" href="#std::set::allocator_type" title='std::set::allocator_type' data-type='_Alloc' data-ref="std::set::allocator_type">allocator_type</a>&amp; <dfn class="local col6 decl" id="16__a" title='__a' data-type='const std::set::allocator_type &amp;' data-ref="16__a">__a</dfn>)</td></tr>
+<tr><th id="260">260</th><td>      <b>noexcept</b>(<a class="type" href="../type_traits.html#std::is_nothrow_copy_constructible" title='std::is_nothrow_copy_constructible' data-ref="std::is_nothrow_copy_constructible">is_nothrow_copy_constructible</a>&lt;_Compare&gt;::value</td></tr>
+<tr><th id="261">261</th><td>	       &amp;&amp; <a class="typedef" href="#std::set::_Alloc_traits" title='std::set::_Alloc_traits' data-type='__gnu_cxx::__alloc_traits&lt;_Key_alloc_type&gt;' data-ref="std::set::_Alloc_traits">_Alloc_traits</a>::_S_always_equal())</td></tr>
+<tr><th id="262">262</th><td>      : <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>(<span class="namespace">std::</span>move(<a class="local col5 ref" href="#15__x" title='__x' data-ref="15__x">__x</a>._M_t), <a class="typedef" href="#std::set::_Key_alloc_type" title='std::set::_Key_alloc_type' data-type='typename __gnu_cxx::__alloc_traits&lt;_Alloc&gt;::template rebind&lt;_Key&gt;::other' data-ref="std::set::_Key_alloc_type">_Key_alloc_type</a>(<a class="local col6 ref" href="#16__a" title='__a' data-ref="16__a">__a</a>)) { }</td></tr>
+<tr><th id="263">263</th><td></td></tr>
+<tr><th id="264">264</th><td>      <i class="doc">/// Allocator-extended initialier-list constructor.</i></td></tr>
+<tr><th id="265">265</th><td>      <dfn class="decl def fn" id="_ZNSt3setC1ESt16initializer_listIT_ERKT1_" title='std::set::set&lt;_Key, _Compare, _Alloc&gt;' data-ref="_ZNSt3setC1ESt16initializer_listIT_ERKT1_">set</dfn>(<a class="type" href="../initializer_list.html#std::initializer_list" title='std::initializer_list' data-ref="std::initializer_list">initializer_list</a>&lt;<a class="typedef" href="#std::set::value_type" title='std::set::value_type' data-type='_Key' data-ref="std::set::value_type">value_type</a>&gt; <dfn class="local col7 decl" id="17__l" title='__l' data-type='initializer_list&lt;std::set::value_type&gt;' data-ref="17__l">__l</dfn>, <em>const</em> <a class="typedef" href="#std::set::allocator_type" title='std::set::allocator_type' data-type='_Alloc' data-ref="std::set::allocator_type">allocator_type</a>&amp; <dfn class="local col8 decl" id="18__a" title='__a' data-type='const std::set::allocator_type &amp;' data-ref="18__a">__a</dfn>)</td></tr>
+<tr><th id="266">266</th><td>      : <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>(<a class="typedef" href="#std::set::_Key_alloc_type" title='std::set::_Key_alloc_type' data-type='typename __gnu_cxx::__alloc_traits&lt;_Alloc&gt;::template rebind&lt;_Key&gt;::other' data-ref="std::set::_Key_alloc_type">_Key_alloc_type</a>(<a class="local col8 ref" href="#18__a" title='__a' data-ref="18__a">__a</a>))</td></tr>
+<tr><th id="267">267</th><td>      { <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>._M_insert_range_unique(<a class="local col7 ref" href="#17__l" title='__l' data-ref="17__l">__l</a>.begin(), <a class="local col7 ref" href="#17__l" title='__l' data-ref="17__l">__l</a>.end()); }</td></tr>
+<tr><th id="268">268</th><td></td></tr>
+<tr><th id="269">269</th><td>      <i class="doc">/// Allocator-extended range constructor.</i></td></tr>
+<tr><th id="270">270</th><td>      <b>template</b>&lt;<b>typename</b> _InputIterator&gt;</td></tr>
+<tr><th id="271">271</th><td>	<dfn class="decl def fn" id="_ZNSt3setC1ETL0__S0_RKT1_" title='std::set::set&lt;_Key, _Compare, _Alloc&gt;' data-ref="_ZNSt3setC1ETL0__S0_RKT1_">set</dfn>(_InputIterator <dfn class="local col9 decl" id="19__first" title='__first' data-type='_InputIterator' data-ref="19__first">__first</dfn>, _InputIterator <dfn class="local col0 decl" id="20__last" title='__last' data-type='_InputIterator' data-ref="20__last">__last</dfn>,</td></tr>
+<tr><th id="272">272</th><td>	    <em>const</em> <a class="typedef" href="#std::set::allocator_type" title='std::set::allocator_type' data-type='_Alloc' data-ref="std::set::allocator_type">allocator_type</a>&amp; <dfn class="local col1 decl" id="21__a" title='__a' data-type='const std::set::allocator_type &amp;' data-ref="21__a">__a</dfn>)</td></tr>
+<tr><th id="273">273</th><td>	: <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>(<a class="typedef" href="#std::set::_Key_alloc_type" title='std::set::_Key_alloc_type' data-type='typename __gnu_cxx::__alloc_traits&lt;_Alloc&gt;::template rebind&lt;_Key&gt;::other' data-ref="std::set::_Key_alloc_type">_Key_alloc_type</a>(<a class="local col1 ref" href="#21__a" title='__a' data-ref="21__a">__a</a>))</td></tr>
+<tr><th id="274">274</th><td>	{ <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>._M_insert_range_unique(<a class="local col9 ref" href="#19__first" title='__first' data-ref="19__first">__first</a>, <a class="local col0 ref" href="#20__last" title='__last' data-ref="20__last">__last</a>); }</td></tr>
+<tr><th id="275">275</th><td></td></tr>
+<tr><th id="276">276</th><td>      <i class="doc">/**</i></td></tr>
+<tr><th id="277">277</th><td><i class="doc">       *  The dtor only erases the elements, and note that if the elements</i></td></tr>
+<tr><th id="278">278</th><td><i class="doc">       *  themselves are pointers, the pointed-to memory is not touched in any</i></td></tr>
+<tr><th id="279">279</th><td><i class="doc">       *  way. Managing the pointer is the user's responsibility.</i></td></tr>
+<tr><th id="280">280</th><td><i class="doc">       */</i></td></tr>
+<tr><th id="281">281</th><td>      <dfn class="decl def fn" id="_ZNSt3setD1Ev" title='std::set::~set&lt;_Key, _Compare, _Alloc&gt;' data-ref="_ZNSt3setD1Ev">~set</dfn>() = <b>default</b>;</td></tr>
+<tr><th id="282">282</th><td><u>#<span data-ppcond="219">endif</span></u></td></tr>
+<tr><th id="283">283</th><td></td></tr>
+<tr><th id="284">284</th><td>      <i class="doc">/**</i></td></tr>
+<tr><th id="285">285</th><td><i class="doc">       *  <span class="command">@brief</span>  %Set assignment operator.</i></td></tr>
+<tr><th id="286">286</th><td><i class="doc">       *</i></td></tr>
+<tr><th id="287">287</th><td><i class="doc">       *  Whether the allocator is copied depends on the allocator traits.</i></td></tr>
+<tr><th id="288">288</th><td><i class="doc">       */</i></td></tr>
+<tr><th id="289">289</th><td><u>#<span data-ppcond="289">if</span> <span class="macro" title="201703L" data-ref="_M/__cplusplus">__cplusplus</span> &lt; 201103L</u></td></tr>
+<tr><th id="290">290</th><td>      set&amp;</td></tr>
+<tr><th id="291">291</th><td>      <b>operator</b>=(<em>const</em> set&amp; __x)</td></tr>
+<tr><th id="292">292</th><td>      {</td></tr>
+<tr><th id="293">293</th><td>	_M_t = __x._M_t;</td></tr>
+<tr><th id="294">294</th><td>	<b>return</b> *<b>this</b>;</td></tr>
+<tr><th id="295">295</th><td>      }</td></tr>
+<tr><th id="296">296</th><td><u>#<span data-ppcond="289">else</span></u></td></tr>
+<tr><th id="297">297</th><td>      set&amp;</td></tr>
+<tr><th id="298">298</th><td>      <dfn class="decl def fn" id="_ZNSt3setaSERKSt3setIT_T0_T1_E" title='std::set::operator=' data-ref="_ZNSt3setaSERKSt3setIT_T0_T1_E"><b>operator</b>=</dfn>(<em>const</em> set&amp;) = <b>default</b>;</td></tr>
+<tr><th id="299">299</th><td></td></tr>
+<tr><th id="300">300</th><td>      <i class="doc">/// Move assignment operator.</i></td></tr>
+<tr><th id="301">301</th><td>      set&amp;</td></tr>
+<tr><th id="302">302</th><td>      <dfn class="decl def fn" id="_ZNSt3setaSEOSt3setIT_T0_T1_E" title='std::set::operator=' data-ref="_ZNSt3setaSEOSt3setIT_T0_T1_E"><b>operator</b>=</dfn>(set&amp;&amp;) = <b>default</b>;</td></tr>
+<tr><th id="303">303</th><td></td></tr>
+<tr><th id="304">304</th><td>      <i class="doc">/**</i></td></tr>
+<tr><th id="305">305</th><td><i class="doc">       *  <span class="command">@brief</span>  %Set list assignment operator.</i></td></tr>
+<tr><th id="306">306</th><td><i class="doc">       *  <span class="command">@param</span>  <span class="arg">__l</span>  An initializer_list.</i></td></tr>
+<tr><th id="307">307</th><td><i class="doc">       *</i></td></tr>
+<tr><th id="308">308</th><td><i class="doc">       *  This function fills a %set with copies of the elements in the</i></td></tr>
+<tr><th id="309">309</th><td><i class="doc">       *  initializer list<span class="command"> @a</span> <span class="arg">__l.</span></i></td></tr>
+<tr><th id="310">310</th><td><i class="doc">       *</i></td></tr>
+<tr><th id="311">311</th><td><i class="doc">       *  Note that the assignment completely changes the %set and</i></td></tr>
+<tr><th id="312">312</th><td><i class="doc">       *  that the resulting %set's size is the same as the number</i></td></tr>
+<tr><th id="313">313</th><td><i class="doc">       *  of elements assigned.</i></td></tr>
+<tr><th id="314">314</th><td><i class="doc">       */</i></td></tr>
+<tr><th id="315">315</th><td>      set&amp;</td></tr>
+<tr><th id="316">316</th><td>      <dfn class="decl def fn" id="_ZNSt3setaSESt16initializer_listIT_E" title='std::set::operator=' data-ref="_ZNSt3setaSESt16initializer_listIT_E"><b>operator</b>=</dfn>(<a class="type" href="../initializer_list.html#std::initializer_list" title='std::initializer_list' data-ref="std::initializer_list">initializer_list</a>&lt;<a class="typedef" href="#std::set::value_type" title='std::set::value_type' data-type='_Key' data-ref="std::set::value_type">value_type</a>&gt; <dfn class="local col2 decl" id="22__l" title='__l' data-type='initializer_list&lt;std::set::value_type&gt;' data-ref="22__l">__l</dfn>)</td></tr>
+<tr><th id="317">317</th><td>      {</td></tr>
+<tr><th id="318">318</th><td>	<a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>._M_assign_unique(<a class="local col2 ref" href="#22__l" title='__l' data-ref="22__l">__l</a>.begin(), <a class="local col2 ref" href="#22__l" title='__l' data-ref="22__l">__l</a>.end());</td></tr>
+<tr><th id="319">319</th><td>	<b>return</b> *<b>this</b>;</td></tr>
+<tr><th id="320">320</th><td>      }</td></tr>
+<tr><th id="321">321</th><td><u>#<span data-ppcond="289">endif</span></u></td></tr>
+<tr><th id="322">322</th><td></td></tr>
+<tr><th id="323">323</th><td>      <i>// accessors:</i></td></tr>
+<tr><th id="324">324</th><td><i></i></td></tr>
+<tr><th id="325">325</th><td><i>      ///  Returns the comparison object with which the %set was constructed.</i></td></tr>
+<tr><th id="326">326</th><td>      <a class="typedef" href="#std::set::key_compare" title='std::set::key_compare' data-type='_Compare' data-ref="std::set::key_compare">key_compare</a></td></tr>
+<tr><th id="327">327</th><td>      <dfn class="decl def fn" id="_ZNKSt3set8key_compEv" title='std::set::key_comp' data-ref="_ZNKSt3set8key_compEv">key_comp</dfn>() <em>const</em></td></tr>
+<tr><th id="328">328</th><td>      { <b>return</b> <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>.key_comp(); }</td></tr>
+<tr><th id="329">329</th><td>      <i class="doc">///  Returns the comparison object with which the %set was constructed.</i></td></tr>
+<tr><th id="330">330</th><td>      <a class="typedef" href="#std::set::value_compare" title='std::set::value_compare' data-type='_Compare' data-ref="std::set::value_compare">value_compare</a></td></tr>
+<tr><th id="331">331</th><td>      <dfn class="decl def fn" id="_ZNKSt3set10value_compEv" title='std::set::value_comp' data-ref="_ZNKSt3set10value_compEv">value_comp</dfn>() <em>const</em></td></tr>
+<tr><th id="332">332</th><td>      { <b>return</b> <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>.key_comp(); }</td></tr>
+<tr><th id="333">333</th><td>      <i class="doc">///  Returns the allocator object with which the %set was constructed.</i></td></tr>
+<tr><th id="334">334</th><td>      <a class="typedef" href="#std::set::allocator_type" title='std::set::allocator_type' data-type='_Alloc' data-ref="std::set::allocator_type">allocator_type</a></td></tr>
+<tr><th id="335">335</th><td>      <dfn class="decl def fn" id="_ZNKSt3set13get_allocatorEv" title='std::set::get_allocator' data-ref="_ZNKSt3set13get_allocatorEv">get_allocator</dfn>() <em>const</em> <a class="macro" href="../../../x86_64-linux-gnu/c++/9/bits/c++config.h.html#163" title="noexcept" data-ref="_M/_GLIBCXX_NOEXCEPT">_GLIBCXX_NOEXCEPT</a></td></tr>
+<tr><th id="336">336</th><td>      { <b>return</b> <a class="typedef" href="#std::set::allocator_type" title='std::set::allocator_type' data-type='_Alloc' data-ref="std::set::allocator_type">allocator_type</a>(<a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>.get_allocator()); }</td></tr>
+<tr><th id="337">337</th><td></td></tr>
+<tr><th id="338">338</th><td>      <i class="doc">/**</i></td></tr>
+<tr><th id="339">339</th><td><i class="doc">       *  Returns a read-only (constant) iterator that points to the first</i></td></tr>
+<tr><th id="340">340</th><td><i class="doc">       *  element in the %set.  Iteration is done in ascending order according</i></td></tr>
+<tr><th id="341">341</th><td><i class="doc">       *  to the keys.</i></td></tr>
+<tr><th id="342">342</th><td><i class="doc">       */</i></td></tr>
+<tr><th id="343">343</th><td>      <a class="typedef" href="#std::set::iterator" title='std::set::iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::iterator">iterator</a></td></tr>
+<tr><th id="344">344</th><td>      <dfn class="decl def fn" id="_ZNKSt3set5beginEv" title='std::set::begin' data-ref="_ZNKSt3set5beginEv">begin</dfn>() <em>const</em> <a class="macro" href="../../../x86_64-linux-gnu/c++/9/bits/c++config.h.html#163" title="noexcept" data-ref="_M/_GLIBCXX_NOEXCEPT">_GLIBCXX_NOEXCEPT</a></td></tr>
+<tr><th id="345">345</th><td>      { <b>return</b> <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>.begin(); }</td></tr>
+<tr><th id="346">346</th><td></td></tr>
+<tr><th id="347">347</th><td>      <i class="doc">/**</i></td></tr>
+<tr><th id="348">348</th><td><i class="doc">       *  Returns a read-only (constant) iterator that points one past the last</i></td></tr>
+<tr><th id="349">349</th><td><i class="doc">       *  element in the %set.  Iteration is done in ascending order according</i></td></tr>
+<tr><th id="350">350</th><td><i class="doc">       *  to the keys.</i></td></tr>
+<tr><th id="351">351</th><td><i class="doc">       */</i></td></tr>
+<tr><th id="352">352</th><td>      <a class="typedef" href="#std::set::iterator" title='std::set::iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::iterator">iterator</a></td></tr>
+<tr><th id="353">353</th><td>      <dfn class="decl def fn" id="_ZNKSt3set3endEv" title='std::set::end' data-ref="_ZNKSt3set3endEv">end</dfn>() <em>const</em> <a class="macro" href="../../../x86_64-linux-gnu/c++/9/bits/c++config.h.html#163" title="noexcept" data-ref="_M/_GLIBCXX_NOEXCEPT">_GLIBCXX_NOEXCEPT</a></td></tr>
+<tr><th id="354">354</th><td>      { <b>return</b> <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>.end(); }</td></tr>
+<tr><th id="355">355</th><td></td></tr>
+<tr><th id="356">356</th><td>      <i class="doc">/**</i></td></tr>
+<tr><th id="357">357</th><td><i class="doc">       *  Returns a read-only (constant) iterator that points to the last</i></td></tr>
+<tr><th id="358">358</th><td><i class="doc">       *  element in the %set.  Iteration is done in descending order according</i></td></tr>
+<tr><th id="359">359</th><td><i class="doc">       *  to the keys.</i></td></tr>
+<tr><th id="360">360</th><td><i class="doc">       */</i></td></tr>
+<tr><th id="361">361</th><td>      <a class="typedef" href="#std::set::reverse_iterator" title='std::set::reverse_iterator' data-type='typename _Rep_type::const_reverse_iterator' data-ref="std::set::reverse_iterator">reverse_iterator</a></td></tr>
+<tr><th id="362">362</th><td>      <dfn class="decl def fn" id="_ZNKSt3set6rbeginEv" title='std::set::rbegin' data-ref="_ZNKSt3set6rbeginEv">rbegin</dfn>() <em>const</em> <a class="macro" href="../../../x86_64-linux-gnu/c++/9/bits/c++config.h.html#163" title="noexcept" data-ref="_M/_GLIBCXX_NOEXCEPT">_GLIBCXX_NOEXCEPT</a></td></tr>
+<tr><th id="363">363</th><td>      { <b>return</b> <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>.rbegin(); }</td></tr>
+<tr><th id="364">364</th><td></td></tr>
+<tr><th id="365">365</th><td>      <i class="doc">/**</i></td></tr>
+<tr><th id="366">366</th><td><i class="doc">       *  Returns a read-only (constant) reverse iterator that points to the</i></td></tr>
+<tr><th id="367">367</th><td><i class="doc">       *  last pair in the %set.  Iteration is done in descending order</i></td></tr>
+<tr><th id="368">368</th><td><i class="doc">       *  according to the keys.</i></td></tr>
+<tr><th id="369">369</th><td><i class="doc">       */</i></td></tr>
+<tr><th id="370">370</th><td>      <a class="typedef" href="#std::set::reverse_iterator" title='std::set::reverse_iterator' data-type='typename _Rep_type::const_reverse_iterator' data-ref="std::set::reverse_iterator">reverse_iterator</a></td></tr>
+<tr><th id="371">371</th><td>      <dfn class="decl def fn" id="_ZNKSt3set4rendEv" title='std::set::rend' data-ref="_ZNKSt3set4rendEv">rend</dfn>() <em>const</em> <a class="macro" href="../../../x86_64-linux-gnu/c++/9/bits/c++config.h.html#163" title="noexcept" data-ref="_M/_GLIBCXX_NOEXCEPT">_GLIBCXX_NOEXCEPT</a></td></tr>
+<tr><th id="372">372</th><td>      { <b>return</b> <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>.rend(); }</td></tr>
+<tr><th id="373">373</th><td></td></tr>
+<tr><th id="374">374</th><td><u>#<span data-ppcond="374">if</span> <span class="macro" title="201703L" data-ref="_M/__cplusplus">__cplusplus</span> &gt;= 201103L</u></td></tr>
+<tr><th id="375">375</th><td>      <i class="doc">/**</i></td></tr>
+<tr><th id="376">376</th><td><i class="doc">       *  Returns a read-only (constant) iterator that points to the first</i></td></tr>
+<tr><th id="377">377</th><td><i class="doc">       *  element in the %set.  Iteration is done in ascending order according</i></td></tr>
+<tr><th id="378">378</th><td><i class="doc">       *  to the keys.</i></td></tr>
+<tr><th id="379">379</th><td><i class="doc">       */</i></td></tr>
+<tr><th id="380">380</th><td>      <a class="typedef" href="#std::set::iterator" title='std::set::iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::iterator">iterator</a></td></tr>
+<tr><th id="381">381</th><td>      <dfn class="decl def fn" id="_ZNKSt3set6cbeginEv" title='std::set::cbegin' data-ref="_ZNKSt3set6cbeginEv">cbegin</dfn>() <em>const</em> <b>noexcept</b></td></tr>
+<tr><th id="382">382</th><td>      { <b>return</b> <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>.begin(); }</td></tr>
+<tr><th id="383">383</th><td></td></tr>
+<tr><th id="384">384</th><td>      <i class="doc">/**</i></td></tr>
+<tr><th id="385">385</th><td><i class="doc">       *  Returns a read-only (constant) iterator that points one past the last</i></td></tr>
+<tr><th id="386">386</th><td><i class="doc">       *  element in the %set.  Iteration is done in ascending order according</i></td></tr>
+<tr><th id="387">387</th><td><i class="doc">       *  to the keys.</i></td></tr>
+<tr><th id="388">388</th><td><i class="doc">       */</i></td></tr>
+<tr><th id="389">389</th><td>      <a class="typedef" href="#std::set::iterator" title='std::set::iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::iterator">iterator</a></td></tr>
+<tr><th id="390">390</th><td>      <dfn class="decl def fn" id="_ZNKSt3set4cendEv" title='std::set::cend' data-ref="_ZNKSt3set4cendEv">cend</dfn>() <em>const</em> <b>noexcept</b></td></tr>
+<tr><th id="391">391</th><td>      { <b>return</b> <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>.end(); }</td></tr>
+<tr><th id="392">392</th><td></td></tr>
+<tr><th id="393">393</th><td>      <i class="doc">/**</i></td></tr>
+<tr><th id="394">394</th><td><i class="doc">       *  Returns a read-only (constant) iterator that points to the last</i></td></tr>
+<tr><th id="395">395</th><td><i class="doc">       *  element in the %set.  Iteration is done in descending order according</i></td></tr>
+<tr><th id="396">396</th><td><i class="doc">       *  to the keys.</i></td></tr>
+<tr><th id="397">397</th><td><i class="doc">       */</i></td></tr>
+<tr><th id="398">398</th><td>      <a class="typedef" href="#std::set::reverse_iterator" title='std::set::reverse_iterator' data-type='typename _Rep_type::const_reverse_iterator' data-ref="std::set::reverse_iterator">reverse_iterator</a></td></tr>
+<tr><th id="399">399</th><td>      <dfn class="decl def fn" id="_ZNKSt3set7crbeginEv" title='std::set::crbegin' data-ref="_ZNKSt3set7crbeginEv">crbegin</dfn>() <em>const</em> <b>noexcept</b></td></tr>
+<tr><th id="400">400</th><td>      { <b>return</b> <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>.rbegin(); }</td></tr>
+<tr><th id="401">401</th><td></td></tr>
+<tr><th id="402">402</th><td>      <i class="doc">/**</i></td></tr>
+<tr><th id="403">403</th><td><i class="doc">       *  Returns a read-only (constant) reverse iterator that points to the</i></td></tr>
+<tr><th id="404">404</th><td><i class="doc">       *  last pair in the %set.  Iteration is done in descending order</i></td></tr>
+<tr><th id="405">405</th><td><i class="doc">       *  according to the keys.</i></td></tr>
+<tr><th id="406">406</th><td><i class="doc">       */</i></td></tr>
+<tr><th id="407">407</th><td>      <a class="typedef" href="#std::set::reverse_iterator" title='std::set::reverse_iterator' data-type='typename _Rep_type::const_reverse_iterator' data-ref="std::set::reverse_iterator">reverse_iterator</a></td></tr>
+<tr><th id="408">408</th><td>      <dfn class="decl def fn" id="_ZNKSt3set5crendEv" title='std::set::crend' data-ref="_ZNKSt3set5crendEv">crend</dfn>() <em>const</em> <b>noexcept</b></td></tr>
+<tr><th id="409">409</th><td>      { <b>return</b> <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>.rend(); }</td></tr>
+<tr><th id="410">410</th><td><u>#<span data-ppcond="374">endif</span></u></td></tr>
+<tr><th id="411">411</th><td></td></tr>
+<tr><th id="412">412</th><td>      <i class="doc">///  Returns true if the %set is empty.</i></td></tr>
+<tr><th id="413">413</th><td>      <a class="macro" href="../../../x86_64-linux-gnu/c++/9/bits/c++config.h.html#108" title="[[__nodiscard__]]" data-ref="_M/_GLIBCXX_NODISCARD">_GLIBCXX_NODISCARD</a> <em>bool</em></td></tr>
+<tr><th id="414">414</th><td>      <dfn class="decl def fn" id="_ZNKSt3set5emptyEv" title='std::set::empty' data-ref="_ZNKSt3set5emptyEv">empty</dfn>() <em>const</em> <a class="macro" href="../../../x86_64-linux-gnu/c++/9/bits/c++config.h.html#163" title="noexcept" data-ref="_M/_GLIBCXX_NOEXCEPT">_GLIBCXX_NOEXCEPT</a></td></tr>
+<tr><th id="415">415</th><td>      { <b>return</b> <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>.empty(); }</td></tr>
+<tr><th id="416">416</th><td></td></tr>
+<tr><th id="417">417</th><td>      <i class="doc">///  Returns the size of the %set.</i></td></tr>
+<tr><th id="418">418</th><td>      <a class="typedef" href="#std::set::size_type" title='std::set::size_type' data-type='typename _Rep_type::size_type' data-ref="std::set::size_type">size_type</a></td></tr>
+<tr><th id="419">419</th><td>      <dfn class="decl def fn" id="_ZNKSt3set4sizeEv" title='std::set::size' data-ref="_ZNKSt3set4sizeEv">size</dfn>() <em>const</em> <a class="macro" href="../../../x86_64-linux-gnu/c++/9/bits/c++config.h.html#163" title="noexcept" data-ref="_M/_GLIBCXX_NOEXCEPT">_GLIBCXX_NOEXCEPT</a></td></tr>
+<tr><th id="420">420</th><td>      { <b>return</b> <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>.size(); }</td></tr>
+<tr><th id="421">421</th><td></td></tr>
+<tr><th id="422">422</th><td>      <i class="doc">///  Returns the maximum size of the %set.</i></td></tr>
+<tr><th id="423">423</th><td>      <a class="typedef" href="#std::set::size_type" title='std::set::size_type' data-type='typename _Rep_type::size_type' data-ref="std::set::size_type">size_type</a></td></tr>
+<tr><th id="424">424</th><td>      <dfn class="decl def fn" id="_ZNKSt3set8max_sizeEv" title='std::set::max_size' data-ref="_ZNKSt3set8max_sizeEv">max_size</dfn>() <em>const</em> <a class="macro" href="../../../x86_64-linux-gnu/c++/9/bits/c++config.h.html#163" title="noexcept" data-ref="_M/_GLIBCXX_NOEXCEPT">_GLIBCXX_NOEXCEPT</a></td></tr>
+<tr><th id="425">425</th><td>      { <b>return</b> <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>.max_size(); }</td></tr>
+<tr><th id="426">426</th><td></td></tr>
+<tr><th id="427">427</th><td>      <i class="doc">/**</i></td></tr>
+<tr><th id="428">428</th><td><i class="doc">       *  <span class="command">@brief</span>  Swaps data with another %set.</i></td></tr>
+<tr><th id="429">429</th><td><i class="doc">       *  <span class="command">@param</span>  <span class="arg">__x</span>  A %set of the same element and allocator types.</i></td></tr>
+<tr><th id="430">430</th><td><i class="doc">       *</i></td></tr>
+<tr><th id="431">431</th><td><i class="doc">       *  This exchanges the elements between two sets in constant</i></td></tr>
+<tr><th id="432">432</th><td><i class="doc">       *  time.  (It is only swapping a pointer, an integer, and an</i></td></tr>
+<tr><th id="433">433</th><td><i class="doc">       *  instance of the<span class="command"> @c</span> <span class="arg">Compare</span> type (which itself is often</i></td></tr>
+<tr><th id="434">434</th><td><i class="doc">       *  stateless and empty), so it should be quite fast.)  Note</i></td></tr>
+<tr><th id="435">435</th><td><i class="doc">       *  that the global std::swap() function is specialized such</i></td></tr>
+<tr><th id="436">436</th><td><i class="doc">       *  that std::swap(s1,s2) will feed to this function.</i></td></tr>
+<tr><th id="437">437</th><td><i class="doc">       *</i></td></tr>
+<tr><th id="438">438</th><td><i class="doc">       *  Whether the allocators are swapped depends on the allocator traits.</i></td></tr>
+<tr><th id="439">439</th><td><i class="doc">       */</i></td></tr>
+<tr><th id="440">440</th><td>      <em>void</em></td></tr>
+<tr><th id="441">441</th><td>      <dfn class="decl def fn" id="_ZNSt3set4swapERSt3setIT_T0_T1_E" title='std::set::swap' data-ref="_ZNSt3set4swapERSt3setIT_T0_T1_E">swap</dfn>(set&amp; <dfn class="local col3 decl" id="23__x" title='__x' data-type='set&lt;_Key, _Compare, _Alloc&gt; &amp;' data-ref="23__x">__x</dfn>)</td></tr>
+<tr><th id="442">442</th><td>      <a class="macro" href="../../../x86_64-linux-gnu/c++/9/bits/c++config.h.html#164" title="noexcept(__is_nothrow_swappable&lt;_Compare&gt;::value)" data-ref="_M/_GLIBCXX_NOEXCEPT_IF">_GLIBCXX_NOEXCEPT_IF</a>(<a class="type" href="../type_traits.html#std::__is_nothrow_swappable" title='std::__is_nothrow_swappable' data-ref="std::__is_nothrow_swappable">__is_nothrow_swappable</a>&lt;_Compare&gt;::value)</td></tr>
+<tr><th id="443">443</th><td>      { <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>.swap(<a class="local col3 ref" href="#23__x" title='__x' data-ref="23__x">__x</a>._M_t); }</td></tr>
+<tr><th id="444">444</th><td></td></tr>
+<tr><th id="445">445</th><td>      <i>// insert/erase</i></td></tr>
+<tr><th id="446">446</th><td><u>#<span data-ppcond="446">if</span> <span class="macro" title="201703L" data-ref="_M/__cplusplus">__cplusplus</span> &gt;= 201103L</u></td></tr>
+<tr><th id="447">447</th><td>      <i class="doc">/**</i></td></tr>
+<tr><th id="448">448</th><td><i class="doc">       *  <span class="command">@brief</span> Attempts to build and insert an element into the %set.</i></td></tr>
+<tr><th id="449">449</th><td><i class="doc">       *  <span class="command">@param</span> <span class="arg">__args</span>  Arguments used to generate an element.</i></td></tr>
+<tr><th id="450">450</th><td><i class="doc">       *  <span class="command">@return</span>  A pair, of which the first element is an iterator that points</i></td></tr>
+<tr><th id="451">451</th><td><i class="doc">       *           to the possibly inserted element, and the second is a bool</i></td></tr>
+<tr><th id="452">452</th><td><i class="doc">       *           that is true if the element was actually inserted.</i></td></tr>
+<tr><th id="453">453</th><td><i class="doc">       *</i></td></tr>
+<tr><th id="454">454</th><td><i class="doc">       *  This function attempts to build and insert an element into the %set.</i></td></tr>
+<tr><th id="455">455</th><td><i class="doc">       *  A %set relies on unique keys and thus an element is only inserted if</i></td></tr>
+<tr><th id="456">456</th><td><i class="doc">       *  it is not already present in the %set.</i></td></tr>
+<tr><th id="457">457</th><td><i class="doc">       *</i></td></tr>
+<tr><th id="458">458</th><td><i class="doc">       *  Insertion requires logarithmic time.</i></td></tr>
+<tr><th id="459">459</th><td><i class="doc">       */</i></td></tr>
+<tr><th id="460">460</th><td>      <b>template</b>&lt;<b>typename</b>... _Args&gt;</td></tr>
+<tr><th id="461">461</th><td>	<span class="namespace">std::</span><a class="type" href="stl_pair.h.html#std::pair" title='std::pair' data-ref="std::pair">pair</a>&lt;<a class="typedef" href="#std::set::iterator" title='std::set::iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::iterator">iterator</a>, <em>bool</em>&gt;</td></tr>
+<tr><th id="462">462</th><td>	<dfn class="decl def fn" id="_ZNSt3set7emplaceEDpOTL0__" title='std::set::emplace' data-ref="_ZNSt3set7emplaceEDpOTL0__">emplace</dfn>(_Args&amp;&amp;... <dfn class="local col4 decl" id="24__args" title='__args' data-type='_Args &amp;&amp;...' data-ref="24__args">__args</dfn>)</td></tr>
+<tr><th id="463">463</th><td>	{ <b>return</b> <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>._M_emplace_unique(<span class="namespace">std::</span>forward&lt;_Args&gt;(<a class="local col4 ref" href="#24__args" title='__args' data-ref="24__args">__args</a>)...); }</td></tr>
+<tr><th id="464">464</th><td></td></tr>
+<tr><th id="465">465</th><td>      <i class="doc">/**</i></td></tr>
+<tr><th id="466">466</th><td><i class="doc">       *  <span class="command">@brief</span> Attempts to insert an element into the %set.</i></td></tr>
+<tr><th id="467">467</th><td><i class="doc">       *  <span class="command">@param</span>  <span class="arg">__pos</span>  An iterator that serves as a hint as to where the</i></td></tr>
+<tr><th id="468">468</th><td><i class="doc">       *                element should be inserted.</i></td></tr>
+<tr><th id="469">469</th><td><i class="doc">       *  <span class="command">@param</span>  <span class="arg">__args</span>  Arguments used to generate the element to be</i></td></tr>
+<tr><th id="470">470</th><td><i class="doc">       *                 inserted.</i></td></tr>
+<tr><th id="471">471</th><td><i class="doc">       *  <span class="command">@return</span> An iterator that points to the element with key equivalent to</i></td></tr>
+<tr><th id="472">472</th><td><i class="doc">       *          the one generated from<span class="command"> @a</span> <span class="arg">__args</span> (may or may not be the</i></td></tr>
+<tr><th id="473">473</th><td><i class="doc">       *          element itself).</i></td></tr>
+<tr><th id="474">474</th><td><i class="doc">       *</i></td></tr>
+<tr><th id="475">475</th><td><i class="doc">       *  This function is not concerned about whether the insertion took place,</i></td></tr>
+<tr><th id="476">476</th><td><i class="doc">       *  and thus does not return a boolean like the single-argument emplace()</i></td></tr>
+<tr><th id="477">477</th><td><i class="doc">       *  does.  Note that the first parameter is only a hint and can</i></td></tr>
+<tr><th id="478">478</th><td><i class="doc">       *  potentially improve the performance of the insertion process.  A bad</i></td></tr>
+<tr><th id="479">479</th><td><i class="doc">       *  hint would cause no gains in efficiency.</i></td></tr>
+<tr><th id="480">480</th><td><i class="doc">       *</i></td></tr>
+<tr><th id="481">481</th><td><i class="doc">       *  For more on<span class="command"> @a</span> <span class="arg">hinting,</span> see:</i></td></tr>
+<tr><th id="482">482</th><td><i class="doc">       *  <a href="https://gcc.gnu.org/onlinedocs/libstdc++/manual/associative.html#containers.associative.insert_hints">https://gcc.gnu.org/onlinedocs/libstdc++/manual/associative.html#containers.associative.insert_hints</a></i></td></tr>
+<tr><th id="483">483</th><td><i class="doc">       *</i></td></tr>
+<tr><th id="484">484</th><td><i class="doc">       *  Insertion requires logarithmic time (if the hint is not taken).</i></td></tr>
+<tr><th id="485">485</th><td><i class="doc">       */</i></td></tr>
+<tr><th id="486">486</th><td>      <b>template</b>&lt;<b>typename</b>... _Args&gt;</td></tr>
+<tr><th id="487">487</th><td>	<a class="typedef" href="#std::set::iterator" title='std::set::iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::iterator">iterator</a></td></tr>
+<tr><th id="488">488</th><td>	<dfn class="decl def fn" id="_ZNSt3set12emplace_hintENSt8_Rb_treeIT_S1_St9_IdentityIS1_ET0_N9__gnu_cxx14__alloc_traitsIT1_NS7_10value_typeEE6rebindIS1_E5otherEE14const_iteratorEDpOTL0__" title='std::set::emplace_hint' data-ref="_ZNSt3set12emplace_hintENSt8_Rb_treeIT_S1_St9_IdentityIS1_ET0_N9__gnu_cxx14__alloc_traitsIT1_NS7_10value_typeEE6rebindIS1_E5otherEE14const_iteratorEDpOTL0__">emplace_hint</dfn>(<a class="typedef" href="#std::set::const_iterator" title='std::set::const_iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::const_iterator">const_iterator</a> <dfn class="local col5 decl" id="25__pos" title='__pos' data-type='std::set::const_iterator' data-ref="25__pos">__pos</dfn>, _Args&amp;&amp;... <dfn class="local col6 decl" id="26__args" title='__args' data-type='_Args &amp;&amp;...' data-ref="26__args">__args</dfn>)</td></tr>
+<tr><th id="489">489</th><td>	{</td></tr>
+<tr><th id="490">490</th><td>	  <b>return</b> <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>._M_emplace_hint_unique(<a class="local col5 ref" href="#25__pos" title='__pos' data-ref="25__pos">__pos</a>,</td></tr>
+<tr><th id="491">491</th><td>					     <span class="namespace">std::</span>forward&lt;_Args&gt;(<a class="local col6 ref" href="#26__args" title='__args' data-ref="26__args">__args</a>)...);</td></tr>
+<tr><th id="492">492</th><td>	}</td></tr>
+<tr><th id="493">493</th><td><u>#<span data-ppcond="446">endif</span></u></td></tr>
+<tr><th id="494">494</th><td></td></tr>
+<tr><th id="495">495</th><td>      <i class="doc">/**</i></td></tr>
+<tr><th id="496">496</th><td><i class="doc">       *  <span class="command">@brief</span> Attempts to insert an element into the %set.</i></td></tr>
+<tr><th id="497">497</th><td><i class="doc">       *  <span class="command">@param</span>  <span class="arg">__x</span>  Element to be inserted.</i></td></tr>
+<tr><th id="498">498</th><td><i class="doc">       *  <span class="command">@return</span>  A pair, of which the first element is an iterator that points</i></td></tr>
+<tr><th id="499">499</th><td><i class="doc">       *           to the possibly inserted element, and the second is a bool</i></td></tr>
+<tr><th id="500">500</th><td><i class="doc">       *           that is true if the element was actually inserted.</i></td></tr>
+<tr><th id="501">501</th><td><i class="doc">       *</i></td></tr>
+<tr><th id="502">502</th><td><i class="doc">       *  This function attempts to insert an element into the %set.  A %set</i></td></tr>
+<tr><th id="503">503</th><td><i class="doc">       *  relies on unique keys and thus an element is only inserted if it is</i></td></tr>
+<tr><th id="504">504</th><td><i class="doc">       *  not already present in the %set.</i></td></tr>
+<tr><th id="505">505</th><td><i class="doc">       *</i></td></tr>
+<tr><th id="506">506</th><td><i class="doc">       *  Insertion requires logarithmic time.</i></td></tr>
+<tr><th id="507">507</th><td><i class="doc">       */</i></td></tr>
+<tr><th id="508">508</th><td>      <span class="namespace">std::</span><a class="type" href="stl_pair.h.html#std::pair" title='std::pair' data-ref="std::pair">pair</a>&lt;<a class="typedef" href="#std::set::iterator" title='std::set::iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::iterator">iterator</a>, <em>bool</em>&gt;</td></tr>
+<tr><th id="509">509</th><td>      <dfn class="decl def fn" id="_ZNSt3set6insertERKT_" title='std::set::insert' data-ref="_ZNSt3set6insertERKT_">insert</dfn>(<em>const</em> <a class="typedef" href="#std::set::value_type" title='std::set::value_type' data-type='_Key' data-ref="std::set::value_type">value_type</a>&amp; <dfn class="local col7 decl" id="27__x" title='__x' data-type='const std::set::value_type &amp;' data-ref="27__x">__x</dfn>)</td></tr>
+<tr><th id="510">510</th><td>      {</td></tr>
+<tr><th id="511">511</th><td>	<span class="namespace">std::</span><a class="type" href="stl_pair.h.html#std::pair" title='std::pair' data-ref="std::pair">pair</a>&lt;<b>typename</b> <a class="typedef" href="#std::set::_Rep_type" title='std::set::_Rep_type' data-type='_Rb_tree&lt;std::set::key_type, std::set::value_type, _Identity&lt;std::set::value_type&gt;, std::set::key_compare, std::set::_Key_alloc_type&gt;' data-ref="std::set::_Rep_type">_Rep_type</a>::iterator, <em>bool</em>&gt; <dfn class="local col8 decl" id="28__p" title='__p' data-type='std::pair&lt;typename _Rep_type::iterator, bool&gt;' data-ref="28__p">__p</dfn> =</td></tr>
+<tr><th id="512">512</th><td>	  <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>._M_insert_unique(<a class="local col7 ref" href="#27__x" title='__x' data-ref="27__x">__x</a>);</td></tr>
+<tr><th id="513">513</th><td>	<b>return</b> <span class="namespace">std::</span><a class="type" href="stl_pair.h.html#std::pair" title='std::pair' data-ref="std::pair">pair</a>&lt;<a class="typedef" href="#std::set::iterator" title='std::set::iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::iterator">iterator</a>, <em>bool</em>&gt;(<a class="local col8 ref" href="#28__p" title='__p' data-ref="28__p">__p</a>.first, <a class="local col8 ref" href="#28__p" title='__p' data-ref="28__p">__p</a>.second);</td></tr>
+<tr><th id="514">514</th><td>      }</td></tr>
+<tr><th id="515">515</th><td></td></tr>
+<tr><th id="516">516</th><td><u>#<span data-ppcond="516">if</span> <span class="macro" title="201703L" data-ref="_M/__cplusplus">__cplusplus</span> &gt;= 201103L</u></td></tr>
+<tr><th id="517">517</th><td>      <span class="namespace">std::</span><a class="type" href="stl_pair.h.html#std::pair" title='std::pair' data-ref="std::pair">pair</a>&lt;<a class="typedef" href="#std::set::iterator" title='std::set::iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::iterator">iterator</a>, <em>bool</em>&gt;</td></tr>
+<tr><th id="518">518</th><td>      <dfn class="decl def fn" id="_ZNSt3set6insertEOT_" title='std::set::insert' data-ref="_ZNSt3set6insertEOT_">insert</dfn>(<a class="typedef" href="#std::set::value_type" title='std::set::value_type' data-type='_Key' data-ref="std::set::value_type">value_type</a>&amp;&amp; <dfn class="local col9 decl" id="29__x" title='__x' data-type='std::set::value_type &amp;&amp;' data-ref="29__x">__x</dfn>)</td></tr>
+<tr><th id="519">519</th><td>      {</td></tr>
+<tr><th id="520">520</th><td>	<span class="namespace">std::</span><a class="type" href="stl_pair.h.html#std::pair" title='std::pair' data-ref="std::pair">pair</a>&lt;<b>typename</b> <a class="typedef" href="#std::set::_Rep_type" title='std::set::_Rep_type' data-type='_Rb_tree&lt;std::set::key_type, std::set::value_type, _Identity&lt;std::set::value_type&gt;, std::set::key_compare, std::set::_Key_alloc_type&gt;' data-ref="std::set::_Rep_type">_Rep_type</a>::iterator, <em>bool</em>&gt; <dfn class="local col0 decl" id="30__p" title='__p' data-type='std::pair&lt;typename _Rep_type::iterator, bool&gt;' data-ref="30__p">__p</dfn> =</td></tr>
+<tr><th id="521">521</th><td>	  <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>._M_insert_unique(<span class="namespace">std::</span>move(<a class="local col9 ref" href="#29__x" title='__x' data-ref="29__x">__x</a>));</td></tr>
+<tr><th id="522">522</th><td>	<b>return</b> <span class="namespace">std::</span><a class="type" href="stl_pair.h.html#std::pair" title='std::pair' data-ref="std::pair">pair</a>&lt;<a class="typedef" href="#std::set::iterator" title='std::set::iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::iterator">iterator</a>, <em>bool</em>&gt;(<a class="local col0 ref" href="#30__p" title='__p' data-ref="30__p">__p</a>.first, <a class="local col0 ref" href="#30__p" title='__p' data-ref="30__p">__p</a>.second);</td></tr>
+<tr><th id="523">523</th><td>      }</td></tr>
+<tr><th id="524">524</th><td><u>#<span data-ppcond="516">endif</span></u></td></tr>
+<tr><th id="525">525</th><td></td></tr>
+<tr><th id="526">526</th><td>      <i class="doc">/**</i></td></tr>
+<tr><th id="527">527</th><td><i class="doc">       *  <span class="command">@brief</span> Attempts to insert an element into the %set.</i></td></tr>
+<tr><th id="528">528</th><td><i class="doc">       *  <span class="command">@param</span>  <span class="arg">__position</span>  An iterator that serves as a hint as to where the</i></td></tr>
+<tr><th id="529">529</th><td><i class="doc">       *                    element should be inserted.</i></td></tr>
+<tr><th id="530">530</th><td><i class="doc">       *  <span class="command">@param</span>  <span class="arg">__x</span>  Element to be inserted.</i></td></tr>
+<tr><th id="531">531</th><td><i class="doc">       *  <span class="command">@return</span> An iterator that points to the element with key of</i></td></tr>
+<tr><th id="532">532</th><td><i class="doc">       *          <span class="command"> @a</span> <span class="arg">__x</span> (may or may not be the element passed in).</i></td></tr>
+<tr><th id="533">533</th><td><i class="doc">       *</i></td></tr>
+<tr><th id="534">534</th><td><i class="doc">       *  This function is not concerned about whether the insertion took place,</i></td></tr>
+<tr><th id="535">535</th><td><i class="doc">       *  and thus does not return a boolean like the single-argument insert()</i></td></tr>
+<tr><th id="536">536</th><td><i class="doc">       *  does.  Note that the first parameter is only a hint and can</i></td></tr>
+<tr><th id="537">537</th><td><i class="doc">       *  potentially improve the performance of the insertion process.  A bad</i></td></tr>
+<tr><th id="538">538</th><td><i class="doc">       *  hint would cause no gains in efficiency.</i></td></tr>
+<tr><th id="539">539</th><td><i class="doc">       *</i></td></tr>
+<tr><th id="540">540</th><td><i class="doc">       *  For more on<span class="command"> @a</span> <span class="arg">hinting,</span> see:</i></td></tr>
+<tr><th id="541">541</th><td><i class="doc">       *  <a href="https://gcc.gnu.org/onlinedocs/libstdc++/manual/associative.html#containers.associative.insert_hints">https://gcc.gnu.org/onlinedocs/libstdc++/manual/associative.html#containers.associative.insert_hints</a></i></td></tr>
+<tr><th id="542">542</th><td><i class="doc">       *</i></td></tr>
+<tr><th id="543">543</th><td><i class="doc">       *  Insertion requires logarithmic time (if the hint is not taken).</i></td></tr>
+<tr><th id="544">544</th><td><i class="doc">       */</i></td></tr>
+<tr><th id="545">545</th><td>      <a class="typedef" href="#std::set::iterator" title='std::set::iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::iterator">iterator</a></td></tr>
+<tr><th id="546">546</th><td>      <dfn class="decl def fn" id="_ZNSt3set6insertENSt8_Rb_treeIT_S1_St9_IdentityIS1_ET0_N9__gnu_cxx14__alloc_traitsIT1_NS7_10value_typeEE6rebindIS1_E5otherEE14const_iteratorERKS1_" title='std::set::insert' data-ref="_ZNSt3set6insertENSt8_Rb_treeIT_S1_St9_IdentityIS1_ET0_N9__gnu_cxx14__alloc_traitsIT1_NS7_10value_typeEE6rebindIS1_E5otherEE14const_iteratorERKS1_">insert</dfn>(<a class="typedef" href="#std::set::const_iterator" title='std::set::const_iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::const_iterator">const_iterator</a> <dfn class="local col1 decl" id="31__position" title='__position' data-type='std::set::const_iterator' data-ref="31__position">__position</dfn>, <em>const</em> <a class="typedef" href="#std::set::value_type" title='std::set::value_type' data-type='_Key' data-ref="std::set::value_type">value_type</a>&amp; <dfn class="local col2 decl" id="32__x" title='__x' data-type='const std::set::value_type &amp;' data-ref="32__x">__x</dfn>)</td></tr>
+<tr><th id="547">547</th><td>      { <b>return</b> <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>._M_insert_unique_(<a class="local col1 ref" href="#31__position" title='__position' data-ref="31__position">__position</a>, <a class="local col2 ref" href="#32__x" title='__x' data-ref="32__x">__x</a>); }</td></tr>
+<tr><th id="548">548</th><td></td></tr>
+<tr><th id="549">549</th><td><u>#<span data-ppcond="549">if</span> <span class="macro" title="201703L" data-ref="_M/__cplusplus">__cplusplus</span> &gt;= 201103L</u></td></tr>
+<tr><th id="550">550</th><td>      <a class="typedef" href="#std::set::iterator" title='std::set::iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::iterator">iterator</a></td></tr>
+<tr><th id="551">551</th><td>      <dfn class="decl def fn" id="_ZNSt3set6insertENSt8_Rb_treeIT_S1_St9_IdentityIS1_ET0_N9__gnu_cxx14__alloc_traitsIT1_NS7_10value_typeEE6rebindIS1_E5otherEE14const_iteratorEOS1_" title='std::set::insert' data-ref="_ZNSt3set6insertENSt8_Rb_treeIT_S1_St9_IdentityIS1_ET0_N9__gnu_cxx14__alloc_traitsIT1_NS7_10value_typeEE6rebindIS1_E5otherEE14const_iteratorEOS1_">insert</dfn>(<a class="typedef" href="#std::set::const_iterator" title='std::set::const_iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::const_iterator">const_iterator</a> <dfn class="local col3 decl" id="33__position" title='__position' data-type='std::set::const_iterator' data-ref="33__position">__position</dfn>, <a class="typedef" href="#std::set::value_type" title='std::set::value_type' data-type='_Key' data-ref="std::set::value_type">value_type</a>&amp;&amp; <dfn class="local col4 decl" id="34__x" title='__x' data-type='std::set::value_type &amp;&amp;' data-ref="34__x">__x</dfn>)</td></tr>
+<tr><th id="552">552</th><td>      { <b>return</b> <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>._M_insert_unique_(<a class="local col3 ref" href="#33__position" title='__position' data-ref="33__position">__position</a>, <span class="namespace">std::</span>move(<a class="local col4 ref" href="#34__x" title='__x' data-ref="34__x">__x</a>)); }</td></tr>
+<tr><th id="553">553</th><td><u>#<span data-ppcond="549">endif</span></u></td></tr>
+<tr><th id="554">554</th><td></td></tr>
+<tr><th id="555">555</th><td>      <i class="doc">/**</i></td></tr>
+<tr><th id="556">556</th><td><i class="doc">       *  <span class="command">@brief</span> A template function that attempts to insert a range</i></td></tr>
+<tr><th id="557">557</th><td><i class="doc">       *  of elements.</i></td></tr>
+<tr><th id="558">558</th><td><i class="doc">       *  <span class="command">@param</span>  <span class="arg">__first</span>  Iterator pointing to the start of the range to be</i></td></tr>
+<tr><th id="559">559</th><td><i class="doc">       *                   inserted.</i></td></tr>
+<tr><th id="560">560</th><td><i class="doc">       *  <span class="command">@param</span>  <span class="arg">__last</span>  Iterator pointing to the end of the range.</i></td></tr>
+<tr><th id="561">561</th><td><i class="doc">       *</i></td></tr>
+<tr><th id="562">562</th><td><i class="doc">       *  Complexity similar to that of the range constructor.</i></td></tr>
+<tr><th id="563">563</th><td><i class="doc">       */</i></td></tr>
+<tr><th id="564">564</th><td>      <b>template</b>&lt;<b>typename</b> _InputIterator&gt;</td></tr>
+<tr><th id="565">565</th><td>	<em>void</em></td></tr>
+<tr><th id="566">566</th><td>	<dfn class="decl def fn" id="_ZNSt3set6insertETL0__S0_" title='std::set::insert' data-ref="_ZNSt3set6insertETL0__S0_">insert</dfn>(_InputIterator <dfn class="local col5 decl" id="35__first" title='__first' data-type='_InputIterator' data-ref="35__first">__first</dfn>, _InputIterator <dfn class="local col6 decl" id="36__last" title='__last' data-type='_InputIterator' data-ref="36__last">__last</dfn>)</td></tr>
+<tr><th id="567">567</th><td>	{ <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>._M_insert_range_unique(<a class="local col5 ref" href="#35__first" title='__first' data-ref="35__first">__first</a>, <a class="local col6 ref" href="#36__last" title='__last' data-ref="36__last">__last</a>); }</td></tr>
+<tr><th id="568">568</th><td></td></tr>
+<tr><th id="569">569</th><td><u>#<span data-ppcond="569">if</span> <span class="macro" title="201703L" data-ref="_M/__cplusplus">__cplusplus</span> &gt;= 201103L</u></td></tr>
+<tr><th id="570">570</th><td>      <i class="doc">/**</i></td></tr>
+<tr><th id="571">571</th><td><i class="doc">       *  <span class="command">@brief</span> Attempts to insert a list of elements into the %set.</i></td></tr>
+<tr><th id="572">572</th><td><i class="doc">       *  <span class="command">@param</span>  <span class="arg">__l</span>  A std::initializer_list&lt;value_type&gt; of elements</i></td></tr>
+<tr><th id="573">573</th><td><i class="doc">       *               to be inserted.</i></td></tr>
+<tr><th id="574">574</th><td><i class="doc">       *</i></td></tr>
+<tr><th id="575">575</th><td><i class="doc">       *  Complexity similar to that of the range constructor.</i></td></tr>
+<tr><th id="576">576</th><td><i class="doc">       */</i></td></tr>
+<tr><th id="577">577</th><td>      <em>void</em></td></tr>
+<tr><th id="578">578</th><td>      <dfn class="decl def fn" id="_ZNSt3set6insertESt16initializer_listIT_E" title='std::set::insert' data-ref="_ZNSt3set6insertESt16initializer_listIT_E">insert</dfn>(<a class="type" href="../initializer_list.html#std::initializer_list" title='std::initializer_list' data-ref="std::initializer_list">initializer_list</a>&lt;<a class="typedef" href="#std::set::value_type" title='std::set::value_type' data-type='_Key' data-ref="std::set::value_type">value_type</a>&gt; <dfn class="local col7 decl" id="37__l" title='__l' data-type='initializer_list&lt;std::set::value_type&gt;' data-ref="37__l">__l</dfn>)</td></tr>
+<tr><th id="579">579</th><td>      { <b>this</b>-&gt;insert(<a class="local col7 ref" href="#37__l" title='__l' data-ref="37__l">__l</a>.begin(), <a class="local col7 ref" href="#37__l" title='__l' data-ref="37__l">__l</a>.end()); }</td></tr>
+<tr><th id="580">580</th><td><u>#<span data-ppcond="569">endif</span></u></td></tr>
+<tr><th id="581">581</th><td></td></tr>
+<tr><th id="582">582</th><td><u>#<span data-ppcond="582">if</span> <span class="macro" title="201703L" data-ref="_M/__cplusplus">__cplusplus</span> &gt; 201402L</u></td></tr>
+<tr><th id="583">583</th><td>      <i class="doc">/// Extract a node.</i></td></tr>
+<tr><th id="584">584</th><td>      <a class="typedef" href="#std::set::node_type" title='std::set::node_type' data-type='typename _Rep_type::node_type' data-ref="std::set::node_type">node_type</a></td></tr>
+<tr><th id="585">585</th><td>      <dfn class="decl def fn" id="_ZNSt3set7extractENSt8_Rb_treeIT_S1_St9_IdentityIS1_ET0_N9__gnu_cxx14__alloc_traitsIT1_NS7_10value_typeEE6rebindIS1_E5otherEE14const_iteratorE" title='std::set::extract' data-ref="_ZNSt3set7extractENSt8_Rb_treeIT_S1_St9_IdentityIS1_ET0_N9__gnu_cxx14__alloc_traitsIT1_NS7_10value_typeEE6rebindIS1_E5otherEE14const_iteratorE">extract</dfn>(<a class="typedef" href="#std::set::const_iterator" title='std::set::const_iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::const_iterator">const_iterator</a> <dfn class="local col8 decl" id="38__pos" title='__pos' data-type='std::set::const_iterator' data-ref="38__pos">__pos</dfn>)</td></tr>
+<tr><th id="586">586</th><td>      {</td></tr>
+<tr><th id="587">587</th><td>	<a class="macro" href="../../../x86_64-linux-gnu/c++/9/bits/c++config.h.html#482" title="" data-ref="_M/__glibcxx_assert">__glibcxx_assert</a>(__pos != end());</td></tr>
+<tr><th id="588">588</th><td>	<b>return</b> <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>.extract(<a class="local col8 ref" href="#38__pos" title='__pos' data-ref="38__pos">__pos</a>);</td></tr>
+<tr><th id="589">589</th><td>      }</td></tr>
+<tr><th id="590">590</th><td></td></tr>
+<tr><th id="591">591</th><td>      <i class="doc">/// Extract a node.</i></td></tr>
+<tr><th id="592">592</th><td>      <a class="typedef" href="#std::set::node_type" title='std::set::node_type' data-type='typename _Rep_type::node_type' data-ref="std::set::node_type">node_type</a></td></tr>
+<tr><th id="593">593</th><td>      <dfn class="decl def fn" id="_ZNSt3set7extractERKT_" title='std::set::extract' data-ref="_ZNSt3set7extractERKT_">extract</dfn>(<em>const</em> <a class="typedef" href="#std::set::key_type" title='std::set::key_type' data-type='_Key' data-ref="std::set::key_type">key_type</a>&amp; <dfn class="local col9 decl" id="39__x" title='__x' data-type='const std::set::key_type &amp;' data-ref="39__x">__x</dfn>)</td></tr>
+<tr><th id="594">594</th><td>      { <b>return</b> <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>.extract(<a class="local col9 ref" href="#39__x" title='__x' data-ref="39__x">__x</a>); }</td></tr>
+<tr><th id="595">595</th><td></td></tr>
+<tr><th id="596">596</th><td>      <i class="doc">/// Re-insert an extracted node.</i></td></tr>
+<tr><th id="597">597</th><td>      <a class="typedef" href="#std::set::insert_return_type" title='std::set::insert_return_type' data-type='typename _Rep_type::insert_return_type' data-ref="std::set::insert_return_type">insert_return_type</a></td></tr>
+<tr><th id="598">598</th><td>      <dfn class="decl def fn" id="_ZNSt3set6insertEONSt8_Rb_treeIT_S1_St9_IdentityIS1_ET0_N9__gnu_cxx14__alloc_traitsIT1_NS7_10value_typeEE6rebindIS1_E5otherEE9node_typeE" title='std::set::insert' data-ref="_ZNSt3set6insertEONSt8_Rb_treeIT_S1_St9_IdentityIS1_ET0_N9__gnu_cxx14__alloc_traitsIT1_NS7_10value_typeEE6rebindIS1_E5otherEE9node_typeE">insert</dfn>(<a class="typedef" href="#std::set::node_type" title='std::set::node_type' data-type='typename _Rep_type::node_type' data-ref="std::set::node_type">node_type</a>&amp;&amp; <dfn class="local col0 decl" id="40__nh" title='__nh' data-type='std::set::node_type &amp;&amp;' data-ref="40__nh">__nh</dfn>)</td></tr>
+<tr><th id="599">599</th><td>      { <b>return</b> <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>._M_reinsert_node_unique(<span class="namespace">std::</span>move(<a class="local col0 ref" href="#40__nh" title='__nh' data-ref="40__nh">__nh</a>)); }</td></tr>
+<tr><th id="600">600</th><td></td></tr>
+<tr><th id="601">601</th><td>      <i class="doc">/// Re-insert an extracted node.</i></td></tr>
+<tr><th id="602">602</th><td>      <a class="typedef" href="#std::set::iterator" title='std::set::iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::iterator">iterator</a></td></tr>
+<tr><th id="603">603</th><td>      <dfn class="decl def fn" id="_ZNSt3set6insertENSt8_Rb_treeIT_S1_St9_IdentityIS1_ET0_N9__gnu_cxx14__alloc_traitsIT1_NS7_10value_typeEE6rebindIS1_E5otherEE14const_iteratorEONSD_9node_typeE" title='std::set::insert' data-ref="_ZNSt3set6insertENSt8_Rb_treeIT_S1_St9_IdentityIS1_ET0_N9__gnu_cxx14__alloc_traitsIT1_NS7_10value_typeEE6rebindIS1_E5otherEE14const_iteratorEONSD_9node_typeE">insert</dfn>(<a class="typedef" href="#std::set::const_iterator" title='std::set::const_iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::const_iterator">const_iterator</a> <dfn class="local col1 decl" id="41__hint" title='__hint' data-type='std::set::const_iterator' data-ref="41__hint">__hint</dfn>, <a class="typedef" href="#std::set::node_type" title='std::set::node_type' data-type='typename _Rep_type::node_type' data-ref="std::set::node_type">node_type</a>&amp;&amp; <dfn class="local col2 decl" id="42__nh" title='__nh' data-type='std::set::node_type &amp;&amp;' data-ref="42__nh">__nh</dfn>)</td></tr>
+<tr><th id="604">604</th><td>      { <b>return</b> <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>._M_reinsert_node_hint_unique(<a class="local col1 ref" href="#41__hint" title='__hint' data-ref="41__hint">__hint</a>, <span class="namespace">std::</span>move(<a class="local col2 ref" href="#42__nh" title='__nh' data-ref="42__nh">__nh</a>)); }</td></tr>
+<tr><th id="605">605</th><td></td></tr>
+<tr><th id="606">606</th><td>      <b>template</b>&lt;<b>typename</b>, <b>typename</b>&gt;</td></tr>
+<tr><th id="607">607</th><td>	<b>friend</b> <b>class</b> <span class="namespace">std::</span><dfn class="type" id="std::_Rb_tree_merge_helper" title='std::_Rb_tree_merge_helper' data-ref="std::_Rb_tree_merge_helper">_Rb_tree_merge_helper</dfn>;</td></tr>
+<tr><th id="608">608</th><td></td></tr>
+<tr><th id="609">609</th><td>      <b>template</b>&lt;<b>typename</b> _Compare1&gt;</td></tr>
+<tr><th id="610">610</th><td>	<em>void</em></td></tr>
+<tr><th id="611">611</th><td>	<dfn class="decl def fn" id="_ZNSt3set5mergeERSt3setIT_TL0__T1_E" title='std::set::merge' data-ref="_ZNSt3set5mergeERSt3setIT_TL0__T1_E">merge</dfn>(<a class="type" href="#std::set" title='std::set' data-ref="std::set">set</a>&lt;_Key, _Compare1, _Alloc&gt;&amp; <dfn class="local col3 decl" id="43__source" title='__source' data-type='set&lt;_Key, _Compare1, _Alloc&gt; &amp;' data-ref="43__source">__source</dfn>)</td></tr>
+<tr><th id="612">612</th><td>	{</td></tr>
+<tr><th id="613">613</th><td>	  <b>using</b> <dfn class="local col4 typedef" id="44_Merge_helper" title='_Merge_helper' data-type='_Rb_tree_merge_helper&lt;set&lt;_Key, _Compare, _Alloc&gt;, _Compare1&gt;' data-ref="44_Merge_helper">_Merge_helper</dfn> = <a class="type" href="stl_tree.h.html#std::_Rb_tree_merge_helper" title='std::_Rb_tree_merge_helper' data-ref="std::_Rb_tree_merge_helper">_Rb_tree_merge_helper</a>&lt;set, _Compare1&gt;;</td></tr>
+<tr><th id="614">614</th><td>	  <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>._M_merge_unique(<a class="local col4 typedef" href="#44_Merge_helper" title='_Merge_helper' data-type='_Rb_tree_merge_helper&lt;set&lt;_Key, _Compare, _Alloc&gt;, _Compare1&gt;' data-ref="44_Merge_helper">_Merge_helper</a>::_S_get_tree(<a class="local col3 ref" href="#43__source" title='__source' data-ref="43__source">__source</a>));</td></tr>
+<tr><th id="615">615</th><td>	}</td></tr>
+<tr><th id="616">616</th><td></td></tr>
+<tr><th id="617">617</th><td>      <b>template</b>&lt;<b>typename</b> _Compare1&gt;</td></tr>
+<tr><th id="618">618</th><td>	<em>void</em></td></tr>
+<tr><th id="619">619</th><td>	<dfn class="decl def fn" id="_ZNSt3set5mergeEOSt3setIT_TL0__T1_E" title='std::set::merge' data-ref="_ZNSt3set5mergeEOSt3setIT_TL0__T1_E">merge</dfn>(<a class="type" href="#std::set" title='std::set' data-ref="std::set">set</a>&lt;_Key, _Compare1, _Alloc&gt;&amp;&amp; <dfn class="local col5 decl" id="45__source" title='__source' data-type='set&lt;_Key, _Compare1, _Alloc&gt; &amp;&amp;' data-ref="45__source">__source</dfn>)</td></tr>
+<tr><th id="620">620</th><td>	{ merge(<a class="local col5 ref" href="#45__source" title='__source' data-ref="45__source">__source</a>); }</td></tr>
+<tr><th id="621">621</th><td></td></tr>
+<tr><th id="622">622</th><td>      <b>template</b>&lt;<b>typename</b> _Compare1&gt;</td></tr>
+<tr><th id="623">623</th><td>	<em>void</em></td></tr>
+<tr><th id="624">624</th><td>	<dfn class="decl def fn" id="_ZNSt3set5mergeERSt8multisetIT_TL0__T1_E" title='std::set::merge' data-ref="_ZNSt3set5mergeERSt8multisetIT_TL0__T1_E">merge</dfn>(<a class="type" href="#std::multiset" title='std::multiset' data-ref="std::multiset">multiset</a>&lt;_Key, _Compare1, _Alloc&gt;&amp; <dfn class="local col6 decl" id="46__source" title='__source' data-type='multiset&lt;_Key, _Compare1, _Alloc&gt; &amp;' data-ref="46__source">__source</dfn>)</td></tr>
+<tr><th id="625">625</th><td>	{</td></tr>
+<tr><th id="626">626</th><td>	  <b>using</b> <dfn class="local col7 typedef" id="47_Merge_helper" title='_Merge_helper' data-type='_Rb_tree_merge_helper&lt;set&lt;_Key, _Compare, _Alloc&gt;, _Compare1&gt;' data-ref="47_Merge_helper">_Merge_helper</dfn> = <a class="type" href="stl_tree.h.html#std::_Rb_tree_merge_helper" title='std::_Rb_tree_merge_helper' data-ref="std::_Rb_tree_merge_helper">_Rb_tree_merge_helper</a>&lt;set, _Compare1&gt;;</td></tr>
+<tr><th id="627">627</th><td>	  <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>._M_merge_unique(<a class="local col7 typedef" href="#47_Merge_helper" title='_Merge_helper' data-type='_Rb_tree_merge_helper&lt;set&lt;_Key, _Compare, _Alloc&gt;, _Compare1&gt;' data-ref="47_Merge_helper">_Merge_helper</a>::_S_get_tree(<a class="local col6 ref" href="#46__source" title='__source' data-ref="46__source">__source</a>));</td></tr>
+<tr><th id="628">628</th><td>	}</td></tr>
+<tr><th id="629">629</th><td></td></tr>
+<tr><th id="630">630</th><td>      <b>template</b>&lt;<b>typename</b> _Compare1&gt;</td></tr>
+<tr><th id="631">631</th><td>	<em>void</em></td></tr>
+<tr><th id="632">632</th><td>	<dfn class="decl def fn" id="_ZNSt3set5mergeEOSt8multisetIT_TL0__T1_E" title='std::set::merge' data-ref="_ZNSt3set5mergeEOSt8multisetIT_TL0__T1_E">merge</dfn>(<a class="type" href="#std::multiset" title='std::multiset' data-ref="std::multiset">multiset</a>&lt;_Key, _Compare1, _Alloc&gt;&amp;&amp; <dfn class="local col8 decl" id="48__source" title='__source' data-type='multiset&lt;_Key, _Compare1, _Alloc&gt; &amp;&amp;' data-ref="48__source">__source</dfn>)</td></tr>
+<tr><th id="633">633</th><td>	{ merge(<a class="local col8 ref" href="#48__source" title='__source' data-ref="48__source">__source</a>); }</td></tr>
+<tr><th id="634">634</th><td><u>#<span data-ppcond="582">endif</span> // C++17</u></td></tr>
+<tr><th id="635">635</th><td></td></tr>
+<tr><th id="636">636</th><td><u>#<span data-ppcond="636">if</span> <span class="macro" title="201703L" data-ref="_M/__cplusplus">__cplusplus</span> &gt;= 201103L</u></td></tr>
+<tr><th id="637">637</th><td>      <i>// _GLIBCXX_RESOLVE_LIB_DEFECTS</i></td></tr>
+<tr><th id="638">638</th><td><i>      // DR 130. Associative erase should return an iterator.</i></td></tr>
+<tr><th id="639">639</th><td>      <i class="doc">/**</i></td></tr>
+<tr><th id="640">640</th><td><i class="doc">       *  <span class="command">@brief</span> Erases an element from a %set.</i></td></tr>
+<tr><th id="641">641</th><td><i class="doc">       *  <span class="command">@param</span>  <span class="arg">__position</span>  An iterator pointing to the element to be erased.</i></td></tr>
+<tr><th id="642">642</th><td><i class="doc">       *  <span class="command">@return</span> An iterator pointing to the element immediately following</i></td></tr>
+<tr><th id="643">643</th><td><i class="doc">       *         <span class="command"> @a</span> <span class="arg">__position</span> prior to the element being erased. If no such</i></td></tr>
+<tr><th id="644">644</th><td><i class="doc">       *          element exists, end() is returned.</i></td></tr>
+<tr><th id="645">645</th><td><i class="doc">       *</i></td></tr>
+<tr><th id="646">646</th><td><i class="doc">       *  This function erases an element, pointed to by the given iterator,</i></td></tr>
+<tr><th id="647">647</th><td><i class="doc">       *  from a %set.  Note that this function only erases the element, and</i></td></tr>
+<tr><th id="648">648</th><td><i class="doc">       *  that if the element is itself a pointer, the pointed-to memory is not</i></td></tr>
+<tr><th id="649">649</th><td><i class="doc">       *  touched in any way.  Managing the pointer is the user's</i></td></tr>
+<tr><th id="650">650</th><td><i class="doc">       *  responsibility.</i></td></tr>
+<tr><th id="651">651</th><td><i class="doc">       */</i></td></tr>
+<tr><th id="652">652</th><td>      <a class="macro" href="../../../x86_64-linux-gnu/c++/9/bits/c++config.h.html#103" title="__attribute ((__abi_tag__ (&quot;cxx11&quot;)))" data-ref="_M/_GLIBCXX_ABI_TAG_CXX11">_GLIBCXX_ABI_TAG_CXX11</a></td></tr>
+<tr><th id="653">653</th><td>      <a class="typedef" href="#std::set::iterator" title='std::set::iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::iterator">iterator</a></td></tr>
+<tr><th id="654">654</th><td>      <dfn class="decl def fn" id="_ZNSt3set5eraseB5cxx11ENSt8_Rb_treeIT_S1_St9_IdentityIS1_ET0_N9__gnu_cxx14__alloc_traitsIT1_NS7_10value_typeEE6rebindIS1_E5otherEE14const_iteratorE" title='std::set::erase' data-ref="_ZNSt3set5eraseB5cxx11ENSt8_Rb_treeIT_S1_St9_IdentityIS1_ET0_N9__gnu_cxx14__alloc_traitsIT1_NS7_10value_typeEE6rebindIS1_E5otherEE14const_iteratorE">erase</dfn>(<a class="typedef" href="#std::set::const_iterator" title='std::set::const_iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::const_iterator">const_iterator</a> <dfn class="local col9 decl" id="49__position" title='__position' data-type='std::set::const_iterator' data-ref="49__position">__position</dfn>)</td></tr>
+<tr><th id="655">655</th><td>      { <b>return</b> <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>.erase(<a class="local col9 ref" href="#49__position" title='__position' data-ref="49__position">__position</a>); }</td></tr>
+<tr><th id="656">656</th><td><u>#<span data-ppcond="636">else</span></u></td></tr>
+<tr><th id="657">657</th><td>      <i class="doc">/**</i></td></tr>
+<tr><th id="658">658</th><td><i class="doc">       *  <span class="command">@brief</span> Erases an element from a %set.</i></td></tr>
+<tr><th id="659">659</th><td><i class="doc">       *  <span class="command">@param</span>  <span class="arg">position</span>  An iterator pointing to the element to be erased.</i></td></tr>
+<tr><th id="660">660</th><td><i class="doc">       *</i></td></tr>
+<tr><th id="661">661</th><td><i class="doc">       *  This function erases an element, pointed to by the given iterator,</i></td></tr>
+<tr><th id="662">662</th><td><i class="doc">       *  from a %set.  Note that this function only erases the element, and</i></td></tr>
+<tr><th id="663">663</th><td><i class="doc">       *  that if the element is itself a pointer, the pointed-to memory is not</i></td></tr>
+<tr><th id="664">664</th><td><i class="doc">       *  touched in any way.  Managing the pointer is the user's</i></td></tr>
+<tr><th id="665">665</th><td><i class="doc">       *  responsibility.</i></td></tr>
+<tr><th id="666">666</th><td><i class="doc">       */</i></td></tr>
+<tr><th id="667">667</th><td>      <em>void</em></td></tr>
+<tr><th id="668">668</th><td>      erase(iterator __position)</td></tr>
+<tr><th id="669">669</th><td>      { _M_t.erase(__position); }</td></tr>
+<tr><th id="670">670</th><td><u>#<span data-ppcond="636">endif</span></u></td></tr>
+<tr><th id="671">671</th><td></td></tr>
+<tr><th id="672">672</th><td>      <i class="doc">/**</i></td></tr>
+<tr><th id="673">673</th><td><i class="doc">       *  <span class="command">@brief</span> Erases elements according to the provided key.</i></td></tr>
+<tr><th id="674">674</th><td><i class="doc">       *  <span class="command">@param</span>  <span class="arg">__x</span>  Key of element to be erased.</i></td></tr>
+<tr><th id="675">675</th><td><i class="doc">       *  <span class="command">@return</span>  The number of elements erased.</i></td></tr>
+<tr><th id="676">676</th><td><i class="doc">       *</i></td></tr>
+<tr><th id="677">677</th><td><i class="doc">       *  This function erases all the elements located by the given key from</i></td></tr>
+<tr><th id="678">678</th><td><i class="doc">       *  a %set.</i></td></tr>
+<tr><th id="679">679</th><td><i class="doc">       *  Note that this function only erases the element, and that if</i></td></tr>
+<tr><th id="680">680</th><td><i class="doc">       *  the element is itself a pointer, the pointed-to memory is not touched</i></td></tr>
+<tr><th id="681">681</th><td><i class="doc">       *  in any way.  Managing the pointer is the user's responsibility.</i></td></tr>
+<tr><th id="682">682</th><td><i class="doc">       */</i></td></tr>
+<tr><th id="683">683</th><td>      <a class="typedef" href="#std::set::size_type" title='std::set::size_type' data-type='typename _Rep_type::size_type' data-ref="std::set::size_type">size_type</a></td></tr>
+<tr><th id="684">684</th><td>      <dfn class="decl def fn" id="_ZNSt3set5eraseERKT_" title='std::set::erase' data-ref="_ZNSt3set5eraseERKT_">erase</dfn>(<em>const</em> <a class="typedef" href="#std::set::key_type" title='std::set::key_type' data-type='_Key' data-ref="std::set::key_type">key_type</a>&amp; <dfn class="local col0 decl" id="50__x" title='__x' data-type='const std::set::key_type &amp;' data-ref="50__x">__x</dfn>)</td></tr>
+<tr><th id="685">685</th><td>      { <b>return</b> <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>.erase(<a class="local col0 ref" href="#50__x" title='__x' data-ref="50__x">__x</a>); }</td></tr>
+<tr><th id="686">686</th><td></td></tr>
+<tr><th id="687">687</th><td><u>#<span data-ppcond="687">if</span> <span class="macro" title="201703L" data-ref="_M/__cplusplus">__cplusplus</span> &gt;= 201103L</u></td></tr>
+<tr><th id="688">688</th><td>      <i>// _GLIBCXX_RESOLVE_LIB_DEFECTS</i></td></tr>
+<tr><th id="689">689</th><td><i>      // DR 130. Associative erase should return an iterator.</i></td></tr>
+<tr><th id="690">690</th><td>      <i class="doc">/**</i></td></tr>
+<tr><th id="691">691</th><td><i class="doc">       *  <span class="command">@brief</span> Erases a [__first,__last) range of elements from a %set.</i></td></tr>
+<tr><th id="692">692</th><td><i class="doc">       *  <span class="command">@param</span>  <span class="arg">__first</span>  Iterator pointing to the start of the range to be</i></td></tr>
+<tr><th id="693">693</th><td><i class="doc">       *                 erased.</i></td></tr>
+<tr><th id="694">694</th><td><i class="doc"></i></td></tr>
+<tr><th id="695">695</th><td><i class="doc">       *  <span class="command">@param</span> <span class="arg">__last</span> Iterator pointing to the end of the range to</i></td></tr>
+<tr><th id="696">696</th><td><i class="doc">       *  be erased.</i></td></tr>
+<tr><th id="697">697</th><td><i class="doc">       *  <span class="command">@return</span> The iterator<span class="command"> @a</span> <span class="arg">__last.</span></i></td></tr>
+<tr><th id="698">698</th><td><i class="doc">       *</i></td></tr>
+<tr><th id="699">699</th><td><i class="doc">       *  This function erases a sequence of elements from a %set.</i></td></tr>
+<tr><th id="700">700</th><td><i class="doc">       *  Note that this function only erases the element, and that if</i></td></tr>
+<tr><th id="701">701</th><td><i class="doc">       *  the element is itself a pointer, the pointed-to memory is not touched</i></td></tr>
+<tr><th id="702">702</th><td><i class="doc">       *  in any way.  Managing the pointer is the user's responsibility.</i></td></tr>
+<tr><th id="703">703</th><td><i class="doc">       */</i></td></tr>
+<tr><th id="704">704</th><td>      <a class="macro" href="../../../x86_64-linux-gnu/c++/9/bits/c++config.h.html#103" title="__attribute ((__abi_tag__ (&quot;cxx11&quot;)))" data-ref="_M/_GLIBCXX_ABI_TAG_CXX11">_GLIBCXX_ABI_TAG_CXX11</a></td></tr>
+<tr><th id="705">705</th><td>      <a class="typedef" href="#std::set::iterator" title='std::set::iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::iterator">iterator</a></td></tr>
+<tr><th id="706">706</th><td>      <dfn class="decl def fn" id="_ZNSt3set5eraseB5cxx11ENSt8_Rb_treeIT_S1_St9_IdentityIS1_ET0_N9__gnu_cxx14__alloc_traitsIT1_NS7_10value_typeEE6rebindIS1_E5otherEE14const_iteratorESE_" title='std::set::erase' data-ref="_ZNSt3set5eraseB5cxx11ENSt8_Rb_treeIT_S1_St9_IdentityIS1_ET0_N9__gnu_cxx14__alloc_traitsIT1_NS7_10value_typeEE6rebindIS1_E5otherEE14const_iteratorESE_">erase</dfn>(<a class="typedef" href="#std::set::const_iterator" title='std::set::const_iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::const_iterator">const_iterator</a> <dfn class="local col1 decl" id="51__first" title='__first' data-type='std::set::const_iterator' data-ref="51__first">__first</dfn>, <a class="typedef" href="#std::set::const_iterator" title='std::set::const_iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::const_iterator">const_iterator</a> <dfn class="local col2 decl" id="52__last" title='__last' data-type='std::set::const_iterator' data-ref="52__last">__last</dfn>)</td></tr>
+<tr><th id="707">707</th><td>      { <b>return</b> <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>.erase(<a class="local col1 ref" href="#51__first" title='__first' data-ref="51__first">__first</a>, <a class="local col2 ref" href="#52__last" title='__last' data-ref="52__last">__last</a>); }</td></tr>
+<tr><th id="708">708</th><td><u>#<span data-ppcond="687">else</span></u></td></tr>
+<tr><th id="709">709</th><td>      <i class="doc">/**</i></td></tr>
+<tr><th id="710">710</th><td><i class="doc">       *  <span class="command">@brief</span> Erases a [first,last) range of elements from a %set.</i></td></tr>
+<tr><th id="711">711</th><td><i class="doc">       *  <span class="command">@param</span>  <span class="arg">__first</span>  Iterator pointing to the start of the range to be</i></td></tr>
+<tr><th id="712">712</th><td><i class="doc">       *                 erased.</i></td></tr>
+<tr><th id="713">713</th><td><i class="doc">       *  <span class="command">@param</span> <span class="arg">__last</span> Iterator pointing to the end of the range to</i></td></tr>
+<tr><th id="714">714</th><td><i class="doc">       *  be erased.</i></td></tr>
+<tr><th id="715">715</th><td><i class="doc">       *</i></td></tr>
+<tr><th id="716">716</th><td><i class="doc">       *  This function erases a sequence of elements from a %set.</i></td></tr>
+<tr><th id="717">717</th><td><i class="doc">       *  Note that this function only erases the element, and that if</i></td></tr>
+<tr><th id="718">718</th><td><i class="doc">       *  the element is itself a pointer, the pointed-to memory is not touched</i></td></tr>
+<tr><th id="719">719</th><td><i class="doc">       *  in any way.  Managing the pointer is the user's responsibility.</i></td></tr>
+<tr><th id="720">720</th><td><i class="doc">       */</i></td></tr>
+<tr><th id="721">721</th><td>      <em>void</em></td></tr>
+<tr><th id="722">722</th><td>      erase(iterator __first, iterator __last)</td></tr>
+<tr><th id="723">723</th><td>      { _M_t.erase(__first, __last); }</td></tr>
+<tr><th id="724">724</th><td><u>#<span data-ppcond="687">endif</span></u></td></tr>
+<tr><th id="725">725</th><td></td></tr>
+<tr><th id="726">726</th><td>      <i class="doc">/**</i></td></tr>
+<tr><th id="727">727</th><td><i class="doc">       *  Erases all elements in a %set.  Note that this function only erases</i></td></tr>
+<tr><th id="728">728</th><td><i class="doc">       *  the elements, and that if the elements themselves are pointers, the</i></td></tr>
+<tr><th id="729">729</th><td><i class="doc">       *  pointed-to memory is not touched in any way.  Managing the pointer is</i></td></tr>
+<tr><th id="730">730</th><td><i class="doc">       *  the user's responsibility.</i></td></tr>
+<tr><th id="731">731</th><td><i class="doc">       */</i></td></tr>
+<tr><th id="732">732</th><td>      <em>void</em></td></tr>
+<tr><th id="733">733</th><td>      <dfn class="decl def fn" id="_ZNSt3set5clearEv" title='std::set::clear' data-ref="_ZNSt3set5clearEv">clear</dfn>() <a class="macro" href="../../../x86_64-linux-gnu/c++/9/bits/c++config.h.html#163" title="noexcept" data-ref="_M/_GLIBCXX_NOEXCEPT">_GLIBCXX_NOEXCEPT</a></td></tr>
+<tr><th id="734">734</th><td>      { <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>.clear(); }</td></tr>
+<tr><th id="735">735</th><td></td></tr>
+<tr><th id="736">736</th><td>      <i>// set operations:</i></td></tr>
+<tr><th id="737">737</th><td><i></i></td></tr>
+<tr><th id="738">738</th><td><i>      ///@{</i></td></tr>
+<tr><th id="739">739</th><td>      <i class="doc">/**</i></td></tr>
+<tr><th id="740">740</th><td><i class="doc">       *  <span class="command">@brief</span>  Finds the number of elements.</i></td></tr>
+<tr><th id="741">741</th><td><i class="doc">       *  <span class="command">@param</span>  <span class="arg">__x</span>  Element to located.</i></td></tr>
+<tr><th id="742">742</th><td><i class="doc">       *  <span class="command">@return</span>  Number of elements with specified key.</i></td></tr>
+<tr><th id="743">743</th><td><i class="doc">       *</i></td></tr>
+<tr><th id="744">744</th><td><i class="doc">       *  This function only makes sense for multisets; for set the result will</i></td></tr>
+<tr><th id="745">745</th><td><i class="doc">       *  either be 0 (not present) or 1 (present).</i></td></tr>
+<tr><th id="746">746</th><td><i class="doc">       */</i></td></tr>
+<tr><th id="747">747</th><td>      <a class="typedef" href="#std::set::size_type" title='std::set::size_type' data-type='typename _Rep_type::size_type' data-ref="std::set::size_type">size_type</a></td></tr>
+<tr><th id="748">748</th><td>      <dfn class="decl def fn" id="_ZNKSt3set5countERKT_" title='std::set::count' data-ref="_ZNKSt3set5countERKT_">count</dfn>(<em>const</em> <a class="typedef" href="#std::set::key_type" title='std::set::key_type' data-type='_Key' data-ref="std::set::key_type">key_type</a>&amp; <dfn class="local col3 decl" id="53__x" title='__x' data-type='const std::set::key_type &amp;' data-ref="53__x">__x</dfn>) <em>const</em></td></tr>
+<tr><th id="749">749</th><td>      { <b>return</b> <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>.find(<a class="local col3 ref" href="#53__x" title='__x' data-ref="53__x">__x</a>) == <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>.end() ? <var>0</var> : <var>1</var>; }</td></tr>
+<tr><th id="750">750</th><td></td></tr>
+<tr><th id="751">751</th><td><u>#<span data-ppcond="751">if</span> <span class="macro" title="201703L" data-ref="_M/__cplusplus">__cplusplus</span> &gt; 201103L</u></td></tr>
+<tr><th id="752">752</th><td>      <b>template</b>&lt;<b>typename</b> _Kt&gt;</td></tr>
+<tr><th id="753">753</th><td>	<em>auto</em></td></tr>
+<tr><th id="754">754</th><td>	<dfn class="decl def fn" id="_ZNKSt3set5countERKTL0__" title='std::set::count' data-ref="_ZNKSt3set5countERKTL0__">count</dfn>(<em>const</em> _Kt&amp; <dfn class="local col4 decl" id="54__x" title='__x' data-type='const _Kt &amp;' data-ref="54__x">__x</dfn>) <em>const</em></td></tr>
+<tr><th id="755">755</th><td>	-&gt; <b>decltype</b>(<a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>._M_count_tr(<a class="local col4 ref" href="#54__x" title='__x' data-ref="54__x">__x</a>))</td></tr>
+<tr><th id="756">756</th><td>	{ <b>return</b> <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>._M_count_tr(<a class="local col4 ref" href="#54__x" title='__x' data-ref="54__x">__x</a>); }</td></tr>
+<tr><th id="757">757</th><td><u>#<span data-ppcond="751">endif</span></u></td></tr>
+<tr><th id="758">758</th><td>      <i class="doc">///@}</i></td></tr>
+<tr><th id="759">759</th><td></td></tr>
+<tr><th id="760">760</th><td><u>#<span data-ppcond="760">if</span> <span class="macro" title="201703L" data-ref="_M/__cplusplus">__cplusplus</span> &gt; 201703L</u></td></tr>
+<tr><th id="761">761</th><td>      <i class="doc">///@{</i></td></tr>
+<tr><th id="762">762</th><td>      <i class="doc">/**</i></td></tr>
+<tr><th id="763">763</th><td><i class="doc">       *  <span class="command">@brief</span>  Finds whether an element with the given key exists.</i></td></tr>
+<tr><th id="764">764</th><td><i class="doc">       *  <span class="command">@param</span>  <span class="arg">__x</span>  Key of elements to be located.</i></td></tr>
+<tr><th id="765">765</th><td><i class="doc">       *  <span class="command">@return</span>  True if there is an element with the specified key.</i></td></tr>
+<tr><th id="766">766</th><td><i class="doc">       */</i></td></tr>
+<tr><th id="767">767</th><td>      <em>bool</em></td></tr>
+<tr><th id="768">768</th><td>      contains(<em>const</em> key_type&amp; __x) <em>const</em></td></tr>
+<tr><th id="769">769</th><td>      { <b>return</b> _M_t.find(__x) != _M_t.end(); }</td></tr>
+<tr><th id="770">770</th><td></td></tr>
+<tr><th id="771">771</th><td>      <b>template</b>&lt;<b>typename</b> _Kt&gt;</td></tr>
+<tr><th id="772">772</th><td>	<em>auto</em></td></tr>
+<tr><th id="773">773</th><td>	contains(<em>const</em> _Kt&amp; __x) <em>const</em></td></tr>
+<tr><th id="774">774</th><td>	-&gt; <b>decltype</b>(_M_t._M_find_tr(__x), <em>void</em>(), <b>true</b>)</td></tr>
+<tr><th id="775">775</th><td>	{ <b>return</b> _M_t._M_find_tr(__x) != _M_t.end(); }</td></tr>
+<tr><th id="776">776</th><td>      <i class="doc">///@}</i></td></tr>
+<tr><th id="777">777</th><td><u>#<span data-ppcond="760">endif</span></u></td></tr>
+<tr><th id="778">778</th><td></td></tr>
+<tr><th id="779">779</th><td>      <i>// _GLIBCXX_RESOLVE_LIB_DEFECTS</i></td></tr>
+<tr><th id="780">780</th><td><i>      // 214.  set::find() missing const overload</i></td></tr>
+<tr><th id="781">781</th><td><i>      ///@{</i></td></tr>
+<tr><th id="782">782</th><td>      <i class="doc">/**</i></td></tr>
+<tr><th id="783">783</th><td><i class="doc">       *  <span class="command">@brief</span> Tries to locate an element in a %set.</i></td></tr>
+<tr><th id="784">784</th><td><i class="doc">       *  <span class="command">@param</span>  <span class="arg">__x</span>  Element to be located.</i></td></tr>
+<tr><th id="785">785</th><td><i class="doc">       *  <span class="command">@return</span>  Iterator pointing to sought-after element, or end() if not</i></td></tr>
+<tr><th id="786">786</th><td><i class="doc">       *           found.</i></td></tr>
+<tr><th id="787">787</th><td><i class="doc">       *</i></td></tr>
+<tr><th id="788">788</th><td><i class="doc">       *  This function takes a key and tries to locate the element with which</i></td></tr>
+<tr><th id="789">789</th><td><i class="doc">       *  the key matches.  If successful the function returns an iterator</i></td></tr>
+<tr><th id="790">790</th><td><i class="doc">       *  pointing to the sought after element.  If unsuccessful it returns the</i></td></tr>
+<tr><th id="791">791</th><td><i class="doc">       *  past-the-end (<span class="command"> @c</span> <span class="arg">end()</span> ) iterator.</i></td></tr>
+<tr><th id="792">792</th><td><i class="doc">       */</i></td></tr>
+<tr><th id="793">793</th><td>      <a class="typedef" href="#std::set::iterator" title='std::set::iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::iterator">iterator</a></td></tr>
+<tr><th id="794">794</th><td>      <dfn class="decl def fn" id="_ZNSt3set4findERKT_" title='std::set::find' data-ref="_ZNSt3set4findERKT_">find</dfn>(<em>const</em> <a class="typedef" href="#std::set::key_type" title='std::set::key_type' data-type='_Key' data-ref="std::set::key_type">key_type</a>&amp; <dfn class="local col5 decl" id="55__x" title='__x' data-type='const std::set::key_type &amp;' data-ref="55__x">__x</dfn>)</td></tr>
+<tr><th id="795">795</th><td>      { <b>return</b> <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>.find(<a class="local col5 ref" href="#55__x" title='__x' data-ref="55__x">__x</a>); }</td></tr>
+<tr><th id="796">796</th><td></td></tr>
+<tr><th id="797">797</th><td>      <a class="typedef" href="#std::set::const_iterator" title='std::set::const_iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::const_iterator">const_iterator</a></td></tr>
+<tr><th id="798">798</th><td>      <dfn class="decl def fn" id="_ZNKSt3set4findERKT_" title='std::set::find' data-ref="_ZNKSt3set4findERKT_">find</dfn>(<em>const</em> <a class="typedef" href="#std::set::key_type" title='std::set::key_type' data-type='_Key' data-ref="std::set::key_type">key_type</a>&amp; <dfn class="local col6 decl" id="56__x" title='__x' data-type='const std::set::key_type &amp;' data-ref="56__x">__x</dfn>) <em>const</em></td></tr>
+<tr><th id="799">799</th><td>      { <b>return</b> <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>.find(<a class="local col6 ref" href="#56__x" title='__x' data-ref="56__x">__x</a>); }</td></tr>
+<tr><th id="800">800</th><td></td></tr>
+<tr><th id="801">801</th><td><u>#<span data-ppcond="801">if</span> <span class="macro" title="201703L" data-ref="_M/__cplusplus">__cplusplus</span> &gt; 201103L</u></td></tr>
+<tr><th id="802">802</th><td>      <b>template</b>&lt;<b>typename</b> _Kt&gt;</td></tr>
+<tr><th id="803">803</th><td>	<em>auto</em></td></tr>
+<tr><th id="804">804</th><td>	<dfn class="decl def fn" id="_ZNSt3set4findERKTL0__" title='std::set::find' data-ref="_ZNSt3set4findERKTL0__">find</dfn>(<em>const</em> _Kt&amp; <dfn class="local col7 decl" id="57__x" title='__x' data-type='const _Kt &amp;' data-ref="57__x">__x</dfn>)</td></tr>
+<tr><th id="805">805</th><td>	-&gt; <b>decltype</b>(<a class="typedef" href="#std::set::iterator" title='std::set::iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::iterator">iterator</a>{<a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>._M_find_tr(<a class="local col7 ref" href="#57__x" title='__x' data-ref="57__x">__x</a>)})</td></tr>
+<tr><th id="806">806</th><td>	{ <b>return</b> <a class="typedef" href="#std::set::iterator" title='std::set::iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::iterator">iterator</a>{<a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>._M_find_tr(<a class="local col7 ref" href="#57__x" title='__x' data-ref="57__x">__x</a>)}; }</td></tr>
+<tr><th id="807">807</th><td></td></tr>
+<tr><th id="808">808</th><td>      <b>template</b>&lt;<b>typename</b> _Kt&gt;</td></tr>
+<tr><th id="809">809</th><td>	<em>auto</em></td></tr>
+<tr><th id="810">810</th><td>	<dfn class="decl def fn" id="_ZNKSt3set4findERKTL0__" title='std::set::find' data-ref="_ZNKSt3set4findERKTL0__">find</dfn>(<em>const</em> _Kt&amp; <dfn class="local col8 decl" id="58__x" title='__x' data-type='const _Kt &amp;' data-ref="58__x">__x</dfn>) <em>const</em></td></tr>
+<tr><th id="811">811</th><td>	-&gt; <b>decltype</b>(<a class="typedef" href="#std::set::const_iterator" title='std::set::const_iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::const_iterator">const_iterator</a>{<a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>._M_find_tr(<a class="local col8 ref" href="#58__x" title='__x' data-ref="58__x">__x</a>)})</td></tr>
+<tr><th id="812">812</th><td>	{ <b>return</b> <a class="typedef" href="#std::set::const_iterator" title='std::set::const_iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::const_iterator">const_iterator</a>{<a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>._M_find_tr(<a class="local col8 ref" href="#58__x" title='__x' data-ref="58__x">__x</a>)}; }</td></tr>
+<tr><th id="813">813</th><td><u>#<span data-ppcond="801">endif</span></u></td></tr>
+<tr><th id="814">814</th><td>      <i class="doc">///@}</i></td></tr>
+<tr><th id="815">815</th><td><i class="doc"></i></td></tr>
+<tr><th id="816">816</th><td><i class="doc">      ///@{</i></td></tr>
+<tr><th id="817">817</th><td>      <i class="doc">/**</i></td></tr>
+<tr><th id="818">818</th><td><i class="doc">       *  <span class="command">@brief</span> Finds the beginning of a subsequence matching given key.</i></td></tr>
+<tr><th id="819">819</th><td><i class="doc">       *  <span class="command">@param</span>  <span class="arg">__x</span>  Key to be located.</i></td></tr>
+<tr><th id="820">820</th><td><i class="doc">       *  <span class="command">@return</span>  Iterator pointing to first element equal to or greater</i></td></tr>
+<tr><th id="821">821</th><td><i class="doc">       *           than key, or end().</i></td></tr>
+<tr><th id="822">822</th><td><i class="doc">       *</i></td></tr>
+<tr><th id="823">823</th><td><i class="doc">       *  This function returns the first element of a subsequence of elements</i></td></tr>
+<tr><th id="824">824</th><td><i class="doc">       *  that matches the given key.  If unsuccessful it returns an iterator</i></td></tr>
+<tr><th id="825">825</th><td><i class="doc">       *  pointing to the first element that has a greater value than given key</i></td></tr>
+<tr><th id="826">826</th><td><i class="doc">       *  or end() if no such element exists.</i></td></tr>
+<tr><th id="827">827</th><td><i class="doc">       */</i></td></tr>
+<tr><th id="828">828</th><td>      <a class="typedef" href="#std::set::iterator" title='std::set::iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::iterator">iterator</a></td></tr>
+<tr><th id="829">829</th><td>      <dfn class="decl def fn" id="_ZNSt3set11lower_boundERKT_" title='std::set::lower_bound' data-ref="_ZNSt3set11lower_boundERKT_">lower_bound</dfn>(<em>const</em> <a class="typedef" href="#std::set::key_type" title='std::set::key_type' data-type='_Key' data-ref="std::set::key_type">key_type</a>&amp; <dfn class="local col9 decl" id="59__x" title='__x' data-type='const std::set::key_type &amp;' data-ref="59__x">__x</dfn>)</td></tr>
+<tr><th id="830">830</th><td>      { <b>return</b> <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>.lower_bound(<a class="local col9 ref" href="#59__x" title='__x' data-ref="59__x">__x</a>); }</td></tr>
+<tr><th id="831">831</th><td></td></tr>
+<tr><th id="832">832</th><td>      <a class="typedef" href="#std::set::const_iterator" title='std::set::const_iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::const_iterator">const_iterator</a></td></tr>
+<tr><th id="833">833</th><td>      <dfn class="decl def fn" id="_ZNKSt3set11lower_boundERKT_" title='std::set::lower_bound' data-ref="_ZNKSt3set11lower_boundERKT_">lower_bound</dfn>(<em>const</em> <a class="typedef" href="#std::set::key_type" title='std::set::key_type' data-type='_Key' data-ref="std::set::key_type">key_type</a>&amp; <dfn class="local col0 decl" id="60__x" title='__x' data-type='const std::set::key_type &amp;' data-ref="60__x">__x</dfn>) <em>const</em></td></tr>
+<tr><th id="834">834</th><td>      { <b>return</b> <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>.lower_bound(<a class="local col0 ref" href="#60__x" title='__x' data-ref="60__x">__x</a>); }</td></tr>
+<tr><th id="835">835</th><td></td></tr>
+<tr><th id="836">836</th><td><u>#<span data-ppcond="836">if</span> <span class="macro" title="201703L" data-ref="_M/__cplusplus">__cplusplus</span> &gt; 201103L</u></td></tr>
+<tr><th id="837">837</th><td>      <b>template</b>&lt;<b>typename</b> _Kt&gt;</td></tr>
+<tr><th id="838">838</th><td>	<em>auto</em></td></tr>
+<tr><th id="839">839</th><td>	<dfn class="decl def fn" id="_ZNSt3set11lower_boundERKTL0__" title='std::set::lower_bound' data-ref="_ZNSt3set11lower_boundERKTL0__">lower_bound</dfn>(<em>const</em> _Kt&amp; <dfn class="local col1 decl" id="61__x" title='__x' data-type='const _Kt &amp;' data-ref="61__x">__x</dfn>)</td></tr>
+<tr><th id="840">840</th><td>	-&gt; <b>decltype</b>(<a class="typedef" href="#std::set::iterator" title='std::set::iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::iterator">iterator</a>(<a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>._M_lower_bound_tr(<a class="local col1 ref" href="#61__x" title='__x' data-ref="61__x">__x</a>)))</td></tr>
+<tr><th id="841">841</th><td>	{ <b>return</b> <a class="typedef" href="#std::set::iterator" title='std::set::iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::iterator">iterator</a>(<a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>._M_lower_bound_tr(<a class="local col1 ref" href="#61__x" title='__x' data-ref="61__x">__x</a>)); }</td></tr>
+<tr><th id="842">842</th><td></td></tr>
+<tr><th id="843">843</th><td>      <b>template</b>&lt;<b>typename</b> _Kt&gt;</td></tr>
+<tr><th id="844">844</th><td>	<em>auto</em></td></tr>
+<tr><th id="845">845</th><td>	<dfn class="decl def fn" id="_ZNKSt3set11lower_boundERKTL0__" title='std::set::lower_bound' data-ref="_ZNKSt3set11lower_boundERKTL0__">lower_bound</dfn>(<em>const</em> _Kt&amp; <dfn class="local col2 decl" id="62__x" title='__x' data-type='const _Kt &amp;' data-ref="62__x">__x</dfn>) <em>const</em></td></tr>
+<tr><th id="846">846</th><td>	-&gt; <b>decltype</b>(<a class="typedef" href="#std::set::const_iterator" title='std::set::const_iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::const_iterator">const_iterator</a>(<a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>._M_lower_bound_tr(<a class="local col2 ref" href="#62__x" title='__x' data-ref="62__x">__x</a>)))</td></tr>
+<tr><th id="847">847</th><td>	{ <b>return</b> <a class="typedef" href="#std::set::const_iterator" title='std::set::const_iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::const_iterator">const_iterator</a>(<a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>._M_lower_bound_tr(<a class="local col2 ref" href="#62__x" title='__x' data-ref="62__x">__x</a>)); }</td></tr>
+<tr><th id="848">848</th><td><u>#<span data-ppcond="836">endif</span></u></td></tr>
+<tr><th id="849">849</th><td>      <i class="doc">///@}</i></td></tr>
+<tr><th id="850">850</th><td><i class="doc"></i></td></tr>
+<tr><th id="851">851</th><td><i class="doc">      ///@{</i></td></tr>
+<tr><th id="852">852</th><td>      <i class="doc">/**</i></td></tr>
+<tr><th id="853">853</th><td><i class="doc">       *  <span class="command">@brief</span> Finds the end of a subsequence matching given key.</i></td></tr>
+<tr><th id="854">854</th><td><i class="doc">       *  <span class="command">@param</span>  <span class="arg">__x</span>  Key to be located.</i></td></tr>
+<tr><th id="855">855</th><td><i class="doc">       *  <span class="command">@return</span> Iterator pointing to the first element</i></td></tr>
+<tr><th id="856">856</th><td><i class="doc">       *          greater than key, or end().</i></td></tr>
+<tr><th id="857">857</th><td><i class="doc">       */</i></td></tr>
+<tr><th id="858">858</th><td>      <a class="typedef" href="#std::set::iterator" title='std::set::iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::iterator">iterator</a></td></tr>
+<tr><th id="859">859</th><td>      <dfn class="decl def fn" id="_ZNSt3set11upper_boundERKT_" title='std::set::upper_bound' data-ref="_ZNSt3set11upper_boundERKT_">upper_bound</dfn>(<em>const</em> <a class="typedef" href="#std::set::key_type" title='std::set::key_type' data-type='_Key' data-ref="std::set::key_type">key_type</a>&amp; <dfn class="local col3 decl" id="63__x" title='__x' data-type='const std::set::key_type &amp;' data-ref="63__x">__x</dfn>)</td></tr>
+<tr><th id="860">860</th><td>      { <b>return</b> <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>.upper_bound(<a class="local col3 ref" href="#63__x" title='__x' data-ref="63__x">__x</a>); }</td></tr>
+<tr><th id="861">861</th><td></td></tr>
+<tr><th id="862">862</th><td>      <a class="typedef" href="#std::set::const_iterator" title='std::set::const_iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::const_iterator">const_iterator</a></td></tr>
+<tr><th id="863">863</th><td>      <dfn class="decl def fn" id="_ZNKSt3set11upper_boundERKT_" title='std::set::upper_bound' data-ref="_ZNKSt3set11upper_boundERKT_">upper_bound</dfn>(<em>const</em> <a class="typedef" href="#std::set::key_type" title='std::set::key_type' data-type='_Key' data-ref="std::set::key_type">key_type</a>&amp; <dfn class="local col4 decl" id="64__x" title='__x' data-type='const std::set::key_type &amp;' data-ref="64__x">__x</dfn>) <em>const</em></td></tr>
+<tr><th id="864">864</th><td>      { <b>return</b> <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>.upper_bound(<a class="local col4 ref" href="#64__x" title='__x' data-ref="64__x">__x</a>); }</td></tr>
+<tr><th id="865">865</th><td></td></tr>
+<tr><th id="866">866</th><td><u>#<span data-ppcond="866">if</span> <span class="macro" title="201703L" data-ref="_M/__cplusplus">__cplusplus</span> &gt; 201103L</u></td></tr>
+<tr><th id="867">867</th><td>      <b>template</b>&lt;<b>typename</b> _Kt&gt;</td></tr>
+<tr><th id="868">868</th><td>	<em>auto</em></td></tr>
+<tr><th id="869">869</th><td>	<dfn class="decl def fn" id="_ZNSt3set11upper_boundERKTL0__" title='std::set::upper_bound' data-ref="_ZNSt3set11upper_boundERKTL0__">upper_bound</dfn>(<em>const</em> _Kt&amp; <dfn class="local col5 decl" id="65__x" title='__x' data-type='const _Kt &amp;' data-ref="65__x">__x</dfn>)</td></tr>
+<tr><th id="870">870</th><td>	-&gt; <b>decltype</b>(<a class="typedef" href="#std::set::iterator" title='std::set::iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::iterator">iterator</a>(<a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>._M_upper_bound_tr(<a class="local col5 ref" href="#65__x" title='__x' data-ref="65__x">__x</a>)))</td></tr>
+<tr><th id="871">871</th><td>	{ <b>return</b> <a class="typedef" href="#std::set::iterator" title='std::set::iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::iterator">iterator</a>(<a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>._M_upper_bound_tr(<a class="local col5 ref" href="#65__x" title='__x' data-ref="65__x">__x</a>)); }</td></tr>
+<tr><th id="872">872</th><td></td></tr>
+<tr><th id="873">873</th><td>      <b>template</b>&lt;<b>typename</b> _Kt&gt;</td></tr>
+<tr><th id="874">874</th><td>	<em>auto</em></td></tr>
+<tr><th id="875">875</th><td>	<dfn class="decl def fn" id="_ZNKSt3set11upper_boundERKTL0__" title='std::set::upper_bound' data-ref="_ZNKSt3set11upper_boundERKTL0__">upper_bound</dfn>(<em>const</em> _Kt&amp; <dfn class="local col6 decl" id="66__x" title='__x' data-type='const _Kt &amp;' data-ref="66__x">__x</dfn>) <em>const</em></td></tr>
+<tr><th id="876">876</th><td>	-&gt; <b>decltype</b>(<a class="typedef" href="#std::set::iterator" title='std::set::iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::iterator">iterator</a>(<a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>._M_upper_bound_tr(<a class="local col6 ref" href="#66__x" title='__x' data-ref="66__x">__x</a>)))</td></tr>
+<tr><th id="877">877</th><td>	{ <b>return</b> <a class="typedef" href="#std::set::const_iterator" title='std::set::const_iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::const_iterator">const_iterator</a>(<a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>._M_upper_bound_tr(<a class="local col6 ref" href="#66__x" title='__x' data-ref="66__x">__x</a>)); }</td></tr>
+<tr><th id="878">878</th><td><u>#<span data-ppcond="866">endif</span></u></td></tr>
+<tr><th id="879">879</th><td>      <i class="doc">///@}</i></td></tr>
+<tr><th id="880">880</th><td><i class="doc"></i></td></tr>
+<tr><th id="881">881</th><td><i class="doc">      ///@{</i></td></tr>
+<tr><th id="882">882</th><td>      <i class="doc">/**</i></td></tr>
+<tr><th id="883">883</th><td><i class="doc">       *  <span class="command">@brief</span> Finds a subsequence matching given key.</i></td></tr>
+<tr><th id="884">884</th><td><i class="doc">       *  <span class="command">@param</span>  <span class="arg">__x</span>  Key to be located.</i></td></tr>
+<tr><th id="885">885</th><td><i class="doc">       *  <span class="command">@return</span>  Pair of iterators that possibly points to the subsequence</i></td></tr>
+<tr><th id="886">886</th><td><i class="doc">       *           matching given key.</i></td></tr>
+<tr><th id="887">887</th><td><i class="doc">       *</i></td></tr>
+<tr><th id="888">888</th><td><i class="doc">       *  This function is equivalent to</i></td></tr>
+<tr><th id="889">889</th><td><i class="doc">       *  <span class="command">@code</span></i></td></tr>
+<tr><th id="890">890</th><td><i class="doc">       *<span class="verb">    std::make_pair(c.lower_bound(val),</span></i></td></tr>
+<tr><th id="891">891</th><td><i class="doc"><span class="verb"></span>       *<span class="verb">                   c.upper_bound(val))</span></i></td></tr>
+<tr><th id="892">892</th><td><i class="doc"><span class="verb"></span>       *  @endcode</i></td></tr>
+<tr><th id="893">893</th><td><i class="doc">       *  (but is faster than making the calls separately).</i></td></tr>
+<tr><th id="894">894</th><td><i class="doc">       *</i></td></tr>
+<tr><th id="895">895</th><td><i class="doc">       *  This function probably only makes sense for multisets.</i></td></tr>
+<tr><th id="896">896</th><td><i class="doc">       */</i></td></tr>
+<tr><th id="897">897</th><td>      <span class="namespace">std::</span><a class="type" href="stl_pair.h.html#std::pair" title='std::pair' data-ref="std::pair">pair</a>&lt;<a class="typedef" href="#std::set::iterator" title='std::set::iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::iterator">iterator</a>, <a class="typedef" href="#std::set::iterator" title='std::set::iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::iterator">iterator</a>&gt;</td></tr>
+<tr><th id="898">898</th><td>      <dfn class="decl def fn" id="_ZNSt3set11equal_rangeERKT_" title='std::set::equal_range' data-ref="_ZNSt3set11equal_rangeERKT_">equal_range</dfn>(<em>const</em> <a class="typedef" href="#std::set::key_type" title='std::set::key_type' data-type='_Key' data-ref="std::set::key_type">key_type</a>&amp; <dfn class="local col7 decl" id="67__x" title='__x' data-type='const std::set::key_type &amp;' data-ref="67__x">__x</dfn>)</td></tr>
+<tr><th id="899">899</th><td>      { <b>return</b> <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>.equal_range(<a class="local col7 ref" href="#67__x" title='__x' data-ref="67__x">__x</a>); }</td></tr>
+<tr><th id="900">900</th><td></td></tr>
+<tr><th id="901">901</th><td>      <span class="namespace">std::</span><a class="type" href="stl_pair.h.html#std::pair" title='std::pair' data-ref="std::pair">pair</a>&lt;<a class="typedef" href="#std::set::const_iterator" title='std::set::const_iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::const_iterator">const_iterator</a>, <a class="typedef" href="#std::set::const_iterator" title='std::set::const_iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::const_iterator">const_iterator</a>&gt;</td></tr>
+<tr><th id="902">902</th><td>      <dfn class="decl def fn" id="_ZNKSt3set11equal_rangeERKT_" title='std::set::equal_range' data-ref="_ZNKSt3set11equal_rangeERKT_">equal_range</dfn>(<em>const</em> <a class="typedef" href="#std::set::key_type" title='std::set::key_type' data-type='_Key' data-ref="std::set::key_type">key_type</a>&amp; <dfn class="local col8 decl" id="68__x" title='__x' data-type='const std::set::key_type &amp;' data-ref="68__x">__x</dfn>) <em>const</em></td></tr>
+<tr><th id="903">903</th><td>      { <b>return</b> <a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>.equal_range(<a class="local col8 ref" href="#68__x" title='__x' data-ref="68__x">__x</a>); }</td></tr>
+<tr><th id="904">904</th><td></td></tr>
+<tr><th id="905">905</th><td><u>#<span data-ppcond="905">if</span> <span class="macro" title="201703L" data-ref="_M/__cplusplus">__cplusplus</span> &gt; 201103L</u></td></tr>
+<tr><th id="906">906</th><td>      <b>template</b>&lt;<b>typename</b> _Kt&gt;</td></tr>
+<tr><th id="907">907</th><td>	<em>auto</em></td></tr>
+<tr><th id="908">908</th><td>	<dfn class="decl def fn" id="_ZNSt3set11equal_rangeERKTL0__" title='std::set::equal_range' data-ref="_ZNSt3set11equal_rangeERKTL0__">equal_range</dfn>(<em>const</em> _Kt&amp; <dfn class="local col9 decl" id="69__x" title='__x' data-type='const _Kt &amp;' data-ref="69__x">__x</dfn>)</td></tr>
+<tr><th id="909">909</th><td>	-&gt; <b>decltype</b>(<a class="type" href="stl_pair.h.html#std::pair" title='std::pair' data-ref="std::pair">pair</a>&lt;<a class="typedef" href="#std::set::iterator" title='std::set::iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::iterator">iterator</a>, <a class="typedef" href="#std::set::iterator" title='std::set::iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::iterator">iterator</a>&gt;(<a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>._M_equal_range_tr(<a class="local col9 ref" href="#69__x" title='__x' data-ref="69__x">__x</a>)))</td></tr>
+<tr><th id="910">910</th><td>	{ <b>return</b> <a class="type" href="stl_pair.h.html#std::pair" title='std::pair' data-ref="std::pair">pair</a>&lt;<a class="typedef" href="#std::set::iterator" title='std::set::iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::iterator">iterator</a>, <a class="typedef" href="#std::set::iterator" title='std::set::iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::iterator">iterator</a>&gt;(<a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>._M_equal_range_tr(<a class="local col9 ref" href="#69__x" title='__x' data-ref="69__x">__x</a>)); }</td></tr>
+<tr><th id="911">911</th><td></td></tr>
+<tr><th id="912">912</th><td>      <b>template</b>&lt;<b>typename</b> _Kt&gt;</td></tr>
+<tr><th id="913">913</th><td>	<em>auto</em></td></tr>
+<tr><th id="914">914</th><td>	<dfn class="decl def fn" id="_ZNKSt3set11equal_rangeERKTL0__" title='std::set::equal_range' data-ref="_ZNKSt3set11equal_rangeERKTL0__">equal_range</dfn>(<em>const</em> _Kt&amp; <dfn class="local col0 decl" id="70__x" title='__x' data-type='const _Kt &amp;' data-ref="70__x">__x</dfn>) <em>const</em></td></tr>
+<tr><th id="915">915</th><td>	-&gt; <b>decltype</b>(<a class="type" href="stl_pair.h.html#std::pair" title='std::pair' data-ref="std::pair">pair</a>&lt;<a class="typedef" href="#std::set::iterator" title='std::set::iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::iterator">iterator</a>, <a class="typedef" href="#std::set::iterator" title='std::set::iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::iterator">iterator</a>&gt;(<a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>._M_equal_range_tr(<a class="local col0 ref" href="#70__x" title='__x' data-ref="70__x">__x</a>)))</td></tr>
+<tr><th id="916">916</th><td>	{ <b>return</b> <a class="type" href="stl_pair.h.html#std::pair" title='std::pair' data-ref="std::pair">pair</a>&lt;<a class="typedef" href="#std::set::iterator" title='std::set::iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::iterator">iterator</a>, <a class="typedef" href="#std::set::iterator" title='std::set::iterator' data-type='typename _Rep_type::const_iterator' data-ref="std::set::iterator">iterator</a>&gt;(<a class="member field" href="#std::set::_M_t" title='std::set::_M_t' data-ref="std::set::_M_t">_M_t</a>._M_equal_range_tr(<a class="local col0 ref" href="#70__x" title='__x' data-ref="70__x">__x</a>)); }</td></tr>
+<tr><th id="917">917</th><td><u>#<span data-ppcond="905">endif</span></u></td></tr>
+<tr><th id="918">918</th><td>      <i class="doc">///@}</i></td></tr>
+<tr><th id="919">919</th><td></td></tr>
+<tr><th id="920">920</th><td>      <b>template</b>&lt;<b>typename</b> _K1, <b>typename</b> _C1, <b>typename</b> _A1&gt;</td></tr>
+<tr><th id="921">921</th><td>	<b>friend</b> <em>bool</em></td></tr>
+<tr><th id="922">922</th><td>	<dfn class="decl fn" id="_ZSteqRKSt3setITL0__TL0_0_TL0_1_ES5_" title='std::operator==' data-ref="_ZSteqRKSt3setITL0__TL0_0_TL0_1_ES5_"><b>operator</b>==</dfn>(<em>const</em> <a class="type" href="#std::set" title='std::set' data-ref="std::set">set</a>&lt;_K1, _C1, _A1&gt;&amp;, <em>const</em> <a class="type" href="#std::set" title='std::set' data-ref="std::set">set</a>&lt;_K1, _C1, _A1&gt;&amp;);</td></tr>
+<tr><th id="923">923</th><td></td></tr>
+<tr><th id="924">924</th><td>      <b>template</b>&lt;<b>typename</b> _K1, <b>typename</b> _C1, <b>typename</b> _A1&gt;</td></tr>
+<tr><th id="925">925</th><td>	<b>friend</b> <em>bool</em></td></tr>
+<tr><th id="926">926</th><td>	<dfn class="decl fn" id="_ZStltRKSt3setITL0__TL0_0_TL0_1_ES5_" title='std::operator&lt;' data-ref="_ZStltRKSt3setITL0__TL0_0_TL0_1_ES5_"><b>operator</b>&lt;</dfn>(<em>const</em> <a class="type" href="#std::set" title='std::set' data-ref="std::set">set</a>&lt;_K1, _C1, _A1&gt;&amp;, <em>const</em> <a class="type" href="#std::set" title='std::set' data-ref="std::set">set</a>&lt;_K1, _C1, _A1&gt;&amp;);</td></tr>
+<tr><th id="927">927</th><td>    };</td></tr>
+<tr><th id="928">928</th><td></td></tr>
+<tr><th id="929">929</th><td><u>#<span data-ppcond="929">if</span> <span class="macro" title="201703L" data-ref="_M/__cpp_deduction_guides">__cpp_deduction_guides</span> &gt;= 201606</u></td></tr>
+<tr><th id="930">930</th><td></td></tr>
+<tr><th id="931">931</th><td>  <b>template</b>&lt;<b>typename</b> _InputIterator,</td></tr>
+<tr><th id="932">932</th><td>	   <b>typename</b> _Compare =</td></tr>
+<tr><th id="933">933</th><td>	     <a class="type" href="stl_function.h.html#std::less" title='std::less' data-ref="std::less">less</a>&lt;<b>typename</b> <a class="type" href="stl_iterator_base_types.h.html#std::iterator_traits" title='std::iterator_traits' data-ref="std::iterator_traits">iterator_traits</a>&lt;_InputIterator&gt;::value_type&gt;,</td></tr>
+<tr><th id="934">934</th><td>	   <b>typename</b> _Allocator =</td></tr>
+<tr><th id="935">935</th><td>	     <a class="type" href="memoryfwd.h.html#std::allocator" title='std::allocator' data-ref="std::allocator">allocator</a>&lt;<b>typename</b> <a class="type" href="stl_iterator_base_types.h.html#std::iterator_traits" title='std::iterator_traits' data-ref="std::iterator_traits">iterator_traits</a>&lt;_InputIterator&gt;::value_type&gt;,</td></tr>
+<tr><th id="936">936</th><td>	   <b>typename</b> = <a class="type" href="stl_iterator_base_types.h.html#std::_RequireInputIter" title='std::_RequireInputIter' data-ref="std::_RequireInputIter">_RequireInputIter</a>&lt;_InputIterator&gt;,</td></tr>
+<tr><th id="937">937</th><td>	   <b>typename</b> = <a class="type" href="alloc_traits.h.html#std::_RequireNotAllocator" title='std::_RequireNotAllocator' data-ref="std::_RequireNotAllocator">_RequireNotAllocator</a>&lt;_Compare&gt;,</td></tr>
+<tr><th id="938">938</th><td>	   <b>typename</b> = <a class="type" href="alloc_traits.h.html#std::_RequireAllocator" title='std::_RequireAllocator' data-ref="std::_RequireAllocator">_RequireAllocator</a>&lt;_Allocator&gt;&gt;</td></tr>
+<tr><th id="939">939</th><td>    <dfn class="tu decl fn" id="std::{deductionguideforset}" title='std::&lt;deduction guide for set&gt;' data-type='set&lt;typename iterator_traits&lt;_InputIterator&gt;::value_type, _Compare, _Allocator&gt; std::&lt;deduction guide for set&gt;(_InputIterator , _InputIterator , _Compare  = _Compare(), _Allocator  = _Allocator())' data-ref="std::{deductionguideforset}">set</dfn>(_InputIterator, _InputIterator,</td></tr>
+<tr><th id="940">940</th><td>	_Compare = _Compare(), _Allocator = _Allocator())</td></tr>
+<tr><th id="941">941</th><td>    -&gt; <a class="type" href="#std::set" title='std::set' data-ref="std::set">set</a>&lt;<b>typename</b> <a class="type" href="stl_iterator_base_types.h.html#std::iterator_traits" title='std::iterator_traits' data-ref="std::iterator_traits">iterator_traits</a>&lt;_InputIterator&gt;::value_type,</td></tr>
+<tr><th id="942">942</th><td>	  _Compare, _Allocator&gt;;</td></tr>
+<tr><th id="943">943</th><td></td></tr>
+<tr><th id="944">944</th><td>  <b>template</b>&lt;<b>typename</b> _Key, <b>typename</b> _Compare = <a class="type" href="stl_function.h.html#std::less" title='std::less' data-ref="std::less">less</a>&lt;_Key&gt;,</td></tr>
+<tr><th id="945">945</th><td>	   <b>typename</b> _Allocator = <a class="type" href="memoryfwd.h.html#std::allocator" title='std::allocator' data-ref="std::allocator">allocator</a>&lt;_Key&gt;,</td></tr>
+<tr><th id="946">946</th><td>	   <b>typename</b> = <a class="type" href="alloc_traits.h.html#std::_RequireNotAllocator" title='std::_RequireNotAllocator' data-ref="std::_RequireNotAllocator">_RequireNotAllocator</a>&lt;_Compare&gt;,</td></tr>
+<tr><th id="947">947</th><td>	   <b>typename</b> = <a class="type" href="alloc_traits.h.html#std::_RequireAllocator" title='std::_RequireAllocator' data-ref="std::_RequireAllocator">_RequireAllocator</a>&lt;_Allocator&gt;&gt;</td></tr>
+<tr><th id="948">948</th><td>    <dfn class="tu decl fn" id="std::{deductionguideforset}" title='std::&lt;deduction guide for set&gt;' data-type='set&lt;_Key, _Compare, _Allocator&gt; std::&lt;deduction guide for set&gt;(initializer_list&lt;_Key&gt; , _Compare  = _Compare(), _Allocator  = _Allocator())' data-ref="std::{deductionguideforset}">set</dfn>(<a class="type" href="../initializer_list.html#std::initializer_list" title='std::initializer_list' data-ref="std::initializer_list">initializer_list</a>&lt;_Key&gt;,</td></tr>
+<tr><th id="949">949</th><td>	_Compare = _Compare(), _Allocator = _Allocator())</td></tr>
+<tr><th id="950">950</th><td>    -&gt; <a class="type" href="#std::set" title='std::set' data-ref="std::set">set</a>&lt;_Key, _Compare, _Allocator&gt;;</td></tr>
+<tr><th id="951">951</th><td></td></tr>
+<tr><th id="952">952</th><td>  <b>template</b>&lt;<b>typename</b> _InputIterator, <b>typename</b> _Allocator,</td></tr>
+<tr><th id="953">953</th><td>	   <b>typename</b> = <a class="type" href="stl_iterator_base_types.h.html#std::_RequireInputIter" title='std::_RequireInputIter' data-ref="std::_RequireInputIter">_RequireInputIter</a>&lt;_InputIterator&gt;,</td></tr>
+<tr><th id="954">954</th><td>	   <b>typename</b> = <a class="type" href="alloc_traits.h.html#std::_RequireAllocator" title='std::_RequireAllocator' data-ref="std::_RequireAllocator">_RequireAllocator</a>&lt;_Allocator&gt;&gt;</td></tr>
+<tr><th id="955">955</th><td>    <dfn class="tu decl fn" id="std::{deductionguideforset}" title='std::&lt;deduction guide for set&gt;' data-type='set&lt;typename iterator_traits&lt;_InputIterator&gt;::value_type, less&lt;typename iterator_traits&lt;_InputIterator&gt;::value_type&gt;, _Allocator&gt; std::&lt;deduction guide for set&gt;(_InputIterator , _InputIterator , _Allocator )' data-ref="std::{deductionguideforset}">set</dfn>(_InputIterator, _InputIterator, _Allocator)</td></tr>
+<tr><th id="956">956</th><td>    -&gt; <a class="type" href="#std::set" title='std::set' data-ref="std::set">set</a>&lt;<b>typename</b> <a class="type" href="stl_iterator_base_types.h.html#std::iterator_traits" title='std::iterator_traits' data-ref="std::iterator_traits">iterator_traits</a>&lt;_InputIterator&gt;::value_type,</td></tr>
+<tr><th id="957">957</th><td>	   <a class="type" href="stl_function.h.html#std::less" title='std::less' data-ref="std::less">less</a>&lt;<b>typename</b> <a class="type" href="stl_iterator_base_types.h.html#std::iterator_traits" title='std::iterator_traits' data-ref="std::iterator_traits">iterator_traits</a>&lt;_InputIterator&gt;::value_type&gt;,</td></tr>
+<tr><th id="958">958</th><td>	   _Allocator&gt;;</td></tr>
+<tr><th id="959">959</th><td></td></tr>
+<tr><th id="960">960</th><td>  <b>template</b>&lt;<b>typename</b> _Key, <b>typename</b> _Allocator,</td></tr>
+<tr><th id="961">961</th><td>	   <b>typename</b> = <a class="type" href="alloc_traits.h.html#std::_RequireAllocator" title='std::_RequireAllocator' data-ref="std::_RequireAllocator">_RequireAllocator</a>&lt;_Allocator&gt;&gt;</td></tr>
+<tr><th id="962">962</th><td>    <dfn class="tu decl fn" id="std::{deductionguideforset}" title='std::&lt;deduction guide for set&gt;' data-type='set&lt;_Key, less&lt;_Key&gt;, _Allocator&gt; std::&lt;deduction guide for set&gt;(initializer_list&lt;_Key&gt; , _Allocator )' data-ref="std::{deductionguideforset}">set</dfn>(<a class="type" href="../initializer_list.html#std::initializer_list" title='std::initializer_list' data-ref="std::initializer_list">initializer_list</a>&lt;_Key&gt;, _Allocator)</td></tr>
+<tr><th id="963">963</th><td>    -&gt; <a class="type" href="#std::set" title='std::set' data-ref="std::set">set</a>&lt;_Key, <a class="type" href="stl_function.h.html#std::less" title='std::less' data-ref="std::less">less</a>&lt;_Key&gt;, _Allocator&gt;;</td></tr>
+<tr><th id="964">964</th><td></td></tr>
+<tr><th id="965">965</th><td><u>#<span data-ppcond="929">endif</span></u></td></tr>
+<tr><th id="966">966</th><td></td></tr>
+<tr><th id="967">967</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="968">968</th><td><i class="doc">   *  <span class="command">@brief</span>  Set equality comparison.</i></td></tr>
+<tr><th id="969">969</th><td><i class="doc">   *  <span class="command">@param</span>  <span class="arg">__x</span>  A %set.</i></td></tr>
+<tr><th id="970">970</th><td><i class="doc">   *  <span class="command">@param</span>  <span class="arg">__y</span>  A %set of the same type as<span class="command"> @a</span> <span class="arg">x.</span></i></td></tr>
+<tr><th id="971">971</th><td><i class="doc">   *  <span class="command">@return</span>  True iff the size and elements of the sets are equal.</i></td></tr>
+<tr><th id="972">972</th><td><i class="doc">   *</i></td></tr>
+<tr><th id="973">973</th><td><i class="doc">   *  This is an equivalence relation.  It is linear in the size of the sets.</i></td></tr>
+<tr><th id="974">974</th><td><i class="doc">   *  Sets are considered equivalent if their sizes are equal, and if</i></td></tr>
+<tr><th id="975">975</th><td><i class="doc">   *  corresponding elements compare equal.</i></td></tr>
+<tr><th id="976">976</th><td><i class="doc">  */</i></td></tr>
+<tr><th id="977">977</th><td>  <b>template</b>&lt;<b>typename</b> _Key, <b>typename</b> _Compare, <b>typename</b> _Alloc&gt;</td></tr>
+<tr><th id="978">978</th><td>    <b>inline</b> <em>bool</em></td></tr>
+<tr><th id="979">979</th><td>    <dfn class="decl def fn" id="_ZSteqRKSt3setIT_T0_T1_ES5_" title='std::operator==' data-ref="_ZSteqRKSt3setIT_T0_T1_ES5_"><b>operator</b>==</dfn>(<em>const</em> <a class="type" href="#std::set" title='std::set' data-ref="std::set">set</a>&lt;_Key, _Compare, _Alloc&gt;&amp; <dfn class="local col1 decl" id="71__x" title='__x' data-type='const set&lt;_Key, _Compare, _Alloc&gt; &amp;' data-ref="71__x">__x</dfn>,</td></tr>
+<tr><th id="980">980</th><td>	       <em>const</em> <a class="type" href="#std::set" title='std::set' data-ref="std::set">set</a>&lt;_Key, _Compare, _Alloc&gt;&amp; <dfn class="local col2 decl" id="72__y" title='__y' data-type='const set&lt;_Key, _Compare, _Alloc&gt; &amp;' data-ref="72__y">__y</dfn>)</td></tr>
+<tr><th id="981">981</th><td>    { <b>return</b> <a class="local col1 ref" href="#71__x" title='__x' data-ref="71__x">__x</a>._M_t == <a class="local col2 ref" href="#72__y" title='__y' data-ref="72__y">__y</a>._M_t; }</td></tr>
+<tr><th id="982">982</th><td></td></tr>
+<tr><th id="983">983</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="984">984</th><td><i class="doc">   *  <span class="command">@brief</span>  Set ordering relation.</i></td></tr>
+<tr><th id="985">985</th><td><i class="doc">   *  <span class="command">@param</span>  <span class="arg">__x</span>  A %set.</i></td></tr>
+<tr><th id="986">986</th><td><i class="doc">   *  <span class="command">@param</span>  <span class="arg">__y</span>  A %set of the same type as<span class="command"> @a</span> <span class="arg">x.</span></i></td></tr>
+<tr><th id="987">987</th><td><i class="doc">   *  <span class="command">@return</span>  True iff<span class="command"> @a</span> <span class="arg">__x</span> is lexicographically less than<span class="command"> @a</span> <span class="arg">__y.</span></i></td></tr>
+<tr><th id="988">988</th><td><i class="doc">   *</i></td></tr>
+<tr><th id="989">989</th><td><i class="doc">   *  This is a total ordering relation.  It is linear in the size of the</i></td></tr>
+<tr><th id="990">990</th><td><i class="doc">   *  sets.  The elements must be comparable with<span class="command"> @c</span> <span class="arg">&lt;.</span></i></td></tr>
+<tr><th id="991">991</th><td><i class="doc">   *</i></td></tr>
+<tr><th id="992">992</th><td><i class="doc">   *  See std::lexicographical_compare() for how the determination is made.</i></td></tr>
+<tr><th id="993">993</th><td><i class="doc">  */</i></td></tr>
+<tr><th id="994">994</th><td>  <b>template</b>&lt;<b>typename</b> _Key, <b>typename</b> _Compare, <b>typename</b> _Alloc&gt;</td></tr>
+<tr><th id="995">995</th><td>    <b>inline</b> <em>bool</em></td></tr>
+<tr><th id="996">996</th><td>    <dfn class="decl def fn" id="_ZStltRKSt3setIT_T0_T1_ES5_" title='std::operator&lt;' data-ref="_ZStltRKSt3setIT_T0_T1_ES5_"><b>operator</b>&lt;</dfn>(<em>const</em> <a class="type" href="#std::set" title='std::set' data-ref="std::set">set</a>&lt;_Key, _Compare, _Alloc&gt;&amp; <dfn class="local col3 decl" id="73__x" title='__x' data-type='const set&lt;_Key, _Compare, _Alloc&gt; &amp;' data-ref="73__x">__x</dfn>,</td></tr>
+<tr><th id="997">997</th><td>	      <em>const</em> <a class="type" href="#std::set" title='std::set' data-ref="std::set">set</a>&lt;_Key, _Compare, _Alloc&gt;&amp; <dfn class="local col4 decl" id="74__y" title='__y' data-type='const set&lt;_Key, _Compare, _Alloc&gt; &amp;' data-ref="74__y">__y</dfn>)</td></tr>
+<tr><th id="998">998</th><td>    { <b>return</b> <a class="local col3 ref" href="#73__x" title='__x' data-ref="73__x">__x</a>._M_t &lt; <a class="local col4 ref" href="#74__y" title='__y' data-ref="74__y">__y</a>._M_t; }</td></tr>
+<tr><th id="999">999</th><td></td></tr>
+<tr><th id="1000">1000</th><td>  <i class="doc">///  Returns !(x == y).</i></td></tr>
+<tr><th id="1001">1001</th><td>  <b>template</b>&lt;<b>typename</b> _Key, <b>typename</b> _Compare, <b>typename</b> _Alloc&gt;</td></tr>
+<tr><th id="1002">1002</th><td>    <b>inline</b> <em>bool</em></td></tr>
+<tr><th id="1003">1003</th><td>    <dfn class="decl def fn" id="_ZStneRKSt3setIT_T0_T1_ES5_" title='std::operator!=' data-ref="_ZStneRKSt3setIT_T0_T1_ES5_"><b>operator</b>!=</dfn>(<em>const</em> <a class="type" href="#std::set" title='std::set' data-ref="std::set">set</a>&lt;_Key, _Compare, _Alloc&gt;&amp; <dfn class="local col5 decl" id="75__x" title='__x' data-type='const set&lt;_Key, _Compare, _Alloc&gt; &amp;' data-ref="75__x">__x</dfn>,</td></tr>
+<tr><th id="1004">1004</th><td>	       <em>const</em> <a class="type" href="#std::set" title='std::set' data-ref="std::set">set</a>&lt;_Key, _Compare, _Alloc&gt;&amp; <dfn class="local col6 decl" id="76__y" title='__y' data-type='const set&lt;_Key, _Compare, _Alloc&gt; &amp;' data-ref="76__y">__y</dfn>)</td></tr>
+<tr><th id="1005">1005</th><td>    { <b>return</b> !(<a class="local col5 ref" href="#75__x" title='__x' data-ref="75__x">__x</a> == <a class="local col6 ref" href="#76__y" title='__y' data-ref="76__y">__y</a>); }</td></tr>
+<tr><th id="1006">1006</th><td></td></tr>
+<tr><th id="1007">1007</th><td>  <i class="doc">///  Returns y &lt; x.</i></td></tr>
+<tr><th id="1008">1008</th><td>  <b>template</b>&lt;<b>typename</b> _Key, <b>typename</b> _Compare, <b>typename</b> _Alloc&gt;</td></tr>
+<tr><th id="1009">1009</th><td>    <b>inline</b> <em>bool</em></td></tr>
+<tr><th id="1010">1010</th><td>    <dfn class="decl def fn" id="_ZStgtRKSt3setIT_T0_T1_ES5_" title='std::operator&gt;' data-ref="_ZStgtRKSt3setIT_T0_T1_ES5_"><b>operator</b>&gt;</dfn>(<em>const</em> <a class="type" href="#std::set" title='std::set' data-ref="std::set">set</a>&lt;_Key, _Compare, _Alloc&gt;&amp; <dfn class="local col7 decl" id="77__x" title='__x' data-type='const set&lt;_Key, _Compare, _Alloc&gt; &amp;' data-ref="77__x">__x</dfn>,</td></tr>
+<tr><th id="1011">1011</th><td>	      <em>const</em> <a class="type" href="#std::set" title='std::set' data-ref="std::set">set</a>&lt;_Key, _Compare, _Alloc&gt;&amp; <dfn class="local col8 decl" id="78__y" title='__y' data-type='const set&lt;_Key, _Compare, _Alloc&gt; &amp;' data-ref="78__y">__y</dfn>)</td></tr>
+<tr><th id="1012">1012</th><td>    { <b>return</b> <a class="local col8 ref" href="#78__y" title='__y' data-ref="78__y">__y</a> &lt; <a class="local col7 ref" href="#77__x" title='__x' data-ref="77__x">__x</a>; }</td></tr>
+<tr><th id="1013">1013</th><td></td></tr>
+<tr><th id="1014">1014</th><td>  <i class="doc">///  Returns !(y &lt; x)</i></td></tr>
+<tr><th id="1015">1015</th><td>  <b>template</b>&lt;<b>typename</b> _Key, <b>typename</b> _Compare, <b>typename</b> _Alloc&gt;</td></tr>
+<tr><th id="1016">1016</th><td>    <b>inline</b> <em>bool</em></td></tr>
+<tr><th id="1017">1017</th><td>    <dfn class="decl def fn" id="_ZStleRKSt3setIT_T0_T1_ES5_" title='std::operator&lt;=' data-ref="_ZStleRKSt3setIT_T0_T1_ES5_"><b>operator</b>&lt;=</dfn>(<em>const</em> <a class="type" href="#std::set" title='std::set' data-ref="std::set">set</a>&lt;_Key, _Compare, _Alloc&gt;&amp; <dfn class="local col9 decl" id="79__x" title='__x' data-type='const set&lt;_Key, _Compare, _Alloc&gt; &amp;' data-ref="79__x">__x</dfn>,</td></tr>
+<tr><th id="1018">1018</th><td>	       <em>const</em> <a class="type" href="#std::set" title='std::set' data-ref="std::set">set</a>&lt;_Key, _Compare, _Alloc&gt;&amp; <dfn class="local col0 decl" id="80__y" title='__y' data-type='const set&lt;_Key, _Compare, _Alloc&gt; &amp;' data-ref="80__y">__y</dfn>)</td></tr>
+<tr><th id="1019">1019</th><td>    { <b>return</b> !(<a class="local col0 ref" href="#80__y" title='__y' data-ref="80__y">__y</a> &lt; <a class="local col9 ref" href="#79__x" title='__x' data-ref="79__x">__x</a>); }</td></tr>
+<tr><th id="1020">1020</th><td></td></tr>
+<tr><th id="1021">1021</th><td>  <i class="doc">///  Returns !(x &lt; y)</i></td></tr>
+<tr><th id="1022">1022</th><td>  <b>template</b>&lt;<b>typename</b> _Key, <b>typename</b> _Compare, <b>typename</b> _Alloc&gt;</td></tr>
+<tr><th id="1023">1023</th><td>    <b>inline</b> <em>bool</em></td></tr>
+<tr><th id="1024">1024</th><td>    <dfn class="decl def fn" id="_ZStgeRKSt3setIT_T0_T1_ES5_" title='std::operator&gt;=' data-ref="_ZStgeRKSt3setIT_T0_T1_ES5_"><b>operator</b>&gt;=</dfn>(<em>const</em> <a class="type" href="#std::set" title='std::set' data-ref="std::set">set</a>&lt;_Key, _Compare, _Alloc&gt;&amp; <dfn class="local col1 decl" id="81__x" title='__x' data-type='const set&lt;_Key, _Compare, _Alloc&gt; &amp;' data-ref="81__x">__x</dfn>,</td></tr>
+<tr><th id="1025">1025</th><td>	       <em>const</em> <a class="type" href="#std::set" title='std::set' data-ref="std::set">set</a>&lt;_Key, _Compare, _Alloc&gt;&amp; <dfn class="local col2 decl" id="82__y" title='__y' data-type='const set&lt;_Key, _Compare, _Alloc&gt; &amp;' data-ref="82__y">__y</dfn>)</td></tr>
+<tr><th id="1026">1026</th><td>    { <b>return</b> !(<a class="local col1 ref" href="#81__x" title='__x' data-ref="81__x">__x</a> &lt; <a class="local col2 ref" href="#82__y" title='__y' data-ref="82__y">__y</a>); }</td></tr>
+<tr><th id="1027">1027</th><td></td></tr>
+<tr><th id="1028">1028</th><td>  <i class="doc">/// See std::set::swap().</i></td></tr>
+<tr><th id="1029">1029</th><td>  <b>template</b>&lt;<b>typename</b> _Key, <b>typename</b> _Compare, <b>typename</b> _Alloc&gt;</td></tr>
+<tr><th id="1030">1030</th><td>    <b>inline</b> <em>void</em></td></tr>
+<tr><th id="1031">1031</th><td>    <dfn class="decl def fn" id="_ZSt4swapRSt3setIT_T0_T1_ES4_" title='std::swap' data-ref="_ZSt4swapRSt3setIT_T0_T1_ES4_">swap</dfn>(<a class="type" href="#std::set" title='std::set' data-ref="std::set">set</a>&lt;_Key, _Compare, _Alloc&gt;&amp; <dfn class="local col3 decl" id="83__x" title='__x' data-type='set&lt;_Key, _Compare, _Alloc&gt; &amp;' data-ref="83__x">__x</dfn>, <a class="type" href="#std::set" title='std::set' data-ref="std::set">set</a>&lt;_Key, _Compare, _Alloc&gt;&amp; <dfn class="local col4 decl" id="84__y" title='__y' data-type='set&lt;_Key, _Compare, _Alloc&gt; &amp;' data-ref="84__y">__y</dfn>)</td></tr>
+<tr><th id="1032">1032</th><td>    <a class="macro" href="../../../x86_64-linux-gnu/c++/9/bits/c++config.h.html#164" title="noexcept(noexcept(__x.swap(__y)))" data-ref="_M/_GLIBCXX_NOEXCEPT_IF">_GLIBCXX_NOEXCEPT_IF</a>(<b>noexcept</b>(<a class="local col3 ref" href="#83__x" title='__x' data-ref="83__x">__x</a>.swap(<a class="local col4 ref" href="#84__y" title='__y' data-ref="84__y">__y</a>)))</td></tr>
+<tr><th id="1033">1033</th><td>    { <a class="local col3 ref" href="#83__x" title='__x' data-ref="83__x">__x</a>.swap(<a class="local col4 ref" href="#84__y" title='__y' data-ref="84__y">__y</a>); }</td></tr>
+<tr><th id="1034">1034</th><td></td></tr>
+<tr><th id="1035">1035</th><td><a class="macro" href="../../../x86_64-linux-gnu/c++/9/bits/c++config.h.html#401" title="" data-ref="_M/_GLIBCXX_END_NAMESPACE_CONTAINER">_GLIBCXX_END_NAMESPACE_CONTAINER</a></td></tr>
+<tr><th id="1036">1036</th><td></td></tr>
+<tr><th id="1037">1037</th><td><u>#<span data-ppcond="1037">if</span> <span class="macro" title="201703L" data-ref="_M/__cplusplus">__cplusplus</span> &gt; 201402L</u></td></tr>
+<tr><th id="1038">1038</th><td>  <i>// Allow std::set access to internals of compatible sets.</i></td></tr>
+<tr><th id="1039">1039</th><td>  <b>template</b>&lt;<b>typename</b> _Val, <b>typename</b> _Cmp1, <b>typename</b> _Alloc, <b>typename</b> _Cmp2&gt;</td></tr>
+<tr><th id="1040">1040</th><td>    <b>struct</b></td></tr>
+<tr><th id="1041">1041</th><td>    <dfn class="type def" id="std::_Rb_tree_merge_helper" title='std::_Rb_tree_merge_helper' data-ref="std::_Rb_tree_merge_helper">_Rb_tree_merge_helper</dfn>&lt;<a class="macro" href="../../../x86_64-linux-gnu/c++/9/bits/c++config.h.html#399" title="std" data-ref="_M/_GLIBCXX_STD_C">_GLIBCXX_STD_C</a>::<a class="type" href="#std::set" title='std::set' data-ref="std::set">set</a>&lt;_Val, _Cmp1, _Alloc&gt;, _Cmp2&gt;</td></tr>
+<tr><th id="1042">1042</th><td>    {</td></tr>
+<tr><th id="1043">1043</th><td>    <b>private</b>:</td></tr>
+<tr><th id="1044">1044</th><td>      <b>friend</b> <b>class</b> <a class="macro" href="../../../x86_64-linux-gnu/c++/9/bits/c++config.h.html#399" title="std" data-ref="_M/_GLIBCXX_STD_C">_GLIBCXX_STD_C</a>::<a class="type" href="#std::set" title='std::set' data-ref="std::set">set</a>&lt;_Val, _Cmp1, _Alloc&gt;;</td></tr>
+<tr><th id="1045">1045</th><td></td></tr>
+<tr><th id="1046">1046</th><td>      <em>static</em> <em>auto</em>&amp;</td></tr>
+<tr><th id="1047">1047</th><td>      <dfn class="decl def fn" id="_ZNSt21_Rb_tree_merge_helperISt3setIT_T0_T1_ET2_E11_S_get_treeERS0_IS1_S5_S3_E" title='std::_Rb_tree_merge_helper&lt;set&lt;type-parameter-0-0, type-parameter-0-1, type-parameter-0-2&gt;, type-parameter-0-3&gt;::_S_get_tree' data-ref="_ZNSt21_Rb_tree_merge_helperISt3setIT_T0_T1_ET2_E11_S_get_treeERS0_IS1_S5_S3_E">_S_get_tree</dfn>(<a class="macro" href="../../../x86_64-linux-gnu/c++/9/bits/c++config.h.html#399" title="std" data-ref="_M/_GLIBCXX_STD_C">_GLIBCXX_STD_C</a>::<a class="type" href="#std::set" title='std::set' data-ref="std::set">set</a>&lt;_Val, _Cmp2, _Alloc&gt;&amp; <dfn class="local col5 decl" id="85__set" title='__set' data-type='std::set&lt;_Val, _Cmp2, _Alloc&gt; &amp;' data-ref="85__set">__set</dfn>)</td></tr>
+<tr><th id="1048">1048</th><td>      { <b>return</b> <a class="local col5 ref" href="#85__set" title='__set' data-ref="85__set">__set</a>._M_t; }</td></tr>
+<tr><th id="1049">1049</th><td></td></tr>
+<tr><th id="1050">1050</th><td>      <em>static</em> <em>auto</em>&amp;</td></tr>
+<tr><th id="1051">1051</th><td>      <dfn class="decl def fn" id="_ZNSt21_Rb_tree_merge_helperISt3setIT_T0_T1_ET2_E11_S_get_treeERSt8multisetIS1_S5_S3_E" title='std::_Rb_tree_merge_helper&lt;set&lt;type-parameter-0-0, type-parameter-0-1, type-parameter-0-2&gt;, type-parameter-0-3&gt;::_S_get_tree' data-ref="_ZNSt21_Rb_tree_merge_helperISt3setIT_T0_T1_ET2_E11_S_get_treeERSt8multisetIS1_S5_S3_E">_S_get_tree</dfn>(<a class="macro" href="../../../x86_64-linux-gnu/c++/9/bits/c++config.h.html#399" title="std" data-ref="_M/_GLIBCXX_STD_C">_GLIBCXX_STD_C</a>::<a class="type" href="#std::multiset" title='std::multiset' data-ref="std::multiset">multiset</a>&lt;_Val, _Cmp2, _Alloc&gt;&amp; <dfn class="local col6 decl" id="86__set" title='__set' data-type='std::multiset&lt;_Val, _Cmp2, _Alloc&gt; &amp;' data-ref="86__set">__set</dfn>)</td></tr>
+<tr><th id="1052">1052</th><td>      { <b>return</b> <a class="local col6 ref" href="#86__set" title='__set' data-ref="86__set">__set</a>._M_t; }</td></tr>
+<tr><th id="1053">1053</th><td>    };</td></tr>
+<tr><th id="1054">1054</th><td><u>#<span data-ppcond="1037">endif</span> // C++17</u></td></tr>
+<tr><th id="1055">1055</th><td></td></tr>
+<tr><th id="1056">1056</th><td><a class="macro" href="../../../x86_64-linux-gnu/c++/9/bits/c++config.h.html#329" title="" data-ref="_M/_GLIBCXX_END_NAMESPACE_VERSION">_GLIBCXX_END_NAMESPACE_VERSION</a></td></tr>
+<tr><th id="1057">1057</th><td>} <i>//namespace std</i></td></tr>
+<tr><th id="1058">1058</th><td><u>#<span data-ppcond="56">endif</span> /* _STL_SET_H */</u></td></tr>
+<tr><th id="1059">1059</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../../../../qtbase-6.5.0/src/network/access/http2/hpack.cpp.html'>qtbase-6.5.0/src/network/access/http2/hpack.cpp</a><br/>Generated on <em>2024-Jun-13</em> from project include<br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

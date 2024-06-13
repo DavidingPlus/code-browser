@@ -1,0 +1,31 @@
+<dec f='include/freetype2/freetype/ftimage.h' l='78' type='FT_Pos'/>
+<use f='qtbase-6.5.0/src/gui/text/freetype/qfontengine_ft.cpp' l='180' u='r' c='_ZN13QFreetypeFace17getPointInOutlineEjijP6QFixedS1_Pj'/>
+<use f='qtbase-6.5.0/src/gui/text/freetype/qfontengine_ft.cpp' l='478' u='w' c='_ZL12scaleOutlineP11FT_FaceRec_P16FT_GlyphSlotRec_ll'/>
+<use f='qtbase-6.5.0/src/gui/text/freetype/qfontengine_ft.cpp' l='478' u='r' c='_ZL12scaleOutlineP11FT_FaceRec_P16FT_GlyphSlotRec_ll'/>
+<use f='qtbase-6.5.0/src/gui/text/freetype/qfontengine_ft.cpp' l='497' u='r' c='_ZN13QFreetypeFace14addGlyphToPathEP11FT_FaceRec_P16FT_GlyphSlotRec_RK11QFixedPointP12QPainterPathll'/>
+<use f='qtbase-6.5.0/src/gui/text/freetype/qfontengine_ft.cpp' l='501' u='r' c='_ZN13QFreetypeFace14addGlyphToPathEP11FT_FaceRec_P16FT_GlyphSlotRec_RK11QFixedPointP12QPainterPathll'/>
+<use f='qtbase-6.5.0/src/gui/text/freetype/qfontengine_ft.cpp' l='505' u='r' c='_ZN13QFreetypeFace14addGlyphToPathEP11FT_FaceRec_P16FT_GlyphSlotRec_RK11QFixedPointP12QPainterPathll'/>
+<use f='qtbase-6.5.0/src/gui/text/freetype/qfontengine_ft.cpp' l='519' u='r' c='_ZN13QFreetypeFace14addGlyphToPathEP11FT_FaceRec_P16FT_GlyphSlotRec_RK11QFixedPointP12QPainterPathll'/>
+<use f='qtbase-6.5.0/src/gui/text/freetype/qfontengine_ft.cpp' l='951' u='w' c='_ZL20transformBoundingBoxPiS_S_S_P10FT_Matrix_'/>
+<use f='qtbase-6.5.0/src/gui/text/freetype/qfontengine_ft.cpp' l='954' u='r' c='_ZL20transformBoundingBoxPiS_S_S_P10FT_Matrix_'/>
+<use f='qtbase-6.5.0/src/gui/text/freetype/qfontengine_ft.cpp' l='956' u='w' c='_ZL20transformBoundingBoxPiS_S_S_P10FT_Matrix_'/>
+<use f='qtbase-6.5.0/src/gui/text/freetype/qfontengine_ft.cpp' l='959' u='r' c='_ZL20transformBoundingBoxPiS_S_S_P10FT_Matrix_'/>
+<use f='qtbase-6.5.0/src/gui/text/freetype/qfontengine_ft.cpp' l='959' u='r' c='_ZL20transformBoundingBoxPiS_S_S_P10FT_Matrix_'/>
+<use f='qtbase-6.5.0/src/gui/text/freetype/qfontengine_ft.cpp' l='960' u='r' c='_ZL20transformBoundingBoxPiS_S_S_P10FT_Matrix_'/>
+<use f='qtbase-6.5.0/src/gui/text/freetype/qfontengine_ft.cpp' l='960' u='r' c='_ZL20transformBoundingBoxPiS_S_S_P10FT_Matrix_'/>
+<use f='qtbase-6.5.0/src/gui/text/freetype/qfontengine_ft.cpp' l='963' u='w' c='_ZL20transformBoundingBoxPiS_S_S_P10FT_Matrix_'/>
+<use f='qtbase-6.5.0/src/gui/text/freetype/qfontengine_ft.cpp' l='966' u='r' c='_ZL20transformBoundingBoxPiS_S_S_P10FT_Matrix_'/>
+<use f='qtbase-6.5.0/src/gui/text/freetype/qfontengine_ft.cpp' l='966' u='r' c='_ZL20transformBoundingBoxPiS_S_S_P10FT_Matrix_'/>
+<use f='qtbase-6.5.0/src/gui/text/freetype/qfontengine_ft.cpp' l='967' u='r' c='_ZL20transformBoundingBoxPiS_S_S_P10FT_Matrix_'/>
+<use f='qtbase-6.5.0/src/gui/text/freetype/qfontengine_ft.cpp' l='967' u='r' c='_ZL20transformBoundingBoxPiS_S_S_P10FT_Matrix_'/>
+<use f='qtbase-6.5.0/src/gui/text/freetype/qfontengine_ft.cpp' l='970' u='w' c='_ZL20transformBoundingBoxPiS_S_S_P10FT_Matrix_'/>
+<use f='qtbase-6.5.0/src/gui/text/freetype/qfontengine_ft.cpp' l='973' u='r' c='_ZL20transformBoundingBoxPiS_S_S_P10FT_Matrix_'/>
+<use f='qtbase-6.5.0/src/gui/text/freetype/qfontengine_ft.cpp' l='973' u='r' c='_ZL20transformBoundingBoxPiS_S_S_P10FT_Matrix_'/>
+<use f='qtbase-6.5.0/src/gui/text/freetype/qfontengine_ft.cpp' l='974' u='r' c='_ZL20transformBoundingBoxPiS_S_S_P10FT_Matrix_'/>
+<use f='qtbase-6.5.0/src/gui/text/freetype/qfontengine_ft.cpp' l='974' u='r' c='_ZL20transformBoundingBoxPiS_S_S_P10FT_Matrix_'/>
+<use f='qtbase-6.5.0/src/gui/text/freetype/qfontengine_ft.cpp' l='1008' u='w' c='_ZNK13QFontEngineFT9loadGlyphEPNS_9QGlyphSetEjRK11QFixedPointN11QFontEngine11GlyphFormatEbb'/>
+<use f='qtbase-6.5.0/src/gui/text/freetype/qfontengine_ft.cpp' l='1069' u='r' c='_ZNK13QFontEngineFT9loadGlyphEPNS_9QGlyphSetEjRK11QFixedPointN11QFontEngine11GlyphFormatEbb'/>
+<use f='qtbase-6.5.0/src/gui/text/freetype/qfontengine_ft.cpp' l='1470' u='r' c='_ZN13QFontEngineFT16getUnscaledGlyphEjP12QPainterPathP15glyph_metrics_t'/>
+<use f='qtbase-6.5.0/src/gui/text/freetype/qfontengine_ft.cpp' l='1807' u='r' c='_ZN13QFontEngineFT11boundingBoxEj'/>
+<use f='qtbase-6.5.0/src/gui/text/freetype/qfontengine_ft.cpp' l='1856' u='r' c='_ZN13QFontEngineFT19alphaMapBoundingBoxEjRK11QFixedPointRK10QTransformN11QFontEngine11GlyphFormatE'/>
+<offset>0</offset>

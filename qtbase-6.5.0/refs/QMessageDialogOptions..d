@@ -1,0 +1,27 @@
+<dec f='qtbase-6.5.0/src/gui/kernel/qplatformdialoghelper.h' l='459' type='QMessageDialogOptionsPrivate *'/>
+<use f='qtbase-6.5.0/src/gui/kernel/qplatformdialoghelper.cpp' l='784' u='w' c='_ZN21QMessageDialogOptionsC1EP28QMessageDialogOptionsPrivate'/>
+<use f='qtbase-6.5.0/src/gui/kernel/qplatformdialoghelper.cpp' l='814' u='r' c='_ZNK21QMessageDialogOptions11windowTitleEv'/>
+<use f='qtbase-6.5.0/src/gui/kernel/qplatformdialoghelper.cpp' l='819' u='r' c='_ZN21QMessageDialogOptions14setWindowTitleERK7QString'/>
+<use f='qtbase-6.5.0/src/gui/kernel/qplatformdialoghelper.cpp' l='824' u='r' c='_ZNK21QMessageDialogOptions4iconEv'/>
+<use f='qtbase-6.5.0/src/gui/kernel/qplatformdialoghelper.cpp' l='829' u='r' c='_ZN21QMessageDialogOptions7setIconENS_4IconE'/>
+<use f='qtbase-6.5.0/src/gui/kernel/qplatformdialoghelper.cpp' l='834' u='r' c='_ZN21QMessageDialogOptions13setIconPixmapERK7QPixmap'/>
+<use f='qtbase-6.5.0/src/gui/kernel/qplatformdialoghelper.cpp' l='839' u='r' c='_ZNK21QMessageDialogOptions10iconPixmapEv'/>
+<use f='qtbase-6.5.0/src/gui/kernel/qplatformdialoghelper.cpp' l='844' u='r' c='_ZNK21QMessageDialogOptions4textEv'/>
+<use f='qtbase-6.5.0/src/gui/kernel/qplatformdialoghelper.cpp' l='849' u='r' c='_ZN21QMessageDialogOptions7setTextERK7QString'/>
+<use f='qtbase-6.5.0/src/gui/kernel/qplatformdialoghelper.cpp' l='854' u='r' c='_ZNK21QMessageDialogOptions15informativeTextEv'/>
+<use f='qtbase-6.5.0/src/gui/kernel/qplatformdialoghelper.cpp' l='859' u='r' c='_ZN21QMessageDialogOptions18setInformativeTextERK7QString'/>
+<use f='qtbase-6.5.0/src/gui/kernel/qplatformdialoghelper.cpp' l='864' u='r' c='_ZNK21QMessageDialogOptions12detailedTextEv'/>
+<use f='qtbase-6.5.0/src/gui/kernel/qplatformdialoghelper.cpp' l='869' u='r' c='_ZN21QMessageDialogOptions15setDetailedTextERK7QString'/>
+<use f='qtbase-6.5.0/src/gui/kernel/qplatformdialoghelper.cpp' l='874' u='r' c='_ZN21QMessageDialogOptions18setStandardButtonsE6QFlagsIN21QPlatformDialogHelper14StandardButtonEE'/>
+<use f='qtbase-6.5.0/src/gui/kernel/qplatformdialoghelper.cpp' l='879' u='r' c='_ZNK21QMessageDialogOptions15standardButtonsEv'/>
+<use f='qtbase-6.5.0/src/gui/kernel/qplatformdialoghelper.cpp' l='885' u='r' c='_ZN21QMessageDialogOptions9addButtonERK7QStringN21QPlatformDialogHelper10ButtonRoleEPv'/>
+<use f='qtbase-6.5.0/src/gui/kernel/qplatformdialoghelper.cpp' l='886' u='r' c='_ZN21QMessageDialogOptions9addButtonERK7QStringN21QPlatformDialogHelper10ButtonRoleEPv'/>
+<use f='qtbase-6.5.0/src/gui/kernel/qplatformdialoghelper.cpp' l='897' u='r' c='_ZN21QMessageDialogOptions12removeButtonEi'/>
+<use f='qtbase-6.5.0/src/gui/kernel/qplatformdialoghelper.cpp' l='902' u='r' c='_ZN21QMessageDialogOptions13customButtonsEv'/>
+<use f='qtbase-6.5.0/src/gui/kernel/qplatformdialoghelper.cpp' l='907' u='r' c='_ZN21QMessageDialogOptions12customButtonEi'/>
+<use f='qtbase-6.5.0/src/gui/kernel/qplatformdialoghelper.cpp' l='908' u='r' c='_ZN21QMessageDialogOptions12customButtonEi'/>
+<use f='qtbase-6.5.0/src/gui/kernel/qplatformdialoghelper.cpp' l='913' u='r' c='_ZN21QMessageDialogOptions11setCheckBoxERK7QStringN2Qt10CheckStateE'/>
+<use f='qtbase-6.5.0/src/gui/kernel/qplatformdialoghelper.cpp' l='914' u='r' c='_ZN21QMessageDialogOptions11setCheckBoxERK7QStringN2Qt10CheckStateE'/>
+<use f='qtbase-6.5.0/src/gui/kernel/qplatformdialoghelper.cpp' l='919' u='r' c='_ZNK21QMessageDialogOptions13checkBoxLabelEv'/>
+<use f='qtbase-6.5.0/src/gui/kernel/qplatformdialoghelper.cpp' l='924' u='r' c='_ZNK21QMessageDialogOptions13checkBoxStateEv'/>
+<offset>0</offset>

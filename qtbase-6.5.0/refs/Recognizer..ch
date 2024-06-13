@@ -1,0 +1,45 @@
+<use f='qtbase-6.5.0/src/tools/qlalr/recognizer.h' l='42' u='w' c='_ZN10Recognizer3inpEv'/>
+<use f='qtbase-6.5.0/src/tools/qlalr/recognizer.h' l='44' u='r' c='_ZN10Recognizer3inpEv'/>
+<use f='qtbase-6.5.0/src/tools/qlalr/recognizer.h' l='48' u='w' c='_ZN10Recognizer3inpEv'/>
+<dec f='qtbase-6.5.0/src/tools/qlalr/recognizer.h' l='66' type='QChar'/>
+<offset>704</offset>
+<doc f='qtbase-6.5.0/src/tools/qlalr/recognizer.h' l='65'>// scanner</doc>
+<use f='qtbase-6.5.0/src/tools/qlalr/recognizer.cpp' l='51' u='m' c='_ZN10Recognizer9nextTokenEv'/>
+<use f='qtbase-6.5.0/src/tools/qlalr/recognizer.cpp' l='54' u='m' c='_ZN10Recognizer9nextTokenEv'/>
+<use f='qtbase-6.5.0/src/tools/qlalr/recognizer.cpp' l='57' u='m' c='_ZN10Recognizer9nextTokenEv'/>
+<use f='qtbase-6.5.0/src/tools/qlalr/recognizer.cpp' l='63' u='m' c='_ZN10Recognizer9nextTokenEv'/>
+<use f='qtbase-6.5.0/src/tools/qlalr/recognizer.cpp' l='63' u='r' c='_ZN10Recognizer9nextTokenEv'/>
+<use f='qtbase-6.5.0/src/tools/qlalr/recognizer.cpp' l='65' u='r' c='_ZN10Recognizer9nextTokenEv'/>
+<use f='qtbase-6.5.0/src/tools/qlalr/recognizer.cpp' l='67' u='r' c='_ZN10Recognizer9nextTokenEv'/>
+<use f='qtbase-6.5.0/src/tools/qlalr/recognizer.cpp' l='70' u='r' c='_ZN10Recognizer9nextTokenEv'/>
+<use f='qtbase-6.5.0/src/tools/qlalr/recognizer.cpp' l='74' u='r' c='_ZN10Recognizer9nextTokenEv'/>
+<use f='qtbase-6.5.0/src/tools/qlalr/recognizer.cpp' l='83' u='m' c='_ZN10Recognizer9nextTokenEv'/>
+<use f='qtbase-6.5.0/src/tools/qlalr/recognizer.cpp' l='83' u='r' c='_ZN10Recognizer9nextTokenEv'/>
+<use f='qtbase-6.5.0/src/tools/qlalr/recognizer.cpp' l='86' u='r' c='_ZN10Recognizer9nextTokenEv'/>
+<use f='qtbase-6.5.0/src/tools/qlalr/recognizer.cpp' l='87' u='m' c='_ZN10Recognizer9nextTokenEv'/>
+<use f='qtbase-6.5.0/src/tools/qlalr/recognizer.cpp' l='87' u='r' c='_ZN10Recognizer9nextTokenEv'/>
+<use f='qtbase-6.5.0/src/tools/qlalr/recognizer.cpp' l='87' u='r' c='_ZN10Recognizer9nextTokenEv'/>
+<use f='qtbase-6.5.0/src/tools/qlalr/recognizer.cpp' l='97' u='m' c='_ZN10Recognizer9nextTokenEv'/>
+<use f='qtbase-6.5.0/src/tools/qlalr/recognizer.cpp' l='99' u='r' c='_ZN10Recognizer9nextTokenEv'/>
+<use f='qtbase-6.5.0/src/tools/qlalr/recognizer.cpp' l='100' u='m' c='_ZN10Recognizer9nextTokenEv'/>
+<use f='qtbase-6.5.0/src/tools/qlalr/recognizer.cpp' l='100' u='r' c='_ZN10Recognizer9nextTokenEv'/>
+<use f='qtbase-6.5.0/src/tools/qlalr/recognizer.cpp' l='100' u='r' c='_ZN10Recognizer9nextTokenEv'/>
+<use f='qtbase-6.5.0/src/tools/qlalr/recognizer.cpp' l='138' u='r' c='_ZN10Recognizer9nextTokenEv'/>
+<use f='qtbase-6.5.0/src/tools/qlalr/recognizer.cpp' l='141' u='m' c='_ZN10Recognizer9nextTokenEv'/>
+<use f='qtbase-6.5.0/src/tools/qlalr/recognizer.cpp' l='141' u='r' c='_ZN10Recognizer9nextTokenEv'/>
+<use f='qtbase-6.5.0/src/tools/qlalr/recognizer.cpp' l='145' u='r' c='_ZN10Recognizer9nextTokenEv'/>
+<use f='qtbase-6.5.0/src/tools/qlalr/recognizer.cpp' l='148' u='r' c='_ZN10Recognizer9nextTokenEv'/>
+<use f='qtbase-6.5.0/src/tools/qlalr/recognizer.cpp' l='154' u='r' c='_ZN10Recognizer9nextTokenEv'/>
+<use f='qtbase-6.5.0/src/tools/qlalr/recognizer.cpp' l='166' u='m' c='_ZN10Recognizer9nextTokenEv'/>
+<use f='qtbase-6.5.0/src/tools/qlalr/recognizer.cpp' l='168' u='m' c='_ZN10Recognizer9nextTokenEv'/>
+<use f='qtbase-6.5.0/src/tools/qlalr/recognizer.cpp' l='171' u='r' c='_ZN10Recognizer9nextTokenEv'/>
+<use f='qtbase-6.5.0/src/tools/qlalr/recognizer.cpp' l='177' u='r' c='_ZN10Recognizer9nextTokenEv'/>
+<use f='qtbase-6.5.0/src/tools/qlalr/recognizer.cpp' l='182' u='m' c='_ZN10Recognizer9nextTokenEv'/>
+<use f='qtbase-6.5.0/src/tools/qlalr/recognizer.cpp' l='182' u='m' c='_ZN10Recognizer9nextTokenEv'/>
+<use f='qtbase-6.5.0/src/tools/qlalr/recognizer.cpp' l='192' u='r' c='_ZN10Recognizer9nextTokenEv'/>
+<use f='qtbase-6.5.0/src/tools/qlalr/recognizer.cpp' l='205' u='m' c='_ZN10Recognizer9nextTokenEv'/>
+<use f='qtbase-6.5.0/src/tools/qlalr/recognizer.cpp' l='207' u='m' c='_ZN10Recognizer9nextTokenEv'/>
+<use f='qtbase-6.5.0/src/tools/qlalr/recognizer.cpp' l='210' u='r' c='_ZN10Recognizer9nextTokenEv'/>
+<use f='qtbase-6.5.0/src/tools/qlalr/recognizer.cpp' l='216' u='r' c='_ZN10Recognizer9nextTokenEv'/>
+<use f='qtbase-6.5.0/src/tools/qlalr/recognizer.cpp' l='221' u='m' c='_ZN10Recognizer9nextTokenEv'/>
+<use f='qtbase-6.5.0/src/tools/qlalr/recognizer.cpp' l='221' u='m' c='_ZN10Recognizer9nextTokenEv'/>

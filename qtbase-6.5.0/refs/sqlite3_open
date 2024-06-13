@@ -1,0 +1,563 @@
+<dec f='qtbase-6.5.0/src/3rdparty/sqlite/sqlite3.c' l='3987' type='int sqlite3_open(const char * filename, sqlite3 ** ppDb)'/>
+<use f='qtbase-6.5.0/src/3rdparty/sqlite/sqlite3.c' l='132950'/>
+<def f='qtbase-6.5.0/src/3rdparty/sqlite/sqlite3.c' l='177489' ll='177495' type='int sqlite3_open(const char * zFilename, sqlite3 ** ppDb)'/>
+<doc f='qtbase-6.5.0/src/3rdparty/sqlite/sqlite3.c' l='3709'>/*
+** CAPI3REF: Opening A New Database Connection
+** CONSTRUCTOR: sqlite3
+**
+** ^These routines open an SQLite database file as specified by the
+** filename argument. ^The filename argument is interpreted as UTF-8 for
+** sqlite3_open() and sqlite3_open_v2() and as UTF-16 in the native byte
+** order for sqlite3_open16(). ^(A [database connection] handle is usually
+** returned in *ppDb, even if an error occurs.  The only exception is that
+** if SQLite is unable to allocate memory to hold the [sqlite3] object,
+** a NULL will be written into *ppDb instead of a pointer to the [sqlite3]
+** object.)^ ^(If the database is opened (and/or created) successfully, then
+** [SQLITE_OK] is returned.  Otherwise an [error code] is returned.)^ ^The
+** [sqlite3_errmsg()] or [sqlite3_errmsg16()] routines can be used to obtain
+** an English language description of the error following a failure of any
+** of the sqlite3_open() routines.
+**
+** ^The default encoding will be UTF-8 for databases created using
+** sqlite3_open() or sqlite3_open_v2().  ^The default encoding for databases
+** created using sqlite3_open16() will be UTF-16 in the native byte order.
+**
+** Whether or not an error occurs when it is opened, resources
+** associated with the [database connection] handle should be released by
+** passing it to [sqlite3_close()] when it is no longer required.
+**
+** The sqlite3_open_v2() interface works like sqlite3_open()
+** except that it accepts two additional parameters for additional control
+** over the new database connection.  ^(The flags parameter to
+** sqlite3_open_v2() must include, at a minimum, one of the following
+** three flag combinations:)^
+**
+** &lt;dl&gt;
+** ^(&lt;dt&gt;[SQLITE_OPEN_READONLY]&lt;/dt&gt;
+** &lt;dd&gt;The database is opened in read-only mode.  If the database does
+** not already exist, an error is returned.&lt;/dd&gt;)^
+**
+** ^(&lt;dt&gt;[SQLITE_OPEN_READWRITE]&lt;/dt&gt;
+** &lt;dd&gt;The database is opened for reading and writing if possible, or
+** reading only if the file is write protected by the operating
+** system.  In either case the database must already exist, otherwise
+** an error is returned.  For historical reasons, if opening in
+** read-write mode fails due to OS-level permissions, an attempt is
+** made to open it in read-only mode. [sqlite3_db_readonly()] can be
+** used to determine whether the database is actually
+** read-write.&lt;/dd&gt;)^
+**
+** ^(&lt;dt&gt;[SQLITE_OPEN_READWRITE] | [SQLITE_OPEN_CREATE]&lt;/dt&gt;
+** &lt;dd&gt;The database is opened for reading and writing, and is created if
+** it does not already exist. This is the behavior that is always used for
+** sqlite3_open() and sqlite3_open16().&lt;/dd&gt;)^
+** &lt;/dl&gt;
+**
+** In addition to the required flags, the following optional flags are
+** also supported:
+**
+** &lt;dl&gt;
+** ^(&lt;dt&gt;[SQLITE_OPEN_URI]&lt;/dt&gt;
+** &lt;dd&gt;The filename can be interpreted as a URI if this flag is set.&lt;/dd&gt;)^
+**
+** ^(&lt;dt&gt;[SQLITE_OPEN_MEMORY]&lt;/dt&gt;
+** &lt;dd&gt;The database will be opened as an in-memory database.  The database
+** is named by the &quot;filename&quot; argument for the purposes of cache-sharing,
+** if shared cache mode is enabled, but the &quot;filename&quot; is otherwise ignored.
+** &lt;/dd&gt;)^
+**
+** ^(&lt;dt&gt;[SQLITE_OPEN_NOMUTEX]&lt;/dt&gt;
+** &lt;dd&gt;The new database connection will use the &quot;multi-thread&quot;
+** [threading mode].)^  This means that separate threads are allowed
+** to use SQLite at the same time, as long as each thread is using
+** a different [database connection].
+**
+** ^(&lt;dt&gt;[SQLITE_OPEN_FULLMUTEX]&lt;/dt&gt;
+** &lt;dd&gt;The new database connection will use the &quot;serialized&quot;
+** [threading mode].)^  This means the multiple threads can safely
+** attempt to use the same database connection at the same time.
+** (Mutexes will block any actual concurrency, but in this mode
+** there is no harm in trying.)
+**
+** ^(&lt;dt&gt;[SQLITE_OPEN_SHAREDCACHE]&lt;/dt&gt;
+** &lt;dd&gt;The database is opened [shared cache] enabled, overriding
+** the default shared cache setting provided by
+** [sqlite3_enable_shared_cache()].)^
+** The [use of shared cache mode is discouraged] and hence shared cache
+** capabilities may be omitted from many builds of SQLite.  In such cases,
+** this option is a no-op.
+**
+** ^(&lt;dt&gt;[SQLITE_OPEN_PRIVATECACHE]&lt;/dt&gt;
+** &lt;dd&gt;The database is opened [shared cache] disabled, overriding
+** the default shared cache setting provided by
+** [sqlite3_enable_shared_cache()].)^
+**
+** [[OPEN_EXRESCODE]] ^(&lt;dt&gt;[SQLITE_OPEN_EXRESCODE]&lt;/dt&gt;
+** &lt;dd&gt;The database connection comes up in &quot;extended result code mode&quot;.
+** In other words, the database behaves has if
+** [sqlite3_extended_result_codes(db,1)] where called on the database
+** connection as soon as the connection is created. In addition to setting
+** the extended result code mode, this flag also causes [sqlite3_open_v2()]
+** to return an extended result code.&lt;/dd&gt;
+**
+** [[OPEN_NOFOLLOW]] ^(&lt;dt&gt;[SQLITE_OPEN_NOFOLLOW]&lt;/dt&gt;
+** &lt;dd&gt;The database filename is not allowed to contain a symbolic link&lt;/dd&gt;
+** &lt;/dl&gt;)^
+**
+** If the 3rd parameter to sqlite3_open_v2() is not one of the
+** required combinations shown above optionally combined with other
+** [SQLITE_OPEN_READONLY | SQLITE_OPEN_* bits]
+** then the behavior is undefined.  Historic versions of SQLite
+** have silently ignored surplus bits in the flags parameter to
+** sqlite3_open_v2(), however that behavior might not be carried through
+** into future versions of SQLite and so applications should not rely
+** upon it.  Note in particular that the SQLITE_OPEN_EXCLUSIVE flag is a no-op
+** for sqlite3_open_v2().  The SQLITE_OPEN_EXCLUSIVE does *not* cause
+** the open to fail if the database already exists.  The SQLITE_OPEN_EXCLUSIVE
+** flag is intended for use by the [sqlite3_vfs|VFS interface] only, and not
+** by sqlite3_open_v2().
+**
+** ^The fourth parameter to sqlite3_open_v2() is the name of the
+** [sqlite3_vfs] object that defines the operating system interface that
+** the new database connection should use.  ^If the fourth parameter is
+** a NULL pointer then the default [sqlite3_vfs] object is used.
+**
+** ^If the filename is &quot;:memory:&quot;, then a private, temporary in-memory database
+** is created for the connection.  ^This in-memory database will vanish when
+** the database connection is closed.  Future versions of SQLite might
+** make use of additional special filenames that begin with the &quot;:&quot; character.
+** It is recommended that when a database filename actually does begin with
+** a &quot;:&quot; character you should prefix the filename with a pathname such as
+** &quot;./&quot; to avoid ambiguity.
+**
+** ^If the filename is an empty string, then a private, temporary
+** on-disk database will be created.  ^This private database will be
+** automatically deleted as soon as the database connection is closed.
+**
+** [[URI filenames in sqlite3_open()]] &lt;h3&gt;URI Filenames&lt;/h3&gt;
+**
+** ^If [URI filename] interpretation is enabled, and the filename argument
+** begins with &quot;file:&quot;, then the filename is interpreted as a URI. ^URI
+** filename interpretation is enabled if the [SQLITE_OPEN_URI] flag is
+** set in the third argument to sqlite3_open_v2(), or if it has
+** been enabled globally using the [SQLITE_CONFIG_URI] option with the
+** [sqlite3_config()] method or by the [SQLITE_USE_URI] compile-time option.
+** URI filename interpretation is turned off
+** by default, but future releases of SQLite might enable URI filename
+** interpretation by default.  See &quot;[URI filenames]&quot; for additional
+** information.
+**
+** URI filenames are parsed according to RFC 3986. ^If the URI contains an
+** authority, then it must be either an empty string or the string
+** &quot;localhost&quot;. ^If the authority is not an empty string or &quot;localhost&quot;, an
+** error is returned to the caller. ^The fragment component of a URI, if
+** present, is ignored.
+**
+** ^SQLite uses the path component of the URI as the name of the disk file
+** which contains the database. ^If the path begins with a &apos;/&apos; character,
+** then it is interpreted as an absolute path. ^If the path does not begin
+** with a &apos;/&apos; (meaning that the authority section is omitted from the URI)
+** then the path is interpreted as a relative path.
+** ^(On windows, the first component of an absolute path
+** is a drive specification (e.g. &quot;C:&quot;).)^
+**
+** [[core URI query parameters]]
+** The query component of a URI may contain parameters that are interpreted
+** either by SQLite itself, or by a [VFS | custom VFS implementation].
+** SQLite and its built-in [VFSes] interpret the
+** following query parameters:
+**
+** &lt;ul&gt;
+**   &lt;li&gt; &lt;b&gt;vfs&lt;/b&gt;: ^The &quot;vfs&quot; parameter may be used to specify the name of
+**     a VFS object that provides the operating system interface that should
+**     be used to access the database file on disk. ^If this option is set to
+**     an empty string the default VFS object is used. ^Specifying an unknown
+**     VFS is an error. ^If sqlite3_open_v2() is used and the vfs option is
+**     present, then the VFS specified by the option takes precedence over
+**     the value passed as the fourth parameter to sqlite3_open_v2().
+**
+**   &lt;li&gt; &lt;b&gt;mode&lt;/b&gt;: ^(The mode parameter may be set to either &quot;ro&quot;, &quot;rw&quot;,
+**     &quot;rwc&quot;, or &quot;memory&quot;. Attempting to set it to any other value is
+**     an error)^.
+**     ^If &quot;ro&quot; is specified, then the database is opened for read-only
+**     access, just as if the [SQLITE_OPEN_READONLY] flag had been set in the
+**     third argument to sqlite3_open_v2(). ^If the mode option is set to
+**     &quot;rw&quot;, then the database is opened for read-write (but not create)
+**     access, as if SQLITE_OPEN_READWRITE (but not SQLITE_OPEN_CREATE) had
+**     been set. ^Value &quot;rwc&quot; is equivalent to setting both
+**     SQLITE_OPEN_READWRITE and SQLITE_OPEN_CREATE.  ^If the mode option is
+**     set to &quot;memory&quot; then a pure [in-memory database] that never reads
+**     or writes from disk is used. ^It is an error to specify a value for
+**     the mode parameter that is less restrictive than that specified by
+**     the flags passed in the third parameter to sqlite3_open_v2().
+**
+**   &lt;li&gt; &lt;b&gt;cache&lt;/b&gt;: ^The cache parameter may be set to either &quot;shared&quot; or
+**     &quot;private&quot;. ^Setting it to &quot;shared&quot; is equivalent to setting the
+**     SQLITE_OPEN_SHAREDCACHE bit in the flags argument passed to
+**     sqlite3_open_v2(). ^Setting the cache parameter to &quot;private&quot; is
+**     equivalent to setting the SQLITE_OPEN_PRIVATECACHE bit.
+**     ^If sqlite3_open_v2() is used and the &quot;cache&quot; parameter is present in
+**     a URI filename, its value overrides any behavior requested by setting
+**     SQLITE_OPEN_PRIVATECACHE or SQLITE_OPEN_SHAREDCACHE flag.
+**
+**  &lt;li&gt; &lt;b&gt;psow&lt;/b&gt;: ^The psow parameter indicates whether or not the
+**     [powersafe overwrite] property does or does not apply to the
+**     storage media on which the database file resides.
+**
+**  &lt;li&gt; &lt;b&gt;nolock&lt;/b&gt;: ^The nolock parameter is a boolean query parameter
+**     which if set disables file locking in rollback journal modes.  This
+**     is useful for accessing a database on a filesystem that does not
+**     support locking.  Caution:  Database corruption might result if two
+**     or more processes write to the same database and any one of those
+**     processes uses nolock=1.
+**
+**  &lt;li&gt; &lt;b&gt;immutable&lt;/b&gt;: ^The immutable parameter is a boolean query
+**     parameter that indicates that the database file is stored on
+**     read-only media.  ^When immutable is set, SQLite assumes that the
+**     database file cannot be changed, even by a process with higher
+**     privilege, and so the database is opened read-only and all locking
+**     and change detection is disabled.  Caution: Setting the immutable
+**     property on a database file that does in fact change can result
+**     in incorrect query results and/or [SQLITE_CORRUPT] errors.
+**     See also: [SQLITE_IOCAP_IMMUTABLE].
+**
+** &lt;/ul&gt;
+**
+** ^Specifying an unknown parameter in the query component of a URI is not an
+** error.  Future versions of SQLite might understand additional query
+** parameters.  See &quot;[query parameters with special meaning to SQLite]&quot; for
+** additional information.
+**
+** [[URI filename examples]] &lt;h3&gt;URI filename examples&lt;/h3&gt;
+**
+** &lt;table border=&quot;1&quot; align=center cellpadding=5&gt;
+** &lt;tr&gt;&lt;th&gt; URI filenames &lt;th&gt; Results
+** &lt;tr&gt;&lt;td&gt; file:data.db &lt;td&gt;
+**          Open the file &quot;data.db&quot; in the current directory.
+** &lt;tr&gt;&lt;td&gt; file:/home/fred/data.db&lt;br&gt;
+**          file:///home/fred/data.db &lt;br&gt;
+**          file://localhost/home/fred/data.db &lt;br&gt; &lt;td&gt;
+**          Open the database file &quot;/home/fred/data.db&quot;.
+** &lt;tr&gt;&lt;td&gt; file://darkstar/home/fred/data.db &lt;td&gt;
+**          An error. &quot;darkstar&quot; is not a recognized authority.
+** &lt;tr&gt;&lt;td style=&quot;white-space:nowrap&quot;&gt;
+**          file:///C:/Documents%20and%20Settings/fred/Desktop/data.db
+**     &lt;td&gt; Windows only: Open the file &quot;data.db&quot; on fred&apos;s desktop on drive
+**          C:. Note that the %20 escaping in this example is not strictly
+**          necessary - space characters can be used literally
+**          in URI filenames.
+** &lt;tr&gt;&lt;td&gt; file:data.db?mode=ro&amp;cache=private &lt;td&gt;
+**          Open file &quot;data.db&quot; in the current directory for read-only access.
+**          Regardless of whether or not shared-cache mode is enabled by
+**          default, use a private cache.
+** &lt;tr&gt;&lt;td&gt; file:/home/fred/data.db?vfs=unix-dotfile &lt;td&gt;
+**          Open file &quot;/home/fred/data.db&quot;. Use the special VFS &quot;unix-dotfile&quot;
+**          that uses dot-files in place of posix advisory locking.
+** &lt;tr&gt;&lt;td&gt; file:data.db?mode=readonly &lt;td&gt;
+**          An error. &quot;readonly&quot; is not a valid option for the &quot;mode&quot; parameter.
+**          Use &quot;ro&quot; instead:  &quot;file:data.db?mode=ro&quot;.
+** &lt;/table&gt;
+**
+** ^URI hexadecimal escape sequences (%HH) are supported within the path and
+** query components of a URI. A hexadecimal escape sequence consists of a
+** percent sign - &quot;%&quot; - followed by exactly two hexadecimal digits
+** specifying an octet value. ^Before the path or query components of a
+** URI filename are interpreted, they are encoded using UTF-8 and all
+** hexadecimal escape sequences replaced by a single byte containing the
+** corresponding octet. If this process generates an invalid UTF-8 encoding,
+** the results are undefined.
+**
+** &lt;b&gt;Note to Windows users:&lt;/b&gt;  The encoding used for the filename argument
+** of sqlite3_open() and sqlite3_open_v2() must be UTF-8, not whatever
+** codepage is currently defined.  Filenames containing international
+** characters must be converted to UTF-8 prior to passing them into
+** sqlite3_open() or sqlite3_open_v2().
+**
+** &lt;b&gt;Note to Windows Runtime users:&lt;/b&gt;  The temporary directory must be set
+** prior to calling sqlite3_open() or sqlite3_open_v2().  Otherwise, various
+** features that require the use of temporary files may fail.
+**
+** See also: [sqlite3_temp_directory]
+*/</doc>
+<doc f='qtbase-6.5.0/src/3rdparty/sqlite/sqlite3.c' l='177486'>/*
+** Open a new database handle.
+*/</doc>
+<dec f='qtbase-6.5.0/src/3rdparty/sqlite/sqlite3.h' l='3681' type='int sqlite3_open(const char * filename, sqlite3 ** ppDb)'/>
+<doc f='qtbase-6.5.0/src/3rdparty/sqlite/sqlite3.h' l='3403'>/*
+** CAPI3REF: Opening A New Database Connection
+** CONSTRUCTOR: sqlite3
+**
+** ^These routines open an SQLite database file as specified by the
+** filename argument. ^The filename argument is interpreted as UTF-8 for
+** sqlite3_open() and sqlite3_open_v2() and as UTF-16 in the native byte
+** order for sqlite3_open16(). ^(A [database connection] handle is usually
+** returned in *ppDb, even if an error occurs.  The only exception is that
+** if SQLite is unable to allocate memory to hold the [sqlite3] object,
+** a NULL will be written into *ppDb instead of a pointer to the [sqlite3]
+** object.)^ ^(If the database is opened (and/or created) successfully, then
+** [SQLITE_OK] is returned.  Otherwise an [error code] is returned.)^ ^The
+** [sqlite3_errmsg()] or [sqlite3_errmsg16()] routines can be used to obtain
+** an English language description of the error following a failure of any
+** of the sqlite3_open() routines.
+**
+** ^The default encoding will be UTF-8 for databases created using
+** sqlite3_open() or sqlite3_open_v2().  ^The default encoding for databases
+** created using sqlite3_open16() will be UTF-16 in the native byte order.
+**
+** Whether or not an error occurs when it is opened, resources
+** associated with the [database connection] handle should be released by
+** passing it to [sqlite3_close()] when it is no longer required.
+**
+** The sqlite3_open_v2() interface works like sqlite3_open()
+** except that it accepts two additional parameters for additional control
+** over the new database connection.  ^(The flags parameter to
+** sqlite3_open_v2() must include, at a minimum, one of the following
+** three flag combinations:)^
+**
+** &lt;dl&gt;
+** ^(&lt;dt&gt;[SQLITE_OPEN_READONLY]&lt;/dt&gt;
+** &lt;dd&gt;The database is opened in read-only mode.  If the database does
+** not already exist, an error is returned.&lt;/dd&gt;)^
+**
+** ^(&lt;dt&gt;[SQLITE_OPEN_READWRITE]&lt;/dt&gt;
+** &lt;dd&gt;The database is opened for reading and writing if possible, or
+** reading only if the file is write protected by the operating
+** system.  In either case the database must already exist, otherwise
+** an error is returned.  For historical reasons, if opening in
+** read-write mode fails due to OS-level permissions, an attempt is
+** made to open it in read-only mode. [sqlite3_db_readonly()] can be
+** used to determine whether the database is actually
+** read-write.&lt;/dd&gt;)^
+**
+** ^(&lt;dt&gt;[SQLITE_OPEN_READWRITE] | [SQLITE_OPEN_CREATE]&lt;/dt&gt;
+** &lt;dd&gt;The database is opened for reading and writing, and is created if
+** it does not already exist. This is the behavior that is always used for
+** sqlite3_open() and sqlite3_open16().&lt;/dd&gt;)^
+** &lt;/dl&gt;
+**
+** In addition to the required flags, the following optional flags are
+** also supported:
+**
+** &lt;dl&gt;
+** ^(&lt;dt&gt;[SQLITE_OPEN_URI]&lt;/dt&gt;
+** &lt;dd&gt;The filename can be interpreted as a URI if this flag is set.&lt;/dd&gt;)^
+**
+** ^(&lt;dt&gt;[SQLITE_OPEN_MEMORY]&lt;/dt&gt;
+** &lt;dd&gt;The database will be opened as an in-memory database.  The database
+** is named by the &quot;filename&quot; argument for the purposes of cache-sharing,
+** if shared cache mode is enabled, but the &quot;filename&quot; is otherwise ignored.
+** &lt;/dd&gt;)^
+**
+** ^(&lt;dt&gt;[SQLITE_OPEN_NOMUTEX]&lt;/dt&gt;
+** &lt;dd&gt;The new database connection will use the &quot;multi-thread&quot;
+** [threading mode].)^  This means that separate threads are allowed
+** to use SQLite at the same time, as long as each thread is using
+** a different [database connection].
+**
+** ^(&lt;dt&gt;[SQLITE_OPEN_FULLMUTEX]&lt;/dt&gt;
+** &lt;dd&gt;The new database connection will use the &quot;serialized&quot;
+** [threading mode].)^  This means the multiple threads can safely
+** attempt to use the same database connection at the same time.
+** (Mutexes will block any actual concurrency, but in this mode
+** there is no harm in trying.)
+**
+** ^(&lt;dt&gt;[SQLITE_OPEN_SHAREDCACHE]&lt;/dt&gt;
+** &lt;dd&gt;The database is opened [shared cache] enabled, overriding
+** the default shared cache setting provided by
+** [sqlite3_enable_shared_cache()].)^
+** The [use of shared cache mode is discouraged] and hence shared cache
+** capabilities may be omitted from many builds of SQLite.  In such cases,
+** this option is a no-op.
+**
+** ^(&lt;dt&gt;[SQLITE_OPEN_PRIVATECACHE]&lt;/dt&gt;
+** &lt;dd&gt;The database is opened [shared cache] disabled, overriding
+** the default shared cache setting provided by
+** [sqlite3_enable_shared_cache()].)^
+**
+** [[OPEN_EXRESCODE]] ^(&lt;dt&gt;[SQLITE_OPEN_EXRESCODE]&lt;/dt&gt;
+** &lt;dd&gt;The database connection comes up in &quot;extended result code mode&quot;.
+** In other words, the database behaves has if
+** [sqlite3_extended_result_codes(db,1)] where called on the database
+** connection as soon as the connection is created. In addition to setting
+** the extended result code mode, this flag also causes [sqlite3_open_v2()]
+** to return an extended result code.&lt;/dd&gt;
+**
+** [[OPEN_NOFOLLOW]] ^(&lt;dt&gt;[SQLITE_OPEN_NOFOLLOW]&lt;/dt&gt;
+** &lt;dd&gt;The database filename is not allowed to contain a symbolic link&lt;/dd&gt;
+** &lt;/dl&gt;)^
+**
+** If the 3rd parameter to sqlite3_open_v2() is not one of the
+** required combinations shown above optionally combined with other
+** [SQLITE_OPEN_READONLY | SQLITE_OPEN_* bits]
+** then the behavior is undefined.  Historic versions of SQLite
+** have silently ignored surplus bits in the flags parameter to
+** sqlite3_open_v2(), however that behavior might not be carried through
+** into future versions of SQLite and so applications should not rely
+** upon it.  Note in particular that the SQLITE_OPEN_EXCLUSIVE flag is a no-op
+** for sqlite3_open_v2().  The SQLITE_OPEN_EXCLUSIVE does *not* cause
+** the open to fail if the database already exists.  The SQLITE_OPEN_EXCLUSIVE
+** flag is intended for use by the [sqlite3_vfs|VFS interface] only, and not
+** by sqlite3_open_v2().
+**
+** ^The fourth parameter to sqlite3_open_v2() is the name of the
+** [sqlite3_vfs] object that defines the operating system interface that
+** the new database connection should use.  ^If the fourth parameter is
+** a NULL pointer then the default [sqlite3_vfs] object is used.
+**
+** ^If the filename is &quot;:memory:&quot;, then a private, temporary in-memory database
+** is created for the connection.  ^This in-memory database will vanish when
+** the database connection is closed.  Future versions of SQLite might
+** make use of additional special filenames that begin with the &quot;:&quot; character.
+** It is recommended that when a database filename actually does begin with
+** a &quot;:&quot; character you should prefix the filename with a pathname such as
+** &quot;./&quot; to avoid ambiguity.
+**
+** ^If the filename is an empty string, then a private, temporary
+** on-disk database will be created.  ^This private database will be
+** automatically deleted as soon as the database connection is closed.
+**
+** [[URI filenames in sqlite3_open()]] &lt;h3&gt;URI Filenames&lt;/h3&gt;
+**
+** ^If [URI filename] interpretation is enabled, and the filename argument
+** begins with &quot;file:&quot;, then the filename is interpreted as a URI. ^URI
+** filename interpretation is enabled if the [SQLITE_OPEN_URI] flag is
+** set in the third argument to sqlite3_open_v2(), or if it has
+** been enabled globally using the [SQLITE_CONFIG_URI] option with the
+** [sqlite3_config()] method or by the [SQLITE_USE_URI] compile-time option.
+** URI filename interpretation is turned off
+** by default, but future releases of SQLite might enable URI filename
+** interpretation by default.  See &quot;[URI filenames]&quot; for additional
+** information.
+**
+** URI filenames are parsed according to RFC 3986. ^If the URI contains an
+** authority, then it must be either an empty string or the string
+** &quot;localhost&quot;. ^If the authority is not an empty string or &quot;localhost&quot;, an
+** error is returned to the caller. ^The fragment component of a URI, if
+** present, is ignored.
+**
+** ^SQLite uses the path component of the URI as the name of the disk file
+** which contains the database. ^If the path begins with a &apos;/&apos; character,
+** then it is interpreted as an absolute path. ^If the path does not begin
+** with a &apos;/&apos; (meaning that the authority section is omitted from the URI)
+** then the path is interpreted as a relative path.
+** ^(On windows, the first component of an absolute path
+** is a drive specification (e.g. &quot;C:&quot;).)^
+**
+** [[core URI query parameters]]
+** The query component of a URI may contain parameters that are interpreted
+** either by SQLite itself, or by a [VFS | custom VFS implementation].
+** SQLite and its built-in [VFSes] interpret the
+** following query parameters:
+**
+** &lt;ul&gt;
+**   &lt;li&gt; &lt;b&gt;vfs&lt;/b&gt;: ^The &quot;vfs&quot; parameter may be used to specify the name of
+**     a VFS object that provides the operating system interface that should
+**     be used to access the database file on disk. ^If this option is set to
+**     an empty string the default VFS object is used. ^Specifying an unknown
+**     VFS is an error. ^If sqlite3_open_v2() is used and the vfs option is
+**     present, then the VFS specified by the option takes precedence over
+**     the value passed as the fourth parameter to sqlite3_open_v2().
+**
+**   &lt;li&gt; &lt;b&gt;mode&lt;/b&gt;: ^(The mode parameter may be set to either &quot;ro&quot;, &quot;rw&quot;,
+**     &quot;rwc&quot;, or &quot;memory&quot;. Attempting to set it to any other value is
+**     an error)^.
+**     ^If &quot;ro&quot; is specified, then the database is opened for read-only
+**     access, just as if the [SQLITE_OPEN_READONLY] flag had been set in the
+**     third argument to sqlite3_open_v2(). ^If the mode option is set to
+**     &quot;rw&quot;, then the database is opened for read-write (but not create)
+**     access, as if SQLITE_OPEN_READWRITE (but not SQLITE_OPEN_CREATE) had
+**     been set. ^Value &quot;rwc&quot; is equivalent to setting both
+**     SQLITE_OPEN_READWRITE and SQLITE_OPEN_CREATE.  ^If the mode option is
+**     set to &quot;memory&quot; then a pure [in-memory database] that never reads
+**     or writes from disk is used. ^It is an error to specify a value for
+**     the mode parameter that is less restrictive than that specified by
+**     the flags passed in the third parameter to sqlite3_open_v2().
+**
+**   &lt;li&gt; &lt;b&gt;cache&lt;/b&gt;: ^The cache parameter may be set to either &quot;shared&quot; or
+**     &quot;private&quot;. ^Setting it to &quot;shared&quot; is equivalent to setting the
+**     SQLITE_OPEN_SHAREDCACHE bit in the flags argument passed to
+**     sqlite3_open_v2(). ^Setting the cache parameter to &quot;private&quot; is
+**     equivalent to setting the SQLITE_OPEN_PRIVATECACHE bit.
+**     ^If sqlite3_open_v2() is used and the &quot;cache&quot; parameter is present in
+**     a URI filename, its value overrides any behavior requested by setting
+**     SQLITE_OPEN_PRIVATECACHE or SQLITE_OPEN_SHAREDCACHE flag.
+**
+**  &lt;li&gt; &lt;b&gt;psow&lt;/b&gt;: ^The psow parameter indicates whether or not the
+**     [powersafe overwrite] property does or does not apply to the
+**     storage media on which the database file resides.
+**
+**  &lt;li&gt; &lt;b&gt;nolock&lt;/b&gt;: ^The nolock parameter is a boolean query parameter
+**     which if set disables file locking in rollback journal modes.  This
+**     is useful for accessing a database on a filesystem that does not
+**     support locking.  Caution:  Database corruption might result if two
+**     or more processes write to the same database and any one of those
+**     processes uses nolock=1.
+**
+**  &lt;li&gt; &lt;b&gt;immutable&lt;/b&gt;: ^The immutable parameter is a boolean query
+**     parameter that indicates that the database file is stored on
+**     read-only media.  ^When immutable is set, SQLite assumes that the
+**     database file cannot be changed, even by a process with higher
+**     privilege, and so the database is opened read-only and all locking
+**     and change detection is disabled.  Caution: Setting the immutable
+**     property on a database file that does in fact change can result
+**     in incorrect query results and/or [SQLITE_CORRUPT] errors.
+**     See also: [SQLITE_IOCAP_IMMUTABLE].
+**
+** &lt;/ul&gt;
+**
+** ^Specifying an unknown parameter in the query component of a URI is not an
+** error.  Future versions of SQLite might understand additional query
+** parameters.  See &quot;[query parameters with special meaning to SQLite]&quot; for
+** additional information.
+**
+** [[URI filename examples]] &lt;h3&gt;URI filename examples&lt;/h3&gt;
+**
+** &lt;table border=&quot;1&quot; align=center cellpadding=5&gt;
+** &lt;tr&gt;&lt;th&gt; URI filenames &lt;th&gt; Results
+** &lt;tr&gt;&lt;td&gt; file:data.db &lt;td&gt;
+**          Open the file &quot;data.db&quot; in the current directory.
+** &lt;tr&gt;&lt;td&gt; file:/home/fred/data.db&lt;br&gt;
+**          file:///home/fred/data.db &lt;br&gt;
+**          file://localhost/home/fred/data.db &lt;br&gt; &lt;td&gt;
+**          Open the database file &quot;/home/fred/data.db&quot;.
+** &lt;tr&gt;&lt;td&gt; file://darkstar/home/fred/data.db &lt;td&gt;
+**          An error. &quot;darkstar&quot; is not a recognized authority.
+** &lt;tr&gt;&lt;td style=&quot;white-space:nowrap&quot;&gt;
+**          file:///C:/Documents%20and%20Settings/fred/Desktop/data.db
+**     &lt;td&gt; Windows only: Open the file &quot;data.db&quot; on fred&apos;s desktop on drive
+**          C:. Note that the %20 escaping in this example is not strictly
+**          necessary - space characters can be used literally
+**          in URI filenames.
+** &lt;tr&gt;&lt;td&gt; file:data.db?mode=ro&amp;cache=private &lt;td&gt;
+**          Open file &quot;data.db&quot; in the current directory for read-only access.
+**          Regardless of whether or not shared-cache mode is enabled by
+**          default, use a private cache.
+** &lt;tr&gt;&lt;td&gt; file:/home/fred/data.db?vfs=unix-dotfile &lt;td&gt;
+**          Open file &quot;/home/fred/data.db&quot;. Use the special VFS &quot;unix-dotfile&quot;
+**          that uses dot-files in place of posix advisory locking.
+** &lt;tr&gt;&lt;td&gt; file:data.db?mode=readonly &lt;td&gt;
+**          An error. &quot;readonly&quot; is not a valid option for the &quot;mode&quot; parameter.
+**          Use &quot;ro&quot; instead:  &quot;file:data.db?mode=ro&quot;.
+** &lt;/table&gt;
+**
+** ^URI hexadecimal escape sequences (%HH) are supported within the path and
+** query components of a URI. A hexadecimal escape sequence consists of a
+** percent sign - &quot;%&quot; - followed by exactly two hexadecimal digits
+** specifying an octet value. ^Before the path or query components of a
+** URI filename are interpreted, they are encoded using UTF-8 and all
+** hexadecimal escape sequences replaced by a single byte containing the
+** corresponding octet. If this process generates an invalid UTF-8 encoding,
+** the results are undefined.
+**
+** &lt;b&gt;Note to Windows users:&lt;/b&gt;  The encoding used for the filename argument
+** of sqlite3_open() and sqlite3_open_v2() must be UTF-8, not whatever
+** codepage is currently defined.  Filenames containing international
+** characters must be converted to UTF-8 prior to passing them into
+** sqlite3_open() or sqlite3_open_v2().
+**
+** &lt;b&gt;Note to Windows Runtime users:&lt;/b&gt;  The temporary directory must be set
+** prior to calling sqlite3_open() or sqlite3_open_v2().  Otherwise, various
+** features that require the use of temporary files may fail.
+**
+** See also: [sqlite3_temp_directory]
+*/</doc>

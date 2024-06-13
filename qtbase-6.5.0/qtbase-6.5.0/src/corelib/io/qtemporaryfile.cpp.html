@@ -1,0 +1,975 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>qtemporaryfile.cpp source code [qtbase-6.5.0/src/corelib/io/qtemporaryfile.cpp] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'qtbase-6.5.0/src/corelib/io/qtemporaryfile.cpp'; var root_path = '../../../..'; var data_path = '../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>qtbase-6.5.0</a>/<a href='../..'>src</a>/<a href='..'>corelib</a>/<a href='./'>io</a>/<a href='qtemporaryfile.cpp.html'>qtemporaryfile.cpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>// Copyright (C) 2016 The Qt Company Ltd.</i></td></tr>
+<tr><th id="2">2</th><td><i>// Copyright (C) 2017 Intel Corporation.</i></td></tr>
+<tr><th id="3">3</th><td><i>// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only</i></td></tr>
+<tr><th id="4">4</th><td></td></tr>
+<tr><th id="5">5</th><td><u>#include <a href="qtemporaryfile.h.html">"qtemporaryfile.h"</a></u></td></tr>
+<tr><th id="6">6</th><td></td></tr>
+<tr><th id="7">7</th><td><u>#include <a href="../../../mkspecs/linux-g++/qplatformdefs.h.html">"qplatformdefs.h"</a></u></td></tr>
+<tr><th id="8">8</th><td><u>#include <a href="../../../build/include/QtCore/qrandom.h.html">"qrandom.h"</a></u></td></tr>
+<tr><th id="9">9</th><td><u>#include <a href="../../../build/include/QtCore/6.5.0/QtCore/private/qtemporaryfile_p.h.html">"private/qtemporaryfile_p.h"</a></u></td></tr>
+<tr><th id="10">10</th><td><u>#include <a href="../../../build/include/QtCore/6.5.0/QtCore/private/qfile_p.h.html">"private/qfile_p.h"</a></u></td></tr>
+<tr><th id="11">11</th><td><u>#include <a href="../../../build/include/QtCore/6.5.0/QtCore/private/qsystemerror_p.h.html">"private/qsystemerror_p.h"</a></u></td></tr>
+<tr><th id="12">12</th><td></td></tr>
+<tr><th id="13">13</th><td><u>#<span data-ppcond="13">if</span> !defined(<span class="macro" data-ref="_M/Q_OS_WIN">Q_OS_WIN</span>)</u></td></tr>
+<tr><th id="14">14</th><td><u>#include <a href="../../../build/include/QtCore/6.5.0/QtCore/private/qcore_unix_p.h.html">"private/qcore_unix_p.h"</a>       // overrides QT_OPEN</u></td></tr>
+<tr><th id="15">15</th><td><u>#include <a href="../../../../include/errno.h.html">&lt;errno.h&gt;</a></u></td></tr>
+<tr><th id="16">16</th><td><u>#<span data-ppcond="13">endif</span></u></td></tr>
+<tr><th id="17">17</th><td></td></tr>
+<tr><th id="18">18</th><td><u>#<span data-ppcond="18">if</span> defined(<span class="macro" data-ref="_M/QT_BUILD_CORE_LIB">QT_BUILD_CORE_LIB</span>)</u></td></tr>
+<tr><th id="19">19</th><td><u>#include "qcoreapplication.h"</u></td></tr>
+<tr><th id="20">20</th><td><u>#<span data-ppcond="18">else</span></u></td></tr>
+<tr><th id="21">21</th><td><u>#define <dfn class="macro" id="_M/tr" data-ref="_M/tr">tr</dfn>(X) QString::fromLatin1(X)</u></td></tr>
+<tr><th id="22">22</th><td><u>#<span data-ppcond="18">endif</span></u></td></tr>
+<tr><th id="23">23</th><td></td></tr>
+<tr><th id="24">24</th><td><a class="macro" href="../global/qtconfigmacros.h.html#103" title="" data-ref="_M/QT_BEGIN_NAMESPACE">QT_BEGIN_NAMESPACE</a></td></tr>
+<tr><th id="25">25</th><td></td></tr>
+<tr><th id="26">26</th><td><b>using</b> <b>namespace</b> <span class="namespace">Qt::StringLiterals</span>;</td></tr>
+<tr><th id="27">27</th><td></td></tr>
+<tr><th id="28">28</th><td><u>#<span data-ppcond="28">if</span> defined(<span class="macro" data-ref="_M/Q_OS_WIN">Q_OS_WIN</span>)</u></td></tr>
+<tr><th id="29">29</th><td><b>typedef</b> ushort Char;</td></tr>
+<tr><th id="30">30</th><td></td></tr>
+<tr><th id="31">31</th><td><em>static</em> <b>inline</b> Char Latin1Char(<em>char</em> ch)</td></tr>
+<tr><th id="32">32</th><td>{</td></tr>
+<tr><th id="33">33</th><td>    <b>return</b> ushort(uchar(ch));</td></tr>
+<tr><th id="34">34</th><td>}</td></tr>
+<tr><th id="35">35</th><td></td></tr>
+<tr><th id="36">36</th><td><b>typedef</b> HANDLE NativeFileHandle;</td></tr>
+<tr><th id="37">37</th><td></td></tr>
+<tr><th id="38">38</th><td><u>#<span data-ppcond="28">else</span> // POSIX</u></td></tr>
+<tr><th id="39">39</th><td><b>typedef</b> <em>char</em> <dfn class="typedef" id="Char" title='Char' data-type='char' data-ref="Char">Char</dfn>;</td></tr>
+<tr><th id="40">40</th><td><b>typedef</b> <em>char</em> <dfn class="typedef" id="Latin1Char" title='Latin1Char' data-type='char' data-ref="Latin1Char">Latin1Char</dfn>;</td></tr>
+<tr><th id="41">41</th><td><b>typedef</b> <em>int</em> <dfn class="typedef" id="NativeFileHandle" title='NativeFileHandle' data-type='int' data-ref="NativeFileHandle">NativeFileHandle</dfn>;</td></tr>
+<tr><th id="42">42</th><td><u>#<span data-ppcond="28">endif</span></u></td></tr>
+<tr><th id="43">43</th><td></td></tr>
+<tr><th id="44">44</th><td><a class="type" href="qtemporaryfile_p.h.html#QTemporaryFileName" title='QTemporaryFileName' data-ref="QTemporaryFileName">QTemporaryFileName</a>::<dfn class="decl def fn" id="_ZN18QTemporaryFileNameC1ERK7QString" title='QTemporaryFileName::QTemporaryFileName' data-ref="_ZN18QTemporaryFileNameC1ERK7QString">QTemporaryFileName</dfn>(<em>const</em> <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> &amp;<dfn class="local col1 decl" id="1templateName" title='templateName' data-type='const QString &amp;' data-ref="1templateName">templateName</dfn>)</td></tr>
+<tr><th id="45">45</th><td>{</td></tr>
+<tr><th id="46">46</th><td>    <i>// Ensure there is a placeholder mask</i></td></tr>
+<tr><th id="47">47</th><td>    <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> <dfn class="local col2 decl" id="2qfilename" title='qfilename' data-type='QString' data-ref="2qfilename">qfilename</dfn> = <a class="type" href="qdir.h.html#QDir" title='QDir' data-ref="QDir">QDir</a>::<a class="ref fn" href="qdir.h.html#_ZN4QDir20fromNativeSeparatorsERK7QString" title='QDir::fromNativeSeparators' data-ref="_ZN4QDir20fromNativeSeparatorsERK7QString">fromNativeSeparators</a>(<span class='inlayHint'>pathName:&nbsp;</span><a class="local col1 ref" href="#1templateName" title='templateName' data-ref="1templateName">templateName</a>);</td></tr>
+<tr><th id="48">48</th><td>    <a class="typedef" href="../../../../include/x86_64-linux-gnu/sys/types.h.html#uint" title='uint' data-type='unsigned int' data-ref="uint">uint</a> <dfn class="local col3 decl" id="3phPos" title='phPos' data-type='uint' data-ref="3phPos">phPos</dfn> = <a class="local col2 ref" href="#2qfilename" title='qfilename' data-ref="2qfilename">qfilename</a>.<a class="ref fn" href="../text/qstring.h.html#_ZNK7QString4sizeEv" title='QString::size' data-ref="_ZNK7QString4sizeEv">size</a>();</td></tr>
+<tr><th id="49">49</th><td>    <a class="typedef" href="../../../../include/x86_64-linux-gnu/sys/types.h.html#uint" title='uint' data-type='unsigned int' data-ref="uint">uint</a> <dfn class="local col4 decl" id="4phLength" title='phLength' data-type='uint' data-ref="4phLength">phLength</dfn> = <var>0</var>;</td></tr>
+<tr><th id="50">50</th><td></td></tr>
+<tr><th id="51">51</th><td>    <b>while</b> (<a class="local col3 ref" href="#3phPos" title='phPos' data-ref="3phPos">phPos</a> != <var>0</var>) {</td></tr>
+<tr><th id="52">52</th><td>        --<a class="local col3 ref" href="#3phPos" title='phPos' data-ref="3phPos">phPos</a>;</td></tr>
+<tr><th id="53">53</th><td></td></tr>
+<tr><th id="54">54</th><td>        <b>if</b> (<a class="ref fn fake" href="../text/qchar.h.html#48" title='QChar::QChar' data-ref="_ZN5QCharC1ERKS_"></a><a class="local col2 ref" href="#2qfilename" title='qfilename' data-ref="2qfilename">qfilename</a><a class="ref fn" href="../text/qstring.h.html#_ZN7QStringixEx" title='QString::operator[]' data-ref="_ZN7QStringixEx">[<a class="local col3 ref" href="#3phPos" title='phPos' data-ref="3phPos">phPos</a>]</a> <a class="ref fn" href="../text/qchar.h.html#_Zeq5QCharS_" title='operator==' data-ref="_Zeq5QCharS_">==</a> <a class="ref fn fake" href="../text/qchar.h.html#_ZN5QCharC1EDs" title='QChar::QChar' data-ref="_ZN5QCharC1EDs"></a>u<kbd>'X'</kbd>) {</td></tr>
+<tr><th id="55">55</th><td>            ++<a class="local col4 ref" href="#4phLength" title='phLength' data-ref="4phLength">phLength</a>;</td></tr>
+<tr><th id="56">56</th><td>            <b>continue</b>;</td></tr>
+<tr><th id="57">57</th><td>        }</td></tr>
+<tr><th id="58">58</th><td></td></tr>
+<tr><th id="59">59</th><td>        <b>if</b> (<a class="local col4 ref" href="#4phLength" title='phLength' data-ref="4phLength">phLength</a> &gt;= <var>6</var></td></tr>
+<tr><th id="60">60</th><td>                || <a class="ref fn fake" href="../text/qchar.h.html#48" title='QChar::QChar' data-ref="_ZN5QCharC1ERKS_"></a><a class="local col2 ref" href="#2qfilename" title='qfilename' data-ref="2qfilename">qfilename</a><a class="ref fn" href="../text/qstring.h.html#_ZN7QStringixEx" title='QString::operator[]' data-ref="_ZN7QStringixEx">[<a class="local col3 ref" href="#3phPos" title='phPos' data-ref="3phPos">phPos</a>]</a> <a class="ref fn" href="../text/qchar.h.html#_Zeq5QCharS_" title='operator==' data-ref="_Zeq5QCharS_">==</a> <a class="ref fn fake" href="../text/qchar.h.html#_ZN5QCharC1EDs" title='QChar::QChar' data-ref="_ZN5QCharC1EDs"></a>u<kbd>'/'</kbd>) {</td></tr>
+<tr><th id="61">61</th><td>            ++<a class="local col3 ref" href="#3phPos" title='phPos' data-ref="3phPos">phPos</a>;</td></tr>
+<tr><th id="62">62</th><td>            <b>break</b>;</td></tr>
+<tr><th id="63">63</th><td>        }</td></tr>
+<tr><th id="64">64</th><td></td></tr>
+<tr><th id="65">65</th><td>        <i>// start over</i></td></tr>
+<tr><th id="66">66</th><td>        <a class="local col4 ref" href="#4phLength" title='phLength' data-ref="4phLength">phLength</a> = <var>0</var>;</td></tr>
+<tr><th id="67">67</th><td>    }</td></tr>
+<tr><th id="68">68</th><td></td></tr>
+<tr><th id="69">69</th><td>    <b>if</b> (<a class="local col4 ref" href="#4phLength" title='phLength' data-ref="4phLength">phLength</a> &lt; <var>6</var>)</td></tr>
+<tr><th id="70">70</th><td>        <a class="local col2 ref" href="#2qfilename" title='qfilename' data-ref="2qfilename">qfilename</a>.<a class="ref fn" href="../text/qstring.h.html#_ZN7QString6appendE17QLatin1StringView" title='QString::append' data-ref="_ZN7QString6appendE17QLatin1StringView">append</a>(<span class='inlayHint'>s:&nbsp;</span><q>".XXXXXX"<a class="ref fn" href="../text/qstring.h.html#_ZN2Qt8Literals14StringLiteralsli3_L1EPKcm" title='Qt::operator&quot;&quot;_L1' data-ref="_ZN2Qt8Literals14StringLiteralsli3_L1EPKcm">_L1</a></q>);</td></tr>
+<tr><th id="71">71</th><td></td></tr>
+<tr><th id="72">72</th><td>    <i>// "Nativify" :-)</i></td></tr>
+<tr><th id="73">73</th><td>    <a class="type" href="qfilesystementry_p.h.html#QFileSystemEntry" title='QFileSystemEntry' data-ref="QFileSystemEntry">QFileSystemEntry</a>::<a class="typedef" href="qfilesystementry_p.h.html#QFileSystemEntry::NativePath" title='QFileSystemEntry::NativePath' data-type='QByteArray' data-ref="QFileSystemEntry::NativePath">NativePath</a> <dfn class="local col5 decl" id="5filename" title='filename' data-type='QFileSystemEntry::NativePath' data-ref="5filename">filename</dfn> = <a class="type" href="qfilesystemengine_p.h.html#QFileSystemEngine" title='QFileSystemEngine' data-ref="QFileSystemEngine">QFileSystemEngine</a>::<a class="ref fn" href="qfilesystemengine_p.h.html#_ZN17QFileSystemEngine12absoluteNameERK16QFileSystemEntry" title='QFileSystemEngine::absoluteName' data-ref="_ZN17QFileSystemEngine12absoluteNameERK16QFileSystemEntry">absoluteName</a>(</td></tr>
+<tr><th id="74">74</th><td>            <span class='inlayHint'>entry:&nbsp;</span><a class="type" href="qfilesystementry_p.h.html#QFileSystemEntry" title='QFileSystemEntry' data-ref="QFileSystemEntry">QFileSystemEntry</a><a class="ref fn" href="qfilesystementry_p.h.html#_ZN16QFileSystemEntryC1ERK7QStringNS_16FromInternalPathE" title='QFileSystemEntry::QFileSystemEntry' data-ref="_ZN16QFileSystemEntryC1ERK7QStringNS_16FromInternalPathE">(</a><a class="local col2 ref" href="#2qfilename" title='qfilename' data-ref="2qfilename">qfilename</a>, <a class="type" href="qfilesystementry_p.h.html#QFileSystemEntry" title='QFileSystemEntry' data-ref="QFileSystemEntry">QFileSystemEntry</a>::<a class="type" href="qfilesystementry_p.h.html#QFileSystemEntry::FromInternalPath" title='QFileSystemEntry::FromInternalPath' data-ref="QFileSystemEntry::FromInternalPath">FromInternalPath</a><a class="ref fn" href="qfilesystementry_p.h.html#34" title='QFileSystemEntry::FromInternalPath::FromInternalPath' data-ref="_ZN16QFileSystemEntry16FromInternalPathC1Ev">(</a>)))</td></tr>
+<tr><th id="75">75</th><td>        .<a class="ref fn" href="qfilesystementry_p.h.html#_ZNK16QFileSystemEntry14nativeFilePathEv" title='QFileSystemEntry::nativeFilePath' data-ref="_ZNK16QFileSystemEntry14nativeFilePathEv">nativeFilePath</a>();</td></tr>
+<tr><th id="76">76</th><td></td></tr>
+<tr><th id="77">77</th><td>    <i>// Find mask in native path</i></td></tr>
+<tr><th id="78">78</th><td>    <a class="local col3 ref" href="#3phPos" title='phPos' data-ref="3phPos">phPos</a> = <a class="local col5 ref" href="#5filename" title='filename' data-ref="5filename">filename</a>.<a class="ref fn" href="../text/qbytearray.h.html#_ZNK10QByteArray4sizeEv" title='QByteArray::size' data-ref="_ZNK10QByteArray4sizeEv">size</a>();</td></tr>
+<tr><th id="79">79</th><td>    <a class="local col4 ref" href="#4phLength" title='phLength' data-ref="4phLength">phLength</a> = <var>0</var>;</td></tr>
+<tr><th id="80">80</th><td>    <b>while</b> (<a class="local col3 ref" href="#3phPos" title='phPos' data-ref="3phPos">phPos</a> != <var>0</var>) {</td></tr>
+<tr><th id="81">81</th><td>        --<a class="local col3 ref" href="#3phPos" title='phPos' data-ref="3phPos">phPos</a>;</td></tr>
+<tr><th id="82">82</th><td></td></tr>
+<tr><th id="83">83</th><td>        <b>if</b> (<a class="local col5 ref" href="#5filename" title='filename' data-ref="5filename">filename</a><a class="ref fn" href="../text/qbytearray.h.html#_ZN10QByteArrayixEx" title='QByteArray::operator[]' data-ref="_ZN10QByteArrayixEx">[<a class="local col3 ref" href="#3phPos" title='phPos' data-ref="3phPos">phPos</a>]</a> == <a class="typedef" href="#Latin1Char" title='Latin1Char' data-type='char' data-ref="Latin1Char">Latin1Char</a>(<kbd>'X'</kbd>)) {</td></tr>
+<tr><th id="84">84</th><td>            ++<a class="local col4 ref" href="#4phLength" title='phLength' data-ref="4phLength">phLength</a>;</td></tr>
+<tr><th id="85">85</th><td>            <b>continue</b>;</td></tr>
+<tr><th id="86">86</th><td>        }</td></tr>
+<tr><th id="87">87</th><td></td></tr>
+<tr><th id="88">88</th><td>        <b>if</b> (<a class="local col4 ref" href="#4phLength" title='phLength' data-ref="4phLength">phLength</a> &gt;= <var>6</var>) {</td></tr>
+<tr><th id="89">89</th><td>            ++<a class="local col3 ref" href="#3phPos" title='phPos' data-ref="3phPos">phPos</a>;</td></tr>
+<tr><th id="90">90</th><td>            <b>break</b>;</td></tr>
+<tr><th id="91">91</th><td>        }</td></tr>
+<tr><th id="92">92</th><td></td></tr>
+<tr><th id="93">93</th><td>        <i>// start over</i></td></tr>
+<tr><th id="94">94</th><td>        <a class="local col4 ref" href="#4phLength" title='phLength' data-ref="4phLength">phLength</a> = <var>0</var>;</td></tr>
+<tr><th id="95">95</th><td>    }</td></tr>
+<tr><th id="96">96</th><td></td></tr>
+<tr><th id="97">97</th><td>    <a class="macro" href="../global/qassert.h.html#28" title="static_cast&lt;void&gt;(false &amp;&amp; (phLength &gt;= 6))" data-ref="_M/Q_ASSERT">Q_ASSERT</a>(<a class="local col4 ref" href="#4phLength" title='phLength' data-ref="4phLength">phLength</a> &gt;= <var>6</var>);</td></tr>
+<tr><th id="98">98</th><td>    <a class="member field" href="qtemporaryfile_p.h.html#QTemporaryFileName::path" title='QTemporaryFileName::path' data-ref="QTemporaryFileName::path">path</a> <a class="ref fn" href="../text/qbytearray.h.html#_ZN10QByteArrayaSERKS_" title='QByteArray::operator=' data-ref="_ZN10QByteArrayaSERKS_">=</a> <a class="local col5 ref" href="#5filename" title='filename' data-ref="5filename">filename</a>;</td></tr>
+<tr><th id="99">99</th><td>    <a class="member field" href="qtemporaryfile_p.h.html#QTemporaryFileName::pos" title='QTemporaryFileName::pos' data-ref="QTemporaryFileName::pos">pos</a> = <a class="local col3 ref" href="#3phPos" title='phPos' data-ref="3phPos">phPos</a>;</td></tr>
+<tr><th id="100">100</th><td>    <a class="member field" href="qtemporaryfile_p.h.html#QTemporaryFileName::length" title='QTemporaryFileName::length' data-ref="QTemporaryFileName::length">length</a> = <a class="local col4 ref" href="#4phLength" title='phLength' data-ref="4phLength">phLength</a>;</td></tr>
+<tr><th id="101">101</th><td>}</td></tr>
+<tr><th id="102">102</th><td></td></tr>
+<tr><th id="103">103</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="104">104</th><td><i class="doc">    <span class="command">\internal</span></i></td></tr>
+<tr><th id="105">105</th><td><i class="doc"><span class="verb"></span></i></td></tr>
+<tr><th id="106">106</th><td><i class="doc"><span class="verb"></span><span class="verb">    Generates a unique file path from the template \a templ and returns it.</span></i></td></tr>
+<tr><th id="107">107</th><td><i class="doc"><span class="verb"></span><span class="verb">    The path in \c templ.path is modified.</span></i></td></tr>
+<tr><th id="108">108</th><td><i class="doc"><span class="verb"></span>*/</i><span class="verb"></span></td></tr>
+<tr><th id="109">109</th><td><span class="verb"></span><a class="type" href="qfilesystementry_p.h.html#QFileSystemEntry" title='QFileSystemEntry' data-ref="QFileSystemEntry">QFileSystemEntry</a>::<a class="typedef" href="qfilesystementry_p.h.html#QFileSystemEntry::NativePath" title='QFileSystemEntry::NativePath' data-type='QByteArray' data-ref="QFileSystemEntry::NativePath">NativePath</a> <a class="type" href="qtemporaryfile_p.h.html#QTemporaryFileName" title='QTemporaryFileName' data-ref="QTemporaryFileName">QTemporaryFileName</a>::<dfn class="decl def fn" id="_ZN18QTemporaryFileName12generateNextEv" title='QTemporaryFileName::generateNext' data-ref="_ZN18QTemporaryFileName12generateNextEv">generateNext</dfn>()</td></tr>
+<tr><th id="110">110</th><td>{</td></tr>
+<tr><th id="111">111</th><td>    <a class="macro" href="../global/qassert.h.html#28" title="static_cast&lt;void&gt;(false &amp;&amp; (length != 0))" data-ref="_M/Q_ASSERT">Q_ASSERT</a>(<a class="member field" href="qtemporaryfile_p.h.html#QTemporaryFileName::length" title='QTemporaryFileName::length' data-ref="QTemporaryFileName::length">length</a> != <var>0</var>);</td></tr>
+<tr><th id="112">112</th><td>    <a class="macro" href="../global/qassert.h.html#28" title="static_cast&lt;void&gt;(false &amp;&amp; (pos &lt; path.size()))" data-ref="_M/Q_ASSERT">Q_ASSERT</a>(<a class="member field" href="qtemporaryfile_p.h.html#QTemporaryFileName::pos" title='QTemporaryFileName::pos' data-ref="QTemporaryFileName::pos">pos</a> &lt; <a class="member field" href="qtemporaryfile_p.h.html#QTemporaryFileName::path" title='QTemporaryFileName::path' data-ref="QTemporaryFileName::path">path</a>.<a class="ref fn" href="../text/qbytearray.h.html#_ZNK10QByteArray4sizeEv" title='QByteArray::size' data-ref="_ZNK10QByteArray4sizeEv">size</a>());</td></tr>
+<tr><th id="113">113</th><td>    <a class="macro" href="../global/qassert.h.html#28" title="static_cast&lt;void&gt;(false &amp;&amp; (length &lt;= path.size() - pos))" data-ref="_M/Q_ASSERT">Q_ASSERT</a>(<a class="member field" href="qtemporaryfile_p.h.html#QTemporaryFileName::length" title='QTemporaryFileName::length' data-ref="QTemporaryFileName::length">length</a> &lt;= <a class="member field" href="qtemporaryfile_p.h.html#QTemporaryFileName::path" title='QTemporaryFileName::path' data-ref="QTemporaryFileName::path">path</a>.<a class="ref fn" href="../text/qbytearray.h.html#_ZNK10QByteArray4sizeEv" title='QByteArray::size' data-ref="_ZNK10QByteArray4sizeEv">size</a>() - <a class="member field" href="qtemporaryfile_p.h.html#QTemporaryFileName::pos" title='QTemporaryFileName::pos' data-ref="QTemporaryFileName::pos">pos</a>);</td></tr>
+<tr><th id="114">114</th><td></td></tr>
+<tr><th id="115">115</th><td>    <a class="typedef" href="#Char" title='Char' data-type='char' data-ref="Char">Char</a> *<em>const</em> <dfn class="local col6 decl" id="6placeholderStart" title='placeholderStart' data-type='Char *const' data-ref="6placeholderStart">placeholderStart</dfn> = (<a class="typedef" href="#Char" title='Char' data-type='char' data-ref="Char">Char</a> *)<a class="member field" href="qtemporaryfile_p.h.html#QTemporaryFileName::path" title='QTemporaryFileName::path' data-ref="QTemporaryFileName::path">path</a>.<a class="ref fn" href="../text/qbytearray.h.html#_ZN10QByteArray4dataEv" title='QByteArray::data' data-ref="_ZN10QByteArray4dataEv">data</a>() + <a class="member field" href="qtemporaryfile_p.h.html#QTemporaryFileName::pos" title='QTemporaryFileName::pos' data-ref="QTemporaryFileName::pos">pos</a>;</td></tr>
+<tr><th id="116">116</th><td>    <a class="typedef" href="#Char" title='Char' data-type='char' data-ref="Char">Char</a> *<em>const</em> <dfn class="local col7 decl" id="7placeholderEnd" title='placeholderEnd' data-type='Char *const' data-ref="7placeholderEnd">placeholderEnd</dfn> = <a class="local col6 ref" href="#6placeholderStart" title='placeholderStart' data-ref="6placeholderStart">placeholderStart</a> + <a class="member field" href="qtemporaryfile_p.h.html#QTemporaryFileName::length" title='QTemporaryFileName::length' data-ref="QTemporaryFileName::length">length</a>;</td></tr>
+<tr><th id="117">117</th><td></td></tr>
+<tr><th id="118">118</th><td>    <i>// Replace placeholder with random chars.</i></td></tr>
+<tr><th id="119">119</th><td>    {</td></tr>
+<tr><th id="120">120</th><td>        <i>// Since our dictionary is 26+26 characters, it would seem we only need</i></td></tr>
+<tr><th id="121">121</th><td><i>        // a random number from 0 to 63 to select a character. However, due to</i></td></tr>
+<tr><th id="122">122</th><td><i>        // the limited range, that would mean 12 (64-52) characters have double</i></td></tr>
+<tr><th id="123">123</th><td><i>        // the probability of the others: 1 in 32 instead of 1 in 64.</i></td></tr>
+<tr><th id="124">124</th><td><i>        //</i></td></tr>
+<tr><th id="125">125</th><td><i>        // To overcome this limitation, we use more bits per character. With 10</i></td></tr>
+<tr><th id="126">126</th><td><i>        // bits, there are 16 characters with probability 19/1024 and the rest</i></td></tr>
+<tr><th id="127">127</th><td><i>        // at 20/1024 (i.e, less than .1% difference). This allows us to do 3</i></td></tr>
+<tr><th id="128">128</th><td><i>        // characters per 32-bit random number, which is also half the typical</i></td></tr>
+<tr><th id="129">129</th><td><i>        // placeholder length.</i></td></tr>
+<tr><th id="130">130</th><td>        <b>enum</b> { <dfn class="local col8 enum" id="8BitsPerCharacter" title='BitsPerCharacter' data-type='10' data-ref="8BitsPerCharacter">BitsPerCharacter</dfn> = <var>10</var> };</td></tr>
+<tr><th id="131">131</th><td></td></tr>
+<tr><th id="132">132</th><td>        <a class="typedef" href="#Char" title='Char' data-type='char' data-ref="Char">Char</a> *<dfn class="local col9 decl" id="9rIter" title='rIter' data-type='Char *' data-ref="9rIter">rIter</dfn> = <a class="local col7 ref" href="#7placeholderEnd" title='placeholderEnd' data-ref="7placeholderEnd">placeholderEnd</a>;</td></tr>
+<tr><th id="133">133</th><td>        <b>while</b> (<a class="local col9 ref" href="#9rIter" title='rIter' data-ref="9rIter">rIter</a> != <a class="local col6 ref" href="#6placeholderStart" title='placeholderStart' data-ref="6placeholderStart">placeholderStart</a>) {</td></tr>
+<tr><th id="134">134</th><td>            <a class="typedef" href="../global/qtypes.h.html#quint32" title='quint32' data-type='unsigned int' data-ref="quint32">quint32</a> <dfn class="local col0 decl" id="10rnd" title='rnd' data-type='quint32' data-ref="10rnd">rnd</dfn> = <a class="type" href="../global/qrandom.h.html#QRandomGenerator" title='QRandomGenerator' data-ref="QRandomGenerator">QRandomGenerator</a>::<a class="ref fn" href="../global/qrandom.h.html#_ZN16QRandomGenerator6globalEv" title='QRandomGenerator::global' data-ref="_ZN16QRandomGenerator6globalEv">global</a>()-&gt;<a class="ref fn" href="../global/qrandom.h.html#_ZN16QRandomGenerator8generateEv" title='QRandomGenerator::generate' data-ref="_ZN16QRandomGenerator8generateEv">generate</a>();</td></tr>
+<tr><th id="135">135</th><td>            <em>auto</em> <dfn class="local col1 decl" id="11applyOne" title='applyOne' data-type='(lambda at /home/lzx0626/DavidingPlus/qtbase/src/corelib/io/qtemporaryfile.cpp:135:29)' data-ref="11applyOne">applyOne</dfn> = [&amp;]() {</td></tr>
+<tr><th id="136">136</th><td>                <a class="typedef" href="../global/qtypes.h.html#quint32" title='quint32' data-type='unsigned int' data-ref="quint32">quint32</a> <dfn class="local col2 decl" id="12v" title='v' data-type='quint32' data-ref="12v">v</dfn> = <a class="local col0 ref" href="#10rnd" title='rnd' data-ref="10rnd">rnd</a> &amp; ((<var>1</var> &lt;&lt; <a class="local col8 enum" href="#8BitsPerCharacter" title='BitsPerCharacter' data-ref="8BitsPerCharacter">BitsPerCharacter</a>) - <var>1</var>);</td></tr>
+<tr><th id="137">137</th><td>                <a class="local col0 ref" href="#10rnd" title='rnd' data-ref="10rnd">rnd</a> &gt;&gt;= <a class="local col8 enum" href="#8BitsPerCharacter" title='BitsPerCharacter' data-ref="8BitsPerCharacter">BitsPerCharacter</a>;</td></tr>
+<tr><th id="138">138</th><td>                <em>char</em> <dfn class="local col3 decl" id="13ch" title='ch' data-type='char' data-ref="13ch">ch</dfn> = <em>char</em>((<var>26</var> + <var>26</var>) * <a class="local col2 ref" href="#12v" title='v' data-ref="12v">v</a> / (<var>1</var> &lt;&lt; <a class="local col8 enum" href="#8BitsPerCharacter" title='BitsPerCharacter' data-ref="8BitsPerCharacter">BitsPerCharacter</a>));</td></tr>
+<tr><th id="139">139</th><td>                <b>if</b> (<a class="local col3 ref" href="#13ch" title='ch' data-ref="13ch">ch</a> &lt; <var>26</var>)</td></tr>
+<tr><th id="140">140</th><td>                    *--<a class="local col9 ref" href="#9rIter" title='rIter' data-ref="9rIter">rIter</a> = <a class="typedef" href="#Latin1Char" title='Latin1Char' data-type='char' data-ref="Latin1Char">Latin1Char</a>(<a class="local col3 ref" href="#13ch" title='ch' data-ref="13ch">ch</a> + <kbd>'A'</kbd>);</td></tr>
+<tr><th id="141">141</th><td>                <b>else</b></td></tr>
+<tr><th id="142">142</th><td>                    *--<a class="local col9 ref" href="#9rIter" title='rIter' data-ref="9rIter">rIter</a> = <a class="typedef" href="#Latin1Char" title='Latin1Char' data-type='char' data-ref="Latin1Char">Latin1Char</a>(<a class="local col3 ref" href="#13ch" title='ch' data-ref="13ch">ch</a> - <var>26</var> + <kbd>'a'</kbd>);</td></tr>
+<tr><th id="143">143</th><td>            };</td></tr>
+<tr><th id="144">144</th><td></td></tr>
+<tr><th id="145">145</th><td>            <a class="local col1 ref" href="#11applyOne" title='applyOne' data-ref="11applyOne">applyOne</a><a class="tu ref fn" href="#_ZZN18QTemporaryFileName12generateNextEvENK3$_0clEv" title='QTemporaryFileName::generateNext()::(anonymous class)::operator()' data-use='c' data-ref="_ZZN18QTemporaryFileName12generateNextEvENK3$_0clEv">()</a>;</td></tr>
+<tr><th id="146">146</th><td>            <b>if</b> (<a class="local col9 ref" href="#9rIter" title='rIter' data-ref="9rIter">rIter</a> == <a class="local col6 ref" href="#6placeholderStart" title='placeholderStart' data-ref="6placeholderStart">placeholderStart</a>)</td></tr>
+<tr><th id="147">147</th><td>                <b>break</b>;</td></tr>
+<tr><th id="148">148</th><td></td></tr>
+<tr><th id="149">149</th><td>            <a class="local col1 ref" href="#11applyOne" title='applyOne' data-ref="11applyOne">applyOne</a><a class="tu ref fn" href="#_ZZN18QTemporaryFileName12generateNextEvENK3$_0clEv" title='QTemporaryFileName::generateNext()::(anonymous class)::operator()' data-use='c' data-ref="_ZZN18QTemporaryFileName12generateNextEvENK3$_0clEv">()</a>;</td></tr>
+<tr><th id="150">150</th><td>            <b>if</b> (<a class="local col9 ref" href="#9rIter" title='rIter' data-ref="9rIter">rIter</a> == <a class="local col6 ref" href="#6placeholderStart" title='placeholderStart' data-ref="6placeholderStart">placeholderStart</a>)</td></tr>
+<tr><th id="151">151</th><td>                <b>break</b>;</td></tr>
+<tr><th id="152">152</th><td></td></tr>
+<tr><th id="153">153</th><td>            <a class="local col1 ref" href="#11applyOne" title='applyOne' data-ref="11applyOne">applyOne</a><a class="tu ref fn" href="#_ZZN18QTemporaryFileName12generateNextEvENK3$_0clEv" title='QTemporaryFileName::generateNext()::(anonymous class)::operator()' data-use='c' data-ref="_ZZN18QTemporaryFileName12generateNextEvENK3$_0clEv">()</a>;</td></tr>
+<tr><th id="154">154</th><td>        }</td></tr>
+<tr><th id="155">155</th><td>    }</td></tr>
+<tr><th id="156">156</th><td></td></tr>
+<tr><th id="157">157</th><td>    <b>return</b> <a class="ref fn fake" href="../text/qbytearray.h.html#_ZN10QByteArrayC1ERKS_" title='QByteArray::QByteArray' data-ref="_ZN10QByteArrayC1ERKS_"></a><a class="member field" href="qtemporaryfile_p.h.html#QTemporaryFileName::path" title='QTemporaryFileName::path' data-ref="QTemporaryFileName::path">path</a>;</td></tr>
+<tr><th id="158">158</th><td>}</td></tr>
+<tr><th id="159">159</th><td></td></tr>
+<tr><th id="160">160</th><td><u>#<span data-ppcond="160">ifndef</span> <a class="macro" href="../global/qconfig-bootstrapped.h.html#112" data-ref="_M/QT_NO_TEMPORARYFILE">QT_NO_TEMPORARYFILE</a></u></td></tr>
+<tr><th id="161">161</th><td></td></tr>
+<tr><th id="162">162</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="163">163</th><td><i class="doc">    <span class="command">\internal</span></i></td></tr>
+<tr><th id="164">164</th><td><i class="doc"><span class="verb"></span></i></td></tr>
+<tr><th id="165">165</th><td><i class="doc"><span class="verb"></span><span class="verb">    Generates a unique file path from the template \a templ and creates a new</span></i></td></tr>
+<tr><th id="166">166</th><td><i class="doc"><span class="verb"></span><span class="verb">    file based based on those parameters: the \c templ.length characters in \c</span></i></td></tr>
+<tr><th id="167">167</th><td><i class="doc"><span class="verb"></span><span class="verb">    templ.path starting at \c templ.pos will be replaced by a random sequence of</span></i></td></tr>
+<tr><th id="168">168</th><td><i class="doc"><span class="verb"></span><span class="verb">    characters. \a mode specifies the file mode bits (not used on Windows).</span></i></td></tr>
+<tr><th id="169">169</th><td><i class="doc"><span class="verb"></span><span class="verb"></span></i></td></tr>
+<tr><th id="170">170</th><td><i class="doc"><span class="verb"></span><span class="verb">    Returns true on success and sets the file handle on \a file. On error,</span></i></td></tr>
+<tr><th id="171">171</th><td><i class="doc"><span class="verb"></span><span class="verb">    returns false, sets an invalid handle on \a handle and sets the error</span></i></td></tr>
+<tr><th id="172">172</th><td><i class="doc"><span class="verb"></span><span class="verb">    condition in \a error. In both cases, the string in \a templ will be</span></i></td></tr>
+<tr><th id="173">173</th><td><i class="doc"><span class="verb"></span><span class="verb">    changed and contain the generated path name.</span></i></td></tr>
+<tr><th id="174">174</th><td><i class="doc"><span class="verb"></span>*/</i><span class="verb"></span></td></tr>
+<tr><th id="175">175</th><td><span class="verb"></span><em>static</em> <em>bool</em> createFileFromTemplate(NativeFileHandle &amp;file, QTemporaryFileName &amp;templ,</td></tr>
+<tr><th id="176">176</th><td>                                   quint32 mode, <em>int</em> flags, QSystemError &amp;error)</td></tr>
+<tr><th id="177">177</th><td>{</td></tr>
+<tr><th id="178">178</th><td>    <em>const</em> <em>int</em> maxAttempts = <var>16</var>;</td></tr>
+<tr><th id="179">179</th><td>    <b>for</b> (<em>int</em> attempt = <var>0</var>; attempt &lt; maxAttempts; ++attempt) {</td></tr>
+<tr><th id="180">180</th><td>        <i>// Atomically create file and obtain handle</i></td></tr>
+<tr><th id="181">181</th><td>        <em>const</em> QFileSystemEntry::NativePath &amp;path = templ.generateNext();</td></tr>
+<tr><th id="182">182</th><td></td></tr>
+<tr><th id="183">183</th><td><u>#if defined(Q_OS_WIN)</u></td></tr>
+<tr><th id="184">184</th><td>        Q_UNUSED(mode);</td></tr>
+<tr><th id="185">185</th><td>        <em>const</em> DWORD shareMode = (flags &amp; QTemporaryFileEngine::Win32NonShared)</td></tr>
+<tr><th id="186">186</th><td>                                ? <var>0u</var> : (FILE_SHARE_READ | FILE_SHARE_WRITE);</td></tr>
+<tr><th id="187">187</th><td></td></tr>
+<tr><th id="188">188</th><td>        file = CreateFile((<em>const</em> <em>wchar_t</em> *)path.constData(),</td></tr>
+<tr><th id="189">189</th><td>                GENERIC_READ | GENERIC_WRITE,</td></tr>
+<tr><th id="190">190</th><td>                shareMode, NULL, CREATE_NEW,</td></tr>
+<tr><th id="191">191</th><td>                FILE_ATTRIBUTE_NORMAL, NULL);</td></tr>
+<tr><th id="192">192</th><td></td></tr>
+<tr><th id="193">193</th><td>        <b>if</b> (file != INVALID_HANDLE_VALUE)</td></tr>
+<tr><th id="194">194</th><td>            <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="195">195</th><td></td></tr>
+<tr><th id="196">196</th><td>        DWORD err = GetLastError();</td></tr>
+<tr><th id="197">197</th><td>        <b>if</b> (err == ERROR_ACCESS_DENIED) {</td></tr>
+<tr><th id="198">198</th><td>            WIN32_FILE_ATTRIBUTE_DATA attributes;</td></tr>
+<tr><th id="199">199</th><td>            <b>if</b> (!GetFileAttributesEx((<em>const</em> <em>wchar_t</em> *)path.constData(),</td></tr>
+<tr><th id="200">200</th><td>                                     GetFileExInfoStandard, &amp;attributes)</td></tr>
+<tr><th id="201">201</th><td>                    || attributes.dwFileAttributes == INVALID_FILE_ATTRIBUTES) {</td></tr>
+<tr><th id="202">202</th><td>                <i>// Potential write error (read-only parent directory, etc.).</i></td></tr>
+<tr><th id="203">203</th><td>                error = QSystemError(err, QSystemError::NativeError);</td></tr>
+<tr><th id="204">204</th><td>                <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="205">205</th><td>            } <i>// else file already exists as a directory.</i></td></tr>
+<tr><th id="206">206</th><td>        } <b>else</b> <b>if</b> (err != ERROR_FILE_EXISTS) {</td></tr>
+<tr><th id="207">207</th><td>            error = QSystemError(err, QSystemError::NativeError);</td></tr>
+<tr><th id="208">208</th><td>            <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="209">209</th><td>        }</td></tr>
+<tr><th id="210">210</th><td><u>#else // POSIX</u></td></tr>
+<tr><th id="211">211</th><td>        Q_UNUSED(flags);</td></tr>
+<tr><th id="212">212</th><td>        file = QT_OPEN(path.constData(),</td></tr>
+<tr><th id="213">213</th><td>                QT_OPEN_CREAT | QT_OPEN_EXCL | QT_OPEN_RDWR | QT_OPEN_LARGEFILE,</td></tr>
+<tr><th id="214">214</th><td>                <b>static_cast</b>&lt;mode_t&gt;(mode));</td></tr>
+<tr><th id="215">215</th><td></td></tr>
+<tr><th id="216">216</th><td>        <b>if</b> (file != -<var>1</var>)</td></tr>
+<tr><th id="217">217</th><td>            <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="218">218</th><td></td></tr>
+<tr><th id="219">219</th><td>        <em>int</em> err = errno;</td></tr>
+<tr><th id="220">220</th><td>        <b>if</b> (err != EEXIST) {</td></tr>
+<tr><th id="221">221</th><td>            error = QSystemError(err, QSystemError::NativeError);</td></tr>
+<tr><th id="222">222</th><td>            <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="223">223</th><td>        }</td></tr>
+<tr><th id="224">224</th><td><u>#endif</u></td></tr>
+<tr><th id="225">225</th><td>    }</td></tr>
+<tr><th id="226">226</th><td></td></tr>
+<tr><th id="227">227</th><td>    <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="228">228</th><td>}</td></tr>
+<tr><th id="229">229</th><td></td></tr>
+<tr><th id="230">230</th><td><b>enum</b> <b>class</b> CreateUnnamedFileStatus {</td></tr>
+<tr><th id="231">231</th><td>    Success = <var>0</var>,</td></tr>
+<tr><th id="232">232</th><td>    NotSupported,</td></tr>
+<tr><th id="233">233</th><td>    OtherError</td></tr>
+<tr><th id="234">234</th><td>};</td></tr>
+<tr><th id="235">235</th><td></td></tr>
+<tr><th id="236">236</th><td><em>static</em> CreateUnnamedFileStatus</td></tr>
+<tr><th id="237">237</th><td>createUnnamedFile(NativeFileHandle &amp;file, QTemporaryFileName &amp;tfn, quint32 mode, QSystemError *error)</td></tr>
+<tr><th id="238">238</th><td>{</td></tr>
+<tr><th id="239">239</th><td><u>#ifdef LINUX_UNNAMED_TMPFILE</u></td></tr>
+<tr><th id="240">240</th><td>    <i>// first, check if we have /proc, otherwise can't make the file exist later</i></td></tr>
+<tr><th id="241">241</th><td><i>    // (no error message set, as caller will try regular temporary file)</i></td></tr>
+<tr><th id="242">242</th><td>    <b>if</b> (!qt_haveLinuxProcfs())</td></tr>
+<tr><th id="243">243</th><td>        <b>return</b> CreateUnnamedFileStatus::NotSupported;</td></tr>
+<tr><th id="244">244</th><td></td></tr>
+<tr><th id="245">245</th><td>    <em>const</em> <em>char</em> *p = <q>"."</q>;</td></tr>
+<tr><th id="246">246</th><td>    QByteArray::size_type lastSlash = tfn.path.lastIndexOf(<kbd>'/'</kbd>);</td></tr>
+<tr><th id="247">247</th><td>    <b>if</b> (lastSlash &gt;= <var>0</var>) {</td></tr>
+<tr><th id="248">248</th><td>        <b>if</b> (lastSlash == <var>0</var>)</td></tr>
+<tr><th id="249">249</th><td>            lastSlash = <var>1</var>;</td></tr>
+<tr><th id="250">250</th><td>        tfn.path[lastSlash] = <kbd>'\0'</kbd>;</td></tr>
+<tr><th id="251">251</th><td>        p = tfn.path.data();</td></tr>
+<tr><th id="252">252</th><td>    }</td></tr>
+<tr><th id="253">253</th><td></td></tr>
+<tr><th id="254">254</th><td>    file = QT_OPEN(p, O_TMPFILE | QT_OPEN_RDWR | QT_OPEN_LARGEFILE,</td></tr>
+<tr><th id="255">255</th><td>            <b>static_cast</b>&lt;mode_t&gt;(mode));</td></tr>
+<tr><th id="256">256</th><td>    <b>if</b> (file != -<var>1</var>)</td></tr>
+<tr><th id="257">257</th><td>        <b>return</b> CreateUnnamedFileStatus::Success;</td></tr>
+<tr><th id="258">258</th><td></td></tr>
+<tr><th id="259">259</th><td>    <b>if</b> (errno == EOPNOTSUPP || errno == EISDIR) {</td></tr>
+<tr><th id="260">260</th><td>        <i>// fs or kernel doesn't support O_TMPFILE, so</i></td></tr>
+<tr><th id="261">261</th><td><i>        // put the slash back so we may try a regular file</i></td></tr>
+<tr><th id="262">262</th><td>        <b>if</b> (lastSlash != -<var>1</var>)</td></tr>
+<tr><th id="263">263</th><td>            tfn.path[lastSlash] = <kbd>'/'</kbd>;</td></tr>
+<tr><th id="264">264</th><td>        <b>return</b> CreateUnnamedFileStatus::NotSupported;</td></tr>
+<tr><th id="265">265</th><td>    }</td></tr>
+<tr><th id="266">266</th><td></td></tr>
+<tr><th id="267">267</th><td>    <i>// real error</i></td></tr>
+<tr><th id="268">268</th><td>    *error = QSystemError(errno, QSystemError::NativeError);</td></tr>
+<tr><th id="269">269</th><td>    <b>return</b> CreateUnnamedFileStatus::OtherError;</td></tr>
+<tr><th id="270">270</th><td><u>#else</u></td></tr>
+<tr><th id="271">271</th><td>    Q_UNUSED(file);</td></tr>
+<tr><th id="272">272</th><td>    Q_UNUSED(tfn);</td></tr>
+<tr><th id="273">273</th><td>    Q_UNUSED(mode);</td></tr>
+<tr><th id="274">274</th><td>    Q_UNUSED(error);</td></tr>
+<tr><th id="275">275</th><td>    <b>return</b> CreateUnnamedFileStatus::NotSupported;</td></tr>
+<tr><th id="276">276</th><td><u>#endif</u></td></tr>
+<tr><th id="277">277</th><td>}</td></tr>
+<tr><th id="278">278</th><td></td></tr>
+<tr><th id="279">279</th><td><i>//************* QTemporaryFileEngine</i></td></tr>
+<tr><th id="280">280</th><td>QTemporaryFileEngine::~QTemporaryFileEngine()</td></tr>
+<tr><th id="281">281</th><td>{</td></tr>
+<tr><th id="282">282</th><td>    Q_D(QFSFileEngine);</td></tr>
+<tr><th id="283">283</th><td>    d-&gt;unmapAll();</td></tr>
+<tr><th id="284">284</th><td>    QFSFileEngine::close();</td></tr>
+<tr><th id="285">285</th><td>}</td></tr>
+<tr><th id="286">286</th><td></td></tr>
+<tr><th id="287">287</th><td><em>bool</em> QTemporaryFileEngine::isReallyOpen() <em>const</em></td></tr>
+<tr><th id="288">288</th><td>{</td></tr>
+<tr><th id="289">289</th><td>    Q_D(<em>const</em> QFSFileEngine);</td></tr>
+<tr><th id="290">290</th><td></td></tr>
+<tr><th id="291">291</th><td>    <b>if</b> (!((<b>nullptr</b> == d-&gt;fh) &amp;&amp; (-<var>1</var> == d-&gt;fd)</td></tr>
+<tr><th id="292">292</th><td><u>#if defined Q_OS_WIN</u></td></tr>
+<tr><th id="293">293</th><td>                &amp;&amp; (INVALID_HANDLE_VALUE == d-&gt;fileHandle)</td></tr>
+<tr><th id="294">294</th><td><u>#endif</u></td></tr>
+<tr><th id="295">295</th><td>            ))</td></tr>
+<tr><th id="296">296</th><td>        <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="297">297</th><td></td></tr>
+<tr><th id="298">298</th><td>    <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="299">299</th><td></td></tr>
+<tr><th id="300">300</th><td>}</td></tr>
+<tr><th id="301">301</th><td></td></tr>
+<tr><th id="302">302</th><td><em>void</em> QTemporaryFileEngine::setFileName(<em>const</em> QString &amp;file)</td></tr>
+<tr><th id="303">303</th><td>{</td></tr>
+<tr><th id="304">304</th><td>    <i>// Really close the file, so we don't leak</i></td></tr>
+<tr><th id="305">305</th><td>    QFSFileEngine::close();</td></tr>
+<tr><th id="306">306</th><td>    QFSFileEngine::setFileName(file);</td></tr>
+<tr><th id="307">307</th><td>}</td></tr>
+<tr><th id="308">308</th><td></td></tr>
+<tr><th id="309">309</th><td><em>bool</em> QTemporaryFileEngine::open(QIODevice::OpenMode openMode,</td></tr>
+<tr><th id="310">310</th><td>                                std::optional&lt;QFile::Permissions&gt; permissions)</td></tr>
+<tr><th id="311">311</th><td>{</td></tr>
+<tr><th id="312">312</th><td>    Q_D(QFSFileEngine);</td></tr>
+<tr><th id="313">313</th><td>    Q_ASSERT(!isReallyOpen());</td></tr>
+<tr><th id="314">314</th><td></td></tr>
+<tr><th id="315">315</th><td>    openMode |= QIODevice::ReadWrite;</td></tr>
+<tr><th id="316">316</th><td></td></tr>
+<tr><th id="317">317</th><td>    <b>if</b> (!filePathIsTemplate)</td></tr>
+<tr><th id="318">318</th><td>        <b>return</b> QFSFileEngine::open(openMode, permissions);</td></tr>
+<tr><th id="319">319</th><td></td></tr>
+<tr><th id="320">320</th><td>    QTemporaryFileName tfn(templateName);</td></tr>
+<tr><th id="321">321</th><td></td></tr>
+<tr><th id="322">322</th><td>    QSystemError error;</td></tr>
+<tr><th id="323">323</th><td><u>#if defined(Q_OS_WIN)</u></td></tr>
+<tr><th id="324">324</th><td>    NativeFileHandle &amp;file = d-&gt;fileHandle;</td></tr>
+<tr><th id="325">325</th><td><u>#else // POSIX</u></td></tr>
+<tr><th id="326">326</th><td>    NativeFileHandle &amp;file = d-&gt;fd;</td></tr>
+<tr><th id="327">327</th><td><u>#endif</u></td></tr>
+<tr><th id="328">328</th><td></td></tr>
+<tr><th id="329">329</th><td>    CreateUnnamedFileStatus st = createUnnamedFile(file, tfn, fileMode, &amp;error);</td></tr>
+<tr><th id="330">330</th><td>    <b>if</b> (st == CreateUnnamedFileStatus::Success) {</td></tr>
+<tr><th id="331">331</th><td>        unnamedFile = <b>true</b>;</td></tr>
+<tr><th id="332">332</th><td>        d-&gt;fileEntry.clear();</td></tr>
+<tr><th id="333">333</th><td>    } <b>else</b> <b>if</b> (st == CreateUnnamedFileStatus::NotSupported &amp;&amp;</td></tr>
+<tr><th id="334">334</th><td>               createFileFromTemplate(file, tfn, fileMode, flags, error)) {</td></tr>
+<tr><th id="335">335</th><td>        filePathIsTemplate = <b>false</b>;</td></tr>
+<tr><th id="336">336</th><td>        unnamedFile = <b>false</b>;</td></tr>
+<tr><th id="337">337</th><td>        d-&gt;fileEntry = QFileSystemEntry(tfn.path, QFileSystemEntry::FromNativePath());</td></tr>
+<tr><th id="338">338</th><td>    } <b>else</b> {</td></tr>
+<tr><th id="339">339</th><td>        setError(QFile::OpenError, error.toString());</td></tr>
+<tr><th id="340">340</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="341">341</th><td>    }</td></tr>
+<tr><th id="342">342</th><td></td></tr>
+<tr><th id="343">343</th><td><u>#if !defined(Q_OS_WIN)</u></td></tr>
+<tr><th id="344">344</th><td>    d-&gt;closeFileHandle = <b>true</b>;</td></tr>
+<tr><th id="345">345</th><td><u>#endif</u></td></tr>
+<tr><th id="346">346</th><td></td></tr>
+<tr><th id="347">347</th><td>    d-&gt;openMode = openMode;</td></tr>
+<tr><th id="348">348</th><td>    d-&gt;lastFlushFailed = <b>false</b>;</td></tr>
+<tr><th id="349">349</th><td>    d-&gt;tried_stat = <var>0</var>;</td></tr>
+<tr><th id="350">350</th><td></td></tr>
+<tr><th id="351">351</th><td>    <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="352">352</th><td>}</td></tr>
+<tr><th id="353">353</th><td></td></tr>
+<tr><th id="354">354</th><td><em>bool</em> QTemporaryFileEngine::remove()</td></tr>
+<tr><th id="355">355</th><td>{</td></tr>
+<tr><th id="356">356</th><td>    Q_D(QFSFileEngine);</td></tr>
+<tr><th id="357">357</th><td>    <i>// Since the QTemporaryFileEngine::close() does not really close the file,</i></td></tr>
+<tr><th id="358">358</th><td><i>    // we must explicitly call QFSFileEngine::close() before we remove it.</i></td></tr>
+<tr><th id="359">359</th><td>    d-&gt;unmapAll();</td></tr>
+<tr><th id="360">360</th><td>    QFSFileEngine::close();</td></tr>
+<tr><th id="361">361</th><td>    <b>if</b> (isUnnamedFile())</td></tr>
+<tr><th id="362">362</th><td>        <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="363">363</th><td>    <b>if</b> (!filePathIsTemplate &amp;&amp; QFSFileEngine::remove()) {</td></tr>
+<tr><th id="364">364</th><td>        d-&gt;fileEntry.clear();</td></tr>
+<tr><th id="365">365</th><td>        <i>// If a QTemporaryFile is constructed using a template file path, the path</i></td></tr>
+<tr><th id="366">366</th><td><i>        // is generated in QTemporaryFileEngine::open() and then filePathIsTemplate</i></td></tr>
+<tr><th id="367">367</th><td><i>        // is set to false. If remove() and then open() are called on the same</i></td></tr>
+<tr><th id="368">368</th><td><i>        // QTemporaryFile, the path is not regenerated. Here we ensure that if the</i></td></tr>
+<tr><th id="369">369</th><td><i>        // file path was generated, it will be generated again in the scenario above.</i></td></tr>
+<tr><th id="370">370</th><td>        filePathIsTemplate = filePathWasTemplate;</td></tr>
+<tr><th id="371">371</th><td>        <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="372">372</th><td>    }</td></tr>
+<tr><th id="373">373</th><td>    <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="374">374</th><td>}</td></tr>
+<tr><th id="375">375</th><td></td></tr>
+<tr><th id="376">376</th><td><em>bool</em> QTemporaryFileEngine::rename(<em>const</em> QString &amp;newName)</td></tr>
+<tr><th id="377">377</th><td>{</td></tr>
+<tr><th id="378">378</th><td>    <b>if</b> (isUnnamedFile()) {</td></tr>
+<tr><th id="379">379</th><td>        <em>bool</em> ok = materializeUnnamedFile(newName, DontOverwrite);</td></tr>
+<tr><th id="380">380</th><td>        QFSFileEngine::close();</td></tr>
+<tr><th id="381">381</th><td>        <b>return</b> ok;</td></tr>
+<tr><th id="382">382</th><td>    }</td></tr>
+<tr><th id="383">383</th><td>    QFSFileEngine::close();</td></tr>
+<tr><th id="384">384</th><td>    <b>return</b> QFSFileEngine::rename(newName);</td></tr>
+<tr><th id="385">385</th><td>}</td></tr>
+<tr><th id="386">386</th><td></td></tr>
+<tr><th id="387">387</th><td><em>bool</em> QTemporaryFileEngine::renameOverwrite(<em>const</em> QString &amp;newName)</td></tr>
+<tr><th id="388">388</th><td>{</td></tr>
+<tr><th id="389">389</th><td>    <b>if</b> (isUnnamedFile()) {</td></tr>
+<tr><th id="390">390</th><td>        <em>bool</em> ok = materializeUnnamedFile(newName, Overwrite);</td></tr>
+<tr><th id="391">391</th><td>        QFSFileEngine::close();</td></tr>
+<tr><th id="392">392</th><td>        <b>return</b> ok;</td></tr>
+<tr><th id="393">393</th><td>    }</td></tr>
+<tr><th id="394">394</th><td>    QFSFileEngine::close();</td></tr>
+<tr><th id="395">395</th><td>    <b>return</b> QFSFileEngine::renameOverwrite(newName);</td></tr>
+<tr><th id="396">396</th><td>}</td></tr>
+<tr><th id="397">397</th><td></td></tr>
+<tr><th id="398">398</th><td><em>bool</em> QTemporaryFileEngine::close()</td></tr>
+<tr><th id="399">399</th><td>{</td></tr>
+<tr><th id="400">400</th><td>    <i>// Don't close the file, just seek to the front.</i></td></tr>
+<tr><th id="401">401</th><td>    seek(<var>0</var>);</td></tr>
+<tr><th id="402">402</th><td>    setError(QFile::UnspecifiedError, QString());</td></tr>
+<tr><th id="403">403</th><td>    <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="404">404</th><td>}</td></tr>
+<tr><th id="405">405</th><td></td></tr>
+<tr><th id="406">406</th><td>QString QTemporaryFileEngine::fileName(QAbstractFileEngine::FileName file) <em>const</em></td></tr>
+<tr><th id="407">407</th><td>{</td></tr>
+<tr><th id="408">408</th><td>    <b>if</b> (isUnnamedFile()) {</td></tr>
+<tr><th id="409">409</th><td>        <b>if</b> (file == AbsoluteLinkTarget) {</td></tr>
+<tr><th id="410">410</th><td>            <i>// we know our file isn't (won't be) a symlink</i></td></tr>
+<tr><th id="411">411</th><td>            <b>return</b> QString();</td></tr>
+<tr><th id="412">412</th><td>        }</td></tr>
+<tr><th id="413">413</th><td></td></tr>
+<tr><th id="414">414</th><td>        <i>// for all other cases, materialize the file</i></td></tr>
+<tr><th id="415">415</th><td>        <b>const_cast</b>&lt;QTemporaryFileEngine *&gt;(<b>this</b>)-&gt;materializeUnnamedFile(templateName, NameIsTemplate);</td></tr>
+<tr><th id="416">416</th><td>    }</td></tr>
+<tr><th id="417">417</th><td>    <b>return</b> QFSFileEngine::fileName(file);</td></tr>
+<tr><th id="418">418</th><td>}</td></tr>
+<tr><th id="419">419</th><td></td></tr>
+<tr><th id="420">420</th><td><em>bool</em> QTemporaryFileEngine::materializeUnnamedFile(<em>const</em> QString &amp;newName, QTemporaryFileEngine::MaterializationMode mode)</td></tr>
+<tr><th id="421">421</th><td>{</td></tr>
+<tr><th id="422">422</th><td>    Q_ASSERT(isUnnamedFile());</td></tr>
+<tr><th id="423">423</th><td></td></tr>
+<tr><th id="424">424</th><td><u>#ifdef LINUX_UNNAMED_TMPFILE</u></td></tr>
+<tr><th id="425">425</th><td>    Q_D(QFSFileEngine);</td></tr>
+<tr><th id="426">426</th><td>    <em>const</em> QByteArray src = <q>"/proc/self/fd/"</q> + QByteArray::number(d-&gt;fd);</td></tr>
+<tr><th id="427">427</th><td>    <em>auto</em> materializeAt = [=](<em>const</em> QFileSystemEntry &amp;dst) {</td></tr>
+<tr><th id="428">428</th><td>        <b>return</b> ::linkat(AT_FDCWD, src, AT_FDCWD, dst.nativeFilePath(), AT_SYMLINK_FOLLOW) == <var>0</var>;</td></tr>
+<tr><th id="429">429</th><td>    };</td></tr>
+<tr><th id="430">430</th><td><u>#else</u></td></tr>
+<tr><th id="431">431</th><td>    <em>auto</em> materializeAt = [](<em>const</em> QFileSystemEntry &amp;) { <b>return</b> <b>false</b>; };</td></tr>
+<tr><th id="432">432</th><td><u>#endif</u></td></tr>
+<tr><th id="433">433</th><td></td></tr>
+<tr><th id="434">434</th><td>    <em>auto</em> success = [<b>this</b>](<em>const</em> QFileSystemEntry &amp;entry) {</td></tr>
+<tr><th id="435">435</th><td>        filePathIsTemplate = <b>false</b>;</td></tr>
+<tr><th id="436">436</th><td>        unnamedFile = <b>false</b>;</td></tr>
+<tr><th id="437">437</th><td>        d_func()-&gt;fileEntry = entry;</td></tr>
+<tr><th id="438">438</th><td>        <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="439">439</th><td>    };</td></tr>
+<tr><th id="440">440</th><td></td></tr>
+<tr><th id="441">441</th><td>    <em>auto</em> materializeAsTemplate = [=](<em>const</em> QString &amp;newName) {</td></tr>
+<tr><th id="442">442</th><td>        QTemporaryFileName tfn(newName);</td></tr>
+<tr><th id="443">443</th><td>        <em>static</em> <em>const</em> <em>int</em> maxAttempts = <var>16</var>;</td></tr>
+<tr><th id="444">444</th><td>        <b>for</b> (<em>int</em> attempt = <var>0</var>; attempt &lt; maxAttempts; ++attempt) {</td></tr>
+<tr><th id="445">445</th><td>            tfn.generateNext();</td></tr>
+<tr><th id="446">446</th><td>            QFileSystemEntry entry(tfn.path, QFileSystemEntry::FromNativePath());</td></tr>
+<tr><th id="447">447</th><td>            <b>if</b> (materializeAt(entry))</td></tr>
+<tr><th id="448">448</th><td>                <b>return</b> success(entry);</td></tr>
+<tr><th id="449">449</th><td>        }</td></tr>
+<tr><th id="450">450</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="451">451</th><td>    };</td></tr>
+<tr><th id="452">452</th><td></td></tr>
+<tr><th id="453">453</th><td>    <b>if</b> (mode == NameIsTemplate) {</td></tr>
+<tr><th id="454">454</th><td>        <b>if</b> (materializeAsTemplate(newName))</td></tr>
+<tr><th id="455">455</th><td>            <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="456">456</th><td>    } <b>else</b> {</td></tr>
+<tr><th id="457">457</th><td>        <i>// Use linkat to materialize the file</i></td></tr>
+<tr><th id="458">458</th><td>        QFileSystemEntry dst(newName);</td></tr>
+<tr><th id="459">459</th><td>        <b>if</b> (materializeAt(dst))</td></tr>
+<tr><th id="460">460</th><td>            <b>return</b> success(dst);</td></tr>
+<tr><th id="461">461</th><td></td></tr>
+<tr><th id="462">462</th><td>        <b>if</b> (errno == EEXIST &amp;&amp; mode == Overwrite) {</td></tr>
+<tr><th id="463">463</th><td>            <i>// retry by first creating a temporary file in the right dir</i></td></tr>
+<tr><th id="464">464</th><td>            <b>if</b> (!materializeAsTemplate(templateName))</td></tr>
+<tr><th id="465">465</th><td>                <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="466">466</th><td></td></tr>
+<tr><th id="467">467</th><td>            <i>// then rename the materialized file to target (same as renameOverwrite)</i></td></tr>
+<tr><th id="468">468</th><td>            QFSFileEngine::close();</td></tr>
+<tr><th id="469">469</th><td>            <b>return</b> QFSFileEngine::renameOverwrite(newName);</td></tr>
+<tr><th id="470">470</th><td>        }</td></tr>
+<tr><th id="471">471</th><td>    }</td></tr>
+<tr><th id="472">472</th><td></td></tr>
+<tr><th id="473">473</th><td>    <i>// failed</i></td></tr>
+<tr><th id="474">474</th><td>    setError(QFile::RenameError, QSystemError(errno, QSystemError::NativeError).toString());</td></tr>
+<tr><th id="475">475</th><td>    <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="476">476</th><td>}</td></tr>
+<tr><th id="477">477</th><td></td></tr>
+<tr><th id="478">478</th><td><em>bool</em> QTemporaryFileEngine::isUnnamedFile() <em>const</em></td></tr>
+<tr><th id="479">479</th><td>{</td></tr>
+<tr><th id="480">480</th><td><u>#ifdef LINUX_UNNAMED_TMPFILE</u></td></tr>
+<tr><th id="481">481</th><td>    <b>if</b> (unnamedFile) {</td></tr>
+<tr><th id="482">482</th><td>        Q_ASSERT(d_func()-&gt;fileEntry.isEmpty());</td></tr>
+<tr><th id="483">483</th><td>        Q_ASSERT(filePathIsTemplate);</td></tr>
+<tr><th id="484">484</th><td>    }</td></tr>
+<tr><th id="485">485</th><td>    <b>return</b> unnamedFile;</td></tr>
+<tr><th id="486">486</th><td><u>#else</u></td></tr>
+<tr><th id="487">487</th><td>    <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="488">488</th><td><u>#endif</u></td></tr>
+<tr><th id="489">489</th><td>}</td></tr>
+<tr><th id="490">490</th><td></td></tr>
+<tr><th id="491">491</th><td><i>//************* QTemporaryFilePrivate</i></td></tr>
+<tr><th id="492">492</th><td></td></tr>
+<tr><th id="493">493</th><td>QTemporaryFilePrivate::QTemporaryFilePrivate()</td></tr>
+<tr><th id="494">494</th><td>{</td></tr>
+<tr><th id="495">495</th><td>}</td></tr>
+<tr><th id="496">496</th><td></td></tr>
+<tr><th id="497">497</th><td>QTemporaryFilePrivate::QTemporaryFilePrivate(<em>const</em> QString &amp;templateNameIn)</td></tr>
+<tr><th id="498">498</th><td>    : templateName(templateNameIn)</td></tr>
+<tr><th id="499">499</th><td>{</td></tr>
+<tr><th id="500">500</th><td>}</td></tr>
+<tr><th id="501">501</th><td></td></tr>
+<tr><th id="502">502</th><td>QTemporaryFilePrivate::~QTemporaryFilePrivate()</td></tr>
+<tr><th id="503">503</th><td>{</td></tr>
+<tr><th id="504">504</th><td>}</td></tr>
+<tr><th id="505">505</th><td></td></tr>
+<tr><th id="506">506</th><td>QAbstractFileEngine *QTemporaryFilePrivate::engine() <em>const</em></td></tr>
+<tr><th id="507">507</th><td>{</td></tr>
+<tr><th id="508">508</th><td>    <b>if</b> (!fileEngine) {</td></tr>
+<tr><th id="509">509</th><td>        fileEngine.reset(<b>new</b> QTemporaryFileEngine(&amp;templateName));</td></tr>
+<tr><th id="510">510</th><td>        resetFileEngine();</td></tr>
+<tr><th id="511">511</th><td>    }</td></tr>
+<tr><th id="512">512</th><td>    <b>return</b> fileEngine.get();</td></tr>
+<tr><th id="513">513</th><td>}</td></tr>
+<tr><th id="514">514</th><td></td></tr>
+<tr><th id="515">515</th><td><em>void</em> QTemporaryFilePrivate::resetFileEngine() <em>const</em></td></tr>
+<tr><th id="516">516</th><td>{</td></tr>
+<tr><th id="517">517</th><td>    <b>if</b> (!fileEngine)</td></tr>
+<tr><th id="518">518</th><td>        <b>return</b>;</td></tr>
+<tr><th id="519">519</th><td></td></tr>
+<tr><th id="520">520</th><td>    QTemporaryFileEngine *tef = <b>static_cast</b>&lt;QTemporaryFileEngine *&gt;(fileEngine.get());</td></tr>
+<tr><th id="521">521</th><td>    <b>if</b> (fileName.isEmpty())</td></tr>
+<tr><th id="522">522</th><td>        tef-&gt;initialize(templateName, <var>0600</var>);</td></tr>
+<tr><th id="523">523</th><td>    <b>else</b></td></tr>
+<tr><th id="524">524</th><td>        tef-&gt;initialize(fileName, <var>0600</var>, <b>false</b>);</td></tr>
+<tr><th id="525">525</th><td>}</td></tr>
+<tr><th id="526">526</th><td></td></tr>
+<tr><th id="527">527</th><td><em>void</em> QTemporaryFilePrivate::materializeUnnamedFile()</td></tr>
+<tr><th id="528">528</th><td>{</td></tr>
+<tr><th id="529">529</th><td><u>#ifdef LINUX_UNNAMED_TMPFILE</u></td></tr>
+<tr><th id="530">530</th><td>    <b>if</b> (!fileName.isEmpty() || !fileEngine)</td></tr>
+<tr><th id="531">531</th><td>        <b>return</b>;</td></tr>
+<tr><th id="532">532</th><td></td></tr>
+<tr><th id="533">533</th><td>    <em>auto</em> *tef = <b>static_cast</b>&lt;QTemporaryFileEngine *&gt;(fileEngine.get());</td></tr>
+<tr><th id="534">534</th><td>    fileName = tef-&gt;fileName(QAbstractFileEngine::DefaultName);</td></tr>
+<tr><th id="535">535</th><td><u>#endif</u></td></tr>
+<tr><th id="536">536</th><td>}</td></tr>
+<tr><th id="537">537</th><td></td></tr>
+<tr><th id="538">538</th><td>QString QTemporaryFilePrivate::defaultTemplateName()</td></tr>
+<tr><th id="539">539</th><td>{</td></tr>
+<tr><th id="540">540</th><td>    QString baseName;</td></tr>
+<tr><th id="541">541</th><td><u>#if defined(QT_BUILD_CORE_LIB)</u></td></tr>
+<tr><th id="542">542</th><td>    baseName = QCoreApplication::applicationName();</td></tr>
+<tr><th id="543">543</th><td>    <b>if</b> (baseName.isEmpty())</td></tr>
+<tr><th id="544">544</th><td><u>#endif</u></td></tr>
+<tr><th id="545">545</th><td>        baseName = <q>"qt_temp"_L1</q>;</td></tr>
+<tr><th id="546">546</th><td></td></tr>
+<tr><th id="547">547</th><td>    <b>return</b> QDir::tempPath() + u<kbd>'/'</kbd> + baseName + <q>".XXXXXX"_L1</q>;</td></tr>
+<tr><th id="548">548</th><td>}</td></tr>
+<tr><th id="549">549</th><td></td></tr>
+<tr><th id="550">550</th><td><i>//************* QTemporaryFile</i></td></tr>
+<tr><th id="551">551</th><td></td></tr>
+<tr><th id="552">552</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="553">553</th><td><i class="doc">    <span class="command">\class</span> <span class="verb" data-ref="QTemporaryFile">QTemporaryFile</span></i></td></tr>
+<tr><th id="554">554</th><td><i class="doc">   <span class="command"> \inmodule</span> QtCore</i></td></tr>
+<tr><th id="555">555</th><td><i class="doc">   <span class="command"> \reentrant</span></i></td></tr>
+<tr><th id="556">556</th><td><i class="doc">    <span class="command">\brief</span> The QTemporaryFile class is an I/O device that operates on temporary files.</i></td></tr>
+<tr><th id="557">557</th><td><i class="doc"></i></td></tr>
+<tr><th id="558">558</th><td><i class="doc">    <span class="command">\ingroup</span> <span class="verb">io</span></i></td></tr>
+<tr><th id="559">559</th><td><i class="doc"></i></td></tr>
+<tr><th id="560">560</th><td><i class="doc"></i></td></tr>
+<tr><th id="561">561</th><td><i class="doc">    QTemporaryFile is used to create unique temporary files safely.</i></td></tr>
+<tr><th id="562">562</th><td><i class="doc">    The file itself is created by calling open(). The name of the</i></td></tr>
+<tr><th id="563">563</th><td><i class="doc">    temporary file is guaranteed to be unique (i.e., you are</i></td></tr>
+<tr><th id="564">564</th><td><i class="doc">    guaranteed to not overwrite an existing file), and the file will</i></td></tr>
+<tr><th id="565">565</th><td><i class="doc">    subsequently be removed upon destruction of the QTemporaryFile</i></td></tr>
+<tr><th id="566">566</th><td><i class="doc">    object. This is an important technique that avoids data</i></td></tr>
+<tr><th id="567">567</th><td><i class="doc">    corruption for applications that store data in temporary files.</i></td></tr>
+<tr><th id="568">568</th><td><i class="doc">    The file name is either auto-generated, or created based on a</i></td></tr>
+<tr><th id="569">569</th><td><i class="doc">    template, which is passed to QTemporaryFile's constructor.</i></td></tr>
+<tr><th id="570">570</th><td><i class="doc"></i></td></tr>
+<tr><th id="571">571</th><td><i class="doc">    Example:</i></td></tr>
+<tr><th id="572">572</th><td><i class="doc"></i></td></tr>
+<tr><th id="573">573</th><td><i class="doc">    <span class="command">\snippet</span> <span class="verb">code/src_corelib_io_qtemporaryfile.cpp 0</span></i></td></tr>
+<tr><th id="574">574</th><td><i class="doc"></i></td></tr>
+<tr><th id="575">575</th><td><i class="doc">    Reopening a QTemporaryFile after calling close() is safe. For as long as</i></td></tr>
+<tr><th id="576">576</th><td><i class="doc">    the QTemporaryFile object itself is not destroyed, the unique temporary</i></td></tr>
+<tr><th id="577">577</th><td><i class="doc">    file will exist and be kept open internally by QTemporaryFile.</i></td></tr>
+<tr><th id="578">578</th><td><i class="doc"></i></td></tr>
+<tr><th id="579">579</th><td><i class="doc">    The file name of the temporary file can be found by calling fileName().</i></td></tr>
+<tr><th id="580">580</th><td><i class="doc">    Note that this is only defined after the file is first opened; the function</i></td></tr>
+<tr><th id="581">581</th><td><i class="doc">    returns an empty string before this.</i></td></tr>
+<tr><th id="582">582</th><td><i class="doc"></i></td></tr>
+<tr><th id="583">583</th><td><i class="doc">    A temporary file will have some static part of the name and some</i></td></tr>
+<tr><th id="584">584</th><td><i class="doc">    part that is calculated to be unique. The default filename will be</i></td></tr>
+<tr><th id="585">585</th><td><i class="doc">    determined from QCoreApplication::applicationName() (otherwise<span class="command"> \c</span> <span class="arg">qt_temp)</span> and will</i></td></tr>
+<tr><th id="586">586</th><td><i class="doc">    be placed into the temporary path as returned by QDir::tempPath().</i></td></tr>
+<tr><th id="587">587</th><td><i class="doc">    If you specify your own filename, a relative file path will not be placed in the</i></td></tr>
+<tr><th id="588">588</th><td><i class="doc">    temporary directory by default, but be relative to the current working directory.</i></td></tr>
+<tr><th id="589">589</th><td><i class="doc">    It is important to specify the correct directory if the rename() function will be</i></td></tr>
+<tr><th id="590">590</th><td><i class="doc">    called, as QTemporaryFile can only rename files within the same volume / filesystem</i></td></tr>
+<tr><th id="591">591</th><td><i class="doc">    as the temporary file itself was created on.</i></td></tr>
+<tr><th id="592">592</th><td><i class="doc"></i></td></tr>
+<tr><th id="593">593</th><td><i class="doc">    Specified filenames can contain the following template<span class="command"> \c</span> <span class="arg">XXXXXX</span></i></td></tr>
+<tr><th id="594">594</th><td><i class="doc">    (six upper case "X" characters), which will be replaced by the</i></td></tr>
+<tr><th id="595">595</th><td><i class="doc">    auto-generated portion of the filename. Note that the template is</i></td></tr>
+<tr><th id="596">596</th><td><i class="doc">    case sensitive. If the template is not present in the filename,</i></td></tr>
+<tr><th id="597">597</th><td><i class="doc">    QTemporaryFile appends the generated part to the filename given.</i></td></tr>
+<tr><th id="598">598</th><td><i class="doc"></i></td></tr>
+<tr><th id="599">599</th><td><i class="doc">    <span class="command">\note</span> On Linux, QTemporaryFile will attempt to create unnamed temporary</i></td></tr>
+<tr><th id="600">600</th><td><i class="doc">    files. If that succeeds, open() will return true but exists() will be</i></td></tr>
+<tr><th id="601">601</th><td><i class="doc">    false. If you call fileName() or any function that calls it,</i></td></tr>
+<tr><th id="602">602</th><td><i class="doc">    QTemporaryFile will give the file a name, so most applications will</i></td></tr>
+<tr><th id="603">603</th><td><i class="doc">    not see a difference.</i></td></tr>
+<tr><th id="604">604</th><td><i class="doc"></i></td></tr>
+<tr><th id="605">605</th><td><i class="doc">    <span class="command">\sa</span> QDir::tempPath(), QFile</i></td></tr>
+<tr><th id="606">606</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="607">607</th><td></td></tr>
+<tr><th id="608">608</th><td><u>#ifdef QT_NO_QOBJECT</u></td></tr>
+<tr><th id="609">609</th><td>QTemporaryFile::QTemporaryFile()</td></tr>
+<tr><th id="610">610</th><td>    : QFile(*<b>new</b> QTemporaryFilePrivate)</td></tr>
+<tr><th id="611">611</th><td>{</td></tr>
+<tr><th id="612">612</th><td>}</td></tr>
+<tr><th id="613">613</th><td></td></tr>
+<tr><th id="614">614</th><td>QTemporaryFile::QTemporaryFile(<em>const</em> QString &amp;templateName)</td></tr>
+<tr><th id="615">615</th><td>    : QFile(*<b>new</b> QTemporaryFilePrivate(templateName))</td></tr>
+<tr><th id="616">616</th><td>{</td></tr>
+<tr><th id="617">617</th><td>}</td></tr>
+<tr><th id="618">618</th><td></td></tr>
+<tr><th id="619">619</th><td><u>#else</u></td></tr>
+<tr><th id="620">620</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="621">621</th><td><i class="doc">    Constructs a QTemporaryFile using as file template</i></td></tr>
+<tr><th id="622">622</th><td><i class="doc">    the application name returned by QCoreApplication::applicationName()</i></td></tr>
+<tr><th id="623">623</th><td><i class="doc">    (otherwise<span class="command"> \c</span> <span class="arg">qt_temp)</span> followed by ".XXXXXX".</i></td></tr>
+<tr><th id="624">624</th><td><i class="doc">    The file is stored in the system's temporary directory, QDir::tempPath().</i></td></tr>
+<tr><th id="625">625</th><td><i class="doc"></i></td></tr>
+<tr><th id="626">626</th><td><i class="doc">    <span class="command">\sa</span> setFileTemplate(), QDir::tempPath()</i></td></tr>
+<tr><th id="627">627</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="628">628</th><td>QTemporaryFile::QTemporaryFile()</td></tr>
+<tr><th id="629">629</th><td>    : QTemporaryFile(<b>nullptr</b>)</td></tr>
+<tr><th id="630">630</th><td>{</td></tr>
+<tr><th id="631">631</th><td>}</td></tr>
+<tr><th id="632">632</th><td></td></tr>
+<tr><th id="633">633</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="634">634</th><td><i class="doc">    Constructs a QTemporaryFile with a template filename of<span class="command"> \a</span></i></td></tr>
+<tr><th id="635">635</th><td><i class="doc">    <span class="arg">templateName.</span> Upon opening the temporary file this will be used to create</i></td></tr>
+<tr><th id="636">636</th><td><i class="doc">    a unique filename.</i></td></tr>
+<tr><th id="637">637</th><td><i class="doc"></i></td></tr>
+<tr><th id="638">638</th><td><i class="doc">    If the<span class="command"> \a</span> <span class="arg">templateName</span> does not contain XXXXXX it will automatically be</i></td></tr>
+<tr><th id="639">639</th><td><i class="doc">    appended and used as the dynamic portion of the filename.</i></td></tr>
+<tr><th id="640">640</th><td><i class="doc"></i></td></tr>
+<tr><th id="641">641</th><td><i class="doc">    If<span class="command"> \a</span> <span class="arg">templateName</span> is a relative path, the path will be relative to the</i></td></tr>
+<tr><th id="642">642</th><td><i class="doc">    current working directory. You can use QDir::tempPath() to construct<span class="command"> \a</span></i></td></tr>
+<tr><th id="643">643</th><td><i class="doc">    <span class="arg">templateName</span> if you want use the system's temporary directory. It is</i></td></tr>
+<tr><th id="644">644</th><td><i class="doc">    important to specify the correct directory if the rename() function will be</i></td></tr>
+<tr><th id="645">645</th><td><i class="doc">    called, as QTemporaryFile can only rename files within the same volume /</i></td></tr>
+<tr><th id="646">646</th><td><i class="doc">    filesystem as the temporary file itself was created on.</i></td></tr>
+<tr><th id="647">647</th><td><i class="doc"></i></td></tr>
+<tr><th id="648">648</th><td><i class="doc"></i></td></tr>
+<tr><th id="649">649</th><td><i class="doc">    <span class="command">\sa</span> open(), fileTemplate()</i></td></tr>
+<tr><th id="650">650</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="651">651</th><td>QTemporaryFile::QTemporaryFile(<em>const</em> QString &amp;templateName)</td></tr>
+<tr><th id="652">652</th><td>    : QTemporaryFile(templateName, <b>nullptr</b>)</td></tr>
+<tr><th id="653">653</th><td>{</td></tr>
+<tr><th id="654">654</th><td>}</td></tr>
+<tr><th id="655">655</th><td></td></tr>
+<tr><th id="656">656</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="657">657</th><td><i class="doc">    Constructs a QTemporaryFile (with the given<span class="command"> \a</span> <span class="arg">parent)</span></i></td></tr>
+<tr><th id="658">658</th><td><i class="doc">    using as file template the application name returned by QCoreApplication::applicationName()</i></td></tr>
+<tr><th id="659">659</th><td><i class="doc">    (otherwise<span class="command"> \c</span> <span class="arg">qt_temp)</span> followed by ".XXXXXX".</i></td></tr>
+<tr><th id="660">660</th><td><i class="doc">    The file is stored in the system's temporary directory, QDir::tempPath().</i></td></tr>
+<tr><th id="661">661</th><td><i class="doc"></i></td></tr>
+<tr><th id="662">662</th><td><i class="doc">    <span class="command">\sa</span> setFileTemplate()</i></td></tr>
+<tr><th id="663">663</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="664">664</th><td>QTemporaryFile::QTemporaryFile(QObject *parent)</td></tr>
+<tr><th id="665">665</th><td>    : QFile(*<b>new</b> QTemporaryFilePrivate, parent)</td></tr>
+<tr><th id="666">666</th><td>{</td></tr>
+<tr><th id="667">667</th><td>}</td></tr>
+<tr><th id="668">668</th><td></td></tr>
+<tr><th id="669">669</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="670">670</th><td><i class="doc">    Constructs a QTemporaryFile with a template filename of<span class="command"> \a</span></i></td></tr>
+<tr><th id="671">671</th><td><i class="doc">    <span class="arg">templateName</span> and the specified<span class="command"> \a</span> <span class="arg">parent.</span></i></td></tr>
+<tr><th id="672">672</th><td><i class="doc">    Upon opening the temporary file this will be used to</i></td></tr>
+<tr><th id="673">673</th><td><i class="doc">    create a unique filename.</i></td></tr>
+<tr><th id="674">674</th><td><i class="doc"></i></td></tr>
+<tr><th id="675">675</th><td><i class="doc">    If the<span class="command"> \a</span> <span class="arg">templateName</span> does not contain XXXXXX it will automatically be</i></td></tr>
+<tr><th id="676">676</th><td><i class="doc">    appended and used as the dynamic portion of the filename.</i></td></tr>
+<tr><th id="677">677</th><td><i class="doc"></i></td></tr>
+<tr><th id="678">678</th><td><i class="doc">    If<span class="command"> \a</span> <span class="arg">templateName</span> is a relative path, the path will be relative to the</i></td></tr>
+<tr><th id="679">679</th><td><i class="doc">    current working directory. You can use QDir::tempPath() to construct<span class="command"> \a</span></i></td></tr>
+<tr><th id="680">680</th><td><i class="doc">    <span class="arg">templateName</span> if you want use the system's temporary directory. It is</i></td></tr>
+<tr><th id="681">681</th><td><i class="doc">    important to specify the correct directory if the rename() function will be</i></td></tr>
+<tr><th id="682">682</th><td><i class="doc">    called, as QTemporaryFile can only rename files within the same volume /</i></td></tr>
+<tr><th id="683">683</th><td><i class="doc">    filesystem as the temporary file itself was created on.</i></td></tr>
+<tr><th id="684">684</th><td><i class="doc"></i></td></tr>
+<tr><th id="685">685</th><td><i class="doc">    <span class="command">\sa</span> open(), fileTemplate()</i></td></tr>
+<tr><th id="686">686</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="687">687</th><td>QTemporaryFile::QTemporaryFile(<em>const</em> QString &amp;templateName, QObject *parent)</td></tr>
+<tr><th id="688">688</th><td>    : QFile(*<b>new</b> QTemporaryFilePrivate(templateName), parent)</td></tr>
+<tr><th id="689">689</th><td>{</td></tr>
+<tr><th id="690">690</th><td>}</td></tr>
+<tr><th id="691">691</th><td><u>#endif</u></td></tr>
+<tr><th id="692">692</th><td></td></tr>
+<tr><th id="693">693</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="694">694</th><td><i class="doc">    Destroys the temporary file object, the file is automatically</i></td></tr>
+<tr><th id="695">695</th><td><i class="doc">    closed if necessary and if in auto remove mode it will</i></td></tr>
+<tr><th id="696">696</th><td><i class="doc">    automatically delete the file.</i></td></tr>
+<tr><th id="697">697</th><td><i class="doc"></i></td></tr>
+<tr><th id="698">698</th><td><i class="doc">    <span class="command">\sa</span> autoRemove()</i></td></tr>
+<tr><th id="699">699</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="700">700</th><td>QTemporaryFile::~QTemporaryFile()</td></tr>
+<tr><th id="701">701</th><td>{</td></tr>
+<tr><th id="702">702</th><td>    Q_D(QTemporaryFile);</td></tr>
+<tr><th id="703">703</th><td>    close();</td></tr>
+<tr><th id="704">704</th><td>    <b>if</b> (!d-&gt;fileName.isEmpty() &amp;&amp; d-&gt;autoRemove)</td></tr>
+<tr><th id="705">705</th><td>        remove();</td></tr>
+<tr><th id="706">706</th><td>}</td></tr>
+<tr><th id="707">707</th><td></td></tr>
+<tr><th id="708">708</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="709">709</th><td><i class="doc">  <span class="command">\fn</span> <span class="verb">bool QTemporaryFile::open()</span></i></td></tr>
+<tr><th id="710">710</th><td><i class="doc"></i></td></tr>
+<tr><th id="711">711</th><td><i class="doc">  A QTemporaryFile will always be opened in QIODevice::ReadWrite mode,</i></td></tr>
+<tr><th id="712">712</th><td><i class="doc">  this allows easy access to the data in the file. This function will</i></td></tr>
+<tr><th id="713">713</th><td><i class="doc">  return true upon success and will set the fileName() to the unique</i></td></tr>
+<tr><th id="714">714</th><td><i class="doc">  filename used.</i></td></tr>
+<tr><th id="715">715</th><td><i class="doc"></i></td></tr>
+<tr><th id="716">716</th><td><i class="doc">  <span class="command">\sa</span> fileName()</i></td></tr>
+<tr><th id="717">717</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="718">718</th><td></td></tr>
+<tr><th id="719">719</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="720">720</th><td><i class="doc">   Returns<span class="command"> \c</span> <span class="arg">true</span> if the QTemporaryFile is in auto remove</i></td></tr>
+<tr><th id="721">721</th><td><i class="doc">   mode. Auto-remove mode will automatically delete the filename from</i></td></tr>
+<tr><th id="722">722</th><td><i class="doc">   disk upon destruction. This makes it very easy to create your</i></td></tr>
+<tr><th id="723">723</th><td><i class="doc">   QTemporaryFile object on the stack, fill it with data, read from</i></td></tr>
+<tr><th id="724">724</th><td><i class="doc">   it, and finally on function return it will automatically clean up</i></td></tr>
+<tr><th id="725">725</th><td><i class="doc">   after itself.</i></td></tr>
+<tr><th id="726">726</th><td><i class="doc"></i></td></tr>
+<tr><th id="727">727</th><td><i class="doc">   Auto-remove is on by default.</i></td></tr>
+<tr><th id="728">728</th><td><i class="doc"></i></td></tr>
+<tr><th id="729">729</th><td><i class="doc">   <span class="command">\sa</span> setAutoRemove(), remove()</i></td></tr>
+<tr><th id="730">730</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="731">731</th><td><em>bool</em> QTemporaryFile::autoRemove() <em>const</em></td></tr>
+<tr><th id="732">732</th><td>{</td></tr>
+<tr><th id="733">733</th><td>    Q_D(<em>const</em> QTemporaryFile);</td></tr>
+<tr><th id="734">734</th><td>    <b>return</b> d-&gt;autoRemove;</td></tr>
+<tr><th id="735">735</th><td>}</td></tr>
+<tr><th id="736">736</th><td></td></tr>
+<tr><th id="737">737</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="738">738</th><td><i class="doc">    Sets the QTemporaryFile into auto-remove mode if<span class="command"> \a</span> <span class="arg">b</span> is<span class="command"> \c</span> <span class="arg">true.</span></i></td></tr>
+<tr><th id="739">739</th><td><i class="doc"></i></td></tr>
+<tr><th id="740">740</th><td><i class="doc">    Auto-remove is on by default.</i></td></tr>
+<tr><th id="741">741</th><td><i class="doc"></i></td></tr>
+<tr><th id="742">742</th><td><i class="doc">    If you set this property to<span class="command"> \c</span> <span class="arg">false,</span> ensure the application provides a way</i></td></tr>
+<tr><th id="743">743</th><td><i class="doc">    to remove the file once it is no longer needed, including passing the</i></td></tr>
+<tr><th id="744">744</th><td><i class="doc">    responsibility on to another process. Always use the fileName() function to</i></td></tr>
+<tr><th id="745">745</th><td><i class="doc">    obtain the name and never try to guess the name that QTemporaryFile has</i></td></tr>
+<tr><th id="746">746</th><td><i class="doc">    generated.</i></td></tr>
+<tr><th id="747">747</th><td><i class="doc"></i></td></tr>
+<tr><th id="748">748</th><td><i class="doc">    On some systems, if fileName() is not called before closing the file, the</i></td></tr>
+<tr><th id="749">749</th><td><i class="doc">    temporary file may be removed regardless of the state of this property.</i></td></tr>
+<tr><th id="750">750</th><td><i class="doc">    This behavior should not be relied upon, so application code should either</i></td></tr>
+<tr><th id="751">751</th><td><i class="doc">    call fileName() or leave the auto removal functionality enabled.</i></td></tr>
+<tr><th id="752">752</th><td><i class="doc"></i></td></tr>
+<tr><th id="753">753</th><td><i class="doc">    <span class="command">\sa</span> autoRemove(), remove()</i></td></tr>
+<tr><th id="754">754</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="755">755</th><td><em>void</em> QTemporaryFile::setAutoRemove(<em>bool</em> b)</td></tr>
+<tr><th id="756">756</th><td>{</td></tr>
+<tr><th id="757">757</th><td>    Q_D(QTemporaryFile);</td></tr>
+<tr><th id="758">758</th><td>    d-&gt;autoRemove = b;</td></tr>
+<tr><th id="759">759</th><td>}</td></tr>
+<tr><th id="760">760</th><td></td></tr>
+<tr><th id="761">761</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="762">762</th><td><i class="doc">   Returns the complete unique filename backing the QTemporaryFile</i></td></tr>
+<tr><th id="763">763</th><td><i class="doc">   object. This string is null before the QTemporaryFile is opened,</i></td></tr>
+<tr><th id="764">764</th><td><i class="doc">   afterwards it will contain the fileTemplate() plus</i></td></tr>
+<tr><th id="765">765</th><td><i class="doc">   additional characters to make it unique.</i></td></tr>
+<tr><th id="766">766</th><td><i class="doc"></i></td></tr>
+<tr><th id="767">767</th><td><i class="doc">   <span class="command">\sa</span> fileTemplate()</i></td></tr>
+<tr><th id="768">768</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="769">769</th><td></td></tr>
+<tr><th id="770">770</th><td>QString QTemporaryFile::fileName() <em>const</em></td></tr>
+<tr><th id="771">771</th><td>{</td></tr>
+<tr><th id="772">772</th><td>    Q_D(<em>const</em> QTemporaryFile);</td></tr>
+<tr><th id="773">773</th><td>    <em>auto</em> tef = <b>static_cast</b>&lt;QTemporaryFileEngine *&gt;(d-&gt;fileEngine.get());</td></tr>
+<tr><th id="774">774</th><td>    <b>if</b> (tef &amp;&amp; tef-&gt;isReallyOpen())</td></tr>
+<tr><th id="775">775</th><td>        <b>const_cast</b>&lt;QTemporaryFilePrivate *&gt;(d)-&gt;materializeUnnamedFile();</td></tr>
+<tr><th id="776">776</th><td></td></tr>
+<tr><th id="777">777</th><td>    <b>if</b> (d-&gt;fileName.isEmpty())</td></tr>
+<tr><th id="778">778</th><td>        <b>return</b> QString();</td></tr>
+<tr><th id="779">779</th><td>    <b>return</b> d-&gt;engine()-&gt;fileName(QAbstractFileEngine::DefaultName);</td></tr>
+<tr><th id="780">780</th><td>}</td></tr>
+<tr><th id="781">781</th><td></td></tr>
+<tr><th id="782">782</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="783">783</th><td><i class="doc">  Returns the set file template. The default file template will be</i></td></tr>
+<tr><th id="784">784</th><td><i class="doc">  called qcoreappname.XXXXXX and be placed in QDir::tempPath().</i></td></tr>
+<tr><th id="785">785</th><td><i class="doc"></i></td></tr>
+<tr><th id="786">786</th><td><i class="doc">  <span class="command">\sa</span> setFileTemplate()</i></td></tr>
+<tr><th id="787">787</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="788">788</th><td>QString QTemporaryFile::fileTemplate() <em>const</em></td></tr>
+<tr><th id="789">789</th><td>{</td></tr>
+<tr><th id="790">790</th><td>    Q_D(<em>const</em> QTemporaryFile);</td></tr>
+<tr><th id="791">791</th><td>    <b>return</b> d-&gt;templateName;</td></tr>
+<tr><th id="792">792</th><td>}</td></tr>
+<tr><th id="793">793</th><td></td></tr>
+<tr><th id="794">794</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="795">795</th><td><i class="doc">   Sets the static portion of the file name to<span class="command"> \a</span> <span class="arg">name.</span> If the file</i></td></tr>
+<tr><th id="796">796</th><td><i class="doc">   template contains XXXXXX that will automatically be replaced with</i></td></tr>
+<tr><th id="797">797</th><td><i class="doc">   the unique part of the filename, otherwise a filename will be</i></td></tr>
+<tr><th id="798">798</th><td><i class="doc">   determined automatically based on the static portion specified.</i></td></tr>
+<tr><th id="799">799</th><td><i class="doc"></i></td></tr>
+<tr><th id="800">800</th><td><i class="doc">    If<span class="command"> \a</span> <span class="arg">name</span> contains a relative file path, the path will be relative to the</i></td></tr>
+<tr><th id="801">801</th><td><i class="doc">    current working directory. You can use QDir::tempPath() to construct<span class="command"> \a</span></i></td></tr>
+<tr><th id="802">802</th><td><i class="doc">    <span class="arg">name</span> if you want use the system's temporary directory. It is important to</i></td></tr>
+<tr><th id="803">803</th><td><i class="doc">    specify the correct directory if the rename() function will be called, as</i></td></tr>
+<tr><th id="804">804</th><td><i class="doc">    QTemporaryFile can only rename files within the same volume / filesystem as</i></td></tr>
+<tr><th id="805">805</th><td><i class="doc">    the temporary file itself was created on.</i></td></tr>
+<tr><th id="806">806</th><td><i class="doc"></i></td></tr>
+<tr><th id="807">807</th><td><i class="doc">   <span class="command">\sa</span> fileTemplate()</i></td></tr>
+<tr><th id="808">808</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="809">809</th><td><em>void</em> QTemporaryFile::setFileTemplate(<em>const</em> QString &amp;name)</td></tr>
+<tr><th id="810">810</th><td>{</td></tr>
+<tr><th id="811">811</th><td>    Q_D(QTemporaryFile);</td></tr>
+<tr><th id="812">812</th><td>    d-&gt;templateName = name;</td></tr>
+<tr><th id="813">813</th><td>}</td></tr>
+<tr><th id="814">814</th><td></td></tr>
+<tr><th id="815">815</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="816">816</th><td><i class="doc">    Renames the current temporary file to<span class="command"> \a</span> <span class="arg">newName</span> and returns true if it</i></td></tr>
+<tr><th id="817">817</th><td><i class="doc">    succeeded.</i></td></tr>
+<tr><th id="818">818</th><td><i class="doc"></i></td></tr>
+<tr><th id="819">819</th><td><i class="doc">    This function has an important difference compared to QFile::rename(): it</i></td></tr>
+<tr><th id="820">820</th><td><i class="doc">    will not perform a copy+delete if the low-level system call to rename the</i></td></tr>
+<tr><th id="821">821</th><td><i class="doc">    file fails, something that could happen if<span class="command"> \a</span> <span class="arg">newName</span> specifies a file in a</i></td></tr>
+<tr><th id="822">822</th><td><i class="doc">    different volume or filesystem than the temporary file was created on. In</i></td></tr>
+<tr><th id="823">823</th><td><i class="doc">    other words, QTemporaryFile only supports atomic file renaming.</i></td></tr>
+<tr><th id="824">824</th><td><i class="doc"></i></td></tr>
+<tr><th id="825">825</th><td><i class="doc">    This functionality is intended to support materializing the destination</i></td></tr>
+<tr><th id="826">826</th><td><i class="doc">    file with all contents already present, so another process cannot see an</i></td></tr>
+<tr><th id="827">827</th><td><i class="doc">    incomplete file in the process of being written. The<span class="command"> \l</span> QSaveFile class can</i></td></tr>
+<tr><th id="828">828</th><td><i class="doc">    be used for a similar purpose too, particularly if the destination file is</i></td></tr>
+<tr><th id="829">829</th><td><i class="doc">    not temporary.</i></td></tr>
+<tr><th id="830">830</th><td><i class="doc"></i></td></tr>
+<tr><th id="831">831</th><td><i class="doc">    <span class="command">\sa</span> QSaveFile, QSaveFile::commit(), QFile::rename()</i></td></tr>
+<tr><th id="832">832</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="833">833</th><td><em>bool</em> QTemporaryFile::rename(<em>const</em> QString &amp;newName)</td></tr>
+<tr><th id="834">834</th><td>{</td></tr>
+<tr><th id="835">835</th><td>    Q_D(QTemporaryFile);</td></tr>
+<tr><th id="836">836</th><td>    <em>auto</em> tef = <b>static_cast</b>&lt;QTemporaryFileEngine *&gt;(d-&gt;fileEngine.get());</td></tr>
+<tr><th id="837">837</th><td>    <b>if</b> (!tef || !tef-&gt;isReallyOpen() || !tef-&gt;filePathWasTemplate)</td></tr>
+<tr><th id="838">838</th><td>        <b>return</b> QFile::rename(newName);</td></tr>
+<tr><th id="839">839</th><td></td></tr>
+<tr><th id="840">840</th><td>    unsetError();</td></tr>
+<tr><th id="841">841</th><td>    close();</td></tr>
+<tr><th id="842">842</th><td>    <b>if</b> (error() == QFile::NoError) {</td></tr>
+<tr><th id="843">843</th><td>        <b>if</b> (tef-&gt;rename(newName)) {</td></tr>
+<tr><th id="844">844</th><td>            unsetError();</td></tr>
+<tr><th id="845">845</th><td>            <i>// engine was able to handle the new name so we just reset it</i></td></tr>
+<tr><th id="846">846</th><td>            tef-&gt;setFileName(newName);</td></tr>
+<tr><th id="847">847</th><td>            d-&gt;fileName = newName;</td></tr>
+<tr><th id="848">848</th><td>            <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="849">849</th><td>        }</td></tr>
+<tr><th id="850">850</th><td></td></tr>
+<tr><th id="851">851</th><td>        d-&gt;setError(QFile::RenameError, tef-&gt;errorString());</td></tr>
+<tr><th id="852">852</th><td>    }</td></tr>
+<tr><th id="853">853</th><td>    <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="854">854</th><td>}</td></tr>
+<tr><th id="855">855</th><td></td></tr>
+<tr><th id="856">856</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="857">857</th><td><i class="doc">  <span class="command">\fn</span> <span class="verb">QTemporaryFile *QTemporaryFile::createNativeFile(const QString &amp;fileName)</span></i></td></tr>
+<tr><th id="858">858</th><td><i class="doc">  <span class="command">\overload</span></i></td></tr>
+<tr><th id="859">859</th><td><i class="doc"></i></td></tr>
+<tr><th id="860">860</th><td><i class="doc">  Works on the given<span class="command"> \a</span> <span class="arg">fileName</span> rather than an existing QFile</i></td></tr>
+<tr><th id="861">861</th><td><i class="doc">  object.</i></td></tr>
+<tr><th id="862">862</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="863">863</th><td></td></tr>
+<tr><th id="864">864</th><td></td></tr>
+<tr><th id="865">865</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="866">866</th><td><i class="doc">  If<span class="command"> \a</span> <span class="arg">file</span> is not already a native file, then a QTemporaryFile is created</i></td></tr>
+<tr><th id="867">867</th><td><i class="doc">  in QDir::tempPath(), the contents of<span class="command"> \a</span> <span class="arg">file</span> is copied into it, and a pointer</i></td></tr>
+<tr><th id="868">868</th><td><i class="doc">  to the temporary file is returned. Does nothing and returns<span class="command"> \c</span> <span class="arg">0</span> if<span class="command"> \a</span> <span class="arg">file</span></i></td></tr>
+<tr><th id="869">869</th><td><i class="doc">  is already a native file.</i></td></tr>
+<tr><th id="870">870</th><td><i class="doc"></i></td></tr>
+<tr><th id="871">871</th><td><i class="doc">  For example:</i></td></tr>
+<tr><th id="872">872</th><td><i class="doc"></i></td></tr>
+<tr><th id="873">873</th><td><i class="doc">  <span class="command">\snippet</span> <span class="verb">code/src_corelib_io_qtemporaryfile.cpp 1</span></i></td></tr>
+<tr><th id="874">874</th><td><i class="doc"></i></td></tr>
+<tr><th id="875">875</th><td><i class="doc">  <span class="command">\sa</span> QFileInfo::isNativePath()</i></td></tr>
+<tr><th id="876">876</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="877">877</th><td></td></tr>
+<tr><th id="878">878</th><td>QTemporaryFile *QTemporaryFile::createNativeFile(QFile &amp;file)</td></tr>
+<tr><th id="879">879</th><td>{</td></tr>
+<tr><th id="880">880</th><td>    <b>if</b> (QAbstractFileEngine *engine = file.d_func()-&gt;engine()) {</td></tr>
+<tr><th id="881">881</th><td>        <b>if</b> (engine-&gt;fileFlags(QAbstractFileEngine::FlagsMask) &amp; QAbstractFileEngine::LocalDiskFlag)</td></tr>
+<tr><th id="882">882</th><td>            <b>return</b> <b>nullptr</b>; <i>// native already</i></td></tr>
+<tr><th id="883">883</th><td>        <i>//cache</i></td></tr>
+<tr><th id="884">884</th><td>        <em>bool</em> wasOpen = file.isOpen();</td></tr>
+<tr><th id="885">885</th><td>        qint64 old_off = <var>0</var>;</td></tr>
+<tr><th id="886">886</th><td>        <b>if</b> (wasOpen)</td></tr>
+<tr><th id="887">887</th><td>            old_off = file.pos();</td></tr>
+<tr><th id="888">888</th><td>        <b>else</b> <b>if</b> (!file.open(QIODevice::ReadOnly))</td></tr>
+<tr><th id="889">889</th><td>            <b>return</b> <b>nullptr</b>;</td></tr>
+<tr><th id="890">890</th><td>        <i>//dump data</i></td></tr>
+<tr><th id="891">891</th><td>        QTemporaryFile *ret = <b>new</b> QTemporaryFile;</td></tr>
+<tr><th id="892">892</th><td>        <b>if</b> (ret-&gt;open()) {</td></tr>
+<tr><th id="893">893</th><td>            file.seek(<var>0</var>);</td></tr>
+<tr><th id="894">894</th><td>            <em>char</em> buffer[<var>1024</var>];</td></tr>
+<tr><th id="895">895</th><td>            <b>while</b> (<b>true</b>) {</td></tr>
+<tr><th id="896">896</th><td>                qint64 len = file.read(buffer, <var>1024</var>);</td></tr>
+<tr><th id="897">897</th><td>                <b>if</b> (len &lt; <var>1</var>)</td></tr>
+<tr><th id="898">898</th><td>                    <b>break</b>;</td></tr>
+<tr><th id="899">899</th><td>                ret-&gt;write(buffer, len);</td></tr>
+<tr><th id="900">900</th><td>            }</td></tr>
+<tr><th id="901">901</th><td>            ret-&gt;seek(<var>0</var>);</td></tr>
+<tr><th id="902">902</th><td>        } <b>else</b> {</td></tr>
+<tr><th id="903">903</th><td>            <b>delete</b> ret;</td></tr>
+<tr><th id="904">904</th><td>            ret = <b>nullptr</b>;</td></tr>
+<tr><th id="905">905</th><td>        }</td></tr>
+<tr><th id="906">906</th><td>        <i>//restore</i></td></tr>
+<tr><th id="907">907</th><td>        <b>if</b> (wasOpen)</td></tr>
+<tr><th id="908">908</th><td>            file.seek(old_off);</td></tr>
+<tr><th id="909">909</th><td>        <b>else</b></td></tr>
+<tr><th id="910">910</th><td>            file.close();</td></tr>
+<tr><th id="911">911</th><td>        <i>//done</i></td></tr>
+<tr><th id="912">912</th><td>        <b>return</b> ret;</td></tr>
+<tr><th id="913">913</th><td>    }</td></tr>
+<tr><th id="914">914</th><td>    <b>return</b> <b>nullptr</b>;</td></tr>
+<tr><th id="915">915</th><td>}</td></tr>
+<tr><th id="916">916</th><td></td></tr>
+<tr><th id="917">917</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="918">918</th><td><i class="doc">  <span class="command"> \reimp</span></i></td></tr>
+<tr><th id="919">919</th><td><i class="doc"></i></td></tr>
+<tr><th id="920">920</th><td><i class="doc">    Creates a unique file name for the temporary file, and opens it.  You can</i></td></tr>
+<tr><th id="921">921</th><td><i class="doc">    get the unique name later by calling fileName(). The file is guaranteed to</i></td></tr>
+<tr><th id="922">922</th><td><i class="doc">    have been created by this function (i.e., it has never existed before).</i></td></tr>
+<tr><th id="923">923</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="924">924</th><td><em>bool</em> QTemporaryFile::open(OpenMode flags)</td></tr>
+<tr><th id="925">925</th><td>{</td></tr>
+<tr><th id="926">926</th><td>    Q_D(QTemporaryFile);</td></tr>
+<tr><th id="927">927</th><td>    <em>auto</em> tef = <b>static_cast</b>&lt;QTemporaryFileEngine *&gt;(d-&gt;fileEngine.get());</td></tr>
+<tr><th id="928">928</th><td>    <b>if</b> (tef &amp;&amp; tef-&gt;isReallyOpen()) {</td></tr>
+<tr><th id="929">929</th><td>        setOpenMode(flags);</td></tr>
+<tr><th id="930">930</th><td>        <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="931">931</th><td>    }</td></tr>
+<tr><th id="932">932</th><td></td></tr>
+<tr><th id="933">933</th><td>    <i>// reset the engine state so it creates a new, unique file name from the template;</i></td></tr>
+<tr><th id="934">934</th><td><i>    // equivalent to:</i></td></tr>
+<tr><th id="935">935</th><td><i>    //    delete d-&gt;fileEngine;</i></td></tr>
+<tr><th id="936">936</th><td><i>    //    d-&gt;fileEngine = 0;</i></td></tr>
+<tr><th id="937">937</th><td><i>    //    d-&gt;engine();</i></td></tr>
+<tr><th id="938">938</th><td>    d-&gt;resetFileEngine();</td></tr>
+<tr><th id="939">939</th><td></td></tr>
+<tr><th id="940">940</th><td>    <b>if</b> (QFile::open(flags)) {</td></tr>
+<tr><th id="941">941</th><td>        tef = <b>static_cast</b>&lt;QTemporaryFileEngine *&gt;(d-&gt;fileEngine.get());</td></tr>
+<tr><th id="942">942</th><td>        <b>if</b> (tef-&gt;isUnnamedFile())</td></tr>
+<tr><th id="943">943</th><td>            d-&gt;fileName.clear();</td></tr>
+<tr><th id="944">944</th><td>        <b>else</b></td></tr>
+<tr><th id="945">945</th><td>            d-&gt;fileName = tef-&gt;fileName(QAbstractFileEngine::DefaultName);</td></tr>
+<tr><th id="946">946</th><td>        <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="947">947</th><td>    }</td></tr>
+<tr><th id="948">948</th><td>    <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="949">949</th><td>}</td></tr>
+<tr><th id="950">950</th><td></td></tr>
+<tr><th id="951">951</th><td><u>#<span data-ppcond="160">endif</span> // QT_NO_TEMPORARYFILE</u></td></tr>
+<tr><th id="952">952</th><td></td></tr>
+<tr><th id="953">953</th><td><a class="macro" href="../global/qtconfigmacros.h.html#104" title="" data-ref="_M/QT_END_NAMESPACE">QT_END_NAMESPACE</a></td></tr>
+<tr><th id="954">954</th><td></td></tr>
+<tr><th id="955">955</th><td><u>#<span data-ppcond="955">ifndef</span> <a class="macro" href="../global/qconfig-bootstrapped.h.html#75" data-ref="_M/QT_NO_QOBJECT">QT_NO_QOBJECT</a></u></td></tr>
+<tr><th id="956">956</th><td><u>#include "moc_qtemporaryfile.cpp"</u></td></tr>
+<tr><th id="957">957</th><td><u>#<span data-ppcond="955">endif</span></u></td></tr>
+<tr><th id="958">958</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2024-Jun-13</em> from project qtbase-6.5.0 revision <em>6.5.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

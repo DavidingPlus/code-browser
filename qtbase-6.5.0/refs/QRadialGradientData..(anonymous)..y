@@ -1,0 +1,9 @@
+<dec f='qtbase-6.5.0/src/gui/painting/qdrawhelper_p.h' l='237' type='qreal'/>
+<dec f='qtbase-6.5.0/src/gui/painting/qdrawhelper_p.h' l='242' type='qreal'/>
+<use f='qtbase-6.5.0/src/gui/painting/qdrawhelper_p.h' l='407' u='r' c='_ZL33qt_fetch_radial_gradient_templatePT0_PK8OperatorPK9QSpanDataiii'/>
+<use f='qtbase-6.5.0/src/gui/painting/qdrawhelper_p.h' l='447' u='r' c='_ZL33qt_fetch_radial_gradient_templatePT0_PK8OperatorPK9QSpanDataiii'/>
+<offset>64</offset>
+<use f='qtbase-6.5.0/src/gui/painting/qdrawhelper.cpp' l='3411' u='r' c='_ZL23getRadialGradientValuesP20RadialGradientValuesPK9QSpanData'/>
+<use f='qtbase-6.5.0/src/gui/painting/qdrawhelper.cpp' l='3411' u='r' c='_ZL23getRadialGradientValuesP20RadialGradientValuesPK9QSpanData'/>
+<use f='qtbase-6.5.0/src/gui/painting/qpaintengine_raster.cpp' l='4529' u='w' c='_ZN9QSpanData5setupERK6QBrushiN8QPainter15CompositionModeEb'/>
+<use f='qtbase-6.5.0/src/gui/painting/qpaintengine_raster.cpp' l='4533' u='w' c='_ZN9QSpanData5setupERK6QBrushiN8QPainter15CompositionModeEb'/>

@@ -1,0 +1,218 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>qsharedmemory_posix.cpp source code [qtbase-6.5.0/src/corelib/kernel/qsharedmemory_posix.cpp] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'qtbase-6.5.0/src/corelib/kernel/qsharedmemory_posix.cpp'; var root_path = '../../../..'; var data_path = '../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>qtbase-6.5.0</a>/<a href='../..'>src</a>/<a href='..'>corelib</a>/<a href='./'>kernel</a>/<a href='qsharedmemory_posix.cpp.html'>qsharedmemory_posix.cpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>// Copyright (C) 2015 Konstantin Ritt &lt;ritt.ks@gmail.com&gt;</i></td></tr>
+<tr><th id="2">2</th><td><i>// Copyright (C) 2016 The Qt Company Ltd.</i></td></tr>
+<tr><th id="3">3</th><td><i>// Copyright (C) 2015 Klarälvdalens Datakonsult AB, a KDAB Group company, info@kdab.com, author Tobias Koenig &lt;tobias.koenig@kdab.com&gt;</i></td></tr>
+<tr><th id="4">4</th><td><i>// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only</i></td></tr>
+<tr><th id="5">5</th><td></td></tr>
+<tr><th id="6">6</th><td><u>#include <a href="../../../mkspecs/linux-g++/qplatformdefs.h.html">"qplatformdefs.h"</a></u></td></tr>
+<tr><th id="7">7</th><td></td></tr>
+<tr><th id="8">8</th><td><u>#include <a href="qsharedmemory.h.html">"qsharedmemory.h"</a></u></td></tr>
+<tr><th id="9">9</th><td><u>#include <a href="qsharedmemory_p.h.html">"qsharedmemory_p.h"</a></u></td></tr>
+<tr><th id="10">10</th><td><u>#include <a href="qsystemsemaphore.h.html">"qsystemsemaphore.h"</a></u></td></tr>
+<tr><th id="11">11</th><td><u>#include <a href="../../../build/include/QtCore/qfile.h.html">&lt;qfile.h&gt;</a></u></td></tr>
+<tr><th id="12">12</th><td></td></tr>
+<tr><th id="13">13</th><td><u>#include <a href="../../../../include/errno.h.html">&lt;errno.h&gt;</a></u></td></tr>
+<tr><th id="14">14</th><td></td></tr>
+<tr><th id="15">15</th><td><u>#<span data-ppcond="15">ifdef</span> <span class="macro" data-ref="_M/QT_POSIX_IPC">QT_POSIX_IPC</span></u></td></tr>
+<tr><th id="16">16</th><td></td></tr>
+<tr><th id="17">17</th><td><u>#if QT_CONFIG(sharedmemory)</u></td></tr>
+<tr><th id="18">18</th><td><u>#include &lt;sys/types.h&gt;</u></td></tr>
+<tr><th id="19">19</th><td><u>#include &lt;sys/mman.h&gt;</u></td></tr>
+<tr><th id="20">20</th><td><u>#include &lt;sys/stat.h&gt;</u></td></tr>
+<tr><th id="21">21</th><td><u>#include &lt;fcntl.h&gt;</u></td></tr>
+<tr><th id="22">22</th><td><u>#include &lt;unistd.h&gt;</u></td></tr>
+<tr><th id="23">23</th><td></td></tr>
+<tr><th id="24">24</th><td><u>#include "private/qcore_unix_p.h"</u></td></tr>
+<tr><th id="25">25</th><td></td></tr>
+<tr><th id="26">26</th><td>QT_BEGIN_NAMESPACE</td></tr>
+<tr><th id="27">27</th><td></td></tr>
+<tr><th id="28">28</th><td><b>using</b> <b>namespace</b> Qt::StringLiterals;</td></tr>
+<tr><th id="29">29</th><td></td></tr>
+<tr><th id="30">30</th><td><em>int</em> QSharedMemoryPrivate::handle()</td></tr>
+<tr><th id="31">31</th><td>{</td></tr>
+<tr><th id="32">32</th><td>    <i>// don't allow making handles on empty keys</i></td></tr>
+<tr><th id="33">33</th><td>    <em>const</em> QString safeKey = makePlatformSafeKey(key);</td></tr>
+<tr><th id="34">34</th><td>    <b>if</b> (safeKey.isEmpty()) {</td></tr>
+<tr><th id="35">35</th><td>        errorString = QSharedMemory::tr(<q>"%1: key is empty"</q>).arg(<q>"QSharedMemory::handle"_L1</q>);</td></tr>
+<tr><th id="36">36</th><td>        error = QSharedMemory::KeyError;</td></tr>
+<tr><th id="37">37</th><td>        <b>return</b> <var>0</var>;</td></tr>
+<tr><th id="38">38</th><td>    }</td></tr>
+<tr><th id="39">39</th><td></td></tr>
+<tr><th id="40">40</th><td>    <b>return</b> <var>1</var>;</td></tr>
+<tr><th id="41">41</th><td>}</td></tr>
+<tr><th id="42">42</th><td></td></tr>
+<tr><th id="43">43</th><td><em>bool</em> QSharedMemoryPrivate::cleanHandle()</td></tr>
+<tr><th id="44">44</th><td>{</td></tr>
+<tr><th id="45">45</th><td>    qt_safe_close(hand);</td></tr>
+<tr><th id="46">46</th><td>    hand = -<var>1</var>;</td></tr>
+<tr><th id="47">47</th><td></td></tr>
+<tr><th id="48">48</th><td>    <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="49">49</th><td>}</td></tr>
+<tr><th id="50">50</th><td></td></tr>
+<tr><th id="51">51</th><td><em>bool</em> QSharedMemoryPrivate::create(qsizetype size)</td></tr>
+<tr><th id="52">52</th><td>{</td></tr>
+<tr><th id="53">53</th><td>    <b>if</b> (!handle())</td></tr>
+<tr><th id="54">54</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="55">55</th><td></td></tr>
+<tr><th id="56">56</th><td>    <em>const</em> QByteArray shmName = QFile::encodeName(makePlatformSafeKey(key));</td></tr>
+<tr><th id="57">57</th><td></td></tr>
+<tr><th id="58">58</th><td>    <em>int</em> fd;</td></tr>
+<tr><th id="59">59</th><td><u>#ifdef O_CLOEXEC</u></td></tr>
+<tr><th id="60">60</th><td>    <i>// First try with O_CLOEXEC flag, if that fails, fall back to normal flags</i></td></tr>
+<tr><th id="61">61</th><td>    EINTR_LOOP(fd, ::shm_open(shmName.constData(), O_RDWR | O_CREAT | O_EXCL | O_CLOEXEC, <var>0600</var>));</td></tr>
+<tr><th id="62">62</th><td>    <b>if</b> (fd == -<var>1</var>)</td></tr>
+<tr><th id="63">63</th><td>        EINTR_LOOP(fd, ::shm_open(shmName.constData(), O_RDWR | O_CREAT | O_EXCL, <var>0600</var>));</td></tr>
+<tr><th id="64">64</th><td><u>#else</u></td></tr>
+<tr><th id="65">65</th><td>    EINTR_LOOP(fd, ::shm_open(shmName.constData(), O_RDWR | O_CREAT | O_EXCL, <var>0600</var>));</td></tr>
+<tr><th id="66">66</th><td><u>#endif</u></td></tr>
+<tr><th id="67">67</th><td>    <b>if</b> (fd == -<var>1</var>) {</td></tr>
+<tr><th id="68">68</th><td>        <em>const</em> <em>int</em> errorNumber = errno;</td></tr>
+<tr><th id="69">69</th><td>        <em>const</em> <em>auto</em> function = <q>"QSharedMemory::attach (shm_open)"_L1</q>;</td></tr>
+<tr><th id="70">70</th><td>        <b>switch</b> (errorNumber) {</td></tr>
+<tr><th id="71">71</th><td>        <b>case</b> EINVAL:</td></tr>
+<tr><th id="72">72</th><td>            errorString = QSharedMemory::tr(<q>"%1: bad name"</q>).arg(function);</td></tr>
+<tr><th id="73">73</th><td>            error = QSharedMemory::KeyError;</td></tr>
+<tr><th id="74">74</th><td>            <b>break</b>;</td></tr>
+<tr><th id="75">75</th><td>        <b>default</b>:</td></tr>
+<tr><th id="76">76</th><td>            setErrorString(function);</td></tr>
+<tr><th id="77">77</th><td>        }</td></tr>
+<tr><th id="78">78</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="79">79</th><td>    }</td></tr>
+<tr><th id="80">80</th><td></td></tr>
+<tr><th id="81">81</th><td>    <i>// the size may only be set once</i></td></tr>
+<tr><th id="82">82</th><td>    <em>int</em> ret;</td></tr>
+<tr><th id="83">83</th><td>    EINTR_LOOP(ret, QT_FTRUNCATE(fd, size));</td></tr>
+<tr><th id="84">84</th><td>    <b>if</b> (ret == -<var>1</var>) {</td></tr>
+<tr><th id="85">85</th><td>        setErrorString(<q>"QSharedMemory::create (ftruncate)"_L1</q>);</td></tr>
+<tr><th id="86">86</th><td>        qt_safe_close(fd);</td></tr>
+<tr><th id="87">87</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="88">88</th><td>    }</td></tr>
+<tr><th id="89">89</th><td></td></tr>
+<tr><th id="90">90</th><td>    qt_safe_close(fd);</td></tr>
+<tr><th id="91">91</th><td></td></tr>
+<tr><th id="92">92</th><td>    <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="93">93</th><td>}</td></tr>
+<tr><th id="94">94</th><td></td></tr>
+<tr><th id="95">95</th><td><em>bool</em> QSharedMemoryPrivate::attach(QSharedMemory::AccessMode mode)</td></tr>
+<tr><th id="96">96</th><td>{</td></tr>
+<tr><th id="97">97</th><td>    <em>const</em> QByteArray shmName = QFile::encodeName(makePlatformSafeKey(key));</td></tr>
+<tr><th id="98">98</th><td></td></tr>
+<tr><th id="99">99</th><td>    <em>const</em> <em>int</em> oflag = (mode == QSharedMemory::ReadOnly ? O_RDONLY : O_RDWR);</td></tr>
+<tr><th id="100">100</th><td>    <em>const</em> mode_t omode = (mode == QSharedMemory::ReadOnly ? <var>0400</var> : <var>0600</var>);</td></tr>
+<tr><th id="101">101</th><td></td></tr>
+<tr><th id="102">102</th><td><u>#ifdef O_CLOEXEC</u></td></tr>
+<tr><th id="103">103</th><td>    <i>// First try with O_CLOEXEC flag, if that fails, fall back to normal flags</i></td></tr>
+<tr><th id="104">104</th><td>    EINTR_LOOP(hand, ::shm_open(shmName.constData(), oflag | O_CLOEXEC, omode));</td></tr>
+<tr><th id="105">105</th><td>    <b>if</b> (hand == -<var>1</var>)</td></tr>
+<tr><th id="106">106</th><td>        EINTR_LOOP(hand, ::shm_open(shmName.constData(), oflag, omode));</td></tr>
+<tr><th id="107">107</th><td><u>#else</u></td></tr>
+<tr><th id="108">108</th><td>    EINTR_LOOP(hand, ::shm_open(shmName.constData(), oflag, omode));</td></tr>
+<tr><th id="109">109</th><td><u>#endif</u></td></tr>
+<tr><th id="110">110</th><td>    <b>if</b> (hand == -<var>1</var>) {</td></tr>
+<tr><th id="111">111</th><td>        <em>const</em> <em>int</em> errorNumber = errno;</td></tr>
+<tr><th id="112">112</th><td>        <em>const</em> <em>auto</em> function = <q>"QSharedMemory::attach (shm_open)"_L1</q>;</td></tr>
+<tr><th id="113">113</th><td>        <b>switch</b> (errorNumber) {</td></tr>
+<tr><th id="114">114</th><td>        <b>case</b> EINVAL:</td></tr>
+<tr><th id="115">115</th><td>            errorString = QSharedMemory::tr(<q>"%1: bad name"</q>).arg(function);</td></tr>
+<tr><th id="116">116</th><td>            error = QSharedMemory::KeyError;</td></tr>
+<tr><th id="117">117</th><td>            <b>break</b>;</td></tr>
+<tr><th id="118">118</th><td>        <b>default</b>:</td></tr>
+<tr><th id="119">119</th><td>            setErrorString(function);</td></tr>
+<tr><th id="120">120</th><td>        }</td></tr>
+<tr><th id="121">121</th><td>        hand = -<var>1</var>;</td></tr>
+<tr><th id="122">122</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="123">123</th><td>    }</td></tr>
+<tr><th id="124">124</th><td></td></tr>
+<tr><th id="125">125</th><td>    <i>// grab the size</i></td></tr>
+<tr><th id="126">126</th><td>    QT_STATBUF st;</td></tr>
+<tr><th id="127">127</th><td>    <b>if</b> (QT_FSTAT(hand, &amp;st) == -<var>1</var>) {</td></tr>
+<tr><th id="128">128</th><td>        setErrorString(<q>"QSharedMemory::attach (fstat)"_L1</q>);</td></tr>
+<tr><th id="129">129</th><td>        cleanHandle();</td></tr>
+<tr><th id="130">130</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="131">131</th><td>    }</td></tr>
+<tr><th id="132">132</th><td>    size = qsizetype(st.st_size);</td></tr>
+<tr><th id="133">133</th><td></td></tr>
+<tr><th id="134">134</th><td>    <i>// grab the memory</i></td></tr>
+<tr><th id="135">135</th><td>    <em>const</em> <em>int</em> mprot = (mode == QSharedMemory::ReadOnly ? PROT_READ : PROT_READ | PROT_WRITE);</td></tr>
+<tr><th id="136">136</th><td>    memory = QT_MMAP(<var>0</var>, size_t(size), mprot, MAP_SHARED, hand, <var>0</var>);</td></tr>
+<tr><th id="137">137</th><td>    <b>if</b> (memory == MAP_FAILED || !memory) {</td></tr>
+<tr><th id="138">138</th><td>        setErrorString(<q>"QSharedMemory::attach (mmap)"_L1</q>);</td></tr>
+<tr><th id="139">139</th><td>        cleanHandle();</td></tr>
+<tr><th id="140">140</th><td>        memory = <var>0</var>;</td></tr>
+<tr><th id="141">141</th><td>        size = <var>0</var>;</td></tr>
+<tr><th id="142">142</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="143">143</th><td>    }</td></tr>
+<tr><th id="144">144</th><td></td></tr>
+<tr><th id="145">145</th><td><u>#ifdef F_ADD_SEALS</u></td></tr>
+<tr><th id="146">146</th><td>    <i>// Make sure the shared memory region will not shrink</i></td></tr>
+<tr><th id="147">147</th><td><i>    // otherwise someone could cause SIGBUS on us.</i></td></tr>
+<tr><th id="148">148</th><td><i>    // (see <a href="http://lwn.net/Articles/594919/">http://lwn.net/Articles/594919/</a>)</i></td></tr>
+<tr><th id="149">149</th><td>    fcntl(hand, F_ADD_SEALS, F_SEAL_SHRINK);</td></tr>
+<tr><th id="150">150</th><td><u>#endif</u></td></tr>
+<tr><th id="151">151</th><td></td></tr>
+<tr><th id="152">152</th><td>    <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="153">153</th><td>}</td></tr>
+<tr><th id="154">154</th><td></td></tr>
+<tr><th id="155">155</th><td><em>bool</em> QSharedMemoryPrivate::detach()</td></tr>
+<tr><th id="156">156</th><td>{</td></tr>
+<tr><th id="157">157</th><td>    <i>// detach from the memory segment</i></td></tr>
+<tr><th id="158">158</th><td>    <b>if</b> (::munmap(memory, size_t(size)) == -<var>1</var>) {</td></tr>
+<tr><th id="159">159</th><td>        setErrorString(<q>"QSharedMemory::detach (munmap)"_L1</q>);</td></tr>
+<tr><th id="160">160</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="161">161</th><td>    }</td></tr>
+<tr><th id="162">162</th><td>    memory = <var>0</var>;</td></tr>
+<tr><th id="163">163</th><td>    size = <var>0</var>;</td></tr>
+<tr><th id="164">164</th><td></td></tr>
+<tr><th id="165">165</th><td><u>#ifdef Q_OS_QNX</u></td></tr>
+<tr><th id="166">166</th><td>    <i>// On QNX the st_nlink field of struct stat contains the number of</i></td></tr>
+<tr><th id="167">167</th><td><i>    // active shm_open() connections to the shared memory file, so we</i></td></tr>
+<tr><th id="168">168</th><td><i>    // can use it to automatically clean up the file once the last</i></td></tr>
+<tr><th id="169">169</th><td><i>    // user has detached from it.</i></td></tr>
+<tr><th id="170">170</th><td><i></i></td></tr>
+<tr><th id="171">171</th><td><i>    // get the number of current attachments</i></td></tr>
+<tr><th id="172">172</th><td>    <em>int</em> shm_nattch = <var>0</var>;</td></tr>
+<tr><th id="173">173</th><td>    QT_STATBUF st;</td></tr>
+<tr><th id="174">174</th><td>    <b>if</b> (QT_FSTAT(hand, &amp;st) == <var>0</var>) {</td></tr>
+<tr><th id="175">175</th><td>        <i>// subtract 2 from linkcount: one for our own open and one for the dir entry</i></td></tr>
+<tr><th id="176">176</th><td>        shm_nattch = st.st_nlink - <var>2</var>;</td></tr>
+<tr><th id="177">177</th><td>    }</td></tr>
+<tr><th id="178">178</th><td></td></tr>
+<tr><th id="179">179</th><td>    cleanHandle();</td></tr>
+<tr><th id="180">180</th><td></td></tr>
+<tr><th id="181">181</th><td>    <i>// if there are no attachments then unlink the shared memory</i></td></tr>
+<tr><th id="182">182</th><td>    <b>if</b> (shm_nattch == <var>0</var>) {</td></tr>
+<tr><th id="183">183</th><td>        <em>const</em> QByteArray shmName = QFile::encodeName(makePlatformSafeKey(key));</td></tr>
+<tr><th id="184">184</th><td>        <b>if</b> (::shm_unlink(shmName.constData()) == -<var>1</var> &amp;&amp; errno != ENOENT)</td></tr>
+<tr><th id="185">185</th><td>            setErrorString(<q>"QSharedMemory::detach (shm_unlink)"_L1</q>);</td></tr>
+<tr><th id="186">186</th><td>    }</td></tr>
+<tr><th id="187">187</th><td><u>#else</u></td></tr>
+<tr><th id="188">188</th><td>    <i>// On non-QNX systems (tested Linux and Haiku), the st_nlink field is always 1,</i></td></tr>
+<tr><th id="189">189</th><td><i>    // so we'll simply leak the shared memory files.</i></td></tr>
+<tr><th id="190">190</th><td>    cleanHandle();</td></tr>
+<tr><th id="191">191</th><td><u>#endif</u></td></tr>
+<tr><th id="192">192</th><td></td></tr>
+<tr><th id="193">193</th><td>    <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="194">194</th><td>}</td></tr>
+<tr><th id="195">195</th><td></td></tr>
+<tr><th id="196">196</th><td>QT_END_NAMESPACE</td></tr>
+<tr><th id="197">197</th><td></td></tr>
+<tr><th id="198">198</th><td><u>#endif // QT_CONFIG(sharedmemory)</u></td></tr>
+<tr><th id="199">199</th><td></td></tr>
+<tr><th id="200">200</th><td><u>#<span data-ppcond="15">endif</span> // QT_POSIX_IPC</u></td></tr>
+<tr><th id="201">201</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2024-Jun-13</em> from project qtbase-6.5.0 revision <em>6.5.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

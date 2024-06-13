@@ -1,0 +1,20 @@
+<dec f='qtbase-6.5.0/src/corelib/thread/qsemaphore.h' l='49' type='QSemaphorePrivate *'/>
+<offset>0</offset>
+<use f='qtbase-6.5.0/src/corelib/thread/qsemaphore.cpp' l='268' u='w' c='_ZN10QSemaphoreC1Ei'/>
+<use f='qtbase-6.5.0/src/corelib/thread/qsemaphore.cpp' l='281' u='r' c='_ZN10QSemaphoreD1Ev'/>
+<use f='qtbase-6.5.0/src/corelib/thread/qsemaphore.cpp' l='300' u='r' c='_ZN10QSemaphore7acquireEi'/>
+<use f='qtbase-6.5.0/src/corelib/thread/qsemaphore.cpp' l='302' u='r' c='_ZN10QSemaphore7acquireEi'/>
+<use f='qtbase-6.5.0/src/corelib/thread/qsemaphore.cpp' l='303' u='r' c='_ZN10QSemaphore7acquireEi'/>
+<use f='qtbase-6.5.0/src/corelib/thread/qsemaphore.cpp' l='304' u='r' c='_ZN10QSemaphore7acquireEi'/>
+<use f='qtbase-6.5.0/src/corelib/thread/qsemaphore.cpp' l='376' u='r' c='_ZN10QSemaphore7releaseEi'/>
+<use f='qtbase-6.5.0/src/corelib/thread/qsemaphore.cpp' l='377' u='r' c='_ZN10QSemaphore7releaseEi'/>
+<use f='qtbase-6.5.0/src/corelib/thread/qsemaphore.cpp' l='378' u='r' c='_ZN10QSemaphore7releaseEi'/>
+<use f='qtbase-6.5.0/src/corelib/thread/qsemaphore.cpp' l='392' u='r' c='_ZNK10QSemaphore9availableEv'/>
+<use f='qtbase-6.5.0/src/corelib/thread/qsemaphore.cpp' l='393' u='r' c='_ZNK10QSemaphore9availableEv'/>
+<use f='qtbase-6.5.0/src/corelib/thread/qsemaphore.cpp' l='414' u='r' c='_ZN10QSemaphore10tryAcquireEi'/>
+<use f='qtbase-6.5.0/src/corelib/thread/qsemaphore.cpp' l='415' u='r' c='_ZN10QSemaphore10tryAcquireEi'/>
+<use f='qtbase-6.5.0/src/corelib/thread/qsemaphore.cpp' l='417' u='r' c='_ZN10QSemaphore10tryAcquireEi'/>
+<use f='qtbase-6.5.0/src/corelib/thread/qsemaphore.cpp' l='453' u='r' c='_ZN10QSemaphore10tryAcquireEii'/>
+<use f='qtbase-6.5.0/src/corelib/thread/qsemaphore.cpp' l='455' u='r' c='_ZN10QSemaphore10tryAcquireEii'/>
+<use f='qtbase-6.5.0/src/corelib/thread/qsemaphore.cpp' l='456' u='r' c='_ZN10QSemaphore10tryAcquireEii'/>
+<use f='qtbase-6.5.0/src/corelib/thread/qsemaphore.cpp' l='458' u='r' c='_ZN10QSemaphore10tryAcquireEii'/>

@@ -1,0 +1,19 @@
+<dec f='qtbase-6.5.0/src/gui/painting/qpagedpaintdevice.h' l='43' type='QPagedPaintDevicePrivate *'/>
+<offset>128</offset>
+<use f='qtbase-6.5.0/src/gui/painting/qpagedpaintdevice_p.h' l='45' u='r' c='_ZN24QPagedPaintDevicePrivate3getEP17QPagedPaintDevice'/>
+<use f='qtbase-6.5.0/src/gui/painting/qpagedpaintdevice.cpp' l='31' u='w' c='_ZN17QPagedPaintDeviceC1EP24QPagedPaintDevicePrivate'/>
+<use f='qtbase-6.5.0/src/gui/painting/qpagedpaintdevice.cpp' l='40' u='r' c='_ZN17QPagedPaintDeviceD1Ev'/>
+<use f='qtbase-6.5.0/src/gui/painting/qpagedpaintdevice.cpp' l='49' u='r' c='_ZN17QPagedPaintDevice2ddEv'/>
+<use f='qtbase-6.5.0/src/gui/painting/qpagedpaintdevice.cpp' l='89' u='r' c='_ZN17QPagedPaintDevice13setPageLayoutERK11QPageLayout'/>
+<use f='qtbase-6.5.0/src/gui/painting/qpagedpaintdevice.cpp' l='111' u='r' c='_ZN17QPagedPaintDevice11setPageSizeERK9QPageSize'/>
+<use f='qtbase-6.5.0/src/gui/painting/qpagedpaintdevice.cpp' l='136' u='r' c='_ZN17QPagedPaintDevice18setPageOrientationEN11QPageLayout11OrientationE'/>
+<use f='qtbase-6.5.0/src/gui/painting/qpagedpaintdevice.cpp' l='158' u='r' c='_ZN17QPagedPaintDevice14setPageMarginsERK9QMarginsFN11QPageLayout4UnitE'/>
+<use f='qtbase-6.5.0/src/gui/painting/qpagedpaintdevice.cpp' l='175' u='r' c='_ZNK17QPagedPaintDevice10pageLayoutEv'/>
+<use f='qtbase-6.5.0/src/gui/painting/qpagedpaintdevice.cpp' l='187' u='r' c='_ZNK17QPagedPaintDevice10pageRangesEv'/>
+<use f='qtbase-6.5.0/src/gui/painting/qpagedpaintdevice.cpp' l='197' u='r' c='_ZN17QPagedPaintDevice13setPageRangesERK11QPageRanges'/>
+<use f='qtbase-6.5.0/src/printsupport/kernel/qprinter.cpp' l='836' u='r' c='_ZN8QPrinter12setPageOrderENS_9PageOrderE'/>
+<use f='qtbase-6.5.0/src/printsupport/kernel/qprinter.cpp' l='1366' u='r' c='_ZNK8QPrinter8fromPageEv'/>
+<use f='qtbase-6.5.0/src/printsupport/kernel/qprinter.cpp' l='1390' u='r' c='_ZNK8QPrinter6toPageEv'/>
+<use f='qtbase-6.5.0/src/printsupport/kernel/qprinter.cpp' l='1412' u='r' c='_ZN8QPrinter9setFromToEii'/>
+<use f='qtbase-6.5.0/src/printsupport/kernel/qprinter.cpp' l='1414' u='r' c='_ZN8QPrinter9setFromToEii'/>
+<use f='qtbase-6.5.0/src/printsupport/kernel/qprinter.cpp' l='1424' u='r' c='_ZN8QPrinter13setPrintRangeENS_10PrintRangeE'/>

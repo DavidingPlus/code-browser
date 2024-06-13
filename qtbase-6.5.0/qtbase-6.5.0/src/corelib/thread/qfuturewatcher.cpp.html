@@ -1,0 +1,722 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>qfuturewatcher.cpp source code [qtbase-6.5.0/src/corelib/thread/qfuturewatcher.cpp] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'qtbase-6.5.0/src/corelib/thread/qfuturewatcher.cpp'; var root_path = '../../../..'; var data_path = '../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>qtbase-6.5.0</a>/<a href='../..'>src</a>/<a href='..'>corelib</a>/<a href='./'>thread</a>/<a href='qfuturewatcher.cpp.html'>qfuturewatcher.cpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>// Copyright (C) 2016 The Qt Company Ltd.</i></td></tr>
+<tr><th id="2">2</th><td><i>// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only</i></td></tr>
+<tr><th id="3">3</th><td></td></tr>
+<tr><th id="4">4</th><td><u>#include <a href="qfuturewatcher.h.html">"qfuturewatcher.h"</a></u></td></tr>
+<tr><th id="5">5</th><td><u>#include <a href="qfuturewatcher_p.h.html">"qfuturewatcher_p.h"</a></u></td></tr>
+<tr><th id="6">6</th><td></td></tr>
+<tr><th id="7">7</th><td><u>#include <a href="../../../build/include/QtCore/qcoreevent.h.html">&lt;QtCore/qcoreevent.h&gt;</a></u></td></tr>
+<tr><th id="8">8</th><td><u>#include <a href="../../../build/include/QtCore/qcoreapplication.h.html">&lt;QtCore/qcoreapplication.h&gt;</a></u></td></tr>
+<tr><th id="9">9</th><td><u>#include <a href="../../../build/include/QtCore/qmetaobject.h.html">&lt;QtCore/qmetaobject.h&gt;</a></u></td></tr>
+<tr><th id="10">10</th><td><u>#include <a href="../../../build/include/QtCore/qthread.h.html">&lt;QtCore/qthread.h&gt;</a></u></td></tr>
+<tr><th id="11">11</th><td></td></tr>
+<tr><th id="12">12</th><td><a class="macro" href="../global/qtconfigmacros.h.html#103" title="" data-ref="_M/QT_BEGIN_NAMESPACE">QT_BEGIN_NAMESPACE</a></td></tr>
+<tr><th id="13">13</th><td></td></tr>
+<tr><th id="14">14</th><td><i class="doc">/*! <span class="command">\class</span> <span class="verb" data-ref="QFutureWatcher">QFutureWatcher</span></i></td></tr>
+<tr><th id="15">15</th><td><i class="doc">   <span class="command"> \reentrant</span></i></td></tr>
+<tr><th id="16">16</th><td><i class="doc">    <span class="command">\since</span> 4.4</i></td></tr>
+<tr><th id="17">17</th><td><i class="doc"></i></td></tr>
+<tr><th id="18">18</th><td><i class="doc">   <span class="command"> \inmodule</span> QtCore</i></td></tr>
+<tr><th id="19">19</th><td><i class="doc">    <span class="command">\ingroup</span> <span class="verb">thread</span></i></td></tr>
+<tr><th id="20">20</th><td><i class="doc"></i></td></tr>
+<tr><th id="21">21</th><td><i class="doc">    <span class="command">\brief</span> The QFutureWatcher class allows monitoring a QFuture using signals</i></td></tr>
+<tr><th id="22">22</th><td><i class="doc">    and slots.</i></td></tr>
+<tr><th id="23">23</th><td><i class="doc"></i></td></tr>
+<tr><th id="24">24</th><td><i class="doc">    QFutureWatcher provides information and notifications about a QFuture. Use</i></td></tr>
+<tr><th id="25">25</th><td><i class="doc">    the setFuture() function to start watching a particular QFuture. The</i></td></tr>
+<tr><th id="26">26</th><td><i class="doc">    future() function returns the future set with setFuture().</i></td></tr>
+<tr><th id="27">27</th><td><i class="doc"></i></td></tr>
+<tr><th id="28">28</th><td><i class="doc">    For convenience, several of QFuture's functions are also available in</i></td></tr>
+<tr><th id="29">29</th><td><i class="doc">    QFutureWatcher: progressValue(), progressMinimum(), progressMaximum(),</i></td></tr>
+<tr><th id="30">30</th><td><i class="doc">    progressText(), isStarted(), isFinished(), isRunning(), isCanceled(),</i></td></tr>
+<tr><th id="31">31</th><td><i class="doc">    isSuspending(), isSuspended(), waitForFinished(), result(), and resultAt().</i></td></tr>
+<tr><th id="32">32</th><td><i class="doc">    The cancel(), setSuspended(), suspend(), resume(), and toggleSuspended() functions</i></td></tr>
+<tr><th id="33">33</th><td><i class="doc">    are slots in QFutureWatcher.</i></td></tr>
+<tr><th id="34">34</th><td><i class="doc"></i></td></tr>
+<tr><th id="35">35</th><td><i class="doc">    Status changes are reported via the started(), finished(), canceled(),</i></td></tr>
+<tr><th id="36">36</th><td><i class="doc">    suspending(), suspended(), resumed(), resultReadyAt(), and resultsReadyAt()</i></td></tr>
+<tr><th id="37">37</th><td><i class="doc">    signals. Progress information is provided from the progressRangeChanged(),</i></td></tr>
+<tr><th id="38">38</th><td><i class="doc">    void progressValueChanged(), and progressTextChanged() signals.</i></td></tr>
+<tr><th id="39">39</th><td><i class="doc"></i></td></tr>
+<tr><th id="40">40</th><td><i class="doc">    Throttling control is provided by the setPendingResultsLimit() function.</i></td></tr>
+<tr><th id="41">41</th><td><i class="doc">    When the number of pending resultReadyAt() or resultsReadyAt() signals</i></td></tr>
+<tr><th id="42">42</th><td><i class="doc">    exceeds the limit, the computation represented by the future will be</i></td></tr>
+<tr><th id="43">43</th><td><i class="doc">    throttled automatically. The computation will resume once the number of</i></td></tr>
+<tr><th id="44">44</th><td><i class="doc">    pending signals drops below the limit.</i></td></tr>
+<tr><th id="45">45</th><td><i class="doc"></i></td></tr>
+<tr><th id="46">46</th><td><i class="doc">    Example: Starting a computation and getting a slot callback when it's</i></td></tr>
+<tr><th id="47">47</th><td><i class="doc">    finished:</i></td></tr>
+<tr><th id="48">48</th><td><i class="doc"></i></td></tr>
+<tr><th id="49">49</th><td><i class="doc">    <span class="command">\snippet</span> <span class="verb">code/src_corelib_thread_qfuturewatcher.cpp 0</span></i></td></tr>
+<tr><th id="50">50</th><td><i class="doc"></i></td></tr>
+<tr><th id="51">51</th><td><i class="doc">    Be aware that not all running asynchronous computations can be canceled or</i></td></tr>
+<tr><th id="52">52</th><td><i class="doc">    suspended. For example, the future returned by QtConcurrent::run() cannot be</i></td></tr>
+<tr><th id="53">53</th><td><i class="doc">    canceled; but the future returned by QtConcurrent::mappedReduced() can.</i></td></tr>
+<tr><th id="54">54</th><td><i class="doc"></i></td></tr>
+<tr><th id="55">55</th><td><i class="doc">    QFutureWatcher&lt;void&gt; is specialized to not contain any of the result</i></td></tr>
+<tr><th id="56">56</th><td><i class="doc">    fetching functions. Any QFuture&lt;T&gt; can be watched by a</i></td></tr>
+<tr><th id="57">57</th><td><i class="doc">    QFutureWatcher&lt;void&gt; as well. This is useful if only status or progress</i></td></tr>
+<tr><th id="58">58</th><td><i class="doc">    information is needed; not the actual result data.</i></td></tr>
+<tr><th id="59">59</th><td><i class="doc"></i></td></tr>
+<tr><th id="60">60</th><td><i class="doc">    <span class="command">\sa</span> QFuture, {Qt Concurrent}</i></td></tr>
+<tr><th id="61">61</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="62">62</th><td></td></tr>
+<tr><th id="63">63</th><td><i class="doc">/*! <span class="command">\fn</span> <span class="verb">template &lt;typename T&gt; QFutureWatcher&lt;T&gt;::QFutureWatcher(QObject *parent)</span></i></td></tr>
+<tr><th id="64">64</th><td><i class="doc"></i></td></tr>
+<tr><th id="65">65</th><td><i class="doc">    Constructs a new QFutureWatcher with the given<span class="command"> \a</span> <span class="arg">parent.</span> Until a future is</i></td></tr>
+<tr><th id="66">66</th><td><i class="doc">    set with setFuture(), the functions isStarted(), isCanceled(), and</i></td></tr>
+<tr><th id="67">67</th><td><i class="doc">    isFinished() return<span class="command"> \c</span> <span class="arg">true.</span></i></td></tr>
+<tr><th id="68">68</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="69">69</th><td><a class="type" href="qfuturewatcher.h.html#QFutureWatcherBase" title='QFutureWatcherBase' data-ref="QFutureWatcherBase">QFutureWatcherBase</a>::<dfn class="decl def fn" id="_ZN18QFutureWatcherBaseC1EP7QObject" title='QFutureWatcherBase::QFutureWatcherBase' data-ref="_ZN18QFutureWatcherBaseC1EP7QObject">QFutureWatcherBase</dfn>(<a class="type" href="../kernel/qobject.h.html#QObject" title='QObject' data-ref="QObject">QObject</a> *<dfn class="local col3 decl" id="3parent" title='parent' data-type='QObject *' data-ref="3parent">parent</dfn>)</td></tr>
+<tr><th id="70">70</th><td>    :<a class="type" href="../kernel/qobject.h.html#QObject" title='QObject' data-ref="QObject">QObject</a><a class="ref fn" href="../kernel/qobject.h.html#_ZN7QObjectC1ER14QObjectPrivatePS_" title='QObject::QObject' data-ref="_ZN7QObjectC1ER14QObjectPrivatePS_">(</a>*<b>new</b> <a class="ref fn fake" href="#_ZN25QFutureWatcherBasePrivateC1Ev" title='QFutureWatcherBasePrivate::QFutureWatcherBasePrivate' data-ref="_ZN25QFutureWatcherBasePrivateC1Ev"></a><a class="type" href="qfuturewatcher_p.h.html#QFutureWatcherBasePrivate" title='QFutureWatcherBasePrivate' data-ref="QFutureWatcherBasePrivate">QFutureWatcherBasePrivate</a>, <a class="local col3 ref" href="#3parent" title='parent' data-ref="3parent">parent</a>)</td></tr>
+<tr><th id="71">71</th><td>{ }</td></tr>
+<tr><th id="72">72</th><td></td></tr>
+<tr><th id="73">73</th><td><i class="doc">/*! <span class="command">\fn</span> <span class="verb">template &lt;typename T&gt; QFutureWatcher&lt;T&gt;::~QFutureWatcher()</span></i></td></tr>
+<tr><th id="74">74</th><td><i class="doc"></i></td></tr>
+<tr><th id="75">75</th><td><i class="doc">    Destroys the QFutureWatcher.</i></td></tr>
+<tr><th id="76">76</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="77">77</th><td></td></tr>
+<tr><th id="78">78</th><td><i class="doc">/*! <span class="command">\fn</span> <span class="verb">template &lt;typename T&gt; void QFutureWatcher&lt;T&gt;::cancel()</span></i></td></tr>
+<tr><th id="79">79</th><td><i class="doc"></i></td></tr>
+<tr><th id="80">80</th><td><i class="doc">    Cancels the asynchronous computation represented by the future(). Note that</i></td></tr>
+<tr><th id="81">81</th><td><i class="doc">    the cancellation is asynchronous. Use waitForFinished() after calling</i></td></tr>
+<tr><th id="82">82</th><td><i class="doc">    cancel() when you need synchronous cancellation.</i></td></tr>
+<tr><th id="83">83</th><td><i class="doc"></i></td></tr>
+<tr><th id="84">84</th><td><i class="doc">    Currently available results may still be accessed on a canceled QFuture,</i></td></tr>
+<tr><th id="85">85</th><td><i class="doc">    but new results will<span class="command"> \e</span> <span class="arg">not</span> become available after calling this function.</i></td></tr>
+<tr><th id="86">86</th><td><i class="doc">    Also, this QFutureWatcher will not deliver progress and result ready</i></td></tr>
+<tr><th id="87">87</th><td><i class="doc">    signals once canceled. This includes the progressValueChanged(),</i></td></tr>
+<tr><th id="88">88</th><td><i class="doc">    progressRangeChanged(), progressTextChanged(), resultReadyAt(), and</i></td></tr>
+<tr><th id="89">89</th><td><i class="doc">    resultsReadyAt() signals.</i></td></tr>
+<tr><th id="90">90</th><td><i class="doc"></i></td></tr>
+<tr><th id="91">91</th><td><i class="doc">    Be aware that not all running asynchronous computations can be canceled.</i></td></tr>
+<tr><th id="92">92</th><td><i class="doc">    For example, the QFuture returned by QtConcurrent::run() cannot be</i></td></tr>
+<tr><th id="93">93</th><td><i class="doc">    canceled; but the QFuture returned by QtConcurrent::mappedReduced() can.</i></td></tr>
+<tr><th id="94">94</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="95">95</th><td><em>void</em> <a class="type" href="qfuturewatcher.h.html#QFutureWatcherBase" title='QFutureWatcherBase' data-ref="QFutureWatcherBase">QFutureWatcherBase</a>::<dfn class="decl def fn" id="_ZN18QFutureWatcherBase6cancelEv" title='QFutureWatcherBase::cancel' data-ref="_ZN18QFutureWatcherBase6cancelEv">cancel</dfn>()</td></tr>
+<tr><th id="96">96</th><td>{</td></tr>
+<tr><th id="97">97</th><td>    <a class="virtual member fn" href="qfuturewatcher.h.html#_ZN18QFutureWatcherBase15futureInterfaceEv" title='QFutureWatcherBase::futureInterface' data-ref="_ZN18QFutureWatcherBase15futureInterfaceEv">futureInterface</a>().<a class="ref fn" href="qfutureinterface.h.html#_ZN20QFutureInterfaceBase6cancelEv" title='QFutureInterfaceBase::cancel' data-ref="_ZN20QFutureInterfaceBase6cancelEv">cancel</a>();</td></tr>
+<tr><th id="98">98</th><td>}</td></tr>
+<tr><th id="99">99</th><td></td></tr>
+<tr><th id="100">100</th><td><u>#<span data-ppcond="100">if</span> <a class="macro" href="../global/qtdeprecationmarkers.h.html#80" title="(((6&lt;&lt;16)|(0&lt;&lt;8)|(0)) &gt; 0x050000)" data-ref="_M/QT_DEPRECATED_SINCE">QT_DEPRECATED_SINCE</a>(6, 0)</u></td></tr>
+<tr><th id="101">101</th><td><i class="doc">/*! <span class="command">\fn</span> <span class="verb">template &lt;typename T&gt; void QFutureWatcher&lt;T&gt;::setPaused(bool paused)</span></i></td></tr>
+<tr><th id="102">102</th><td><i class="doc"></i></td></tr>
+<tr><th id="103">103</th><td><i class="doc">    <span class="command">\deprecated</span> [6.6] Use setSuspended() instead.</i></td></tr>
+<tr><th id="104">104</th><td><i class="doc"></i></td></tr>
+<tr><th id="105">105</th><td><i class="doc">    If<span class="command"> \a</span> <span class="arg">paused</span> is true, this function pauses the asynchronous computation</i></td></tr>
+<tr><th id="106">106</th><td><i class="doc">    represented by the future(). If the computation is already paused, this</i></td></tr>
+<tr><th id="107">107</th><td><i class="doc">    function does nothing. QFutureWatcher will not immediately stop delivering</i></td></tr>
+<tr><th id="108">108</th><td><i class="doc">    progress and result ready signals when the future is paused. At the moment</i></td></tr>
+<tr><th id="109">109</th><td><i class="doc">    of pausing there may still be computations that are in progress and cannot</i></td></tr>
+<tr><th id="110">110</th><td><i class="doc">    be stopped. Signals for such computations will still be delivered after</i></td></tr>
+<tr><th id="111">111</th><td><i class="doc">    pause.</i></td></tr>
+<tr><th id="112">112</th><td><i class="doc"></i></td></tr>
+<tr><th id="113">113</th><td><i class="doc">    If<span class="command"> \a</span> <span class="arg">paused</span> is false, this function resumes the asynchronous computation.</i></td></tr>
+<tr><th id="114">114</th><td><i class="doc">    If the computation was not previously paused, this function does nothing.</i></td></tr>
+<tr><th id="115">115</th><td><i class="doc"></i></td></tr>
+<tr><th id="116">116</th><td><i class="doc">    Be aware that not all computations can be paused. For example, the</i></td></tr>
+<tr><th id="117">117</th><td><i class="doc">    QFuture returned by QtConcurrent::run() cannot be paused; but the QFuture</i></td></tr>
+<tr><th id="118">118</th><td><i class="doc">    returned by QtConcurrent::mappedReduced() can.</i></td></tr>
+<tr><th id="119">119</th><td><i class="doc"></i></td></tr>
+<tr><th id="120">120</th><td><i class="doc">    <span class="command">\sa</span> suspend(), resume(), toggleSuspended()</i></td></tr>
+<tr><th id="121">121</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="122">122</th><td><em>void</em> <a class="type" href="qfuturewatcher.h.html#QFutureWatcherBase" title='QFutureWatcherBase' data-ref="QFutureWatcherBase">QFutureWatcherBase</a>::<dfn class="decl def fn" id="_ZN18QFutureWatcherBase9setPausedEb" title='QFutureWatcherBase::setPaused' data-ref="_ZN18QFutureWatcherBase9setPausedEb">setPaused</dfn>(<em>bool</em> <dfn class="local col4 decl" id="4paused" title='paused' data-type='bool' data-ref="4paused">paused</dfn>)</td></tr>
+<tr><th id="123">123</th><td>{</td></tr>
+<tr><th id="124">124</th><td>    <a class="virtual member fn" href="qfuturewatcher.h.html#_ZN18QFutureWatcherBase15futureInterfaceEv" title='QFutureWatcherBase::futureInterface' data-ref="_ZN18QFutureWatcherBase15futureInterfaceEv">futureInterface</a>().<a class="ref fn" href="qfutureinterface.h.html#_ZN20QFutureInterfaceBase12setSuspendedEb" title='QFutureInterfaceBase::setSuspended' data-ref="_ZN20QFutureInterfaceBase12setSuspendedEb">setSuspended</a>(<a class="local col4 ref" href="#4paused" title='paused' data-ref="4paused">paused</a>);</td></tr>
+<tr><th id="125">125</th><td>}</td></tr>
+<tr><th id="126">126</th><td></td></tr>
+<tr><th id="127">127</th><td><i class="doc">/*! <span class="command">\fn</span> <span class="verb">template &lt;typename T&gt; void QFutureWatcher&lt;T&gt;::pause()</span></i></td></tr>
+<tr><th id="128">128</th><td><i class="doc"></i></td></tr>
+<tr><th id="129">129</th><td><i class="doc">    <span class="command">\deprecated</span></i></td></tr>
+<tr><th id="130">130</th><td><i class="doc">    Use suspend() instead.</i></td></tr>
+<tr><th id="131">131</th><td><i class="doc"></i></td></tr>
+<tr><th id="132">132</th><td><i class="doc">    Pauses the asynchronous computation represented by the future(). This is a</i></td></tr>
+<tr><th id="133">133</th><td><i class="doc">    convenience method that simply calls setPaused(true).</i></td></tr>
+<tr><th id="134">134</th><td><i class="doc"></i></td></tr>
+<tr><th id="135">135</th><td><i class="doc">    <span class="command">\sa</span> resume()</i></td></tr>
+<tr><th id="136">136</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="137">137</th><td><em>void</em> <a class="type" href="qfuturewatcher.h.html#QFutureWatcherBase" title='QFutureWatcherBase' data-ref="QFutureWatcherBase">QFutureWatcherBase</a>::<dfn class="decl def fn" id="_ZN18QFutureWatcherBase5pauseEv" title='QFutureWatcherBase::pause' data-ref="_ZN18QFutureWatcherBase5pauseEv">pause</dfn>()</td></tr>
+<tr><th id="138">138</th><td>{</td></tr>
+<tr><th id="139">139</th><td>    <a class="virtual member fn" href="qfuturewatcher.h.html#_ZN18QFutureWatcherBase15futureInterfaceEv" title='QFutureWatcherBase::futureInterface' data-ref="_ZN18QFutureWatcherBase15futureInterfaceEv">futureInterface</a>().<a class="ref fn" href="qfutureinterface.h.html#_ZN20QFutureInterfaceBase12setSuspendedEb" title='QFutureInterfaceBase::setSuspended' data-ref="_ZN20QFutureInterfaceBase12setSuspendedEb">setSuspended</a>(<b>true</b>);</td></tr>
+<tr><th id="140">140</th><td>}</td></tr>
+<tr><th id="141">141</th><td></td></tr>
+<tr><th id="142">142</th><td><u>#<span data-ppcond="100">endif</span> // QT_DEPRECATED_SINCE(6, 0)</u></td></tr>
+<tr><th id="143">143</th><td></td></tr>
+<tr><th id="144">144</th><td><i class="doc">/*! <span class="command">\fn</span> <span class="verb">template &lt;typename T&gt; void QFutureWatcher&lt;T&gt;::setSuspended(bool suspend)</span></i></td></tr>
+<tr><th id="145">145</th><td><i class="doc"></i></td></tr>
+<tr><th id="146">146</th><td><i class="doc">    <span class="command">\since</span> 6.0</i></td></tr>
+<tr><th id="147">147</th><td><i class="doc"></i></td></tr>
+<tr><th id="148">148</th><td><i class="doc">    If<span class="command"> \a</span> <span class="arg">suspend</span> is true, this function suspends the asynchronous computation</i></td></tr>
+<tr><th id="149">149</th><td><i class="doc">    represented by the future(). If the computation is already suspended, this</i></td></tr>
+<tr><th id="150">150</th><td><i class="doc">    function does nothing. QFutureWatcher will not immediately stop delivering</i></td></tr>
+<tr><th id="151">151</th><td><i class="doc">    progress and result ready signals when the future is suspended. At the moment</i></td></tr>
+<tr><th id="152">152</th><td><i class="doc">    of suspending there may still be computations that are in progress and cannot</i></td></tr>
+<tr><th id="153">153</th><td><i class="doc">    be stopped. Signals for such computations will still be delivered.</i></td></tr>
+<tr><th id="154">154</th><td><i class="doc"></i></td></tr>
+<tr><th id="155">155</th><td><i class="doc">    If<span class="command"> \a</span> <span class="arg">suspend</span> is false, this function resumes the asynchronous computation.</i></td></tr>
+<tr><th id="156">156</th><td><i class="doc">    If the computation was not previously suspended, this function does nothing.</i></td></tr>
+<tr><th id="157">157</th><td><i class="doc"></i></td></tr>
+<tr><th id="158">158</th><td><i class="doc">    Be aware that not all computations can be suspended. For example, the</i></td></tr>
+<tr><th id="159">159</th><td><i class="doc">    QFuture returned by QtConcurrent::run() cannot be suspended; but the QFuture</i></td></tr>
+<tr><th id="160">160</th><td><i class="doc">    returned by QtConcurrent::mappedReduced() can.</i></td></tr>
+<tr><th id="161">161</th><td><i class="doc"></i></td></tr>
+<tr><th id="162">162</th><td><i class="doc">    <span class="command">\sa</span> suspend(), resume(), toggleSuspended()</i></td></tr>
+<tr><th id="163">163</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="164">164</th><td><em>void</em> <a class="type" href="qfuturewatcher.h.html#QFutureWatcherBase" title='QFutureWatcherBase' data-ref="QFutureWatcherBase">QFutureWatcherBase</a>::<dfn class="decl def fn" id="_ZN18QFutureWatcherBase12setSuspendedEb" title='QFutureWatcherBase::setSuspended' data-ref="_ZN18QFutureWatcherBase12setSuspendedEb">setSuspended</dfn>(<em>bool</em> <dfn class="local col5 decl" id="5suspend" title='suspend' data-type='bool' data-ref="5suspend">suspend</dfn>)</td></tr>
+<tr><th id="165">165</th><td>{</td></tr>
+<tr><th id="166">166</th><td>    <a class="virtual member fn" href="qfuturewatcher.h.html#_ZN18QFutureWatcherBase15futureInterfaceEv" title='QFutureWatcherBase::futureInterface' data-ref="_ZN18QFutureWatcherBase15futureInterfaceEv">futureInterface</a>().<a class="ref fn" href="qfutureinterface.h.html#_ZN20QFutureInterfaceBase12setSuspendedEb" title='QFutureInterfaceBase::setSuspended' data-ref="_ZN20QFutureInterfaceBase12setSuspendedEb">setSuspended</a>(<a class="local col5 ref" href="#5suspend" title='suspend' data-ref="5suspend">suspend</a>);</td></tr>
+<tr><th id="167">167</th><td>}</td></tr>
+<tr><th id="168">168</th><td></td></tr>
+<tr><th id="169">169</th><td><i class="doc">/*! <span class="command">\fn</span> <span class="verb">template &lt;typename T&gt; void QFutureWatcher&lt;T&gt;::suspend()</span></i></td></tr>
+<tr><th id="170">170</th><td><i class="doc"></i></td></tr>
+<tr><th id="171">171</th><td><i class="doc">    <span class="command">\since</span> 6.0</i></td></tr>
+<tr><th id="172">172</th><td><i class="doc"></i></td></tr>
+<tr><th id="173">173</th><td><i class="doc">    Suspends the asynchronous computation represented by this future. This is a</i></td></tr>
+<tr><th id="174">174</th><td><i class="doc">    convenience method that simply calls setSuspended(true).</i></td></tr>
+<tr><th id="175">175</th><td><i class="doc"></i></td></tr>
+<tr><th id="176">176</th><td><i class="doc">    <span class="command">\sa</span> resume()</i></td></tr>
+<tr><th id="177">177</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="178">178</th><td><em>void</em> <a class="type" href="qfuturewatcher.h.html#QFutureWatcherBase" title='QFutureWatcherBase' data-ref="QFutureWatcherBase">QFutureWatcherBase</a>::<dfn class="decl def fn" id="_ZN18QFutureWatcherBase7suspendEv" title='QFutureWatcherBase::suspend' data-ref="_ZN18QFutureWatcherBase7suspendEv">suspend</dfn>()</td></tr>
+<tr><th id="179">179</th><td>{</td></tr>
+<tr><th id="180">180</th><td>    <a class="virtual member fn" href="qfuturewatcher.h.html#_ZN18QFutureWatcherBase15futureInterfaceEv" title='QFutureWatcherBase::futureInterface' data-ref="_ZN18QFutureWatcherBase15futureInterfaceEv">futureInterface</a>().<a class="ref fn" href="qfutureinterface.h.html#_ZN20QFutureInterfaceBase12setSuspendedEb" title='QFutureInterfaceBase::setSuspended' data-ref="_ZN20QFutureInterfaceBase12setSuspendedEb">setSuspended</a>(<b>true</b>);</td></tr>
+<tr><th id="181">181</th><td>}</td></tr>
+<tr><th id="182">182</th><td></td></tr>
+<tr><th id="183">183</th><td><i class="doc">/*! <span class="command">\fn</span> <span class="verb">template &lt;typename T&gt; void QFutureWatcher&lt;T&gt;::resume()</span></i></td></tr>
+<tr><th id="184">184</th><td><i class="doc"></i></td></tr>
+<tr><th id="185">185</th><td><i class="doc">    Resumes the asynchronous computation represented by the future(). This is</i></td></tr>
+<tr><th id="186">186</th><td><i class="doc">    a convenience method that simply calls setSuspended(false).</i></td></tr>
+<tr><th id="187">187</th><td><i class="doc"></i></td></tr>
+<tr><th id="188">188</th><td><i class="doc">    <span class="command">\sa</span> suspend()</i></td></tr>
+<tr><th id="189">189</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="190">190</th><td></td></tr>
+<tr><th id="191">191</th><td><em>void</em> <a class="type" href="qfuturewatcher.h.html#QFutureWatcherBase" title='QFutureWatcherBase' data-ref="QFutureWatcherBase">QFutureWatcherBase</a>::<dfn class="decl def fn" id="_ZN18QFutureWatcherBase6resumeEv" title='QFutureWatcherBase::resume' data-ref="_ZN18QFutureWatcherBase6resumeEv">resume</dfn>()</td></tr>
+<tr><th id="192">192</th><td>{</td></tr>
+<tr><th id="193">193</th><td>    <a class="virtual member fn" href="qfuturewatcher.h.html#_ZN18QFutureWatcherBase15futureInterfaceEv" title='QFutureWatcherBase::futureInterface' data-ref="_ZN18QFutureWatcherBase15futureInterfaceEv">futureInterface</a>().<a class="ref fn" href="qfutureinterface.h.html#_ZN20QFutureInterfaceBase12setSuspendedEb" title='QFutureInterfaceBase::setSuspended' data-ref="_ZN20QFutureInterfaceBase12setSuspendedEb">setSuspended</a>(<b>false</b>);</td></tr>
+<tr><th id="194">194</th><td>}</td></tr>
+<tr><th id="195">195</th><td></td></tr>
+<tr><th id="196">196</th><td><u>#<span data-ppcond="196">if</span> <a class="macro" href="../global/qtdeprecationmarkers.h.html#80" title="(((6&lt;&lt;16)|(0&lt;&lt;8)|(0)) &gt; 0x050000)" data-ref="_M/QT_DEPRECATED_SINCE">QT_DEPRECATED_SINCE</a>(6, 0)</u></td></tr>
+<tr><th id="197">197</th><td><i class="doc">/*! <span class="command">\fn</span> <span class="verb">template &lt;typename T&gt; void QFutureWatcher&lt;T&gt;::togglePaused()</span></i></td></tr>
+<tr><th id="198">198</th><td><i class="doc"></i></td></tr>
+<tr><th id="199">199</th><td><i class="doc">    <span class="command">\deprecated</span> [6.0] Use toggleSuspended() instead.</i></td></tr>
+<tr><th id="200">200</th><td><i class="doc"></i></td></tr>
+<tr><th id="201">201</th><td><i class="doc">    Toggles the paused state of the asynchronous computation. In other words,</i></td></tr>
+<tr><th id="202">202</th><td><i class="doc">    if the computation is currently paused, calling this function resumes it;</i></td></tr>
+<tr><th id="203">203</th><td><i class="doc">    if the computation is running, it is paused. This is a convenience method</i></td></tr>
+<tr><th id="204">204</th><td><i class="doc">    for calling setPaused(!isPaused()).</i></td></tr>
+<tr><th id="205">205</th><td><i class="doc"></i></td></tr>
+<tr><th id="206">206</th><td><i class="doc">    <span class="command">\sa</span> setSuspended(), suspend(), resume()</i></td></tr>
+<tr><th id="207">207</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="208">208</th><td><em>void</em> <a class="type" href="qfuturewatcher.h.html#QFutureWatcherBase" title='QFutureWatcherBase' data-ref="QFutureWatcherBase">QFutureWatcherBase</a>::<dfn class="decl def fn" id="_ZN18QFutureWatcherBase12togglePausedEv" title='QFutureWatcherBase::togglePaused' data-ref="_ZN18QFutureWatcherBase12togglePausedEv">togglePaused</dfn>()</td></tr>
+<tr><th id="209">209</th><td>{</td></tr>
+<tr><th id="210">210</th><td>    <a class="virtual member fn" href="qfuturewatcher.h.html#_ZN18QFutureWatcherBase15futureInterfaceEv" title='QFutureWatcherBase::futureInterface' data-ref="_ZN18QFutureWatcherBase15futureInterfaceEv">futureInterface</a>().<a class="ref fn" href="qfutureinterface.h.html#_ZN20QFutureInterfaceBase15toggleSuspendedEv" title='QFutureInterfaceBase::toggleSuspended' data-ref="_ZN20QFutureInterfaceBase15toggleSuspendedEv">toggleSuspended</a>();</td></tr>
+<tr><th id="211">211</th><td>}</td></tr>
+<tr><th id="212">212</th><td><u>#<span data-ppcond="196">endif</span> // QT_DEPRECATED_SINCE(6, 0)</u></td></tr>
+<tr><th id="213">213</th><td></td></tr>
+<tr><th id="214">214</th><td><i class="doc">/*! <span class="command">\fn</span> <span class="verb">template &lt;typename T&gt; void QFutureWatcher&lt;T&gt;::toggleSuspended()</span></i></td></tr>
+<tr><th id="215">215</th><td><i class="doc"></i></td></tr>
+<tr><th id="216">216</th><td><i class="doc">    <span class="command">\since</span> 6.0</i></td></tr>
+<tr><th id="217">217</th><td><i class="doc"></i></td></tr>
+<tr><th id="218">218</th><td><i class="doc">    Toggles the suspended state of the asynchronous computation. In other words,</i></td></tr>
+<tr><th id="219">219</th><td><i class="doc">    if the computation is currently suspending or suspended, calling this</i></td></tr>
+<tr><th id="220">220</th><td><i class="doc">    function resumes it; if the computation is running, it is suspended. This is a</i></td></tr>
+<tr><th id="221">221</th><td><i class="doc">    convenience method for calling setSuspended(!(isSuspending() || isSuspended())).</i></td></tr>
+<tr><th id="222">222</th><td><i class="doc"></i></td></tr>
+<tr><th id="223">223</th><td><i class="doc">    <span class="command">\sa</span> setSuspended(), suspend(), resume()</i></td></tr>
+<tr><th id="224">224</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="225">225</th><td><em>void</em> <a class="type" href="qfuturewatcher.h.html#QFutureWatcherBase" title='QFutureWatcherBase' data-ref="QFutureWatcherBase">QFutureWatcherBase</a>::<dfn class="decl def fn" id="_ZN18QFutureWatcherBase15toggleSuspendedEv" title='QFutureWatcherBase::toggleSuspended' data-ref="_ZN18QFutureWatcherBase15toggleSuspendedEv">toggleSuspended</dfn>()</td></tr>
+<tr><th id="226">226</th><td>{</td></tr>
+<tr><th id="227">227</th><td>    <a class="virtual member fn" href="qfuturewatcher.h.html#_ZN18QFutureWatcherBase15futureInterfaceEv" title='QFutureWatcherBase::futureInterface' data-ref="_ZN18QFutureWatcherBase15futureInterfaceEv">futureInterface</a>().<a class="ref fn" href="qfutureinterface.h.html#_ZN20QFutureInterfaceBase15toggleSuspendedEv" title='QFutureInterfaceBase::toggleSuspended' data-ref="_ZN20QFutureInterfaceBase15toggleSuspendedEv">toggleSuspended</a>();</td></tr>
+<tr><th id="228">228</th><td>}</td></tr>
+<tr><th id="229">229</th><td></td></tr>
+<tr><th id="230">230</th><td><i class="doc">/*! <span class="command">\fn</span> <span class="verb">template &lt;typename T&gt; int QFutureWatcher&lt;T&gt;::progressValue() const</span></i></td></tr>
+<tr><th id="231">231</th><td><i class="doc"></i></td></tr>
+<tr><th id="232">232</th><td><i class="doc">    Returns the current progress value, which is between the progressMinimum()</i></td></tr>
+<tr><th id="233">233</th><td><i class="doc">    and progressMaximum().</i></td></tr>
+<tr><th id="234">234</th><td><i class="doc"></i></td></tr>
+<tr><th id="235">235</th><td><i class="doc">    <span class="command">\sa</span> progressMinimum(), progressMaximum()</i></td></tr>
+<tr><th id="236">236</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="237">237</th><td><em>int</em> <a class="type" href="qfuturewatcher.h.html#QFutureWatcherBase" title='QFutureWatcherBase' data-ref="QFutureWatcherBase">QFutureWatcherBase</a>::<dfn class="decl def fn" id="_ZNK18QFutureWatcherBase13progressValueEv" title='QFutureWatcherBase::progressValue' data-ref="_ZNK18QFutureWatcherBase13progressValueEv">progressValue</dfn>() <em>const</em></td></tr>
+<tr><th id="238">238</th><td>{</td></tr>
+<tr><th id="239">239</th><td>    <b>return</b> <a class="virtual member fn" href="qfuturewatcher.h.html#_ZNK18QFutureWatcherBase15futureInterfaceEv" title='QFutureWatcherBase::futureInterface' data-ref="_ZNK18QFutureWatcherBase15futureInterfaceEv">futureInterface</a>().<a class="ref fn" href="qfutureinterface.h.html#_ZNK20QFutureInterfaceBase13progressValueEv" title='QFutureInterfaceBase::progressValue' data-ref="_ZNK20QFutureInterfaceBase13progressValueEv">progressValue</a>();</td></tr>
+<tr><th id="240">240</th><td>}</td></tr>
+<tr><th id="241">241</th><td></td></tr>
+<tr><th id="242">242</th><td><i class="doc">/*! <span class="command">\fn</span> <span class="verb">template &lt;typename T&gt; int QFutureWatcher&lt;T&gt;::progressMinimum() const</span></i></td></tr>
+<tr><th id="243">243</th><td><i class="doc"></i></td></tr>
+<tr><th id="244">244</th><td><i class="doc">    Returns the minimum progressValue().</i></td></tr>
+<tr><th id="245">245</th><td><i class="doc"></i></td></tr>
+<tr><th id="246">246</th><td><i class="doc">    <span class="command">\sa</span> progressValue(), progressMaximum()</i></td></tr>
+<tr><th id="247">247</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="248">248</th><td><em>int</em> <a class="type" href="qfuturewatcher.h.html#QFutureWatcherBase" title='QFutureWatcherBase' data-ref="QFutureWatcherBase">QFutureWatcherBase</a>::<dfn class="decl def fn" id="_ZNK18QFutureWatcherBase15progressMinimumEv" title='QFutureWatcherBase::progressMinimum' data-ref="_ZNK18QFutureWatcherBase15progressMinimumEv">progressMinimum</dfn>() <em>const</em></td></tr>
+<tr><th id="249">249</th><td>{</td></tr>
+<tr><th id="250">250</th><td>    <b>return</b> <a class="virtual member fn" href="qfuturewatcher.h.html#_ZNK18QFutureWatcherBase15futureInterfaceEv" title='QFutureWatcherBase::futureInterface' data-ref="_ZNK18QFutureWatcherBase15futureInterfaceEv">futureInterface</a>().<a class="ref fn" href="qfutureinterface.h.html#_ZNK20QFutureInterfaceBase15progressMinimumEv" title='QFutureInterfaceBase::progressMinimum' data-ref="_ZNK20QFutureInterfaceBase15progressMinimumEv">progressMinimum</a>();</td></tr>
+<tr><th id="251">251</th><td>}</td></tr>
+<tr><th id="252">252</th><td></td></tr>
+<tr><th id="253">253</th><td><i class="doc">/*! <span class="command">\fn</span> <span class="verb">template &lt;typename T&gt; int QFutureWatcher&lt;T&gt;::progressMaximum() const</span></i></td></tr>
+<tr><th id="254">254</th><td><i class="doc"></i></td></tr>
+<tr><th id="255">255</th><td><i class="doc">    Returns the maximum progressValue().</i></td></tr>
+<tr><th id="256">256</th><td><i class="doc"></i></td></tr>
+<tr><th id="257">257</th><td><i class="doc">    <span class="command">\sa</span> progressValue(), progressMinimum()</i></td></tr>
+<tr><th id="258">258</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="259">259</th><td><em>int</em> <a class="type" href="qfuturewatcher.h.html#QFutureWatcherBase" title='QFutureWatcherBase' data-ref="QFutureWatcherBase">QFutureWatcherBase</a>::<dfn class="decl def fn" id="_ZNK18QFutureWatcherBase15progressMaximumEv" title='QFutureWatcherBase::progressMaximum' data-ref="_ZNK18QFutureWatcherBase15progressMaximumEv">progressMaximum</dfn>() <em>const</em></td></tr>
+<tr><th id="260">260</th><td>{</td></tr>
+<tr><th id="261">261</th><td>    <b>return</b> <a class="virtual member fn" href="qfuturewatcher.h.html#_ZNK18QFutureWatcherBase15futureInterfaceEv" title='QFutureWatcherBase::futureInterface' data-ref="_ZNK18QFutureWatcherBase15futureInterfaceEv">futureInterface</a>().<a class="ref fn" href="qfutureinterface.h.html#_ZNK20QFutureInterfaceBase15progressMaximumEv" title='QFutureInterfaceBase::progressMaximum' data-ref="_ZNK20QFutureInterfaceBase15progressMaximumEv">progressMaximum</a>();</td></tr>
+<tr><th id="262">262</th><td>}</td></tr>
+<tr><th id="263">263</th><td></td></tr>
+<tr><th id="264">264</th><td><i class="doc">/*! <span class="command">\fn</span> <span class="verb">template &lt;typename T&gt; QString QFutureWatcher&lt;T&gt;::progressText() const</span></i></td></tr>
+<tr><th id="265">265</th><td><i class="doc"></i></td></tr>
+<tr><th id="266">266</th><td><i class="doc">    Returns the (optional) textual representation of the progress as reported</i></td></tr>
+<tr><th id="267">267</th><td><i class="doc">    by the asynchronous computation.</i></td></tr>
+<tr><th id="268">268</th><td><i class="doc"></i></td></tr>
+<tr><th id="269">269</th><td><i class="doc">    Be aware that not all computations provide a textual representation of the</i></td></tr>
+<tr><th id="270">270</th><td><i class="doc">    progress, and as such, this function may return an empty string.</i></td></tr>
+<tr><th id="271">271</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="272">272</th><td><a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> <a class="type" href="qfuturewatcher.h.html#QFutureWatcherBase" title='QFutureWatcherBase' data-ref="QFutureWatcherBase">QFutureWatcherBase</a>::<dfn class="decl def fn" id="_ZNK18QFutureWatcherBase12progressTextEv" title='QFutureWatcherBase::progressText' data-ref="_ZNK18QFutureWatcherBase12progressTextEv">progressText</dfn>() <em>const</em></td></tr>
+<tr><th id="273">273</th><td>{</td></tr>
+<tr><th id="274">274</th><td>    <b>return</b> <a class="virtual member fn" href="qfuturewatcher.h.html#_ZNK18QFutureWatcherBase15futureInterfaceEv" title='QFutureWatcherBase::futureInterface' data-ref="_ZNK18QFutureWatcherBase15futureInterfaceEv">futureInterface</a>().<a class="ref fn" href="qfutureinterface.h.html#_ZNK20QFutureInterfaceBase12progressTextEv" title='QFutureInterfaceBase::progressText' data-ref="_ZNK20QFutureInterfaceBase12progressTextEv">progressText</a>();</td></tr>
+<tr><th id="275">275</th><td>}</td></tr>
+<tr><th id="276">276</th><td></td></tr>
+<tr><th id="277">277</th><td><i class="doc">/*! <span class="command">\fn</span> <span class="verb">template &lt;typename T&gt; bool QFutureWatcher&lt;T&gt;::isStarted() const</span></i></td></tr>
+<tr><th id="278">278</th><td><i class="doc"></i></td></tr>
+<tr><th id="279">279</th><td><i class="doc">    Returns<span class="command"> \c</span> <span class="arg">true</span> if the asynchronous computation represented by the future()</i></td></tr>
+<tr><th id="280">280</th><td><i class="doc">    has been started, or if no future has been set; otherwise returns<span class="command"> \c</span> <span class="arg">false.</span></i></td></tr>
+<tr><th id="281">281</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="282">282</th><td><em>bool</em> <a class="type" href="qfuturewatcher.h.html#QFutureWatcherBase" title='QFutureWatcherBase' data-ref="QFutureWatcherBase">QFutureWatcherBase</a>::<dfn class="decl def fn" id="_ZNK18QFutureWatcherBase9isStartedEv" title='QFutureWatcherBase::isStarted' data-ref="_ZNK18QFutureWatcherBase9isStartedEv">isStarted</dfn>() <em>const</em></td></tr>
+<tr><th id="283">283</th><td>{</td></tr>
+<tr><th id="284">284</th><td>    <b>return</b> <a class="virtual member fn" href="qfuturewatcher.h.html#_ZNK18QFutureWatcherBase15futureInterfaceEv" title='QFutureWatcherBase::futureInterface' data-ref="_ZNK18QFutureWatcherBase15futureInterfaceEv">futureInterface</a>().<a class="ref fn" href="qfutureinterface.h.html#_ZNK20QFutureInterfaceBase10queryStateENS_5StateE" title='QFutureInterfaceBase::queryState' data-ref="_ZNK20QFutureInterfaceBase10queryStateENS_5StateE">queryState</a>(<span class='inlayHint'>state:&nbsp;</span><a class="type" href="qfutureinterface.h.html#QFutureInterfaceBase" title='QFutureInterfaceBase' data-ref="QFutureInterfaceBase">QFutureInterfaceBase</a>::<a class="enum" href="qfutureinterface.h.html#QFutureInterfaceBase::Started" title='QFutureInterfaceBase::Started' data-ref="QFutureInterfaceBase::Started">Started</a>);</td></tr>
+<tr><th id="285">285</th><td>}</td></tr>
+<tr><th id="286">286</th><td></td></tr>
+<tr><th id="287">287</th><td><i class="doc">/*! <span class="command">\fn</span> <span class="verb">template &lt;typename T&gt; bool QFutureWatcher&lt;T&gt;::isFinished() const</span></i></td></tr>
+<tr><th id="288">288</th><td><i class="doc"></i></td></tr>
+<tr><th id="289">289</th><td><i class="doc">    Returns<span class="command"> \c</span> <span class="arg">true</span> if the asynchronous computation represented by the future()</i></td></tr>
+<tr><th id="290">290</th><td><i class="doc">    has finished, or if no future has been set; otherwise returns<span class="command"> \c</span> <span class="arg">false.</span></i></td></tr>
+<tr><th id="291">291</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="292">292</th><td><em>bool</em> <a class="type" href="qfuturewatcher.h.html#QFutureWatcherBase" title='QFutureWatcherBase' data-ref="QFutureWatcherBase">QFutureWatcherBase</a>::<dfn class="decl def fn" id="_ZNK18QFutureWatcherBase10isFinishedEv" title='QFutureWatcherBase::isFinished' data-ref="_ZNK18QFutureWatcherBase10isFinishedEv">isFinished</dfn>() <em>const</em></td></tr>
+<tr><th id="293">293</th><td>{</td></tr>
+<tr><th id="294">294</th><td>    <b>return</b> <a class="virtual member fn" href="qfuturewatcher.h.html#_ZNK18QFutureWatcherBase15futureInterfaceEv" title='QFutureWatcherBase::futureInterface' data-ref="_ZNK18QFutureWatcherBase15futureInterfaceEv">futureInterface</a>().<a class="ref fn" href="qfutureinterface.h.html#_ZNK20QFutureInterfaceBase10isFinishedEv" title='QFutureInterfaceBase::isFinished' data-ref="_ZNK20QFutureInterfaceBase10isFinishedEv">isFinished</a>();</td></tr>
+<tr><th id="295">295</th><td>}</td></tr>
+<tr><th id="296">296</th><td></td></tr>
+<tr><th id="297">297</th><td><i class="doc">/*! <span class="command">\fn</span> <span class="verb">template &lt;typename T&gt; bool QFutureWatcher&lt;T&gt;::isRunning() const</span></i></td></tr>
+<tr><th id="298">298</th><td><i class="doc"></i></td></tr>
+<tr><th id="299">299</th><td><i class="doc">    Returns<span class="command"> \c</span> <span class="arg">true</span> if the asynchronous computation represented by the future()</i></td></tr>
+<tr><th id="300">300</th><td><i class="doc">    is currently running; otherwise returns<span class="command"> \c</span> <span class="arg">false.</span></i></td></tr>
+<tr><th id="301">301</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="302">302</th><td><em>bool</em> <a class="type" href="qfuturewatcher.h.html#QFutureWatcherBase" title='QFutureWatcherBase' data-ref="QFutureWatcherBase">QFutureWatcherBase</a>::<dfn class="decl def fn" id="_ZNK18QFutureWatcherBase9isRunningEv" title='QFutureWatcherBase::isRunning' data-ref="_ZNK18QFutureWatcherBase9isRunningEv">isRunning</dfn>() <em>const</em></td></tr>
+<tr><th id="303">303</th><td>{</td></tr>
+<tr><th id="304">304</th><td>    <b>return</b> <a class="virtual member fn" href="qfuturewatcher.h.html#_ZNK18QFutureWatcherBase15futureInterfaceEv" title='QFutureWatcherBase::futureInterface' data-ref="_ZNK18QFutureWatcherBase15futureInterfaceEv">futureInterface</a>().<a class="ref fn" href="qfutureinterface.h.html#_ZNK20QFutureInterfaceBase10queryStateENS_5StateE" title='QFutureInterfaceBase::queryState' data-ref="_ZNK20QFutureInterfaceBase10queryStateENS_5StateE">queryState</a>(<span class='inlayHint'>state:&nbsp;</span><a class="type" href="qfutureinterface.h.html#QFutureInterfaceBase" title='QFutureInterfaceBase' data-ref="QFutureInterfaceBase">QFutureInterfaceBase</a>::<a class="enum" href="qfutureinterface.h.html#QFutureInterfaceBase::Running" title='QFutureInterfaceBase::Running' data-ref="QFutureInterfaceBase::Running">Running</a>);</td></tr>
+<tr><th id="305">305</th><td>}</td></tr>
+<tr><th id="306">306</th><td></td></tr>
+<tr><th id="307">307</th><td><i class="doc">/*! <span class="command">\fn</span> <span class="verb">template &lt;typename T&gt; bool QFutureWatcher&lt;T&gt;::isCanceled() const</span></i></td></tr>
+<tr><th id="308">308</th><td><i class="doc"></i></td></tr>
+<tr><th id="309">309</th><td><i class="doc">    Returns<span class="command"> \c</span> <span class="arg">true</span> if the asynchronous computation has been canceled with the</i></td></tr>
+<tr><th id="310">310</th><td><i class="doc">    cancel() function, or if no future has been set; otherwise returns<span class="command"> \c</span> <span class="arg">false.</span></i></td></tr>
+<tr><th id="311">311</th><td><i class="doc"></i></td></tr>
+<tr><th id="312">312</th><td><i class="doc">    Be aware that the computation may still be running even though this</i></td></tr>
+<tr><th id="313">313</th><td><i class="doc">    function returns<span class="command"> \c</span> <span class="arg">true.</span> See cancel() for more details.</i></td></tr>
+<tr><th id="314">314</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="315">315</th><td><em>bool</em> <a class="type" href="qfuturewatcher.h.html#QFutureWatcherBase" title='QFutureWatcherBase' data-ref="QFutureWatcherBase">QFutureWatcherBase</a>::<dfn class="decl def fn" id="_ZNK18QFutureWatcherBase10isCanceledEv" title='QFutureWatcherBase::isCanceled' data-ref="_ZNK18QFutureWatcherBase10isCanceledEv">isCanceled</dfn>() <em>const</em></td></tr>
+<tr><th id="316">316</th><td>{</td></tr>
+<tr><th id="317">317</th><td>    <b>return</b> <a class="virtual member fn" href="qfuturewatcher.h.html#_ZNK18QFutureWatcherBase15futureInterfaceEv" title='QFutureWatcherBase::futureInterface' data-ref="_ZNK18QFutureWatcherBase15futureInterfaceEv">futureInterface</a>().<a class="ref fn" href="qfutureinterface.h.html#_ZNK20QFutureInterfaceBase10queryStateENS_5StateE" title='QFutureInterfaceBase::queryState' data-ref="_ZNK20QFutureInterfaceBase10queryStateENS_5StateE">queryState</a>(<span class='inlayHint'>state:&nbsp;</span><a class="type" href="qfutureinterface.h.html#QFutureInterfaceBase" title='QFutureInterfaceBase' data-ref="QFutureInterfaceBase">QFutureInterfaceBase</a>::<a class="enum" href="qfutureinterface.h.html#QFutureInterfaceBase::Canceled" title='QFutureInterfaceBase::Canceled' data-ref="QFutureInterfaceBase::Canceled">Canceled</a>);</td></tr>
+<tr><th id="318">318</th><td>}</td></tr>
+<tr><th id="319">319</th><td></td></tr>
+<tr><th id="320">320</th><td><u>#<span data-ppcond="320">if</span> <a class="macro" href="../global/qtdeprecationmarkers.h.html#80" title="(((6&lt;&lt;16)|(0&lt;&lt;8)|(0)) &gt; 0x050000)" data-ref="_M/QT_DEPRECATED_SINCE">QT_DEPRECATED_SINCE</a>(6, 0)</u></td></tr>
+<tr><th id="321">321</th><td></td></tr>
+<tr><th id="322">322</th><td><i class="doc">/*! <span class="command">\fn</span> <span class="verb">template &lt;typename T&gt; bool QFutureWatcher&lt;T&gt;::isPaused() const</span></i></td></tr>
+<tr><th id="323">323</th><td><i class="doc"></i></td></tr>
+<tr><th id="324">324</th><td><i class="doc">    <span class="command">\deprecated</span> [6.0] Use isSuspending() or isSuspended() instead.</i></td></tr>
+<tr><th id="325">325</th><td><i class="doc"></i></td></tr>
+<tr><th id="326">326</th><td><i class="doc">    Returns<span class="command"> \c</span> <span class="arg">true</span> if the asynchronous computation has been paused with the</i></td></tr>
+<tr><th id="327">327</th><td><i class="doc">    pause() function; otherwise returns<span class="command"> \c</span> <span class="arg">false.</span></i></td></tr>
+<tr><th id="328">328</th><td><i class="doc"></i></td></tr>
+<tr><th id="329">329</th><td><i class="doc">    Be aware that the computation may still be running even though this</i></td></tr>
+<tr><th id="330">330</th><td><i class="doc">    function returns<span class="command"> \c</span> <span class="arg">true.</span> See setPaused() for more details. To check</i></td></tr>
+<tr><th id="331">331</th><td><i class="doc">    if pause actually took effect, use isSuspended() instead.</i></td></tr>
+<tr><th id="332">332</th><td><i class="doc"></i></td></tr>
+<tr><th id="333">333</th><td><i class="doc">    <span class="command">\sa</span> setSuspended(), toggleSuspended(), isSuspended()</i></td></tr>
+<tr><th id="334">334</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="335">335</th><td></td></tr>
+<tr><th id="336">336</th><td><em>bool</em> <a class="type" href="qfuturewatcher.h.html#QFutureWatcherBase" title='QFutureWatcherBase' data-ref="QFutureWatcherBase">QFutureWatcherBase</a>::<dfn class="decl def fn" id="_ZNK18QFutureWatcherBase8isPausedEv" title='QFutureWatcherBase::isPaused' data-ref="_ZNK18QFutureWatcherBase8isPausedEv">isPaused</dfn>() <em>const</em></td></tr>
+<tr><th id="337">337</th><td>{</td></tr>
+<tr><th id="338">338</th><td><a class="macro" href="../global/qcompilerdetection.h.html#1105" title="" data-ref="_M/QT_WARNING_PUSH">QT_WARNING_PUSH</a></td></tr>
+<tr><th id="339">339</th><td><a class="macro" href="../global/qcompilerdetection.h.html#1111" title="" data-ref="_M/QT_WARNING_DISABLE_DEPRECATED">QT_WARNING_DISABLE_DEPRECATED</a></td></tr>
+<tr><th id="340">340</th><td>    <b>return</b> <a class="virtual member fn" href="qfuturewatcher.h.html#_ZNK18QFutureWatcherBase15futureInterfaceEv" title='QFutureWatcherBase::futureInterface' data-ref="_ZNK18QFutureWatcherBase15futureInterfaceEv">futureInterface</a>().<a class="ref fn" href="qfutureinterface.h.html#_ZNK20QFutureInterfaceBase8isPausedEv" title='QFutureInterfaceBase::isPaused' data-ref="_ZNK20QFutureInterfaceBase8isPausedEv">isPaused</a>();</td></tr>
+<tr><th id="341">341</th><td><a class="macro" href="../global/qcompilerdetection.h.html#1106" title="" data-ref="_M/QT_WARNING_POP">QT_WARNING_POP</a></td></tr>
+<tr><th id="342">342</th><td>}</td></tr>
+<tr><th id="343">343</th><td><u>#<span data-ppcond="320">endif</span> // QT_DEPRECATED_SINCE(6, 0)</u></td></tr>
+<tr><th id="344">344</th><td></td></tr>
+<tr><th id="345">345</th><td><i class="doc">/*! <span class="command">\fn</span> <span class="verb">template &lt;typename T&gt; bool QFutureWatcher&lt;T&gt;::isSuspending() const</span></i></td></tr>
+<tr><th id="346">346</th><td><i class="doc"></i></td></tr>
+<tr><th id="347">347</th><td><i class="doc">    <span class="command">\since</span> 6.0</i></td></tr>
+<tr><th id="348">348</th><td><i class="doc"></i></td></tr>
+<tr><th id="349">349</th><td><i class="doc">    Returns<span class="command"> \c</span> <span class="arg">true</span> if the asynchronous computation has been suspended with the</i></td></tr>
+<tr><th id="350">350</th><td><i class="doc">    suspend() function, but the work is not yet suspended, and computation is still</i></td></tr>
+<tr><th id="351">351</th><td><i class="doc">    running. Returns<span class="command"> \c</span> <span class="arg">false</span> otherwise.</i></td></tr>
+<tr><th id="352">352</th><td><i class="doc"></i></td></tr>
+<tr><th id="353">353</th><td><i class="doc">    To check if suspension is actually in effect, use isSuspended() instead.</i></td></tr>
+<tr><th id="354">354</th><td><i class="doc"></i></td></tr>
+<tr><th id="355">355</th><td><i class="doc">    <span class="command">\sa</span> setSuspended(), toggleSuspended(), isSuspended()</i></td></tr>
+<tr><th id="356">356</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="357">357</th><td><em>bool</em> <a class="type" href="qfuturewatcher.h.html#QFutureWatcherBase" title='QFutureWatcherBase' data-ref="QFutureWatcherBase">QFutureWatcherBase</a>::<dfn class="decl def fn" id="_ZNK18QFutureWatcherBase12isSuspendingEv" title='QFutureWatcherBase::isSuspending' data-ref="_ZNK18QFutureWatcherBase12isSuspendingEv">isSuspending</dfn>() <em>const</em></td></tr>
+<tr><th id="358">358</th><td>{</td></tr>
+<tr><th id="359">359</th><td>    <b>return</b> <a class="virtual member fn" href="qfuturewatcher.h.html#_ZNK18QFutureWatcherBase15futureInterfaceEv" title='QFutureWatcherBase::futureInterface' data-ref="_ZNK18QFutureWatcherBase15futureInterfaceEv">futureInterface</a>().<a class="ref fn" href="qfutureinterface.h.html#_ZNK20QFutureInterfaceBase12isSuspendingEv" title='QFutureInterfaceBase::isSuspending' data-ref="_ZNK20QFutureInterfaceBase12isSuspendingEv">isSuspending</a>();</td></tr>
+<tr><th id="360">360</th><td>}</td></tr>
+<tr><th id="361">361</th><td></td></tr>
+<tr><th id="362">362</th><td><i class="doc">/*! <span class="command">\fn</span> <span class="verb">template &lt;typename T&gt; bool QFutureWatcher&lt;T&gt;::isSuspended() const</span></i></td></tr>
+<tr><th id="363">363</th><td><i class="doc"></i></td></tr>
+<tr><th id="364">364</th><td><i class="doc">    <span class="command">\since</span> 6.0</i></td></tr>
+<tr><th id="365">365</th><td><i class="doc"></i></td></tr>
+<tr><th id="366">366</th><td><i class="doc">    Returns<span class="command"> \c</span> <span class="arg">true</span> if a suspension of the asynchronous computation has been</i></td></tr>
+<tr><th id="367">367</th><td><i class="doc">    requested, and it is in effect, meaning that no more results or progress</i></td></tr>
+<tr><th id="368">368</th><td><i class="doc">    changes are expected.</i></td></tr>
+<tr><th id="369">369</th><td><i class="doc"></i></td></tr>
+<tr><th id="370">370</th><td><i class="doc">    <span class="command">\sa</span> suspended(), setSuspended(), isSuspending()</i></td></tr>
+<tr><th id="371">371</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="372">372</th><td><em>bool</em> <a class="type" href="qfuturewatcher.h.html#QFutureWatcherBase" title='QFutureWatcherBase' data-ref="QFutureWatcherBase">QFutureWatcherBase</a>::<dfn class="decl def fn" id="_ZNK18QFutureWatcherBase11isSuspendedEv" title='QFutureWatcherBase::isSuspended' data-ref="_ZNK18QFutureWatcherBase11isSuspendedEv">isSuspended</dfn>() <em>const</em></td></tr>
+<tr><th id="373">373</th><td>{</td></tr>
+<tr><th id="374">374</th><td>    <b>return</b> <a class="virtual member fn" href="qfuturewatcher.h.html#_ZNK18QFutureWatcherBase15futureInterfaceEv" title='QFutureWatcherBase::futureInterface' data-ref="_ZNK18QFutureWatcherBase15futureInterfaceEv">futureInterface</a>().<a class="ref fn" href="qfutureinterface.h.html#_ZNK20QFutureInterfaceBase11isSuspendedEv" title='QFutureInterfaceBase::isSuspended' data-ref="_ZNK20QFutureInterfaceBase11isSuspendedEv">isSuspended</a>();</td></tr>
+<tr><th id="375">375</th><td>}</td></tr>
+<tr><th id="376">376</th><td></td></tr>
+<tr><th id="377">377</th><td><i class="doc">/*! <span class="command">\fn</span> <span class="verb">template &lt;typename T&gt; void QFutureWatcher&lt;T&gt;::waitForFinished()</span></i></td></tr>
+<tr><th id="378">378</th><td><i class="doc"></i></td></tr>
+<tr><th id="379">379</th><td><i class="doc">    Waits for the asynchronous computation to finish (including cancel()ed</i></td></tr>
+<tr><th id="380">380</th><td><i class="doc">    computations), i.e. until isFinished() returns<span class="command"> \c</span> <span class="arg">true.</span></i></td></tr>
+<tr><th id="381">381</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="382">382</th><td><em>void</em> <a class="type" href="qfuturewatcher.h.html#QFutureWatcherBase" title='QFutureWatcherBase' data-ref="QFutureWatcherBase">QFutureWatcherBase</a>::<dfn class="decl def fn" id="_ZN18QFutureWatcherBase15waitForFinishedEv" title='QFutureWatcherBase::waitForFinished' data-ref="_ZN18QFutureWatcherBase15waitForFinishedEv">waitForFinished</dfn>()</td></tr>
+<tr><th id="383">383</th><td>{</td></tr>
+<tr><th id="384">384</th><td>    <a class="virtual member fn" href="qfuturewatcher.h.html#_ZN18QFutureWatcherBase15futureInterfaceEv" title='QFutureWatcherBase::futureInterface' data-ref="_ZN18QFutureWatcherBase15futureInterfaceEv">futureInterface</a>().<a class="ref fn" href="qfutureinterface.h.html#_ZN20QFutureInterfaceBase15waitForFinishedEv" title='QFutureInterfaceBase::waitForFinished' data-ref="_ZN20QFutureInterfaceBase15waitForFinishedEv">waitForFinished</a>();</td></tr>
+<tr><th id="385">385</th><td>}</td></tr>
+<tr><th id="386">386</th><td></td></tr>
+<tr><th id="387">387</th><td><em>bool</em> <a class="type" href="qfuturewatcher.h.html#QFutureWatcherBase" title='QFutureWatcherBase' data-ref="QFutureWatcherBase">QFutureWatcherBase</a>::<dfn class="virtual decl def fn" id="_ZN18QFutureWatcherBase5eventEP6QEvent" title='QFutureWatcherBase::event' data-ref="_ZN18QFutureWatcherBase5eventEP6QEvent">event</dfn>(<a class="type" href="../kernel/qcoreevent.h.html#QEvent" title='QEvent' data-ref="QEvent">QEvent</a> *<dfn class="local col6 decl" id="6event" title='event' data-type='QEvent *' data-ref="6event">event</dfn>)</td></tr>
+<tr><th id="388">388</th><td>{</td></tr>
+<tr><th id="389">389</th><td>    <a class="macro" href="../global/qtclasshelpermacros.h.html#109" title="QFutureWatcherBasePrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(QFutureWatcherBase);</td></tr>
+<tr><th id="390">390</th><td>    <b>if</b> (<a class="local col6 ref" href="#6event" title='event' data-ref="6event">event</a>-&gt;<a class="ref fn" href="../kernel/qcoreevent.h.html#_ZNK6QEvent4typeEv" title='QEvent::type' data-ref="_ZNK6QEvent4typeEv">type</a>() == <a class="type" href="../kernel/qcoreevent.h.html#QEvent" title='QEvent' data-ref="QEvent">QEvent</a>::<a class="enum" href="../kernel/qcoreevent.h.html#QEvent::FutureCallOut" title='QEvent::FutureCallOut' data-ref="QEvent::FutureCallOut">FutureCallOut</a>) {</td></tr>
+<tr><th id="391">391</th><td>        <a class="type" href="qfutureinterface_p.h.html#QFutureCallOutEvent" title='QFutureCallOutEvent' data-ref="QFutureCallOutEvent">QFutureCallOutEvent</a> *<dfn class="local col7 decl" id="7callOutEvent" title='callOutEvent' data-type='QFutureCallOutEvent *' data-ref="7callOutEvent">callOutEvent</dfn> = <b>static_cast</b>&lt;<a class="type" href="qfutureinterface_p.h.html#QFutureCallOutEvent" title='QFutureCallOutEvent' data-ref="QFutureCallOutEvent">QFutureCallOutEvent</a> *&gt;(<a class="local col6 ref" href="#6event" title='event' data-ref="6event">event</a>);</td></tr>
+<tr><th id="392">392</th><td>        <a class="local col8 ref" href="#389" title='d' data-ref="8d">d</a>-&gt;<a class="ref fn" href="#_ZN25QFutureWatcherBasePrivate16sendCallOutEventEP19QFutureCallOutEvent" title='QFutureWatcherBasePrivate::sendCallOutEvent' data-ref="_ZN25QFutureWatcherBasePrivate16sendCallOutEventEP19QFutureCallOutEvent">sendCallOutEvent</a>(<span class='inlayHint'>event:&nbsp;</span><a class="local col7 ref" href="#7callOutEvent" title='callOutEvent' data-ref="7callOutEvent">callOutEvent</a>);</td></tr>
+<tr><th id="393">393</th><td>        <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="394">394</th><td>    }</td></tr>
+<tr><th id="395">395</th><td>    <b>return</b> <a class="type" href="../kernel/qobject.h.html#QObject" title='QObject' data-ref="QObject">QObject</a>::<a class="virtual member fn" href="../kernel/qobject.h.html#_ZN7QObject5eventEP6QEvent" title='QObject::event' data-ref="_ZN7QObject5eventEP6QEvent">event</a>(<a class="local col6 ref" href="#6event" title='event' data-ref="6event">event</a>);</td></tr>
+<tr><th id="396">396</th><td>}</td></tr>
+<tr><th id="397">397</th><td></td></tr>
+<tr><th id="398">398</th><td><i class="doc">/*! <span class="command">\fn</span> <span class="verb">template &lt;typename T&gt; void QFutureWatcher&lt;T&gt;::setPendingResultsLimit(int limit)</span></i></td></tr>
+<tr><th id="399">399</th><td><i class="doc"></i></td></tr>
+<tr><th id="400">400</th><td><i class="doc">    The setPendingResultsLimit() provides throttling control. When the number</i></td></tr>
+<tr><th id="401">401</th><td><i class="doc">    of pending resultReadyAt() or resultsReadyAt() signals exceeds the</i></td></tr>
+<tr><th id="402">402</th><td><i class="doc">   <span class="command"> \a</span> <span class="arg">limit,</span> the computation represented by the future will be throttled</i></td></tr>
+<tr><th id="403">403</th><td><i class="doc">    automatically. The computation will resume once the number of pending</i></td></tr>
+<tr><th id="404">404</th><td><i class="doc">    signals drops below the<span class="command"> \a</span> <span class="arg">limit.</span></i></td></tr>
+<tr><th id="405">405</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="406">406</th><td><em>void</em> <a class="type" href="qfuturewatcher.h.html#QFutureWatcherBase" title='QFutureWatcherBase' data-ref="QFutureWatcherBase">QFutureWatcherBase</a>::<dfn class="decl def fn" id="_ZN18QFutureWatcherBase22setPendingResultsLimitEi" title='QFutureWatcherBase::setPendingResultsLimit' data-ref="_ZN18QFutureWatcherBase22setPendingResultsLimitEi">setPendingResultsLimit</dfn>(<em>int</em> <dfn class="local col9 decl" id="9limit" title='limit' data-type='int' data-ref="9limit">limit</dfn>)</td></tr>
+<tr><th id="407">407</th><td>{</td></tr>
+<tr><th id="408">408</th><td>    <a class="macro" href="../global/qtclasshelpermacros.h.html#109" title="QFutureWatcherBasePrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(QFutureWatcherBase);</td></tr>
+<tr><th id="409">409</th><td>    <a class="local col0 ref" href="#408" title='d' data-ref="10d">d</a>-&gt;<a class="ref field" href="qfuturewatcher_p.h.html#QFutureWatcherBasePrivate::maximumPendingResultsReady" title='QFutureWatcherBasePrivate::maximumPendingResultsReady' data-ref="QFutureWatcherBasePrivate::maximumPendingResultsReady">maximumPendingResultsReady</a> = <a class="local col9 ref" href="#9limit" title='limit' data-ref="9limit">limit</a>;</td></tr>
+<tr><th id="410">410</th><td>}</td></tr>
+<tr><th id="411">411</th><td></td></tr>
+<tr><th id="412">412</th><td><em>void</em> <a class="type" href="qfuturewatcher.h.html#QFutureWatcherBase" title='QFutureWatcherBase' data-ref="QFutureWatcherBase">QFutureWatcherBase</a>::<dfn class="virtual decl def fn" id="_ZN18QFutureWatcherBase13connectNotifyERK11QMetaMethod" title='QFutureWatcherBase::connectNotify' data-ref="_ZN18QFutureWatcherBase13connectNotifyERK11QMetaMethod">connectNotify</dfn>(<em>const</em> <a class="type" href="../kernel/qmetaobject.h.html#QMetaMethod" title='QMetaMethod' data-ref="QMetaMethod">QMetaMethod</a> &amp;<dfn class="local col1 decl" id="11signal" title='signal' data-type='const QMetaMethod &amp;' data-ref="11signal">signal</dfn>)</td></tr>
+<tr><th id="413">413</th><td>{</td></tr>
+<tr><th id="414">414</th><td>    <a class="macro" href="../global/qtclasshelpermacros.h.html#109" title="QFutureWatcherBasePrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(QFutureWatcherBase);</td></tr>
+<tr><th id="415">415</th><td>    <em>static</em> <em>const</em> <a class="type" href="../kernel/qmetaobject.h.html#QMetaMethod" title='QMetaMethod' data-ref="QMetaMethod">QMetaMethod</a> <dfn class="local col2 decl" id="12resultReadyAtSignal" title='resultReadyAtSignal' data-type='const QMetaMethod' data-ref="12resultReadyAtSignal">resultReadyAtSignal</dfn> = <a class="type" href="../kernel/qmetaobject.h.html#QMetaMethod" title='QMetaMethod' data-ref="QMetaMethod">QMetaMethod</a>::<a class="ref fn" href="../kernel/qmetaobject.h.html#_ZN11QMetaMethod10fromSignalET_" title='QMetaMethod::fromSignal' data-ref="_ZN11QMetaMethod10fromSignalET_">fromSignal</a>(<span class='inlayHint'>signal:&nbsp;</span>&amp;<a class="type" href="qfuturewatcher.h.html#QFutureWatcherBase" title='QFutureWatcherBase' data-ref="QFutureWatcherBase">QFutureWatcherBase</a>::<a class="member fn" href="qfuturewatcher.h.html#_ZN18QFutureWatcherBase13resultReadyAtEi" title='QFutureWatcherBase::resultReadyAt' data-ref="_ZN18QFutureWatcherBase13resultReadyAtEi">resultReadyAt</a>);</td></tr>
+<tr><th id="416">416</th><td>    <b>if</b> (<a class="local col1 ref" href="#11signal" title='signal' data-ref="11signal">signal</a> <a class="ref fn" href="../kernel/qmetaobject.h.html#_ZeqRK11QMetaMethodS1_" title='operator==' data-ref="_ZeqRK11QMetaMethodS1_">==</a> <a class="local col2 ref" href="#12resultReadyAtSignal" title='resultReadyAtSignal' data-ref="12resultReadyAtSignal">resultReadyAtSignal</a>)</td></tr>
+<tr><th id="417">417</th><td>        <a class="local col3 ref" href="#414" title='d' data-ref="13d">d</a>-&gt;<a class="ref field" href="qfuturewatcher_p.h.html#QFutureWatcherBasePrivate::resultAtConnected" title='QFutureWatcherBasePrivate::resultAtConnected' data-ref="QFutureWatcherBasePrivate::resultAtConnected">resultAtConnected</a>.<a class="ref fn" href="qbasicatomic.h.html#_ZN19QBasicAtomicInteger3refEv" title='QBasicAtomicInteger::ref' data-ref="_ZN19QBasicAtomicInteger3refEv">ref</a>();</td></tr>
+<tr><th id="418">418</th><td><u>#<span data-ppcond="418">ifndef</span> <span class="macro" data-ref="_M/QT_NO_DEBUG">QT_NO_DEBUG</span></u></td></tr>
+<tr><th id="419">419</th><td>    <em>static</em> <em>const</em> QMetaMethod finishedSignal = QMetaMethod::fromSignal(&amp;QFutureWatcherBase::finished);</td></tr>
+<tr><th id="420">420</th><td>    <b>if</b> (signal == finishedSignal) {</td></tr>
+<tr><th id="421">421</th><td>        <b>if</b> (futureInterface().isRunning()) {</td></tr>
+<tr><th id="422">422</th><td>            <i>//connections should be established before calling stFuture to avoid race.</i></td></tr>
+<tr><th id="423">423</th><td><i>            // (The future could finish before the connection is made.)</i></td></tr>
+<tr><th id="424">424</th><td>            qWarning(<q>"QFutureWatcher::connect: connecting after calling setFuture() is likely to produce race"</q>);</td></tr>
+<tr><th id="425">425</th><td>        }</td></tr>
+<tr><th id="426">426</th><td>    }</td></tr>
+<tr><th id="427">427</th><td><u>#<span data-ppcond="418">endif</span></u></td></tr>
+<tr><th id="428">428</th><td>}</td></tr>
+<tr><th id="429">429</th><td></td></tr>
+<tr><th id="430">430</th><td><em>void</em> <a class="type" href="qfuturewatcher.h.html#QFutureWatcherBase" title='QFutureWatcherBase' data-ref="QFutureWatcherBase">QFutureWatcherBase</a>::<dfn class="virtual decl def fn" id="_ZN18QFutureWatcherBase16disconnectNotifyERK11QMetaMethod" title='QFutureWatcherBase::disconnectNotify' data-ref="_ZN18QFutureWatcherBase16disconnectNotifyERK11QMetaMethod">disconnectNotify</dfn>(<em>const</em> <a class="type" href="../kernel/qmetaobject.h.html#QMetaMethod" title='QMetaMethod' data-ref="QMetaMethod">QMetaMethod</a> &amp;<dfn class="local col4 decl" id="14signal" title='signal' data-type='const QMetaMethod &amp;' data-ref="14signal">signal</dfn>)</td></tr>
+<tr><th id="431">431</th><td>{</td></tr>
+<tr><th id="432">432</th><td>    <a class="macro" href="../global/qtclasshelpermacros.h.html#109" title="QFutureWatcherBasePrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(QFutureWatcherBase);</td></tr>
+<tr><th id="433">433</th><td>    <em>static</em> <em>const</em> <a class="type" href="../kernel/qmetaobject.h.html#QMetaMethod" title='QMetaMethod' data-ref="QMetaMethod">QMetaMethod</a> <dfn class="local col5 decl" id="15resultReadyAtSignal" title='resultReadyAtSignal' data-type='const QMetaMethod' data-ref="15resultReadyAtSignal">resultReadyAtSignal</dfn> = <a class="type" href="../kernel/qmetaobject.h.html#QMetaMethod" title='QMetaMethod' data-ref="QMetaMethod">QMetaMethod</a>::<a class="ref fn" href="../kernel/qmetaobject.h.html#_ZN11QMetaMethod10fromSignalET_" title='QMetaMethod::fromSignal' data-ref="_ZN11QMetaMethod10fromSignalET_">fromSignal</a>(<span class='inlayHint'>signal:&nbsp;</span>&amp;<a class="type" href="qfuturewatcher.h.html#QFutureWatcherBase" title='QFutureWatcherBase' data-ref="QFutureWatcherBase">QFutureWatcherBase</a>::<a class="member fn" href="qfuturewatcher.h.html#_ZN18QFutureWatcherBase13resultReadyAtEi" title='QFutureWatcherBase::resultReadyAt' data-ref="_ZN18QFutureWatcherBase13resultReadyAtEi">resultReadyAt</a>);</td></tr>
+<tr><th id="434">434</th><td>    <b>if</b> (<a class="local col4 ref" href="#14signal" title='signal' data-ref="14signal">signal</a> <a class="ref fn" href="../kernel/qmetaobject.h.html#_ZeqRK11QMetaMethodS1_" title='operator==' data-ref="_ZeqRK11QMetaMethodS1_">==</a> <a class="local col5 ref" href="#15resultReadyAtSignal" title='resultReadyAtSignal' data-ref="15resultReadyAtSignal">resultReadyAtSignal</a>)</td></tr>
+<tr><th id="435">435</th><td>        <a class="local col6 ref" href="#432" title='d' data-ref="16d">d</a>-&gt;<a class="ref field" href="qfuturewatcher_p.h.html#QFutureWatcherBasePrivate::resultAtConnected" title='QFutureWatcherBasePrivate::resultAtConnected' data-ref="QFutureWatcherBasePrivate::resultAtConnected">resultAtConnected</a>.<a class="ref fn" href="qbasicatomic.h.html#_ZN19QBasicAtomicInteger5derefEv" title='QBasicAtomicInteger::deref' data-ref="_ZN19QBasicAtomicInteger5derefEv">deref</a>();</td></tr>
+<tr><th id="436">436</th><td>}</td></tr>
+<tr><th id="437">437</th><td></td></tr>
+<tr><th id="438">438</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="439">439</th><td><i class="doc">    <span class="command">\internal</span></i></td></tr>
+<tr><th id="440">440</th><td><i class="doc">*/</i><span class="verb"></span></td></tr>
+<tr><th id="441">441</th><td><span class="verb"></span><a class="type" href="qfuturewatcher_p.h.html#QFutureWatcherBasePrivate" title='QFutureWatcherBasePrivate' data-ref="QFutureWatcherBasePrivate">QFutureWatcherBasePrivate</a>::<dfn class="decl def fn" id="_ZN25QFutureWatcherBasePrivateC1Ev" title='QFutureWatcherBasePrivate::QFutureWatcherBasePrivate' data-ref="_ZN25QFutureWatcherBasePrivateC1Ev">QFutureWatcherBasePrivate</dfn>()</td></tr>
+<tr><th id="442">442</th><td>    : <a class="member field" href="qfuturewatcher_p.h.html#QFutureWatcherBasePrivate::maximumPendingResultsReady" title='QFutureWatcherBasePrivate::maximumPendingResultsReady' data-ref="QFutureWatcherBasePrivate::maximumPendingResultsReady">maximumPendingResultsReady</a>(<a class="type" href="qthread.h.html#QThread" title='QThread' data-ref="QThread">QThread</a>::<a class="ref fn" href="qthread.h.html#_ZN7QThread16idealThreadCountEv" title='QThread::idealThreadCount' data-ref="_ZN7QThread16idealThreadCountEv">idealThreadCount</a>() * <var>2</var>),</td></tr>
+<tr><th id="443">443</th><td>      <a class="member field" href="qfuturewatcher_p.h.html#QFutureWatcherBasePrivate::resultAtConnected" title='QFutureWatcherBasePrivate::resultAtConnected' data-ref="QFutureWatcherBasePrivate::resultAtConnected">resultAtConnected</a><a class="ref fn" href="qatomic.h.html#_ZN10QAtomicIntC1Ei" title='QAtomicInt::QAtomicInt' data-ref="_ZN10QAtomicIntC1Ei">(</a><var>0</var>)</td></tr>
+<tr><th id="444">444</th><td>{ }</td></tr>
+<tr><th id="445">445</th><td></td></tr>
+<tr><th id="446">446</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="447">447</th><td><i class="doc">    <span class="command">\internal</span></i></td></tr>
+<tr><th id="448">448</th><td><i class="doc">*/</i><span class="verb"></span></td></tr>
+<tr><th id="449">449</th><td><span class="verb"></span><em>void</em> <a class="type" href="qfuturewatcher.h.html#QFutureWatcherBase" title='QFutureWatcherBase' data-ref="QFutureWatcherBase">QFutureWatcherBase</a>::<dfn class="decl def fn" id="_ZN18QFutureWatcherBase22connectOutputInterfaceEv" title='QFutureWatcherBase::connectOutputInterface' data-ref="_ZN18QFutureWatcherBase22connectOutputInterfaceEv">connectOutputInterface</dfn>()</td></tr>
+<tr><th id="450">450</th><td>{</td></tr>
+<tr><th id="451">451</th><td>    <a class="virtual member fn" href="qfuturewatcher.h.html#_ZN18QFutureWatcherBase15futureInterfaceEv" title='QFutureWatcherBase::futureInterface' data-ref="_ZN18QFutureWatcherBase15futureInterfaceEv">futureInterface</a>().<a class="ref field" href="qfutureinterface.h.html#QFutureInterfaceBase::d" title='QFutureInterfaceBase::d' data-ref="QFutureInterfaceBase::d">d</a>-&gt;<a class="ref fn" href="qfutureinterface_p.h.html#_ZN27QFutureInterfaceBasePrivate22connectOutputInterfaceEP23QFutureCallOutInterface" title='QFutureInterfaceBasePrivate::connectOutputInterface' data-ref="_ZN27QFutureInterfaceBasePrivate22connectOutputInterfaceEP23QFutureCallOutInterface">connectOutputInterface</a>(<span class='inlayHint'>iface:&nbsp;</span><a class="member fn" href="qfuturewatcher.h.html#21" title='QFutureWatcherBase::d_func' data-ref="_ZN18QFutureWatcherBase6d_funcEv">d_func</a>());</td></tr>
+<tr><th id="452">452</th><td>}</td></tr>
+<tr><th id="453">453</th><td></td></tr>
+<tr><th id="454">454</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="455">455</th><td><i class="doc">    <span class="command">\internal</span></i></td></tr>
+<tr><th id="456">456</th><td><i class="doc">*/</i><span class="verb"></span></td></tr>
+<tr><th id="457">457</th><td><span class="verb"></span><em>void</em> <a class="type" href="qfuturewatcher.h.html#QFutureWatcherBase" title='QFutureWatcherBase' data-ref="QFutureWatcherBase">QFutureWatcherBase</a>::<dfn class="decl def fn" id="_ZN18QFutureWatcherBase25disconnectOutputInterfaceEb" title='QFutureWatcherBase::disconnectOutputInterface' data-ref="_ZN18QFutureWatcherBase25disconnectOutputInterfaceEb">disconnectOutputInterface</dfn>(<em>bool</em> <dfn class="local col7 decl" id="17pendingAssignment" title='pendingAssignment' data-type='bool' data-ref="17pendingAssignment">pendingAssignment</dfn>)</td></tr>
+<tr><th id="458">458</th><td>{</td></tr>
+<tr><th id="459">459</th><td>    <b>if</b> (<a class="local col7 ref" href="#17pendingAssignment" title='pendingAssignment' data-ref="17pendingAssignment">pendingAssignment</a>) {</td></tr>
+<tr><th id="460">460</th><td>        <a class="macro" href="../global/qtclasshelpermacros.h.html#109" title="QFutureWatcherBasePrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(QFutureWatcherBase);</td></tr>
+<tr><th id="461">461</th><td>        <a class="local col8 ref" href="#460" title='d' data-ref="18d">d</a>-&gt;<a class="ref field" href="qfuturewatcher_p.h.html#QFutureWatcherBasePrivate::pendingResultsReady" title='QFutureWatcherBasePrivate::pendingResultsReady' data-ref="QFutureWatcherBasePrivate::pendingResultsReady">pendingResultsReady</a>.<a class="ref fn" href="qbasicatomic.h.html#_ZN19QBasicAtomicInteger12storeRelaxedET_" title='QBasicAtomicInteger::storeRelaxed' data-ref="_ZN19QBasicAtomicInteger12storeRelaxedET_">storeRelaxed</a>(<span class='inlayHint'>newValue:&nbsp;</span><var>0</var>);</td></tr>
+<tr><th id="462">462</th><td>    }</td></tr>
+<tr><th id="463">463</th><td></td></tr>
+<tr><th id="464">464</th><td>    <a class="virtual member fn" href="qfuturewatcher.h.html#_ZN18QFutureWatcherBase15futureInterfaceEv" title='QFutureWatcherBase::futureInterface' data-ref="_ZN18QFutureWatcherBase15futureInterfaceEv">futureInterface</a>().<a class="ref field" href="qfutureinterface.h.html#QFutureInterfaceBase::d" title='QFutureInterfaceBase::d' data-ref="QFutureInterfaceBase::d">d</a>-&gt;<a class="ref fn" href="qfutureinterface_p.h.html#_ZN27QFutureInterfaceBasePrivate25disconnectOutputInterfaceEP23QFutureCallOutInterface" title='QFutureInterfaceBasePrivate::disconnectOutputInterface' data-ref="_ZN27QFutureInterfaceBasePrivate25disconnectOutputInterfaceEP23QFutureCallOutInterface">disconnectOutputInterface</a>(<span class='inlayHint'>iface:&nbsp;</span><a class="member fn" href="qfuturewatcher.h.html#21" title='QFutureWatcherBase::d_func' data-ref="_ZN18QFutureWatcherBase6d_funcEv">d_func</a>());</td></tr>
+<tr><th id="465">465</th><td>}</td></tr>
+<tr><th id="466">466</th><td></td></tr>
+<tr><th id="467">467</th><td><em>void</em> <a class="type" href="qfuturewatcher_p.h.html#QFutureWatcherBasePrivate" title='QFutureWatcherBasePrivate' data-ref="QFutureWatcherBasePrivate">QFutureWatcherBasePrivate</a>::<dfn class="virtual decl def fn" id="_ZN25QFutureWatcherBasePrivate16postCallOutEventERK19QFutureCallOutEvent" title='QFutureWatcherBasePrivate::postCallOutEvent' data-ref="_ZN25QFutureWatcherBasePrivate16postCallOutEventERK19QFutureCallOutEvent">postCallOutEvent</dfn>(<em>const</em> <a class="type" href="qfutureinterface_p.h.html#QFutureCallOutEvent" title='QFutureCallOutEvent' data-ref="QFutureCallOutEvent">QFutureCallOutEvent</a> &amp;<dfn class="local col9 decl" id="19callOutEvent" title='callOutEvent' data-type='const QFutureCallOutEvent &amp;' data-ref="19callOutEvent">callOutEvent</dfn>)</td></tr>
+<tr><th id="468">468</th><td>{</td></tr>
+<tr><th id="469">469</th><td>    <a class="macro" href="../global/qtclasshelpermacros.h.html#110" title="QFutureWatcherBase * const q = q_func()" data-ref="_M/Q_Q">Q_Q</a>(<a class="type" href="qfuturewatcher.h.html#QFutureWatcherBase" title='QFutureWatcherBase' data-ref="QFutureWatcherBase">QFutureWatcherBase</a>);</td></tr>
+<tr><th id="470">470</th><td></td></tr>
+<tr><th id="471">471</th><td>    <b>if</b> (<a class="local col9 ref" href="#19callOutEvent" title='callOutEvent' data-ref="19callOutEvent">callOutEvent</a>.<a class="ref field" href="qfutureinterface_p.h.html#QFutureCallOutEvent::callOutType" title='QFutureCallOutEvent::callOutType' data-ref="QFutureCallOutEvent::callOutType">callOutType</a> == <a class="type" href="qfutureinterface_p.h.html#QFutureCallOutEvent" title='QFutureCallOutEvent' data-ref="QFutureCallOutEvent">QFutureCallOutEvent</a>::<a class="enum" href="qfutureinterface_p.h.html#QFutureCallOutEvent::ResultsReady" title='QFutureCallOutEvent::ResultsReady' data-ref="QFutureCallOutEvent::ResultsReady">ResultsReady</a>) {</td></tr>
+<tr><th id="472">472</th><td>        <b>if</b> (<a class="member field" href="qfuturewatcher_p.h.html#QFutureWatcherBasePrivate::pendingResultsReady" title='QFutureWatcherBasePrivate::pendingResultsReady' data-ref="QFutureWatcherBasePrivate::pendingResultsReady">pendingResultsReady</a>.<a class="ref fn" href="qbasicatomic.h.html#_ZN19QBasicAtomicInteger18fetchAndAddRelaxedET_" title='QBasicAtomicInteger::fetchAndAddRelaxed' data-ref="_ZN19QBasicAtomicInteger18fetchAndAddRelaxedET_">fetchAndAddRelaxed</a>(<span class='inlayHint'>valueToAdd:&nbsp;</span><var>1</var>) &gt;= <a class="member field" href="qfuturewatcher_p.h.html#QFutureWatcherBasePrivate::maximumPendingResultsReady" title='QFutureWatcherBasePrivate::maximumPendingResultsReady' data-ref="QFutureWatcherBasePrivate::maximumPendingResultsReady">maximumPendingResultsReady</a>)</td></tr>
+<tr><th id="473">473</th><td>            <a class="local col0 ref" href="#469" title='q' data-ref="20q">q</a>-&gt;<a class="virtual ref fn" href="qfuturewatcher.h.html#_ZN18QFutureWatcherBase15futureInterfaceEv" title='QFutureWatcherBase::futureInterface' data-ref="_ZN18QFutureWatcherBase15futureInterfaceEv">futureInterface</a>().<a class="ref field" href="qfutureinterface.h.html#QFutureInterfaceBase::d" title='QFutureInterfaceBase::d' data-ref="QFutureInterfaceBase::d">d</a>-&gt;<a class="ref fn" href="qfutureinterface_p.h.html#_ZN27QFutureInterfaceBasePrivate21internal_setThrottledEb" title='QFutureInterfaceBasePrivate::internal_setThrottled' data-ref="_ZN27QFutureInterfaceBasePrivate21internal_setThrottledEb">internal_setThrottled</a>(<span class='inlayHint'>enable:&nbsp;</span><b>true</b>);</td></tr>
+<tr><th id="474">474</th><td>    }</td></tr>
+<tr><th id="475">475</th><td></td></tr>
+<tr><th id="476">476</th><td>    <a class="type" href="../kernel/qcoreapplication.h.html#QCoreApplication" title='QCoreApplication' data-ref="QCoreApplication">QCoreApplication</a>::<a class="ref fn" href="../kernel/qcoreapplication.h.html#_ZN16QCoreApplication9postEventEP7QObjectP6QEventi" title='QCoreApplication::postEvent' data-ref="_ZN16QCoreApplication9postEventEP7QObjectP6QEventi">postEvent</a>(<span class='inlayHint'>receiver:&nbsp;</span><a class="local col0 ref" href="#469" title='q' data-ref="20q">q</a>, <span class='inlayHint'>event:&nbsp;</span><a class="local col9 ref" href="#19callOutEvent" title='callOutEvent' data-ref="19callOutEvent">callOutEvent</a>.<a class="virtual ref fn" href="qfutureinterface_p.h.html#38" title='QFutureCallOutEvent::clone' data-ref="_ZNK19QFutureCallOutEvent5cloneEv">clone</a>());</td></tr>
+<tr><th id="477">477</th><td>}</td></tr>
+<tr><th id="478">478</th><td></td></tr>
+<tr><th id="479">479</th><td><em>void</em> <a class="type" href="qfuturewatcher_p.h.html#QFutureWatcherBasePrivate" title='QFutureWatcherBasePrivate' data-ref="QFutureWatcherBasePrivate">QFutureWatcherBasePrivate</a>::<dfn class="virtual decl def fn" id="_ZN25QFutureWatcherBasePrivate28callOutInterfaceDisconnectedEv" title='QFutureWatcherBasePrivate::callOutInterfaceDisconnected' data-ref="_ZN25QFutureWatcherBasePrivate28callOutInterfaceDisconnectedEv">callOutInterfaceDisconnected</dfn>()</td></tr>
+<tr><th id="480">480</th><td>{</td></tr>
+<tr><th id="481">481</th><td>    <a class="type" href="../kernel/qcoreapplication.h.html#QCoreApplication" title='QCoreApplication' data-ref="QCoreApplication">QCoreApplication</a>::<a class="ref fn" href="../kernel/qcoreapplication.h.html#_ZN16QCoreApplication18removePostedEventsEP7QObjecti" title='QCoreApplication::removePostedEvents' data-ref="_ZN16QCoreApplication18removePostedEventsEP7QObjecti">removePostedEvents</a>(<span class='inlayHint'>receiver:&nbsp;</span><a class="member fn" href="qfuturewatcher_p.h.html#31" title='QFutureWatcherBasePrivate::q_func' data-ref="_ZN25QFutureWatcherBasePrivate6q_funcEv">q_func</a>(), <span class='inlayHint'>eventType:&nbsp;</span><a class="type" href="../kernel/qcoreevent.h.html#QEvent" title='QEvent' data-ref="QEvent">QEvent</a>::<a class="enum" href="../kernel/qcoreevent.h.html#QEvent::FutureCallOut" title='QEvent::FutureCallOut' data-ref="QEvent::FutureCallOut">FutureCallOut</a>);</td></tr>
+<tr><th id="482">482</th><td>}</td></tr>
+<tr><th id="483">483</th><td></td></tr>
+<tr><th id="484">484</th><td><em>void</em> <a class="type" href="qfuturewatcher_p.h.html#QFutureWatcherBasePrivate" title='QFutureWatcherBasePrivate' data-ref="QFutureWatcherBasePrivate">QFutureWatcherBasePrivate</a>::<dfn class="decl def fn" id="_ZN25QFutureWatcherBasePrivate16sendCallOutEventEP19QFutureCallOutEvent" title='QFutureWatcherBasePrivate::sendCallOutEvent' data-ref="_ZN25QFutureWatcherBasePrivate16sendCallOutEventEP19QFutureCallOutEvent">sendCallOutEvent</dfn>(<a class="type" href="qfutureinterface_p.h.html#QFutureCallOutEvent" title='QFutureCallOutEvent' data-ref="QFutureCallOutEvent">QFutureCallOutEvent</a> *<dfn class="local col1 decl" id="21event" title='event' data-type='QFutureCallOutEvent *' data-ref="21event">event</dfn>)</td></tr>
+<tr><th id="485">485</th><td>{</td></tr>
+<tr><th id="486">486</th><td>    <a class="macro" href="../global/qtclasshelpermacros.h.html#110" title="QFutureWatcherBase * const q = q_func()" data-ref="_M/Q_Q">Q_Q</a>(<a class="type" href="qfuturewatcher.h.html#QFutureWatcherBase" title='QFutureWatcherBase' data-ref="QFutureWatcherBase">QFutureWatcherBase</a>);</td></tr>
+<tr><th id="487">487</th><td></td></tr>
+<tr><th id="488">488</th><td>    <b>switch</b> (<a class="local col1 ref" href="#21event" title='event' data-ref="21event">event</a>-&gt;<a class="ref field" href="qfutureinterface_p.h.html#QFutureCallOutEvent::callOutType" title='QFutureCallOutEvent::callOutType' data-ref="QFutureCallOutEvent::callOutType">callOutType</a>) {</td></tr>
+<tr><th id="489">489</th><td>        <b>case</b> <a class="type" href="qfutureinterface_p.h.html#QFutureCallOutEvent" title='QFutureCallOutEvent' data-ref="QFutureCallOutEvent">QFutureCallOutEvent</a>::<a class="enum" href="qfutureinterface_p.h.html#QFutureCallOutEvent::Started" title='QFutureCallOutEvent::Started' data-ref="QFutureCallOutEvent::Started">Started</a>:</td></tr>
+<tr><th id="490">490</th><td>            <a class="macro" href="../kernel/qtmetamacros.h.html#49" title="" data-ref="_M/emit">emit</a> <a class="local col2 ref" href="#486" title='q' data-ref="22q">q</a>-&gt;<a class="ref fn" href="qfuturewatcher.h.html#_ZN18QFutureWatcherBase7startedEv" title='QFutureWatcherBase::started' data-ref="_ZN18QFutureWatcherBase7startedEv">started</a>();</td></tr>
+<tr><th id="491">491</th><td>        <b>break</b>;</td></tr>
+<tr><th id="492">492</th><td>        <b>case</b> <a class="type" href="qfutureinterface_p.h.html#QFutureCallOutEvent" title='QFutureCallOutEvent' data-ref="QFutureCallOutEvent">QFutureCallOutEvent</a>::<a class="enum" href="qfutureinterface_p.h.html#QFutureCallOutEvent::Finished" title='QFutureCallOutEvent::Finished' data-ref="QFutureCallOutEvent::Finished">Finished</a>:</td></tr>
+<tr><th id="493">493</th><td>            <a class="macro" href="../kernel/qtmetamacros.h.html#49" title="" data-ref="_M/emit">emit</a> <a class="local col2 ref" href="#486" title='q' data-ref="22q">q</a>-&gt;<a class="ref fn" href="qfuturewatcher.h.html#_ZN18QFutureWatcherBase8finishedEv" title='QFutureWatcherBase::finished' data-ref="_ZN18QFutureWatcherBase8finishedEv">finished</a>();</td></tr>
+<tr><th id="494">494</th><td>        <b>break</b>;</td></tr>
+<tr><th id="495">495</th><td>        <b>case</b> <a class="type" href="qfutureinterface_p.h.html#QFutureCallOutEvent" title='QFutureCallOutEvent' data-ref="QFutureCallOutEvent">QFutureCallOutEvent</a>::<a class="enum" href="qfutureinterface_p.h.html#QFutureCallOutEvent::Canceled" title='QFutureCallOutEvent::Canceled' data-ref="QFutureCallOutEvent::Canceled">Canceled</a>:</td></tr>
+<tr><th id="496">496</th><td>            <a class="member field" href="qfuturewatcher_p.h.html#QFutureWatcherBasePrivate::pendingResultsReady" title='QFutureWatcherBasePrivate::pendingResultsReady' data-ref="QFutureWatcherBasePrivate::pendingResultsReady">pendingResultsReady</a>.<a class="ref fn" href="qbasicatomic.h.html#_ZN19QBasicAtomicInteger12storeRelaxedET_" title='QBasicAtomicInteger::storeRelaxed' data-ref="_ZN19QBasicAtomicInteger12storeRelaxedET_">storeRelaxed</a>(<span class='inlayHint'>newValue:&nbsp;</span><var>0</var>);</td></tr>
+<tr><th id="497">497</th><td>            <a class="macro" href="../kernel/qtmetamacros.h.html#49" title="" data-ref="_M/emit">emit</a> <a class="local col2 ref" href="#486" title='q' data-ref="22q">q</a>-&gt;<a class="ref fn" href="qfuturewatcher.h.html#_ZN18QFutureWatcherBase8canceledEv" title='QFutureWatcherBase::canceled' data-ref="_ZN18QFutureWatcherBase8canceledEv">canceled</a>();</td></tr>
+<tr><th id="498">498</th><td>        <b>break</b>;</td></tr>
+<tr><th id="499">499</th><td>        <b>case</b> <a class="type" href="qfutureinterface_p.h.html#QFutureCallOutEvent" title='QFutureCallOutEvent' data-ref="QFutureCallOutEvent">QFutureCallOutEvent</a>::<a class="enum" href="qfutureinterface_p.h.html#QFutureCallOutEvent::Suspending" title='QFutureCallOutEvent::Suspending' data-ref="QFutureCallOutEvent::Suspending">Suspending</a>:</td></tr>
+<tr><th id="500">500</th><td>            <b>if</b> (<a class="local col2 ref" href="#486" title='q' data-ref="22q">q</a>-&gt;<a class="virtual ref fn" href="qfuturewatcher.h.html#_ZN18QFutureWatcherBase15futureInterfaceEv" title='QFutureWatcherBase::futureInterface' data-ref="_ZN18QFutureWatcherBase15futureInterfaceEv">futureInterface</a>().<a class="ref fn" href="qfutureinterface.h.html#_ZNK20QFutureInterfaceBase10isCanceledEv" title='QFutureInterfaceBase::isCanceled' data-ref="_ZNK20QFutureInterfaceBase10isCanceledEv">isCanceled</a>())</td></tr>
+<tr><th id="501">501</th><td>                <b>break</b>;</td></tr>
+<tr><th id="502">502</th><td>            <a class="macro" href="../kernel/qtmetamacros.h.html#49" title="" data-ref="_M/emit">emit</a> <a class="local col2 ref" href="#486" title='q' data-ref="22q">q</a>-&gt;<a class="ref fn" href="qfuturewatcher.h.html#_ZN18QFutureWatcherBase10suspendingEv" title='QFutureWatcherBase::suspending' data-ref="_ZN18QFutureWatcherBase10suspendingEv">suspending</a>();</td></tr>
+<tr><th id="503">503</th><td><u>#<span data-ppcond="503">if</span> <a class="macro" href="../global/qtdeprecationmarkers.h.html#80" title="(((6&lt;&lt;16)|(0&lt;&lt;8)|(0)) &gt; 0x050000)" data-ref="_M/QT_DEPRECATED_SINCE">QT_DEPRECATED_SINCE</a>(6, 0)</u></td></tr>
+<tr><th id="504">504</th><td><a class="macro" href="../global/qcompilerdetection.h.html#1105" title="" data-ref="_M/QT_WARNING_PUSH">QT_WARNING_PUSH</a></td></tr>
+<tr><th id="505">505</th><td><a class="macro" href="../global/qcompilerdetection.h.html#1111" title="" data-ref="_M/QT_WARNING_DISABLE_DEPRECATED">QT_WARNING_DISABLE_DEPRECATED</a></td></tr>
+<tr><th id="506">506</th><td>            <a class="macro" href="../kernel/qtmetamacros.h.html#49" title="" data-ref="_M/emit">emit</a> <a class="local col2 ref" href="#486" title='q' data-ref="22q">q</a>-&gt;<a class="ref fn" href="qfuturewatcher.h.html#_ZN18QFutureWatcherBase6pausedEv" title='QFutureWatcherBase::paused' data-ref="_ZN18QFutureWatcherBase6pausedEv">paused</a>();</td></tr>
+<tr><th id="507">507</th><td><a class="macro" href="../global/qcompilerdetection.h.html#1106" title="" data-ref="_M/QT_WARNING_POP">QT_WARNING_POP</a></td></tr>
+<tr><th id="508">508</th><td><u>#<span data-ppcond="503">endif</span></u></td></tr>
+<tr><th id="509">509</th><td>        <b>break</b>;</td></tr>
+<tr><th id="510">510</th><td>        <b>case</b> <a class="type" href="qfutureinterface_p.h.html#QFutureCallOutEvent" title='QFutureCallOutEvent' data-ref="QFutureCallOutEvent">QFutureCallOutEvent</a>::<a class="enum" href="qfutureinterface_p.h.html#QFutureCallOutEvent::Suspended" title='QFutureCallOutEvent::Suspended' data-ref="QFutureCallOutEvent::Suspended">Suspended</a>:</td></tr>
+<tr><th id="511">511</th><td>            <b>if</b> (<a class="local col2 ref" href="#486" title='q' data-ref="22q">q</a>-&gt;<a class="virtual ref fn" href="qfuturewatcher.h.html#_ZN18QFutureWatcherBase15futureInterfaceEv" title='QFutureWatcherBase::futureInterface' data-ref="_ZN18QFutureWatcherBase15futureInterfaceEv">futureInterface</a>().<a class="ref fn" href="qfutureinterface.h.html#_ZNK20QFutureInterfaceBase10isCanceledEv" title='QFutureInterfaceBase::isCanceled' data-ref="_ZNK20QFutureInterfaceBase10isCanceledEv">isCanceled</a>())</td></tr>
+<tr><th id="512">512</th><td>                <b>break</b>;</td></tr>
+<tr><th id="513">513</th><td>            <a class="macro" href="../kernel/qtmetamacros.h.html#49" title="" data-ref="_M/emit">emit</a> <a class="local col2 ref" href="#486" title='q' data-ref="22q">q</a>-&gt;<a class="ref fn" href="qfuturewatcher.h.html#_ZN18QFutureWatcherBase9suspendedEv" title='QFutureWatcherBase::suspended' data-ref="_ZN18QFutureWatcherBase9suspendedEv">suspended</a>();</td></tr>
+<tr><th id="514">514</th><td>        <b>break</b>;</td></tr>
+<tr><th id="515">515</th><td>        <b>case</b> <a class="type" href="qfutureinterface_p.h.html#QFutureCallOutEvent" title='QFutureCallOutEvent' data-ref="QFutureCallOutEvent">QFutureCallOutEvent</a>::<a class="enum" href="qfutureinterface_p.h.html#QFutureCallOutEvent::Resumed" title='QFutureCallOutEvent::Resumed' data-ref="QFutureCallOutEvent::Resumed">Resumed</a>:</td></tr>
+<tr><th id="516">516</th><td>            <b>if</b> (<a class="local col2 ref" href="#486" title='q' data-ref="22q">q</a>-&gt;<a class="virtual ref fn" href="qfuturewatcher.h.html#_ZN18QFutureWatcherBase15futureInterfaceEv" title='QFutureWatcherBase::futureInterface' data-ref="_ZN18QFutureWatcherBase15futureInterfaceEv">futureInterface</a>().<a class="ref fn" href="qfutureinterface.h.html#_ZNK20QFutureInterfaceBase10isCanceledEv" title='QFutureInterfaceBase::isCanceled' data-ref="_ZNK20QFutureInterfaceBase10isCanceledEv">isCanceled</a>())</td></tr>
+<tr><th id="517">517</th><td>                <b>break</b>;</td></tr>
+<tr><th id="518">518</th><td>            <a class="macro" href="../kernel/qtmetamacros.h.html#49" title="" data-ref="_M/emit">emit</a> <a class="local col2 ref" href="#486" title='q' data-ref="22q">q</a>-&gt;<a class="ref fn" href="qfuturewatcher.h.html#_ZN18QFutureWatcherBase7resumedEv" title='QFutureWatcherBase::resumed' data-ref="_ZN18QFutureWatcherBase7resumedEv">resumed</a>();</td></tr>
+<tr><th id="519">519</th><td>        <b>break</b>;</td></tr>
+<tr><th id="520">520</th><td>        <b>case</b> <a class="type" href="qfutureinterface_p.h.html#QFutureCallOutEvent" title='QFutureCallOutEvent' data-ref="QFutureCallOutEvent">QFutureCallOutEvent</a>::<a class="enum" href="qfutureinterface_p.h.html#QFutureCallOutEvent::ResultsReady" title='QFutureCallOutEvent::ResultsReady' data-ref="QFutureCallOutEvent::ResultsReady">ResultsReady</a>: {</td></tr>
+<tr><th id="521">521</th><td>            <b>if</b> (<a class="local col2 ref" href="#486" title='q' data-ref="22q">q</a>-&gt;<a class="virtual ref fn" href="qfuturewatcher.h.html#_ZN18QFutureWatcherBase15futureInterfaceEv" title='QFutureWatcherBase::futureInterface' data-ref="_ZN18QFutureWatcherBase15futureInterfaceEv">futureInterface</a>().<a class="ref fn" href="qfutureinterface.h.html#_ZNK20QFutureInterfaceBase10isCanceledEv" title='QFutureInterfaceBase::isCanceled' data-ref="_ZNK20QFutureInterfaceBase10isCanceledEv">isCanceled</a>())</td></tr>
+<tr><th id="522">522</th><td>                <b>break</b>;</td></tr>
+<tr><th id="523">523</th><td></td></tr>
+<tr><th id="524">524</th><td>            <b>if</b> (<a class="member field" href="qfuturewatcher_p.h.html#QFutureWatcherBasePrivate::pendingResultsReady" title='QFutureWatcherBasePrivate::pendingResultsReady' data-ref="QFutureWatcherBasePrivate::pendingResultsReady">pendingResultsReady</a>.<a class="ref fn" href="qbasicatomic.h.html#_ZN19QBasicAtomicInteger18fetchAndAddRelaxedET_" title='QBasicAtomicInteger::fetchAndAddRelaxed' data-ref="_ZN19QBasicAtomicInteger18fetchAndAddRelaxedET_">fetchAndAddRelaxed</a>(<span class='inlayHint'>valueToAdd:&nbsp;</span>-<var>1</var>) &lt;= <a class="member field" href="qfuturewatcher_p.h.html#QFutureWatcherBasePrivate::maximumPendingResultsReady" title='QFutureWatcherBasePrivate::maximumPendingResultsReady' data-ref="QFutureWatcherBasePrivate::maximumPendingResultsReady">maximumPendingResultsReady</a>)</td></tr>
+<tr><th id="525">525</th><td>                <a class="local col2 ref" href="#486" title='q' data-ref="22q">q</a>-&gt;<a class="virtual ref fn" href="qfuturewatcher.h.html#_ZN18QFutureWatcherBase15futureInterfaceEv" title='QFutureWatcherBase::futureInterface' data-ref="_ZN18QFutureWatcherBase15futureInterfaceEv">futureInterface</a>().<a class="ref fn" href="qfutureinterface.h.html#_ZN20QFutureInterfaceBase12setThrottledEb" title='QFutureInterfaceBase::setThrottled' data-ref="_ZN20QFutureInterfaceBase12setThrottledEb">setThrottled</a>(<b>false</b>);</td></tr>
+<tr><th id="526">526</th><td></td></tr>
+<tr><th id="527">527</th><td>            <em>const</em> <em>int</em> <dfn class="local col3 decl" id="23beginIndex" title='beginIndex' data-type='const int' data-ref="23beginIndex">beginIndex</dfn> = <a class="local col1 ref" href="#21event" title='event' data-ref="21event">event</a>-&gt;<a class="ref field" href="qfutureinterface_p.h.html#QFutureCallOutEvent::index1" title='QFutureCallOutEvent::index1' data-ref="QFutureCallOutEvent::index1">index1</a>;</td></tr>
+<tr><th id="528">528</th><td>            <em>const</em> <em>int</em> <dfn class="local col4 decl" id="24endIndex" title='endIndex' data-type='const int' data-ref="24endIndex">endIndex</dfn> = <a class="local col1 ref" href="#21event" title='event' data-ref="21event">event</a>-&gt;<a class="ref field" href="qfutureinterface_p.h.html#QFutureCallOutEvent::index2" title='QFutureCallOutEvent::index2' data-ref="QFutureCallOutEvent::index2">index2</a>;</td></tr>
+<tr><th id="529">529</th><td></td></tr>
+<tr><th id="530">530</th><td>            <a class="macro" href="../kernel/qtmetamacros.h.html#49" title="" data-ref="_M/emit">emit</a> <a class="local col2 ref" href="#486" title='q' data-ref="22q">q</a>-&gt;<a class="ref fn" href="qfuturewatcher.h.html#_ZN18QFutureWatcherBase14resultsReadyAtEii" title='QFutureWatcherBase::resultsReadyAt' data-ref="_ZN18QFutureWatcherBase14resultsReadyAtEii">resultsReadyAt</a>(<a class="local col3 ref" href="#23beginIndex" title='beginIndex' data-ref="23beginIndex">beginIndex</a>, <a class="local col4 ref" href="#24endIndex" title='endIndex' data-ref="24endIndex">endIndex</a>);</td></tr>
+<tr><th id="531">531</th><td></td></tr>
+<tr><th id="532">532</th><td>            <b>if</b> (<a class="member field" href="qfuturewatcher_p.h.html#QFutureWatcherBasePrivate::resultAtConnected" title='QFutureWatcherBasePrivate::resultAtConnected' data-ref="QFutureWatcherBasePrivate::resultAtConnected">resultAtConnected</a>.<a class="ref fn" href="qbasicatomic.h.html#_ZNK19QBasicAtomicInteger11loadRelaxedEv" title='QBasicAtomicInteger::loadRelaxed' data-ref="_ZNK19QBasicAtomicInteger11loadRelaxedEv">loadRelaxed</a>() &lt;= <var>0</var>)</td></tr>
+<tr><th id="533">533</th><td>                <b>break</b>;</td></tr>
+<tr><th id="534">534</th><td></td></tr>
+<tr><th id="535">535</th><td>            <b>for</b> (<em>int</em> <dfn class="local col5 decl" id="25i" title='i' data-type='int' data-ref="25i">i</dfn> = <a class="local col3 ref" href="#23beginIndex" title='beginIndex' data-ref="23beginIndex">beginIndex</a>; <a class="local col5 ref" href="#25i" title='i' data-ref="25i">i</a> &lt; <a class="local col4 ref" href="#24endIndex" title='endIndex' data-ref="24endIndex">endIndex</a>; ++<a class="local col5 ref" href="#25i" title='i' data-ref="25i">i</a>)</td></tr>
+<tr><th id="536">536</th><td>                <a class="macro" href="../kernel/qtmetamacros.h.html#49" title="" data-ref="_M/emit">emit</a> <a class="local col2 ref" href="#486" title='q' data-ref="22q">q</a>-&gt;<a class="ref fn" href="qfuturewatcher.h.html#_ZN18QFutureWatcherBase13resultReadyAtEi" title='QFutureWatcherBase::resultReadyAt' data-ref="_ZN18QFutureWatcherBase13resultReadyAtEi">resultReadyAt</a>(<span class='inlayHint'>resultIndex:&nbsp;</span><a class="local col5 ref" href="#25i" title='i' data-ref="25i">i</a>);</td></tr>
+<tr><th id="537">537</th><td></td></tr>
+<tr><th id="538">538</th><td>        } <b>break</b>;</td></tr>
+<tr><th id="539">539</th><td>        <b>case</b> <a class="type" href="qfutureinterface_p.h.html#QFutureCallOutEvent" title='QFutureCallOutEvent' data-ref="QFutureCallOutEvent">QFutureCallOutEvent</a>::<a class="enum" href="qfutureinterface_p.h.html#QFutureCallOutEvent::Progress" title='QFutureCallOutEvent::Progress' data-ref="QFutureCallOutEvent::Progress">Progress</a>:</td></tr>
+<tr><th id="540">540</th><td>            <b>if</b> (<a class="local col2 ref" href="#486" title='q' data-ref="22q">q</a>-&gt;<a class="virtual ref fn" href="qfuturewatcher.h.html#_ZN18QFutureWatcherBase15futureInterfaceEv" title='QFutureWatcherBase::futureInterface' data-ref="_ZN18QFutureWatcherBase15futureInterfaceEv">futureInterface</a>().<a class="ref fn" href="qfutureinterface.h.html#_ZNK20QFutureInterfaceBase10isCanceledEv" title='QFutureInterfaceBase::isCanceled' data-ref="_ZNK20QFutureInterfaceBase10isCanceledEv">isCanceled</a>())</td></tr>
+<tr><th id="541">541</th><td>                <b>break</b>;</td></tr>
+<tr><th id="542">542</th><td></td></tr>
+<tr><th id="543">543</th><td>            <a class="macro" href="../kernel/qtmetamacros.h.html#49" title="" data-ref="_M/emit">emit</a> <a class="local col2 ref" href="#486" title='q' data-ref="22q">q</a>-&gt;<a class="ref fn" href="qfuturewatcher.h.html#_ZN18QFutureWatcherBase20progressValueChangedEi" title='QFutureWatcherBase::progressValueChanged' data-ref="_ZN18QFutureWatcherBase20progressValueChangedEi">progressValueChanged</a>(<span class='inlayHint'>progressValue:&nbsp;</span><a class="local col1 ref" href="#21event" title='event' data-ref="21event">event</a>-&gt;<a class="ref field" href="qfutureinterface_p.h.html#QFutureCallOutEvent::index1" title='QFutureCallOutEvent::index1' data-ref="QFutureCallOutEvent::index1">index1</a>);</td></tr>
+<tr><th id="544">544</th><td>            <b>if</b> (!<a class="local col1 ref" href="#21event" title='event' data-ref="21event">event</a>-&gt;<a class="ref field" href="qfutureinterface_p.h.html#QFutureCallOutEvent::text" title='QFutureCallOutEvent::text' data-ref="QFutureCallOutEvent::text">text</a>.<a class="ref fn" href="../text/qstring.h.html#_ZNK7QString6isNullEv" title='QString::isNull' data-ref="_ZNK7QString6isNullEv">isNull</a>()) <i>// ###</i></td></tr>
+<tr><th id="545">545</th><td>                <a class="macro" href="../kernel/qtmetamacros.h.html#49" title="" data-ref="_M/emit">emit</a> <a class="local col2 ref" href="#486" title='q' data-ref="22q">q</a>-&gt;<a class="ref fn" href="qfuturewatcher.h.html#_ZN18QFutureWatcherBase19progressTextChangedERK7QString" title='QFutureWatcherBase::progressTextChanged' data-ref="_ZN18QFutureWatcherBase19progressTextChangedERK7QString">progressTextChanged</a>(<span class='inlayHint'>progressText:&nbsp;</span><a class="local col1 ref" href="#21event" title='event' data-ref="21event">event</a>-&gt;<a class="ref field" href="qfutureinterface_p.h.html#QFutureCallOutEvent::text" title='QFutureCallOutEvent::text' data-ref="QFutureCallOutEvent::text">text</a>);</td></tr>
+<tr><th id="546">546</th><td>        <b>break</b>;</td></tr>
+<tr><th id="547">547</th><td>        <b>case</b> <a class="type" href="qfutureinterface_p.h.html#QFutureCallOutEvent" title='QFutureCallOutEvent' data-ref="QFutureCallOutEvent">QFutureCallOutEvent</a>::<a class="enum" href="qfutureinterface_p.h.html#QFutureCallOutEvent::ProgressRange" title='QFutureCallOutEvent::ProgressRange' data-ref="QFutureCallOutEvent::ProgressRange">ProgressRange</a>:</td></tr>
+<tr><th id="548">548</th><td>            <a class="macro" href="../kernel/qtmetamacros.h.html#49" title="" data-ref="_M/emit">emit</a> <a class="local col2 ref" href="#486" title='q' data-ref="22q">q</a>-&gt;<a class="ref fn" href="qfuturewatcher.h.html#_ZN18QFutureWatcherBase20progressRangeChangedEii" title='QFutureWatcherBase::progressRangeChanged' data-ref="_ZN18QFutureWatcherBase20progressRangeChangedEii">progressRangeChanged</a>(<span class='inlayHint'>minimum:&nbsp;</span><a class="local col1 ref" href="#21event" title='event' data-ref="21event">event</a>-&gt;<a class="ref field" href="qfutureinterface_p.h.html#QFutureCallOutEvent::index1" title='QFutureCallOutEvent::index1' data-ref="QFutureCallOutEvent::index1">index1</a>, <span class='inlayHint'>maximum:&nbsp;</span><a class="local col1 ref" href="#21event" title='event' data-ref="21event">event</a>-&gt;<a class="ref field" href="qfutureinterface_p.h.html#QFutureCallOutEvent::index2" title='QFutureCallOutEvent::index2' data-ref="QFutureCallOutEvent::index2">index2</a>);</td></tr>
+<tr><th id="549">549</th><td>        <b>break</b>;</td></tr>
+<tr><th id="550">550</th><td>        <b>default</b>: <b>break</b>;</td></tr>
+<tr><th id="551">551</th><td>    }</td></tr>
+<tr><th id="552">552</th><td>}</td></tr>
+<tr><th id="553">553</th><td></td></tr>
+<tr><th id="554">554</th><td></td></tr>
+<tr><th id="555">555</th><td><i class="doc">/*! <span class="command">\fn</span> <span class="verb">template &lt;typename T&gt; const T &amp;QFutureWatcher&lt;T&gt;::result() const</span></i></td></tr>
+<tr><th id="556">556</th><td><i class="doc"></i></td></tr>
+<tr><th id="557">557</th><td><i class="doc">    Returns the first result in the future(). If the result is not immediately</i></td></tr>
+<tr><th id="558">558</th><td><i class="doc">    available, this function will block and wait for the result to become</i></td></tr>
+<tr><th id="559">559</th><td><i class="doc">    available. This is a convenience method for calling resultAt(0).</i></td></tr>
+<tr><th id="560">560</th><td><i class="doc"></i></td></tr>
+<tr><th id="561">561</th><td><i class="doc">    <span class="command">\sa</span> resultAt()</i></td></tr>
+<tr><th id="562">562</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="563">563</th><td></td></tr>
+<tr><th id="564">564</th><td><i class="doc">/*! <span class="command">\fn</span> <span class="verb">template &lt;typename T&gt; const T &amp;QFutureWatcher&lt;T&gt;::resultAt(int index) const</span></i></td></tr>
+<tr><th id="565">565</th><td><i class="doc"></i></td></tr>
+<tr><th id="566">566</th><td><i class="doc">    Returns the result at<span class="command"> \a</span> <span class="arg">index</span> in the future(). If the result is not</i></td></tr>
+<tr><th id="567">567</th><td><i class="doc">    immediately available, this function will block and wait for the result to</i></td></tr>
+<tr><th id="568">568</th><td><i class="doc">    become available.</i></td></tr>
+<tr><th id="569">569</th><td><i class="doc"></i></td></tr>
+<tr><th id="570">570</th><td><i class="doc">    <span class="command">\sa</span> result()</i></td></tr>
+<tr><th id="571">571</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="572">572</th><td></td></tr>
+<tr><th id="573">573</th><td><i class="doc">/*! <span class="command">\fn</span> <span class="verb">template &lt;typename T&gt; void QFutureWatcher&lt;T&gt;::setFuture(const QFuture&lt;T&gt; &amp;future)</span></i></td></tr>
+<tr><th id="574">574</th><td><i class="doc"></i></td></tr>
+<tr><th id="575">575</th><td><i class="doc">    Starts watching the given<span class="command"> \a</span> <span class="arg">future.</span></i></td></tr>
+<tr><th id="576">576</th><td><i class="doc"></i></td></tr>
+<tr><th id="577">577</th><td><i class="doc">    If<span class="command"> \a</span> <span class="arg">future</span> has already started, the watcher will initially emit signals</i></td></tr>
+<tr><th id="578">578</th><td><i class="doc">    that bring their listeners up to date about the future's state. The</i></td></tr>
+<tr><th id="579">579</th><td><i class="doc">    following signals will, if applicable, be emitted in the given order:</i></td></tr>
+<tr><th id="580">580</th><td><i class="doc">    started(), progressRangeChanged(), progressValueChanged(),</i></td></tr>
+<tr><th id="581">581</th><td><i class="doc">    progressTextChanged(), resultsReadyAt(), resultReadyAt(), suspending(),</i></td></tr>
+<tr><th id="582">582</th><td><i class="doc">    suspended(), canceled(), and finished(). Of these, resultsReadyAt() and</i></td></tr>
+<tr><th id="583">583</th><td><i class="doc">    resultReadyAt() may be emitted several times to cover all available</i></td></tr>
+<tr><th id="584">584</th><td><i class="doc">    results. progressValueChanged() and progressTextChanged() will only be</i></td></tr>
+<tr><th id="585">585</th><td><i class="doc">    emitted once for the latest available progress value and text.</i></td></tr>
+<tr><th id="586">586</th><td><i class="doc"></i></td></tr>
+<tr><th id="587">587</th><td><i class="doc">    To avoid a race condition, it is important to call this function</i></td></tr>
+<tr><th id="588">588</th><td><i class="doc">   <span class="command"> \e</span> <span class="arg">after</span> doing the connections.</i></td></tr>
+<tr><th id="589">589</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="590">590</th><td></td></tr>
+<tr><th id="591">591</th><td><i class="doc">/*! <span class="command">\fn</span> <span class="verb">template &lt;typename T&gt; QFuture&lt;T&gt; QFutureWatcher&lt;T&gt;::future() const</span></i></td></tr>
+<tr><th id="592">592</th><td><i class="doc"></i></td></tr>
+<tr><th id="593">593</th><td><i class="doc">    Returns the watched future.</i></td></tr>
+<tr><th id="594">594</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="595">595</th><td></td></tr>
+<tr><th id="596">596</th><td><i class="doc">/*! <span class="command">\fn</span> <span class="verb">template &lt;typename T&gt; void QFutureWatcher&lt;T&gt;::started()</span></i></td></tr>
+<tr><th id="597">597</th><td><i class="doc"></i></td></tr>
+<tr><th id="598">598</th><td><i class="doc">    This signal is emitted when this QFutureWatcher starts watching the future</i></td></tr>
+<tr><th id="599">599</th><td><i class="doc">    set with setFuture().</i></td></tr>
+<tr><th id="600">600</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="601">601</th><td></td></tr>
+<tr><th id="602">602</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="603">603</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">template &lt;typename T&gt; void QFutureWatcher&lt;T&gt;::finished()</span></i></td></tr>
+<tr><th id="604">604</th><td><i class="doc">    This signal is emitted when the watched future finishes.</i></td></tr>
+<tr><th id="605">605</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="606">606</th><td></td></tr>
+<tr><th id="607">607</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="608">608</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">template &lt;typename T&gt; void QFutureWatcher&lt;T&gt;::canceled()</span></i></td></tr>
+<tr><th id="609">609</th><td><i class="doc">    This signal is emitted if the watched future is canceled.</i></td></tr>
+<tr><th id="610">610</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="611">611</th><td></td></tr>
+<tr><th id="612">612</th><td><i class="doc">/*! <span class="command">\fn</span> <span class="verb">template &lt;typename T&gt; void QFutureWatcher&lt;T&gt;::suspending()</span></i></td></tr>
+<tr><th id="613">613</th><td><i class="doc"></i></td></tr>
+<tr><th id="614">614</th><td><i class="doc">    <span class="command">\since</span> 6.0</i></td></tr>
+<tr><th id="615">615</th><td><i class="doc"></i></td></tr>
+<tr><th id="616">616</th><td><i class="doc">    This signal is emitted when the state of the watched future is</i></td></tr>
+<tr><th id="617">617</th><td><i class="doc">    set to suspended.</i></td></tr>
+<tr><th id="618">618</th><td><i class="doc"></i></td></tr>
+<tr><th id="619">619</th><td><i class="doc">    <span class="command">\note</span> This signal only informs that suspension has been requested. It</i></td></tr>
+<tr><th id="620">620</th><td><i class="doc">    doesn't indicate that all background operations are stopped. Signals</i></td></tr>
+<tr><th id="621">621</th><td><i class="doc">    for computations that were in progress at the moment of suspending will</i></td></tr>
+<tr><th id="622">622</th><td><i class="doc">    still be delivered. To be informed when suspension actually</i></td></tr>
+<tr><th id="623">623</th><td><i class="doc">    took effect, use the suspended() signal.</i></td></tr>
+<tr><th id="624">624</th><td><i class="doc"></i></td></tr>
+<tr><th id="625">625</th><td><i class="doc">    <span class="command">\sa</span> setSuspended(), suspend(), suspended()</i></td></tr>
+<tr><th id="626">626</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="627">627</th><td></td></tr>
+<tr><th id="628">628</th><td><u>#<span data-ppcond="628">if</span> <a class="macro" href="../global/qtdeprecationmarkers.h.html#80" title="(((6&lt;&lt;16)|(0&lt;&lt;8)|(0)) &gt; 0x050000)" data-ref="_M/QT_DEPRECATED_SINCE">QT_DEPRECATED_SINCE</a>(6, 0)</u></td></tr>
+<tr><th id="629">629</th><td><i class="doc">/*! <span class="command">\fn</span> <span class="verb">template &lt;typename T&gt; void QFutureWatcher&lt;T&gt;::paused()</span></i></td></tr>
+<tr><th id="630">630</th><td><i class="doc"></i></td></tr>
+<tr><th id="631">631</th><td><i class="doc">    <span class="command">\deprecated</span> [6.0] Use suspending() instead.</i></td></tr>
+<tr><th id="632">632</th><td><i class="doc"></i></td></tr>
+<tr><th id="633">633</th><td><i class="doc">    This signal is emitted when the state of the watched future is</i></td></tr>
+<tr><th id="634">634</th><td><i class="doc">    set to paused.</i></td></tr>
+<tr><th id="635">635</th><td><i class="doc"></i></td></tr>
+<tr><th id="636">636</th><td><i class="doc">    <span class="command">\note</span> This signal only informs that pause has been requested. It</i></td></tr>
+<tr><th id="637">637</th><td><i class="doc">    doesn't indicate that all background operations are stopped. Signals</i></td></tr>
+<tr><th id="638">638</th><td><i class="doc">    for computations that were in progress at the moment of pausing will</i></td></tr>
+<tr><th id="639">639</th><td><i class="doc">    still be delivered. To to be informed when pause() actually</i></td></tr>
+<tr><th id="640">640</th><td><i class="doc">    took effect, use the suspended() signal.</i></td></tr>
+<tr><th id="641">641</th><td><i class="doc"></i></td></tr>
+<tr><th id="642">642</th><td><i class="doc">    <span class="command">\sa</span> setSuspended(), suspend(), suspended()</i></td></tr>
+<tr><th id="643">643</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="644">644</th><td><u>#<span data-ppcond="628">endif</span> // QT_DEPRECATED_SINCE(6, 0)</u></td></tr>
+<tr><th id="645">645</th><td></td></tr>
+<tr><th id="646">646</th><td><i class="doc">/*! <span class="command">\fn</span> <span class="verb">template &lt;typename T&gt; void QFutureWatcher&lt;T&gt;::suspended()</span></i></td></tr>
+<tr><th id="647">647</th><td><i class="doc"></i></td></tr>
+<tr><th id="648">648</th><td><i class="doc">    <span class="command">\since</span> 6.0</i></td></tr>
+<tr><th id="649">649</th><td><i class="doc"></i></td></tr>
+<tr><th id="650">650</th><td><i class="doc">    This signal is emitted when suspend() took effect, meaning that there are</i></td></tr>
+<tr><th id="651">651</th><td><i class="doc">    no more running computations. After receiving this signal no more result</i></td></tr>
+<tr><th id="652">652</th><td><i class="doc">    ready or progress reporting signals are expected.</i></td></tr>
+<tr><th id="653">653</th><td><i class="doc"></i></td></tr>
+<tr><th id="654">654</th><td><i class="doc">    <span class="command">\sa</span> setSuspended(), suspend(), suspended()</i></td></tr>
+<tr><th id="655">655</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="656">656</th><td></td></tr>
+<tr><th id="657">657</th><td><i class="doc">/*! <span class="command">\fn</span> <span class="verb">template &lt;typename T&gt; void QFutureWatcher&lt;T&gt;::resumed()</span></i></td></tr>
+<tr><th id="658">658</th><td><i class="doc">    This signal is emitted when the watched future is resumed.</i></td></tr>
+<tr><th id="659">659</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="660">660</th><td></td></tr>
+<tr><th id="661">661</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="662">662</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">template &lt;typename T&gt; void QFutureWatcher&lt;T&gt;::progressRangeChanged(int minimum, int maximum)</span></i></td></tr>
+<tr><th id="663">663</th><td><i class="doc"></i></td></tr>
+<tr><th id="664">664</th><td><i class="doc">    The progress range for the watched future has changed to<span class="command"> \a</span> <span class="arg">minimum</span> and</i></td></tr>
+<tr><th id="665">665</th><td><i class="doc">   <span class="command"> \a</span> <span class="arg">maximum</span></i></td></tr>
+<tr><th id="666">666</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="667">667</th><td></td></tr>
+<tr><th id="668">668</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="669">669</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">template &lt;typename T&gt; void QFutureWatcher&lt;T&gt;::progressValueChanged(int progressValue)</span></i></td></tr>
+<tr><th id="670">670</th><td><i class="doc"></i></td></tr>
+<tr><th id="671">671</th><td><i class="doc">    This signal is emitted when the watched future reports progress,</i></td></tr>
+<tr><th id="672">672</th><td><i class="doc">   <span class="command"> \a</span> <span class="arg">progressValue</span> gives the current progress. In order to avoid overloading</i></td></tr>
+<tr><th id="673">673</th><td><i class="doc">    the GUI event loop, QFutureWatcher limits the progress signal emission</i></td></tr>
+<tr><th id="674">674</th><td><i class="doc">    rate. This means that listeners connected to this slot might not get all</i></td></tr>
+<tr><th id="675">675</th><td><i class="doc">    progress reports the future makes. The last progress update (where</i></td></tr>
+<tr><th id="676">676</th><td><i class="doc">   <span class="command"> \a</span> <span class="arg">progressValue</span> equals the maximum value) will always be delivered.</i></td></tr>
+<tr><th id="677">677</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="678">678</th><td></td></tr>
+<tr><th id="679">679</th><td><i class="doc">/*! <span class="command">\fn</span> <span class="verb">template &lt;typename T&gt; void QFutureWatcher&lt;T&gt;::progressTextChanged(const QString &amp;progressText)</span></i></td></tr>
+<tr><th id="680">680</th><td><i class="doc"></i></td></tr>
+<tr><th id="681">681</th><td><i class="doc">    This signal is emitted when the watched future reports textual progress</i></td></tr>
+<tr><th id="682">682</th><td><i class="doc">    information,<span class="command"> \a</span> <span class="arg">progressText.</span></i></td></tr>
+<tr><th id="683">683</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="684">684</th><td></td></tr>
+<tr><th id="685">685</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="686">686</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">template &lt;typename T&gt; void QFutureWatcher&lt;T&gt;::resultReadyAt(int index)</span></i></td></tr>
+<tr><th id="687">687</th><td><i class="doc"></i></td></tr>
+<tr><th id="688">688</th><td><i class="doc">    This signal is emitted when the watched future reports a ready result at</i></td></tr>
+<tr><th id="689">689</th><td><i class="doc">   <span class="command"> \a</span> <span class="arg">index.</span> If the future reports multiple results, the index will indicate</i></td></tr>
+<tr><th id="690">690</th><td><i class="doc">    which one it is. Results can be reported out-of-order. To get the result,</i></td></tr>
+<tr><th id="691">691</th><td><i class="doc">    call resultAt(index);</i></td></tr>
+<tr><th id="692">692</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="693">693</th><td></td></tr>
+<tr><th id="694">694</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="695">695</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">template &lt;typename T&gt; void QFutureWatcher&lt;T&gt;::resultsReadyAt(int beginIndex, int endIndex);</span></i></td></tr>
+<tr><th id="696">696</th><td><i class="doc"></i></td></tr>
+<tr><th id="697">697</th><td><i class="doc">    This signal is emitted when the watched future reports ready results.</i></td></tr>
+<tr><th id="698">698</th><td><i class="doc">    The results are indexed from<span class="command"> \a</span> <span class="arg">beginIndex</span> to<span class="command"> \a</span> <span class="arg">endIndex.</span></i></td></tr>
+<tr><th id="699">699</th><td><i class="doc"></i></td></tr>
+<tr><th id="700">700</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="701">701</th><td></td></tr>
+<tr><th id="702">702</th><td><a class="macro" href="../global/qtconfigmacros.h.html#104" title="" data-ref="_M/QT_END_NAMESPACE">QT_END_NAMESPACE</a></td></tr>
+<tr><th id="703">703</th><td></td></tr>
+<tr><th id="704">704</th><td><u>#include <span class='error' title="&apos;moc_qfuturewatcher.cpp&apos; file not found">"moc_qfuturewatcher.cpp"</span></u></td></tr>
+<tr><th id="705">705</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2024-Jun-13</em> from project qtbase-6.5.0 revision <em>6.5.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

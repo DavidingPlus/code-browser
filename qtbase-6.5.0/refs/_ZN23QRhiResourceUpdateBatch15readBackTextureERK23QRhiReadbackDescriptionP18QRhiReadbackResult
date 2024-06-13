@@ -1,0 +1,63 @@
+<dec f='qtbase-6.5.0/src/gui/rhi/qrhi_p.h' l='1571' type='void QRhiResourceUpdateBatch::readBackTexture(const QRhiReadbackDescription &amp; rb, QRhiReadbackResult * result)'/>
+<def f='qtbase-6.5.0/src/gui/rhi/qrhi.cpp' l='6186' ll='6193' type='void QRhiResourceUpdateBatch::readBackTexture(const QRhiReadbackDescription &amp; rb, QRhiReadbackResult * result)'/>
+<doc f='qtbase-6.5.0/src/gui/rhi/qrhi.cpp' l='6125'>/*!
+   Enqueues a texture-to-host copy operation as described by \a rb.
+
+   Normally \a rb will specify a QRhiTexture as the source. However, when the
+   swapchain in the current frame was created with
+   QRhiSwapChain::UsedAsTransferSource, it can also be the source of the
+   readback. For this, leave the texture set to null in \a rb.
+
+   Unlike other operations, the results here need to be processed by the
+   application. Therefore, \a result provides not just the data but also a
+   callback as operations on the batch are asynchronous by nature:
+
+   \badcode
+      beginFrame(sc);
+      beginPass
+      ...
+      QRhiReadbackResult *rbResult = new QRhiReadbackResult;
+      rbResult-&gt;completed = [rbResult] {
+          {
+              const QImage::Format fmt = QImage::Format_RGBA8888_Premultiplied; // fits QRhiTexture::RGBA8
+              const uchar *p = reinterpret_cast&lt;const uchar *&gt;(rbResult-&gt;data.constData());
+              QImage image(p, rbResult-&gt;pixelSize.width(), rbResult-&gt;pixelSize.height(), fmt);
+              image.save(&quot;result.png&quot;);
+          }
+          delete rbResult;
+      };
+      u = nextResourceUpdateBatch();
+      QRhiReadbackDescription rb; // no texture -&gt; uses the current backbuffer of sc
+      u-&gt;readBackTexture(rb, rbResult);
+      endPass(u);
+      endFrame(sc);
+   \endcode
+
+   \note The texture must be created with QRhiTexture::UsedAsTransferSource.
+
+   \note Multisample textures cannot be read back.
+
+   \note The readback returns raw byte data, in order to allow the applications
+   to interpret it in any way they see fit. Be aware of the blending settings
+   of rendering code: if the blending is set up to rely on premultiplied alpha,
+   the results of the readback must also be interpreted as Premultiplied.
+
+   \note When interpreting the resulting raw data, be aware that the readback
+   happens with a byte ordered format. A \l{QRhiTexture::RGBA8}{RGBA8} texture
+   maps therefore to byte ordered QImage formats, such as,
+   QImage::Format_RGBA8888.
+
+   \note The asynchronous readback is guaranteed to have completed when one of
+   the following conditions is met: \l{QRhi::finish()}{finish()} has been
+   called; or, at least \c N frames have been \l{QRhi::endFrame()}{submitted},
+   including the frame that issued the readback operation, and the
+   \l{QRhi::beginFrame()}{recording of a new frame} has been started, where \c
+   N is the \l{QRhi::resourceLimit()}{resource limit value} returned for
+   QRhi::MaxAsyncReadbackFrames.
+
+   A single readback operation copies one mip level of one layer (cubemap face
+   or 3D slice or texture array element) at a time. The level and layer are
+   specified by the respective fields in \a rb.
+
+   \sa readBackBuffer(), QRhi::resourceLimit()
+ */</doc>

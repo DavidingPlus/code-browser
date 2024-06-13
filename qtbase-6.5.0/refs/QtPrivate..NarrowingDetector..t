@@ -1,0 +1,1 @@
+<dec f='qtbase-6.5.0/src/corelib/kernel/qobjectdefs_impl.h' l='248' type='T[1]'/>

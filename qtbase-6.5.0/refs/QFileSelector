@@ -1,0 +1,129 @@
+<inh f='qtbase-6.5.0/src/corelib/kernel/qobject.h' l='89' c='QObject'/>
+<def f='qtbase-6.5.0/src/corelib/io/qfileselector.h' l='13' ll='30'/>
+<size>16</size>
+<smbr r='QFileSelector::staticMetaObject' t='const QMetaObject'/>
+<fun r='_ZNK13QFileSelector10metaObjectEv'/>
+<fun r='_ZN13QFileSelector11qt_metacastEPKc'/>
+<fun r='_ZN13QFileSelector11qt_metacallEN11QMetaObject4CallEiPPv'/>
+<fun r='_ZN13QFileSelector2trEPKcS1_i'/>
+<fun r='_ZN13QFileSelector18qt_static_metacallEP7QObjectN11QMetaObject4CallEiPPv'/>
+<fun r='_ZN13QFileSelectorC1EP7QObject'/>
+<fun r='_ZN13QFileSelectorD1Ev'/>
+<fun r='_ZNK13QFileSelector6selectERK7QString'/>
+<fun r='_ZNK13QFileSelector6selectERK4QUrl'/>
+<fun r='_ZNK13QFileSelector14extraSelectorsEv'/>
+<fun r='_ZN13QFileSelector17setExtraSelectorsERK5QListI7QStringE'/>
+<fun r='_ZNK13QFileSelector12allSelectorsEv'/>
+<fun r='_ZN13QFileSelector6d_funcEv'/>
+<fun r='_ZNK13QFileSelector6d_funcEv'/>
+<use f='qtbase-6.5.0/src/corelib/io/qfileselector_p.h' l='32' c='_ZN20QFileSelectorPrivate6q_funcEv'/>
+<use f='qtbase-6.5.0/src/corelib/io/qfileselector_p.h' l='32' c='_ZN20QFileSelectorPrivate6q_funcEv'/>
+<use f='qtbase-6.5.0/src/corelib/io/qfileselector_p.h' l='32' c='_ZNK20QFileSelectorPrivate6q_funcEv'/>
+<use f='qtbase-6.5.0/src/corelib/io/qfileselector_p.h' l='32' c='_ZNK20QFileSelectorPrivate6q_funcEv'/>
+<use f='qtbase-6.5.0/src/corelib/io/qfileselector_p.h' l='32'/>
+<use f='qtbase-6.5.0/src/corelib/io/qfileselector.cpp' l='245' c='_ZNK20QFileSelectorPrivate6selectERK7QString'/>
+<size>16</size>
+<doc f='qtbase-6.5.0/src/corelib/io/qfileselector.cpp' l='32'>/*!
+    \class QFileSelector
+    \inmodule QtCore
+    \brief QFileSelector provides a convenient way of selecting file variants.
+    \since 5.2
+
+    QFileSelector is a convenience for selecting file variants based on platform or device
+    characteristics. This allows you to develop and deploy one codebase containing all the
+    different variants more easily in some circumstances, such as when the correct variant cannot
+    be determined during the deploy step.
+
+    \section1 Using QFileSelector
+
+    If you always use the same file you do not need to use QFileSelector.
+
+    Consider the following example usage, where you want to use different settings files on
+    different locales. You might select code between locales like this:
+
+    \snippet code/src_corelib_io_qfileselector.cpp 0
+
+    Similarly, if you want to pick a different data file based on target platform,
+    your code might look something like this:
+    \snippet code/src_corelib_io_qfileselector.cpp 1
+
+    QFileSelector provides a convenient alternative to writing such boilerplate code, and in the
+    latter case it allows you to start using an platform-specific configuration without a recompile.
+    QFileSelector also allows for chaining of multiple selectors in a convenient way, for example
+    selecting a different file only on certain combinations of platform and locale. For example, to
+    select based on platform and/or locale, the code is as follows:
+
+    \snippet code/src_corelib_io_qfileselector.cpp 2
+
+    The files to be selected are placed in directories named with a \c&apos;+&apos; and a selector name. In the above
+    example you could have the platform configurations selected by placing them in the following locations:
+    \snippet code/src_corelib_io_qfileselector.cpp 3
+
+    To find selected files, QFileSelector looks in the same directory as the base file. If there are
+    any directories of the form +&lt;selector&gt; with an active selector, QFileSelector will prefer a file
+    with the same file name from that directory over the base file. These directories can be nested to
+    check against multiple selectors, for example:
+    \snippet code/src_corelib_io_qfileselector.cpp 4
+    With those files available, you would select a different file on the android platform,
+    but only if the locale was en_GB.
+
+    For error handling in the case no valid selectors are present, it is recommended to have a default or
+    error-handling file in the base file location even if you expect selectors to be present for all
+    deployments.
+
+    In a future version, some may be marked as deploy-time static and be moved during the
+    deployment step as an optimization. As selectors come with a performance cost, it is
+    recommended to avoid their use in circumstances involving performance-critical code.
+
+    \section1 Adding Selectors
+
+    Selectors normally available are
+    \list
+    \li platform, any of the following strings which match the platform the application is running
+        on (list not exhaustive): android, ios, osx, darwin, mac, macos, linux, qnx, unix, windows.
+        On Linux, if it can be determined, the name of the distribution too, like debian,
+        fedora or opensuse.
+    \li locale, same as QLocale().name().
+    \endlist
+
+    Further selectors will be added from the \c QT_FILE_SELECTORS environment variable, which
+    when set should be a set of comma separated selectors. Note that this variable will only be
+    read once; selectors may not update if the variable changes while the application is running.
+    The initial set of selectors are evaluated only once, on first use.
+
+    You can also add extra selectors at runtime for custom behavior. These will be used in any
+    future calls to select(). If the extra selectors list has been changed, calls to select() will
+    use the new list and may return differently.
+
+    \section1 Conflict Resolution when Multiple Selectors Apply
+
+    When multiple selectors could be applied to the same file, the first matching selector is chosen.
+    The order selectors are checked in are:
+
+    \list 1
+    \li Selectors set via setExtraSelectors(), in the order they are in the list
+    \li Selectors in the \c QT_FILE_SELECTORS environment variable, from left to right
+    \li Locale
+    \li Platform
+    \endlist
+
+    Here is an example involving multiple selectors matching at the same time. It uses platform
+    selectors, plus an extra selector named &quot;admin&quot; is set by the application based on user
+    credentials. The example is sorted so that the lowest matching file would be chosen if all
+    selectors were present:
+
+    \snippet code/src_corelib_io_qfileselector.cpp 5
+
+    Because extra selectors are checked before platform the \c{+admin/background.png} will be chosen
+    on Windows when the admin selector is set, and \c{+windows/background.png} will be chosen on
+    Windows when the admin selector is not set.  On Linux, the \c{+admin/+linux/background.png} will be
+    chosen when admin is set, and the \c{+linux/background.png} when it is not.
+
+*/</doc>
+<fun r='_ZN13QFileSelectorC1EP7QObject'/>
+<fun r='_ZN13QFileSelectorD1Ev'/>
+<fun r='_ZNK13QFileSelector6selectERK7QString'/>
+<fun r='_ZNK13QFileSelector6selectERK4QUrl'/>
+<fun r='_ZNK13QFileSelector14extraSelectorsEv'/>
+<fun r='_ZN13QFileSelector17setExtraSelectorsERK5QListI7QStringE'/>
+<fun r='_ZNK13QFileSelector12allSelectorsEv'/>

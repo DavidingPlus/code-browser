@@ -1,0 +1,10 @@
+<use f='qtbase-6.5.0/src/widgets/kernel/qapplication_p.h' l='164' u='r' c='_ZN19QApplicationPrivate8instanceEv'/>
+<dec f='qtbase-6.5.0/src/widgets/kernel/qapplication_p.h' l='225' type='QApplicationPrivate *'/>
+<def f='qtbase-6.5.0/src/widgets/kernel/qapplication.cpp' l='121' type='QApplicationPrivate *'/>
+<use f='qtbase-6.5.0/src/widgets/kernel/qapplication.cpp' l='135' u='r' c='_ZN19QApplicationPrivateC1ERiPPc'/>
+<use f='qtbase-6.5.0/src/widgets/kernel/qapplication.cpp' l='136' u='w' c='_ZN19QApplicationPrivateC1ERiPPc'/>
+<use f='qtbase-6.5.0/src/widgets/kernel/qapplication.cpp' l='141' u='r' c='_ZN19QApplicationPrivateD1Ev'/>
+<use f='qtbase-6.5.0/src/widgets/kernel/qapplication.cpp' l='142' u='w' c='_ZN19QApplicationPrivateD1Ev'/>
+<use f='qtbase-6.5.0/src/widgets/kernel/qapplication.cpp' l='2191' u='r' c='_ZN19QApplicationPrivate16isBlockedByModalEP7QWidget'/>
+<use f='qtbase-6.5.0/src/widgets/kernel/qapplication.cpp' l='2253' u='r' c='_ZN19QApplicationPrivate10modalStateEv'/>
+<use f='qtbase-6.5.0/src/widgets/kernel/qapplication.cpp' l='3822' u='r' c='_ZN19QApplicationPrivate22translateRawTouchEventEP7QWidgetPK11QTouchEvent'/>

@@ -1,0 +1,9 @@
+<use f='qtbase-6.5.0/src/corelib/serialization/qjson_p.h' l='181' u='r' c='_ZN12QJsonPrivate5Value9containerE18QJsonValueConstRef'/>
+<use f='qtbase-6.5.0/src/corelib/serialization/qjsonvalue.cpp' l='901' u='w' c='_ZN13QJsonValueRef6detachEv'/>
+<use f='qtbase-6.5.0/src/corelib/serialization/qjsonvalue.cpp' l='901' u='r' c='_ZN13QJsonValueRef6detachEv'/>
+<use f='qtbase-6.5.0/src/corelib/serialization/qjsonvalue.cpp' l='901' u='r' c='_ZN13QJsonValueRef6detachEv'/>
+<use f='qtbase-6.5.0/src/corelib/serialization/qjsonvalue.cpp' l='1046' u='r' c='_ZN13QJsonValueRefixEx'/>
+<use f='qtbase-6.5.0/src/corelib/serialization/qjsonvalue.cpp' l='1047' u='r' c='_ZN13QJsonValueRefixEx'/>
+<use f='qtbase-6.5.0/src/corelib/serialization/qjsonvalue.cpp' l='1049' u='r' c='_ZN13QJsonValueRefixEx'/>
+<use f='qtbase-6.5.0/src/corelib/serialization/qjsonvalue.cpp' l='1060' u='r' c='_ZN13QJsonValueRefixE14QAnyStringView'/>
+<use f='qtbase-6.5.0/src/corelib/serialization/qjsonvalue.cpp' l='1072' u='r' c='_ZN13QJsonValueRefixE14QAnyStringView'/>

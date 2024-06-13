@@ -1,0 +1,884 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>qstorageinfo_unix.cpp source code [qtbase-6.5.0/src/corelib/io/qstorageinfo_unix.cpp] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="QStorageIterator "/>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'qtbase-6.5.0/src/corelib/io/qstorageinfo_unix.cpp'; var root_path = '../../../..'; var data_path = '../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>qtbase-6.5.0</a>/<a href='../..'>src</a>/<a href='..'>corelib</a>/<a href='./'>io</a>/<a href='qstorageinfo_unix.cpp.html'>qstorageinfo_unix.cpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>// Copyright (C) 2021 The Qt Company Ltd.</i></td></tr>
+<tr><th id="2">2</th><td><i>// Copyright (C) 2014 Ivan Komissarov &lt;ABBAPOH@gmail.com&gt;</i></td></tr>
+<tr><th id="3">3</th><td><i>// Copyright (C) 2016 Intel Corporation.</i></td></tr>
+<tr><th id="4">4</th><td><i>// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only</i></td></tr>
+<tr><th id="5">5</th><td></td></tr>
+<tr><th id="6">6</th><td><u>#include <a href="qstorageinfo_p.h.html">"qstorageinfo_p.h"</a></u></td></tr>
+<tr><th id="7">7</th><td></td></tr>
+<tr><th id="8">8</th><td><u>#include <a href="../../../build/include/QtCore/qdiriterator.h.html">&lt;QtCore/qdiriterator.h&gt;</a></u></td></tr>
+<tr><th id="9">9</th><td><u>#include <a href="../../../build/include/QtCore/qfileinfo.h.html">&lt;QtCore/qfileinfo.h&gt;</a></u></td></tr>
+<tr><th id="10">10</th><td><u>#include <a href="../../../build/include/QtCore/qtextstream.h.html">&lt;QtCore/qtextstream.h&gt;</a></u></td></tr>
+<tr><th id="11">11</th><td></td></tr>
+<tr><th id="12">12</th><td><u>#include <a href="../../../build/include/QtCore/6.5.0/QtCore/private/qcore_unix_p.h.html">&lt;QtCore/private/qcore_unix_p.h&gt;</a></u></td></tr>
+<tr><th id="13">13</th><td><u>#include <a href="../../../build/include/QtCore/6.5.0/QtCore/private/qlocale_tools_p.h.html">&lt;QtCore/private/qlocale_tools_p.h&gt;</a></u></td></tr>
+<tr><th id="14">14</th><td></td></tr>
+<tr><th id="15">15</th><td><u>#include <a href="../../../../include/errno.h.html">&lt;errno.h&gt;</a></u></td></tr>
+<tr><th id="16">16</th><td><u>#include <a href="../../../../include/x86_64-linux-gnu/sys/stat.h.html">&lt;sys/stat.h&gt;</a></u></td></tr>
+<tr><th id="17">17</th><td></td></tr>
+<tr><th id="18">18</th><td><u>#<span data-ppcond="18">if</span> defined(<span class="macro" data-ref="_M/Q_OS_BSD4">Q_OS_BSD4</span>)</u></td></tr>
+<tr><th id="19">19</th><td><u>#  include &lt;sys/mount.h&gt;</u></td></tr>
+<tr><th id="20">20</th><td><u>#  include &lt;sys/statvfs.h&gt;</u></td></tr>
+<tr><th id="21">21</th><td><u>#<span data-ppcond="18">elif</span> defined(<span class="macro" data-ref="_M/Q_OS_ANDROID">Q_OS_ANDROID</span>)</u></td></tr>
+<tr><th id="22">22</th><td><u>#  include &lt;sys/mount.h&gt;</u></td></tr>
+<tr><th id="23">23</th><td><u>#  include &lt;sys/vfs.h&gt;</u></td></tr>
+<tr><th id="24">24</th><td><u>#  include &lt;mntent.h&gt;</u></td></tr>
+<tr><th id="25">25</th><td><u>#<span data-ppcond="18">elif</span> defined(<a class="macro" href="../global/qsystemdetection.h.html#106" data-ref="_M/Q_OS_LINUX">Q_OS_LINUX</a>) || defined(<span class="macro" data-ref="_M/Q_OS_HURD">Q_OS_HURD</span>)</u></td></tr>
+<tr><th id="26">26</th><td><u>#  include <a href="../../../../include/mntent.h.html">&lt;mntent.h&gt;</a></u></td></tr>
+<tr><th id="27">27</th><td><u>#  include <a href="../../../../include/x86_64-linux-gnu/sys/statvfs.h.html">&lt;sys/statvfs.h&gt;</a></u></td></tr>
+<tr><th id="28">28</th><td><u>#  include <a href="../../../../include/x86_64-linux-gnu/sys/sysmacros.h.html">&lt;sys/sysmacros.h&gt;</a></u></td></tr>
+<tr><th id="29">29</th><td><u>#<span data-ppcond="18">elif</span> defined(Q_OS_SOLARIS)</u></td></tr>
+<tr><th id="30">30</th><td><u>#  include &lt;sys/mnttab.h&gt;</u></td></tr>
+<tr><th id="31">31</th><td><u>#  include &lt;sys/statvfs.h&gt;</u></td></tr>
+<tr><th id="32">32</th><td><u>#elif defined(Q_OS_HAIKU)</u></td></tr>
+<tr><th id="33">33</th><td><u>#  include &lt;Directory.h&gt;</u></td></tr>
+<tr><th id="34">34</th><td><u>#  include &lt;Path.h&gt;</u></td></tr>
+<tr><th id="35">35</th><td><u>#  include &lt;Volume.h&gt;</u></td></tr>
+<tr><th id="36">36</th><td><u>#  include &lt;VolumeRoster.h&gt;</u></td></tr>
+<tr><th id="37">37</th><td><u>#  include &lt;fs_info.h&gt;</u></td></tr>
+<tr><th id="38">38</th><td><u>#  include &lt;sys/statvfs.h&gt;</u></td></tr>
+<tr><th id="39">39</th><td><u>#else</u></td></tr>
+<tr><th id="40">40</th><td><u>#  include &lt;sys/statvfs.h&gt;</u></td></tr>
+<tr><th id="41">41</th><td><u>#<span data-ppcond="18">endif</span></u></td></tr>
+<tr><th id="42">42</th><td></td></tr>
+<tr><th id="43">43</th><td><u>#<span data-ppcond="43">if</span> defined(<span class="macro" data-ref="_M/Q_OS_BSD4">Q_OS_BSD4</span>)</u></td></tr>
+<tr><th id="44">44</th><td><u>#  if defined(Q_OS_NETBSD)</u></td></tr>
+<tr><th id="45">45</th><td><u>#    define QT_STATFSBUF struct statvfs</u></td></tr>
+<tr><th id="46">46</th><td><u>#    define QT_STATFS    ::statvfs</u></td></tr>
+<tr><th id="47">47</th><td><u>#  else</u></td></tr>
+<tr><th id="48">48</th><td><u>#    define QT_STATFSBUF struct statfs</u></td></tr>
+<tr><th id="49">49</th><td><u>#    define QT_STATFS    ::statfs</u></td></tr>
+<tr><th id="50">50</th><td><u>#  endif</u></td></tr>
+<tr><th id="51">51</th><td></td></tr>
+<tr><th id="52">52</th><td><u>#  if !defined(ST_RDONLY)</u></td></tr>
+<tr><th id="53">53</th><td><u>#    define ST_RDONLY MNT_RDONLY</u></td></tr>
+<tr><th id="54">54</th><td><u>#  endif</u></td></tr>
+<tr><th id="55">55</th><td><u>#  if !defined(_STATFS_F_FLAGS) &amp;&amp; !defined(Q_OS_NETBSD)</u></td></tr>
+<tr><th id="56">56</th><td><u>#    define _STATFS_F_FLAGS 1</u></td></tr>
+<tr><th id="57">57</th><td><u>#  endif</u></td></tr>
+<tr><th id="58">58</th><td><u>#<span data-ppcond="43">elif</span> defined(<span class="macro" data-ref="_M/Q_OS_ANDROID">Q_OS_ANDROID</span>)</u></td></tr>
+<tr><th id="59">59</th><td><u>#  define QT_STATFS    ::statfs</u></td></tr>
+<tr><th id="60">60</th><td><u>#  define QT_STATFSBUF struct statfs</u></td></tr>
+<tr><th id="61">61</th><td><u>#  if !defined(ST_RDONLY)</u></td></tr>
+<tr><th id="62">62</th><td><u>#    define ST_RDONLY 1 // hack for missing define on Android</u></td></tr>
+<tr><th id="63">63</th><td><u>#  endif</u></td></tr>
+<tr><th id="64">64</th><td><u>#<span data-ppcond="43">elif</span> defined(<span class="macro" data-ref="_M/Q_OS_HAIKU">Q_OS_HAIKU</span>)</u></td></tr>
+<tr><th id="65">65</th><td><u>#  define QT_STATFSBUF struct statvfs</u></td></tr>
+<tr><th id="66">66</th><td><u>#  define QT_STATFS    ::statvfs</u></td></tr>
+<tr><th id="67">67</th><td><u>#<span data-ppcond="43">else</span></u></td></tr>
+<tr><th id="68">68</th><td><u>#  <span data-ppcond="68">if</span> defined(<a class="macro" href="../../../build/src/corelib/global/qconfig.h.html#75" data-ref="_M/QT_LARGEFILE_SUPPORT">QT_LARGEFILE_SUPPORT</a>)</u></td></tr>
+<tr><th id="69">69</th><td><u>#    define <dfn class="macro" id="_M/QT_STATFSBUF" data-ref="_M/QT_STATFSBUF">QT_STATFSBUF</dfn> struct <a class="type" href="../../../../include/x86_64-linux-gnu/bits/statvfs.h.html#statvfs64" title='statvfs64' data-ref="statvfs64">statvfs64</a></u></td></tr>
+<tr><th id="70">70</th><td><u>#    define <dfn class="macro" id="_M/QT_STATFS" data-ref="_M/QT_STATFS">QT_STATFS</dfn>    ::<a class="ref fn" href="../../../../include/x86_64-linux-gnu/sys/statvfs.h.html#statvfs64" title='statvfs64' data-ref="statvfs64">statvfs64</a></u></td></tr>
+<tr><th id="71">71</th><td><u>#  <span data-ppcond="68">else</span></u></td></tr>
+<tr><th id="72">72</th><td><u>#    define QT_STATFSBUF struct statvfs</u></td></tr>
+<tr><th id="73">73</th><td><u>#    define QT_STATFS    ::statvfs</u></td></tr>
+<tr><th id="74">74</th><td><u>#  <span data-ppcond="68">endif</span> // QT_LARGEFILE_SUPPORT</u></td></tr>
+<tr><th id="75">75</th><td><u>#<span data-ppcond="43">endif</span> // Q_OS_BSD4</u></td></tr>
+<tr><th id="76">76</th><td></td></tr>
+<tr><th id="77">77</th><td><u>#<span data-ppcond="77">if</span> <span class="macro" title="" data-ref="_M/__has_include">__has_include</span>(&lt;paths.h&gt;)</u></td></tr>
+<tr><th id="78">78</th><td><u>#  include <a href="../../../../include/paths.h.html">&lt;paths.h&gt;</a></u></td></tr>
+<tr><th id="79">79</th><td><u>#<span data-ppcond="77">endif</span></u></td></tr>
+<tr><th id="80">80</th><td><u>#<span data-ppcond="80">ifndef</span> <a class="macro" href="../../../../include/paths.h.html#55" data-ref="_M/_PATH_MOUNTED">_PATH_MOUNTED</a></u></td></tr>
+<tr><th id="81">81</th><td><u>#  define _PATH_MOUNTED     "/etc/mnttab"</u></td></tr>
+<tr><th id="82">82</th><td><u>#<span data-ppcond="80">endif</span></u></td></tr>
+<tr><th id="83">83</th><td></td></tr>
+<tr><th id="84">84</th><td><a class="macro" href="../global/qtconfigmacros.h.html#103" title="" data-ref="_M/QT_BEGIN_NAMESPACE">QT_BEGIN_NAMESPACE</a></td></tr>
+<tr><th id="85">85</th><td></td></tr>
+<tr><th id="86">86</th><td><b>using</b> <b>namespace</b> <span class="namespace">Qt::StringLiterals</span>;</td></tr>
+<tr><th id="87">87</th><td></td></tr>
+<tr><th id="88">88</th><td><b>class</b> <dfn class="type def" id="QStorageIterator" title='QStorageIterator' data-ref="QStorageIterator">QStorageIterator</dfn></td></tr>
+<tr><th id="89">89</th><td>{</td></tr>
+<tr><th id="90">90</th><td><b>public</b>:</td></tr>
+<tr><th id="91">91</th><td>    <a class="tu decl fn" href="#_ZN16QStorageIteratorC1Ev" title='QStorageIterator::QStorageIterator' data-type='void QStorageIterator::QStorageIterator()' data-ref="_ZN16QStorageIteratorC1Ev">QStorageIterator</a>();</td></tr>
+<tr><th id="92">92</th><td>    <a class="tu decl fn" href="#_ZN16QStorageIteratorD1Ev" title='QStorageIterator::~QStorageIterator' data-type='void QStorageIterator::~QStorageIterator()' data-ref="_ZN16QStorageIteratorD1Ev">~QStorageIterator</a>();</td></tr>
+<tr><th id="93">93</th><td></td></tr>
+<tr><th id="94">94</th><td>    <b>inline</b> <em>bool</em> <a class="tu decl fn" href="#_ZNK16QStorageIterator7isValidEv" title='QStorageIterator::isValid' data-type='bool QStorageIterator::isValid() const' data-ref="_ZNK16QStorageIterator7isValidEv">isValid</a>() <em>const</em>;</td></tr>
+<tr><th id="95">95</th><td>    <b>inline</b> <em>bool</em> <a class="tu decl fn" href="#_ZN16QStorageIterator4nextEv" title='QStorageIterator::next' data-type='bool QStorageIterator::next()' data-ref="_ZN16QStorageIterator4nextEv">next</a>();</td></tr>
+<tr><th id="96">96</th><td>    <b>inline</b> <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> <a class="tu decl fn" href="#_ZNK16QStorageIterator8rootPathEv" title='QStorageIterator::rootPath' data-type='QString QStorageIterator::rootPath() const' data-ref="_ZNK16QStorageIterator8rootPathEv">rootPath</a>() <em>const</em>;</td></tr>
+<tr><th id="97">97</th><td>    <b>inline</b> <a class="type" href="../text/qbytearray.h.html#QByteArray" title='QByteArray' data-ref="QByteArray">QByteArray</a> <a class="tu decl fn" href="#_ZNK16QStorageIterator14fileSystemTypeEv" title='QStorageIterator::fileSystemType' data-type='QByteArray QStorageIterator::fileSystemType() const' data-ref="_ZNK16QStorageIterator14fileSystemTypeEv">fileSystemType</a>() <em>const</em>;</td></tr>
+<tr><th id="98">98</th><td>    <b>inline</b> <a class="type" href="../text/qbytearray.h.html#QByteArray" title='QByteArray' data-ref="QByteArray">QByteArray</a> <a class="tu decl fn" href="#_ZNK16QStorageIterator6deviceEv" title='QStorageIterator::device' data-type='QByteArray QStorageIterator::device() const' data-ref="_ZNK16QStorageIterator6deviceEv">device</a>() <em>const</em>;</td></tr>
+<tr><th id="99">99</th><td>    <b>inline</b> <a class="type" href="../text/qbytearray.h.html#QByteArray" title='QByteArray' data-ref="QByteArray">QByteArray</a> <a class="tu decl fn" href="#_ZNK16QStorageIterator7optionsEv" title='QStorageIterator::options' data-type='QByteArray QStorageIterator::options() const' data-ref="_ZNK16QStorageIterator7optionsEv">options</a>() <em>const</em>;</td></tr>
+<tr><th id="100">100</th><td>    <b>inline</b> <a class="type" href="../text/qbytearray.h.html#QByteArray" title='QByteArray' data-ref="QByteArray">QByteArray</a> <a class="tu decl fn" href="#_ZNK16QStorageIterator9subvolumeEv" title='QStorageIterator::subvolume' data-type='QByteArray QStorageIterator::subvolume() const' data-ref="_ZNK16QStorageIterator9subvolumeEv">subvolume</a>() <em>const</em>;</td></tr>
+<tr><th id="101">101</th><td><b>private</b>:</td></tr>
+<tr><th id="102">102</th><td><u>#<span data-ppcond="102">if</span> defined(<span class="macro" data-ref="_M/Q_OS_BSD4">Q_OS_BSD4</span>)</u></td></tr>
+<tr><th id="103">103</th><td>    QT_STATFSBUF *stat_buf;</td></tr>
+<tr><th id="104">104</th><td>    <em>int</em> entryCount;</td></tr>
+<tr><th id="105">105</th><td>    <em>int</em> currentIndex;</td></tr>
+<tr><th id="106">106</th><td><u>#<span data-ppcond="102">elif</span> defined(<span class="macro" data-ref="_M/Q_OS_SOLARIS">Q_OS_SOLARIS</span>)</u></td></tr>
+<tr><th id="107">107</th><td>    FILE *fp;</td></tr>
+<tr><th id="108">108</th><td>    mnttab mnt;</td></tr>
+<tr><th id="109">109</th><td><u>#<span data-ppcond="102">elif</span> defined(<span class="macro" data-ref="_M/Q_OS_ANDROID">Q_OS_ANDROID</span>)</u></td></tr>
+<tr><th id="110">110</th><td>    QFile file;</td></tr>
+<tr><th id="111">111</th><td>    QByteArray m_rootPath;</td></tr>
+<tr><th id="112">112</th><td>    QByteArray m_fileSystemType;</td></tr>
+<tr><th id="113">113</th><td>    QByteArray m_device;</td></tr>
+<tr><th id="114">114</th><td>    QByteArray m_options;</td></tr>
+<tr><th id="115">115</th><td><u>#<span data-ppcond="102">elif</span> defined(<a class="macro" href="../global/qsystemdetection.h.html#106" data-ref="_M/Q_OS_LINUX">Q_OS_LINUX</a>) || defined(<span class="macro" data-ref="_M/Q_OS_HURD">Q_OS_HURD</span>)</u></td></tr>
+<tr><th id="116">116</th><td>    <b>struct</b> <dfn class="tu type def" id="QStorageIterator::mountinfoent" title='QStorageIterator::mountinfoent' data-ref="QStorageIterator::mountinfoent">mountinfoent</dfn> : <b>public</b> <a class="type" href="../../../../include/mntent.h.html#mntent" title='mntent' data-ref="mntent">mntent</a> {</td></tr>
+<tr><th id="117">117</th><td>        <i  data-doc="QStorageIterator::mountinfoent::mount_id">// Details from proc(5) section from /proc/&lt;pid&gt;/mountinfo:</i></td></tr>
+<tr><th id="118">118</th><td><i  data-doc="QStorageIterator::mountinfoent::mount_id">        //(1)  mount ID: a unique ID for the mount (may be reused after umount(2)).</i></td></tr>
+<tr><th id="119">119</th><td>        <em>int</em> <dfn class="tu decl field" id="QStorageIterator::mountinfoent::mount_id" title='QStorageIterator::mountinfoent::mount_id' data-type='int' data-ref="QStorageIterator::mountinfoent::mount_id">mount_id</dfn>;</td></tr>
+<tr><th id="120">120</th><td>        <i  data-doc="QStorageIterator::mountinfoent::rdev">//(2)  parent ID: the ID of the parent mount (or of self for the top of the mount tree).</i></td></tr>
+<tr><th id="121">121</th><td><i  data-doc="QStorageIterator::mountinfoent::rdev">//      int parent_id;</i></td></tr>
+<tr><th id="122">122</th><td><i  data-doc="QStorageIterator::mountinfoent::rdev">        //(3)  major:minor: the value of st_dev for files on this filesystem (see stat(2)).</i></td></tr>
+<tr><th id="123">123</th><td>        <a class="typedef" href="../../../../include/x86_64-linux-gnu/sys/types.h.html#dev_t" title='dev_t' data-type='__dev_t' data-ref="dev_t">dev_t</a> <dfn class="tu decl field" id="QStorageIterator::mountinfoent::rdev" title='QStorageIterator::mountinfoent::rdev' data-type='dev_t' data-ref="QStorageIterator::mountinfoent::rdev">rdev</dfn>;</td></tr>
+<tr><th id="124">124</th><td>        <i  data-doc="QStorageIterator::mountinfoent::subvolume">//(4)  root: the pathname of the directory in the filesystem which forms the root of this mount.</i></td></tr>
+<tr><th id="125">125</th><td>        <em>char</em> *<dfn class="tu decl field" id="QStorageIterator::mountinfoent::subvolume" title='QStorageIterator::mountinfoent::subvolume' data-type='char *' data-ref="QStorageIterator::mountinfoent::subvolume">subvolume</dfn>;</td></tr>
+<tr><th id="126">126</th><td>        <i  data-doc="QStorageIterator::mountinfoent::superopts">//(5)  mount point: the pathname of the mount point relative to the process's root directory.</i></td></tr>
+<tr><th id="127">127</th><td><i  data-doc="QStorageIterator::mountinfoent::superopts">//      char *mnt_dir;      // in mntent</i></td></tr>
+<tr><th id="128">128</th><td><i  data-doc="QStorageIterator::mountinfoent::superopts">        //(6)  mount options: per-mount options.</i></td></tr>
+<tr><th id="129">129</th><td><i  data-doc="QStorageIterator::mountinfoent::superopts">//      char *mnt_opts;     // in mntent</i></td></tr>
+<tr><th id="130">130</th><td><i  data-doc="QStorageIterator::mountinfoent::superopts">        //(7)  optional fields: zero or more fields of the form "tag[:value]"; see below.</i></td></tr>
+<tr><th id="131">131</th><td><i  data-doc="QStorageIterator::mountinfoent::superopts">//      int flags;</i></td></tr>
+<tr><th id="132">132</th><td><i  data-doc="QStorageIterator::mountinfoent::superopts">        //(8)  separator: the end of the optional fields is marked by a single hyphen.</i></td></tr>
+<tr><th id="133">133</th><td><i  data-doc="QStorageIterator::mountinfoent::superopts"></i></td></tr>
+<tr><th id="134">134</th><td><i  data-doc="QStorageIterator::mountinfoent::superopts">        //(9)  filesystem type: the filesystem type in the form "type[.subtype]".</i></td></tr>
+<tr><th id="135">135</th><td><i  data-doc="QStorageIterator::mountinfoent::superopts">//      char *mnt_type;     // in mntent</i></td></tr>
+<tr><th id="136">136</th><td><i  data-doc="QStorageIterator::mountinfoent::superopts">        //(10) mount source: filesystem-specific information or "none".</i></td></tr>
+<tr><th id="137">137</th><td><i  data-doc="QStorageIterator::mountinfoent::superopts">//      char *mnt_fsname;   // in mntent</i></td></tr>
+<tr><th id="138">138</th><td><i  data-doc="QStorageIterator::mountinfoent::superopts">        //(11) super options: per-superblock options.</i></td></tr>
+<tr><th id="139">139</th><td>        <em>char</em> *<dfn class="tu decl field" id="QStorageIterator::mountinfoent::superopts" title='QStorageIterator::mountinfoent::superopts' data-type='char *' data-ref="QStorageIterator::mountinfoent::superopts">superopts</dfn>;</td></tr>
+<tr><th id="140">140</th><td>    };</td></tr>
+<tr><th id="141">141</th><td></td></tr>
+<tr><th id="142">142</th><td>    <a class="typedef" href="../../../../include/x86_64-linux-gnu/bits/types/FILE.h.html#FILE" title='FILE' data-type='struct _IO_FILE' data-ref="FILE">FILE</a> *<dfn class="tu decl field" id="QStorageIterator::fp" title='QStorageIterator::fp' data-type='FILE *' data-ref="QStorageIterator::fp">fp</dfn>;</td></tr>
+<tr><th id="143">143</th><td>    <a class="type" href="../text/qbytearray.h.html#QByteArray" title='QByteArray' data-ref="QByteArray">QByteArray</a> <dfn class="tu decl field" id="QStorageIterator::buffer" title='QStorageIterator::buffer' data-type='QByteArray' data-ref="QStorageIterator::buffer">buffer</dfn>;</td></tr>
+<tr><th id="144">144</th><td>    <a class="tu type" href="#QStorageIterator::mountinfoent" title='QStorageIterator::mountinfoent' data-ref="QStorageIterator::mountinfoent">mountinfoent</a> <dfn class="tu decl field" id="QStorageIterator::mnt" title='QStorageIterator::mnt' data-type='QStorageIterator::mountinfoent' data-ref="QStorageIterator::mnt">mnt</dfn>;</td></tr>
+<tr><th id="145">145</th><td>    <em>bool</em> <dfn class="tu decl field" id="QStorageIterator::usingMountinfo" title='QStorageIterator::usingMountinfo' data-type='bool' data-ref="QStorageIterator::usingMountinfo">usingMountinfo</dfn>;</td></tr>
+<tr><th id="146">146</th><td><u>#<span data-ppcond="102">elif</span> defined(Q_OS_HAIKU)</u></td></tr>
+<tr><th id="147">147</th><td>    BVolumeRoster m_volumeRoster;</td></tr>
+<tr><th id="148">148</th><td></td></tr>
+<tr><th id="149">149</th><td>    QByteArray m_rootPath;</td></tr>
+<tr><th id="150">150</th><td>    QByteArray m_fileSystemType;</td></tr>
+<tr><th id="151">151</th><td>    QByteArray m_device;</td></tr>
+<tr><th id="152">152</th><td><u>#<span data-ppcond="102">endif</span></u></td></tr>
+<tr><th id="153">153</th><td>};</td></tr>
+<tr><th id="154">154</th><td></td></tr>
+<tr><th id="155">155</th><td><b>template</b> &lt;<b>typename</b> String&gt;</td></tr>
+<tr><th id="156">156</th><td><em>static</em> <em>bool</em> <dfn class="tu decl def fn" id="_ZL10isParentOfRKT_RK7QString" title='isParentOf' data-type='bool isParentOf(const String &amp; parent, const QString &amp; dirName)' data-ref="_ZL10isParentOfRKT_RK7QString">isParentOf</dfn>(<em>const</em> String &amp;<dfn class="local col1 decl" id="21parent" title='parent' data-type='const String &amp;' data-ref="21parent">parent</dfn>, <em>const</em> <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> &amp;<dfn class="local col2 decl" id="22dirName" title='dirName' data-type='const QString &amp;' data-ref="22dirName">dirName</dfn>)</td></tr>
+<tr><th id="157">157</th><td>{</td></tr>
+<tr><th id="158">158</th><td>    <b>return</b> <a class="local col2 ref" href="#22dirName" title='dirName' data-ref="22dirName">dirName</a>.startsWith(<a class="local col1 ref" href="#21parent" title='parent' data-ref="21parent">parent</a>) &amp;&amp;</td></tr>
+<tr><th id="159">159</th><td>            (<a class="local col2 ref" href="#22dirName" title='dirName' data-ref="22dirName">dirName</a>.<a class="ref fn" href="../text/qstring.h.html#_ZNK7QString4sizeEv" title='QString::size' data-ref="_ZNK7QString4sizeEv">size</a>() == <a class="local col1 ref" href="#21parent" title='parent' data-ref="21parent">parent</a>.size() || <a class="local col2 ref" href="#22dirName" title='dirName' data-ref="22dirName">dirName</a>.<a class="ref fn" href="../text/qstring.h.html#_ZNK7QString2atEx" title='QString::at' data-ref="_ZNK7QString2atEx">at</a>(<span class='inlayHint'>i:&nbsp;</span><a class="local col1 ref" href="#21parent" title='parent' data-ref="21parent">parent</a>.size()) == u<kbd>'/'</kbd> ||</td></tr>
+<tr><th id="160">160</th><td>             <a class="local col1 ref" href="#21parent" title='parent' data-ref="21parent">parent</a>.size() == <var>1</var>);</td></tr>
+<tr><th id="161">161</th><td>}</td></tr>
+<tr><th id="162">162</th><td></td></tr>
+<tr><th id="163">163</th><td><em>static</em> <em>bool</em> <dfn class="tu decl def fn" id="_ZL15shouldIncludeFsRK16QStorageIterator" title='shouldIncludeFs' data-type='bool shouldIncludeFs(const QStorageIterator &amp; it)' data-ref="_ZL15shouldIncludeFsRK16QStorageIterator">shouldIncludeFs</dfn>(<em>const</em> <a class="type" href="#QStorageIterator" title='QStorageIterator' data-ref="QStorageIterator">QStorageIterator</a> &amp;<dfn class="local col3 decl" id="23it" title='it' data-type='const QStorageIterator &amp;' data-ref="23it">it</dfn>)</td></tr>
+<tr><th id="164">164</th><td>{</td></tr>
+<tr><th id="165">165</th><td>    <i>/*</i></td></tr>
+<tr><th id="166">166</th><td><i>     * This function implements a heuristic algorithm to determine whether a</i></td></tr>
+<tr><th id="167">167</th><td><i>     * given mount should be reported to the user. Our objective is to list</i></td></tr>
+<tr><th id="168">168</th><td><i>     * only entries that the end-user would find useful.</i></td></tr>
+<tr><th id="169">169</th><td><i>     *</i></td></tr>
+<tr><th id="170">170</th><td><i>     * We therefore ignore:</i></td></tr>
+<tr><th id="171">171</th><td><i>     *  - mounted in /dev, /proc, /sys: special mounts</i></td></tr>
+<tr><th id="172">172</th><td><i>     *    (this will catch /sys/fs/cgroup, /proc/sys/fs/binfmt_misc, /dev/pts,</i></td></tr>
+<tr><th id="173">173</th><td><i>     *    some of which are tmpfs on Linux)</i></td></tr>
+<tr><th id="174">174</th><td><i>     *  - mounted in /var/run or /var/lock: most likely pseudofs</i></td></tr>
+<tr><th id="175">175</th><td><i>     *    (on earlier systemd versions, /var/run was a bind-mount of /run, so</i></td></tr>
+<tr><th id="176">176</th><td><i>     *    everything would be unnecessarily duplicated)</i></td></tr>
+<tr><th id="177">177</th><td><i>     *  - filesystem type is "rootfs": artifact of the root-pivot on some Linux</i></td></tr>
+<tr><th id="178">178</th><td><i>     *    initrd</i></td></tr>
+<tr><th id="179">179</th><td><i>     *  - if the filesystem total size is zero, it's a pseudo-fs (not checked here).</i></td></tr>
+<tr><th id="180">180</th><td><i>     */</i></td></tr>
+<tr><th id="181">181</th><td></td></tr>
+<tr><th id="182">182</th><td>    <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> <dfn class="local col4 decl" id="24mountDir" title='mountDir' data-type='QString' data-ref="24mountDir">mountDir</dfn> = <a class="local col3 ref" href="#23it" title='it' data-ref="23it">it</a>.<a class="tu ref fn" href="#_ZNK16QStorageIterator8rootPathEv" title='QStorageIterator::rootPath' data-use='c' data-ref="_ZNK16QStorageIterator8rootPathEv">rootPath</a>();</td></tr>
+<tr><th id="183">183</th><td>    <b>if</b> (<a class="tu ref fn" href="#_ZL10isParentOfRKT_RK7QString" title='isParentOf' data-use='c' data-ref="_ZL10isParentOfRKT_RK7QString">isParentOf</a>(<span class='inlayHint'>parent:&nbsp;</span><q>"/dev"<a class="ref fn" href="../text/qstring.h.html#_ZN2Qt8Literals14StringLiteralsli3_L1EPKcm" title='Qt::operator&quot;&quot;_L1' data-ref="_ZN2Qt8Literals14StringLiteralsli3_L1EPKcm">_L1</a></q>, <span class='inlayHint'>dirName:&nbsp;</span><a class="local col4 ref" href="#24mountDir" title='mountDir' data-ref="24mountDir">mountDir</a>)</td></tr>
+<tr><th id="184">184</th><td>        || <a class="tu ref fn" href="#_ZL10isParentOfRKT_RK7QString" title='isParentOf' data-use='c' data-ref="_ZL10isParentOfRKT_RK7QString">isParentOf</a>(<span class='inlayHint'>parent:&nbsp;</span><q>"/proc"<a class="ref fn" href="../text/qstring.h.html#_ZN2Qt8Literals14StringLiteralsli3_L1EPKcm" title='Qt::operator&quot;&quot;_L1' data-ref="_ZN2Qt8Literals14StringLiteralsli3_L1EPKcm">_L1</a></q>, <span class='inlayHint'>dirName:&nbsp;</span><a class="local col4 ref" href="#24mountDir" title='mountDir' data-ref="24mountDir">mountDir</a>)</td></tr>
+<tr><th id="185">185</th><td>        || <a class="tu ref fn" href="#_ZL10isParentOfRKT_RK7QString" title='isParentOf' data-use='c' data-ref="_ZL10isParentOfRKT_RK7QString">isParentOf</a>(<span class='inlayHint'>parent:&nbsp;</span><q>"/sys"<a class="ref fn" href="../text/qstring.h.html#_ZN2Qt8Literals14StringLiteralsli3_L1EPKcm" title='Qt::operator&quot;&quot;_L1' data-ref="_ZN2Qt8Literals14StringLiteralsli3_L1EPKcm">_L1</a></q>, <span class='inlayHint'>dirName:&nbsp;</span><a class="local col4 ref" href="#24mountDir" title='mountDir' data-ref="24mountDir">mountDir</a>)</td></tr>
+<tr><th id="186">186</th><td>        || <a class="tu ref fn" href="#_ZL10isParentOfRKT_RK7QString" title='isParentOf' data-use='c' data-ref="_ZL10isParentOfRKT_RK7QString">isParentOf</a>(<span class='inlayHint'>parent:&nbsp;</span><q>"/var/run"<a class="ref fn" href="../text/qstring.h.html#_ZN2Qt8Literals14StringLiteralsli3_L1EPKcm" title='Qt::operator&quot;&quot;_L1' data-ref="_ZN2Qt8Literals14StringLiteralsli3_L1EPKcm">_L1</a></q>, <span class='inlayHint'>dirName:&nbsp;</span><a class="local col4 ref" href="#24mountDir" title='mountDir' data-ref="24mountDir">mountDir</a>)</td></tr>
+<tr><th id="187">187</th><td>        || <a class="tu ref fn" href="#_ZL10isParentOfRKT_RK7QString" title='isParentOf' data-use='c' data-ref="_ZL10isParentOfRKT_RK7QString">isParentOf</a>(<span class='inlayHint'>parent:&nbsp;</span><q>"/var/lock"<a class="ref fn" href="../text/qstring.h.html#_ZN2Qt8Literals14StringLiteralsli3_L1EPKcm" title='Qt::operator&quot;&quot;_L1' data-ref="_ZN2Qt8Literals14StringLiteralsli3_L1EPKcm">_L1</a></q>, <span class='inlayHint'>dirName:&nbsp;</span><a class="local col4 ref" href="#24mountDir" title='mountDir' data-ref="24mountDir">mountDir</a>)) {</td></tr>
+<tr><th id="188">188</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="189">189</th><td>    }</td></tr>
+<tr><th id="190">190</th><td></td></tr>
+<tr><th id="191">191</th><td><u>#<span data-ppcond="191">if</span> defined(<a class="macro" href="../global/qsystemdetection.h.html#106" data-ref="_M/Q_OS_LINUX">Q_OS_LINUX</a>) &amp;&amp; !defined(<span class="macro" data-ref="_M/Q_OS_ANDROID">Q_OS_ANDROID</span>)</u></td></tr>
+<tr><th id="192">192</th><td>    <b>if</b> (<a class="local col3 ref" href="#23it" title='it' data-ref="23it">it</a>.<a class="tu ref fn" href="#_ZNK16QStorageIterator14fileSystemTypeEv" title='QStorageIterator::fileSystemType' data-use='c' data-ref="_ZNK16QStorageIterator14fileSystemTypeEv">fileSystemType</a>() <a class="ref fn" href="../text/qbytearray.h.html#_ZeqRK10QByteArrayPKc" title='operator==' data-ref="_ZeqRK10QByteArrayPKc">==</a> <q>"rootfs"</q>)</td></tr>
+<tr><th id="193">193</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="194">194</th><td><u>#<span data-ppcond="191">endif</span></u></td></tr>
+<tr><th id="195">195</th><td></td></tr>
+<tr><th id="196">196</th><td>    <i>// size checking in mountedVolumes()</i></td></tr>
+<tr><th id="197">197</th><td>    <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="198">198</th><td>}</td></tr>
+<tr><th id="199">199</th><td></td></tr>
+<tr><th id="200">200</th><td><u>#<span data-ppcond="200">if</span> defined(<span class="macro" data-ref="_M/Q_OS_BSD4">Q_OS_BSD4</span>)</u></td></tr>
+<tr><th id="201">201</th><td></td></tr>
+<tr><th id="202">202</th><td><u>#ifndef MNT_NOWAIT</u></td></tr>
+<tr><th id="203">203</th><td><u>#  define MNT_NOWAIT 0</u></td></tr>
+<tr><th id="204">204</th><td><u>#endif</u></td></tr>
+<tr><th id="205">205</th><td></td></tr>
+<tr><th id="206">206</th><td><b>inline</b> QStorageIterator::QStorageIterator()</td></tr>
+<tr><th id="207">207</th><td>    : entryCount(::getmntinfo(&amp;stat_buf, MNT_NOWAIT)),</td></tr>
+<tr><th id="208">208</th><td>      currentIndex(-<var>1</var>)</td></tr>
+<tr><th id="209">209</th><td>{</td></tr>
+<tr><th id="210">210</th><td>}</td></tr>
+<tr><th id="211">211</th><td></td></tr>
+<tr><th id="212">212</th><td><b>inline</b> QStorageIterator::~QStorageIterator()</td></tr>
+<tr><th id="213">213</th><td>{</td></tr>
+<tr><th id="214">214</th><td>}</td></tr>
+<tr><th id="215">215</th><td></td></tr>
+<tr><th id="216">216</th><td><b>inline</b> <em>bool</em> QStorageIterator::isValid() <em>const</em></td></tr>
+<tr><th id="217">217</th><td>{</td></tr>
+<tr><th id="218">218</th><td>    <b>return</b> entryCount != -<var>1</var>;</td></tr>
+<tr><th id="219">219</th><td>}</td></tr>
+<tr><th id="220">220</th><td></td></tr>
+<tr><th id="221">221</th><td><b>inline</b> <em>bool</em> QStorageIterator::next()</td></tr>
+<tr><th id="222">222</th><td>{</td></tr>
+<tr><th id="223">223</th><td>    <b>return</b> ++currentIndex &lt; entryCount;</td></tr>
+<tr><th id="224">224</th><td>}</td></tr>
+<tr><th id="225">225</th><td></td></tr>
+<tr><th id="226">226</th><td><b>inline</b> QString QStorageIterator::rootPath() <em>const</em></td></tr>
+<tr><th id="227">227</th><td>{</td></tr>
+<tr><th id="228">228</th><td>    <b>return</b> QFile::decodeName(stat_buf[currentIndex].f_mntonname);</td></tr>
+<tr><th id="229">229</th><td>}</td></tr>
+<tr><th id="230">230</th><td></td></tr>
+<tr><th id="231">231</th><td><b>inline</b> QByteArray QStorageIterator::fileSystemType() <em>const</em></td></tr>
+<tr><th id="232">232</th><td>{</td></tr>
+<tr><th id="233">233</th><td>    <b>return</b> QByteArray(stat_buf[currentIndex].f_fstypename);</td></tr>
+<tr><th id="234">234</th><td>}</td></tr>
+<tr><th id="235">235</th><td></td></tr>
+<tr><th id="236">236</th><td><b>inline</b> QByteArray QStorageIterator::device() <em>const</em></td></tr>
+<tr><th id="237">237</th><td>{</td></tr>
+<tr><th id="238">238</th><td>    <b>return</b> QByteArray(stat_buf[currentIndex].f_mntfromname);</td></tr>
+<tr><th id="239">239</th><td>}</td></tr>
+<tr><th id="240">240</th><td></td></tr>
+<tr><th id="241">241</th><td><b>inline</b> QByteArray QStorageIterator::options() <em>const</em></td></tr>
+<tr><th id="242">242</th><td>{</td></tr>
+<tr><th id="243">243</th><td>    <b>return</b> QByteArray();</td></tr>
+<tr><th id="244">244</th><td>}</td></tr>
+<tr><th id="245">245</th><td></td></tr>
+<tr><th id="246">246</th><td><b>inline</b> QByteArray QStorageIterator::subvolume() <em>const</em></td></tr>
+<tr><th id="247">247</th><td>{</td></tr>
+<tr><th id="248">248</th><td>    <b>return</b> QByteArray();</td></tr>
+<tr><th id="249">249</th><td>}</td></tr>
+<tr><th id="250">250</th><td><u>#<span data-ppcond="200">elif</span> defined(<span class="macro" data-ref="_M/Q_OS_SOLARIS">Q_OS_SOLARIS</span>)</u></td></tr>
+<tr><th id="251">251</th><td></td></tr>
+<tr><th id="252">252</th><td><b>inline</b> QStorageIterator::QStorageIterator()</td></tr>
+<tr><th id="253">253</th><td>{</td></tr>
+<tr><th id="254">254</th><td>    <em>const</em> <em>int</em> fd = qt_safe_open(_PATH_MOUNTED, O_RDONLY);</td></tr>
+<tr><th id="255">255</th><td>    fp = ::fdopen(fd, <q>"r"</q>);</td></tr>
+<tr><th id="256">256</th><td>}</td></tr>
+<tr><th id="257">257</th><td></td></tr>
+<tr><th id="258">258</th><td><b>inline</b> QStorageIterator::~QStorageIterator()</td></tr>
+<tr><th id="259">259</th><td>{</td></tr>
+<tr><th id="260">260</th><td>    <b>if</b> (fp)</td></tr>
+<tr><th id="261">261</th><td>        ::fclose(fp);</td></tr>
+<tr><th id="262">262</th><td>}</td></tr>
+<tr><th id="263">263</th><td></td></tr>
+<tr><th id="264">264</th><td><b>inline</b> <em>bool</em> QStorageIterator::isValid() <em>const</em></td></tr>
+<tr><th id="265">265</th><td>{</td></tr>
+<tr><th id="266">266</th><td>    <b>return</b> fp != <b>nullptr</b>;</td></tr>
+<tr><th id="267">267</th><td>}</td></tr>
+<tr><th id="268">268</th><td></td></tr>
+<tr><th id="269">269</th><td><b>inline</b> <em>bool</em> QStorageIterator::next()</td></tr>
+<tr><th id="270">270</th><td>{</td></tr>
+<tr><th id="271">271</th><td>    <b>return</b> ::getmntent(fp, &amp;mnt) == <var>0</var>;</td></tr>
+<tr><th id="272">272</th><td>}</td></tr>
+<tr><th id="273">273</th><td></td></tr>
+<tr><th id="274">274</th><td><b>inline</b> QString QStorageIterator::rootPath() <em>const</em></td></tr>
+<tr><th id="275">275</th><td>{</td></tr>
+<tr><th id="276">276</th><td>    <b>return</b> QFile::decodeName(mnt.mnt_mountp);</td></tr>
+<tr><th id="277">277</th><td>}</td></tr>
+<tr><th id="278">278</th><td></td></tr>
+<tr><th id="279">279</th><td><b>inline</b> QByteArray QStorageIterator::fileSystemType() <em>const</em></td></tr>
+<tr><th id="280">280</th><td>{</td></tr>
+<tr><th id="281">281</th><td>    <b>return</b> QByteArray(mnt.mnt_fstype);</td></tr>
+<tr><th id="282">282</th><td>}</td></tr>
+<tr><th id="283">283</th><td></td></tr>
+<tr><th id="284">284</th><td><b>inline</b> QByteArray QStorageIterator::device() <em>const</em></td></tr>
+<tr><th id="285">285</th><td>{</td></tr>
+<tr><th id="286">286</th><td>    <b>return</b> QByteArray(mnt.mnt_mntopts);</td></tr>
+<tr><th id="287">287</th><td>}</td></tr>
+<tr><th id="288">288</th><td></td></tr>
+<tr><th id="289">289</th><td><b>inline</b> QByteArray QStorageIterator::subvolume() <em>const</em></td></tr>
+<tr><th id="290">290</th><td>{</td></tr>
+<tr><th id="291">291</th><td>    <b>return</b> QByteArray();</td></tr>
+<tr><th id="292">292</th><td>}</td></tr>
+<tr><th id="293">293</th><td><u>#<span data-ppcond="200">elif</span> defined(<span class="macro" data-ref="_M/Q_OS_ANDROID">Q_OS_ANDROID</span>)</u></td></tr>
+<tr><th id="294">294</th><td></td></tr>
+<tr><th id="295">295</th><td><b>inline</b> QStorageIterator::QStorageIterator()</td></tr>
+<tr><th id="296">296</th><td>{</td></tr>
+<tr><th id="297">297</th><td>    file.setFileName(QString::fromUtf8(_PATH_MOUNTED));</td></tr>
+<tr><th id="298">298</th><td>    file.open(QIODevice::ReadOnly | QIODevice::Text);</td></tr>
+<tr><th id="299">299</th><td>}</td></tr>
+<tr><th id="300">300</th><td></td></tr>
+<tr><th id="301">301</th><td><b>inline</b> QStorageIterator::~QStorageIterator()</td></tr>
+<tr><th id="302">302</th><td>{</td></tr>
+<tr><th id="303">303</th><td>}</td></tr>
+<tr><th id="304">304</th><td></td></tr>
+<tr><th id="305">305</th><td><b>inline</b> <em>bool</em> QStorageIterator::isValid() <em>const</em></td></tr>
+<tr><th id="306">306</th><td>{</td></tr>
+<tr><th id="307">307</th><td>    <b>return</b> file.isOpen();</td></tr>
+<tr><th id="308">308</th><td>}</td></tr>
+<tr><th id="309">309</th><td></td></tr>
+<tr><th id="310">310</th><td><b>inline</b> <em>bool</em> QStorageIterator::next()</td></tr>
+<tr><th id="311">311</th><td>{</td></tr>
+<tr><th id="312">312</th><td>    QList&lt;QByteArray&gt; data;</td></tr>
+<tr><th id="313">313</th><td>    <i>// If file is virtual, file.readLine() may succeed even when file.atEnd().</i></td></tr>
+<tr><th id="314">314</th><td>    <b>do</b> {</td></tr>
+<tr><th id="315">315</th><td>        <em>const</em> QByteArray line = file.readLine();</td></tr>
+<tr><th id="316">316</th><td>        <b>if</b> (line.isEmpty() &amp;&amp; file.atEnd())</td></tr>
+<tr><th id="317">317</th><td>            <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="318">318</th><td>        data = line.split(<kbd>' '</kbd>);</td></tr>
+<tr><th id="319">319</th><td>    } <b>while</b> (data.count() &lt; <var>4</var>);</td></tr>
+<tr><th id="320">320</th><td></td></tr>
+<tr><th id="321">321</th><td>    m_device = data.at(<var>0</var>);</td></tr>
+<tr><th id="322">322</th><td>    m_rootPath = data.at(<var>1</var>);</td></tr>
+<tr><th id="323">323</th><td>    m_fileSystemType = data.at(<var>2</var>);</td></tr>
+<tr><th id="324">324</th><td>    m_options = data.at(<var>3</var>);</td></tr>
+<tr><th id="325">325</th><td></td></tr>
+<tr><th id="326">326</th><td>    <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="327">327</th><td>}</td></tr>
+<tr><th id="328">328</th><td></td></tr>
+<tr><th id="329">329</th><td><b>inline</b> QString QStorageIterator::rootPath() <em>const</em></td></tr>
+<tr><th id="330">330</th><td>{</td></tr>
+<tr><th id="331">331</th><td>    <b>return</b> QFile::decodeName(m_rootPath);</td></tr>
+<tr><th id="332">332</th><td>}</td></tr>
+<tr><th id="333">333</th><td></td></tr>
+<tr><th id="334">334</th><td><b>inline</b> QByteArray QStorageIterator::fileSystemType() <em>const</em></td></tr>
+<tr><th id="335">335</th><td>{</td></tr>
+<tr><th id="336">336</th><td>    <b>return</b> m_fileSystemType;</td></tr>
+<tr><th id="337">337</th><td>}</td></tr>
+<tr><th id="338">338</th><td></td></tr>
+<tr><th id="339">339</th><td><b>inline</b> QByteArray QStorageIterator::device() <em>const</em></td></tr>
+<tr><th id="340">340</th><td>{</td></tr>
+<tr><th id="341">341</th><td>    <b>return</b> m_device;</td></tr>
+<tr><th id="342">342</th><td>}</td></tr>
+<tr><th id="343">343</th><td></td></tr>
+<tr><th id="344">344</th><td><b>inline</b> QByteArray QStorageIterator::options() <em>const</em></td></tr>
+<tr><th id="345">345</th><td>{</td></tr>
+<tr><th id="346">346</th><td>    <b>return</b> m_options;</td></tr>
+<tr><th id="347">347</th><td>}</td></tr>
+<tr><th id="348">348</th><td></td></tr>
+<tr><th id="349">349</th><td><b>inline</b> QByteArray QStorageIterator::subvolume() <em>const</em></td></tr>
+<tr><th id="350">350</th><td>{</td></tr>
+<tr><th id="351">351</th><td>    <b>return</b> QByteArray();</td></tr>
+<tr><th id="352">352</th><td>}</td></tr>
+<tr><th id="353">353</th><td><u>#<span data-ppcond="200">elif</span> defined(<a class="macro" href="../global/qsystemdetection.h.html#106" data-ref="_M/Q_OS_LINUX">Q_OS_LINUX</a>) || defined(<span class="macro" data-ref="_M/Q_OS_HURD">Q_OS_HURD</span>)</u></td></tr>
+<tr><th id="354">354</th><td></td></tr>
+<tr><th id="355">355</th><td><em>static</em> <em>const</em> <em>int</em> <dfn class="tu decl def" id="bufferSize" title='bufferSize' data-type='const int' data-ref="bufferSize">bufferSize</dfn> = <var>1024</var>; <i  data-doc="bufferSize">// 2 paths (mount point+device) and metainfo;</i></td></tr>
+<tr><th id="356">356</th><td>                                    <i  data-doc="_ZN16QStorageIteratorC1Ev">// should be enough</i></td></tr>
+<tr><th id="357">357</th><td></td></tr>
+<tr><th id="358">358</th><td><b>inline</b> <a class="type" href="#QStorageIterator" title='QStorageIterator' data-ref="QStorageIterator">QStorageIterator</a>::<dfn class="tu decl def fn" id="_ZN16QStorageIteratorC1Ev" title='QStorageIterator::QStorageIterator' data-type='void QStorageIterator::QStorageIterator()' data-ref="_ZN16QStorageIteratorC1Ev">QStorageIterator</dfn>() :</td></tr>
+<tr><th id="359">359</th><td>    <a class="tu member field" href="#QStorageIterator::buffer" title='QStorageIterator::buffer' data-use='w' data-ref="QStorageIterator::buffer">buffer</a>(<a class="type" href="../text/qbytearray.h.html#QByteArray" title='QByteArray' data-ref="QByteArray">QByteArray</a><a class="ref fn" href="../text/qbytearray.h.html#_ZN10QByteArrayC1Exc" title='QByteArray::QByteArray' data-ref="_ZN10QByteArrayC1Exc">(</a><a class="tu ref" href="#bufferSize" title='bufferSize' data-use='r' data-ref="bufferSize">bufferSize</a>, <var>0</var>))</td></tr>
+<tr><th id="360">360</th><td>{</td></tr>
+<tr><th id="361">361</th><td>    <a class="tu member field" href="#QStorageIterator::fp" title='QStorageIterator::fp' data-use='w' data-ref="QStorageIterator::fp">fp</a> = <b>nullptr</b>;</td></tr>
+<tr><th id="362">362</th><td></td></tr>
+<tr><th id="363">363</th><td><u>#<span data-ppcond="363">ifdef</span> <a class="macro" href="../global/qsystemdetection.h.html#106" data-ref="_M/Q_OS_LINUX">Q_OS_LINUX</a></u></td></tr>
+<tr><th id="364">364</th><td>    <i>// first, try to open /proc/self/mountinfo, which has more details</i></td></tr>
+<tr><th id="365">365</th><td>    <a class="tu member field" href="#QStorageIterator::fp" title='QStorageIterator::fp' data-use='w' data-ref="QStorageIterator::fp">fp</a> = ::<a class="ref fn" href="../../../../include/stdio.h.html#fopen" title='fopen' data-ref="fopen">fopen</a>(<span class='inlayHint'>filename:&nbsp;</span><q>"/proc/self/mountinfo"</q>, <span class='inlayHint'>modes:&nbsp;</span><q>"re"</q>);</td></tr>
+<tr><th id="366">366</th><td><u>#<span data-ppcond="363">endif</span></u></td></tr>
+<tr><th id="367">367</th><td>    <b>if</b> (<a class="tu member field" href="#QStorageIterator::fp" title='QStorageIterator::fp' data-use='r' data-ref="QStorageIterator::fp">fp</a>) {</td></tr>
+<tr><th id="368">368</th><td>        <a class="tu member field" href="#QStorageIterator::usingMountinfo" title='QStorageIterator::usingMountinfo' data-use='w' data-ref="QStorageIterator::usingMountinfo">usingMountinfo</a> = <b>true</b>;</td></tr>
+<tr><th id="369">369</th><td>    } <b>else</b> {</td></tr>
+<tr><th id="370">370</th><td>        <a class="tu member field" href="#QStorageIterator::usingMountinfo" title='QStorageIterator::usingMountinfo' data-use='w' data-ref="QStorageIterator::usingMountinfo">usingMountinfo</a> = <b>false</b>;</td></tr>
+<tr><th id="371">371</th><td>        <a class="tu member field" href="#QStorageIterator::fp" title='QStorageIterator::fp' data-use='w' data-ref="QStorageIterator::fp">fp</a> = ::<a class="ref fn" href="../../../../include/mntent.h.html#setmntent" title='setmntent' data-ref="setmntent">setmntent</a>(<a class="macro" href="../../../../include/paths.h.html#55" title="&quot;/etc/mtab&quot;" data-ref="_M/_PATH_MOUNTED">_PATH_MOUNTED</a>, <span class='inlayHint'>mode:&nbsp;</span><q>"r"</q>);</td></tr>
+<tr><th id="372">372</th><td>    }</td></tr>
+<tr><th id="373">373</th><td>}</td></tr>
+<tr><th id="374">374</th><td></td></tr>
+<tr><th id="375">375</th><td><b>inline</b> <a class="type" href="#QStorageIterator" title='QStorageIterator' data-ref="QStorageIterator">QStorageIterator</a>::<dfn class="tu decl def fn" id="_ZN16QStorageIteratorD1Ev" title='QStorageIterator::~QStorageIterator' data-type='void QStorageIterator::~QStorageIterator()' data-ref="_ZN16QStorageIteratorD1Ev">~QStorageIterator</dfn>()</td></tr>
+<tr><th id="376">376</th><td>{</td></tr>
+<tr><th id="377">377</th><td>    <b>if</b> (<a class="tu member field" href="#QStorageIterator::fp" title='QStorageIterator::fp' data-use='r' data-ref="QStorageIterator::fp">fp</a>) {</td></tr>
+<tr><th id="378">378</th><td>        <b>if</b> (<a class="tu member field" href="#QStorageIterator::usingMountinfo" title='QStorageIterator::usingMountinfo' data-use='r' data-ref="QStorageIterator::usingMountinfo">usingMountinfo</a>)</td></tr>
+<tr><th id="379">379</th><td>            ::<a class="ref fn" href="../../../../include/stdio.h.html#fclose" title='fclose' data-ref="fclose">fclose</a>(<span class='inlayHint'>stream:&nbsp;</span><a class="tu member field" href="#QStorageIterator::fp" title='QStorageIterator::fp' data-use='r' data-ref="QStorageIterator::fp">fp</a>);</td></tr>
+<tr><th id="380">380</th><td>        <b>else</b></td></tr>
+<tr><th id="381">381</th><td>            ::<a class="ref fn" href="../../../../include/mntent.h.html#endmntent" title='endmntent' data-ref="endmntent">endmntent</a>(<span class='inlayHint'>stream:&nbsp;</span><a class="tu member field" href="#QStorageIterator::fp" title='QStorageIterator::fp' data-use='r' data-ref="QStorageIterator::fp">fp</a>);</td></tr>
+<tr><th id="382">382</th><td>    }</td></tr>
+<tr><th id="383">383</th><td>}</td></tr>
+<tr><th id="384">384</th><td></td></tr>
+<tr><th id="385">385</th><td><b>inline</b> <em>bool</em> <a class="type" href="#QStorageIterator" title='QStorageIterator' data-ref="QStorageIterator">QStorageIterator</a>::<dfn class="tu decl def fn" id="_ZNK16QStorageIterator7isValidEv" title='QStorageIterator::isValid' data-type='bool QStorageIterator::isValid() const' data-ref="_ZNK16QStorageIterator7isValidEv">isValid</dfn>() <em>const</em></td></tr>
+<tr><th id="386">386</th><td>{</td></tr>
+<tr><th id="387">387</th><td>    <b>return</b> <a class="tu member field" href="#QStorageIterator::fp" title='QStorageIterator::fp' data-use='r' data-ref="QStorageIterator::fp">fp</a> != <b>nullptr</b>;</td></tr>
+<tr><th id="388">388</th><td>}</td></tr>
+<tr><th id="389">389</th><td></td></tr>
+<tr><th id="390">390</th><td><b>inline</b> <em>bool</em> <a class="type" href="#QStorageIterator" title='QStorageIterator' data-ref="QStorageIterator">QStorageIterator</a>::<dfn class="tu decl def fn" id="_ZN16QStorageIterator4nextEv" title='QStorageIterator::next' data-type='bool QStorageIterator::next()' data-ref="_ZN16QStorageIterator4nextEv">next</dfn>()</td></tr>
+<tr><th id="391">391</th><td>{</td></tr>
+<tr><th id="392">392</th><td>    <a class="tu member field" href="#QStorageIterator::mnt" title='QStorageIterator::mnt' data-use='m' data-ref="QStorageIterator::mnt">mnt</a>.<a class="tu ref field" href="#QStorageIterator::mountinfoent::subvolume" title='QStorageIterator::mountinfoent::subvolume' data-use='w' data-ref="QStorageIterator::mountinfoent::subvolume">subvolume</a> = <b>nullptr</b>;</td></tr>
+<tr><th id="393">393</th><td>    <a class="tu member field" href="#QStorageIterator::mnt" title='QStorageIterator::mnt' data-use='m' data-ref="QStorageIterator::mnt">mnt</a>.<a class="tu ref field" href="#QStorageIterator::mountinfoent::superopts" title='QStorageIterator::mountinfoent::superopts' data-use='w' data-ref="QStorageIterator::mountinfoent::superopts">superopts</a> = <b>nullptr</b>;</td></tr>
+<tr><th id="394">394</th><td>    <b>if</b> (!<a class="tu member field" href="#QStorageIterator::usingMountinfo" title='QStorageIterator::usingMountinfo' data-use='r' data-ref="QStorageIterator::usingMountinfo">usingMountinfo</a>)</td></tr>
+<tr><th id="395">395</th><td>        <b>return</b> ::<a class="ref fn" href="../../../../include/mntent.h.html#getmntent_r" title='getmntent_r' data-ref="getmntent_r">getmntent_r</a>(<span class='inlayHint'>stream:&nbsp;</span><a class="tu member field" href="#QStorageIterator::fp" title='QStorageIterator::fp' data-use='r' data-ref="QStorageIterator::fp">fp</a>, <span class='inlayHint'>result:&nbsp;</span>&amp;<a class="tu member field" href="#QStorageIterator::mnt" title='QStorageIterator::mnt' data-use='a' data-ref="QStorageIterator::mnt">mnt</a>, <span class='inlayHint'>buffer:&nbsp;</span><a class="tu member field" href="#QStorageIterator::buffer" title='QStorageIterator::buffer' data-use='m' data-ref="QStorageIterator::buffer">buffer</a>.<a class="ref fn" href="../text/qbytearray.h.html#_ZN10QByteArray4dataEv" title='QByteArray::data' data-ref="_ZN10QByteArray4dataEv">data</a>(), <span class='inlayHint'>bufsize:&nbsp;</span><a class="tu member field" href="#QStorageIterator::buffer" title='QStorageIterator::buffer' data-use='m' data-ref="QStorageIterator::buffer">buffer</a>.<a class="ref fn" href="../text/qbytearray.h.html#_ZNK10QByteArray4sizeEv" title='QByteArray::size' data-ref="_ZNK10QByteArray4sizeEv">size</a>()) != <b>nullptr</b>;</td></tr>
+<tr><th id="396">396</th><td></td></tr>
+<tr><th id="397">397</th><td>    <i>// Helper function to parse paths that the kernel inserts escape sequences</i></td></tr>
+<tr><th id="398">398</th><td><i>    // for. The unescaped string is left at \a src and is properly</i></td></tr>
+<tr><th id="399">399</th><td><i>    // NUL-terminated. Returns a pointer to the delimiter that terminated the</i></td></tr>
+<tr><th id="400">400</th><td><i>    // path, or nullptr if it failed.</i></td></tr>
+<tr><th id="401">401</th><td>    <em>auto</em> <dfn class="local col5 decl" id="25parseMangledPath" title='parseMangledPath' data-type='(lambda at /home/lzx0626/DavidingPlus/qtbase/src/corelib/io/qstorageinfo_unix.cpp:401:29)' data-ref="25parseMangledPath">parseMangledPath</dfn> = [](<em>char</em> *<dfn class="local col6 decl" id="26src" title='src' data-type='char *' data-ref="26src">src</dfn>) {</td></tr>
+<tr><th id="402">402</th><td>        <i>// The kernel escapes with octal the following characters:</i></td></tr>
+<tr><th id="403">403</th><td><i>        //  space ' ', tab '\t', backslask '\\', and newline '\n'</i></td></tr>
+<tr><th id="404">404</th><td>        <em>char</em> *<dfn class="local col7 decl" id="27dst" title='dst' data-type='char *' data-ref="27dst">dst</dfn> = <a class="local col6 ref" href="#26src" title='src' data-ref="26src">src</a>;</td></tr>
+<tr><th id="405">405</th><td>        <b>while</b> (*<a class="local col6 ref" href="#26src" title='src' data-ref="26src">src</a>) {</td></tr>
+<tr><th id="406">406</th><td>            <b>switch</b> (*<a class="local col6 ref" href="#26src" title='src' data-ref="26src">src</a>) {</td></tr>
+<tr><th id="407">407</th><td>            <b>case</b> <kbd>' '</kbd>:</td></tr>
+<tr><th id="408">408</th><td>                <i>// Unescaped space: end of the field.</i></td></tr>
+<tr><th id="409">409</th><td>                *<a class="local col7 ref" href="#27dst" title='dst' data-ref="27dst">dst</a> = <kbd>'\0'</kbd>;</td></tr>
+<tr><th id="410">410</th><td>                <b>return</b> <a class="local col6 ref" href="#26src" title='src' data-ref="26src">src</a>;</td></tr>
+<tr><th id="411">411</th><td></td></tr>
+<tr><th id="412">412</th><td>            <b>default</b>:</td></tr>
+<tr><th id="413">413</th><td>                *<a class="local col7 ref" href="#27dst" title='dst' data-ref="27dst">dst</a>++ = *<a class="local col6 ref" href="#26src" title='src' data-ref="26src">src</a>++;</td></tr>
+<tr><th id="414">414</th><td>                <b>break</b>;</td></tr>
+<tr><th id="415">415</th><td></td></tr>
+<tr><th id="416">416</th><td>            <b>case</b> <kbd>'\\'</kbd>:</td></tr>
+<tr><th id="417">417</th><td>                <i>// It always uses exactly three octal characters.</i></td></tr>
+<tr><th id="418">418</th><td>                ++<a class="local col6 ref" href="#26src" title='src' data-ref="26src">src</a>;</td></tr>
+<tr><th id="419">419</th><td>                <em>char</em> <dfn class="local col8 decl" id="28c" title='c' data-type='char' data-ref="28c">c</dfn> = (*<a class="local col6 ref" href="#26src" title='src' data-ref="26src">src</a>++ - <kbd>'0'</kbd>) &lt;&lt; <var>6</var>;</td></tr>
+<tr><th id="420">420</th><td>                <a class="local col8 ref" href="#28c" title='c' data-ref="28c">c</a> |= (*<a class="local col6 ref" href="#26src" title='src' data-ref="26src">src</a>++ - <kbd>'0'</kbd>) &lt;&lt; <var>3</var>;</td></tr>
+<tr><th id="421">421</th><td>                <a class="local col8 ref" href="#28c" title='c' data-ref="28c">c</a> |= (*<a class="local col6 ref" href="#26src" title='src' data-ref="26src">src</a>++ - <kbd>'0'</kbd>);</td></tr>
+<tr><th id="422">422</th><td>                *<a class="local col7 ref" href="#27dst" title='dst' data-ref="27dst">dst</a>++ = <a class="local col8 ref" href="#28c" title='c' data-ref="28c">c</a>;</td></tr>
+<tr><th id="423">423</th><td>                <b>break</b>;</td></tr>
+<tr><th id="424">424</th><td>            }</td></tr>
+<tr><th id="425">425</th><td>        }</td></tr>
+<tr><th id="426">426</th><td></td></tr>
+<tr><th id="427">427</th><td>        <i>// Found a NUL before the end of the field.</i></td></tr>
+<tr><th id="428">428</th><td>        <a class="local col6 ref" href="#26src" title='src' data-ref="26src">src</a> = <b>nullptr</b>;</td></tr>
+<tr><th id="429">429</th><td>        <b>return</b> <a class="local col6 ref" href="#26src" title='src' data-ref="26src">src</a>;</td></tr>
+<tr><th id="430">430</th><td>    };</td></tr>
+<tr><th id="431">431</th><td></td></tr>
+<tr><th id="432">432</th><td>    <em>char</em> *<dfn class="local col9 decl" id="29ptr" title='ptr' data-type='char *' data-ref="29ptr">ptr</dfn> = <a class="tu member field" href="#QStorageIterator::buffer" title='QStorageIterator::buffer' data-use='m' data-ref="QStorageIterator::buffer">buffer</a>.<a class="ref fn" href="../text/qbytearray.h.html#_ZN10QByteArray4dataEv" title='QByteArray::data' data-ref="_ZN10QByteArray4dataEv">data</a>();</td></tr>
+<tr><th id="433">433</th><td>    <b>if</b> (<a class="ref fn" href="../../../../include/stdio.h.html#fgets" title='fgets' data-ref="fgets">fgets</a>(<span class='inlayHint'>s:&nbsp;</span><a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a>, <span class='inlayHint'>n:&nbsp;</span><a class="tu member field" href="#QStorageIterator::buffer" title='QStorageIterator::buffer' data-use='m' data-ref="QStorageIterator::buffer">buffer</a>.<a class="ref fn" href="../text/qbytearray.h.html#_ZNK10QByteArray4sizeEv" title='QByteArray::size' data-ref="_ZNK10QByteArray4sizeEv">size</a>(), <span class='inlayHint'>stream:&nbsp;</span><a class="tu member field" href="#QStorageIterator::fp" title='QStorageIterator::fp' data-use='r' data-ref="QStorageIterator::fp">fp</a>) == <b>nullptr</b>)</td></tr>
+<tr><th id="434">434</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="435">435</th><td></td></tr>
+<tr><th id="436">436</th><td>    <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col0 decl" id="30len" title='len' data-type='size_t' data-ref="30len">len</dfn> = <a class="ref fn" href="../../../../include/string.h.html#strlen" title='strlen' data-ref="strlen">strlen</a>(<span class='inlayHint'>s:&nbsp;</span><a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a>);</td></tr>
+<tr><th id="437">437</th><td>    <b>if</b> (<a class="local col0 ref" href="#30len" title='len' data-ref="30len">len</a> == <var>0</var>)</td></tr>
+<tr><th id="438">438</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="439">439</th><td>    <b>while</b> (<a class="macro" href="../global/qcompilerdetection.h.html#194" title="__builtin_expect(!!(ptr[len - 1] != &apos;\n&apos; &amp;&amp; !feof(fp)), false)" data-ref="_M/Q_UNLIKELY">Q_UNLIKELY</a>(<a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a>[<a class="local col0 ref" href="#30len" title='len' data-ref="30len">len</a> - <var>1</var>] != <kbd>'\n'</kbd> &amp;&amp; !<a class="ref fn" href="../../../../include/stdio.h.html#feof" title='feof' data-ref="feof">feof</a>(<a class="tu member field" href="#QStorageIterator::fp" title='QStorageIterator::fp' data-use='r' data-ref="QStorageIterator::fp">fp</a>))) {</td></tr>
+<tr><th id="440">440</th><td>        <i>// buffer wasn't large enough. Enlarge and try again.</i></td></tr>
+<tr><th id="441">441</th><td><i>        // (we're readidng from the kernel, so OOM is unlikely)</i></td></tr>
+<tr><th id="442">442</th><td>        <a class="tu member field" href="#QStorageIterator::buffer" title='QStorageIterator::buffer' data-use='m' data-ref="QStorageIterator::buffer">buffer</a>.<a class="ref fn" href="../text/qbytearray.h.html#_ZN10QByteArray6resizeEx" title='QByteArray::resize' data-ref="_ZN10QByteArray6resizeEx">resize</a>(<span class='inlayHint'>size:&nbsp;</span>(<a class="tu member field" href="#QStorageIterator::buffer" title='QStorageIterator::buffer' data-use='m' data-ref="QStorageIterator::buffer">buffer</a>.<a class="ref fn" href="../text/qbytearray.h.html#_ZNK10QByteArray4sizeEv" title='QByteArray::size' data-ref="_ZNK10QByteArray4sizeEv">size</a>() + <var>4096</var>) &amp; ~<var>4095</var>);</td></tr>
+<tr><th id="443">443</th><td>        <a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a> = <a class="tu member field" href="#QStorageIterator::buffer" title='QStorageIterator::buffer' data-use='m' data-ref="QStorageIterator::buffer">buffer</a>.<a class="ref fn" href="../text/qbytearray.h.html#_ZN10QByteArray4dataEv" title='QByteArray::data' data-ref="_ZN10QByteArray4dataEv">data</a>();</td></tr>
+<tr><th id="444">444</th><td>        <b>if</b> (<a class="ref fn" href="../../../../include/stdio.h.html#fgets" title='fgets' data-ref="fgets">fgets</a>(<span class='inlayHint'>s:&nbsp;</span><a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a> + <a class="local col0 ref" href="#30len" title='len' data-ref="30len">len</a>, <span class='inlayHint'>n:&nbsp;</span><a class="tu member field" href="#QStorageIterator::buffer" title='QStorageIterator::buffer' data-use='m' data-ref="QStorageIterator::buffer">buffer</a>.<a class="ref fn" href="../text/qbytearray.h.html#_ZNK10QByteArray4sizeEv" title='QByteArray::size' data-ref="_ZNK10QByteArray4sizeEv">size</a>() - <a class="local col0 ref" href="#30len" title='len' data-ref="30len">len</a>, <span class='inlayHint'>stream:&nbsp;</span><a class="tu member field" href="#QStorageIterator::fp" title='QStorageIterator::fp' data-use='r' data-ref="QStorageIterator::fp">fp</a>) == <b>nullptr</b>)</td></tr>
+<tr><th id="445">445</th><td>            <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="446">446</th><td></td></tr>
+<tr><th id="447">447</th><td>        <a class="local col0 ref" href="#30len" title='len' data-ref="30len">len</a> += <a class="ref fn" href="../../../../include/string.h.html#strlen" title='strlen' data-ref="strlen">strlen</a>(<span class='inlayHint'>s:&nbsp;</span><a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a> + <a class="local col0 ref" href="#30len" title='len' data-ref="30len">len</a>);</td></tr>
+<tr><th id="448">448</th><td>        <a class="macro" href="../global/qassert.h.html#28" title="static_cast&lt;void&gt;(false &amp;&amp; (len &lt; size_t(buffer.size())))" data-ref="_M/Q_ASSERT">Q_ASSERT</a>(<a class="local col0 ref" href="#30len" title='len' data-ref="30len">len</a> &lt; <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span>(<a class="tu member field" href="#QStorageIterator::buffer" title='QStorageIterator::buffer' data-use='m' data-ref="QStorageIterator::buffer">buffer</a>.<a class="ref fn" href="../text/qbytearray.h.html#_ZNK10QByteArray4sizeEv" title='QByteArray::size' data-ref="_ZNK10QByteArray4sizeEv">size</a>()));</td></tr>
+<tr><th id="449">449</th><td>    }</td></tr>
+<tr><th id="450">450</th><td>    <a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a>[<a class="local col0 ref" href="#30len" title='len' data-ref="30len">len</a> - <var>1</var>] = <kbd>'\0'</kbd>;</td></tr>
+<tr><th id="451">451</th><td>    <em>const</em> <em>char</em> *<em>const</em> <dfn class="local col1 decl" id="31stop" title='stop' data-type='const char *const' data-ref="31stop">stop</dfn> = <a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a> + <a class="local col0 ref" href="#30len" title='len' data-ref="30len">len</a> - <var>1</var>;</td></tr>
+<tr><th id="452">452</th><td></td></tr>
+<tr><th id="453">453</th><td>    <i>// parse the line</i></td></tr>
+<tr><th id="454">454</th><td>    <a class="tu member field" href="#QStorageIterator::mnt" title='QStorageIterator::mnt' data-use='m' data-ref="QStorageIterator::mnt">mnt</a>.<a class="ref field" href="../../../../include/mntent.h.html#mntent::mnt_freq" title='mntent::mnt_freq' data-ref="mntent::mnt_freq">mnt_freq</a> = <var>0</var>;</td></tr>
+<tr><th id="455">455</th><td>    <a class="tu member field" href="#QStorageIterator::mnt" title='QStorageIterator::mnt' data-use='m' data-ref="QStorageIterator::mnt">mnt</a>.<a class="ref field" href="../../../../include/mntent.h.html#mntent::mnt_passno" title='mntent::mnt_passno' data-ref="mntent::mnt_passno">mnt_passno</a> = <var>0</var>;</td></tr>
+<tr><th id="456">456</th><td></td></tr>
+<tr><th id="457">457</th><td>    <em>auto</em> <dfn class="local col2 decl" id="32r" title='r' data-type='QSimpleParsedNumber&lt;qlonglong&gt;' data-ref="32r">r</dfn> = <a class="ref fn" href="../text/qlocale_tools_p.h.html#_Z9qstrntollPKcxi" title='qstrntoll' data-ref="_Z9qstrntollPKcxi">qstrntoll</a>(<span class='inlayHint'>nptr:&nbsp;</span><a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a>, <span class='inlayHint'>size:&nbsp;</span><a class="local col1 ref" href="#31stop" title='stop' data-ref="31stop">stop</a> - <a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a>, <span class='inlayHint'>base:&nbsp;</span><var>10</var>);</td></tr>
+<tr><th id="458">458</th><td>    <b>if</b> (!<a class="local col2 ref" href="#32r" title='r' data-ref="32r">r</a>.<a class="ref fn" href="../text/qlocale_tools_p.h.html#_ZNK19QSimpleParsedNumber2okEv" title='QSimpleParsedNumber::ok' data-ref="_ZNK19QSimpleParsedNumber2okEv">ok</a>())</td></tr>
+<tr><th id="459">459</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="460">460</th><td>    <a class="tu member field" href="#QStorageIterator::mnt" title='QStorageIterator::mnt' data-use='m' data-ref="QStorageIterator::mnt">mnt</a>.<a class="tu ref field" href="#QStorageIterator::mountinfoent::mount_id" title='QStorageIterator::mountinfoent::mount_id' data-use='w' data-ref="QStorageIterator::mountinfoent::mount_id">mount_id</a> = <a class="local col2 ref" href="#32r" title='r' data-ref="32r">r</a>.<a class="ref field" href="../text/qlocale_tools_p.h.html#QSimpleParsedNumber::result" title='QSimpleParsedNumber&lt;long long&gt;::result' data-ref="QSimpleParsedNumber::result">result</a>;</td></tr>
+<tr><th id="461">461</th><td></td></tr>
+<tr><th id="462">462</th><td>    <a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a> += <a class="local col2 ref" href="#32r" title='r' data-ref="32r">r</a>.<a class="ref field" href="../text/qlocale_tools_p.h.html#QSimpleParsedNumber::used" title='QSimpleParsedNumber&lt;long long&gt;::used' data-ref="QSimpleParsedNumber::used">used</a>;</td></tr>
+<tr><th id="463">463</th><td>    <a class="local col2 ref" href="#32r" title='r' data-ref="32r">r</a> <a class="ref fn" href="../text/qlocale_tools_p.h.html#29" title='QSimpleParsedNumber&lt;long long&gt;::operator=' data-ref="_ZN19QSimpleParsedNumberIxEaSEOS0_">=</a> <a class="ref fn" href="../text/qlocale_tools_p.h.html#_Z9qstrntollPKcxi" title='qstrntoll' data-ref="_Z9qstrntollPKcxi">qstrntoll</a>(<span class='inlayHint'>nptr:&nbsp;</span><a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a>, <span class='inlayHint'>size:&nbsp;</span><a class="local col1 ref" href="#31stop" title='stop' data-ref="31stop">stop</a> - <a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a>, <span class='inlayHint'>base:&nbsp;</span><var>10</var>);</td></tr>
+<tr><th id="464">464</th><td>    <b>if</b> (!<a class="local col2 ref" href="#32r" title='r' data-ref="32r">r</a>.<a class="ref fn" href="../text/qlocale_tools_p.h.html#_ZNK19QSimpleParsedNumber2okEv" title='QSimpleParsedNumber::ok' data-ref="_ZNK19QSimpleParsedNumber2okEv">ok</a>())</td></tr>
+<tr><th id="465">465</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="466">466</th><td>    <em>int</em> <dfn class="local col3 decl" id="33parent_id" title='parent_id' data-type='int' data-ref="33parent_id">parent_id</dfn> = <a class="local col2 ref" href="#32r" title='r' data-ref="32r">r</a>.<a class="ref field" href="../text/qlocale_tools_p.h.html#QSimpleParsedNumber::result" title='QSimpleParsedNumber&lt;long long&gt;::result' data-ref="QSimpleParsedNumber::result">result</a>;</td></tr>
+<tr><th id="467">467</th><td>    <a class="macro" href="../global/qtpreprocessorsupport.h.html#20" title="(void)parent_id;" data-ref="_M/Q_UNUSED">Q_UNUSED</a>(<a class="local col3 ref" href="#33parent_id" title='parent_id' data-ref="33parent_id">parent_id</a>);</td></tr>
+<tr><th id="468">468</th><td></td></tr>
+<tr><th id="469">469</th><td>    <a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a> += <a class="local col2 ref" href="#32r" title='r' data-ref="32r">r</a>.<a class="ref field" href="../text/qlocale_tools_p.h.html#QSimpleParsedNumber::used" title='QSimpleParsedNumber&lt;long long&gt;::used' data-ref="QSimpleParsedNumber::used">used</a>;</td></tr>
+<tr><th id="470">470</th><td>    <a class="local col2 ref" href="#32r" title='r' data-ref="32r">r</a> <a class="ref fn" href="../text/qlocale_tools_p.h.html#29" title='QSimpleParsedNumber&lt;long long&gt;::operator=' data-ref="_ZN19QSimpleParsedNumberIxEaSEOS0_">=</a> <a class="ref fn" href="../text/qlocale_tools_p.h.html#_Z9qstrntollPKcxi" title='qstrntoll' data-ref="_Z9qstrntollPKcxi">qstrntoll</a>(<span class='inlayHint'>nptr:&nbsp;</span><a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a>, <span class='inlayHint'>size:&nbsp;</span><a class="local col1 ref" href="#31stop" title='stop' data-ref="31stop">stop</a> - <a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a>, <span class='inlayHint'>base:&nbsp;</span><var>10</var>);</td></tr>
+<tr><th id="471">471</th><td>    <b>if</b> (!<a class="local col2 ref" href="#32r" title='r' data-ref="32r">r</a>.<a class="ref fn" href="../text/qlocale_tools_p.h.html#_ZNK19QSimpleParsedNumber2okEv" title='QSimpleParsedNumber::ok' data-ref="_ZNK19QSimpleParsedNumber2okEv">ok</a>())</td></tr>
+<tr><th id="472">472</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="473">473</th><td>    <a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a> += <a class="local col2 ref" href="#32r" title='r' data-ref="32r">r</a>.<a class="ref field" href="../text/qlocale_tools_p.h.html#QSimpleParsedNumber::used" title='QSimpleParsedNumber&lt;long long&gt;::used' data-ref="QSimpleParsedNumber::used">used</a>;</td></tr>
+<tr><th id="474">474</th><td>    <b>if</b> (*<a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a> != <kbd>':'</kbd>)</td></tr>
+<tr><th id="475">475</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="476">476</th><td>    <em>int</em> <dfn class="local col4 decl" id="34rdevmajor" title='rdevmajor' data-type='int' data-ref="34rdevmajor">rdevmajor</dfn> = <a class="local col2 ref" href="#32r" title='r' data-ref="32r">r</a>.<a class="ref field" href="../text/qlocale_tools_p.h.html#QSimpleParsedNumber::result" title='QSimpleParsedNumber&lt;long long&gt;::result' data-ref="QSimpleParsedNumber::result">result</a>;</td></tr>
+<tr><th id="477">477</th><td>    ++<a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a>; <i>// Skip over the ':'</i></td></tr>
+<tr><th id="478">478</th><td>    <a class="local col2 ref" href="#32r" title='r' data-ref="32r">r</a> <a class="ref fn" href="../text/qlocale_tools_p.h.html#29" title='QSimpleParsedNumber&lt;long long&gt;::operator=' data-ref="_ZN19QSimpleParsedNumberIxEaSEOS0_">=</a> <a class="ref fn" href="../text/qlocale_tools_p.h.html#_Z9qstrntollPKcxi" title='qstrntoll' data-ref="_Z9qstrntollPKcxi">qstrntoll</a>(<span class='inlayHint'>nptr:&nbsp;</span><a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a>, <span class='inlayHint'>size:&nbsp;</span><a class="local col1 ref" href="#31stop" title='stop' data-ref="31stop">stop</a> - <a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a>, <span class='inlayHint'>base:&nbsp;</span><var>10</var>);</td></tr>
+<tr><th id="479">479</th><td>    <b>if</b> (!<a class="local col2 ref" href="#32r" title='r' data-ref="32r">r</a>.<a class="ref fn" href="../text/qlocale_tools_p.h.html#_ZNK19QSimpleParsedNumber2okEv" title='QSimpleParsedNumber::ok' data-ref="_ZNK19QSimpleParsedNumber2okEv">ok</a>())</td></tr>
+<tr><th id="480">480</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="481">481</th><td>    <a class="tu member field" href="#QStorageIterator::mnt" title='QStorageIterator::mnt' data-use='m' data-ref="QStorageIterator::mnt">mnt</a>.<a class="tu ref field" href="#QStorageIterator::mountinfoent::rdev" title='QStorageIterator::mountinfoent::rdev' data-use='w' data-ref="QStorageIterator::mountinfoent::rdev">rdev</a> = <a class="macro" href="../../../../include/x86_64-linux-gnu/sys/sysmacros.h.html#62" title="gnu_dev_makedev (rdevmajor, r.result)" data-ref="_M/makedev">makedev</a>(<a class="local col4 ref" href="#34rdevmajor" title='rdevmajor' data-ref="34rdevmajor">rdevmajor</a>, <a class="local col2 ref" href="#32r" title='r' data-ref="32r">r</a>.<a class="ref field" href="../text/qlocale_tools_p.h.html#QSimpleParsedNumber::result" title='QSimpleParsedNumber&lt;long long&gt;::result' data-ref="QSimpleParsedNumber::result">result</a>);</td></tr>
+<tr><th id="482">482</th><td></td></tr>
+<tr><th id="483">483</th><td>    <a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a> += <a class="local col2 ref" href="#32r" title='r' data-ref="32r">r</a>.<a class="ref field" href="../text/qlocale_tools_p.h.html#QSimpleParsedNumber::used" title='QSimpleParsedNumber&lt;long long&gt;::used' data-ref="QSimpleParsedNumber::used">used</a>;</td></tr>
+<tr><th id="484">484</th><td>    <b>if</b> (*<a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a> != <kbd>' '</kbd>)</td></tr>
+<tr><th id="485">485</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="486">486</th><td></td></tr>
+<tr><th id="487">487</th><td>    <a class="tu member field" href="#QStorageIterator::mnt" title='QStorageIterator::mnt' data-use='m' data-ref="QStorageIterator::mnt">mnt</a>.<a class="tu ref field" href="#QStorageIterator::mountinfoent::subvolume" title='QStorageIterator::mountinfoent::subvolume' data-use='w' data-ref="QStorageIterator::mountinfoent::subvolume">subvolume</a> = ++<a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a>;</td></tr>
+<tr><th id="488">488</th><td>    <a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a> = <a class="local col5 ref" href="#25parseMangledPath" title='parseMangledPath' data-ref="25parseMangledPath">parseMangledPath</a>(<a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a>);</td></tr>
+<tr><th id="489">489</th><td>    <b>if</b> (!<a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a>)</td></tr>
+<tr><th id="490">490</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="491">491</th><td></td></tr>
+<tr><th id="492">492</th><td>    <i>// unset a subvolume of "/" -- it's not a *sub* volume</i></td></tr>
+<tr><th id="493">493</th><td>    <b>if</b> (<a class="tu member field" href="#QStorageIterator::mnt" title='QStorageIterator::mnt' data-use='m' data-ref="QStorageIterator::mnt">mnt</a>.<a class="tu ref field" href="#QStorageIterator::mountinfoent::subvolume" title='QStorageIterator::mountinfoent::subvolume' data-use='r' data-ref="QStorageIterator::mountinfoent::subvolume">subvolume</a> + <var>1</var> == <a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a>)</td></tr>
+<tr><th id="494">494</th><td>        *<a class="tu member field" href="#QStorageIterator::mnt" title='QStorageIterator::mnt' data-use='m' data-ref="QStorageIterator::mnt">mnt</a>.<a class="tu ref field" href="#QStorageIterator::mountinfoent::subvolume" title='QStorageIterator::mountinfoent::subvolume' data-use='r' data-ref="QStorageIterator::mountinfoent::subvolume">subvolume</a> = <kbd>'\0'</kbd>;</td></tr>
+<tr><th id="495">495</th><td></td></tr>
+<tr><th id="496">496</th><td>    <a class="tu member field" href="#QStorageIterator::mnt" title='QStorageIterator::mnt' data-use='m' data-ref="QStorageIterator::mnt">mnt</a>.<a class="ref field" href="../../../../include/mntent.h.html#mntent::mnt_dir" title='mntent::mnt_dir' data-ref="mntent::mnt_dir">mnt_dir</a> = ++<a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a>;</td></tr>
+<tr><th id="497">497</th><td>    <a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a> = <a class="local col5 ref" href="#25parseMangledPath" title='parseMangledPath' data-ref="25parseMangledPath">parseMangledPath</a>(<a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a>);</td></tr>
+<tr><th id="498">498</th><td>    <b>if</b> (!<a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a>)</td></tr>
+<tr><th id="499">499</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="500">500</th><td></td></tr>
+<tr><th id="501">501</th><td>    <a class="tu member field" href="#QStorageIterator::mnt" title='QStorageIterator::mnt' data-use='m' data-ref="QStorageIterator::mnt">mnt</a>.<a class="ref field" href="../../../../include/mntent.h.html#mntent::mnt_opts" title='mntent::mnt_opts' data-ref="mntent::mnt_opts">mnt_opts</a> = ++<a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a>;</td></tr>
+<tr><th id="502">502</th><td>    <a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a> = <a class="ref fn" href="../../../../include/string.h.html#strchr" title='strchr' data-ref="strchr">strchr</a>(<span class='inlayHint'>s:&nbsp;</span><a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a>, <span class='inlayHint'>c:&nbsp;</span><kbd>' '</kbd>);</td></tr>
+<tr><th id="503">503</th><td>    <b>if</b> (!<a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a>)</td></tr>
+<tr><th id="504">504</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="505">505</th><td></td></tr>
+<tr><th id="506">506</th><td>    <i>// we don't parse the flags, so just find the separator</i></td></tr>
+<tr><th id="507">507</th><td>    <b>if</b> (<em>char</em> *<em>const</em> <dfn class="local col5 decl" id="35dashed" title='dashed' data-type='char *const' data-ref="35dashed"><a class="local col5 ref" href="#35dashed" title='dashed' data-ref="35dashed">dashed</a></dfn> = <a class="ref fn" href="../../../../include/string.h.html#strstr" title='strstr' data-ref="strstr">strstr</a>(<span class='inlayHint'>haystack:&nbsp;</span><a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a>, <span class='inlayHint'>needle:&nbsp;</span><q>" - "</q>)) {</td></tr>
+<tr><th id="508">508</th><td>        *<a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a> = <kbd>'\0'</kbd>;</td></tr>
+<tr><th id="509">509</th><td>        <a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a> = <a class="local col5 ref" href="#35dashed" title='dashed' data-ref="35dashed">dashed</a> + <a class="ref fn" href="../../../../include/string.h.html#strlen" title='strlen' data-ref="strlen">strlen</a>(<span class='inlayHint'>s:&nbsp;</span><q>" - "</q>) - <var>1</var>;</td></tr>
+<tr><th id="510">510</th><td>    } <b>else</b> {</td></tr>
+<tr><th id="511">511</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="512">512</th><td>    }</td></tr>
+<tr><th id="513">513</th><td></td></tr>
+<tr><th id="514">514</th><td>    <a class="tu member field" href="#QStorageIterator::mnt" title='QStorageIterator::mnt' data-use='m' data-ref="QStorageIterator::mnt">mnt</a>.<a class="ref field" href="../../../../include/mntent.h.html#mntent::mnt_type" title='mntent::mnt_type' data-ref="mntent::mnt_type">mnt_type</a> = ++<a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a>;</td></tr>
+<tr><th id="515">515</th><td>    <a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a> = <a class="ref fn" href="../../../../include/string.h.html#strchr" title='strchr' data-ref="strchr">strchr</a>(<span class='inlayHint'>s:&nbsp;</span><a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a>, <span class='inlayHint'>c:&nbsp;</span><kbd>' '</kbd>);</td></tr>
+<tr><th id="516">516</th><td>    <b>if</b> (!<a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a>)</td></tr>
+<tr><th id="517">517</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="518">518</th><td>    *<a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a> = <kbd>'\0'</kbd>;</td></tr>
+<tr><th id="519">519</th><td></td></tr>
+<tr><th id="520">520</th><td>    <a class="tu member field" href="#QStorageIterator::mnt" title='QStorageIterator::mnt' data-use='m' data-ref="QStorageIterator::mnt">mnt</a>.<a class="ref field" href="../../../../include/mntent.h.html#mntent::mnt_fsname" title='mntent::mnt_fsname' data-ref="mntent::mnt_fsname">mnt_fsname</a> = ++<a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a>;</td></tr>
+<tr><th id="521">521</th><td>    <a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a> = <a class="local col5 ref" href="#25parseMangledPath" title='parseMangledPath' data-ref="25parseMangledPath">parseMangledPath</a>(<a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a>);</td></tr>
+<tr><th id="522">522</th><td>    <b>if</b> (!<a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a>)</td></tr>
+<tr><th id="523">523</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="524">524</th><td></td></tr>
+<tr><th id="525">525</th><td>    <a class="tu member field" href="#QStorageIterator::mnt" title='QStorageIterator::mnt' data-use='m' data-ref="QStorageIterator::mnt">mnt</a>.<a class="tu ref field" href="#QStorageIterator::mountinfoent::superopts" title='QStorageIterator::mountinfoent::superopts' data-use='w' data-ref="QStorageIterator::mountinfoent::superopts">superopts</a> = ++<a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a>;</td></tr>
+<tr><th id="526">526</th><td>    <a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a> += <a class="ref fn" href="../../../../include/string.h.html#strcspn" title='strcspn' data-ref="strcspn">strcspn</a>(<span class='inlayHint'>s:&nbsp;</span><a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a>, <span class='inlayHint'>reject:&nbsp;</span><q>" \n"</q>);</td></tr>
+<tr><th id="527">527</th><td>    *<a class="local col9 ref" href="#29ptr" title='ptr' data-ref="29ptr">ptr</a> = <kbd>'\0'</kbd>;</td></tr>
+<tr><th id="528">528</th><td></td></tr>
+<tr><th id="529">529</th><td>    <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="530">530</th><td>}</td></tr>
+<tr><th id="531">531</th><td></td></tr>
+<tr><th id="532">532</th><td><b>inline</b> <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> <a class="type" href="#QStorageIterator" title='QStorageIterator' data-ref="QStorageIterator">QStorageIterator</a>::<dfn class="tu decl def fn" id="_ZNK16QStorageIterator8rootPathEv" title='QStorageIterator::rootPath' data-type='QString QStorageIterator::rootPath() const' data-ref="_ZNK16QStorageIterator8rootPathEv">rootPath</dfn>() <em>const</em></td></tr>
+<tr><th id="533">533</th><td>{</td></tr>
+<tr><th id="534">534</th><td>    <b>return</b> <a class="type" href="qfile.h.html#QFile" title='QFile' data-ref="QFile">QFile</a>::<a class="ref fn" href="qfile.h.html#_ZN5QFile10decodeNameEPKc" title='QFile::decodeName' data-ref="_ZN5QFile10decodeNameEPKc">decodeName</a>(<span class='inlayHint'>localFileName:&nbsp;</span><a class="tu member field" href="#QStorageIterator::mnt" title='QStorageIterator::mnt' data-use='m' data-ref="QStorageIterator::mnt">mnt</a>.<a class="ref field" href="../../../../include/mntent.h.html#mntent::mnt_dir" title='mntent::mnt_dir' data-ref="mntent::mnt_dir">mnt_dir</a>);</td></tr>
+<tr><th id="535">535</th><td>}</td></tr>
+<tr><th id="536">536</th><td></td></tr>
+<tr><th id="537">537</th><td><b>inline</b> <a class="type" href="../text/qbytearray.h.html#QByteArray" title='QByteArray' data-ref="QByteArray">QByteArray</a> <a class="type" href="#QStorageIterator" title='QStorageIterator' data-ref="QStorageIterator">QStorageIterator</a>::<dfn class="tu decl def fn" id="_ZNK16QStorageIterator14fileSystemTypeEv" title='QStorageIterator::fileSystemType' data-type='QByteArray QStorageIterator::fileSystemType() const' data-ref="_ZNK16QStorageIterator14fileSystemTypeEv">fileSystemType</dfn>() <em>const</em></td></tr>
+<tr><th id="538">538</th><td>{</td></tr>
+<tr><th id="539">539</th><td>    <b>return</b> <a class="type" href="../text/qbytearray.h.html#QByteArray" title='QByteArray' data-ref="QByteArray">QByteArray</a><a class="ref fn" href="../text/qbytearray.h.html#_ZN10QByteArrayC1EPKcx" title='QByteArray::QByteArray' data-ref="_ZN10QByteArrayC1EPKcx">(</a><a class="tu member field" href="#QStorageIterator::mnt" title='QStorageIterator::mnt' data-use='m' data-ref="QStorageIterator::mnt">mnt</a>.<a class="ref field" href="../../../../include/mntent.h.html#mntent::mnt_type" title='mntent::mnt_type' data-ref="mntent::mnt_type">mnt_type</a>);</td></tr>
+<tr><th id="540">540</th><td>}</td></tr>
+<tr><th id="541">541</th><td></td></tr>
+<tr><th id="542">542</th><td><b>inline</b> <a class="type" href="../text/qbytearray.h.html#QByteArray" title='QByteArray' data-ref="QByteArray">QByteArray</a> <a class="type" href="#QStorageIterator" title='QStorageIterator' data-ref="QStorageIterator">QStorageIterator</a>::<dfn class="tu decl def fn" id="_ZNK16QStorageIterator6deviceEv" title='QStorageIterator::device' data-type='QByteArray QStorageIterator::device() const' data-ref="_ZNK16QStorageIterator6deviceEv">device</dfn>() <em>const</em></td></tr>
+<tr><th id="543">543</th><td>{</td></tr>
+<tr><th id="544">544</th><td><u>#<span data-ppcond="544">ifdef</span> <a class="macro" href="../global/qsystemdetection.h.html#106" data-ref="_M/Q_OS_LINUX">Q_OS_LINUX</a></u></td></tr>
+<tr><th id="545">545</th><td>    <i>// check that the device exists</i></td></tr>
+<tr><th id="546">546</th><td>    <b>if</b> (<a class="tu member field" href="#QStorageIterator::mnt" title='QStorageIterator::mnt' data-use='m' data-ref="QStorageIterator::mnt">mnt</a>.<a class="ref field" href="../../../../include/mntent.h.html#mntent::mnt_fsname" title='mntent::mnt_fsname' data-ref="mntent::mnt_fsname">mnt_fsname</a>[<var>0</var>] == <kbd>'/'</kbd> &amp;&amp; <a class="ref fn" href="../../../../include/unistd.h.html#access" title='access' data-ref="access">access</a>(<span class='inlayHint'>name:&nbsp;</span><a class="tu member field" href="#QStorageIterator::mnt" title='QStorageIterator::mnt' data-use='m' data-ref="QStorageIterator::mnt">mnt</a>.<a class="ref field" href="../../../../include/mntent.h.html#mntent::mnt_fsname" title='mntent::mnt_fsname' data-ref="mntent::mnt_fsname">mnt_fsname</a>, <a class="macro" href="../../../../include/unistd.h.html#284" title="0" data-ref="_M/F_OK">F_OK</a>) != <var>0</var>) {</td></tr>
+<tr><th id="547">547</th><td>        <i>// It doesn't, so let's try to resolve the dev_t from /dev/block.</i></td></tr>
+<tr><th id="548">548</th><td><i>        // Note how strlen("4294967295") == digits10 + 1, so we need to add 1</i></td></tr>
+<tr><th id="549">549</th><td><i>        // for each number, plus the ':'.</i></td></tr>
+<tr><th id="550">550</th><td>        <em>char</em> <dfn class="local col6 decl" id="36buf" title='buf' data-type='char[33]' data-ref="36buf">buf</dfn>[<b>sizeof</b>(<q>"/dev/block/"</q>) + <var>2</var> * <span class="namespace">std::</span><a class="type" href="../../../../include/c++/9/limits.html#std::numeric_limits" title='std::numeric_limits' data-ref="std::numeric_limits">numeric_limits</a>&lt;<em>unsigned</em>&gt;::<a class="ref" href="../../../../include/c++/9/limits.html#std::numeric_limits{unsignedint}::digits10" title='std::numeric_limits&lt;unsigned int&gt;::digits10' data-ref="std::numeric_limits{unsignedint}::digits10">digits10</a> + <var>3</var>];</td></tr>
+<tr><th id="551">551</th><td>        <a class="type" href="../text/qbytearray.h.html#QByteArray" title='QByteArray' data-ref="QByteArray">QByteArray</a> <dfn class="local col7 decl" id="37dev" title='dev' data-type='QByteArray' data-ref="37dev">dev</dfn><a class="ref fn" href="../text/qbytearray.h.html#_ZN10QByteArrayC1ExN2Qt14InitializationE" title='QByteArray::QByteArray' data-ref="_ZN10QByteArrayC1ExN2Qt14InitializationE">(</a><a class="macro" href="../../../../include/linux/limits.h.html#13" title="4096" data-ref="_M/PATH_MAX">PATH_MAX</a>, <span class="namespace">Qt::</span><a class="ref" href="../global/qnamespace.h.html#Qt::Uninitialized" title='Qt::Uninitialized' data-ref="Qt::Uninitialized">Uninitialized</a>);</td></tr>
+<tr><th id="552">552</th><td>        <em>char</em> *<dfn class="local col8 decl" id="38devdata" title='devdata' data-type='char *' data-ref="38devdata">devdata</dfn> = <a class="local col7 ref" href="#37dev" title='dev' data-ref="37dev">dev</a>.<a class="ref fn" href="../text/qbytearray.h.html#_ZN10QByteArray4dataEv" title='QByteArray::data' data-ref="_ZN10QByteArray4dataEv">data</a>();</td></tr>
+<tr><th id="553">553</th><td></td></tr>
+<tr><th id="554">554</th><td>        <a class="ref fn" href="../../../../include/stdio.h.html#snprintf" title='snprintf' data-ref="snprintf">snprintf</a>(<span class='inlayHint'>s:&nbsp;</span><a class="local col6 ref" href="#36buf" title='buf' data-ref="36buf">buf</a>, <span class='inlayHint'>maxlen:&nbsp;</span><b>sizeof</b>(<a class="local col6 ref" href="#36buf" title='buf' data-ref="36buf">buf</a>), <span class='inlayHint'>format:&nbsp;</span><q>"/dev/block/%u:%u"</q>, <a class="macro" href="../../../../include/x86_64-linux-gnu/sys/sysmacros.h.html#60" title="gnu_dev_major (mnt.rdev)" data-ref="_M/major">major</a>(<a class="tu member field" href="#QStorageIterator::mnt" title='QStorageIterator::mnt' data-use='m' data-ref="QStorageIterator::mnt">mnt</a>.<a class="tu ref field" href="#QStorageIterator::mountinfoent::rdev" title='QStorageIterator::mountinfoent::rdev' data-use='r' data-ref="QStorageIterator::mountinfoent::rdev">rdev</a>), <a class="macro" href="../../../../include/x86_64-linux-gnu/sys/sysmacros.h.html#61" title="gnu_dev_minor (mnt.rdev)" data-ref="_M/minor">minor</a>(<a class="tu member field" href="#QStorageIterator::mnt" title='QStorageIterator::mnt' data-use='m' data-ref="QStorageIterator::mnt">mnt</a>.<a class="tu ref field" href="#QStorageIterator::mountinfoent::rdev" title='QStorageIterator::mountinfoent::rdev' data-use='r' data-ref="QStorageIterator::mountinfoent::rdev">rdev</a>));</td></tr>
+<tr><th id="555">555</th><td>        <b>if</b> (<a class="ref fn" href="../../../../include/stdlib.h.html#realpath" title='realpath' data-ref="realpath">realpath</a>(<span class='inlayHint'>name:&nbsp;</span><a class="local col6 ref" href="#36buf" title='buf' data-ref="36buf">buf</a>, <span class='inlayHint'>resolved:&nbsp;</span><a class="local col8 ref" href="#38devdata" title='devdata' data-ref="38devdata">devdata</a>)) {</td></tr>
+<tr><th id="556">556</th><td>            <a class="local col7 ref" href="#37dev" title='dev' data-ref="37dev">dev</a>.<a class="ref fn" href="../text/qbytearray.h.html#_ZN10QByteArray8truncateEx" title='QByteArray::truncate' data-ref="_ZN10QByteArray8truncateEx">truncate</a>(<span class='inlayHint'>pos:&nbsp;</span><a class="ref fn" href="../../../../include/string.h.html#strlen" title='strlen' data-ref="strlen">strlen</a>(<span class='inlayHint'>s:&nbsp;</span><a class="local col8 ref" href="#38devdata" title='devdata' data-ref="38devdata">devdata</a>));</td></tr>
+<tr><th id="557">557</th><td>            <b>return</b> <a class="ref fn fake" href="../text/qbytearray.h.html#_ZN10QByteArrayC1EOS_" title='QByteArray::QByteArray' data-ref="_ZN10QByteArrayC1EOS_"></a><a class="local col7 ref" href="#37dev" title='dev' data-ref="37dev">dev</a>;</td></tr>
+<tr><th id="558">558</th><td>        }</td></tr>
+<tr><th id="559">559</th><td>    }</td></tr>
+<tr><th id="560">560</th><td><u>#<span data-ppcond="544">endif</span></u></td></tr>
+<tr><th id="561">561</th><td>    <b>return</b> <a class="type" href="../text/qbytearray.h.html#QByteArray" title='QByteArray' data-ref="QByteArray">QByteArray</a><a class="ref fn" href="../text/qbytearray.h.html#_ZN10QByteArrayC1EPKcx" title='QByteArray::QByteArray' data-ref="_ZN10QByteArrayC1EPKcx">(</a><a class="tu member field" href="#QStorageIterator::mnt" title='QStorageIterator::mnt' data-use='m' data-ref="QStorageIterator::mnt">mnt</a>.<a class="ref field" href="../../../../include/mntent.h.html#mntent::mnt_fsname" title='mntent::mnt_fsname' data-ref="mntent::mnt_fsname">mnt_fsname</a>);</td></tr>
+<tr><th id="562">562</th><td>}</td></tr>
+<tr><th id="563">563</th><td></td></tr>
+<tr><th id="564">564</th><td><b>inline</b> <a class="type" href="../text/qbytearray.h.html#QByteArray" title='QByteArray' data-ref="QByteArray">QByteArray</a> <a class="type" href="#QStorageIterator" title='QStorageIterator' data-ref="QStorageIterator">QStorageIterator</a>::<dfn class="tu decl def fn" id="_ZNK16QStorageIterator7optionsEv" title='QStorageIterator::options' data-type='QByteArray QStorageIterator::options() const' data-ref="_ZNK16QStorageIterator7optionsEv">options</dfn>() <em>const</em></td></tr>
+<tr><th id="565">565</th><td>{</td></tr>
+<tr><th id="566">566</th><td>    <i>// Merge the two options, starting with the superblock options and letting</i></td></tr>
+<tr><th id="567">567</th><td><i>    // the per-mount options override.</i></td></tr>
+<tr><th id="568">568</th><td>    <em>const</em> <em>char</em> *<dfn class="local col9 decl" id="39superopts" title='superopts' data-type='const char *' data-ref="39superopts">superopts</dfn> = <a class="tu member field" href="#QStorageIterator::mnt" title='QStorageIterator::mnt' data-use='m' data-ref="QStorageIterator::mnt">mnt</a>.<a class="tu ref field" href="#QStorageIterator::mountinfoent::superopts" title='QStorageIterator::mountinfoent::superopts' data-use='r' data-ref="QStorageIterator::mountinfoent::superopts">superopts</a>;</td></tr>
+<tr><th id="569">569</th><td></td></tr>
+<tr><th id="570">570</th><td>    <i>// Both mnt_opts and superopts start with "ro" or "rw", so we can skip the</i></td></tr>
+<tr><th id="571">571</th><td><i>    // superblock's field (see show_mountinfo() in fs/proc_namespace.c).</i></td></tr>
+<tr><th id="572">572</th><td>    <b>if</b> (<a class="local col9 ref" href="#39superopts" title='superopts' data-ref="39superopts">superopts</a> &amp;&amp; <a class="local col9 ref" href="#39superopts" title='superopts' data-ref="39superopts">superopts</a>[<var>0</var>] == <kbd>'r'</kbd>) {</td></tr>
+<tr><th id="573">573</th><td>        <b>if</b> (<a class="local col9 ref" href="#39superopts" title='superopts' data-ref="39superopts">superopts</a>[<var>2</var>] == <kbd>'\0'</kbd>)       <i>// no other superopts besides "ro" / "rw"?</i></td></tr>
+<tr><th id="574">574</th><td>            <a class="local col9 ref" href="#39superopts" title='superopts' data-ref="39superopts">superopts</a> = <b>nullptr</b>;</td></tr>
+<tr><th id="575">575</th><td>        <b>else</b> <b>if</b> (<a class="local col9 ref" href="#39superopts" title='superopts' data-ref="39superopts">superopts</a>[<var>2</var>] == <kbd>','</kbd>)</td></tr>
+<tr><th id="576">576</th><td>            <a class="local col9 ref" href="#39superopts" title='superopts' data-ref="39superopts">superopts</a> += <var>3</var>;</td></tr>
+<tr><th id="577">577</th><td>    }</td></tr>
+<tr><th id="578">578</th><td></td></tr>
+<tr><th id="579">579</th><td>    <b>if</b> (<a class="local col9 ref" href="#39superopts" title='superopts' data-ref="39superopts">superopts</a>)</td></tr>
+<tr><th id="580">580</th><td>        <b>return</b> <a class="ref fn fake" href="../text/qstringbuilder.h.html#_ZNK14QStringBuildercvN13QConcatenableI14QStringBuilderIT_T0_EE9ConvertToEEv" title='QStringBuilder::operator typename QConcatenable&lt;QStringBuilder&lt;type-parameter-0-0, type-parameter-0-1&gt; &gt;::ConvertTo' data-ref="_ZNK14QStringBuildercvN13QConcatenableI14QStringBuilderIT_T0_EE9ConvertToEEv"></a><a class="type" href="../text/qbytearray.h.html#QByteArray" title='QByteArray' data-ref="QByteArray">QByteArray</a><a class="ref fn" href="../text/qbytearray.h.html#_ZN10QByteArrayC1EPKcx" title='QByteArray::QByteArray' data-ref="_ZN10QByteArrayC1EPKcx">(</a><a class="local col9 ref" href="#39superopts" title='superopts' data-ref="39superopts">superopts</a>) <a class="ref fn" href="../text/qstringbuilder.h.html#_ZplRKT_RKT0_" title='operator+' data-ref="_ZplRKT_RKT0_">+</a> <kbd>','</kbd> <a class="ref fn" href="../text/qstringbuilder.h.html#_ZplRKT_RKT0_" title='operator+' data-ref="_ZplRKT_RKT0_">+</a> <a class="tu member field" href="#QStorageIterator::mnt" title='QStorageIterator::mnt' data-use='m' data-ref="QStorageIterator::mnt">mnt</a>.<a class="ref field" href="../../../../include/mntent.h.html#mntent::mnt_opts" title='mntent::mnt_opts' data-ref="mntent::mnt_opts">mnt_opts</a>;</td></tr>
+<tr><th id="581">581</th><td>    <b>return</b> <a class="type" href="../text/qbytearray.h.html#QByteArray" title='QByteArray' data-ref="QByteArray">QByteArray</a><a class="ref fn" href="../text/qbytearray.h.html#_ZN10QByteArrayC1EPKcx" title='QByteArray::QByteArray' data-ref="_ZN10QByteArrayC1EPKcx">(</a><a class="tu member field" href="#QStorageIterator::mnt" title='QStorageIterator::mnt' data-use='m' data-ref="QStorageIterator::mnt">mnt</a>.<a class="ref field" href="../../../../include/mntent.h.html#mntent::mnt_opts" title='mntent::mnt_opts' data-ref="mntent::mnt_opts">mnt_opts</a>);</td></tr>
+<tr><th id="582">582</th><td>}</td></tr>
+<tr><th id="583">583</th><td></td></tr>
+<tr><th id="584">584</th><td><b>inline</b> <a class="type" href="../text/qbytearray.h.html#QByteArray" title='QByteArray' data-ref="QByteArray">QByteArray</a> <a class="type" href="#QStorageIterator" title='QStorageIterator' data-ref="QStorageIterator">QStorageIterator</a>::<dfn class="tu decl def fn" id="_ZNK16QStorageIterator9subvolumeEv" title='QStorageIterator::subvolume' data-type='QByteArray QStorageIterator::subvolume() const' data-ref="_ZNK16QStorageIterator9subvolumeEv">subvolume</dfn>() <em>const</em></td></tr>
+<tr><th id="585">585</th><td>{</td></tr>
+<tr><th id="586">586</th><td>    <b>return</b> <a class="type" href="../text/qbytearray.h.html#QByteArray" title='QByteArray' data-ref="QByteArray">QByteArray</a><a class="ref fn" href="../text/qbytearray.h.html#_ZN10QByteArrayC1EPKcx" title='QByteArray::QByteArray' data-ref="_ZN10QByteArrayC1EPKcx">(</a><a class="tu member field" href="#QStorageIterator::mnt" title='QStorageIterator::mnt' data-use='m' data-ref="QStorageIterator::mnt">mnt</a>.<a class="tu ref field" href="#QStorageIterator::mountinfoent::subvolume" title='QStorageIterator::mountinfoent::subvolume' data-use='r' data-ref="QStorageIterator::mountinfoent::subvolume">subvolume</a>);</td></tr>
+<tr><th id="587">587</th><td>}</td></tr>
+<tr><th id="588">588</th><td><u>#<span data-ppcond="200">elif</span> defined(Q_OS_HAIKU)</u></td></tr>
+<tr><th id="589">589</th><td><b>inline</b> QStorageIterator::QStorageIterator()</td></tr>
+<tr><th id="590">590</th><td>{</td></tr>
+<tr><th id="591">591</th><td>}</td></tr>
+<tr><th id="592">592</th><td></td></tr>
+<tr><th id="593">593</th><td><b>inline</b> QStorageIterator::~QStorageIterator()</td></tr>
+<tr><th id="594">594</th><td>{</td></tr>
+<tr><th id="595">595</th><td>}</td></tr>
+<tr><th id="596">596</th><td></td></tr>
+<tr><th id="597">597</th><td><b>inline</b> <em>bool</em> QStorageIterator::isValid() <em>const</em></td></tr>
+<tr><th id="598">598</th><td>{</td></tr>
+<tr><th id="599">599</th><td>    <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="600">600</th><td>}</td></tr>
+<tr><th id="601">601</th><td></td></tr>
+<tr><th id="602">602</th><td><b>inline</b> <em>bool</em> QStorageIterator::next()</td></tr>
+<tr><th id="603">603</th><td>{</td></tr>
+<tr><th id="604">604</th><td>    BVolume volume;</td></tr>
+<tr><th id="605">605</th><td></td></tr>
+<tr><th id="606">606</th><td>    <b>if</b> (m_volumeRoster.GetNextVolume(&amp;volume) != B_OK)</td></tr>
+<tr><th id="607">607</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="608">608</th><td></td></tr>
+<tr><th id="609">609</th><td>    BDirectory directory;</td></tr>
+<tr><th id="610">610</th><td>    <b>if</b> (volume.GetRootDirectory(&amp;directory) != B_OK)</td></tr>
+<tr><th id="611">611</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="612">612</th><td></td></tr>
+<tr><th id="613">613</th><td>    <em>const</em> BPath path(&amp;directory);</td></tr>
+<tr><th id="614">614</th><td></td></tr>
+<tr><th id="615">615</th><td>    fs_info fsInfo;</td></tr>
+<tr><th id="616">616</th><td>    memset(&amp;fsInfo, <var>0</var>, <b>sizeof</b>(fsInfo));</td></tr>
+<tr><th id="617">617</th><td></td></tr>
+<tr><th id="618">618</th><td>    <b>if</b> (fs_stat_dev(volume.Device(), &amp;fsInfo) != <var>0</var>)</td></tr>
+<tr><th id="619">619</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="620">620</th><td></td></tr>
+<tr><th id="621">621</th><td>    m_rootPath = path.Path();</td></tr>
+<tr><th id="622">622</th><td>    m_fileSystemType = QByteArray(fsInfo.fsh_name);</td></tr>
+<tr><th id="623">623</th><td></td></tr>
+<tr><th id="624">624</th><td>    <em>const</em> QByteArray deviceName(fsInfo.device_name);</td></tr>
+<tr><th id="625">625</th><td>    m_device = (deviceName.isEmpty() ? QByteArray::number(qint32(volume.Device())) : deviceName);</td></tr>
+<tr><th id="626">626</th><td></td></tr>
+<tr><th id="627">627</th><td>    <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="628">628</th><td>}</td></tr>
+<tr><th id="629">629</th><td></td></tr>
+<tr><th id="630">630</th><td><b>inline</b> QString QStorageIterator::rootPath() <em>const</em></td></tr>
+<tr><th id="631">631</th><td>{</td></tr>
+<tr><th id="632">632</th><td>    <b>return</b> QFile::decodeName(m_rootPath);</td></tr>
+<tr><th id="633">633</th><td>}</td></tr>
+<tr><th id="634">634</th><td></td></tr>
+<tr><th id="635">635</th><td><b>inline</b> QByteArray QStorageIterator::fileSystemType() <em>const</em></td></tr>
+<tr><th id="636">636</th><td>{</td></tr>
+<tr><th id="637">637</th><td>    <b>return</b> m_fileSystemType;</td></tr>
+<tr><th id="638">638</th><td>}</td></tr>
+<tr><th id="639">639</th><td></td></tr>
+<tr><th id="640">640</th><td><b>inline</b> QByteArray QStorageIterator::device() <em>const</em></td></tr>
+<tr><th id="641">641</th><td>{</td></tr>
+<tr><th id="642">642</th><td>    <b>return</b> m_device;</td></tr>
+<tr><th id="643">643</th><td>}</td></tr>
+<tr><th id="644">644</th><td></td></tr>
+<tr><th id="645">645</th><td><b>inline</b> QByteArray QStorageIterator::options() <em>const</em></td></tr>
+<tr><th id="646">646</th><td>{</td></tr>
+<tr><th id="647">647</th><td>    <b>return</b> QByteArray();</td></tr>
+<tr><th id="648">648</th><td>}</td></tr>
+<tr><th id="649">649</th><td></td></tr>
+<tr><th id="650">650</th><td><b>inline</b> QByteArray QStorageIterator::subvolume() <em>const</em></td></tr>
+<tr><th id="651">651</th><td>{</td></tr>
+<tr><th id="652">652</th><td>    <b>return</b> QByteArray();</td></tr>
+<tr><th id="653">653</th><td>}</td></tr>
+<tr><th id="654">654</th><td><u>#else</u></td></tr>
+<tr><th id="655">655</th><td></td></tr>
+<tr><th id="656">656</th><td><b>inline</b> QStorageIterator::QStorageIterator()</td></tr>
+<tr><th id="657">657</th><td>{</td></tr>
+<tr><th id="658">658</th><td>}</td></tr>
+<tr><th id="659">659</th><td></td></tr>
+<tr><th id="660">660</th><td><b>inline</b> QStorageIterator::~QStorageIterator()</td></tr>
+<tr><th id="661">661</th><td>{</td></tr>
+<tr><th id="662">662</th><td>}</td></tr>
+<tr><th id="663">663</th><td></td></tr>
+<tr><th id="664">664</th><td><b>inline</b> <em>bool</em> QStorageIterator::isValid() <em>const</em></td></tr>
+<tr><th id="665">665</th><td>{</td></tr>
+<tr><th id="666">666</th><td>    <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="667">667</th><td>}</td></tr>
+<tr><th id="668">668</th><td></td></tr>
+<tr><th id="669">669</th><td><b>inline</b> <em>bool</em> QStorageIterator::next()</td></tr>
+<tr><th id="670">670</th><td>{</td></tr>
+<tr><th id="671">671</th><td>    <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="672">672</th><td>}</td></tr>
+<tr><th id="673">673</th><td></td></tr>
+<tr><th id="674">674</th><td><b>inline</b> QString QStorageIterator::rootPath() <em>const</em></td></tr>
+<tr><th id="675">675</th><td>{</td></tr>
+<tr><th id="676">676</th><td>    <b>return</b> QString();</td></tr>
+<tr><th id="677">677</th><td>}</td></tr>
+<tr><th id="678">678</th><td></td></tr>
+<tr><th id="679">679</th><td><b>inline</b> QByteArray QStorageIterator::fileSystemType() <em>const</em></td></tr>
+<tr><th id="680">680</th><td>{</td></tr>
+<tr><th id="681">681</th><td>    <b>return</b> QByteArray();</td></tr>
+<tr><th id="682">682</th><td>}</td></tr>
+<tr><th id="683">683</th><td></td></tr>
+<tr><th id="684">684</th><td><b>inline</b> QByteArray QStorageIterator::device() <em>const</em></td></tr>
+<tr><th id="685">685</th><td>{</td></tr>
+<tr><th id="686">686</th><td>    <b>return</b> QByteArray();</td></tr>
+<tr><th id="687">687</th><td>}</td></tr>
+<tr><th id="688">688</th><td></td></tr>
+<tr><th id="689">689</th><td><b>inline</b> QByteArray QStorageIterator::options() <em>const</em></td></tr>
+<tr><th id="690">690</th><td>{</td></tr>
+<tr><th id="691">691</th><td>    <b>return</b> QByteArray();</td></tr>
+<tr><th id="692">692</th><td>}</td></tr>
+<tr><th id="693">693</th><td></td></tr>
+<tr><th id="694">694</th><td><b>inline</b> QByteArray QStorageIterator::subvolume() <em>const</em></td></tr>
+<tr><th id="695">695</th><td>{</td></tr>
+<tr><th id="696">696</th><td>    <b>return</b> QByteArray();</td></tr>
+<tr><th id="697">697</th><td>}</td></tr>
+<tr><th id="698">698</th><td><u>#<span data-ppcond="200">endif</span></u></td></tr>
+<tr><th id="699">699</th><td></td></tr>
+<tr><th id="700">700</th><td><em>void</em> <a class="type" href="qstorageinfo_p.h.html#QStorageInfoPrivate" title='QStorageInfoPrivate' data-ref="QStorageInfoPrivate">QStorageInfoPrivate</a>::<dfn class="decl def fn" id="_ZN19QStorageInfoPrivate12initRootPathEv" title='QStorageInfoPrivate::initRootPath' data-ref="_ZN19QStorageInfoPrivate12initRootPathEv">initRootPath</dfn>()</td></tr>
+<tr><th id="701">701</th><td>{</td></tr>
+<tr><th id="702">702</th><td>    <a class="member field" href="qstorageinfo_p.h.html#QStorageInfoPrivate::rootPath" title='QStorageInfoPrivate::rootPath' data-ref="QStorageInfoPrivate::rootPath">rootPath</a> <a class="ref fn" href="../text/qstring.h.html#470" title='QString::operator=' data-ref="_ZN7QStringaSEOS_">=</a> <a class="type" href="qfileinfo.h.html#QFileInfo" title='QFileInfo' data-ref="QFileInfo">QFileInfo</a><a class="ref fn" href="qfileinfo.h.html#_ZN9QFileInfoC1ERK7QString" title='QFileInfo::QFileInfo' data-ref="_ZN9QFileInfoC1ERK7QString">(</a><a class="member field" href="qstorageinfo_p.h.html#QStorageInfoPrivate::rootPath" title='QStorageInfoPrivate::rootPath' data-ref="QStorageInfoPrivate::rootPath">rootPath</a>).<a class="ref fn" href="qfileinfo.h.html#_ZNK9QFileInfo17canonicalFilePathEv" title='QFileInfo::canonicalFilePath' data-ref="_ZNK9QFileInfo17canonicalFilePathEv">canonicalFilePath</a>();</td></tr>
+<tr><th id="703">703</th><td></td></tr>
+<tr><th id="704">704</th><td>    <b>if</b> (<a class="member field" href="qstorageinfo_p.h.html#QStorageInfoPrivate::rootPath" title='QStorageInfoPrivate::rootPath' data-ref="QStorageInfoPrivate::rootPath">rootPath</a>.<a class="ref fn" href="../text/qstring.h.html#_ZNK7QString7isEmptyEv" title='QString::isEmpty' data-ref="_ZNK7QString7isEmptyEv">isEmpty</a>())</td></tr>
+<tr><th id="705">705</th><td>        <b>return</b>;</td></tr>
+<tr><th id="706">706</th><td></td></tr>
+<tr><th id="707">707</th><td>    <a class="type" href="#QStorageIterator" title='QStorageIterator' data-ref="QStorageIterator">QStorageIterator</a> <a class="tu ref fn fake" href="#_ZN16QStorageIteratorC1Ev" title='QStorageIterator::QStorageIterator' data-use='c' data-ref="_ZN16QStorageIteratorC1Ev"></a><dfn class="local col0 decl" id="40it" title='it' data-type='QStorageIterator' data-ref="40it">it</dfn>;</td></tr>
+<tr><th id="708">708</th><td>    <b>if</b> (!<a class="local col0 ref" href="#40it" title='it' data-ref="40it">it</a>.<a class="tu ref fn" href="#_ZNK16QStorageIterator7isValidEv" title='QStorageIterator::isValid' data-use='c' data-ref="_ZNK16QStorageIterator7isValidEv">isValid</a>()) {</td></tr>
+<tr><th id="709">709</th><td>        <a class="member field" href="qstorageinfo_p.h.html#QStorageInfoPrivate::rootPath" title='QStorageInfoPrivate::rootPath' data-ref="QStorageInfoPrivate::rootPath">rootPath</a> <a class="ref fn" href="../text/qstring.h.html#470" title='QString::operator=' data-ref="_ZN7QStringaSEOS_">=</a> <a class="macro" href="../text/qstringliteral.h.html#36" title="(QString(QtPrivate::qMakeStringPrivate(u&quot;&quot; &quot;/&quot;)))" data-ref="_M/QStringLiteral">QStringLiteral</a>(<q>"/"</q>);</td></tr>
+<tr><th id="710">710</th><td>        <b>return</b>;</td></tr>
+<tr><th id="711">711</th><td>    }</td></tr>
+<tr><th id="712">712</th><td></td></tr>
+<tr><th id="713">713</th><td>    <em>int</em> <dfn class="local col1 decl" id="41maxLength" title='maxLength' data-type='int' data-ref="41maxLength">maxLength</dfn> = <var>0</var>;</td></tr>
+<tr><th id="714">714</th><td>    <em>const</em> <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> <dfn class="local col2 decl" id="42oldRootPath" title='oldRootPath' data-type='const QString' data-ref="42oldRootPath">oldRootPath</dfn> = <a class="ref fn fake" href="../text/qstring.h.html#_ZN7QStringC1ERKS_" title='QString::QString' data-ref="_ZN7QStringC1ERKS_"></a><a class="member field" href="qstorageinfo_p.h.html#QStorageInfoPrivate::rootPath" title='QStorageInfoPrivate::rootPath' data-ref="QStorageInfoPrivate::rootPath">rootPath</a>;</td></tr>
+<tr><th id="715">715</th><td>    <a class="member field" href="qstorageinfo_p.h.html#QStorageInfoPrivate::rootPath" title='QStorageInfoPrivate::rootPath' data-ref="QStorageInfoPrivate::rootPath">rootPath</a>.<a class="ref fn" href="../text/qstring.h.html#_ZN7QString5clearEv" title='QString::clear' data-ref="_ZN7QString5clearEv">clear</a>();</td></tr>
+<tr><th id="716">716</th><td></td></tr>
+<tr><th id="717">717</th><td>    <b>while</b> (<a class="local col0 ref" href="#40it" title='it' data-ref="40it">it</a>.<a class="tu ref fn" href="#_ZN16QStorageIterator4nextEv" title='QStorageIterator::next' data-use='c' data-ref="_ZN16QStorageIterator4nextEv">next</a>()) {</td></tr>
+<tr><th id="718">718</th><td>        <em>const</em> <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> <dfn class="local col3 decl" id="43mountDir" title='mountDir' data-type='const QString' data-ref="43mountDir">mountDir</dfn> = <a class="local col0 ref" href="#40it" title='it' data-ref="40it">it</a>.<a class="tu ref fn" href="#_ZNK16QStorageIterator8rootPathEv" title='QStorageIterator::rootPath' data-use='c' data-ref="_ZNK16QStorageIterator8rootPathEv">rootPath</a>();</td></tr>
+<tr><th id="719">719</th><td>        <em>const</em> <a class="type" href="../text/qbytearray.h.html#QByteArray" title='QByteArray' data-ref="QByteArray">QByteArray</a> <dfn class="local col4 decl" id="44fsName" title='fsName' data-type='const QByteArray' data-ref="44fsName">fsName</dfn> = <a class="local col0 ref" href="#40it" title='it' data-ref="40it">it</a>.<a class="tu ref fn" href="#_ZNK16QStorageIterator14fileSystemTypeEv" title='QStorageIterator::fileSystemType' data-use='c' data-ref="_ZNK16QStorageIterator14fileSystemTypeEv">fileSystemType</a>();</td></tr>
+<tr><th id="720">720</th><td>        <i>// we try to find most suitable entry</i></td></tr>
+<tr><th id="721">721</th><td>        <b>if</b> (<a class="tu ref fn" href="#_ZL10isParentOfRKT_RK7QString" title='isParentOf' data-use='c' data-ref="_ZL10isParentOfRKT_RK7QString">isParentOf</a>(<span class='inlayHint'>parent:&nbsp;</span><a class="local col3 ref" href="#43mountDir" title='mountDir' data-ref="43mountDir">mountDir</a>, <span class='inlayHint'>dirName:&nbsp;</span><a class="local col2 ref" href="#42oldRootPath" title='oldRootPath' data-ref="42oldRootPath">oldRootPath</a>) &amp;&amp; <a class="local col1 ref" href="#41maxLength" title='maxLength' data-ref="41maxLength">maxLength</a> &lt; <a class="local col3 ref" href="#43mountDir" title='mountDir' data-ref="43mountDir">mountDir</a>.<a class="ref fn" href="../text/qstring.h.html#_ZNK7QString4sizeEv" title='QString::size' data-ref="_ZNK7QString4sizeEv">size</a>()) {</td></tr>
+<tr><th id="722">722</th><td>            <a class="local col1 ref" href="#41maxLength" title='maxLength' data-ref="41maxLength">maxLength</a> = <a class="local col3 ref" href="#43mountDir" title='mountDir' data-ref="43mountDir">mountDir</a>.<a class="ref fn" href="../text/qstring.h.html#_ZNK7QString4sizeEv" title='QString::size' data-ref="_ZNK7QString4sizeEv">size</a>();</td></tr>
+<tr><th id="723">723</th><td>            <a class="member field" href="qstorageinfo_p.h.html#QStorageInfoPrivate::rootPath" title='QStorageInfoPrivate::rootPath' data-ref="QStorageInfoPrivate::rootPath">rootPath</a> <a class="ref fn" href="../text/qstring.h.html#_ZN7QStringaSERKS_" title='QString::operator=' data-ref="_ZN7QStringaSERKS_">=</a> <a class="local col3 ref" href="#43mountDir" title='mountDir' data-ref="43mountDir">mountDir</a>;</td></tr>
+<tr><th id="724">724</th><td>            <a class="member field" href="qstorageinfo_p.h.html#QStorageInfoPrivate::device" title='QStorageInfoPrivate::device' data-ref="QStorageInfoPrivate::device">device</a> <a class="ref fn" href="../text/qbytearray.h.html#95" title='QByteArray::operator=' data-ref="_ZN10QByteArrayaSEOS_">=</a> <a class="local col0 ref" href="#40it" title='it' data-ref="40it">it</a>.<a class="tu ref fn" href="#_ZNK16QStorageIterator6deviceEv" title='QStorageIterator::device' data-use='c' data-ref="_ZNK16QStorageIterator6deviceEv">device</a>();</td></tr>
+<tr><th id="725">725</th><td>            <a class="member field" href="qstorageinfo_p.h.html#QStorageInfoPrivate::fileSystemType" title='QStorageInfoPrivate::fileSystemType' data-ref="QStorageInfoPrivate::fileSystemType">fileSystemType</a> <a class="ref fn" href="../text/qbytearray.h.html#_ZN10QByteArrayaSERKS_" title='QByteArray::operator=' data-ref="_ZN10QByteArrayaSERKS_">=</a> <a class="local col4 ref" href="#44fsName" title='fsName' data-ref="44fsName">fsName</a>;</td></tr>
+<tr><th id="726">726</th><td>            <a class="member field" href="qstorageinfo_p.h.html#QStorageInfoPrivate::subvolume" title='QStorageInfoPrivate::subvolume' data-ref="QStorageInfoPrivate::subvolume">subvolume</a> <a class="ref fn" href="../text/qbytearray.h.html#95" title='QByteArray::operator=' data-ref="_ZN10QByteArrayaSEOS_">=</a> <a class="local col0 ref" href="#40it" title='it' data-ref="40it">it</a>.<a class="tu ref fn" href="#_ZNK16QStorageIterator9subvolumeEv" title='QStorageIterator::subvolume' data-use='c' data-ref="_ZNK16QStorageIterator9subvolumeEv">subvolume</a>();</td></tr>
+<tr><th id="727">727</th><td>        }</td></tr>
+<tr><th id="728">728</th><td>    }</td></tr>
+<tr><th id="729">729</th><td>}</td></tr>
+<tr><th id="730">730</th><td></td></tr>
+<tr><th id="731">731</th><td><u>#<span data-ppcond="731">ifdef</span> <a class="macro" href="../global/qsystemdetection.h.html#106" data-ref="_M/Q_OS_LINUX">Q_OS_LINUX</a></u></td></tr>
+<tr><th id="732">732</th><td><i  data-doc="_ZL17decodeFsEncStringRK7QString">// udev encodes the labels with ID_LABEL_FS_ENC which is done with</i></td></tr>
+<tr><th id="733">733</th><td><i  data-doc="_ZL17decodeFsEncStringRK7QString">// blkid_encode_string(). Within this function some 1-byte utf-8</i></td></tr>
+<tr><th id="734">734</th><td><i  data-doc="_ZL17decodeFsEncStringRK7QString">// characters not considered safe (e.g. '\' or ' ') are encoded as hex</i></td></tr>
+<tr><th id="735">735</th><td><em>static</em> <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> <dfn class="tu decl def fn" id="_ZL17decodeFsEncStringRK7QString" title='decodeFsEncString' data-type='QString decodeFsEncString(const QString &amp; str)' data-ref="_ZL17decodeFsEncStringRK7QString">decodeFsEncString</dfn>(<em>const</em> <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> &amp;<dfn class="local col5 decl" id="45str" title='str' data-type='const QString &amp;' data-ref="45str">str</dfn>)</td></tr>
+<tr><th id="736">736</th><td>{</td></tr>
+<tr><th id="737">737</th><td>    <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> <a class="ref fn fake" href="../text/qstring.h.html#_ZN7QStringC1Ev" title='QString::QString' data-ref="_ZN7QStringC1Ev"></a><dfn class="local col6 decl" id="46decoded" title='decoded' data-type='QString' data-ref="46decoded">decoded</dfn>;</td></tr>
+<tr><th id="738">738</th><td>    <a class="local col6 ref" href="#46decoded" title='decoded' data-ref="46decoded">decoded</a>.<a class="ref fn" href="../text/qstring.h.html#_ZN7QString7reserveEx" title='QString::reserve' data-ref="_ZN7QString7reserveEx">reserve</a>(<span class='inlayHint'>asize:&nbsp;</span><a class="local col5 ref" href="#45str" title='str' data-ref="45str">str</a>.<a class="ref fn" href="../text/qstring.h.html#_ZNK7QString4sizeEv" title='QString::size' data-ref="_ZNK7QString4sizeEv">size</a>());</td></tr>
+<tr><th id="739">739</th><td></td></tr>
+<tr><th id="740">740</th><td>    <em>int</em> <dfn class="local col7 decl" id="47i" title='i' data-type='int' data-ref="47i">i</dfn> = <var>0</var>;</td></tr>
+<tr><th id="741">741</th><td>    <b>while</b> (<a class="local col7 ref" href="#47i" title='i' data-ref="47i">i</a> &lt; <a class="local col5 ref" href="#45str" title='str' data-ref="45str">str</a>.<a class="ref fn" href="../text/qstring.h.html#_ZNK7QString4sizeEv" title='QString::size' data-ref="_ZNK7QString4sizeEv">size</a>()) {</td></tr>
+<tr><th id="742">742</th><td>        <b>if</b> (<a class="local col7 ref" href="#47i" title='i' data-ref="47i">i</a> &lt;= <a class="local col5 ref" href="#45str" title='str' data-ref="45str">str</a>.<a class="ref fn" href="../text/qstring.h.html#_ZNK7QString4sizeEv" title='QString::size' data-ref="_ZNK7QString4sizeEv">size</a>() - <var>4</var>) {    <i>// we need at least four characters \xAB</i></td></tr>
+<tr><th id="743">743</th><td>            <b>if</b> (<a class="type" href="../text/qstringview.h.html#QStringView" title='QStringView' data-ref="QStringView">QStringView</a><a class="ref fn" href="../text/qstringview.h.html#_ZN11QStringViewC1ERKT_" title='QStringView::QStringView' data-ref="_ZN11QStringViewC1ERKT_">{</a><a class="local col5 ref" href="#45str" title='str' data-ref="45str">str</a>}.<a class="ref fn" href="../text/qstringview.h.html#_ZNK11QStringView6slicedEx" title='QStringView::sliced' data-ref="_ZNK11QStringView6slicedEx">sliced</a>(<span class='inlayHint'>pos:&nbsp;</span><a class="local col7 ref" href="#47i" title='i' data-ref="47i">i</a>).<a class="ref fn" href="../text/qstringview.h.html#_ZNK11QStringView10startsWithE13QLatin1StringN2Qt15CaseSensitivityE" title='QStringView::startsWith' data-ref="_ZNK11QStringView10startsWithE13QLatin1StringN2Qt15CaseSensitivityE">startsWith</a>(<span class='inlayHint'>s:&nbsp;</span><q>"\\x"<a class="ref fn" href="../text/qstring.h.html#_ZN2Qt8Literals14StringLiteralsli3_L1EPKcm" title='Qt::operator&quot;&quot;_L1' data-ref="_ZN2Qt8Literals14StringLiteralsli3_L1EPKcm">_L1</a></q>)) {</td></tr>
+<tr><th id="744">744</th><td>                <em>bool</em> <dfn class="local col8 decl" id="48bOk" title='bOk' data-type='bool' data-ref="48bOk">bOk</dfn>;</td></tr>
+<tr><th id="745">745</th><td>                <em>const</em> <em>int</em> <dfn class="local col9 decl" id="49code" title='code' data-type='const int' data-ref="49code">code</dfn> = <a class="type" href="../text/qstringview.h.html#QStringView" title='QStringView' data-ref="QStringView">QStringView</a><a class="ref fn" href="../text/qstringview.h.html#_ZN11QStringViewC1ERKT_" title='QStringView::QStringView' data-ref="_ZN11QStringViewC1ERKT_">{</a><a class="local col5 ref" href="#45str" title='str' data-ref="45str">str</a>}.<a class="ref fn" href="../text/qstringview.h.html#_ZNK11QStringView3midExx" title='QStringView::mid' data-ref="_ZNK11QStringView3midExx">mid</a>(<span class='inlayHint'>pos:&nbsp;</span><a class="local col7 ref" href="#47i" title='i' data-ref="47i">i</a>+<var>2</var>, <span class='inlayHint'>n:&nbsp;</span><var>2</var>).<a class="ref fn" href="../text/qstringview.h.html#_ZNK11QStringView5toIntEPbi" title='QStringView::toInt' data-ref="_ZNK11QStringView5toIntEPbi">toInt</a>(<span class='inlayHint'>ok:&nbsp;</span>&amp;<a class="local col8 ref" href="#48bOk" title='bOk' data-ref="48bOk">bOk</a>, <span class='inlayHint'>base:&nbsp;</span><var>16</var>);</td></tr>
+<tr><th id="746">746</th><td>                <i>// only decode characters between 0x20 and 0x7f but not</i></td></tr>
+<tr><th id="747">747</th><td><i>                // the backslash to prevent collisions</i></td></tr>
+<tr><th id="748">748</th><td>                <b>if</b> (<a class="local col8 ref" href="#48bOk" title='bOk' data-ref="48bOk">bOk</a> &amp;&amp; <a class="local col9 ref" href="#49code" title='code' data-ref="49code">code</a> &gt;= <var>0x20</var> &amp;&amp; <a class="local col9 ref" href="#49code" title='code' data-ref="49code">code</a> &lt; <var>0x80</var> &amp;&amp; <a class="local col9 ref" href="#49code" title='code' data-ref="49code">code</a> != <kbd>'\\'</kbd>) {</td></tr>
+<tr><th id="749">749</th><td>                    <a class="local col6 ref" href="#46decoded" title='decoded' data-ref="46decoded">decoded</a> <a class="ref fn" href="../text/qstring.h.html#_ZN7QStringpLE5QChar" title='QString::operator+=' data-ref="_ZN7QStringpLE5QChar">+=</a> <a class="type" href="../text/qchar.h.html#QChar" title='QChar' data-ref="QChar">QChar</a><a class="ref fn" href="../text/qchar.h.html#_ZN5QCharC1Ei" title='QChar::QChar' data-ref="_ZN5QCharC1Ei">(</a><a class="local col9 ref" href="#49code" title='code' data-ref="49code">code</a>);</td></tr>
+<tr><th id="750">750</th><td>                    <a class="local col7 ref" href="#47i" title='i' data-ref="47i">i</a> += <var>4</var>;</td></tr>
+<tr><th id="751">751</th><td>                    <b>continue</b>;</td></tr>
+<tr><th id="752">752</th><td>                }</td></tr>
+<tr><th id="753">753</th><td>            }</td></tr>
+<tr><th id="754">754</th><td>        }</td></tr>
+<tr><th id="755">755</th><td>        <a class="local col6 ref" href="#46decoded" title='decoded' data-ref="46decoded">decoded</a> <a class="ref fn" href="../text/qstring.h.html#_ZN7QStringpLE5QChar" title='QString::operator+=' data-ref="_ZN7QStringpLE5QChar">+=</a> <a class="local col5 ref" href="#45str" title='str' data-ref="45str">str</a>.<a class="ref fn" href="../text/qstring.h.html#_ZNK7QString2atEx" title='QString::at' data-ref="_ZNK7QString2atEx">at</a>(<a class="local col7 ref" href="#47i" title='i' data-ref="47i">i</a>);</td></tr>
+<tr><th id="756">756</th><td>        ++<a class="local col7 ref" href="#47i" title='i' data-ref="47i">i</a>;</td></tr>
+<tr><th id="757">757</th><td>    }</td></tr>
+<tr><th id="758">758</th><td>    <b>return</b> <a class="ref fn fake" href="../text/qstring.h.html#_ZN7QStringC1EOS_" title='QString::QString' data-ref="_ZN7QStringC1EOS_"></a><a class="local col6 ref" href="#46decoded" title='decoded' data-ref="46decoded">decoded</a>;</td></tr>
+<tr><th id="759">759</th><td>}</td></tr>
+<tr><th id="760">760</th><td><u>#<span data-ppcond="731">endif</span></u></td></tr>
+<tr><th id="761">761</th><td></td></tr>
+<tr><th id="762">762</th><td><em>static</em> <b>inline</b> <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> <dfn class="tu decl def fn" id="_ZL13retrieveLabelRK10QByteArray" title='retrieveLabel' data-type='QString retrieveLabel(const QByteArray &amp; device)' data-ref="_ZL13retrieveLabelRK10QByteArray">retrieveLabel</dfn>(<em>const</em> <a class="type" href="../text/qbytearray.h.html#QByteArray" title='QByteArray' data-ref="QByteArray">QByteArray</a> &amp;<dfn class="local col0 decl" id="50device" title='device' data-type='const QByteArray &amp;' data-ref="50device">device</dfn>)</td></tr>
+<tr><th id="763">763</th><td>{</td></tr>
+<tr><th id="764">764</th><td><u>#<span data-ppcond="764">ifdef</span> <a class="macro" href="../global/qsystemdetection.h.html#106" data-ref="_M/Q_OS_LINUX">Q_OS_LINUX</a></u></td></tr>
+<tr><th id="765">765</th><td>    <em>static</em> <em>const</em> <em>char</em> <dfn class="local col1 decl" id="51pathDiskByLabel" title='pathDiskByLabel' data-type='const char[19]' data-ref="51pathDiskByLabel">pathDiskByLabel</dfn>[] = <q>"/dev/disk/by-label"</q>;</td></tr>
+<tr><th id="766">766</th><td></td></tr>
+<tr><th id="767">767</th><td>    <a class="type" href="qfileinfo.h.html#QFileInfo" title='QFileInfo' data-ref="QFileInfo">QFileInfo</a> <dfn class="local col2 decl" id="52devinfo" title='devinfo' data-type='QFileInfo' data-ref="52devinfo">devinfo</dfn><a class="ref fn" href="qfileinfo.h.html#_ZN9QFileInfoC1ERK7QString" title='QFileInfo::QFileInfo' data-ref="_ZN9QFileInfoC1ERK7QString">(</a><a class="type" href="qfile.h.html#QFile" title='QFile' data-ref="QFile">QFile</a>::<a class="ref fn" href="qfile.h.html#_ZN5QFile10decodeNameERK10QByteArray" title='QFile::decodeName' data-ref="_ZN5QFile10decodeNameERK10QByteArray">decodeName</a>(<span class='inlayHint'>localFileName:&nbsp;</span><a class="local col0 ref" href="#50device" title='device' data-ref="50device">device</a>));</td></tr>
+<tr><th id="768">768</th><td>    <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> <dfn class="local col3 decl" id="53devicePath" title='devicePath' data-type='QString' data-ref="53devicePath">devicePath</dfn> = <a class="local col2 ref" href="#52devinfo" title='devinfo' data-ref="52devinfo">devinfo</a>.<a class="ref fn" href="qfileinfo.h.html#_ZNK9QFileInfo17canonicalFilePathEv" title='QFileInfo::canonicalFilePath' data-ref="_ZNK9QFileInfo17canonicalFilePathEv">canonicalFilePath</a>();</td></tr>
+<tr><th id="769">769</th><td></td></tr>
+<tr><th id="770">770</th><td>    <a class="type" href="qdiriterator.h.html#QDirIterator" title='QDirIterator' data-ref="QDirIterator">QDirIterator</a> <dfn class="local col4 decl" id="54it" title='it' data-type='QDirIterator' data-ref="54it">it</dfn><a class="ref fn" href="qdiriterator.h.html#_ZN12QDirIteratorC1ERK7QString6QFlagsIN4QDir6FilterEES3_INS_12IteratorFlagEE" title='QDirIterator::QDirIterator' data-ref="_ZN12QDirIteratorC1ERK7QString6QFlagsIN4QDir6FilterEES3_INS_12IteratorFlagEE">(</a><a class="ref fn fake" href="../text/qstring.h.html#_ZN7QStringC1E13QLatin1String" title='QString::QString' data-ref="_ZN7QStringC1E13QLatin1String"></a><a class="typedef" href="../text/qstringfwd.h.html#QLatin1StringView" title='QLatin1StringView' data-type='QLatin1String' data-ref="QLatin1StringView">QLatin1StringView</a><a class="ref fn" href="../text/qstring.h.html#_ZN13QLatin1StringC1EPKc" title='QLatin1String::QLatin1String' data-ref="_ZN13QLatin1StringC1EPKc">(</a><a class="local col1 ref" href="#51pathDiskByLabel" title='pathDiskByLabel' data-ref="51pathDiskByLabel">pathDiskByLabel</a>), <a class="ref fn fake" href="../global/qflags.h.html#_ZN6QFlagsC1ET_" title='QFlags::QFlags&lt;T&gt;' data-ref="_ZN6QFlagsC1ET_"></a><a class="type" href="qdir.h.html#QDir" title='QDir' data-ref="QDir">QDir</a>::<a class="enum" href="qdir.h.html#QDir::NoDotAndDotDot" title='QDir::NoDotAndDotDot' data-ref="QDir::NoDotAndDotDot">NoDotAndDotDot</a>);</td></tr>
+<tr><th id="771">771</th><td>    <b>while</b> (<a class="local col4 ref" href="#54it" title='it' data-ref="54it">it</a>.<a class="ref fn" href="qdiriterator.h.html#_ZNK12QDirIterator7hasNextEv" title='QDirIterator::hasNext' data-ref="_ZNK12QDirIterator7hasNextEv">hasNext</a>()) {</td></tr>
+<tr><th id="772">772</th><td>        <a class="type" href="qfileinfo.h.html#QFileInfo" title='QFileInfo' data-ref="QFileInfo">QFileInfo</a> <dfn class="local col5 decl" id="55fileInfo" title='fileInfo' data-type='QFileInfo' data-ref="55fileInfo">fileInfo</dfn> = <a class="local col4 ref" href="#54it" title='it' data-ref="54it">it</a>.<a class="ref fn" href="qdiriterator.h.html#_ZN12QDirIterator12nextFileInfoEv" title='QDirIterator::nextFileInfo' data-ref="_ZN12QDirIterator12nextFileInfoEv">nextFileInfo</a>();</td></tr>
+<tr><th id="773">773</th><td>        <b>if</b> (<a class="local col5 ref" href="#55fileInfo" title='fileInfo' data-ref="55fileInfo">fileInfo</a>.<a class="ref fn" href="qfileinfo.h.html#_ZNK9QFileInfo9isSymLinkEv" title='QFileInfo::isSymLink' data-ref="_ZNK9QFileInfo9isSymLinkEv">isSymLink</a>() &amp;&amp; <a class="local col5 ref" href="#55fileInfo" title='fileInfo' data-ref="55fileInfo">fileInfo</a>.<a class="ref fn" href="qfileinfo.h.html#_ZNK9QFileInfo13symLinkTargetEv" title='QFileInfo::symLinkTarget' data-ref="_ZNK9QFileInfo13symLinkTargetEv">symLinkTarget</a>() <a class="ref fn" href="../text/qstring.h.html#_ZeqRK7QStringS1_" title='operator==' data-ref="_ZeqRK7QStringS1_">==</a> <a class="local col3 ref" href="#53devicePath" title='devicePath' data-ref="53devicePath">devicePath</a>)</td></tr>
+<tr><th id="774">774</th><td>            <b>return</b> <a class="tu ref fn" href="#_ZL17decodeFsEncStringRK7QString" title='decodeFsEncString' data-use='c' data-ref="_ZL17decodeFsEncStringRK7QString">decodeFsEncString</a>(<span class='inlayHint'>str:&nbsp;</span><a class="local col5 ref" href="#55fileInfo" title='fileInfo' data-ref="55fileInfo">fileInfo</a>.<a class="ref fn" href="qfileinfo.h.html#_ZNK9QFileInfo8fileNameEv" title='QFileInfo::fileName' data-ref="_ZNK9QFileInfo8fileNameEv">fileName</a>());</td></tr>
+<tr><th id="775">775</th><td>    }</td></tr>
+<tr><th id="776">776</th><td><u>#<span data-ppcond="764">elif</span> defined Q_OS_HAIKU</u></td></tr>
+<tr><th id="777">777</th><td>    fs_info fsInfo;</td></tr>
+<tr><th id="778">778</th><td>    memset(&amp;fsInfo, <var>0</var>, <b>sizeof</b>(fsInfo));</td></tr>
+<tr><th id="779">779</th><td></td></tr>
+<tr><th id="780">780</th><td>    int32 pos = <var>0</var>;</td></tr>
+<tr><th id="781">781</th><td>    dev_t dev;</td></tr>
+<tr><th id="782">782</th><td>    <b>while</b> ((dev = next_dev(&amp;pos)) &gt;= <var>0</var>) {</td></tr>
+<tr><th id="783">783</th><td>        <b>if</b> (fs_stat_dev(dev, &amp;fsInfo) != <var>0</var>)</td></tr>
+<tr><th id="784">784</th><td>            <b>continue</b>;</td></tr>
+<tr><th id="785">785</th><td></td></tr>
+<tr><th id="786">786</th><td>        <b>if</b> (qstrcmp(fsInfo.device_name, device.constData()) == <var>0</var>)</td></tr>
+<tr><th id="787">787</th><td>            <b>return</b> QString::fromLocal8Bit(fsInfo.volume_name);</td></tr>
+<tr><th id="788">788</th><td>    }</td></tr>
+<tr><th id="789">789</th><td><u>#else</u></td></tr>
+<tr><th id="790">790</th><td>    Q_UNUSED(device);</td></tr>
+<tr><th id="791">791</th><td><u>#<span data-ppcond="764">endif</span></u></td></tr>
+<tr><th id="792">792</th><td></td></tr>
+<tr><th id="793">793</th><td>    <b>return</b> <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a><a class="ref fn" href="../text/qstring.h.html#_ZN7QStringC1Ev" title='QString::QString' data-ref="_ZN7QStringC1Ev">(</a>);</td></tr>
+<tr><th id="794">794</th><td>}</td></tr>
+<tr><th id="795">795</th><td></td></tr>
+<tr><th id="796">796</th><td><em>void</em> <a class="type" href="qstorageinfo_p.h.html#QStorageInfoPrivate" title='QStorageInfoPrivate' data-ref="QStorageInfoPrivate">QStorageInfoPrivate</a>::<dfn class="decl def fn" id="_ZN19QStorageInfoPrivate6doStatEv" title='QStorageInfoPrivate::doStat' data-ref="_ZN19QStorageInfoPrivate6doStatEv">doStat</dfn>()</td></tr>
+<tr><th id="797">797</th><td>{</td></tr>
+<tr><th id="798">798</th><td>    <a class="member fn" href="#_ZN19QStorageInfoPrivate12initRootPathEv" title='QStorageInfoPrivate::initRootPath' data-ref="_ZN19QStorageInfoPrivate12initRootPathEv">initRootPath</a>();</td></tr>
+<tr><th id="799">799</th><td>    <b>if</b> (<a class="member field" href="qstorageinfo_p.h.html#QStorageInfoPrivate::rootPath" title='QStorageInfoPrivate::rootPath' data-ref="QStorageInfoPrivate::rootPath">rootPath</a>.<a class="ref fn" href="../text/qstring.h.html#_ZNK7QString7isEmptyEv" title='QString::isEmpty' data-ref="_ZNK7QString7isEmptyEv">isEmpty</a>())</td></tr>
+<tr><th id="800">800</th><td>        <b>return</b>;</td></tr>
+<tr><th id="801">801</th><td></td></tr>
+<tr><th id="802">802</th><td>    <a class="member fn" href="#_ZN19QStorageInfoPrivate18retrieveVolumeInfoEv" title='QStorageInfoPrivate::retrieveVolumeInfo' data-ref="_ZN19QStorageInfoPrivate18retrieveVolumeInfoEv">retrieveVolumeInfo</a>();</td></tr>
+<tr><th id="803">803</th><td>    <a class="member field" href="qstorageinfo_p.h.html#QStorageInfoPrivate::name" title='QStorageInfoPrivate::name' data-ref="QStorageInfoPrivate::name">name</a> <a class="ref fn" href="../text/qstring.h.html#470" title='QString::operator=' data-ref="_ZN7QStringaSEOS_">=</a> <a class="tu ref fn" href="#_ZL13retrieveLabelRK10QByteArray" title='retrieveLabel' data-use='c' data-ref="_ZL13retrieveLabelRK10QByteArray">retrieveLabel</a>(<a class="member field" href="qstorageinfo_p.h.html#QStorageInfoPrivate::device" title='QStorageInfoPrivate::device' data-ref="QStorageInfoPrivate::device">device</a>);</td></tr>
+<tr><th id="804">804</th><td>}</td></tr>
+<tr><th id="805">805</th><td></td></tr>
+<tr><th id="806">806</th><td><em>void</em> <a class="type" href="qstorageinfo_p.h.html#QStorageInfoPrivate" title='QStorageInfoPrivate' data-ref="QStorageInfoPrivate">QStorageInfoPrivate</a>::<dfn class="decl def fn" id="_ZN19QStorageInfoPrivate18retrieveVolumeInfoEv" title='QStorageInfoPrivate::retrieveVolumeInfo' data-ref="_ZN19QStorageInfoPrivate18retrieveVolumeInfoEv">retrieveVolumeInfo</dfn>()</td></tr>
+<tr><th id="807">807</th><td>{</td></tr>
+<tr><th id="808">808</th><td>    <a class="macro" href="#69" title="struct statvfs64" data-ref="_M/QT_STATFSBUF">QT_STATFSBUF</a> <a class="ref fn fake" href="../../../../include/x86_64-linux-gnu/bits/statvfs.h.html#58" title='statvfs64::statvfs64' data-ref="_ZN9statvfs64C1Ev"></a><dfn class="local col6 decl" id="56statfs_buf" title='statfs_buf' data-type='struct statvfs64' data-ref="56statfs_buf">statfs_buf</dfn>;</td></tr>
+<tr><th id="809">809</th><td>    <em>int</em> <dfn class="local col7 decl" id="57result" title='result' data-type='int' data-ref="57result">result</dfn>;</td></tr>
+<tr><th id="810">810</th><td>    <a class="macro" href="../kernel/qcore_unix_p.h.html#62" title="do { result = ::statvfs64(QFile::encodeName(rootPath).constData(), &amp;statfs_buf); } while (result == -1 &amp;&amp; (*__errno_location ()) == 4)" data-ref="_M/EINTR_LOOP">EINTR_LOOP</a>(<a class="local col7 ref" href="#57result" title='result' data-ref="57result">result</a>, <a class="macro" href="#70" title="::statvfs64" data-ref="_M/QT_STATFS">QT_STATFS</a>(<a class="type" href="qfile.h.html#QFile" title='QFile' data-ref="QFile">QFile</a>::<a class="ref fn" href="qfile.h.html#_ZN5QFile10encodeNameERK7QString" title='QFile::encodeName' data-ref="_ZN5QFile10encodeNameERK7QString">encodeName</a>(<a class="member field" href="qstorageinfo_p.h.html#QStorageInfoPrivate::rootPath" title='QStorageInfoPrivate::rootPath' data-ref="QStorageInfoPrivate::rootPath">rootPath</a>).<a class="ref fn" href="../text/qbytearray.h.html#_ZNK10QByteArray9constDataEv" title='QByteArray::constData' data-ref="_ZNK10QByteArray9constDataEv">constData</a>(), &amp;<a class="local col6 ref" href="#56statfs_buf" title='statfs_buf' data-ref="56statfs_buf">statfs_buf</a>));</td></tr>
+<tr><th id="811">811</th><td>    <b>if</b> (<a class="local col7 ref" href="#57result" title='result' data-ref="57result">result</a> == <var>0</var>) {</td></tr>
+<tr><th id="812">812</th><td>        <a class="member field" href="qstorageinfo_p.h.html#QStorageInfoPrivate::valid" title='QStorageInfoPrivate::valid' data-ref="QStorageInfoPrivate::valid">valid</a> = <b>true</b>;</td></tr>
+<tr><th id="813">813</th><td>        <a class="member field" href="qstorageinfo_p.h.html#QStorageInfoPrivate::ready" title='QStorageInfoPrivate::ready' data-ref="QStorageInfoPrivate::ready">ready</a> = <b>true</b>;</td></tr>
+<tr><th id="814">814</th><td></td></tr>
+<tr><th id="815">815</th><td><u>#<span data-ppcond="815">if</span> defined(<span class="macro" data-ref="_M/Q_OS_INTEGRITY">Q_OS_INTEGRITY</span>) || (defined(<span class="macro" data-ref="_M/Q_OS_BSD4">Q_OS_BSD4</span>) &amp;&amp; !defined(<span class="macro" data-ref="_M/Q_OS_NETBSD">Q_OS_NETBSD</span>)) || defined(<span class="macro" data-ref="_M/Q_OS_RTEMS">Q_OS_RTEMS</span>)</u></td></tr>
+<tr><th id="816">816</th><td>        bytesTotal = statfs_buf.f_blocks * statfs_buf.f_bsize;</td></tr>
+<tr><th id="817">817</th><td>        bytesFree = statfs_buf.f_bfree * statfs_buf.f_bsize;</td></tr>
+<tr><th id="818">818</th><td>        bytesAvailable = statfs_buf.f_bavail * statfs_buf.f_bsize;</td></tr>
+<tr><th id="819">819</th><td><u>#<span data-ppcond="815">else</span></u></td></tr>
+<tr><th id="820">820</th><td>        <a class="member field" href="qstorageinfo_p.h.html#QStorageInfoPrivate::bytesTotal" title='QStorageInfoPrivate::bytesTotal' data-ref="QStorageInfoPrivate::bytesTotal">bytesTotal</a> = <a class="local col6 ref" href="#56statfs_buf" title='statfs_buf' data-ref="56statfs_buf">statfs_buf</a>.<a class="ref field" href="../../../../include/x86_64-linux-gnu/bits/statvfs.h.html#statvfs64::f_blocks" title='statvfs64::f_blocks' data-ref="statvfs64::f_blocks">f_blocks</a> * <a class="local col6 ref" href="#56statfs_buf" title='statfs_buf' data-ref="56statfs_buf">statfs_buf</a>.<a class="ref field" href="../../../../include/x86_64-linux-gnu/bits/statvfs.h.html#statvfs64::f_frsize" title='statvfs64::f_frsize' data-ref="statvfs64::f_frsize">f_frsize</a>;</td></tr>
+<tr><th id="821">821</th><td>        <a class="member field" href="qstorageinfo_p.h.html#QStorageInfoPrivate::bytesFree" title='QStorageInfoPrivate::bytesFree' data-ref="QStorageInfoPrivate::bytesFree">bytesFree</a> = <a class="local col6 ref" href="#56statfs_buf" title='statfs_buf' data-ref="56statfs_buf">statfs_buf</a>.<a class="ref field" href="../../../../include/x86_64-linux-gnu/bits/statvfs.h.html#statvfs64::f_bfree" title='statvfs64::f_bfree' data-ref="statvfs64::f_bfree">f_bfree</a> * <a class="local col6 ref" href="#56statfs_buf" title='statfs_buf' data-ref="56statfs_buf">statfs_buf</a>.<a class="ref field" href="../../../../include/x86_64-linux-gnu/bits/statvfs.h.html#statvfs64::f_frsize" title='statvfs64::f_frsize' data-ref="statvfs64::f_frsize">f_frsize</a>;</td></tr>
+<tr><th id="822">822</th><td>        <a class="member field" href="qstorageinfo_p.h.html#QStorageInfoPrivate::bytesAvailable" title='QStorageInfoPrivate::bytesAvailable' data-ref="QStorageInfoPrivate::bytesAvailable">bytesAvailable</a> = <a class="local col6 ref" href="#56statfs_buf" title='statfs_buf' data-ref="56statfs_buf">statfs_buf</a>.<a class="ref field" href="../../../../include/x86_64-linux-gnu/bits/statvfs.h.html#statvfs64::f_bavail" title='statvfs64::f_bavail' data-ref="statvfs64::f_bavail">f_bavail</a> * <a class="local col6 ref" href="#56statfs_buf" title='statfs_buf' data-ref="56statfs_buf">statfs_buf</a>.<a class="ref field" href="../../../../include/x86_64-linux-gnu/bits/statvfs.h.html#statvfs64::f_frsize" title='statvfs64::f_frsize' data-ref="statvfs64::f_frsize">f_frsize</a>;</td></tr>
+<tr><th id="823">823</th><td><u>#<span data-ppcond="815">endif</span></u></td></tr>
+<tr><th id="824">824</th><td>        <a class="member field" href="qstorageinfo_p.h.html#QStorageInfoPrivate::blockSize" title='QStorageInfoPrivate::blockSize' data-ref="QStorageInfoPrivate::blockSize">blockSize</a> = <a class="local col6 ref" href="#56statfs_buf" title='statfs_buf' data-ref="56statfs_buf">statfs_buf</a>.<a class="ref field" href="../../../../include/x86_64-linux-gnu/bits/statvfs.h.html#statvfs64::f_bsize" title='statvfs64::f_bsize' data-ref="statvfs64::f_bsize">f_bsize</a>;</td></tr>
+<tr><th id="825">825</th><td><u>#<span data-ppcond="825">if</span> defined(<span class="macro" data-ref="_M/Q_OS_ANDROID">Q_OS_ANDROID</span>) || defined(<span class="macro" data-ref="_M/Q_OS_BSD4">Q_OS_BSD4</span>) || defined(<span class="macro" data-ref="_M/Q_OS_INTEGRITY">Q_OS_INTEGRITY</span>) || defined(<span class="macro" data-ref="_M/Q_OS_RTEMS">Q_OS_RTEMS</span>)</u></td></tr>
+<tr><th id="826">826</th><td><u>#if defined(_STATFS_F_FLAGS)</u></td></tr>
+<tr><th id="827">827</th><td>        readOnly = (statfs_buf.f_flags &amp; ST_RDONLY) != <var>0</var>;</td></tr>
+<tr><th id="828">828</th><td><u>#endif</u></td></tr>
+<tr><th id="829">829</th><td><u>#<span data-ppcond="825">else</span></u></td></tr>
+<tr><th id="830">830</th><td>        <a class="member field" href="qstorageinfo_p.h.html#QStorageInfoPrivate::readOnly" title='QStorageInfoPrivate::readOnly' data-ref="QStorageInfoPrivate::readOnly">readOnly</a> = (<a class="local col6 ref" href="#56statfs_buf" title='statfs_buf' data-ref="56statfs_buf">statfs_buf</a>.<a class="ref field" href="../../../../include/x86_64-linux-gnu/bits/statvfs.h.html#statvfs64::f_flag" title='statvfs64::f_flag' data-ref="statvfs64::f_flag">f_flag</a> &amp; <a class="macro" href="../../../../include/x86_64-linux-gnu/bits/statvfs.h.html#83" title="ST_RDONLY" data-ref="_M/ST_RDONLY">ST_RDONLY</a>) != <var>0</var>;</td></tr>
+<tr><th id="831">831</th><td><u>#<span data-ppcond="825">endif</span></u></td></tr>
+<tr><th id="832">832</th><td>    }</td></tr>
+<tr><th id="833">833</th><td>}</td></tr>
+<tr><th id="834">834</th><td></td></tr>
+<tr><th id="835">835</th><td><a class="type" href="../tools/qcontainerfwd.h.html#QList" title='QList' data-ref="QList">QList</a>&lt;<a class="type" href="qstorageinfo.h.html#QStorageInfo" title='QStorageInfo' data-ref="QStorageInfo">QStorageInfo</a>&gt; <a class="type" href="qstorageinfo_p.h.html#QStorageInfoPrivate" title='QStorageInfoPrivate' data-ref="QStorageInfoPrivate">QStorageInfoPrivate</a>::<dfn class="decl def fn" id="_ZN19QStorageInfoPrivate14mountedVolumesEv" title='QStorageInfoPrivate::mountedVolumes' data-ref="_ZN19QStorageInfoPrivate14mountedVolumesEv">mountedVolumes</dfn>()</td></tr>
+<tr><th id="836">836</th><td>{</td></tr>
+<tr><th id="837">837</th><td>    <a class="type" href="#QStorageIterator" title='QStorageIterator' data-ref="QStorageIterator">QStorageIterator</a> <a class="tu ref fn fake" href="#_ZN16QStorageIteratorC1Ev" title='QStorageIterator::QStorageIterator' data-use='c' data-ref="_ZN16QStorageIteratorC1Ev"></a><dfn class="local col8 decl" id="58it" title='it' data-type='QStorageIterator' data-ref="58it">it</dfn>;</td></tr>
+<tr><th id="838">838</th><td>    <b>if</b> (!<a class="local col8 ref" href="#58it" title='it' data-ref="58it">it</a>.<a class="tu ref fn" href="#_ZNK16QStorageIterator7isValidEv" title='QStorageIterator::isValid' data-use='c' data-ref="_ZNK16QStorageIterator7isValidEv">isValid</a>())</td></tr>
+<tr><th id="839">839</th><td>        <b>return</b> <a class="ref fn fake" href="../tools/qlist.h.html#68" title='QList&lt;QStorageInfo&gt;::QList' data-ref="_ZN5QListI12QStorageInfoEC1ERKS1_"></a><a class="type" href="../tools/qcontainerfwd.h.html#QList" title='QList' data-ref="QList">QList</a>&lt;<a class="type" href="qstorageinfo.h.html#QStorageInfo" title='QStorageInfo' data-ref="QStorageInfo">QStorageInfo</a>&gt;<a class="ref fn" href="../tools/qlist.h.html#_ZN5QListC1Ev" title='QList::QList&lt;T&gt;' data-ref="_ZN5QListC1Ev">(</a>) <a class="ref fn" href="../tools/qlist.h.html#_ZN5QListlsENSt11conditionalIXsr11DataPointerE23pass_parameter_by_valueENS_17DisableRValueRefsEOT_E4typeE" title='QList::operator&lt;&lt;' data-ref="_ZN5QListlsENSt11conditionalIXsr11DataPointerE23pass_parameter_by_valueENS_17DisableRValueRefsEOT_E4typeE">&lt;&lt;</a> <a class="member fn" href="#_ZN19QStorageInfoPrivate4rootEv" title='QStorageInfoPrivate::root' data-ref="_ZN19QStorageInfoPrivate4rootEv">root</a>();</td></tr>
+<tr><th id="840">840</th><td></td></tr>
+<tr><th id="841">841</th><td>    <a class="type" href="../tools/qcontainerfwd.h.html#QList" title='QList' data-ref="QList">QList</a>&lt;<a class="type" href="qstorageinfo.h.html#QStorageInfo" title='QStorageInfo' data-ref="QStorageInfo">QStorageInfo</a>&gt; <a class="ref fn fake" href="../tools/qlist.h.html#_ZN5QListC1Ev" title='QList::QList&lt;T&gt;' data-ref="_ZN5QListC1Ev"></a><dfn class="local col9 decl" id="59volumes" title='volumes' data-type='QList&lt;QStorageInfo&gt;' data-ref="59volumes">volumes</dfn>;</td></tr>
+<tr><th id="842">842</th><td></td></tr>
+<tr><th id="843">843</th><td>    <b>while</b> (<a class="local col8 ref" href="#58it" title='it' data-ref="58it">it</a>.<a class="tu ref fn" href="#_ZN16QStorageIterator4nextEv" title='QStorageIterator::next' data-use='c' data-ref="_ZN16QStorageIterator4nextEv">next</a>()) {</td></tr>
+<tr><th id="844">844</th><td>        <b>if</b> (!<a class="tu ref fn" href="#_ZL15shouldIncludeFsRK16QStorageIterator" title='shouldIncludeFs' data-use='c' data-ref="_ZL15shouldIncludeFsRK16QStorageIterator">shouldIncludeFs</a>(<a class="local col8 ref" href="#58it" title='it' data-ref="58it">it</a>))</td></tr>
+<tr><th id="845">845</th><td>            <b>continue</b>;</td></tr>
+<tr><th id="846">846</th><td></td></tr>
+<tr><th id="847">847</th><td>        <em>const</em> <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> <dfn class="local col0 decl" id="60mountDir" title='mountDir' data-type='const QString' data-ref="60mountDir">mountDir</dfn> = <a class="local col8 ref" href="#58it" title='it' data-ref="58it">it</a>.<a class="tu ref fn" href="#_ZNK16QStorageIterator8rootPathEv" title='QStorageIterator::rootPath' data-use='c' data-ref="_ZNK16QStorageIterator8rootPathEv">rootPath</a>();</td></tr>
+<tr><th id="848">848</th><td>        <a class="type" href="qstorageinfo.h.html#QStorageInfo" title='QStorageInfo' data-ref="QStorageInfo">QStorageInfo</a> <dfn class="local col1 decl" id="61info" title='info' data-type='QStorageInfo' data-ref="61info">info</dfn><a class="ref fn" href="qstorageinfo.h.html#_ZN12QStorageInfoC1ERK7QString" title='QStorageInfo::QStorageInfo' data-ref="_ZN12QStorageInfoC1ERK7QString">(</a><a class="local col0 ref" href="#60mountDir" title='mountDir' data-ref="60mountDir">mountDir</a>);</td></tr>
+<tr><th id="849">849</th><td>        <a class="local col1 ref" href="#61info" title='info' data-ref="61info">info</a>.<a class="ref field" href="qstorageinfo.h.html#QStorageInfo::d" title='QStorageInfo::d' data-ref="QStorageInfo::d">d</a><a class="ref fn" href="../tools/qshareddata.h.html#_ZN28QExplicitlySharedDataPointerptEv" title='QExplicitlySharedDataPointer::operator-&gt;' data-ref="_ZN28QExplicitlySharedDataPointerptEv">-&gt;</a><a class="member field" href="qstorageinfo_p.h.html#QStorageInfoPrivate::device" title='QStorageInfoPrivate::device' data-ref="QStorageInfoPrivate::device">device</a> <a class="ref fn" href="../text/qbytearray.h.html#95" title='QByteArray::operator=' data-ref="_ZN10QByteArrayaSEOS_">=</a> <a class="local col8 ref" href="#58it" title='it' data-ref="58it">it</a>.<a class="tu ref fn" href="#_ZNK16QStorageIterator6deviceEv" title='QStorageIterator::device' data-use='c' data-ref="_ZNK16QStorageIterator6deviceEv">device</a>();</td></tr>
+<tr><th id="850">850</th><td>        <a class="local col1 ref" href="#61info" title='info' data-ref="61info">info</a>.<a class="ref field" href="qstorageinfo.h.html#QStorageInfo::d" title='QStorageInfo::d' data-ref="QStorageInfo::d">d</a><a class="ref fn" href="../tools/qshareddata.h.html#_ZN28QExplicitlySharedDataPointerptEv" title='QExplicitlySharedDataPointer::operator-&gt;' data-ref="_ZN28QExplicitlySharedDataPointerptEv">-&gt;</a><a class="member field" href="qstorageinfo_p.h.html#QStorageInfoPrivate::fileSystemType" title='QStorageInfoPrivate::fileSystemType' data-ref="QStorageInfoPrivate::fileSystemType">fileSystemType</a> <a class="ref fn" href="../text/qbytearray.h.html#95" title='QByteArray::operator=' data-ref="_ZN10QByteArrayaSEOS_">=</a> <a class="local col8 ref" href="#58it" title='it' data-ref="58it">it</a>.<a class="tu ref fn" href="#_ZNK16QStorageIterator14fileSystemTypeEv" title='QStorageIterator::fileSystemType' data-use='c' data-ref="_ZNK16QStorageIterator14fileSystemTypeEv">fileSystemType</a>();</td></tr>
+<tr><th id="851">851</th><td>        <a class="local col1 ref" href="#61info" title='info' data-ref="61info">info</a>.<a class="ref field" href="qstorageinfo.h.html#QStorageInfo::d" title='QStorageInfo::d' data-ref="QStorageInfo::d">d</a><a class="ref fn" href="../tools/qshareddata.h.html#_ZN28QExplicitlySharedDataPointerptEv" title='QExplicitlySharedDataPointer::operator-&gt;' data-ref="_ZN28QExplicitlySharedDataPointerptEv">-&gt;</a><a class="member field" href="qstorageinfo_p.h.html#QStorageInfoPrivate::subvolume" title='QStorageInfoPrivate::subvolume' data-ref="QStorageInfoPrivate::subvolume">subvolume</a> <a class="ref fn" href="../text/qbytearray.h.html#95" title='QByteArray::operator=' data-ref="_ZN10QByteArrayaSEOS_">=</a> <a class="local col8 ref" href="#58it" title='it' data-ref="58it">it</a>.<a class="tu ref fn" href="#_ZNK16QStorageIterator9subvolumeEv" title='QStorageIterator::subvolume' data-use='c' data-ref="_ZNK16QStorageIterator9subvolumeEv">subvolume</a>();</td></tr>
+<tr><th id="852">852</th><td>        <b>if</b> (<a class="local col1 ref" href="#61info" title='info' data-ref="61info">info</a>.<a class="ref fn" href="qstorageinfo.h.html#_ZNK12QStorageInfo10bytesTotalEv" title='QStorageInfo::bytesTotal' data-ref="_ZNK12QStorageInfo10bytesTotalEv">bytesTotal</a>() == <var>0</var> &amp;&amp; <a class="local col1 ref" href="#61info" title='info' data-ref="61info">info</a> <a class="ref fn" href="qstorageinfo.h.html#_ZneRK12QStorageInfoS1_" title='operator!=' data-ref="_ZneRK12QStorageInfoS1_">!=</a> <a class="member fn" href="#_ZN19QStorageInfoPrivate4rootEv" title='QStorageInfoPrivate::root' data-ref="_ZN19QStorageInfoPrivate4rootEv">root</a>())</td></tr>
+<tr><th id="853">853</th><td>            <b>continue</b>;</td></tr>
+<tr><th id="854">854</th><td>        <a class="local col9 ref" href="#59volumes" title='volumes' data-ref="59volumes">volumes</a>.<a class="ref fn" href="../tools/qlist.h.html#_ZN5QList6appendEN17QArrayDataPointerIT_E14parameter_typeE" title='QList::append' data-ref="_ZN5QList6appendEN17QArrayDataPointerIT_E14parameter_typeE">append</a>(<span class='inlayHint'>t:&nbsp;</span><a class="local col1 ref" href="#61info" title='info' data-ref="61info">info</a>);</td></tr>
+<tr><th id="855">855</th><td>    }</td></tr>
+<tr><th id="856">856</th><td></td></tr>
+<tr><th id="857">857</th><td>    <b>return</b> <a class="ref fn fake" href="../tools/qlist.h.html#68" title='QList&lt;QStorageInfo&gt;::QList' data-ref="_ZN5QListI12QStorageInfoEC1EOS1_"></a><a class="local col9 ref" href="#59volumes" title='volumes' data-ref="59volumes">volumes</a>;</td></tr>
+<tr><th id="858">858</th><td>}</td></tr>
+<tr><th id="859">859</th><td></td></tr>
+<tr><th id="860">860</th><td><a class="type" href="qstorageinfo.h.html#QStorageInfo" title='QStorageInfo' data-ref="QStorageInfo">QStorageInfo</a> <a class="type" href="qstorageinfo_p.h.html#QStorageInfoPrivate" title='QStorageInfoPrivate' data-ref="QStorageInfoPrivate">QStorageInfoPrivate</a>::<dfn class="decl def fn" id="_ZN19QStorageInfoPrivate4rootEv" title='QStorageInfoPrivate::root' data-ref="_ZN19QStorageInfoPrivate4rootEv">root</dfn>()</td></tr>
+<tr><th id="861">861</th><td>{</td></tr>
+<tr><th id="862">862</th><td>    <b>return</b> <a class="type" href="qstorageinfo.h.html#QStorageInfo" title='QStorageInfo' data-ref="QStorageInfo">QStorageInfo</a><a class="ref fn" href="qstorageinfo.h.html#_ZN12QStorageInfoC1ERK7QString" title='QStorageInfo::QStorageInfo' data-ref="_ZN12QStorageInfoC1ERK7QString">(</a><a class="macro" href="../text/qstringliteral.h.html#36" title="(QString(QtPrivate::qMakeStringPrivate(u&quot;&quot; &quot;/&quot;)))" data-ref="_M/QStringLiteral">QStringLiteral</a>(<q>"/"</q>));</td></tr>
+<tr><th id="863">863</th><td>}</td></tr>
+<tr><th id="864">864</th><td></td></tr>
+<tr><th id="865">865</th><td><a class="macro" href="../global/qtconfigmacros.h.html#104" title="" data-ref="_M/QT_END_NAMESPACE">QT_END_NAMESPACE</a></td></tr>
+<tr><th id="866">866</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2024-Jun-13</em> from project qtbase-6.5.0 revision <em>6.5.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

@@ -1,0 +1,23 @@
+<dec f='qtbase-6.5.0/src/dbus/qdbusserver.h' l='41' type='QDBusConnectionPrivate *'/>
+<offset>128</offset>
+<use f='qtbase-6.5.0/src/dbus/qdbusintegrator.cpp' l='1697' u='w' c='_ZN22QDBusConnectionPrivate9setServerEP11QDBusServerP10DBusServerRK18QDBusErrorInternal'/>
+<use f='qtbase-6.5.0/src/dbus/qdbusserver.cpp' l='29' u='w' c='_ZN11QDBusServerC1ERK7QStringP7QObject'/>
+<use f='qtbase-6.5.0/src/dbus/qdbusserver.cpp' l='42' u='r' c='_ZN11QDBusServerC1ERK7QStringP7QObject'/>
+<use f='qtbase-6.5.0/src/dbus/qdbusserver.cpp' l='52' u='w' c='_ZN11QDBusServerC1EP7QObject'/>
+<use f='qtbase-6.5.0/src/dbus/qdbusserver.cpp' l='69' u='r' c='_ZN11QDBusServerC1EP7QObject'/>
+<use f='qtbase-6.5.0/src/dbus/qdbusserver.cpp' l='82' u='r' c='_ZN11QDBusServerD1Ev'/>
+<use f='qtbase-6.5.0/src/dbus/qdbusserver.cpp' l='84' u='r' c='_ZN11QDBusServerD1Ev'/>
+<use f='qtbase-6.5.0/src/dbus/qdbusserver.cpp' l='86' u='r' c='_ZN11QDBusServerD1Ev'/>
+<use f='qtbase-6.5.0/src/dbus/qdbusserver.cpp' l='89' u='r' c='_ZN11QDBusServerD1Ev'/>
+<use f='qtbase-6.5.0/src/dbus/qdbusserver.cpp' l='90' u='r' c='_ZN11QDBusServerD1Ev'/>
+<use f='qtbase-6.5.0/src/dbus/qdbusserver.cpp' l='91' u='r' c='_ZN11QDBusServerD1Ev'/>
+<use f='qtbase-6.5.0/src/dbus/qdbusserver.cpp' l='101' u='r' c='_ZNK11QDBusServer11isConnectedEv'/>
+<use f='qtbase-6.5.0/src/dbus/qdbusserver.cpp' l='101' u='r' c='_ZNK11QDBusServer11isConnectedEv'/>
+<use f='qtbase-6.5.0/src/dbus/qdbusserver.cpp' l='101' u='r' c='_ZNK11QDBusServer11isConnectedEv'/>
+<use f='qtbase-6.5.0/src/dbus/qdbusserver.cpp' l='111' u='r' c='_ZNK11QDBusServer9lastErrorEv'/>
+<use f='qtbase-6.5.0/src/dbus/qdbusserver.cpp' l='111' u='r' c='_ZNK11QDBusServer9lastErrorEv'/>
+<use f='qtbase-6.5.0/src/dbus/qdbusserver.cpp' l='120' u='r' c='_ZNK11QDBusServer7addressEv'/>
+<use f='qtbase-6.5.0/src/dbus/qdbusserver.cpp' l='120' u='r' c='_ZNK11QDBusServer7addressEv'/>
+<use f='qtbase-6.5.0/src/dbus/qdbusserver.cpp' l='121' u='r' c='_ZNK11QDBusServer7addressEv'/>
+<use f='qtbase-6.5.0/src/dbus/qdbusserver.cpp' l='141' u='r' c='_ZN11QDBusServer33setAnonymousAuthenticationAllowedEb'/>
+<use f='qtbase-6.5.0/src/dbus/qdbusserver.cpp' l='153' u='r' c='_ZNK11QDBusServer32isAnonymousAuthenticationAllowedEv'/>

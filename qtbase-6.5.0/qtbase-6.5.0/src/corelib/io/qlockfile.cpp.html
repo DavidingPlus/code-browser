@@ -1,0 +1,473 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>qlockfile.cpp source code [qtbase-6.5.0/src/corelib/io/qlockfile.cpp] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'qtbase-6.5.0/src/corelib/io/qlockfile.cpp'; var root_path = '../../../..'; var data_path = '../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>qtbase-6.5.0</a>/<a href='../..'>src</a>/<a href='..'>corelib</a>/<a href='./'>io</a>/<a href='qlockfile.cpp.html'>qlockfile.cpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>// Copyright (C) 2013 David Faure &lt;faure+bluesystems@kde.org&gt;</i></td></tr>
+<tr><th id="2">2</th><td><i>// Copyright (C) 2016 The Qt Company Ltd.</i></td></tr>
+<tr><th id="3">3</th><td><i>// Copyright (C) 2017 Intel Corporation.</i></td></tr>
+<tr><th id="4">4</th><td><i>// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only</i></td></tr>
+<tr><th id="5">5</th><td></td></tr>
+<tr><th id="6">6</th><td><u>#include <a href="qlockfile.h.html">"qlockfile.h"</a></u></td></tr>
+<tr><th id="7">7</th><td><u>#include <a href="qlockfile_p.h.html">"qlockfile_p.h"</a></u></td></tr>
+<tr><th id="8">8</th><td></td></tr>
+<tr><th id="9">9</th><td><u>#include <a href="../../../build/include/QtCore/qthread.h.html">&lt;QtCore/qthread.h&gt;</a></u></td></tr>
+<tr><th id="10">10</th><td><u>#include <a href="../../../build/include/QtCore/qcoreapplication.h.html">&lt;QtCore/qcoreapplication.h&gt;</a></u></td></tr>
+<tr><th id="11">11</th><td><u>#include <a href="../../../build/include/QtCore/qdeadlinetimer.h.html">&lt;QtCore/qdeadlinetimer.h&gt;</a></u></td></tr>
+<tr><th id="12">12</th><td><u>#include <a href="../../../build/include/QtCore/qdatetime.h.html">&lt;QtCore/qdatetime.h&gt;</a></u></td></tr>
+<tr><th id="13">13</th><td><u>#include <a href="../../../build/include/QtCore/qfileinfo.h.html">&lt;QtCore/qfileinfo.h&gt;</a></u></td></tr>
+<tr><th id="14">14</th><td></td></tr>
+<tr><th id="15">15</th><td><a class="macro" href="../global/qtconfigmacros.h.html#103" title="" data-ref="_M/QT_BEGIN_NAMESPACE">QT_BEGIN_NAMESPACE</a></td></tr>
+<tr><th id="16">16</th><td></td></tr>
+<tr><th id="17">17</th><td><b>using</b> <b>namespace</b> <span class="namespace">Qt::StringLiterals</span>;</td></tr>
+<tr><th id="18">18</th><td></td></tr>
+<tr><th id="19">19</th><td><b>namespace</b> {</td></tr>
+<tr><th id="20">20</th><td><b>struct</b> <dfn class="tu type def" id="(anonymousnamespace)::LockFileInfo" title='(anonymous namespace)::LockFileInfo' data-ref="(anonymousnamespace)::LockFileInfo">LockFileInfo</dfn></td></tr>
+<tr><th id="21">21</th><td>{</td></tr>
+<tr><th id="22">22</th><td>    <a class="typedef" href="../global/qtypes.h.html#qint64" title='qint64' data-type='long long' data-ref="qint64">qint64</a> <dfn class="tu decl field" id="(anonymousnamespace)::LockFileInfo::pid" title='(anonymous namespace)::LockFileInfo::pid' data-type='qint64' data-ref="(anonymousnamespace)::LockFileInfo::pid">pid</dfn>;</td></tr>
+<tr><th id="23">23</th><td>    <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> <dfn class="tu decl field" id="(anonymousnamespace)::LockFileInfo::appname" title='(anonymous namespace)::LockFileInfo::appname' data-type='QString' data-ref="(anonymousnamespace)::LockFileInfo::appname">appname</dfn>;</td></tr>
+<tr><th id="24">24</th><td>    <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> <dfn class="tu decl field" id="(anonymousnamespace)::LockFileInfo::hostname" title='(anonymous namespace)::LockFileInfo::hostname' data-type='QString' data-ref="(anonymousnamespace)::LockFileInfo::hostname">hostname</dfn>;</td></tr>
+<tr><th id="25">25</th><td>    <a class="type" href="../text/qbytearray.h.html#QByteArray" title='QByteArray' data-ref="QByteArray">QByteArray</a> <dfn class="tu decl field" id="(anonymousnamespace)::LockFileInfo::hostid" title='(anonymous namespace)::LockFileInfo::hostid' data-type='QByteArray' data-ref="(anonymousnamespace)::LockFileInfo::hostid">hostid</dfn>;</td></tr>
+<tr><th id="26">26</th><td>    <a class="type" href="../text/qbytearray.h.html#QByteArray" title='QByteArray' data-ref="QByteArray">QByteArray</a> <dfn class="tu decl field" id="(anonymousnamespace)::LockFileInfo::bootid" title='(anonymous namespace)::LockFileInfo::bootid' data-type='QByteArray' data-ref="(anonymousnamespace)::LockFileInfo::bootid">bootid</dfn>;</td></tr>
+<tr><th id="27">27</th><td>};</td></tr>
+<tr><th id="28">28</th><td>}</td></tr>
+<tr><th id="29">29</th><td></td></tr>
+<tr><th id="30">30</th><td><em>static</em> <em>bool</em> <a class="tu decl fn" href="#_ZL18getLockInfo_helperRK7QStringPN12_GLOBAL__N_112LockFileInfoE" title='getLockInfo_helper' data-type='bool getLockInfo_helper(const QString &amp; fileName, (anonymous namespace)::LockFileInfo * info)' data-ref="_ZL18getLockInfo_helperRK7QStringPN12_GLOBAL__N_112LockFileInfoE">getLockInfo_helper</a>(<em>const</em> <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> &amp;<dfn class="local col7 decl" id="7fileName" title='fileName' data-type='const QString &amp;' data-ref="7fileName">fileName</dfn>, <a class="tu type" href="#(anonymousnamespace)::LockFileInfo" title='(anonymous namespace)::LockFileInfo' data-ref="(anonymousnamespace)::LockFileInfo">LockFileInfo</a> *<dfn class="local col8 decl" id="8info" title='info' data-type='(anonymous namespace)::LockFileInfo *' data-ref="8info">info</dfn>);</td></tr>
+<tr><th id="31">31</th><td></td></tr>
+<tr><th id="32">32</th><td><em>static</em> <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> <dfn class="tu decl def fn" id="_ZL11machineNamev" title='machineName' data-type='QString machineName()' data-ref="_ZL11machineNamev">machineName</dfn>()</td></tr>
+<tr><th id="33">33</th><td>{</td></tr>
+<tr><th id="34">34</th><td><u>#<span data-ppcond="34">ifdef</span> <span class="macro" data-ref="_M/Q_OS_WIN">Q_OS_WIN</span></u></td></tr>
+<tr><th id="35">35</th><td>    <i>// we don't use QSysInfo because it tries to do name resolution</i></td></tr>
+<tr><th id="36">36</th><td>    <b>return</b> qEnvironmentVariable(<q>"COMPUTERNAME"</q>);</td></tr>
+<tr><th id="37">37</th><td><u>#<span data-ppcond="34">else</span></u></td></tr>
+<tr><th id="38">38</th><td>    <b>return</b> <a class="type" href="../global/qsysinfo.h.html#QSysInfo" title='QSysInfo' data-ref="QSysInfo">QSysInfo</a>::<a class="ref fn" href="../global/qsysinfo.h.html#_ZN8QSysInfo15machineHostNameEv" title='QSysInfo::machineHostName' data-ref="_ZN8QSysInfo15machineHostNameEv">machineHostName</a>();</td></tr>
+<tr><th id="39">39</th><td><u>#<span data-ppcond="34">endif</span></u></td></tr>
+<tr><th id="40">40</th><td>}</td></tr>
+<tr><th id="41">41</th><td></td></tr>
+<tr><th id="42">42</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="43">43</th><td><i class="doc">    <span class="command">\class</span> <span class="verb" data-ref="QLockFile">QLockFile</span></i></td></tr>
+<tr><th id="44">44</th><td><i class="doc">   <span class="command"> \inmodule</span> QtCore</i></td></tr>
+<tr><th id="45">45</th><td><i class="doc">    <span class="command">\brief</span> The QLockFile class provides locking between processes using a file.</i></td></tr>
+<tr><th id="46">46</th><td><i class="doc">    <span class="command">\since</span> 5.1</i></td></tr>
+<tr><th id="47">47</th><td><i class="doc"></i></td></tr>
+<tr><th id="48">48</th><td><i class="doc">    A lock file can be used to prevent multiple processes from accessing concurrently</i></td></tr>
+<tr><th id="49">49</th><td><i class="doc">    the same resource. For instance, a configuration file on disk, or a socket, a port,</i></td></tr>
+<tr><th id="50">50</th><td><i class="doc">    a region of shared memory...</i></td></tr>
+<tr><th id="51">51</th><td><i class="doc"></i></td></tr>
+<tr><th id="52">52</th><td><i class="doc">    Serialization is only guaranteed if all processes that access the shared resource</i></td></tr>
+<tr><th id="53">53</th><td><i class="doc">    use QLockFile, with the same file path.</i></td></tr>
+<tr><th id="54">54</th><td><i class="doc"></i></td></tr>
+<tr><th id="55">55</th><td><i class="doc">    QLockFile supports two use cases:</i></td></tr>
+<tr><th id="56">56</th><td><i class="doc">    to protect a resource for a short-term operation (e.g. verifying if a configuration</i></td></tr>
+<tr><th id="57">57</th><td><i class="doc">    file has changed before saving new settings), and for long-lived protection of a</i></td></tr>
+<tr><th id="58">58</th><td><i class="doc">    resource (e.g. a document opened by a user in an editor) for an indefinite amount of time.</i></td></tr>
+<tr><th id="59">59</th><td><i class="doc"></i></td></tr>
+<tr><th id="60">60</th><td><i class="doc">    When protecting for a short-term operation, it is acceptable to call lock() and wait</i></td></tr>
+<tr><th id="61">61</th><td><i class="doc">    until any running operation finishes.</i></td></tr>
+<tr><th id="62">62</th><td><i class="doc">    When protecting a resource over a long time, however, the application should always</i></td></tr>
+<tr><th id="63">63</th><td><i class="doc">    call setStaleLockTime(0) and then tryLock() with a short timeout, in order to</i></td></tr>
+<tr><th id="64">64</th><td><i class="doc">    warn the user that the resource is locked.</i></td></tr>
+<tr><th id="65">65</th><td><i class="doc"></i></td></tr>
+<tr><th id="66">66</th><td><i class="doc">    If the process holding the lock crashes, the lock file stays on disk and can prevent</i></td></tr>
+<tr><th id="67">67</th><td><i class="doc">    any other process from accessing the shared resource, ever. For this reason, QLockFile</i></td></tr>
+<tr><th id="68">68</th><td><i class="doc">    tries to detect such a "stale" lock file, based on the process ID written into the file.</i></td></tr>
+<tr><th id="69">69</th><td><i class="doc">    To cover the situation that the process ID got reused meanwhile, the current process name is</i></td></tr>
+<tr><th id="70">70</th><td><i class="doc">    compared to the name of the process that corresponds to the process ID from the lock file.</i></td></tr>
+<tr><th id="71">71</th><td><i class="doc">    If the process names differ, the lock file is considered stale.</i></td></tr>
+<tr><th id="72">72</th><td><i class="doc">    Additionally, the last modification time of the lock file (30s by default, for the use case of a</i></td></tr>
+<tr><th id="73">73</th><td><i class="doc">    short-lived operation) is taken into account.</i></td></tr>
+<tr><th id="74">74</th><td><i class="doc">    If the lock file is found to be stale, it will be deleted.</i></td></tr>
+<tr><th id="75">75</th><td><i class="doc"></i></td></tr>
+<tr><th id="76">76</th><td><i class="doc">    For the use case of protecting a resource over a long time, you should therefore call</i></td></tr>
+<tr><th id="77">77</th><td><i class="doc">    setStaleLockTime(0), and when tryLock() returns LockFailedError, inform the user</i></td></tr>
+<tr><th id="78">78</th><td><i class="doc">    that the document is locked, possibly using getLockInfo() for more details.</i></td></tr>
+<tr><th id="79">79</th><td><i class="doc"></i></td></tr>
+<tr><th id="80">80</th><td><i class="doc">    <span class="command">\note</span> On Windows, this class has problems detecting a stale lock if the</i></td></tr>
+<tr><th id="81">81</th><td><i class="doc">    machine's hostname contains characters outside the US-ASCII character set.</i></td></tr>
+<tr><th id="82">82</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="83">83</th><td></td></tr>
+<tr><th id="84">84</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="85">85</th><td><i class="doc">    <span class="command">\enum</span> <span class="verb" data-ref="QLockFile::LockError">QLockFile::LockError</span></i></td></tr>
+<tr><th id="86">86</th><td><i class="doc"></i></td></tr>
+<tr><th id="87">87</th><td><i class="doc">    This enum describes the result of the last call to lock() or tryLock().</i></td></tr>
+<tr><th id="88">88</th><td><i class="doc"></i></td></tr>
+<tr><th id="89">89</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QLockFile::NoError">NoError </span>The lock was acquired successfully.</i></td></tr>
+<tr><th id="90">90</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QLockFile::LockFailedError">LockFailedError </span>The lock could not be acquired because another process holds it.</i></td></tr>
+<tr><th id="91">91</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QLockFile::PermissionError">PermissionError </span>The lock file could not be created, for lack of permissions</i></td></tr>
+<tr><th id="92">92</th><td><i class="doc">                           in the parent directory.</i></td></tr>
+<tr><th id="93">93</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QLockFile::UnknownError">UnknownError </span>Another error happened, for instance a full partition</i></td></tr>
+<tr><th id="94">94</th><td><i class="doc">                        prevented writing out the lock file.</i></td></tr>
+<tr><th id="95">95</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="96">96</th><td></td></tr>
+<tr><th id="97">97</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="98">98</th><td><i class="doc">    Constructs a new lock file object.</i></td></tr>
+<tr><th id="99">99</th><td><i class="doc">    The object is created in an unlocked state.</i></td></tr>
+<tr><th id="100">100</th><td><i class="doc">    When calling lock() or tryLock(), a lock file named<span class="command"> \a</span> <span class="arg">fileName</span> will be created,</i></td></tr>
+<tr><th id="101">101</th><td><i class="doc">    if it doesn't already exist.</i></td></tr>
+<tr><th id="102">102</th><td><i class="doc"></i></td></tr>
+<tr><th id="103">103</th><td><i class="doc">    <span class="command">\sa</span> lock(), unlock()</i></td></tr>
+<tr><th id="104">104</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="105">105</th><td><a class="type" href="qlockfile.h.html#QLockFile" title='QLockFile' data-ref="QLockFile">QLockFile</a>::<dfn class="decl def fn" id="_ZN9QLockFileC1ERK7QString" title='QLockFile::QLockFile' data-ref="_ZN9QLockFileC1ERK7QString">QLockFile</dfn>(<em>const</em> <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> &amp;<dfn class="local col9 decl" id="9fileName" title='fileName' data-type='const QString &amp;' data-ref="9fileName">fileName</dfn>)</td></tr>
+<tr><th id="106">106</th><td>    : <a class="member field" href="qlockfile.h.html#QLockFile::d_ptr" title='QLockFile::d_ptr' data-ref="QLockFile::d_ptr">d_ptr</a><a class="ref fn" href="../tools/qscopedpointer.h.html#_ZN14QScopedPointerC1EPT_" title='QScopedPointer::QScopedPointer&lt;T, Cleanup&gt;' data-ref="_ZN14QScopedPointerC1EPT_">(</a><b>new</b> <a class="type" href="qlockfile_p.h.html#QLockFilePrivate" title='QLockFilePrivate' data-ref="QLockFilePrivate">QLockFilePrivate</a><a class="ref fn" href="qlockfile_p.h.html#_ZN16QLockFilePrivateC1ERK7QString" title='QLockFilePrivate::QLockFilePrivate' data-ref="_ZN16QLockFilePrivateC1ERK7QString">(</a><a class="local col9 ref" href="#9fileName" title='fileName' data-ref="9fileName">fileName</a>))</td></tr>
+<tr><th id="107">107</th><td>{</td></tr>
+<tr><th id="108">108</th><td>}</td></tr>
+<tr><th id="109">109</th><td></td></tr>
+<tr><th id="110">110</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="111">111</th><td><i class="doc">    Destroys the lock file object.</i></td></tr>
+<tr><th id="112">112</th><td><i class="doc">    If the lock was acquired, this will release the lock, by deleting the lock file.</i></td></tr>
+<tr><th id="113">113</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="114">114</th><td><a class="type" href="qlockfile.h.html#QLockFile" title='QLockFile' data-ref="QLockFile">QLockFile</a>::<dfn class="decl def fn" id="_ZN9QLockFileD1Ev" title='QLockFile::~QLockFile' data-ref="_ZN9QLockFileD1Ev">~QLockFile</dfn>()</td></tr>
+<tr><th id="115">115</th><td>{</td></tr>
+<tr><th id="116">116</th><td>    <a class="member fn" href="qlockfile.h.html#_ZN9QLockFile6unlockEv" title='QLockFile::unlock' data-ref="_ZN9QLockFile6unlockEv">unlock</a>();</td></tr>
+<tr><th id="117">117</th><td>}</td></tr>
+<tr><th id="118">118</th><td></td></tr>
+<tr><th id="119">119</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="120">120</th><td><i class="doc"> * Returns the file name of the lock file</i></td></tr>
+<tr><th id="121">121</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="122">122</th><td><a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> <a class="type" href="qlockfile.h.html#QLockFile" title='QLockFile' data-ref="QLockFile">QLockFile</a>::<dfn class="decl def fn" id="_ZNK9QLockFile8fileNameEv" title='QLockFile::fileName' data-ref="_ZNK9QLockFile8fileNameEv">fileName</dfn>() <em>const</em></td></tr>
+<tr><th id="123">123</th><td>{</td></tr>
+<tr><th id="124">124</th><td>    <b>return</b> <a class="ref fn fake" href="../text/qstring.h.html#_ZN7QStringC1ERKS_" title='QString::QString' data-ref="_ZN7QStringC1ERKS_"></a><a class="member field" href="qlockfile.h.html#QLockFile::d_ptr" title='QLockFile::d_ptr' data-ref="QLockFile::d_ptr">d_ptr</a><a class="ref fn" href="../tools/qscopedpointer.h.html#_ZNK14QScopedPointerptEv" title='QScopedPointer::operator-&gt;' data-ref="_ZNK14QScopedPointerptEv">-&gt;</a><a class="ref field" href="qlockfile_p.h.html#QLockFilePrivate::fileName" title='QLockFilePrivate::fileName' data-ref="QLockFilePrivate::fileName">fileName</a>;</td></tr>
+<tr><th id="125">125</th><td>}</td></tr>
+<tr><th id="126">126</th><td></td></tr>
+<tr><th id="127">127</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="128">128</th><td><i class="doc">    Sets<span class="command"> \a</span> <span class="arg">staleLockTime</span> to be the time in milliseconds after which</i></td></tr>
+<tr><th id="129">129</th><td><i class="doc">    a lock file is considered stale.</i></td></tr>
+<tr><th id="130">130</th><td><i class="doc">    The default value is 30000, i.e. 30 seconds.</i></td></tr>
+<tr><th id="131">131</th><td><i class="doc">    If your application typically keeps the file locked for more than 30 seconds</i></td></tr>
+<tr><th id="132">132</th><td><i class="doc">    (for instance while saving megabytes of data for 2 minutes), you should set</i></td></tr>
+<tr><th id="133">133</th><td><i class="doc">    a bigger value using setStaleLockTime().</i></td></tr>
+<tr><th id="134">134</th><td><i class="doc"></i></td></tr>
+<tr><th id="135">135</th><td><i class="doc">    The value of<span class="command"> \a</span> <span class="arg">staleLockTime</span> is used by lock() and tryLock() in order</i></td></tr>
+<tr><th id="136">136</th><td><i class="doc">    to determine when an existing lock file is considered stale, i.e. left over</i></td></tr>
+<tr><th id="137">137</th><td><i class="doc">    by a crashed process. This is useful for the case where the PID got reused</i></td></tr>
+<tr><th id="138">138</th><td><i class="doc">    meanwhile, so one way to detect a stale lock file is by the fact that</i></td></tr>
+<tr><th id="139">139</th><td><i class="doc">    it has been around for a long time.</i></td></tr>
+<tr><th id="140">140</th><td><i class="doc"></i></td></tr>
+<tr><th id="141">141</th><td><i class="doc">    <span class="command">\sa</span> staleLockTime()</i></td></tr>
+<tr><th id="142">142</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="143">143</th><td><em>void</em> <a class="type" href="qlockfile.h.html#QLockFile" title='QLockFile' data-ref="QLockFile">QLockFile</a>::<dfn class="decl def fn" id="_ZN9QLockFile16setStaleLockTimeEi" title='QLockFile::setStaleLockTime' data-ref="_ZN9QLockFile16setStaleLockTimeEi">setStaleLockTime</dfn>(<em>int</em> <dfn class="local col0 decl" id="10staleLockTime" title='staleLockTime' data-type='int' data-ref="10staleLockTime">staleLockTime</dfn>)</td></tr>
+<tr><th id="144">144</th><td>{</td></tr>
+<tr><th id="145">145</th><td>    <a class="macro" href="../global/qtclasshelpermacros.h.html#109" title="QLockFilePrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(QLockFile);</td></tr>
+<tr><th id="146">146</th><td>    <a class="local col1 ref" href="#145" title='d' data-ref="11d">d</a>-&gt;<a class="ref field" href="qlockfile_p.h.html#QLockFilePrivate::staleLockTime" title='QLockFilePrivate::staleLockTime' data-ref="QLockFilePrivate::staleLockTime">staleLockTime</a> = <a class="local col0 ref" href="#10staleLockTime" title='staleLockTime' data-ref="10staleLockTime">staleLockTime</a>;</td></tr>
+<tr><th id="147">147</th><td>}</td></tr>
+<tr><th id="148">148</th><td></td></tr>
+<tr><th id="149">149</th><td><i class="doc">/*! <span class="command">\fn</span> <span class="verb">void QLockFile::setStaleLockTime(std::chrono::milliseconds value)</span></i></td></tr>
+<tr><th id="150">150</th><td><i class="doc">    <span class="command">\overload</span></i></td></tr>
+<tr><th id="151">151</th><td><i class="doc">    <span class="command">\since</span> 6.2</i></td></tr>
+<tr><th id="152">152</th><td><i class="doc"></i></td></tr>
+<tr><th id="153">153</th><td><i class="doc">    Sets the interval after which a lock file is considered stale to<span class="command"> \a</span> <span class="arg">value.</span></i></td></tr>
+<tr><th id="154">154</th><td><i class="doc">    The default value is 30 seconds.</i></td></tr>
+<tr><th id="155">155</th><td><i class="doc">    If your application typically keeps the file locked for more than 30 seconds</i></td></tr>
+<tr><th id="156">156</th><td><i class="doc">    (for instance while saving megabytes of data for 2 minutes), you should set</i></td></tr>
+<tr><th id="157">157</th><td><i class="doc">    a bigger value using setStaleLockTime().</i></td></tr>
+<tr><th id="158">158</th><td><i class="doc"></i></td></tr>
+<tr><th id="159">159</th><td><i class="doc">    The value of staleLockTime() is used by lock() and tryLock() in order</i></td></tr>
+<tr><th id="160">160</th><td><i class="doc">    to determine when an existing lock file is considered stale, i.e. left over</i></td></tr>
+<tr><th id="161">161</th><td><i class="doc">    by a crashed process. This is useful for the case where the PID got reused</i></td></tr>
+<tr><th id="162">162</th><td><i class="doc">    meanwhile, so one way to detect a stale lock file is by the fact that</i></td></tr>
+<tr><th id="163">163</th><td><i class="doc">    it has been around for a long time.</i></td></tr>
+<tr><th id="164">164</th><td><i class="doc"></i></td></tr>
+<tr><th id="165">165</th><td><i class="doc">    <span class="command">\sa</span> staleLockTime()</i></td></tr>
+<tr><th id="166">166</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="167">167</th><td></td></tr>
+<tr><th id="168">168</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="169">169</th><td><i class="doc">    Returns the time in milliseconds after which</i></td></tr>
+<tr><th id="170">170</th><td><i class="doc">    a lock file is considered stale.</i></td></tr>
+<tr><th id="171">171</th><td><i class="doc"></i></td></tr>
+<tr><th id="172">172</th><td><i class="doc">    <span class="command">\sa</span> setStaleLockTime()</i></td></tr>
+<tr><th id="173">173</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="174">174</th><td><em>int</em> <a class="type" href="qlockfile.h.html#QLockFile" title='QLockFile' data-ref="QLockFile">QLockFile</a>::<dfn class="decl def fn" id="_ZNK9QLockFile13staleLockTimeEv" title='QLockFile::staleLockTime' data-ref="_ZNK9QLockFile13staleLockTimeEv">staleLockTime</dfn>() <em>const</em></td></tr>
+<tr><th id="175">175</th><td>{</td></tr>
+<tr><th id="176">176</th><td>    <a class="macro" href="../global/qtclasshelpermacros.h.html#109" title="const QLockFilePrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(<em>const</em> QLockFile);</td></tr>
+<tr><th id="177">177</th><td>    <b>return</b> <a class="local col2 ref" href="#176" title='d' data-ref="12d">d</a>-&gt;<a class="ref field" href="qlockfile_p.h.html#QLockFilePrivate::staleLockTime" title='QLockFilePrivate::staleLockTime' data-ref="QLockFilePrivate::staleLockTime">staleLockTime</a>;</td></tr>
+<tr><th id="178">178</th><td>}</td></tr>
+<tr><th id="179">179</th><td></td></tr>
+<tr><th id="180">180</th><td><i class="doc">/*! <span class="command">\fn</span> <span class="verb" data-ref="_ZNK9QLockFile23staleLockTimeAsDurationEv">std::chrono::milliseconds QLockFile::staleLockTimeAsDuration() const</span></i></td></tr>
+<tr><th id="181">181</th><td><i class="doc">    <span class="command">\overload</span></i></td></tr>
+<tr><th id="182">182</th><td><i class="doc">    <span class="command">\since</span> 6.2</i></td></tr>
+<tr><th id="183">183</th><td><i class="doc"></i></td></tr>
+<tr><th id="184">184</th><td><i class="doc">    Returns a std::chrono::milliseconds object which denotes the time after</i></td></tr>
+<tr><th id="185">185</th><td><i class="doc">    which a lock file is considered stale.</i></td></tr>
+<tr><th id="186">186</th><td><i class="doc"></i></td></tr>
+<tr><th id="187">187</th><td><i class="doc">    <span class="command">\sa</span> setStaleLockTime()</i></td></tr>
+<tr><th id="188">188</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="189">189</th><td></td></tr>
+<tr><th id="190">190</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="191">191</th><td><i class="doc">    Returns<span class="command"> \c</span> <span class="arg">true</span> if the lock was acquired by this QLockFile instance,</i></td></tr>
+<tr><th id="192">192</th><td><i class="doc">    otherwise returns<span class="command"> \c</span> <span class="arg">false.</span></i></td></tr>
+<tr><th id="193">193</th><td><i class="doc"></i></td></tr>
+<tr><th id="194">194</th><td><i class="doc">    <span class="command">\sa</span> lock(), unlock(), tryLock()</i></td></tr>
+<tr><th id="195">195</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="196">196</th><td><em>bool</em> <a class="type" href="qlockfile.h.html#QLockFile" title='QLockFile' data-ref="QLockFile">QLockFile</a>::<dfn class="decl def fn" id="_ZNK9QLockFile8isLockedEv" title='QLockFile::isLocked' data-ref="_ZNK9QLockFile8isLockedEv">isLocked</dfn>() <em>const</em></td></tr>
+<tr><th id="197">197</th><td>{</td></tr>
+<tr><th id="198">198</th><td>    <a class="macro" href="../global/qtclasshelpermacros.h.html#109" title="const QLockFilePrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(<em>const</em> QLockFile);</td></tr>
+<tr><th id="199">199</th><td>    <b>return</b> <a class="local col3 ref" href="#198" title='d' data-ref="13d">d</a>-&gt;<a class="ref field" href="qlockfile_p.h.html#QLockFilePrivate::isLocked" title='QLockFilePrivate::isLocked' data-ref="QLockFilePrivate::isLocked">isLocked</a>;</td></tr>
+<tr><th id="200">200</th><td>}</td></tr>
+<tr><th id="201">201</th><td></td></tr>
+<tr><th id="202">202</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="203">203</th><td><i class="doc">    Creates the lock file.</i></td></tr>
+<tr><th id="204">204</th><td><i class="doc"></i></td></tr>
+<tr><th id="205">205</th><td><i class="doc">    If another process (or another thread) has created the lock file already,</i></td></tr>
+<tr><th id="206">206</th><td><i class="doc">    this function will block until that process (or thread) releases it.</i></td></tr>
+<tr><th id="207">207</th><td><i class="doc"></i></td></tr>
+<tr><th id="208">208</th><td><i class="doc">    Calling this function multiple times on the same lock from the same</i></td></tr>
+<tr><th id="209">209</th><td><i class="doc">    thread without unlocking first is not allowed. This function will</i></td></tr>
+<tr><th id="210">210</th><td><i class="doc">   <span class="command"> \e</span> <span class="arg">dead-lock</span> when the file is locked recursively.</i></td></tr>
+<tr><th id="211">211</th><td><i class="doc"></i></td></tr>
+<tr><th id="212">212</th><td><i class="doc">    Returns<span class="command"> \c</span> <span class="arg">true</span> if the lock was acquired, false if it could not be acquired</i></td></tr>
+<tr><th id="213">213</th><td><i class="doc">    due to an unrecoverable error, such as no permissions in the parent directory.</i></td></tr>
+<tr><th id="214">214</th><td><i class="doc"></i></td></tr>
+<tr><th id="215">215</th><td><i class="doc">    <span class="command">\sa</span> unlock(), tryLock()</i></td></tr>
+<tr><th id="216">216</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="217">217</th><td><em>bool</em> <a class="type" href="qlockfile.h.html#QLockFile" title='QLockFile' data-ref="QLockFile">QLockFile</a>::<dfn class="decl def fn" id="_ZN9QLockFile4lockEv" title='QLockFile::lock' data-ref="_ZN9QLockFile4lockEv">lock</dfn>()</td></tr>
+<tr><th id="218">218</th><td>{</td></tr>
+<tr><th id="219">219</th><td>    <b>return</b> <a class="member fn" href="#_ZN9QLockFile7tryLockEi" title='QLockFile::tryLock' data-ref="_ZN9QLockFile7tryLockEi">tryLock</a>(<span class='inlayHint'>timeout:&nbsp;</span>-<var>1</var>);</td></tr>
+<tr><th id="220">220</th><td>}</td></tr>
+<tr><th id="221">221</th><td></td></tr>
+<tr><th id="222">222</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="223">223</th><td><i class="doc">    Attempts to create the lock file. This function returns<span class="command"> \c</span> <span class="arg">true</span> if the</i></td></tr>
+<tr><th id="224">224</th><td><i class="doc">    lock was obtained; otherwise it returns<span class="command"> \c</span> <span class="arg">false.</span> If another process (or</i></td></tr>
+<tr><th id="225">225</th><td><i class="doc">    another thread) has created the lock file already, this function will</i></td></tr>
+<tr><th id="226">226</th><td><i class="doc">    wait for at most<span class="command"> \a</span> <span class="arg">timeout</span> milliseconds for the lock file to become</i></td></tr>
+<tr><th id="227">227</th><td><i class="doc">    available.</i></td></tr>
+<tr><th id="228">228</th><td><i class="doc"></i></td></tr>
+<tr><th id="229">229</th><td><i class="doc">    Note: Passing a negative number as the<span class="command"> \a</span> <span class="arg">timeout</span> is equivalent to</i></td></tr>
+<tr><th id="230">230</th><td><i class="doc">    calling lock(), i.e. this function will wait forever until the lock</i></td></tr>
+<tr><th id="231">231</th><td><i class="doc">    file can be locked if<span class="command"> \a</span> <span class="arg">timeout</span> is negative.</i></td></tr>
+<tr><th id="232">232</th><td><i class="doc"></i></td></tr>
+<tr><th id="233">233</th><td><i class="doc">    If the lock was obtained, it must be released with unlock()</i></td></tr>
+<tr><th id="234">234</th><td><i class="doc">    before another process (or thread) can successfully lock it.</i></td></tr>
+<tr><th id="235">235</th><td><i class="doc"></i></td></tr>
+<tr><th id="236">236</th><td><i class="doc">    Calling this function multiple times on the same lock from the same</i></td></tr>
+<tr><th id="237">237</th><td><i class="doc">    thread without unlocking first is not allowed, this function will</i></td></tr>
+<tr><th id="238">238</th><td><i class="doc">   <span class="command"> \e</span> <span class="arg">always</span> return false when attempting to lock the file recursively.</i></td></tr>
+<tr><th id="239">239</th><td><i class="doc"></i></td></tr>
+<tr><th id="240">240</th><td><i class="doc">    <span class="command">\sa</span> lock(), unlock()</i></td></tr>
+<tr><th id="241">241</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="242">242</th><td><em>bool</em> <a class="type" href="qlockfile.h.html#QLockFile" title='QLockFile' data-ref="QLockFile">QLockFile</a>::<dfn class="decl def fn" id="_ZN9QLockFile7tryLockEi" title='QLockFile::tryLock' data-ref="_ZN9QLockFile7tryLockEi">tryLock</dfn>(<em>int</em> <dfn class="local col4 decl" id="14timeout" title='timeout' data-type='int' data-ref="14timeout">timeout</dfn>)</td></tr>
+<tr><th id="243">243</th><td>{</td></tr>
+<tr><th id="244">244</th><td>    <a class="macro" href="../global/qtclasshelpermacros.h.html#109" title="QLockFilePrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(QLockFile);</td></tr>
+<tr><th id="245">245</th><td>    <a class="type" href="../kernel/qdeadlinetimer.h.html#QDeadlineTimer" title='QDeadlineTimer' data-ref="QDeadlineTimer">QDeadlineTimer</a> <dfn class="local col5 decl" id="15timer" title='timer' data-type='QDeadlineTimer' data-ref="15timer">timer</dfn><a class="ref fn" href="../kernel/qdeadlinetimer.h.html#_ZN14QDeadlineTimerC1ExN2Qt9TimerTypeE" title='QDeadlineTimer::QDeadlineTimer' data-ref="_ZN14QDeadlineTimerC1ExN2Qt9TimerTypeE">(</a><a class="ref fn" href="../global/qminmax.h.html#_Z4qMaxRKT_S1_" title='qMax' data-ref="_Z4qMaxRKT_S1_">qMax</a>(<span class='inlayHint'>a:&nbsp;</span><a class="local col4 ref" href="#14timeout" title='timeout' data-ref="14timeout">timeout</a>, <span class='inlayHint'>b:&nbsp;</span>-<var>1</var>));    <i>// QDT only takes -1 as "forever"</i></td></tr>
+<tr><th id="246">246</th><td>    <em>int</em> <dfn class="local col6 decl" id="16sleepTime" title='sleepTime' data-type='int' data-ref="16sleepTime">sleepTime</dfn> = <var>100</var>;</td></tr>
+<tr><th id="247">247</th><td>    <a class="macro" href="../global/qforeach.h.html#78" title="for(;;)" data-ref="_M/forever">forever</a> {</td></tr>
+<tr><th id="248">248</th><td>        <a class="local col7 ref" href="#244" title='d' data-ref="17d">d</a>-&gt;<a class="ref field" href="qlockfile_p.h.html#QLockFilePrivate::lockError" title='QLockFilePrivate::lockError' data-ref="QLockFilePrivate::lockError">lockError</a> = <a class="local col7 ref" href="#244" title='d' data-ref="17d">d</a>-&gt;<a class="ref fn" href="qlockfile_p.h.html#_ZN16QLockFilePrivate11tryLock_sysEv" title='QLockFilePrivate::tryLock_sys' data-ref="_ZN16QLockFilePrivate11tryLock_sysEv">tryLock_sys</a>();</td></tr>
+<tr><th id="249">249</th><td>        <b>switch</b> (<a class="local col7 ref" href="#244" title='d' data-ref="17d">d</a>-&gt;<a class="ref field" href="qlockfile_p.h.html#QLockFilePrivate::lockError" title='QLockFilePrivate::lockError' data-ref="QLockFilePrivate::lockError">lockError</a>) {</td></tr>
+<tr><th id="250">250</th><td>        <b>case</b> <a class="enum" href="qlockfile.h.html#QLockFile::NoError" title='QLockFile::NoError' data-ref="QLockFile::NoError">NoError</a>:</td></tr>
+<tr><th id="251">251</th><td>            <a class="local col7 ref" href="#244" title='d' data-ref="17d">d</a>-&gt;<a class="ref field" href="qlockfile_p.h.html#QLockFilePrivate::isLocked" title='QLockFilePrivate::isLocked' data-ref="QLockFilePrivate::isLocked">isLocked</a> = <b>true</b>;</td></tr>
+<tr><th id="252">252</th><td>            <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="253">253</th><td>        <b>case</b> <a class="enum" href="qlockfile.h.html#QLockFile::PermissionError" title='QLockFile::PermissionError' data-ref="QLockFile::PermissionError">PermissionError</a>:</td></tr>
+<tr><th id="254">254</th><td>        <b>case</b> <a class="enum" href="qlockfile.h.html#QLockFile::UnknownError" title='QLockFile::UnknownError' data-ref="QLockFile::UnknownError">UnknownError</a>:</td></tr>
+<tr><th id="255">255</th><td>            <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="256">256</th><td>        <b>case</b> <a class="enum" href="qlockfile.h.html#QLockFile::LockFailedError" title='QLockFile::LockFailedError' data-ref="QLockFile::LockFailedError">LockFailedError</a>:</td></tr>
+<tr><th id="257">257</th><td>            <b>if</b> (!<a class="local col7 ref" href="#244" title='d' data-ref="17d">d</a>-&gt;<a class="ref field" href="qlockfile_p.h.html#QLockFilePrivate::isLocked" title='QLockFilePrivate::isLocked' data-ref="QLockFilePrivate::isLocked">isLocked</a> &amp;&amp; <a class="local col7 ref" href="#244" title='d' data-ref="17d">d</a>-&gt;<a class="ref fn" href="#_ZNK16QLockFilePrivate17isApparentlyStaleEv" title='QLockFilePrivate::isApparentlyStale' data-ref="_ZNK16QLockFilePrivate17isApparentlyStaleEv">isApparentlyStale</a>()) {</td></tr>
+<tr><th id="258">258</th><td>                <b>if</b> (<a class="macro" href="../global/qcompilerdetection.h.html#194" title="__builtin_expect(!!(QFileInfo(d-&gt;fileName).lastModified() &gt; QDateTime::currentDateTimeUtc()), false)" data-ref="_M/Q_UNLIKELY">Q_UNLIKELY</a>(<a class="type" href="qfileinfo.h.html#QFileInfo" title='QFileInfo' data-ref="QFileInfo">QFileInfo</a><a class="ref fn" href="qfileinfo.h.html#_ZN9QFileInfoC1ERK7QString" title='QFileInfo::QFileInfo' data-ref="_ZN9QFileInfoC1ERK7QString">(</a><a class="local col7 ref" href="#244" title='d' data-ref="17d">d</a>-&gt;<a class="ref field" href="qlockfile_p.h.html#QLockFilePrivate::fileName" title='QLockFilePrivate::fileName' data-ref="QLockFilePrivate::fileName">fileName</a>).<a class="ref fn" href="qfileinfo.h.html#_ZNK9QFileInfo12lastModifiedEv" title='QFileInfo::lastModified' data-ref="_ZNK9QFileInfo12lastModifiedEv">lastModified</a>() <a class="ref fn" href="../time/qdatetime.h.html#_ZgtRK9QDateTimeS1_" title='operator&gt;' data-ref="_ZgtRK9QDateTimeS1_">&gt;</a> <a class="type" href="../time/qdatetime.h.html#QDateTime" title='QDateTime' data-ref="QDateTime">QDateTime</a>::<a class="ref fn" href="../time/qdatetime.h.html#_ZN9QDateTime18currentDateTimeUtcEv" title='QDateTime::currentDateTimeUtc' data-ref="_ZN9QDateTime18currentDateTimeUtcEv">currentDateTimeUtc</a>()))</td></tr>
+<tr><th id="259">259</th><td>                    <a class="macro" href="../global/qlogging.h.html#157" title="QMessageLogger(nullptr, 0, nullptr).info" data-ref="_M/qInfo">qInfo</a>(<span class='inlayHint'>msg:&nbsp;</span><q>"QLockFile: Lock file '%ls' has a modification time in the future"</q>, <a class="macro" href="../text/qstring.h.html#1632" title="static_cast&lt;const wchar_t*&gt;(static_cast&lt;const void*&gt;(QtPrivate::asString(d-&gt;fileName).utf16()))" data-ref="_M/qUtf16Printable">qUtf16Printable</a>(<a class="local col7 ref" href="#244" title='d' data-ref="17d">d</a>-&gt;<a class="ref field" href="qlockfile_p.h.html#QLockFilePrivate::fileName" title='QLockFilePrivate::fileName' data-ref="QLockFilePrivate::fileName">fileName</a>));</td></tr>
+<tr><th id="260">260</th><td>                <i>// Stale lock from another thread/process</i></td></tr>
+<tr><th id="261">261</th><td><i>                // Ensure two processes don't remove it at the same time</i></td></tr>
+<tr><th id="262">262</th><td>                <a class="type" href="qlockfile.h.html#QLockFile" title='QLockFile' data-ref="QLockFile">QLockFile</a> <dfn class="local col8 decl" id="18rmlock" title='rmlock' data-type='QLockFile' data-ref="18rmlock">rmlock</dfn><a class="ref fn" href="#_ZN9QLockFileC1ERK7QString" title='QLockFile::QLockFile' data-ref="_ZN9QLockFileC1ERK7QString">(</a><a class="ref fn fake" href="../text/qstringbuilder.h.html#_ZNK14QStringBuildercvN13QConcatenableI14QStringBuilderIT_T0_EE9ConvertToEEv" title='QStringBuilder::operator typename QConcatenable&lt;QStringBuilder&lt;type-parameter-0-0, type-parameter-0-1&gt; &gt;::ConvertTo' data-ref="_ZNK14QStringBuildercvN13QConcatenableI14QStringBuilderIT_T0_EE9ConvertToEEv"></a><a class="local col7 ref" href="#244" title='d' data-ref="17d">d</a>-&gt;<a class="ref field" href="qlockfile_p.h.html#QLockFilePrivate::fileName" title='QLockFilePrivate::fileName' data-ref="QLockFilePrivate::fileName">fileName</a> <a class="ref fn" href="../text/qstringbuilder.h.html#_ZplRKT_RKT0_" title='operator+' data-ref="_ZplRKT_RKT0_">+</a> <q>".rmlock"<a class="ref fn" href="../text/qstring.h.html#_ZN2Qt8Literals14StringLiteralsli3_L1EPKcm" title='Qt::operator&quot;&quot;_L1' data-ref="_ZN2Qt8Literals14StringLiteralsli3_L1EPKcm">_L1</a></q>);</td></tr>
+<tr><th id="263">263</th><td>                <b>if</b> (<a class="local col8 ref" href="#18rmlock" title='rmlock' data-ref="18rmlock">rmlock</a>.<a class="member fn" href="#_ZN9QLockFile7tryLockEi" title='QLockFile::tryLock' data-ref="_ZN9QLockFile7tryLockEi">tryLock</a>()) {</td></tr>
+<tr><th id="264">264</th><td>                    <b>if</b> (<a class="local col7 ref" href="#244" title='d' data-ref="17d">d</a>-&gt;<a class="ref fn" href="#_ZNK16QLockFilePrivate17isApparentlyStaleEv" title='QLockFilePrivate::isApparentlyStale' data-ref="_ZNK16QLockFilePrivate17isApparentlyStaleEv">isApparentlyStale</a>() &amp;&amp; <a class="local col7 ref" href="#244" title='d' data-ref="17d">d</a>-&gt;<a class="ref fn" href="qlockfile_p.h.html#_ZN16QLockFilePrivate15removeStaleLockEv" title='QLockFilePrivate::removeStaleLock' data-ref="_ZN16QLockFilePrivate15removeStaleLockEv">removeStaleLock</a>())</td></tr>
+<tr><th id="265">265</th><td>                        <b>continue</b>;</td></tr>
+<tr><th id="266">266</th><td>                }</td></tr>
+<tr><th id="267">267</th><td>            }</td></tr>
+<tr><th id="268">268</th><td>            <b>break</b>;</td></tr>
+<tr><th id="269">269</th><td>        }</td></tr>
+<tr><th id="270">270</th><td></td></tr>
+<tr><th id="271">271</th><td>        <em>int</em> <dfn class="local col9 decl" id="19remainingTime" title='remainingTime' data-type='int' data-ref="19remainingTime">remainingTime</dfn> = <a class="local col5 ref" href="#15timer" title='timer' data-ref="15timer">timer</a>.<a class="ref fn" href="../kernel/qdeadlinetimer.h.html#_ZNK14QDeadlineTimer13remainingTimeEv" title='QDeadlineTimer::remainingTime' data-ref="_ZNK14QDeadlineTimer13remainingTimeEv">remainingTime</a>();</td></tr>
+<tr><th id="272">272</th><td>        <b>if</b> (<a class="local col9 ref" href="#19remainingTime" title='remainingTime' data-ref="19remainingTime">remainingTime</a> == <var>0</var>)</td></tr>
+<tr><th id="273">273</th><td>            <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="274">274</th><td>        <b>else</b> <b>if</b> (<a class="typedef" href="../../../../include/x86_64-linux-gnu/sys/types.h.html#uint" title='uint' data-type='unsigned int' data-ref="uint">uint</a>(<a class="local col6 ref" href="#16sleepTime" title='sleepTime' data-ref="16sleepTime">sleepTime</a>) &gt; <a class="typedef" href="../../../../include/x86_64-linux-gnu/sys/types.h.html#uint" title='uint' data-type='unsigned int' data-ref="uint">uint</a>(<a class="local col9 ref" href="#19remainingTime" title='remainingTime' data-ref="19remainingTime">remainingTime</a>))</td></tr>
+<tr><th id="275">275</th><td>            <a class="local col6 ref" href="#16sleepTime" title='sleepTime' data-ref="16sleepTime">sleepTime</a> = <a class="local col9 ref" href="#19remainingTime" title='remainingTime' data-ref="19remainingTime">remainingTime</a>;</td></tr>
+<tr><th id="276">276</th><td></td></tr>
+<tr><th id="277">277</th><td>        <a class="type" href="../thread/qthread.h.html#QThread" title='QThread' data-ref="QThread">QThread</a>::<a class="ref fn" href="../thread/qthread.h.html#_ZN7QThread6msleepEm" title='QThread::msleep' data-ref="_ZN7QThread6msleepEm">msleep</a>(<a class="local col6 ref" href="#16sleepTime" title='sleepTime' data-ref="16sleepTime">sleepTime</a>);</td></tr>
+<tr><th id="278">278</th><td>        <b>if</b> (<a class="local col6 ref" href="#16sleepTime" title='sleepTime' data-ref="16sleepTime">sleepTime</a> &lt; <var>5</var> * <var>1000</var>)</td></tr>
+<tr><th id="279">279</th><td>            <a class="local col6 ref" href="#16sleepTime" title='sleepTime' data-ref="16sleepTime">sleepTime</a> *= <var>2</var>;</td></tr>
+<tr><th id="280">280</th><td>    }</td></tr>
+<tr><th id="281">281</th><td>    <i>// not reached</i></td></tr>
+<tr><th id="282">282</th><td>    <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="283">283</th><td>}</td></tr>
+<tr><th id="284">284</th><td></td></tr>
+<tr><th id="285">285</th><td><i class="doc">/*! <span class="command">\fn</span> <span class="verb">bool QLockFile::tryLock(std::chrono::milliseconds timeout)</span></i></td></tr>
+<tr><th id="286">286</th><td><i class="doc">    <span class="command">\overload</span></i></td></tr>
+<tr><th id="287">287</th><td><i class="doc">    <span class="command">\since</span> 6.2</i></td></tr>
+<tr><th id="288">288</th><td><i class="doc"></i></td></tr>
+<tr><th id="289">289</th><td><i class="doc">    Attempts to create the lock file. This function returns<span class="command"> \c</span> <span class="arg">true</span> if the</i></td></tr>
+<tr><th id="290">290</th><td><i class="doc">    lock was obtained; otherwise it returns<span class="command"> \c</span> <span class="arg">false.</span> If another process (or</i></td></tr>
+<tr><th id="291">291</th><td><i class="doc">    another thread) has created the lock file already, this function will</i></td></tr>
+<tr><th id="292">292</th><td><i class="doc">    wait for at most<span class="command"> \a</span> <span class="arg">timeout</span> for the lock file to become available.</i></td></tr>
+<tr><th id="293">293</th><td><i class="doc"></i></td></tr>
+<tr><th id="294">294</th><td><i class="doc">    If the lock was obtained, it must be released with unlock()</i></td></tr>
+<tr><th id="295">295</th><td><i class="doc">    before another process (or thread) can successfully lock it.</i></td></tr>
+<tr><th id="296">296</th><td><i class="doc"></i></td></tr>
+<tr><th id="297">297</th><td><i class="doc">    Calling this function multiple times on the same lock from the same</i></td></tr>
+<tr><th id="298">298</th><td><i class="doc">    thread without unlocking first is not allowed, this function will</i></td></tr>
+<tr><th id="299">299</th><td><i class="doc">   <span class="command"> \e</span> <span class="arg">always</span> return false when attempting to lock the file recursively.</i></td></tr>
+<tr><th id="300">300</th><td><i class="doc"></i></td></tr>
+<tr><th id="301">301</th><td><i class="doc">    <span class="command">\sa</span> lock(), unlock()</i></td></tr>
+<tr><th id="302">302</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="303">303</th><td></td></tr>
+<tr><th id="304">304</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="305">305</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb" data-ref="_ZN9QLockFile6unlockEv">void QLockFile::unlock()</span></i></td></tr>
+<tr><th id="306">306</th><td><i class="doc">    Releases the lock, by deleting the lock file.</i></td></tr>
+<tr><th id="307">307</th><td><i class="doc"></i></td></tr>
+<tr><th id="308">308</th><td><i class="doc">    Calling unlock() without locking the file first, does nothing.</i></td></tr>
+<tr><th id="309">309</th><td><i class="doc"></i></td></tr>
+<tr><th id="310">310</th><td><i class="doc">    <span class="command">\sa</span> lock(), tryLock()</i></td></tr>
+<tr><th id="311">311</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="312">312</th><td></td></tr>
+<tr><th id="313">313</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="314">314</th><td><i class="doc">    Retrieves information about the current owner of the lock file.</i></td></tr>
+<tr><th id="315">315</th><td><i class="doc"></i></td></tr>
+<tr><th id="316">316</th><td><i class="doc">    If tryLock() returns<span class="command"> \c</span> <span class="arg">false,</span> and error() returns LockFailedError,</i></td></tr>
+<tr><th id="317">317</th><td><i class="doc">    this function can be called to find out more information about the existing</i></td></tr>
+<tr><th id="318">318</th><td><i class="doc">    lock file:</i></td></tr>
+<tr><th id="319">319</th><td><i class="doc">   <span class="command"> \list</span></i></td></tr>
+<tr><th id="320">320</th><td><i class="doc">    <span class="command">\li</span> the PID of the application (returned in<span class="command"> \a</span> <span class="arg">pid)</span></i></td></tr>
+<tr><th id="321">321</th><td><i class="doc">    <span class="command">\li</span> the<span class="command"> \a</span> <span class="arg">hostname</span> it's running on (useful in case of networked filesystems),</i></td></tr>
+<tr><th id="322">322</th><td><i class="doc">    <span class="command">\li</span> the name of the application which created it (returned in<span class="command"> \a</span> <span class="arg">appname),</span></i></td></tr>
+<tr><th id="323">323</th><td><i class="doc">   <span class="command"> \endlist</span></i></td></tr>
+<tr><th id="324">324</th><td><i class="doc"></i></td></tr>
+<tr><th id="325">325</th><td><i class="doc">    Note that tryLock() automatically deleted the file if there is no</i></td></tr>
+<tr><th id="326">326</th><td><i class="doc">    running application with this PID, so LockFailedError can only happen if there is</i></td></tr>
+<tr><th id="327">327</th><td><i class="doc">    an application with this PID (it could be unrelated though).</i></td></tr>
+<tr><th id="328">328</th><td><i class="doc"></i></td></tr>
+<tr><th id="329">329</th><td><i class="doc">    This can be used to inform users about the existing lock file and give them</i></td></tr>
+<tr><th id="330">330</th><td><i class="doc">    the choice to delete it. After removing the file using removeStaleLockFile(),</i></td></tr>
+<tr><th id="331">331</th><td><i class="doc">    the application can call tryLock() again.</i></td></tr>
+<tr><th id="332">332</th><td><i class="doc"></i></td></tr>
+<tr><th id="333">333</th><td><i class="doc">    This function returns<span class="command"> \c</span> <span class="arg">true</span> if the information could be successfully retrieved, false</i></td></tr>
+<tr><th id="334">334</th><td><i class="doc">    if the lock file doesn't exist or doesn't contain the expected data.</i></td></tr>
+<tr><th id="335">335</th><td><i class="doc">    This can happen if the lock file was deleted between the time where tryLock() failed</i></td></tr>
+<tr><th id="336">336</th><td><i class="doc">    and the call to this function. Simply call tryLock() again if this happens.</i></td></tr>
+<tr><th id="337">337</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="338">338</th><td><em>bool</em> <a class="type" href="qlockfile.h.html#QLockFile" title='QLockFile' data-ref="QLockFile">QLockFile</a>::<dfn class="decl def fn" id="_ZNK9QLockFile11getLockInfoEPxP7QStringS2_" title='QLockFile::getLockInfo' data-ref="_ZNK9QLockFile11getLockInfoEPxP7QStringS2_">getLockInfo</dfn>(<a class="typedef" href="../global/qtypes.h.html#qint64" title='qint64' data-type='long long' data-ref="qint64">qint64</a> *<dfn class="local col0 decl" id="20pid" title='pid' data-type='qint64 *' data-ref="20pid">pid</dfn>, <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> *<dfn class="local col1 decl" id="21hostname" title='hostname' data-type='QString *' data-ref="21hostname">hostname</dfn>, <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> *<dfn class="local col2 decl" id="22appname" title='appname' data-type='QString *' data-ref="22appname">appname</dfn>) <em>const</em></td></tr>
+<tr><th id="339">339</th><td>{</td></tr>
+<tr><th id="340">340</th><td>    <a class="macro" href="../global/qtclasshelpermacros.h.html#109" title="const QLockFilePrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(<em>const</em> QLockFile);</td></tr>
+<tr><th id="341">341</th><td>    <a class="tu type" href="#(anonymousnamespace)::LockFileInfo" title='(anonymous namespace)::LockFileInfo' data-ref="(anonymousnamespace)::LockFileInfo">LockFileInfo</a> <a class="tu ref fn fake" href="#20" title='(anonymous namespace)::LockFileInfo::LockFileInfo' data-use='c' data-ref="_ZN12_GLOBAL__N_112LockFileInfoC1Ev"></a><dfn class="local col3 decl" id="23info" title='info' data-type='(anonymous namespace)::LockFileInfo' data-ref="23info">info</dfn>;</td></tr>
+<tr><th id="342">342</th><td>    <b>if</b> (!<a class="tu ref fn" href="#_ZL18getLockInfo_helperRK7QStringPN12_GLOBAL__N_112LockFileInfoE" title='getLockInfo_helper' data-use='c' data-ref="_ZL18getLockInfo_helperRK7QStringPN12_GLOBAL__N_112LockFileInfoE">getLockInfo_helper</a>(<span class='inlayHint'>fileName:&nbsp;</span><a class="local col4 ref" href="#340" title='d' data-ref="24d">d</a>-&gt;<a class="ref field" href="qlockfile_p.h.html#QLockFilePrivate::fileName" title='QLockFilePrivate::fileName' data-ref="QLockFilePrivate::fileName">fileName</a>, <span class='inlayHint'>info:&nbsp;</span>&amp;<a class="local col3 ref" href="#23info" title='info' data-ref="23info">info</a>))</td></tr>
+<tr><th id="343">343</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="344">344</th><td>    <b>if</b> (<a class="local col0 ref" href="#20pid" title='pid' data-ref="20pid">pid</a>)</td></tr>
+<tr><th id="345">345</th><td>        *<a class="local col0 ref" href="#20pid" title='pid' data-ref="20pid">pid</a> = <a class="local col3 ref" href="#23info" title='info' data-ref="23info">info</a>.<a class="tu ref field" href="#(anonymousnamespace)::LockFileInfo::pid" title='(anonymous namespace)::LockFileInfo::pid' data-use='r' data-ref="(anonymousnamespace)::LockFileInfo::pid">pid</a>;</td></tr>
+<tr><th id="346">346</th><td>    <b>if</b> (<a class="local col1 ref" href="#21hostname" title='hostname' data-ref="21hostname">hostname</a>)</td></tr>
+<tr><th id="347">347</th><td>        *<a class="local col1 ref" href="#21hostname" title='hostname' data-ref="21hostname">hostname</a> <a class="ref fn" href="../text/qstring.h.html#_ZN7QStringaSERKS_" title='QString::operator=' data-ref="_ZN7QStringaSERKS_">=</a> <a class="local col3 ref" href="#23info" title='info' data-ref="23info">info</a>.<a class="tu ref field" href="#(anonymousnamespace)::LockFileInfo::hostname" title='(anonymous namespace)::LockFileInfo::hostname' data-use='r' data-ref="(anonymousnamespace)::LockFileInfo::hostname">hostname</a>;</td></tr>
+<tr><th id="348">348</th><td>    <b>if</b> (<a class="local col2 ref" href="#22appname" title='appname' data-ref="22appname">appname</a>)</td></tr>
+<tr><th id="349">349</th><td>        *<a class="local col2 ref" href="#22appname" title='appname' data-ref="22appname">appname</a> <a class="ref fn" href="../text/qstring.h.html#_ZN7QStringaSERKS_" title='QString::operator=' data-ref="_ZN7QStringaSERKS_">=</a> <a class="local col3 ref" href="#23info" title='info' data-ref="23info">info</a>.<a class="tu ref field" href="#(anonymousnamespace)::LockFileInfo::appname" title='(anonymous namespace)::LockFileInfo::appname' data-use='r' data-ref="(anonymousnamespace)::LockFileInfo::appname">appname</a>;</td></tr>
+<tr><th id="350">350</th><td>    <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="351">351</th><td>}</td></tr>
+<tr><th id="352">352</th><td></td></tr>
+<tr><th id="353">353</th><td><a class="type" href="../text/qbytearray.h.html#QByteArray" title='QByteArray' data-ref="QByteArray">QByteArray</a> <a class="type" href="qlockfile_p.h.html#QLockFilePrivate" title='QLockFilePrivate' data-ref="QLockFilePrivate">QLockFilePrivate</a>::<dfn class="decl def fn" id="_ZNK16QLockFilePrivate16lockFileContentsEv" title='QLockFilePrivate::lockFileContents' data-ref="_ZNK16QLockFilePrivate16lockFileContentsEv">lockFileContents</dfn>() <em>const</em></td></tr>
+<tr><th id="354">354</th><td>{</td></tr>
+<tr><th id="355">355</th><td>    <i>// Use operator% from the fast builder to avoid multiple memory allocations.</i></td></tr>
+<tr><th id="356">356</th><td>    <b>return</b> <a class="ref fn fake" href="../text/qstringbuilder.h.html#_ZNK14QStringBuildercvN13QConcatenableI14QStringBuilderIT_T0_EE9ConvertToEEv" title='QStringBuilder::operator typename QConcatenable&lt;QStringBuilder&lt;type-parameter-0-0, type-parameter-0-1&gt; &gt;::ConvertTo' data-ref="_ZNK14QStringBuildercvN13QConcatenableI14QStringBuilderIT_T0_EE9ConvertToEEv"></a><a class="type" href="../text/qbytearray.h.html#QByteArray" title='QByteArray' data-ref="QByteArray">QByteArray</a>::<a class="ref fn" href="../text/qbytearray.h.html#_ZN10QByteArray6numberExi" title='QByteArray::number' data-ref="_ZN10QByteArray6numberExi">number</a>(<a class="type" href="../kernel/qcoreapplication.h.html#QCoreApplication" title='QCoreApplication' data-ref="QCoreApplication">QCoreApplication</a>::<a class="ref fn" href="../kernel/qcoreapplication.h.html#_ZN16QCoreApplication14applicationPidEv" title='QCoreApplication::applicationPid' data-ref="_ZN16QCoreApplication14applicationPidEv">applicationPid</a>()) <a class="ref fn" href="../text/qstringbuilder.h.html#_ZrmRKT_RKT0_" title='operator%' data-ref="_ZrmRKT_RKT0_">%</a> <kbd>'\n'</kbd></td></tr>
+<tr><th id="357">357</th><td>            <a class="ref fn" href="../text/qstringbuilder.h.html#_ZrmRKT_RKT0_" title='operator%' data-ref="_ZrmRKT_RKT0_">%</a> <a class="member fn" href="qlockfile_p.h.html#_ZN16QLockFilePrivate16processNameByPidEx" title='QLockFilePrivate::processNameByPid' data-ref="_ZN16QLockFilePrivate16processNameByPidEx">processNameByPid</a>(<span class='inlayHint'>pid:&nbsp;</span><a class="type" href="../kernel/qcoreapplication.h.html#QCoreApplication" title='QCoreApplication' data-ref="QCoreApplication">QCoreApplication</a>::<a class="ref fn" href="../kernel/qcoreapplication.h.html#_ZN16QCoreApplication14applicationPidEv" title='QCoreApplication::applicationPid' data-ref="_ZN16QCoreApplication14applicationPidEv">applicationPid</a>()).<a class="ref fn" href="../text/qstring.h.html#_ZNO7QString6toUtf8Ev" title='QString::toUtf8' data-ref="_ZNO7QString6toUtf8Ev">toUtf8</a>() <a class="ref fn" href="../text/qstringbuilder.h.html#_ZrmRKT_RKT0_" title='operator%' data-ref="_ZrmRKT_RKT0_">%</a> <kbd>'\n'</kbd></td></tr>
+<tr><th id="358">358</th><td>            <a class="ref fn" href="../text/qstringbuilder.h.html#_ZrmRKT_RKT0_" title='operator%' data-ref="_ZrmRKT_RKT0_">%</a> <a class="tu ref fn" href="#_ZL11machineNamev" title='machineName' data-use='c' data-ref="_ZL11machineNamev">machineName</a>().<a class="ref fn" href="../text/qstring.h.html#_ZNO7QString6toUtf8Ev" title='QString::toUtf8' data-ref="_ZNO7QString6toUtf8Ev">toUtf8</a>() <a class="ref fn" href="../text/qstringbuilder.h.html#_ZrmRKT_RKT0_" title='operator%' data-ref="_ZrmRKT_RKT0_">%</a> <kbd>'\n'</kbd></td></tr>
+<tr><th id="359">359</th><td>            <a class="ref fn" href="../text/qstringbuilder.h.html#_ZrmRKT_RKT0_" title='operator%' data-ref="_ZrmRKT_RKT0_">%</a> <a class="type" href="../global/qsysinfo.h.html#QSysInfo" title='QSysInfo' data-ref="QSysInfo">QSysInfo</a>::<a class="ref fn" href="../global/qsysinfo.h.html#_ZN8QSysInfo15machineUniqueIdEv" title='QSysInfo::machineUniqueId' data-ref="_ZN8QSysInfo15machineUniqueIdEv">machineUniqueId</a>() <a class="ref fn" href="../text/qstringbuilder.h.html#_ZrmRKT_RKT0_" title='operator%' data-ref="_ZrmRKT_RKT0_">%</a> <kbd>'\n'</kbd></td></tr>
+<tr><th id="360">360</th><td>            <a class="ref fn" href="../text/qstringbuilder.h.html#_ZrmRKT_RKT0_" title='operator%' data-ref="_ZrmRKT_RKT0_">%</a> <a class="type" href="../global/qsysinfo.h.html#QSysInfo" title='QSysInfo' data-ref="QSysInfo">QSysInfo</a>::<a class="ref fn" href="../global/qsysinfo.h.html#_ZN8QSysInfo12bootUniqueIdEv" title='QSysInfo::bootUniqueId' data-ref="_ZN8QSysInfo12bootUniqueIdEv">bootUniqueId</a>() <a class="ref fn" href="../text/qstringbuilder.h.html#_ZrmRKT_RKT0_" title='operator%' data-ref="_ZrmRKT_RKT0_">%</a> <kbd>'\n'</kbd>;</td></tr>
+<tr><th id="361">361</th><td>}</td></tr>
+<tr><th id="362">362</th><td></td></tr>
+<tr><th id="363">363</th><td><em>static</em> <em>bool</em> <dfn class="tu decl def fn" id="_ZL18getLockInfo_helperRK7QStringPN12_GLOBAL__N_112LockFileInfoE" title='getLockInfo_helper' data-type='bool getLockInfo_helper(const QString &amp; fileName, (anonymous namespace)::LockFileInfo * info)' data-ref="_ZL18getLockInfo_helperRK7QStringPN12_GLOBAL__N_112LockFileInfoE">getLockInfo_helper</dfn>(<em>const</em> <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> &amp;<dfn class="local col5 decl" id="25fileName" title='fileName' data-type='const QString &amp;' data-ref="25fileName">fileName</dfn>, <a class="tu type" href="#(anonymousnamespace)::LockFileInfo" title='(anonymous namespace)::LockFileInfo' data-ref="(anonymousnamespace)::LockFileInfo">LockFileInfo</a> *<dfn class="local col6 decl" id="26info" title='info' data-type='(anonymous namespace)::LockFileInfo *' data-ref="26info">info</dfn>)</td></tr>
+<tr><th id="364">364</th><td>{</td></tr>
+<tr><th id="365">365</th><td>    <a class="type" href="qfile.h.html#QFile" title='QFile' data-ref="QFile">QFile</a> <dfn class="local col7 decl" id="27reader" title='reader' data-type='QFile' data-ref="27reader">reader</dfn><a class="ref fn" href="qfile.h.html#_ZN5QFileC1ERK7QString" title='QFile::QFile' data-ref="_ZN5QFileC1ERK7QString">(</a><a class="local col5 ref" href="#25fileName" title='fileName' data-ref="25fileName">fileName</a>);</td></tr>
+<tr><th id="366">366</th><td>    <b>if</b> (!<a class="local col7 ref" href="#27reader" title='reader' data-ref="27reader">reader</a>.<a class="virtual ref fn" href="qfile.h.html#_ZN5QFile4openE6QFlagsIN13QIODeviceBase12OpenModeFlagEE" title='QFile::open' data-ref="_ZN5QFile4openE6QFlagsIN13QIODeviceBase12OpenModeFlagEE">open</a>(<span class='inlayHint'>flags:&nbsp;</span><a class="type" href="qiodevice.h.html#QIODevice" title='QIODevice' data-ref="QIODevice">QIODevice</a>::<a class="enum" href="qiodevicebase.h.html#QIODeviceBase::ReadOnly" title='QIODeviceBase::ReadOnly' data-ref="QIODeviceBase::ReadOnly">ReadOnly</a> <a class="ref fn" href="qiodevice.h.html#139" title='operator|' data-ref="_ZorN13QIODeviceBase12OpenModeFlagES0_">|</a> <a class="type" href="qiodevice.h.html#QIODevice" title='QIODevice' data-ref="QIODevice">QIODevice</a>::<a class="enum" href="qiodevicebase.h.html#QIODeviceBase::Text" title='QIODeviceBase::Text' data-ref="QIODeviceBase::Text">Text</a>))</td></tr>
+<tr><th id="367">367</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="368">368</th><td></td></tr>
+<tr><th id="369">369</th><td>    <a class="type" href="../text/qbytearray.h.html#QByteArray" title='QByteArray' data-ref="QByteArray">QByteArray</a> <dfn class="local col8 decl" id="28pidLine" title='pidLine' data-type='QByteArray' data-ref="28pidLine">pidLine</dfn> = <a class="local col7 ref" href="#27reader" title='reader' data-ref="27reader">reader</a>.<a class="ref fn" href="qiodevice.h.html#_ZN9QIODevice8readLineEx" title='QIODevice::readLine' data-ref="_ZN9QIODevice8readLineEx">readLine</a>();</td></tr>
+<tr><th id="370">370</th><td>    <a class="local col8 ref" href="#28pidLine" title='pidLine' data-ref="28pidLine">pidLine</a>.<a class="ref fn" href="../text/qbytearray.h.html#_ZN10QByteArray4chopEx" title='QByteArray::chop' data-ref="_ZN10QByteArray4chopEx">chop</a>(<span class='inlayHint'>n:&nbsp;</span><var>1</var>);</td></tr>
+<tr><th id="371">371</th><td>    <b>if</b> (<a class="local col8 ref" href="#28pidLine" title='pidLine' data-ref="28pidLine">pidLine</a>.<a class="ref fn" href="../text/qbytearray.h.html#_ZNK10QByteArray7isEmptyEv" title='QByteArray::isEmpty' data-ref="_ZNK10QByteArray7isEmptyEv">isEmpty</a>())</td></tr>
+<tr><th id="372">372</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="373">373</th><td>    <a class="type" href="../text/qbytearray.h.html#QByteArray" title='QByteArray' data-ref="QByteArray">QByteArray</a> <dfn class="local col9 decl" id="29appNameLine" title='appNameLine' data-type='QByteArray' data-ref="29appNameLine">appNameLine</dfn> = <a class="local col7 ref" href="#27reader" title='reader' data-ref="27reader">reader</a>.<a class="ref fn" href="qiodevice.h.html#_ZN9QIODevice8readLineEx" title='QIODevice::readLine' data-ref="_ZN9QIODevice8readLineEx">readLine</a>();</td></tr>
+<tr><th id="374">374</th><td>    <a class="local col9 ref" href="#29appNameLine" title='appNameLine' data-ref="29appNameLine">appNameLine</a>.<a class="ref fn" href="../text/qbytearray.h.html#_ZN10QByteArray4chopEx" title='QByteArray::chop' data-ref="_ZN10QByteArray4chopEx">chop</a>(<span class='inlayHint'>n:&nbsp;</span><var>1</var>);</td></tr>
+<tr><th id="375">375</th><td>    <a class="type" href="../text/qbytearray.h.html#QByteArray" title='QByteArray' data-ref="QByteArray">QByteArray</a> <dfn class="local col0 decl" id="30hostNameLine" title='hostNameLine' data-type='QByteArray' data-ref="30hostNameLine">hostNameLine</dfn> = <a class="local col7 ref" href="#27reader" title='reader' data-ref="27reader">reader</a>.<a class="ref fn" href="qiodevice.h.html#_ZN9QIODevice8readLineEx" title='QIODevice::readLine' data-ref="_ZN9QIODevice8readLineEx">readLine</a>();</td></tr>
+<tr><th id="376">376</th><td>    <a class="local col0 ref" href="#30hostNameLine" title='hostNameLine' data-ref="30hostNameLine">hostNameLine</a>.<a class="ref fn" href="../text/qbytearray.h.html#_ZN10QByteArray4chopEx" title='QByteArray::chop' data-ref="_ZN10QByteArray4chopEx">chop</a>(<span class='inlayHint'>n:&nbsp;</span><var>1</var>);</td></tr>
+<tr><th id="377">377</th><td></td></tr>
+<tr><th id="378">378</th><td>    <i>// prior to Qt 5.10, only the lines above were recorded</i></td></tr>
+<tr><th id="379">379</th><td>    <a class="type" href="../text/qbytearray.h.html#QByteArray" title='QByteArray' data-ref="QByteArray">QByteArray</a> <dfn class="local col1 decl" id="31hostId" title='hostId' data-type='QByteArray' data-ref="31hostId">hostId</dfn> = <a class="local col7 ref" href="#27reader" title='reader' data-ref="27reader">reader</a>.<a class="ref fn" href="qiodevice.h.html#_ZN9QIODevice8readLineEx" title='QIODevice::readLine' data-ref="_ZN9QIODevice8readLineEx">readLine</a>();</td></tr>
+<tr><th id="380">380</th><td>    <a class="local col1 ref" href="#31hostId" title='hostId' data-ref="31hostId">hostId</a>.<a class="ref fn" href="../text/qbytearray.h.html#_ZN10QByteArray4chopEx" title='QByteArray::chop' data-ref="_ZN10QByteArray4chopEx">chop</a>(<span class='inlayHint'>n:&nbsp;</span><var>1</var>);</td></tr>
+<tr><th id="381">381</th><td>    <a class="type" href="../text/qbytearray.h.html#QByteArray" title='QByteArray' data-ref="QByteArray">QByteArray</a> <dfn class="local col2 decl" id="32bootId" title='bootId' data-type='QByteArray' data-ref="32bootId">bootId</dfn> = <a class="local col7 ref" href="#27reader" title='reader' data-ref="27reader">reader</a>.<a class="ref fn" href="qiodevice.h.html#_ZN9QIODevice8readLineEx" title='QIODevice::readLine' data-ref="_ZN9QIODevice8readLineEx">readLine</a>();</td></tr>
+<tr><th id="382">382</th><td>    <a class="local col2 ref" href="#32bootId" title='bootId' data-ref="32bootId">bootId</a>.<a class="ref fn" href="../text/qbytearray.h.html#_ZN10QByteArray4chopEx" title='QByteArray::chop' data-ref="_ZN10QByteArray4chopEx">chop</a>(<span class='inlayHint'>n:&nbsp;</span><var>1</var>);</td></tr>
+<tr><th id="383">383</th><td></td></tr>
+<tr><th id="384">384</th><td>    <em>bool</em> <dfn class="local col3 decl" id="33ok" title='ok' data-type='bool' data-ref="33ok">ok</dfn>;</td></tr>
+<tr><th id="385">385</th><td>    <a class="local col6 ref" href="#26info" title='info' data-ref="26info">info</a>-&gt;<a class="tu ref field" href="#(anonymousnamespace)::LockFileInfo::appname" title='(anonymous namespace)::LockFileInfo::appname' data-use='w' data-ref="(anonymousnamespace)::LockFileInfo::appname">appname</a> <a class="ref fn" href="../text/qstring.h.html#470" title='QString::operator=' data-ref="_ZN7QStringaSEOS_">=</a> <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a>::<a class="ref fn" href="../text/qstring.h.html#_ZN7QString8fromUtf8ERK10QByteArray" title='QString::fromUtf8' data-ref="_ZN7QString8fromUtf8ERK10QByteArray">fromUtf8</a>(<span class='inlayHint'>ba:&nbsp;</span><a class="local col9 ref" href="#29appNameLine" title='appNameLine' data-ref="29appNameLine">appNameLine</a>);</td></tr>
+<tr><th id="386">386</th><td>    <a class="local col6 ref" href="#26info" title='info' data-ref="26info">info</a>-&gt;<a class="tu ref field" href="#(anonymousnamespace)::LockFileInfo::hostname" title='(anonymous namespace)::LockFileInfo::hostname' data-use='w' data-ref="(anonymousnamespace)::LockFileInfo::hostname">hostname</a> <a class="ref fn" href="../text/qstring.h.html#470" title='QString::operator=' data-ref="_ZN7QStringaSEOS_">=</a> <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a>::<a class="ref fn" href="../text/qstring.h.html#_ZN7QString8fromUtf8ERK10QByteArray" title='QString::fromUtf8' data-ref="_ZN7QString8fromUtf8ERK10QByteArray">fromUtf8</a>(<span class='inlayHint'>ba:&nbsp;</span><a class="local col0 ref" href="#30hostNameLine" title='hostNameLine' data-ref="30hostNameLine">hostNameLine</a>);</td></tr>
+<tr><th id="387">387</th><td>    <a class="local col6 ref" href="#26info" title='info' data-ref="26info">info</a>-&gt;<a class="tu ref field" href="#(anonymousnamespace)::LockFileInfo::hostid" title='(anonymous namespace)::LockFileInfo::hostid' data-use='w' data-ref="(anonymousnamespace)::LockFileInfo::hostid">hostid</a> <a class="ref fn" href="../text/qbytearray.h.html#_ZN10QByteArrayaSERKS_" title='QByteArray::operator=' data-ref="_ZN10QByteArrayaSERKS_">=</a> <a class="local col1 ref" href="#31hostId" title='hostId' data-ref="31hostId">hostId</a>;</td></tr>
+<tr><th id="388">388</th><td>    <a class="local col6 ref" href="#26info" title='info' data-ref="26info">info</a>-&gt;<a class="tu ref field" href="#(anonymousnamespace)::LockFileInfo::bootid" title='(anonymous namespace)::LockFileInfo::bootid' data-use='w' data-ref="(anonymousnamespace)::LockFileInfo::bootid">bootid</a> <a class="ref fn" href="../text/qbytearray.h.html#_ZN10QByteArrayaSERKS_" title='QByteArray::operator=' data-ref="_ZN10QByteArrayaSERKS_">=</a> <a class="local col2 ref" href="#32bootId" title='bootId' data-ref="32bootId">bootId</a>;</td></tr>
+<tr><th id="389">389</th><td>    <a class="local col6 ref" href="#26info" title='info' data-ref="26info">info</a>-&gt;<a class="tu ref field" href="#(anonymousnamespace)::LockFileInfo::pid" title='(anonymous namespace)::LockFileInfo::pid' data-use='w' data-ref="(anonymousnamespace)::LockFileInfo::pid">pid</a> = <a class="local col8 ref" href="#28pidLine" title='pidLine' data-ref="28pidLine">pidLine</a>.<a class="ref fn" href="../text/qbytearray.h.html#_ZNK10QByteArray10toLongLongEPbi" title='QByteArray::toLongLong' data-ref="_ZNK10QByteArray10toLongLongEPbi">toLongLong</a>(<span class='inlayHint'>ok:&nbsp;</span>&amp;<a class="local col3 ref" href="#33ok" title='ok' data-ref="33ok">ok</a>);</td></tr>
+<tr><th id="390">390</th><td>    <b>return</b> <a class="local col3 ref" href="#33ok" title='ok' data-ref="33ok">ok</a> &amp;&amp; <a class="local col6 ref" href="#26info" title='info' data-ref="26info">info</a>-&gt;<a class="tu ref field" href="#(anonymousnamespace)::LockFileInfo::pid" title='(anonymous namespace)::LockFileInfo::pid' data-use='r' data-ref="(anonymousnamespace)::LockFileInfo::pid">pid</a> &gt; <var>0</var>;</td></tr>
+<tr><th id="391">391</th><td>}</td></tr>
+<tr><th id="392">392</th><td></td></tr>
+<tr><th id="393">393</th><td><em>bool</em> <a class="type" href="qlockfile_p.h.html#QLockFilePrivate" title='QLockFilePrivate' data-ref="QLockFilePrivate">QLockFilePrivate</a>::<dfn class="decl def fn" id="_ZNK16QLockFilePrivate17isApparentlyStaleEv" title='QLockFilePrivate::isApparentlyStale' data-ref="_ZNK16QLockFilePrivate17isApparentlyStaleEv">isApparentlyStale</dfn>() <em>const</em></td></tr>
+<tr><th id="394">394</th><td>{</td></tr>
+<tr><th id="395">395</th><td>    <a class="tu type" href="#(anonymousnamespace)::LockFileInfo" title='(anonymous namespace)::LockFileInfo' data-ref="(anonymousnamespace)::LockFileInfo">LockFileInfo</a> <a class="tu ref fn fake" href="#20" title='(anonymous namespace)::LockFileInfo::LockFileInfo' data-use='c' data-ref="_ZN12_GLOBAL__N_112LockFileInfoC1Ev"></a><dfn class="local col4 decl" id="34info" title='info' data-type='(anonymous namespace)::LockFileInfo' data-ref="34info">info</dfn>;</td></tr>
+<tr><th id="396">396</th><td>    <b>if</b> (<a class="tu ref fn" href="#_ZL18getLockInfo_helperRK7QStringPN12_GLOBAL__N_112LockFileInfoE" title='getLockInfo_helper' data-use='c' data-ref="_ZL18getLockInfo_helperRK7QStringPN12_GLOBAL__N_112LockFileInfoE">getLockInfo_helper</a>(<a class="member field" href="qlockfile_p.h.html#QLockFilePrivate::fileName" title='QLockFilePrivate::fileName' data-ref="QLockFilePrivate::fileName">fileName</a>, <span class='inlayHint'>info:&nbsp;</span>&amp;<a class="local col4 ref" href="#34info" title='info' data-ref="34info">info</a>)) {</td></tr>
+<tr><th id="397">397</th><td>        <em>bool</em> <dfn class="local col5 decl" id="35sameHost" title='sameHost' data-type='bool' data-ref="35sameHost">sameHost</dfn> = <a class="local col4 ref" href="#34info" title='info' data-ref="34info">info</a>.<a class="tu ref field" href="#(anonymousnamespace)::LockFileInfo::hostname" title='(anonymous namespace)::LockFileInfo::hostname' data-use='m' data-ref="(anonymousnamespace)::LockFileInfo::hostname">hostname</a>.<a class="ref fn" href="../text/qstring.h.html#_ZNK7QString7isEmptyEv" title='QString::isEmpty' data-ref="_ZNK7QString7isEmptyEv">isEmpty</a>() || <a class="local col4 ref" href="#34info" title='info' data-ref="34info">info</a>.<a class="tu ref field" href="#(anonymousnamespace)::LockFileInfo::hostname" title='(anonymous namespace)::LockFileInfo::hostname' data-use='r' data-ref="(anonymousnamespace)::LockFileInfo::hostname">hostname</a> <a class="ref fn" href="../text/qstring.h.html#_ZeqRK7QStringS1_" title='operator==' data-ref="_ZeqRK7QStringS1_">==</a> <a class="tu ref fn" href="#_ZL11machineNamev" title='machineName' data-use='c' data-ref="_ZL11machineNamev">machineName</a>();</td></tr>
+<tr><th id="398">398</th><td>        <b>if</b> (!<a class="local col4 ref" href="#34info" title='info' data-ref="34info">info</a>.<a class="tu ref field" href="#(anonymousnamespace)::LockFileInfo::hostid" title='(anonymous namespace)::LockFileInfo::hostid' data-use='m' data-ref="(anonymousnamespace)::LockFileInfo::hostid">hostid</a>.<a class="ref fn" href="../text/qbytearray.h.html#_ZNK10QByteArray7isEmptyEv" title='QByteArray::isEmpty' data-ref="_ZNK10QByteArray7isEmptyEv">isEmpty</a>()) {</td></tr>
+<tr><th id="399">399</th><td>            <i>// Override with the host ID, if we know it.</i></td></tr>
+<tr><th id="400">400</th><td>            <a class="type" href="../text/qbytearray.h.html#QByteArray" title='QByteArray' data-ref="QByteArray">QByteArray</a> <dfn class="local col6 decl" id="36ourHostId" title='ourHostId' data-type='QByteArray' data-ref="36ourHostId">ourHostId</dfn> = <a class="type" href="../global/qsysinfo.h.html#QSysInfo" title='QSysInfo' data-ref="QSysInfo">QSysInfo</a>::<a class="ref fn" href="../global/qsysinfo.h.html#_ZN8QSysInfo15machineUniqueIdEv" title='QSysInfo::machineUniqueId' data-ref="_ZN8QSysInfo15machineUniqueIdEv">machineUniqueId</a>();</td></tr>
+<tr><th id="401">401</th><td>            <b>if</b> (!<a class="local col6 ref" href="#36ourHostId" title='ourHostId' data-ref="36ourHostId">ourHostId</a>.<a class="ref fn" href="../text/qbytearray.h.html#_ZNK10QByteArray7isEmptyEv" title='QByteArray::isEmpty' data-ref="_ZNK10QByteArray7isEmptyEv">isEmpty</a>())</td></tr>
+<tr><th id="402">402</th><td>                <a class="local col5 ref" href="#35sameHost" title='sameHost' data-ref="35sameHost">sameHost</a> = (<a class="local col6 ref" href="#36ourHostId" title='ourHostId' data-ref="36ourHostId">ourHostId</a> <a class="ref fn" href="../text/qbytearray.h.html#_ZeqRK10QByteArrayS1_" title='operator==' data-ref="_ZeqRK10QByteArrayS1_">==</a> <a class="local col4 ref" href="#34info" title='info' data-ref="34info">info</a>.<a class="tu ref field" href="#(anonymousnamespace)::LockFileInfo::hostid" title='(anonymous namespace)::LockFileInfo::hostid' data-use='r' data-ref="(anonymousnamespace)::LockFileInfo::hostid">hostid</a>);</td></tr>
+<tr><th id="403">403</th><td>        }</td></tr>
+<tr><th id="404">404</th><td></td></tr>
+<tr><th id="405">405</th><td>        <b>if</b> (<a class="local col5 ref" href="#35sameHost" title='sameHost' data-ref="35sameHost">sameHost</a>) {</td></tr>
+<tr><th id="406">406</th><td>            <b>if</b> (!<a class="local col4 ref" href="#34info" title='info' data-ref="34info">info</a>.<a class="tu ref field" href="#(anonymousnamespace)::LockFileInfo::bootid" title='(anonymous namespace)::LockFileInfo::bootid' data-use='m' data-ref="(anonymousnamespace)::LockFileInfo::bootid">bootid</a>.<a class="ref fn" href="../text/qbytearray.h.html#_ZNK10QByteArray7isEmptyEv" title='QByteArray::isEmpty' data-ref="_ZNK10QByteArray7isEmptyEv">isEmpty</a>()) {</td></tr>
+<tr><th id="407">407</th><td>                <i>// If we've rebooted, then the lock is definitely stale.</i></td></tr>
+<tr><th id="408">408</th><td>                <b>if</b> (<a class="local col4 ref" href="#34info" title='info' data-ref="34info">info</a>.<a class="tu ref field" href="#(anonymousnamespace)::LockFileInfo::bootid" title='(anonymous namespace)::LockFileInfo::bootid' data-use='r' data-ref="(anonymousnamespace)::LockFileInfo::bootid">bootid</a> <a class="ref fn" href="../text/qbytearray.h.html#_ZneRK10QByteArrayS1_" title='operator!=' data-ref="_ZneRK10QByteArrayS1_">!=</a> <a class="type" href="../global/qsysinfo.h.html#QSysInfo" title='QSysInfo' data-ref="QSysInfo">QSysInfo</a>::<a class="ref fn" href="../global/qsysinfo.h.html#_ZN8QSysInfo12bootUniqueIdEv" title='QSysInfo::bootUniqueId' data-ref="_ZN8QSysInfo12bootUniqueIdEv">bootUniqueId</a>())</td></tr>
+<tr><th id="409">409</th><td>                    <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="410">410</th><td>            }</td></tr>
+<tr><th id="411">411</th><td>            <b>if</b> (!<a class="member fn" href="qlockfile_p.h.html#_ZN16QLockFilePrivate16isProcessRunningExRK7QString" title='QLockFilePrivate::isProcessRunning' data-ref="_ZN16QLockFilePrivate16isProcessRunningExRK7QString">isProcessRunning</a>(<span class='inlayHint'>pid:&nbsp;</span><a class="local col4 ref" href="#34info" title='info' data-ref="34info">info</a>.<a class="tu ref field" href="#(anonymousnamespace)::LockFileInfo::pid" title='(anonymous namespace)::LockFileInfo::pid' data-use='r' data-ref="(anonymousnamespace)::LockFileInfo::pid">pid</a>, <span class='inlayHint'>appname:&nbsp;</span><a class="local col4 ref" href="#34info" title='info' data-ref="34info">info</a>.<a class="tu ref field" href="#(anonymousnamespace)::LockFileInfo::appname" title='(anonymous namespace)::LockFileInfo::appname' data-use='r' data-ref="(anonymousnamespace)::LockFileInfo::appname">appname</a>))</td></tr>
+<tr><th id="412">412</th><td>                <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="413">413</th><td>        }</td></tr>
+<tr><th id="414">414</th><td>    }</td></tr>
+<tr><th id="415">415</th><td></td></tr>
+<tr><th id="416">416</th><td>    <em>const</em> <a class="typedef" href="../global/qtypes.h.html#qint64" title='qint64' data-type='long long' data-ref="qint64">qint64</a> <dfn class="local col7 decl" id="37age" title='age' data-type='const qint64' data-ref="37age">age</dfn> = <a class="type" href="qfileinfo.h.html#QFileInfo" title='QFileInfo' data-ref="QFileInfo">QFileInfo</a><a class="ref fn" href="qfileinfo.h.html#_ZN9QFileInfoC1ERK7QString" title='QFileInfo::QFileInfo' data-ref="_ZN9QFileInfoC1ERK7QString">(</a><a class="member field" href="qlockfile_p.h.html#QLockFilePrivate::fileName" title='QLockFilePrivate::fileName' data-ref="QLockFilePrivate::fileName">fileName</a>).<a class="ref fn" href="qfileinfo.h.html#_ZNK9QFileInfo12lastModifiedEv" title='QFileInfo::lastModified' data-ref="_ZNK9QFileInfo12lastModifiedEv">lastModified</a>().<a class="ref fn" href="../time/qdatetime.h.html#_ZNK9QDateTime7msecsToERKS_" title='QDateTime::msecsTo' data-ref="_ZNK9QDateTime7msecsToERKS_">msecsTo</a>(<a class="type" href="../time/qdatetime.h.html#QDateTime" title='QDateTime' data-ref="QDateTime">QDateTime</a>::<a class="ref fn" href="../time/qdatetime.h.html#_ZN9QDateTime18currentDateTimeUtcEv" title='QDateTime::currentDateTimeUtc' data-ref="_ZN9QDateTime18currentDateTimeUtcEv">currentDateTimeUtc</a>());</td></tr>
+<tr><th id="417">417</th><td>    <b>return</b> <a class="member field" href="qlockfile_p.h.html#QLockFilePrivate::staleLockTime" title='QLockFilePrivate::staleLockTime' data-ref="QLockFilePrivate::staleLockTime">staleLockTime</a> &gt; <var>0</var> &amp;&amp; <a class="ref fn" href="../global/qnumeric.h.html#_Z4qAbsRKT_" title='qAbs' data-ref="_Z4qAbsRKT_">qAbs</a>(<span class='inlayHint'>t:&nbsp;</span><a class="local col7 ref" href="#37age" title='age' data-ref="37age">age</a>) &gt; <a class="member field" href="qlockfile_p.h.html#QLockFilePrivate::staleLockTime" title='QLockFilePrivate::staleLockTime' data-ref="QLockFilePrivate::staleLockTime">staleLockTime</a>;</td></tr>
+<tr><th id="418">418</th><td>}</td></tr>
+<tr><th id="419">419</th><td></td></tr>
+<tr><th id="420">420</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="421">421</th><td><i class="doc">    Attempts to forcefully remove an existing lock file.</i></td></tr>
+<tr><th id="422">422</th><td><i class="doc"></i></td></tr>
+<tr><th id="423">423</th><td><i class="doc">    Calling this is not recommended when protecting a short-lived operation: QLockFile</i></td></tr>
+<tr><th id="424">424</th><td><i class="doc">    already takes care of removing lock files after they are older than staleLockTime().</i></td></tr>
+<tr><th id="425">425</th><td><i class="doc"></i></td></tr>
+<tr><th id="426">426</th><td><i class="doc">    This method should only be called when protecting a resource for a long time, i.e.</i></td></tr>
+<tr><th id="427">427</th><td><i class="doc">    with staleLockTime(0), and after tryLock() returned LockFailedError, and the user</i></td></tr>
+<tr><th id="428">428</th><td><i class="doc">    agreed on removing the lock file.</i></td></tr>
+<tr><th id="429">429</th><td><i class="doc"></i></td></tr>
+<tr><th id="430">430</th><td><i class="doc">    Returns<span class="command"> \c</span> <span class="arg">true</span> on success, false if the lock file couldn't be removed. This happens</i></td></tr>
+<tr><th id="431">431</th><td><i class="doc">    on Windows, when the application owning the lock is still running.</i></td></tr>
+<tr><th id="432">432</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="433">433</th><td><em>bool</em> <a class="type" href="qlockfile.h.html#QLockFile" title='QLockFile' data-ref="QLockFile">QLockFile</a>::<dfn class="decl def fn" id="_ZN9QLockFile19removeStaleLockFileEv" title='QLockFile::removeStaleLockFile' data-ref="_ZN9QLockFile19removeStaleLockFileEv">removeStaleLockFile</dfn>()</td></tr>
+<tr><th id="434">434</th><td>{</td></tr>
+<tr><th id="435">435</th><td>    <a class="macro" href="../global/qtclasshelpermacros.h.html#109" title="QLockFilePrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(QLockFile);</td></tr>
+<tr><th id="436">436</th><td>    <b>if</b> (<a class="local col8 ref" href="#435" title='d' data-ref="38d">d</a>-&gt;<a class="ref field" href="qlockfile_p.h.html#QLockFilePrivate::isLocked" title='QLockFilePrivate::isLocked' data-ref="QLockFilePrivate::isLocked">isLocked</a>) {</td></tr>
+<tr><th id="437">437</th><td>        <a class="macro" href="../global/qlogging.h.html#158" title="QMessageLogger(nullptr, 0, nullptr).warning" data-ref="_M/qWarning">qWarning</a>(<span class='inlayHint'>msg:&nbsp;</span><q>"removeStaleLockFile can only be called when not holding the lock"</q>);</td></tr>
+<tr><th id="438">438</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="439">439</th><td>    }</td></tr>
+<tr><th id="440">440</th><td>    <b>return</b> <a class="local col8 ref" href="#435" title='d' data-ref="38d">d</a>-&gt;<a class="ref fn" href="qlockfile_p.h.html#_ZN16QLockFilePrivate15removeStaleLockEv" title='QLockFilePrivate::removeStaleLock' data-ref="_ZN16QLockFilePrivate15removeStaleLockEv">removeStaleLock</a>();</td></tr>
+<tr><th id="441">441</th><td>}</td></tr>
+<tr><th id="442">442</th><td></td></tr>
+<tr><th id="443">443</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="444">444</th><td><i class="doc">    Returns the lock file error status.</i></td></tr>
+<tr><th id="445">445</th><td><i class="doc"></i></td></tr>
+<tr><th id="446">446</th><td><i class="doc">    If tryLock() returns<span class="command"> \c</span> <span class="arg">false,</span> this function can be called to find out</i></td></tr>
+<tr><th id="447">447</th><td><i class="doc">    the reason why the locking failed.</i></td></tr>
+<tr><th id="448">448</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="449">449</th><td><a class="type" href="qlockfile.h.html#QLockFile" title='QLockFile' data-ref="QLockFile">QLockFile</a>::<a class="type" href="qlockfile.h.html#QLockFile::LockError" title='QLockFile::LockError' data-ref="QLockFile::LockError">LockError</a> <a class="type" href="qlockfile.h.html#QLockFile" title='QLockFile' data-ref="QLockFile">QLockFile</a>::<dfn class="decl def fn" id="_ZNK9QLockFile5errorEv" title='QLockFile::error' data-ref="_ZNK9QLockFile5errorEv">error</dfn>() <em>const</em></td></tr>
+<tr><th id="450">450</th><td>{</td></tr>
+<tr><th id="451">451</th><td>    <a class="macro" href="../global/qtclasshelpermacros.h.html#109" title="const QLockFilePrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(<em>const</em> QLockFile);</td></tr>
+<tr><th id="452">452</th><td>    <b>return</b> <a class="local col9 ref" href="#451" title='d' data-ref="39d">d</a>-&gt;<a class="ref field" href="qlockfile_p.h.html#QLockFilePrivate::lockError" title='QLockFilePrivate::lockError' data-ref="QLockFilePrivate::lockError">lockError</a>;</td></tr>
+<tr><th id="453">453</th><td>}</td></tr>
+<tr><th id="454">454</th><td></td></tr>
+<tr><th id="455">455</th><td><a class="macro" href="../global/qtconfigmacros.h.html#104" title="" data-ref="_M/QT_END_NAMESPACE">QT_END_NAMESPACE</a></td></tr>
+<tr><th id="456">456</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2024-Jun-13</em> from project qtbase-6.5.0 revision <em>6.5.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

@@ -1,0 +1,634 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>qimageiohandler.cpp source code [qtbase-6.5.0/src/gui/image/qimageiohandler.cpp] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="QImageIOHandlerPrivate "/>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'qtbase-6.5.0/src/gui/image/qimageiohandler.cpp'; var root_path = '../../../..'; var data_path = '../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>qtbase-6.5.0</a>/<a href='../..'>src</a>/<a href='..'>gui</a>/<a href='./'>image</a>/<a href='qimageiohandler.cpp.html'>qimageiohandler.cpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>// Copyright (C) 2016 The Qt Company Ltd.</i></td></tr>
+<tr><th id="2">2</th><td><i>// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only</i></td></tr>
+<tr><th id="3">3</th><td></td></tr>
+<tr><th id="4">4</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="5">5</th><td><i class="doc">    <span class="command">\class</span> <span class="verb" data-ref="QImageIOHandler">QImageIOHandler</span></i></td></tr>
+<tr><th id="6">6</th><td><i class="doc">    <span class="command">\brief</span> The QImageIOHandler class defines the common image I/O</i></td></tr>
+<tr><th id="7">7</th><td><i class="doc">    interface for all image formats in Qt.</i></td></tr>
+<tr><th id="8">8</th><td><i class="doc">   <span class="command"> \reentrant</span></i></td></tr>
+<tr><th id="9">9</th><td><i class="doc">   <span class="command"> \inmodule</span> QtGui</i></td></tr>
+<tr><th id="10">10</th><td><i class="doc"></i></td></tr>
+<tr><th id="11">11</th><td><i class="doc">    Qt uses QImageIOHandler for reading and writing images through</i></td></tr>
+<tr><th id="12">12</th><td><i class="doc">    QImageReader and QImageWriter. You can also derive from this class</i></td></tr>
+<tr><th id="13">13</th><td><i class="doc">    to write your own image format handler using Qt's plugin mechanism.</i></td></tr>
+<tr><th id="14">14</th><td><i class="doc"></i></td></tr>
+<tr><th id="15">15</th><td><i class="doc">    Call setDevice() to assign a device to the handler, and</i></td></tr>
+<tr><th id="16">16</th><td><i class="doc">    setFormat() to assign a format to it. One QImageIOHandler may</i></td></tr>
+<tr><th id="17">17</th><td><i class="doc">    support more than one image format. canRead() returns<span class="command"> \c</span> <span class="arg">true</span> if an</i></td></tr>
+<tr><th id="18">18</th><td><i class="doc">    image can be read from the device, and read() and write() return</i></td></tr>
+<tr><th id="19">19</th><td><i class="doc">    true if reading or writing an image was completed successfully.</i></td></tr>
+<tr><th id="20">20</th><td><i class="doc"></i></td></tr>
+<tr><th id="21">21</th><td><i class="doc">    QImageIOHandler also has support for animations formats, through</i></td></tr>
+<tr><th id="22">22</th><td><i class="doc">    the functions loopCount(), imageCount(), nextImageDelay() and</i></td></tr>
+<tr><th id="23">23</th><td><i class="doc">    currentImageNumber().</i></td></tr>
+<tr><th id="24">24</th><td><i class="doc"></i></td></tr>
+<tr><th id="25">25</th><td><i class="doc">    In order to determine what options an image handler supports, Qt</i></td></tr>
+<tr><th id="26">26</th><td><i class="doc">    will call supportsOption() and setOption(). Make sure to</i></td></tr>
+<tr><th id="27">27</th><td><i class="doc">    reimplement these functions if you can provide support for any of</i></td></tr>
+<tr><th id="28">28</th><td><i class="doc">    the options in the ImageOption enum.</i></td></tr>
+<tr><th id="29">29</th><td><i class="doc"></i></td></tr>
+<tr><th id="30">30</th><td><i class="doc">    To write your own image handler, you must at least reimplement</i></td></tr>
+<tr><th id="31">31</th><td><i class="doc">    canRead() and read(). Then create a QImageIOPlugin that</i></td></tr>
+<tr><th id="32">32</th><td><i class="doc">    can create the handler. Finally, install your plugin, and</i></td></tr>
+<tr><th id="33">33</th><td><i class="doc">    QImageReader and QImageWriter will then automatically load the</i></td></tr>
+<tr><th id="34">34</th><td><i class="doc">    plugin, and start using it.</i></td></tr>
+<tr><th id="35">35</th><td><i class="doc"></i></td></tr>
+<tr><th id="36">36</th><td><i class="doc">    <span class="command">\sa</span> QImageIOPlugin, QImageReader, QImageWriter</i></td></tr>
+<tr><th id="37">37</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="38">38</th><td></td></tr>
+<tr><th id="39">39</th><td><i class="doc">/*! <span class="command">\enum</span> <span class="verb" data-ref="QImageIOHandler::ImageOption">QImageIOHandler::ImageOption</span></i></td></tr>
+<tr><th id="40">40</th><td><i class="doc"></i></td></tr>
+<tr><th id="41">41</th><td><i class="doc">    This enum describes the different options supported by</i></td></tr>
+<tr><th id="42">42</th><td><i class="doc">    QImageIOHandler.  Some options are used to query an image for</i></td></tr>
+<tr><th id="43">43</th><td><i class="doc">    properties, and others are used to toggle the way in which an</i></td></tr>
+<tr><th id="44">44</th><td><i class="doc">    image should be written.</i></td></tr>
+<tr><th id="45">45</th><td><i class="doc"></i></td></tr>
+<tr><th id="46">46</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QImageIOHandler::Size">Size </span>The original size of an image. A handler that supports</i></td></tr>
+<tr><th id="47">47</th><td><i class="doc">    this option is expected to read the size of the image from the</i></td></tr>
+<tr><th id="48">48</th><td><i class="doc">    image metadata, and return this size from option() as a QSize.</i></td></tr>
+<tr><th id="49">49</th><td><i class="doc"></i></td></tr>
+<tr><th id="50">50</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QImageIOHandler::ClipRect">ClipRect </span>The clip rect, or ROI (Region Of Interest). A</i></td></tr>
+<tr><th id="51">51</th><td><i class="doc">    handler that supports this option is expected to only read the</i></td></tr>
+<tr><th id="52">52</th><td><i class="doc">    provided QRect area from the original image in read(), before any</i></td></tr>
+<tr><th id="53">53</th><td><i class="doc">    other transformation is applied.</i></td></tr>
+<tr><th id="54">54</th><td><i class="doc"></i></td></tr>
+<tr><th id="55">55</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QImageIOHandler::ScaledSize">ScaledSize </span>The scaled size of the image. A handler that</i></td></tr>
+<tr><th id="56">56</th><td><i class="doc">    supports this option is expected to scale the image to the</i></td></tr>
+<tr><th id="57">57</th><td><i class="doc">    provided size (a QSize), after applying any clip rect</i></td></tr>
+<tr><th id="58">58</th><td><i class="doc">    transformation (ClipRect). If the handler does not support this</i></td></tr>
+<tr><th id="59">59</th><td><i class="doc">    option, QImageReader will perform the scaling after the image has</i></td></tr>
+<tr><th id="60">60</th><td><i class="doc">    been read.</i></td></tr>
+<tr><th id="61">61</th><td><i class="doc"></i></td></tr>
+<tr><th id="62">62</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QImageIOHandler::ScaledClipRect">ScaledClipRect </span>The scaled clip rect (or ROI, Region Of</i></td></tr>
+<tr><th id="63">63</th><td><i class="doc">    Interest) of the image. A handler that supports this option is</i></td></tr>
+<tr><th id="64">64</th><td><i class="doc">    expected to apply the provided clip rect (a QRect), after applying</i></td></tr>
+<tr><th id="65">65</th><td><i class="doc">    any scaling (ScaleSize) or regular clipping (ClipRect). If the</i></td></tr>
+<tr><th id="66">66</th><td><i class="doc">    handler does not support this option, QImageReader will apply the</i></td></tr>
+<tr><th id="67">67</th><td><i class="doc">    scaled clip rect after the image has been read.</i></td></tr>
+<tr><th id="68">68</th><td><i class="doc"></i></td></tr>
+<tr><th id="69">69</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QImageIOHandler::Description">Description </span>The image description. Some image formats,</i></td></tr>
+<tr><th id="70">70</th><td><i class="doc">    such as GIF and PNG, allow embedding of text</i></td></tr>
+<tr><th id="71">71</th><td><i class="doc">    or comments into the image data (e.g., for storing copyright</i></td></tr>
+<tr><th id="72">72</th><td><i class="doc">    information). It's common that the text is stored in key-value</i></td></tr>
+<tr><th id="73">73</th><td><i class="doc">    pairs, but some formats store all text in one continuous block.</i></td></tr>
+<tr><th id="74">74</th><td><i class="doc">    QImageIOHandler returns the text as one</i></td></tr>
+<tr><th id="75">75</th><td><i class="doc">    QString, where keys and values are separated by a ':', and</i></td></tr>
+<tr><th id="76">76</th><td><i class="doc">    keys-value pairs are separated by two newlines (\\n\\n). For example,</i></td></tr>
+<tr><th id="77">77</th><td><i class="doc">    "Title: Sunset\\n\\nAuthor: Jim Smith\\nSarah Jones\\n\\n". Formats that</i></td></tr>
+<tr><th id="78">78</th><td><i class="doc">    store text in a single block can use "Description" as the key.</i></td></tr>
+<tr><th id="79">79</th><td><i class="doc"></i></td></tr>
+<tr><th id="80">80</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QImageIOHandler::CompressionRatio">CompressionRatio </span>The compression ratio of the image data. A</i></td></tr>
+<tr><th id="81">81</th><td><i class="doc">    handler that supports this option is expected to set its</i></td></tr>
+<tr><th id="82">82</th><td><i class="doc">    compression rate depending on the value of this option (an int)</i></td></tr>
+<tr><th id="83">83</th><td><i class="doc">    when writing.</i></td></tr>
+<tr><th id="84">84</th><td><i class="doc"></i></td></tr>
+<tr><th id="85">85</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QImageIOHandler::Gamma">Gamma </span>The gamma level of the image. A handler that supports</i></td></tr>
+<tr><th id="86">86</th><td><i class="doc">    this option is expected to set the image gamma level depending on</i></td></tr>
+<tr><th id="87">87</th><td><i class="doc">    the value of this option (a float) when writing.</i></td></tr>
+<tr><th id="88">88</th><td><i class="doc"></i></td></tr>
+<tr><th id="89">89</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QImageIOHandler::Quality">Quality </span>The quality level of the image. A handler that</i></td></tr>
+<tr><th id="90">90</th><td><i class="doc">    supports this option is expected to set the image quality level</i></td></tr>
+<tr><th id="91">91</th><td><i class="doc">    depending on the value of this option (an int) when writing.</i></td></tr>
+<tr><th id="92">92</th><td><i class="doc"></i></td></tr>
+<tr><th id="93">93</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QImageIOHandler::Name">Name </span>The name of the image. A handler that supports this</i></td></tr>
+<tr><th id="94">94</th><td><i class="doc">    option is expected to read the name from the image metadata and</i></td></tr>
+<tr><th id="95">95</th><td><i class="doc">    return this as a QString, or when writing an image it is expected</i></td></tr>
+<tr><th id="96">96</th><td><i class="doc">    to store the name in the image metadata.</i></td></tr>
+<tr><th id="97">97</th><td><i class="doc"></i></td></tr>
+<tr><th id="98">98</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QImageIOHandler::SubType">SubType </span>The subtype of the image. A handler that supports</i></td></tr>
+<tr><th id="99">99</th><td><i class="doc">    this option can use the subtype value to help when reading and</i></td></tr>
+<tr><th id="100">100</th><td><i class="doc">    writing images. For example, a PPM handler may have a subtype</i></td></tr>
+<tr><th id="101">101</th><td><i class="doc">    value of "ppm" or "ppmraw".</i></td></tr>
+<tr><th id="102">102</th><td><i class="doc"></i></td></tr>
+<tr><th id="103">103</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QImageIOHandler::IncrementalReading">IncrementalReading </span>A handler that supports this option is</i></td></tr>
+<tr><th id="104">104</th><td><i class="doc">    expected to read the image in several passes, as if it was an</i></td></tr>
+<tr><th id="105">105</th><td><i class="doc">    animation. QImageReader will treat the image as an animation.</i></td></tr>
+<tr><th id="106">106</th><td><i class="doc"></i></td></tr>
+<tr><th id="107">107</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QImageIOHandler::Endianness">Endianness </span>The endianness of the image. Certain image</i></td></tr>
+<tr><th id="108">108</th><td><i class="doc">    formats can be stored as BigEndian or LittleEndian. A handler that</i></td></tr>
+<tr><th id="109">109</th><td><i class="doc">    supports Endianness uses the value of this option to determine how</i></td></tr>
+<tr><th id="110">110</th><td><i class="doc">    the image should be stored.</i></td></tr>
+<tr><th id="111">111</th><td><i class="doc"></i></td></tr>
+<tr><th id="112">112</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QImageIOHandler::Animation">Animation </span>Image formats that support animation return</i></td></tr>
+<tr><th id="113">113</th><td><i class="doc">    true for this value in supportsOption(); otherwise, false is returned.</i></td></tr>
+<tr><th id="114">114</th><td><i class="doc"></i></td></tr>
+<tr><th id="115">115</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QImageIOHandler::BackgroundColor">BackgroundColor </span>Certain image formats allow the</i></td></tr>
+<tr><th id="116">116</th><td><i class="doc">    background color to be specified. A handler that supports</i></td></tr>
+<tr><th id="117">117</th><td><i class="doc">    BackgroundColor initializes the background color to this option</i></td></tr>
+<tr><th id="118">118</th><td><i class="doc">    (a QColor) when reading an image.</i></td></tr>
+<tr><th id="119">119</th><td><i class="doc"></i></td></tr>
+<tr><th id="120">120</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QImageIOHandler::ImageFormat">ImageFormat </span>The image's data format returned by the handler.</i></td></tr>
+<tr><th id="121">121</th><td><i class="doc">    This can be any of the formats listed in QImage::Format.</i></td></tr>
+<tr><th id="122">122</th><td><i class="doc"></i></td></tr>
+<tr><th id="123">123</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QImageIOHandler::SupportedSubTypes">SupportedSubTypes </span>Image formats that support different saving</i></td></tr>
+<tr><th id="124">124</th><td><i class="doc">    variants should return a list of supported variant names</i></td></tr>
+<tr><th id="125">125</th><td><i class="doc">    (QList&lt;QByteArray&gt;) in this option.</i></td></tr>
+<tr><th id="126">126</th><td><i class="doc"></i></td></tr>
+<tr><th id="127">127</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QImageIOHandler::OptimizedWrite">OptimizedWrite.</span> A handler which supports this option</i></td></tr>
+<tr><th id="128">128</th><td><i class="doc">    is expected to turn on optimization flags when writing.</i></td></tr>
+<tr><th id="129">129</th><td><i class="doc"></i></td></tr>
+<tr><th id="130">130</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QImageIOHandler::ProgressiveScanWrite">ProgressiveScanWrite.</span> A handler which supports</i></td></tr>
+<tr><th id="131">131</th><td><i class="doc">    this option is expected to write the image as a progressive scan image.</i></td></tr>
+<tr><th id="132">132</th><td><i class="doc"></i></td></tr>
+<tr><th id="133">133</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QImageIOHandler::ImageTransformation">ImageTransformation.</span> A handler which supports this option can read</i></td></tr>
+<tr><th id="134">134</th><td><i class="doc">    the transformation metadata of an image. A handler that supports this option</i></td></tr>
+<tr><th id="135">135</th><td><i class="doc">    should not apply the transformation itself.</i></td></tr>
+<tr><th id="136">136</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="137">137</th><td></td></tr>
+<tr><th id="138">138</th><td><i class="doc">/*! <span class="command">\enum</span> <span class="verb" data-ref="QImageIOHandler::Transformation">QImageIOHandler::Transformation</span></i></td></tr>
+<tr><th id="139">139</th><td><i class="doc">    <span class="command">\since</span> 5.5</i></td></tr>
+<tr><th id="140">140</th><td><i class="doc"></i></td></tr>
+<tr><th id="141">141</th><td><i class="doc">    This enum describes the different transformations or orientations</i></td></tr>
+<tr><th id="142">142</th><td><i class="doc">    supported by some image formats, usually through EXIF.</i></td></tr>
+<tr><th id="143">143</th><td><i class="doc"></i></td></tr>
+<tr><th id="144">144</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QImageIOHandler::TransformationNone">TransformationNone </span>No transformation should be applied.</i></td></tr>
+<tr><th id="145">145</th><td><i class="doc"></i></td></tr>
+<tr><th id="146">146</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QImageIOHandler::TransformationMirror">TransformationMirror </span>Mirror the image horizontally.</i></td></tr>
+<tr><th id="147">147</th><td><i class="doc"></i></td></tr>
+<tr><th id="148">148</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QImageIOHandler::TransformationFlip">TransformationFlip </span>Mirror the image vertically.</i></td></tr>
+<tr><th id="149">149</th><td><i class="doc"></i></td></tr>
+<tr><th id="150">150</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QImageIOHandler::TransformationRotate180">TransformationRotate180 </span>Rotate the image 180 degrees.</i></td></tr>
+<tr><th id="151">151</th><td><i class="doc">    This is the same as mirroring it both horizontally and vertically.</i></td></tr>
+<tr><th id="152">152</th><td><i class="doc"></i></td></tr>
+<tr><th id="153">153</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QImageIOHandler::TransformationRotate90">TransformationRotate90 </span>Rotate the image 90 degrees.</i></td></tr>
+<tr><th id="154">154</th><td><i class="doc"></i></td></tr>
+<tr><th id="155">155</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QImageIOHandler::TransformationMirrorAndRotate90">TransformationMirrorAndRotate90 </span>Mirror the image horizontally</i></td></tr>
+<tr><th id="156">156</th><td><i class="doc">    and then rotate it 90 degrees.</i></td></tr>
+<tr><th id="157">157</th><td><i class="doc"></i></td></tr>
+<tr><th id="158">158</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QImageIOHandler::TransformationFlipAndRotate90">TransformationFlipAndRotate90 </span>Mirror the image vertically</i></td></tr>
+<tr><th id="159">159</th><td><i class="doc">    and then rotate it 90 degrees.</i></td></tr>
+<tr><th id="160">160</th><td><i class="doc"></i></td></tr>
+<tr><th id="161">161</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QImageIOHandler::TransformationRotate270">TransformationRotate270 </span>Rotate the image 270 degrees.</i></td></tr>
+<tr><th id="162">162</th><td><i class="doc">    This is the same as mirroring it both horizontally, vertically and</i></td></tr>
+<tr><th id="163">163</th><td><i class="doc">    then rotating it 90 degrees.</i></td></tr>
+<tr><th id="164">164</th><td><i class="doc"></i></td></tr>
+<tr><th id="165">165</th><td><i class="doc">    <span class="command">\sa</span> QImageReader::transformation(), QImageReader::setAutoTransform(), QImageWriter::setTransformation()</i></td></tr>
+<tr><th id="166">166</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="167">167</th><td></td></tr>
+<tr><th id="168">168</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="169">169</th><td><i class="doc">    <span class="command">\class</span> <span class="verb" data-ref="QImageIOPlugin">QImageIOPlugin</span></i></td></tr>
+<tr><th id="170">170</th><td><i class="doc">   <span class="command"> \inmodule</span> QtGui</i></td></tr>
+<tr><th id="171">171</th><td><i class="doc">    <span class="command">\brief</span> The QImageIOPlugin class defines an interface for writing</i></td></tr>
+<tr><th id="172">172</th><td><i class="doc">    an image format plugin.</i></td></tr>
+<tr><th id="173">173</th><td><i class="doc">   <span class="command"> \reentrant</span></i></td></tr>
+<tr><th id="174">174</th><td><i class="doc"></i></td></tr>
+<tr><th id="175">175</th><td><i class="doc">    <span class="command">\ingroup</span> <span class="verb">plugins</span></i></td></tr>
+<tr><th id="176">176</th><td><i class="doc"></i></td></tr>
+<tr><th id="177">177</th><td><i class="doc">    QImageIOPlugin is a factory for creating QImageIOHandler objects,</i></td></tr>
+<tr><th id="178">178</th><td><i class="doc">    which are used internally by QImageReader and QImageWriter to add</i></td></tr>
+<tr><th id="179">179</th><td><i class="doc">    support for different image formats to Qt.</i></td></tr>
+<tr><th id="180">180</th><td><i class="doc"></i></td></tr>
+<tr><th id="181">181</th><td><i class="doc">    Writing an image I/O plugin is achieved by subclassing this</i></td></tr>
+<tr><th id="182">182</th><td><i class="doc">    base class, reimplementing the pure virtual functions capabilities()</i></td></tr>
+<tr><th id="183">183</th><td><i class="doc">    and create(), and exporting the class with the</i></td></tr>
+<tr><th id="184">184</th><td><i class="doc">    Q_PLUGIN_METADATA() macro. See<span class="command"> \l</span>{How to Create Qt Plugins} for details.</i></td></tr>
+<tr><th id="185">185</th><td><i class="doc"></i></td></tr>
+<tr><th id="186">186</th><td><i class="doc">    An image format plugin can support three capabilities: reading <span class="command">(\l</span></i></td></tr>
+<tr><th id="187">187</th><td><i class="doc">    CanRead), writing <span class="command">(\l</span> CanWrite) and<span class="command"> \e</span> <span class="arg">incremental</span> reading <span class="command">(\l</span></i></td></tr>
+<tr><th id="188">188</th><td><i class="doc">    CanReadIncremental). Reimplement capabilities() in your subclass to</i></td></tr>
+<tr><th id="189">189</th><td><i class="doc">    expose the capabilities of your image format.</i></td></tr>
+<tr><th id="190">190</th><td><i class="doc"></i></td></tr>
+<tr><th id="191">191</th><td><i class="doc">    create() should create an instance of your QImageIOHandler</i></td></tr>
+<tr><th id="192">192</th><td><i class="doc">    subclass, with the provided device and format properly set, and</i></td></tr>
+<tr><th id="193">193</th><td><i class="doc">    return this handler.</i></td></tr>
+<tr><th id="194">194</th><td><i class="doc"></i></td></tr>
+<tr><th id="195">195</th><td><i class="doc">    The json metadata file for the plugin needs to contain information</i></td></tr>
+<tr><th id="196">196</th><td><i class="doc">    about the image formats the plugins supports, together with the</i></td></tr>
+<tr><th id="197">197</th><td><i class="doc">    corresponding MIME types (one for each format). For a jpeg plugin, this</i></td></tr>
+<tr><th id="198">198</th><td><i class="doc">    could, for example, look as follows:</i></td></tr>
+<tr><th id="199">199</th><td><i class="doc"></i></td></tr>
+<tr><th id="200">200</th><td><i class="doc">    <span class="command">\code</span></i></td></tr>
+<tr><th id="201">201</th><td><i class="doc"><span class="verb">    {</span></i></td></tr>
+<tr><th id="202">202</th><td><i class="doc"><span class="verb"></span><span class="verb">      "Keys": [ "jpg", "jpeg" ],</span></i></td></tr>
+<tr><th id="203">203</th><td><i class="doc"><span class="verb"></span><span class="verb">      "MimeTypes": [ "image/jpeg", "image/jpeg" ]</span></i></td></tr>
+<tr><th id="204">204</th><td><i class="doc"><span class="verb"></span><span class="verb">    }</span></i></td></tr>
+<tr><th id="205">205</th><td><i class="doc"><span class="verb"></span>    \endcode</i></td></tr>
+<tr><th id="206">206</th><td><i class="doc"></i></td></tr>
+<tr><th id="207">207</th><td><i class="doc">    Different plugins can support different capabilities. For example,</i></td></tr>
+<tr><th id="208">208</th><td><i class="doc">    you may have one plugin that supports reading the GIF format, and</i></td></tr>
+<tr><th id="209">209</th><td><i class="doc">    another that supports writing. Qt will select the correct plugin</i></td></tr>
+<tr><th id="210">210</th><td><i class="doc">    for the job, depending on the return value of capabilities(). If</i></td></tr>
+<tr><th id="211">211</th><td><i class="doc">    several plugins support the same capability, Qt will select one</i></td></tr>
+<tr><th id="212">212</th><td><i class="doc">    arbitrarily.</i></td></tr>
+<tr><th id="213">213</th><td><i class="doc"></i></td></tr>
+<tr><th id="214">214</th><td><i class="doc">    <span class="command">\sa</span> QImageIOHandler, {How to Create Qt Plugins}</i></td></tr>
+<tr><th id="215">215</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="216">216</th><td></td></tr>
+<tr><th id="217">217</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="218">218</th><td><i class="doc">    <span class="command">\enum</span> <span class="verb" data-ref="QImageIOPlugin::Capability">QImageIOPlugin::Capability</span></i></td></tr>
+<tr><th id="219">219</th><td><i class="doc"></i></td></tr>
+<tr><th id="220">220</th><td><i class="doc">    This enum describes the capabilities of a QImageIOPlugin.</i></td></tr>
+<tr><th id="221">221</th><td><i class="doc"></i></td></tr>
+<tr><th id="222">222</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QImageIOPlugin::CanRead">CanRead </span>The plugin can read images.</i></td></tr>
+<tr><th id="223">223</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QImageIOPlugin::CanWrite">CanWrite </span>The plugin can write images.</i></td></tr>
+<tr><th id="224">224</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QImageIOPlugin::CanReadIncremental">CanReadIncremental </span>The plugin can read images incrementally.</i></td></tr>
+<tr><th id="225">225</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="226">226</th><td></td></tr>
+<tr><th id="227">227</th><td><u>#include <a href="qimageiohandler.h.html">"qimageiohandler.h"</a></u></td></tr>
+<tr><th id="228">228</th><td><u>#include <a href="qimage_p.h.html">"qimage_p.h"</a></u></td></tr>
+<tr><th id="229">229</th><td></td></tr>
+<tr><th id="230">230</th><td><u>#include <a href="../../../build/include/QtCore/qbytearray.h.html">&lt;qbytearray.h&gt;</a></u></td></tr>
+<tr><th id="231">231</th><td><u>#include <a href="../../../build/include/QtGui/qimagereader.h.html">&lt;qimagereader.h&gt;</a></u></td></tr>
+<tr><th id="232">232</th><td><u>#include <a href="../../../build/include/QtCore/qloggingcategory.h.html">&lt;qloggingcategory.h&gt;</a></u></td></tr>
+<tr><th id="233">233</th><td><u>#include <a href="../../../build/include/QtCore/qvariant.h.html">&lt;qvariant.h&gt;</a></u></td></tr>
+<tr><th id="234">234</th><td></td></tr>
+<tr><th id="235">235</th><td><a class="macro" href="../../corelib/global/qtconfigmacros.h.html#103" title="" data-ref="_M/QT_BEGIN_NAMESPACE">QT_BEGIN_NAMESPACE</a></td></tr>
+<tr><th id="236">236</th><td></td></tr>
+<tr><th id="237">237</th><td><a class="macro" href="../../corelib/io/qloggingcategory.h.html#117" title="const QLoggingCategory &amp;lcImageIo() { static const QLoggingCategory category(&quot;qt.gui.imageio&quot;); return category; }" data-ref="_M/Q_LOGGING_CATEGORY">Q_LOGGING_CATEGORY</a>(<dfn class="decl def fn" id="_Z9lcImageIov" title='lcImageIo' data-ref="_Z9lcImageIov">lcImageIo</dfn>, <q>"qt.gui.imageio"</q>)</td></tr>
+<tr><th id="238">238</th><td></td></tr>
+<tr><th id="239">239</th><td><b>class</b> <a class="type" href="../../corelib/io/qiodevice.h.html#QIODevice" title='QIODevice' data-ref="QIODevice" id="QIODevice">QIODevice</a>;</td></tr>
+<tr><th id="240">240</th><td></td></tr>
+<tr><th id="241">241</th><td><b>class</b> <dfn class="type def" id="QImageIOHandlerPrivate" title='QImageIOHandlerPrivate' data-ref="QImageIOHandlerPrivate">QImageIOHandlerPrivate</dfn></td></tr>
+<tr><th id="242">242</th><td>{</td></tr>
+<tr><th id="243">243</th><td>    <a class="macro" href="../../corelib/global/qtclasshelpermacros.h.html#102" title="inline QImageIOHandler* q_func() noexcept { return static_cast&lt;QImageIOHandler *&gt;(q_ptr); } inline const QImageIOHandler* q_func() const noexcept { return static_cast&lt;const QImageIOHandler *&gt;(q_ptr); } friend class QImageIOHandler; friend const QObject *QtPrivate::getQObject(const QObjectPrivate *d); template &lt;typename ObjPrivate&gt; friend void QtPrivate::assertObjectType(QObjectPrivate *d);" data-ref="_M/Q_DECLARE_PUBLIC">Q_DECLARE_PUBLIC</a>(<a class="type" href="qimageiohandler.h.html#QImageIOHandler" title='QImageIOHandler' data-ref="QImageIOHandler">QImageIOHandler</a>)</td></tr>
+<tr><th id="244">244</th><td><b>public</b>:</td></tr>
+<tr><th id="245">245</th><td>    <a class="decl fn" href="#_ZN22QImageIOHandlerPrivateC1EP15QImageIOHandler" title='QImageIOHandlerPrivate::QImageIOHandlerPrivate' data-ref="_ZN22QImageIOHandlerPrivateC1EP15QImageIOHandler">QImageIOHandlerPrivate</a>(<a class="type" href="qimageiohandler.h.html#QImageIOHandler" title='QImageIOHandler' data-ref="QImageIOHandler">QImageIOHandler</a> *<dfn class="local col1 decl" id="1q" title='q' data-type='QImageIOHandler *' data-ref="1q">q</dfn>);</td></tr>
+<tr><th id="246">246</th><td>    <b>virtual</b> <a class="virtual decl fn" href="#_ZN22QImageIOHandlerPrivateD1Ev" title='QImageIOHandlerPrivate::~QImageIOHandlerPrivate' data-ref="_ZN22QImageIOHandlerPrivateD1Ev">~QImageIOHandlerPrivate</a>();</td></tr>
+<tr><th id="247">247</th><td></td></tr>
+<tr><th id="248">248</th><td>    <a class="type" href="../../corelib/io/qiodevice.h.html#QIODevice" title='QIODevice' data-ref="QIODevice">QIODevice</a> *<dfn class="decl field" id="QImageIOHandlerPrivate::device" title='QImageIOHandlerPrivate::device' data-ref="QImageIOHandlerPrivate::device">device</dfn>;</td></tr>
+<tr><th id="249">249</th><td>    <em>mutable</em> <a class="type" href="../../corelib/text/qbytearray.h.html#QByteArray" title='QByteArray' data-ref="QByteArray">QByteArray</a> <dfn class="decl field" id="QImageIOHandlerPrivate::format" title='QImageIOHandlerPrivate::format' data-ref="QImageIOHandlerPrivate::format">format</dfn>;</td></tr>
+<tr><th id="250">250</th><td></td></tr>
+<tr><th id="251">251</th><td>    <a class="type" href="qimageiohandler.h.html#QImageIOHandler" title='QImageIOHandler' data-ref="QImageIOHandler">QImageIOHandler</a> *<dfn class="decl field" id="QImageIOHandlerPrivate::q_ptr" title='QImageIOHandlerPrivate::q_ptr' data-ref="QImageIOHandlerPrivate::q_ptr">q_ptr</dfn>;</td></tr>
+<tr><th id="252">252</th><td>};</td></tr>
+<tr><th id="253">253</th><td></td></tr>
+<tr><th id="254">254</th><td><a class="type" href="#QImageIOHandlerPrivate" title='QImageIOHandlerPrivate' data-ref="QImageIOHandlerPrivate">QImageIOHandlerPrivate</a>::<dfn class="decl def fn" id="_ZN22QImageIOHandlerPrivateC1EP15QImageIOHandler" title='QImageIOHandlerPrivate::QImageIOHandlerPrivate' data-ref="_ZN22QImageIOHandlerPrivateC1EP15QImageIOHandler">QImageIOHandlerPrivate</dfn>(<a class="type" href="qimageiohandler.h.html#QImageIOHandler" title='QImageIOHandler' data-ref="QImageIOHandler">QImageIOHandler</a> *<dfn class="local col2 decl" id="2q" title='q' data-type='QImageIOHandler *' data-ref="2q">q</dfn>)</td></tr>
+<tr><th id="255">255</th><td>{</td></tr>
+<tr><th id="256">256</th><td>    <a class="member field" href="#QImageIOHandlerPrivate::device" title='QImageIOHandlerPrivate::device' data-ref="QImageIOHandlerPrivate::device">device</a> = <b>nullptr</b>;</td></tr>
+<tr><th id="257">257</th><td>    <a class="member field" href="#QImageIOHandlerPrivate::q_ptr" title='QImageIOHandlerPrivate::q_ptr' data-ref="QImageIOHandlerPrivate::q_ptr">q_ptr</a> = <a class="local col2 ref" href="#2q" title='q' data-ref="2q">q</a>;</td></tr>
+<tr><th id="258">258</th><td>}</td></tr>
+<tr><th id="259">259</th><td></td></tr>
+<tr><th id="260">260</th><td><a class="type" href="#QImageIOHandlerPrivate" title='QImageIOHandlerPrivate' data-ref="QImageIOHandlerPrivate">QImageIOHandlerPrivate</a>::<dfn class="virtual decl def fn" id="_ZN22QImageIOHandlerPrivateD1Ev" title='QImageIOHandlerPrivate::~QImageIOHandlerPrivate' data-ref="_ZN22QImageIOHandlerPrivateD1Ev">~QImageIOHandlerPrivate</dfn>()</td></tr>
+<tr><th id="261">261</th><td>{</td></tr>
+<tr><th id="262">262</th><td>}</td></tr>
+<tr><th id="263">263</th><td></td></tr>
+<tr><th id="264">264</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="265">265</th><td><i class="doc">    Constructs a QImageIOHandler object.</i></td></tr>
+<tr><th id="266">266</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="267">267</th><td><a class="type" href="qimageiohandler.h.html#QImageIOHandler" title='QImageIOHandler' data-ref="QImageIOHandler">QImageIOHandler</a>::<dfn class="decl def fn" id="_ZN15QImageIOHandlerC1Ev" title='QImageIOHandler::QImageIOHandler' data-ref="_ZN15QImageIOHandlerC1Ev">QImageIOHandler</dfn>()</td></tr>
+<tr><th id="268">268</th><td>    : <a class="member field" href="qimageiohandler.h.html#QImageIOHandler::d_ptr" title='QImageIOHandler::d_ptr' data-ref="QImageIOHandler::d_ptr">d_ptr</a><a class="ref fn" href="../../corelib/tools/qscopedpointer.h.html#_ZN14QScopedPointerC1EPT_" title='QScopedPointer::QScopedPointer&lt;T, Cleanup&gt;' data-ref="_ZN14QScopedPointerC1EPT_">(</a><b>new</b> <a class="type" href="#QImageIOHandlerPrivate" title='QImageIOHandlerPrivate' data-ref="QImageIOHandlerPrivate">QImageIOHandlerPrivate</a><a class="ref fn" href="#_ZN22QImageIOHandlerPrivateC1EP15QImageIOHandler" title='QImageIOHandlerPrivate::QImageIOHandlerPrivate' data-ref="_ZN22QImageIOHandlerPrivateC1EP15QImageIOHandler">(</a><b>this</b>))</td></tr>
+<tr><th id="269">269</th><td>{</td></tr>
+<tr><th id="270">270</th><td>}</td></tr>
+<tr><th id="271">271</th><td></td></tr>
+<tr><th id="272">272</th><td><i class="doc">/*! <span class="command">\internal</span></i></td></tr>
+<tr><th id="273">273</th><td><i class="doc"><span class="verb"></span></i></td></tr>
+<tr><th id="274">274</th><td><i class="doc"><span class="verb"></span><span class="verb">    Constructs a QImageIOHandler object, using the private member \a</span></i></td></tr>
+<tr><th id="275">275</th><td><i class="doc"><span class="verb"></span><span class="verb">    dd.</span></i></td></tr>
+<tr><th id="276">276</th><td><i class="doc"><span class="verb"></span>*/</i><span class="verb"></span></td></tr>
+<tr><th id="277">277</th><td><span class="verb"></span><a class="type" href="qimageiohandler.h.html#QImageIOHandler" title='QImageIOHandler' data-ref="QImageIOHandler">QImageIOHandler</a>::<dfn class="decl def fn" id="_ZN15QImageIOHandlerC1ER22QImageIOHandlerPrivate" title='QImageIOHandler::QImageIOHandler' data-ref="_ZN15QImageIOHandlerC1ER22QImageIOHandlerPrivate">QImageIOHandler</dfn>(<a class="type" href="#QImageIOHandlerPrivate" title='QImageIOHandlerPrivate' data-ref="QImageIOHandlerPrivate">QImageIOHandlerPrivate</a> &amp;<dfn class="local col3 decl" id="3dd" title='dd' data-type='QImageIOHandlerPrivate &amp;' data-ref="3dd">dd</dfn>)</td></tr>
+<tr><th id="278">278</th><td>    : <a class="member field" href="qimageiohandler.h.html#QImageIOHandler::d_ptr" title='QImageIOHandler::d_ptr' data-ref="QImageIOHandler::d_ptr">d_ptr</a><a class="ref fn" href="../../corelib/tools/qscopedpointer.h.html#_ZN14QScopedPointerC1EPT_" title='QScopedPointer::QScopedPointer&lt;T, Cleanup&gt;' data-ref="_ZN14QScopedPointerC1EPT_">(</a>&amp;<a class="local col3 ref" href="#3dd" title='dd' data-ref="3dd">dd</a>)</td></tr>
+<tr><th id="279">279</th><td>{</td></tr>
+<tr><th id="280">280</th><td>}</td></tr>
+<tr><th id="281">281</th><td></td></tr>
+<tr><th id="282">282</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="283">283</th><td><i class="doc">    Destructs the QImageIOHandler object.</i></td></tr>
+<tr><th id="284">284</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="285">285</th><td><a class="type" href="qimageiohandler.h.html#QImageIOHandler" title='QImageIOHandler' data-ref="QImageIOHandler">QImageIOHandler</a>::<dfn class="virtual decl def fn" id="_ZN15QImageIOHandlerD1Ev" title='QImageIOHandler::~QImageIOHandler' data-ref="_ZN15QImageIOHandlerD1Ev">~QImageIOHandler</dfn>()</td></tr>
+<tr><th id="286">286</th><td>{</td></tr>
+<tr><th id="287">287</th><td>}</td></tr>
+<tr><th id="288">288</th><td></td></tr>
+<tr><th id="289">289</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="290">290</th><td><i class="doc">    Sets the device of the QImageIOHandler to<span class="command"> \a</span> <span class="arg">device.</span> The image</i></td></tr>
+<tr><th id="291">291</th><td><i class="doc">    handler will use this device when reading and writing images.</i></td></tr>
+<tr><th id="292">292</th><td><i class="doc"></i></td></tr>
+<tr><th id="293">293</th><td><i class="doc">    The device can only be set once and must be set before calling</i></td></tr>
+<tr><th id="294">294</th><td><i class="doc">    canRead(), read(), write(), etc. If you need to read multiple</i></td></tr>
+<tr><th id="295">295</th><td><i class="doc">    files, construct multiple instances of the appropriate</i></td></tr>
+<tr><th id="296">296</th><td><i class="doc">    QImageIOHandler subclass.</i></td></tr>
+<tr><th id="297">297</th><td><i class="doc"></i></td></tr>
+<tr><th id="298">298</th><td><i class="doc">    <span class="command">\sa</span> device()</i></td></tr>
+<tr><th id="299">299</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="300">300</th><td><em>void</em> <a class="type" href="qimageiohandler.h.html#QImageIOHandler" title='QImageIOHandler' data-ref="QImageIOHandler">QImageIOHandler</a>::<dfn class="decl def fn" id="_ZN15QImageIOHandler9setDeviceEP9QIODevice" title='QImageIOHandler::setDevice' data-ref="_ZN15QImageIOHandler9setDeviceEP9QIODevice">setDevice</dfn>(<a class="type" href="../../corelib/io/qiodevice.h.html#QIODevice" title='QIODevice' data-ref="QIODevice">QIODevice</a> *<dfn class="local col4 decl" id="4device" title='device' data-type='QIODevice *' data-ref="4device">device</dfn>)</td></tr>
+<tr><th id="301">301</th><td>{</td></tr>
+<tr><th id="302">302</th><td>    <a class="macro" href="../../corelib/global/qtclasshelpermacros.h.html#109" title="QImageIOHandlerPrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(QImageIOHandler);</td></tr>
+<tr><th id="303">303</th><td>    <a class="local col5 ref" href="#302" title='d' data-ref="5d">d</a>-&gt;<a class="ref field" href="#QImageIOHandlerPrivate::device" title='QImageIOHandlerPrivate::device' data-ref="QImageIOHandlerPrivate::device">device</a> = <a class="local col4 ref" href="#4device" title='device' data-ref="4device">device</a>;</td></tr>
+<tr><th id="304">304</th><td>}</td></tr>
+<tr><th id="305">305</th><td></td></tr>
+<tr><th id="306">306</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="307">307</th><td><i class="doc">    Returns the device currently assigned to the QImageIOHandler. If</i></td></tr>
+<tr><th id="308">308</th><td><i class="doc">    not device has been assigned,<span class="command"> \nullptr</span> is returned.</i></td></tr>
+<tr><th id="309">309</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="310">310</th><td><a class="type" href="../../corelib/io/qiodevice.h.html#QIODevice" title='QIODevice' data-ref="QIODevice">QIODevice</a> *<a class="type" href="qimageiohandler.h.html#QImageIOHandler" title='QImageIOHandler' data-ref="QImageIOHandler">QImageIOHandler</a>::<dfn class="decl def fn" id="_ZNK15QImageIOHandler6deviceEv" title='QImageIOHandler::device' data-ref="_ZNK15QImageIOHandler6deviceEv">device</dfn>() <em>const</em></td></tr>
+<tr><th id="311">311</th><td>{</td></tr>
+<tr><th id="312">312</th><td>    <a class="macro" href="../../corelib/global/qtclasshelpermacros.h.html#109" title="const QImageIOHandlerPrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(<em>const</em> QImageIOHandler);</td></tr>
+<tr><th id="313">313</th><td>    <b>return</b> <a class="local col6 ref" href="#312" title='d' data-ref="6d">d</a>-&gt;<a class="ref field" href="#QImageIOHandlerPrivate::device" title='QImageIOHandlerPrivate::device' data-ref="QImageIOHandlerPrivate::device">device</a>;</td></tr>
+<tr><th id="314">314</th><td>}</td></tr>
+<tr><th id="315">315</th><td></td></tr>
+<tr><th id="316">316</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="317">317</th><td><i class="doc">    Sets the format of the QImageIOHandler to<span class="command"> \a</span> <span class="arg">format.</span> The format is</i></td></tr>
+<tr><th id="318">318</th><td><i class="doc">    most useful for handlers that support multiple image formats.</i></td></tr>
+<tr><th id="319">319</th><td><i class="doc"></i></td></tr>
+<tr><th id="320">320</th><td><i class="doc">    <span class="command">\sa</span> format()</i></td></tr>
+<tr><th id="321">321</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="322">322</th><td><em>void</em> <a class="type" href="qimageiohandler.h.html#QImageIOHandler" title='QImageIOHandler' data-ref="QImageIOHandler">QImageIOHandler</a>::<dfn class="decl def fn" id="_ZN15QImageIOHandler9setFormatERK10QByteArray" title='QImageIOHandler::setFormat' data-ref="_ZN15QImageIOHandler9setFormatERK10QByteArray">setFormat</dfn>(<em>const</em> <a class="type" href="../../corelib/text/qbytearray.h.html#QByteArray" title='QByteArray' data-ref="QByteArray">QByteArray</a> &amp;<dfn class="local col7 decl" id="7format" title='format' data-type='const QByteArray &amp;' data-ref="7format">format</dfn>)</td></tr>
+<tr><th id="323">323</th><td>{</td></tr>
+<tr><th id="324">324</th><td>    <a class="macro" href="../../corelib/global/qtclasshelpermacros.h.html#109" title="QImageIOHandlerPrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(QImageIOHandler);</td></tr>
+<tr><th id="325">325</th><td>    <a class="local col8 ref" href="#324" title='d' data-ref="8d">d</a>-&gt;<a class="ref field" href="#QImageIOHandlerPrivate::format" title='QImageIOHandlerPrivate::format' data-ref="QImageIOHandlerPrivate::format">format</a> <a class="ref fn" href="../../corelib/text/qbytearray.h.html#_ZN10QByteArrayaSERKS_" title='QByteArray::operator=' data-ref="_ZN10QByteArrayaSERKS_">=</a> <a class="local col7 ref" href="#7format" title='format' data-ref="7format">format</a>;</td></tr>
+<tr><th id="326">326</th><td>}</td></tr>
+<tr><th id="327">327</th><td></td></tr>
+<tr><th id="328">328</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="329">329</th><td><i class="doc">    Sets the format of the QImageIOHandler to<span class="command"> \a</span> <span class="arg">format.</span> The format is</i></td></tr>
+<tr><th id="330">330</th><td><i class="doc">    most useful for handlers that support multiple image formats.</i></td></tr>
+<tr><th id="331">331</th><td><i class="doc"></i></td></tr>
+<tr><th id="332">332</th><td><i class="doc">    This function is declared const so that it can be called from canRead().</i></td></tr>
+<tr><th id="333">333</th><td><i class="doc"></i></td></tr>
+<tr><th id="334">334</th><td><i class="doc">    <span class="command">\sa</span> format()</i></td></tr>
+<tr><th id="335">335</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="336">336</th><td><em>void</em> <a class="type" href="qimageiohandler.h.html#QImageIOHandler" title='QImageIOHandler' data-ref="QImageIOHandler">QImageIOHandler</a>::<dfn class="decl def fn" id="_ZNK15QImageIOHandler9setFormatERK10QByteArray" title='QImageIOHandler::setFormat' data-ref="_ZNK15QImageIOHandler9setFormatERK10QByteArray">setFormat</dfn>(<em>const</em> <a class="type" href="../../corelib/text/qbytearray.h.html#QByteArray" title='QByteArray' data-ref="QByteArray">QByteArray</a> &amp;<dfn class="local col9 decl" id="9format" title='format' data-type='const QByteArray &amp;' data-ref="9format">format</dfn>) <em>const</em></td></tr>
+<tr><th id="337">337</th><td>{</td></tr>
+<tr><th id="338">338</th><td>    <a class="macro" href="../../corelib/global/qtclasshelpermacros.h.html#109" title="const QImageIOHandlerPrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(<em>const</em> QImageIOHandler);</td></tr>
+<tr><th id="339">339</th><td>    <a class="local col0 ref" href="#338" title='d' data-ref="10d">d</a>-&gt;<a class="ref field" href="#QImageIOHandlerPrivate::format" title='QImageIOHandlerPrivate::format' data-ref="QImageIOHandlerPrivate::format">format</a> <a class="ref fn" href="../../corelib/text/qbytearray.h.html#_ZN10QByteArrayaSERKS_" title='QByteArray::operator=' data-ref="_ZN10QByteArrayaSERKS_">=</a> <a class="local col9 ref" href="#9format" title='format' data-ref="9format">format</a>;</td></tr>
+<tr><th id="340">340</th><td>}</td></tr>
+<tr><th id="341">341</th><td></td></tr>
+<tr><th id="342">342</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="343">343</th><td><i class="doc">    Returns the format that is currently assigned to</i></td></tr>
+<tr><th id="344">344</th><td><i class="doc">    QImageIOHandler. If no format has been assigned, an empty string</i></td></tr>
+<tr><th id="345">345</th><td><i class="doc">    is returned.</i></td></tr>
+<tr><th id="346">346</th><td><i class="doc"></i></td></tr>
+<tr><th id="347">347</th><td><i class="doc">    <span class="command">\sa</span> setFormat()</i></td></tr>
+<tr><th id="348">348</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="349">349</th><td><a class="type" href="../../corelib/text/qbytearray.h.html#QByteArray" title='QByteArray' data-ref="QByteArray">QByteArray</a> <a class="type" href="qimageiohandler.h.html#QImageIOHandler" title='QImageIOHandler' data-ref="QImageIOHandler">QImageIOHandler</a>::<dfn class="decl def fn" id="_ZNK15QImageIOHandler6formatEv" title='QImageIOHandler::format' data-ref="_ZNK15QImageIOHandler6formatEv">format</dfn>() <em>const</em></td></tr>
+<tr><th id="350">350</th><td>{</td></tr>
+<tr><th id="351">351</th><td>    <a class="macro" href="../../corelib/global/qtclasshelpermacros.h.html#109" title="const QImageIOHandlerPrivate * const d = d_func()" data-ref="_M/Q_D">Q_D</a>(<em>const</em> QImageIOHandler);</td></tr>
+<tr><th id="352">352</th><td>    <b>return</b> <a class="ref fn fake" href="../../corelib/text/qbytearray.h.html#_ZN10QByteArrayC1ERKS_" title='QByteArray::QByteArray' data-ref="_ZN10QByteArrayC1ERKS_"></a><a class="local col1 ref" href="#351" title='d' data-ref="11d">d</a>-&gt;<a class="ref field" href="#QImageIOHandlerPrivate::format" title='QImageIOHandlerPrivate::format' data-ref="QImageIOHandlerPrivate::format">format</a>;</td></tr>
+<tr><th id="353">353</th><td>}</td></tr>
+<tr><th id="354">354</th><td></td></tr>
+<tr><th id="355">355</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="356">356</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb" data-ref="_ZN15QImageIOHandler4readEP6QImage">bool QImageIOHandler::read(QImage *image)</span></i></td></tr>
+<tr><th id="357">357</th><td><i class="doc"></i></td></tr>
+<tr><th id="358">358</th><td><i class="doc">    Read an image from the device, and stores it in<span class="command"> \a</span> <span class="arg">image.</span></i></td></tr>
+<tr><th id="359">359</th><td><i class="doc">    Returns<span class="command"> \c</span> <span class="arg">true</span> if the image is successfully read; otherwise returns</i></td></tr>
+<tr><th id="360">360</th><td><i class="doc">    false.</i></td></tr>
+<tr><th id="361">361</th><td><i class="doc"></i></td></tr>
+<tr><th id="362">362</th><td><i class="doc">    For image formats that support incremental loading, and for animation</i></td></tr>
+<tr><th id="363">363</th><td><i class="doc">    formats, the image handler can assume that<span class="command"> \a</span> <span class="arg">image</span> points to the</i></td></tr>
+<tr><th id="364">364</th><td><i class="doc">    previous frame.</i></td></tr>
+<tr><th id="365">365</th><td><i class="doc"></i></td></tr>
+<tr><th id="366">366</th><td><i class="doc">    <span class="command">\sa</span> canRead()</i></td></tr>
+<tr><th id="367">367</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="368">368</th><td></td></tr>
+<tr><th id="369">369</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="370">370</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb" data-ref="_ZNK15QImageIOHandler7canReadEv">bool QImageIOHandler::canRead() const</span></i></td></tr>
+<tr><th id="371">371</th><td><i class="doc"></i></td></tr>
+<tr><th id="372">372</th><td><i class="doc">    Returns<span class="command"> \c</span> <span class="arg">true</span> if an image can be read from the device (i.e., the</i></td></tr>
+<tr><th id="373">373</th><td><i class="doc">    image format is supported, the device can be read from and the</i></td></tr>
+<tr><th id="374">374</th><td><i class="doc">    initial header information suggests that the image can be read);</i></td></tr>
+<tr><th id="375">375</th><td><i class="doc">    otherwise returns<span class="command"> \c</span> <span class="arg">false.</span></i></td></tr>
+<tr><th id="376">376</th><td><i class="doc"></i></td></tr>
+<tr><th id="377">377</th><td><i class="doc">    When reimplementing canRead(), make sure that the I/O device</i></td></tr>
+<tr><th id="378">378</th><td><i class="doc">    (device()) is left in its original state (e.g., by using peek()</i></td></tr>
+<tr><th id="379">379</th><td><i class="doc">    rather than read()).</i></td></tr>
+<tr><th id="380">380</th><td><i class="doc"></i></td></tr>
+<tr><th id="381">381</th><td><i class="doc">    <span class="command">\sa</span> read(), QIODevice::peek()</i></td></tr>
+<tr><th id="382">382</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="383">383</th><td></td></tr>
+<tr><th id="384">384</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="385">385</th><td><i class="doc">    Writes the image<span class="command"> \a</span> <span class="arg">image</span> to the assigned device. Returns<span class="command"> \c</span> <span class="arg">true</span> on</i></td></tr>
+<tr><th id="386">386</th><td><i class="doc">    success; otherwise returns<span class="command"> \c</span> <span class="arg">false.</span></i></td></tr>
+<tr><th id="387">387</th><td><i class="doc"></i></td></tr>
+<tr><th id="388">388</th><td><i class="doc">    The default implementation does nothing, and simply returns<span class="command"> \c</span> <span class="arg">false.</span></i></td></tr>
+<tr><th id="389">389</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="390">390</th><td><em>bool</em> <a class="type" href="qimageiohandler.h.html#QImageIOHandler" title='QImageIOHandler' data-ref="QImageIOHandler">QImageIOHandler</a>::<dfn class="virtual decl def fn" id="_ZN15QImageIOHandler5writeERK6QImage" title='QImageIOHandler::write' data-ref="_ZN15QImageIOHandler5writeERK6QImage">write</dfn>(<em>const</em> <a class="type" href="qimage.h.html#QImage" title='QImage' data-ref="QImage">QImage</a> &amp;<dfn class="local col2 decl" id="12image" title='image' data-type='const QImage &amp;' data-ref="12image">image</dfn>)</td></tr>
+<tr><th id="391">391</th><td>{</td></tr>
+<tr><th id="392">392</th><td>    <a class="macro" href="../../corelib/global/qtpreprocessorsupport.h.html#20" title="(void)image;" data-ref="_M/Q_UNUSED">Q_UNUSED</a>(<a class="local col2 ref" href="#12image" title='image' data-ref="12image">image</a>);</td></tr>
+<tr><th id="393">393</th><td>    <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="394">394</th><td>}</td></tr>
+<tr><th id="395">395</th><td></td></tr>
+<tr><th id="396">396</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="397">397</th><td><i class="doc">    Sets the option<span class="command"> \a</span> <span class="arg">option</span> with the value<span class="command"> \a</span> <span class="arg">value.</span></i></td></tr>
+<tr><th id="398">398</th><td><i class="doc"></i></td></tr>
+<tr><th id="399">399</th><td><i class="doc">    <span class="command">\sa</span> option(), ImageOption</i></td></tr>
+<tr><th id="400">400</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="401">401</th><td><em>void</em> <a class="type" href="qimageiohandler.h.html#QImageIOHandler" title='QImageIOHandler' data-ref="QImageIOHandler">QImageIOHandler</a>::<dfn class="virtual decl def fn" id="_ZN15QImageIOHandler9setOptionENS_11ImageOptionERK8QVariant" title='QImageIOHandler::setOption' data-ref="_ZN15QImageIOHandler9setOptionENS_11ImageOptionERK8QVariant">setOption</dfn>(<a class="type" href="qimageiohandler.h.html#QImageIOHandler::ImageOption" title='QImageIOHandler::ImageOption' data-ref="QImageIOHandler::ImageOption">ImageOption</a> <dfn class="local col3 decl" id="13option" title='option' data-type='QImageIOHandler::ImageOption' data-ref="13option">option</dfn>, <em>const</em> <a class="type" href="../../corelib/kernel/qvariant.h.html#QVariant" title='QVariant' data-ref="QVariant">QVariant</a> &amp;<dfn class="local col4 decl" id="14value" title='value' data-type='const QVariant &amp;' data-ref="14value">value</dfn>)</td></tr>
+<tr><th id="402">402</th><td>{</td></tr>
+<tr><th id="403">403</th><td>    <a class="macro" href="../../corelib/global/qtpreprocessorsupport.h.html#20" title="(void)option;" data-ref="_M/Q_UNUSED">Q_UNUSED</a>(<a class="local col3 ref" href="#13option" title='option' data-ref="13option">option</a>);</td></tr>
+<tr><th id="404">404</th><td>    <a class="macro" href="../../corelib/global/qtpreprocessorsupport.h.html#20" title="(void)value;" data-ref="_M/Q_UNUSED">Q_UNUSED</a>(<a class="local col4 ref" href="#14value" title='value' data-ref="14value">value</a>);</td></tr>
+<tr><th id="405">405</th><td>}</td></tr>
+<tr><th id="406">406</th><td></td></tr>
+<tr><th id="407">407</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="408">408</th><td><i class="doc">    Returns the value assigned to<span class="command"> \a</span> <span class="arg">option</span> as a QVariant. The type of</i></td></tr>
+<tr><th id="409">409</th><td><i class="doc">    the value depends on the option. For example, option(Size) returns</i></td></tr>
+<tr><th id="410">410</th><td><i class="doc">    a QSize variant.</i></td></tr>
+<tr><th id="411">411</th><td><i class="doc"></i></td></tr>
+<tr><th id="412">412</th><td><i class="doc">    <span class="command">\sa</span> setOption(), supportsOption()</i></td></tr>
+<tr><th id="413">413</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="414">414</th><td><a class="type" href="../../corelib/kernel/qvariant.h.html#QVariant" title='QVariant' data-ref="QVariant">QVariant</a> <a class="type" href="qimageiohandler.h.html#QImageIOHandler" title='QImageIOHandler' data-ref="QImageIOHandler">QImageIOHandler</a>::<dfn class="virtual decl def fn" id="_ZNK15QImageIOHandler6optionENS_11ImageOptionE" title='QImageIOHandler::option' data-ref="_ZNK15QImageIOHandler6optionENS_11ImageOptionE">option</dfn>(<a class="type" href="qimageiohandler.h.html#QImageIOHandler::ImageOption" title='QImageIOHandler::ImageOption' data-ref="QImageIOHandler::ImageOption">ImageOption</a> <dfn class="local col5 decl" id="15option" title='option' data-type='QImageIOHandler::ImageOption' data-ref="15option">option</dfn>) <em>const</em></td></tr>
+<tr><th id="415">415</th><td>{</td></tr>
+<tr><th id="416">416</th><td>    <a class="macro" href="../../corelib/global/qtpreprocessorsupport.h.html#20" title="(void)option;" data-ref="_M/Q_UNUSED">Q_UNUSED</a>(<a class="local col5 ref" href="#15option" title='option' data-ref="15option">option</a>);</td></tr>
+<tr><th id="417">417</th><td>    <b>return</b> <a class="type" href="../../corelib/kernel/qvariant.h.html#QVariant" title='QVariant' data-ref="QVariant">QVariant</a><a class="ref fn" href="../../corelib/kernel/qvariant.h.html#_ZN8QVariantC1Ev" title='QVariant::QVariant' data-ref="_ZN8QVariantC1Ev">(</a>);</td></tr>
+<tr><th id="418">418</th><td>}</td></tr>
+<tr><th id="419">419</th><td></td></tr>
+<tr><th id="420">420</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="421">421</th><td><i class="doc">    Returns<span class="command"> \c</span> <span class="arg">true</span> if the QImageIOHandler supports the option<span class="command"> \a</span> <span class="arg">option;</span></i></td></tr>
+<tr><th id="422">422</th><td><i class="doc">    otherwise returns<span class="command"> \c</span> <span class="arg">false.</span> For example, if the QImageIOHandler</i></td></tr>
+<tr><th id="423">423</th><td><i class="doc">    supports the<span class="command"> \l</span> Size option, supportsOption(Size) must return</i></td></tr>
+<tr><th id="424">424</th><td><i class="doc">    true.</i></td></tr>
+<tr><th id="425">425</th><td><i class="doc"></i></td></tr>
+<tr><th id="426">426</th><td><i class="doc">    <span class="command">\sa</span> setOption(), option()</i></td></tr>
+<tr><th id="427">427</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="428">428</th><td><em>bool</em> <a class="type" href="qimageiohandler.h.html#QImageIOHandler" title='QImageIOHandler' data-ref="QImageIOHandler">QImageIOHandler</a>::<dfn class="virtual decl def fn" id="_ZNK15QImageIOHandler14supportsOptionENS_11ImageOptionE" title='QImageIOHandler::supportsOption' data-ref="_ZNK15QImageIOHandler14supportsOptionENS_11ImageOptionE">supportsOption</dfn>(<a class="type" href="qimageiohandler.h.html#QImageIOHandler::ImageOption" title='QImageIOHandler::ImageOption' data-ref="QImageIOHandler::ImageOption">ImageOption</a> <dfn class="local col6 decl" id="16option" title='option' data-type='QImageIOHandler::ImageOption' data-ref="16option">option</dfn>) <em>const</em></td></tr>
+<tr><th id="429">429</th><td>{</td></tr>
+<tr><th id="430">430</th><td>    <a class="macro" href="../../corelib/global/qtpreprocessorsupport.h.html#20" title="(void)option;" data-ref="_M/Q_UNUSED">Q_UNUSED</a>(<a class="local col6 ref" href="#16option" title='option' data-ref="16option">option</a>);</td></tr>
+<tr><th id="431">431</th><td>    <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="432">432</th><td>}</td></tr>
+<tr><th id="433">433</th><td></td></tr>
+<tr><th id="434">434</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="435">435</th><td><i class="doc">    For image formats that support animation, this function returns</i></td></tr>
+<tr><th id="436">436</th><td><i class="doc">    the sequence number of the current image in the animation. If</i></td></tr>
+<tr><th id="437">437</th><td><i class="doc">    this function is called before any image is read(), -1 is</i></td></tr>
+<tr><th id="438">438</th><td><i class="doc">    returned. The number of the first image in the sequence is 0.</i></td></tr>
+<tr><th id="439">439</th><td><i class="doc"></i></td></tr>
+<tr><th id="440">440</th><td><i class="doc">    If the image format does not support animation, 0 is returned.</i></td></tr>
+<tr><th id="441">441</th><td><i class="doc"></i></td></tr>
+<tr><th id="442">442</th><td><i class="doc">    <span class="command">\sa</span> read()</i></td></tr>
+<tr><th id="443">443</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="444">444</th><td><em>int</em> <a class="type" href="qimageiohandler.h.html#QImageIOHandler" title='QImageIOHandler' data-ref="QImageIOHandler">QImageIOHandler</a>::<dfn class="virtual decl def fn" id="_ZNK15QImageIOHandler18currentImageNumberEv" title='QImageIOHandler::currentImageNumber' data-ref="_ZNK15QImageIOHandler18currentImageNumberEv">currentImageNumber</dfn>() <em>const</em></td></tr>
+<tr><th id="445">445</th><td>{</td></tr>
+<tr><th id="446">446</th><td>    <b>return</b> <var>0</var>;</td></tr>
+<tr><th id="447">447</th><td>}</td></tr>
+<tr><th id="448">448</th><td></td></tr>
+<tr><th id="449">449</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="450">450</th><td><i class="doc">    Returns the rect of the current image. If no rect is defined for the</i></td></tr>
+<tr><th id="451">451</th><td><i class="doc">    image, and empty QRect() is returned.</i></td></tr>
+<tr><th id="452">452</th><td><i class="doc"></i></td></tr>
+<tr><th id="453">453</th><td><i class="doc">    This function is useful for animations, where only parts of the frame</i></td></tr>
+<tr><th id="454">454</th><td><i class="doc">    may be updated at a time.</i></td></tr>
+<tr><th id="455">455</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="456">456</th><td><a class="type" href="../../corelib/tools/qrect.h.html#QRect" title='QRect' data-ref="QRect">QRect</a> <a class="type" href="qimageiohandler.h.html#QImageIOHandler" title='QImageIOHandler' data-ref="QImageIOHandler">QImageIOHandler</a>::<dfn class="virtual decl def fn" id="_ZNK15QImageIOHandler16currentImageRectEv" title='QImageIOHandler::currentImageRect' data-ref="_ZNK15QImageIOHandler16currentImageRectEv">currentImageRect</dfn>() <em>const</em></td></tr>
+<tr><th id="457">457</th><td>{</td></tr>
+<tr><th id="458">458</th><td>    <b>return</b> <a class="type" href="../../corelib/tools/qrect.h.html#QRect" title='QRect' data-ref="QRect">QRect</a><a class="ref fn" href="../../corelib/tools/qrect.h.html#_ZN5QRectC1Ev" title='QRect::QRect' data-ref="_ZN5QRectC1Ev">(</a>);</td></tr>
+<tr><th id="459">459</th><td>}</td></tr>
+<tr><th id="460">460</th><td></td></tr>
+<tr><th id="461">461</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="462">462</th><td><i class="doc">    For image formats that support animation, this function returns</i></td></tr>
+<tr><th id="463">463</th><td><i class="doc">    the number of images in the animation. If the image format does</i></td></tr>
+<tr><th id="464">464</th><td><i class="doc">    not support animation, or if it is unable to determine the number</i></td></tr>
+<tr><th id="465">465</th><td><i class="doc">    of images, 0 is returned.</i></td></tr>
+<tr><th id="466">466</th><td><i class="doc"></i></td></tr>
+<tr><th id="467">467</th><td><i class="doc">    The default implementation returns 1 if canRead() returns<span class="command"> \c</span> <span class="arg">true;</span></i></td></tr>
+<tr><th id="468">468</th><td><i class="doc">    otherwise 0 is returned.</i></td></tr>
+<tr><th id="469">469</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="470">470</th><td><em>int</em> <a class="type" href="qimageiohandler.h.html#QImageIOHandler" title='QImageIOHandler' data-ref="QImageIOHandler">QImageIOHandler</a>::<dfn class="virtual decl def fn" id="_ZNK15QImageIOHandler10imageCountEv" title='QImageIOHandler::imageCount' data-ref="_ZNK15QImageIOHandler10imageCountEv">imageCount</dfn>() <em>const</em></td></tr>
+<tr><th id="471">471</th><td>{</td></tr>
+<tr><th id="472">472</th><td>    <b>return</b> <a class="virtual member fn" href="qimageiohandler.h.html#_ZNK15QImageIOHandler7canReadEv" title='QImageIOHandler::canRead' data-ref="_ZNK15QImageIOHandler7canReadEv">canRead</a>() ? <var>1</var> : <var>0</var>;</td></tr>
+<tr><th id="473">473</th><td>}</td></tr>
+<tr><th id="474">474</th><td></td></tr>
+<tr><th id="475">475</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="476">476</th><td><i class="doc">   For image formats that support animation, this function jumps to the</i></td></tr>
+<tr><th id="477">477</th><td><i class="doc">   next image.</i></td></tr>
+<tr><th id="478">478</th><td><i class="doc"></i></td></tr>
+<tr><th id="479">479</th><td><i class="doc">   The default implementation does nothing, and returns<span class="command"> \c</span> <span class="arg">false.</span></i></td></tr>
+<tr><th id="480">480</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="481">481</th><td><em>bool</em> <a class="type" href="qimageiohandler.h.html#QImageIOHandler" title='QImageIOHandler' data-ref="QImageIOHandler">QImageIOHandler</a>::<dfn class="virtual decl def fn" id="_ZN15QImageIOHandler15jumpToNextImageEv" title='QImageIOHandler::jumpToNextImage' data-ref="_ZN15QImageIOHandler15jumpToNextImageEv">jumpToNextImage</dfn>()</td></tr>
+<tr><th id="482">482</th><td>{</td></tr>
+<tr><th id="483">483</th><td>    <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="484">484</th><td>}</td></tr>
+<tr><th id="485">485</th><td></td></tr>
+<tr><th id="486">486</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="487">487</th><td><i class="doc">   For image formats that support animation, this function jumps to the image</i></td></tr>
+<tr><th id="488">488</th><td><i class="doc">   whose sequence number is<span class="command"> \a</span> <span class="arg">imageNumber.</span> The next call to read() will</i></td></tr>
+<tr><th id="489">489</th><td><i class="doc">   attempt to read this image.</i></td></tr>
+<tr><th id="490">490</th><td><i class="doc"></i></td></tr>
+<tr><th id="491">491</th><td><i class="doc">   The default implementation does nothing, and returns<span class="command"> \c</span> <span class="arg">false.</span></i></td></tr>
+<tr><th id="492">492</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="493">493</th><td><em>bool</em> <a class="type" href="qimageiohandler.h.html#QImageIOHandler" title='QImageIOHandler' data-ref="QImageIOHandler">QImageIOHandler</a>::<dfn class="virtual decl def fn" id="_ZN15QImageIOHandler11jumpToImageEi" title='QImageIOHandler::jumpToImage' data-ref="_ZN15QImageIOHandler11jumpToImageEi">jumpToImage</dfn>(<em>int</em> <dfn class="local col7 decl" id="17imageNumber" title='imageNumber' data-type='int' data-ref="17imageNumber">imageNumber</dfn>)</td></tr>
+<tr><th id="494">494</th><td>{</td></tr>
+<tr><th id="495">495</th><td>    <a class="macro" href="../../corelib/global/qtpreprocessorsupport.h.html#20" title="(void)imageNumber;" data-ref="_M/Q_UNUSED">Q_UNUSED</a>(<a class="local col7 ref" href="#17imageNumber" title='imageNumber' data-ref="17imageNumber">imageNumber</a>);</td></tr>
+<tr><th id="496">496</th><td>    <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="497">497</th><td>}</td></tr>
+<tr><th id="498">498</th><td></td></tr>
+<tr><th id="499">499</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="500">500</th><td><i class="doc">    For image formats that support animation, this function returns</i></td></tr>
+<tr><th id="501">501</th><td><i class="doc">    the number of times the animation should loop. If the image format</i></td></tr>
+<tr><th id="502">502</th><td><i class="doc">    does not support animation, 0 is returned.</i></td></tr>
+<tr><th id="503">503</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="504">504</th><td><em>int</em> <a class="type" href="qimageiohandler.h.html#QImageIOHandler" title='QImageIOHandler' data-ref="QImageIOHandler">QImageIOHandler</a>::<dfn class="virtual decl def fn" id="_ZNK15QImageIOHandler9loopCountEv" title='QImageIOHandler::loopCount' data-ref="_ZNK15QImageIOHandler9loopCountEv">loopCount</dfn>() <em>const</em></td></tr>
+<tr><th id="505">505</th><td>{</td></tr>
+<tr><th id="506">506</th><td>    <b>return</b> <var>0</var>;</td></tr>
+<tr><th id="507">507</th><td>}</td></tr>
+<tr><th id="508">508</th><td></td></tr>
+<tr><th id="509">509</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="510">510</th><td><i class="doc">    For image formats that support animation, this function returns</i></td></tr>
+<tr><th id="511">511</th><td><i class="doc">    the number of milliseconds to wait until reading the next</i></td></tr>
+<tr><th id="512">512</th><td><i class="doc">    image. If the image format does not support animation, 0 is</i></td></tr>
+<tr><th id="513">513</th><td><i class="doc">    returned.</i></td></tr>
+<tr><th id="514">514</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="515">515</th><td><em>int</em> <a class="type" href="qimageiohandler.h.html#QImageIOHandler" title='QImageIOHandler' data-ref="QImageIOHandler">QImageIOHandler</a>::<dfn class="virtual decl def fn" id="_ZNK15QImageIOHandler14nextImageDelayEv" title='QImageIOHandler::nextImageDelay' data-ref="_ZNK15QImageIOHandler14nextImageDelayEv">nextImageDelay</dfn>() <em>const</em></td></tr>
+<tr><th id="516">516</th><td>{</td></tr>
+<tr><th id="517">517</th><td>    <b>return</b> <var>0</var>;</td></tr>
+<tr><th id="518">518</th><td>}</td></tr>
+<tr><th id="519">519</th><td></td></tr>
+<tr><th id="520">520</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="521">521</th><td><i class="doc">    <span class="command">\since</span> 6.0</i></td></tr>
+<tr><th id="522">522</th><td><i class="doc"></i></td></tr>
+<tr><th id="523">523</th><td><i class="doc">    This is a convenience method for the reading function in subclasses. Image</i></td></tr>
+<tr><th id="524">524</th><td><i class="doc">    format handlers must reject loading an image if the required allocation</i></td></tr>
+<tr><th id="525">525</th><td><i class="doc">    would exceeed the current allocation limit. This function checks the</i></td></tr>
+<tr><th id="526">526</th><td><i class="doc">    parameters and limit, and does the allocation if it is valid and required.</i></td></tr>
+<tr><th id="527">527</th><td><i class="doc">    Upon successful return,<span class="command"> \a</span> <span class="arg">image</span> will be a valid, detached QImage of the</i></td></tr>
+<tr><th id="528">528</th><td><i class="doc">    given<span class="command"> \a</span> <span class="arg">size</span> and<span class="command"> \a</span> <span class="arg">format.</span></i></td></tr>
+<tr><th id="529">529</th><td><i class="doc"></i></td></tr>
+<tr><th id="530">530</th><td><i class="doc">    <span class="command">\sa</span> QImageReader::allocationLimit()</i></td></tr>
+<tr><th id="531">531</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="532">532</th><td><em>bool</em> <a class="type" href="qimageiohandler.h.html#QImageIOHandler" title='QImageIOHandler' data-ref="QImageIOHandler">QImageIOHandler</a>::<dfn class="decl def fn" id="_ZN15QImageIOHandler13allocateImageE5QSizeN6QImage6FormatEPS1_" title='QImageIOHandler::allocateImage' data-ref="_ZN15QImageIOHandler13allocateImageE5QSizeN6QImage6FormatEPS1_">allocateImage</dfn>(<a class="type" href="../../corelib/tools/qsize.h.html#QSize" title='QSize' data-ref="QSize">QSize</a> <dfn class="local col8 decl" id="18size" title='size' data-type='QSize' data-ref="18size">size</dfn>, <a class="type" href="qimage.h.html#QImage" title='QImage' data-ref="QImage">QImage</a>::<a class="type" href="qimage.h.html#QImage::Format" title='QImage::Format' data-ref="QImage::Format">Format</a> <dfn class="local col9 decl" id="19format" title='format' data-type='QImage::Format' data-ref="19format">format</dfn>, <a class="type" href="qimage.h.html#QImage" title='QImage' data-ref="QImage">QImage</a> *<dfn class="local col0 decl" id="20image" title='image' data-type='QImage *' data-ref="20image">image</dfn>)</td></tr>
+<tr><th id="533">533</th><td>{</td></tr>
+<tr><th id="534">534</th><td>    <a class="macro" href="../../corelib/global/qassert.h.html#28" title="static_cast&lt;void&gt;(false &amp;&amp; (image))" data-ref="_M/Q_ASSERT">Q_ASSERT</a>(<a class="local col0 ref" href="#20image" title='image' data-ref="20image">image</a>);</td></tr>
+<tr><th id="535">535</th><td>    <b>if</b> (<a class="local col8 ref" href="#18size" title='size' data-ref="18size">size</a>.<a class="ref fn" href="../../corelib/tools/qsize.h.html#_ZNK5QSize7isEmptyEv" title='QSize::isEmpty' data-ref="_ZNK5QSize7isEmptyEv">isEmpty</a>() || <a class="local col9 ref" href="#19format" title='format' data-ref="19format">format</a> &lt;= <a class="type" href="qimage.h.html#QImage" title='QImage' data-ref="QImage">QImage</a>::<a class="enum" href="qimage.h.html#QImage::Format_Invalid" title='QImage::Format_Invalid' data-ref="QImage::Format_Invalid">Format_Invalid</a> || <a class="local col9 ref" href="#19format" title='format' data-ref="19format">format</a> &gt;= <a class="type" href="qimage.h.html#QImage" title='QImage' data-ref="QImage">QImage</a>::<a class="enum" href="qimage.h.html#QImage::NImageFormats" title='QImage::NImageFormats' data-ref="QImage::NImageFormats">NImageFormats</a>)</td></tr>
+<tr><th id="536">536</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="537">537</th><td></td></tr>
+<tr><th id="538">538</th><td>    <b>if</b> (<a class="local col0 ref" href="#20image" title='image' data-ref="20image">image</a>-&gt;<a class="ref fn" href="qimage.h.html#_ZNK6QImage4sizeEv" title='QImage::size' data-ref="_ZNK6QImage4sizeEv">size</a>() <a class="ref fn" href="../../corelib/tools/qsize.h.html#_ZeqRK5QSizeS1_" title='operator==' data-ref="_ZeqRK5QSizeS1_">==</a> <a class="local col8 ref" href="#18size" title='size' data-ref="18size">size</a> &amp;&amp; <a class="local col0 ref" href="#20image" title='image' data-ref="20image">image</a>-&gt;<a class="ref fn" href="qimage.h.html#_ZNK6QImage6formatEv" title='QImage::format' data-ref="_ZNK6QImage6formatEv">format</a>() == <a class="local col9 ref" href="#19format" title='format' data-ref="19format">format</a>) {</td></tr>
+<tr><th id="539">539</th><td>        <a class="local col0 ref" href="#20image" title='image' data-ref="20image">image</a>-&gt;<a class="ref fn" href="qimage.h.html#_ZN6QImage6detachEv" title='QImage::detach' data-ref="_ZN6QImage6detachEv">detach</a>();</td></tr>
+<tr><th id="540">540</th><td>    } <b>else</b> {</td></tr>
+<tr><th id="541">541</th><td>        <b>if</b> (<em>const</em> <em>int</em> <dfn class="local col1 decl" id="21mbLimit" title='mbLimit' data-type='const int' data-ref="21mbLimit"><a class="local col1 ref" href="#21mbLimit" title='mbLimit' data-ref="21mbLimit">mbLimit</a></dfn> = <a class="type" href="qimagereader.h.html#QImageReader" title='QImageReader' data-ref="QImageReader">QImageReader</a>::<a class="ref fn" href="qimagereader.h.html#_ZN12QImageReader15allocationLimitEv" title='QImageReader::allocationLimit' data-ref="_ZN12QImageReader15allocationLimitEv">allocationLimit</a>()) {</td></tr>
+<tr><th id="542">542</th><td>            <a class="typedef" href="../../corelib/global/qtypes.h.html#qsizetype" title='qsizetype' data-type='QIntegerForSizeof&lt;std::size_t&gt;::Signed' data-ref="qsizetype">qsizetype</a> <dfn class="local col2 decl" id="22depth" title='depth' data-type='qsizetype' data-ref="22depth">depth</dfn> = <a class="ref fn" href="../../corelib/global/qminmax.h.html#_Z4qMaxRKT_S1_" title='qMax' data-ref="_Z4qMaxRKT_S1_">qMax</a>(<span class='inlayHint'>a:&nbsp;</span><a class="ref fn" href="qimage_p.h.html#_Z17qt_depthForFormatN6QImage6FormatE" title='qt_depthForFormat' data-ref="_Z17qt_depthForFormatN6QImage6FormatE">qt_depthForFormat</a>(<a class="local col9 ref" href="#19format" title='format' data-ref="19format">format</a>), <span class='inlayHint'>b:&nbsp;</span><var>32</var>); <i>// Effective gui depth = 32</i></td></tr>
+<tr><th id="543">543</th><td>            <a class="type" href="qimage_p.h.html#QImageData" title='QImageData' data-ref="QImageData">QImageData</a>::<a class="type" href="qimage_p.h.html#QImageData::ImageSizeParameters" title='QImageData::ImageSizeParameters' data-ref="QImageData::ImageSizeParameters">ImageSizeParameters</a> <dfn class="local col3 decl" id="23szp" title='szp' data-type='QImageData::ImageSizeParameters' data-ref="23szp">szp</dfn> =</td></tr>
+<tr><th id="544">544</th><td>                    <a class="type" href="qimage_p.h.html#QImageData" title='QImageData' data-ref="QImageData">QImageData</a>::<a class="ref fn" href="qimage_p.h.html#_ZN10QImageData24calculateImageParametersExxx" title='QImageData::calculateImageParameters' data-ref="_ZN10QImageData24calculateImageParametersExxx">calculateImageParameters</a>(<span class='inlayHint'>width:&nbsp;</span><a class="local col8 ref" href="#18size" title='size' data-ref="18size">size</a>.<a class="ref fn" href="../../corelib/tools/qsize.h.html#_ZNK5QSize5widthEv" title='QSize::width' data-ref="_ZNK5QSize5widthEv">width</a>(), <span class='inlayHint'>height:&nbsp;</span><a class="local col8 ref" href="#18size" title='size' data-ref="18size">size</a>.<a class="ref fn" href="../../corelib/tools/qsize.h.html#_ZNK5QSize6heightEv" title='QSize::height' data-ref="_ZNK5QSize6heightEv">height</a>(), <a class="local col2 ref" href="#22depth" title='depth' data-ref="22depth">depth</a>);</td></tr>
+<tr><th id="545">545</th><td>            <b>if</b> (!<a class="local col3 ref" href="#23szp" title='szp' data-ref="23szp">szp</a>.<a class="ref fn" href="qimage_p.h.html#_ZNK10QImageData19ImageSizeParameters7isValidEv" title='QImageData::ImageSizeParameters::isValid' data-ref="_ZNK10QImageData19ImageSizeParameters7isValidEv">isValid</a>())</td></tr>
+<tr><th id="546">546</th><td>                <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="547">547</th><td>            <em>const</em> <a class="typedef" href="../../corelib/global/qtypes.h.html#qsizetype" title='qsizetype' data-type='QIntegerForSizeof&lt;std::size_t&gt;::Signed' data-ref="qsizetype">qsizetype</a> <dfn class="local col4 decl" id="24mb" title='mb' data-type='const qsizetype' data-ref="24mb">mb</dfn> = <a class="local col3 ref" href="#23szp" title='szp' data-ref="23szp">szp</a>.<a class="ref field" href="qimage_p.h.html#QImageData::ImageSizeParameters::totalSize" title='QImageData::ImageSizeParameters::totalSize' data-ref="QImageData::ImageSizeParameters::totalSize">totalSize</a> &gt;&gt; <var>20</var>;</td></tr>
+<tr><th id="548">548</th><td>            <b>if</b> (<a class="local col4 ref" href="#24mb" title='mb' data-ref="24mb">mb</a> &gt; <a class="local col1 ref" href="#21mbLimit" title='mbLimit' data-ref="21mbLimit">mbLimit</a> || (<a class="local col4 ref" href="#24mb" title='mb' data-ref="24mb">mb</a> == <a class="local col1 ref" href="#21mbLimit" title='mbLimit' data-ref="21mbLimit">mbLimit</a> &amp;&amp; <a class="local col3 ref" href="#23szp" title='szp' data-ref="23szp">szp</a>.<a class="ref field" href="qimage_p.h.html#QImageData::ImageSizeParameters::totalSize" title='QImageData::ImageSizeParameters::totalSize' data-ref="QImageData::ImageSizeParameters::totalSize">totalSize</a> % (<var>1</var> &lt;&lt; <var>20</var>))) {</td></tr>
+<tr><th id="549">549</th><td>                <a class="macro" href="../../corelib/io/qloggingcategory.h.html#130" title="for (QLoggingCategoryMacroHolder&lt;QtWarningMsg&gt; qt_category(lcImageIo); qt_category; qt_category.control = false) QMessageLogger(nullptr, 0, nullptr, qt_category.name()).warning(&quot;QImageIOHandler: Rejecting image as it exceeds the current &quot; &quot;allocation limit of %i megabytes&quot;, mbLimit)" data-ref="_M/qCWarning">qCWarning</a>(<a class="ref fn" href="#237" title='lcImageIo' data-ref="_Z9lcImageIov">lcImageIo</a>, <q>"QImageIOHandler: Rejecting image as it exceeds the current "</q></td></tr>
+<tr><th id="550">550</th><td>                                     <q>"allocation limit of %i megabytes"</q>, <a class="local col1 ref" href="#21mbLimit" title='mbLimit' data-ref="21mbLimit">mbLimit</a>);</td></tr>
+<tr><th id="551">551</th><td>                <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="552">552</th><td>            }</td></tr>
+<tr><th id="553">553</th><td>        }</td></tr>
+<tr><th id="554">554</th><td>        *<a class="local col0 ref" href="#20image" title='image' data-ref="20image">image</a> <a class="ref fn" href="qimage.h.html#104" title='QImage::operator=' data-ref="_ZN6QImageaSEOS_">=</a> <a class="type" href="qimage.h.html#QImage" title='QImage' data-ref="QImage">QImage</a><a class="ref fn" href="qimage.h.html#_ZN6QImageC1ERK5QSizeNS_6FormatE" title='QImage::QImage' data-ref="_ZN6QImageC1ERK5QSizeNS_6FormatE">(</a><a class="local col8 ref" href="#18size" title='size' data-ref="18size">size</a>, <a class="local col9 ref" href="#19format" title='format' data-ref="19format">format</a>);</td></tr>
+<tr><th id="555">555</th><td>    }</td></tr>
+<tr><th id="556">556</th><td>    <b>return</b> !<a class="local col0 ref" href="#20image" title='image' data-ref="20image">image</a>-&gt;<a class="ref fn" href="qimage.h.html#_ZNK6QImage6isNullEv" title='QImage::isNull' data-ref="_ZNK6QImage6isNullEv">isNull</a>();</td></tr>
+<tr><th id="557">557</th><td>}</td></tr>
+<tr><th id="558">558</th><td></td></tr>
+<tr><th id="559">559</th><td><u>#<span data-ppcond="559">ifndef</span> <span class="macro" data-ref="_M/QT_NO_IMAGEFORMATPLUGIN">QT_NO_IMAGEFORMATPLUGIN</span></u></td></tr>
+<tr><th id="560">560</th><td></td></tr>
+<tr><th id="561">561</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="562">562</th><td><i class="doc">    Constructs an image plugin with the given<span class="command"> \a</span> <span class="arg">parent.</span> This is</i></td></tr>
+<tr><th id="563">563</th><td><i class="doc">    invoked automatically by the moc generated code that exports the plugin.</i></td></tr>
+<tr><th id="564">564</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="565">565</th><td><a class="type" href="qimageiohandler.h.html#QImageIOPlugin" title='QImageIOPlugin' data-ref="QImageIOPlugin">QImageIOPlugin</a>::<dfn class="decl def fn" id="_ZN14QImageIOPluginC1EP7QObject" title='QImageIOPlugin::QImageIOPlugin' data-ref="_ZN14QImageIOPluginC1EP7QObject">QImageIOPlugin</dfn>(<a class="type" href="../../corelib/kernel/qobject.h.html#QObject" title='QObject' data-ref="QObject">QObject</a> *<dfn class="local col5 decl" id="25parent" title='parent' data-type='QObject *' data-ref="25parent">parent</dfn>)</td></tr>
+<tr><th id="566">566</th><td>    : <a class="type" href="../../corelib/kernel/qobject.h.html#QObject" title='QObject' data-ref="QObject">QObject</a><a class="ref fn" href="../../corelib/kernel/qobject.h.html#_ZN7QObjectC1EPS_" title='QObject::QObject' data-ref="_ZN7QObjectC1EPS_">(</a><a class="local col5 ref" href="#25parent" title='parent' data-ref="25parent">parent</a>)</td></tr>
+<tr><th id="567">567</th><td>{</td></tr>
+<tr><th id="568">568</th><td>}</td></tr>
+<tr><th id="569">569</th><td></td></tr>
+<tr><th id="570">570</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="571">571</th><td><i class="doc">    Destroys the picture format plugin.</i></td></tr>
+<tr><th id="572">572</th><td><i class="doc"></i></td></tr>
+<tr><th id="573">573</th><td><i class="doc">    You never have to call this explicitly. Qt destroys a plugin</i></td></tr>
+<tr><th id="574">574</th><td><i class="doc">    automatically when it is no longer used.</i></td></tr>
+<tr><th id="575">575</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="576">576</th><td><a class="type" href="qimageiohandler.h.html#QImageIOPlugin" title='QImageIOPlugin' data-ref="QImageIOPlugin">QImageIOPlugin</a>::<dfn class="virtual decl def fn" id="_ZN14QImageIOPluginD1Ev" title='QImageIOPlugin::~QImageIOPlugin' data-ref="_ZN14QImageIOPluginD1Ev">~QImageIOPlugin</dfn>()</td></tr>
+<tr><th id="577">577</th><td>{</td></tr>
+<tr><th id="578">578</th><td>}</td></tr>
+<tr><th id="579">579</th><td></td></tr>
+<tr><th id="580">580</th><td><i class="doc">/*! <span class="command">\fn</span> <span class="verb" data-ref="_ZNK14QImageIOPlugin12capabilitiesEP9QIODeviceRK10QByteArray">QImageIOPlugin::capabilities(QIODevice *device, const QByteArray &amp;format) const</span></i></td></tr>
+<tr><th id="581">581</th><td><i class="doc"></i></td></tr>
+<tr><th id="582">582</th><td><i class="doc">    Returns the capabilities of the plugin, based on the data in<span class="command"> \a</span></i></td></tr>
+<tr><th id="583">583</th><td><i class="doc">    <span class="arg">device</span> and the format<span class="command"> \a</span> <span class="arg">format.</span>  If<span class="command"> \a</span> <span class="arg">device</span> is<span class="command"> \c</span> <span class="arg">0,</span> it should</i></td></tr>
+<tr><th id="584">584</th><td><i class="doc">    simply report whether the format can be read or written.  Otherwise,</i></td></tr>
+<tr><th id="585">585</th><td><i class="doc">    it should attempt to determine whether the given format (or any</i></td></tr>
+<tr><th id="586">586</th><td><i class="doc">    format supported by the plugin if<span class="command"> \a</span> <span class="arg">format</span> is empty) can be read</i></td></tr>
+<tr><th id="587">587</th><td><i class="doc">    from or written to<span class="command"> \a</span> <span class="arg">device.</span>  It should do this without changing</i></td></tr>
+<tr><th id="588">588</th><td><i class="doc">    the state of<span class="command"> \a</span> <span class="arg">device</span> (typically by using QIODevice::peek()).</i></td></tr>
+<tr><th id="589">589</th><td><i class="doc"></i></td></tr>
+<tr><th id="590">590</th><td><i class="doc">    For example, if the QImageIOPlugin supports the BMP format,<span class="command"> \a</span> <span class="arg">format</span></i></td></tr>
+<tr><th id="591">591</th><td><i class="doc">    is either empty or<span class="command"> \c</span> <span class="arg">"bmp",</span> and the data in the device starts with the</i></td></tr>
+<tr><th id="592">592</th><td><i class="doc">    characters<span class="command"> \c</span> <span class="arg">"BM",</span> this function should return<span class="command"> \l</span> CanRead. If<span class="command"> \a</span> <span class="arg">format</span></i></td></tr>
+<tr><th id="593">593</th><td><i class="doc">    is<span class="command"> \c</span> <span class="arg">"bmp",</span><span class="command"> \a</span> <span class="arg">device</span> is<span class="command"> \c</span> <span class="arg">0</span> and the handler supports both reading and</i></td></tr>
+<tr><th id="594">594</th><td><i class="doc">    writing, this function should return<span class="command"> \l</span> CanRead |<span class="command"> \l</span> CanWrite.</i></td></tr>
+<tr><th id="595">595</th><td><i class="doc"></i></td></tr>
+<tr><th id="596">596</th><td><i class="doc">    Format names are always given in lower case.</i></td></tr>
+<tr><th id="597">597</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="598">598</th><td></td></tr>
+<tr><th id="599">599</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="600">600</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb" data-ref="_ZNK14QImageIOPlugin6createEP9QIODeviceRK10QByteArray">QImageIOHandler *QImageIOPlugin::create(QIODevice *device, const QByteArray &amp;format) const</span></i></td></tr>
+<tr><th id="601">601</th><td><i class="doc"></i></td></tr>
+<tr><th id="602">602</th><td><i class="doc">    Creates and returns a QImageIOHandler subclass, with<span class="command"> \a</span> <span class="arg">device</span></i></td></tr>
+<tr><th id="603">603</th><td><i class="doc">    and<span class="command"> \a</span> <span class="arg">format</span> set. The<span class="command"> \a</span> <span class="arg">format</span> must come from the values listed</i></td></tr>
+<tr><th id="604">604</th><td><i class="doc">    in the<span class="command"> \c</span> <span class="arg">"Keys"</span> entry in the plugin metadata, or be empty.  If it is</i></td></tr>
+<tr><th id="605">605</th><td><i class="doc">    empty, the data in<span class="command"> \a</span> <span class="arg">device</span> must have been recognized by the</i></td></tr>
+<tr><th id="606">606</th><td><i class="doc">    capabilities() method (with a likewise empty format).</i></td></tr>
+<tr><th id="607">607</th><td><i class="doc"></i></td></tr>
+<tr><th id="608">608</th><td><i class="doc">    Format names are always given in lower case.</i></td></tr>
+<tr><th id="609">609</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="610">610</th><td></td></tr>
+<tr><th id="611">611</th><td><u>#<span data-ppcond="559">endif</span> // QT_NO_IMAGEFORMATPLUGIN</u></td></tr>
+<tr><th id="612">612</th><td></td></tr>
+<tr><th id="613">613</th><td><a class="macro" href="../../corelib/global/qtconfigmacros.h.html#104" title="" data-ref="_M/QT_END_NAMESPACE">QT_END_NAMESPACE</a></td></tr>
+<tr><th id="614">614</th><td></td></tr>
+<tr><th id="615">615</th><td><u>#include <span class='error' title="&apos;moc_qimageiohandler.cpp&apos; file not found">"moc_qimageiohandler.cpp"</span></u></td></tr>
+<tr><th id="616">616</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2024-Jun-13</em> from project qtbase-6.5.0 revision <em>6.5.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

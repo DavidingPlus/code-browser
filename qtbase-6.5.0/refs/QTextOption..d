@@ -1,0 +1,24 @@
+<dec f='qtbase-6.5.0/src/gui/text/qtextoption.h' l='102' type='QTextOptionPrivate *'/>
+<offset>128</offset>
+<use f='qtbase-6.5.0/src/gui/text/qtextoption.cpp' l='41' u='w' c='_ZN11QTextOptionC1E6QFlagsIN2Qt13AlignmentFlagEE'/>
+<use f='qtbase-6.5.0/src/gui/text/qtextoption.cpp' l='51' u='r' c='_ZN11QTextOptionD1Ev'/>
+<use f='qtbase-6.5.0/src/gui/text/qtextoption.cpp' l='67' u='w' c='_ZN11QTextOptionC1ERKS_'/>
+<use f='qtbase-6.5.0/src/gui/text/qtextoption.cpp' l='69' u='r' c='_ZN11QTextOptionC1ERKS_'/>
+<use f='qtbase-6.5.0/src/gui/text/qtextoption.cpp' l='70' u='w' c='_ZN11QTextOptionC1ERKS_'/>
+<use f='qtbase-6.5.0/src/gui/text/qtextoption.cpp' l='70' u='r' c='_ZN11QTextOptionC1ERKS_'/>
+<use f='qtbase-6.5.0/src/gui/text/qtextoption.cpp' l='85' u='r' c='_ZN11QTextOptionaSERKS_'/>
+<use f='qtbase-6.5.0/src/gui/text/qtextoption.cpp' l='86' u='r' c='_ZN11QTextOptionaSERKS_'/>
+<use f='qtbase-6.5.0/src/gui/text/qtextoption.cpp' l='87' u='r' c='_ZN11QTextOptionaSERKS_'/>
+<use f='qtbase-6.5.0/src/gui/text/qtextoption.cpp' l='88' u='w' c='_ZN11QTextOptionaSERKS_'/>
+<use f='qtbase-6.5.0/src/gui/text/qtextoption.cpp' l='108' u='r' c='_ZN11QTextOption11setTabArrayERK5QListIdE'/>
+<use f='qtbase-6.5.0/src/gui/text/qtextoption.cpp' l='109' u='w' c='_ZN11QTextOption11setTabArrayERK5QListIdE'/>
+<use f='qtbase-6.5.0/src/gui/text/qtextoption.cpp' l='117' u='r' c='_ZN11QTextOption11setTabArrayERK5QListIdE'/>
+<use f='qtbase-6.5.0/src/gui/text/qtextoption.cpp' l='129' u='r' c='_ZN11QTextOption7setTabsERK5QListINS_3TabEE'/>
+<use f='qtbase-6.5.0/src/gui/text/qtextoption.cpp' l='130' u='w' c='_ZN11QTextOption7setTabsERK5QListINS_3TabEE'/>
+<use f='qtbase-6.5.0/src/gui/text/qtextoption.cpp' l='131' u='r' c='_ZN11QTextOption7setTabsERK5QListINS_3TabEE'/>
+<use f='qtbase-6.5.0/src/gui/text/qtextoption.cpp' l='142' u='r' c='_ZNK11QTextOption8tabArrayEv'/>
+<use f='qtbase-6.5.0/src/gui/text/qtextoption.cpp' l='145' u='r' c='_ZNK11QTextOption8tabArrayEv'/>
+<use f='qtbase-6.5.0/src/gui/text/qtextoption.cpp' l='146' u='r' c='_ZNK11QTextOption8tabArrayEv'/>
+<use f='qtbase-6.5.0/src/gui/text/qtextoption.cpp' l='147' u='r' c='_ZNK11QTextOption8tabArrayEv'/>
+<use f='qtbase-6.5.0/src/gui/text/qtextoption.cpp' l='157' u='r' c='_ZNK11QTextOption4tabsEv'/>
+<use f='qtbase-6.5.0/src/gui/text/qtextoption.cpp' l='159' u='r' c='_ZNK11QTextOption4tabsEv'/>

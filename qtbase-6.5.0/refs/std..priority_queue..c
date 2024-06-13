@@ -1,0 +1,45 @@
+<dec f='include/c++/9/bits/stl_queue.h' l='484' type='_Sequence'/>
+<use f='include/c++/9/bits/stl_queue.h' l='502' u='w' c='_ZNSt14priority_queueC1Ev'/>
+<use f='include/c++/9/bits/stl_queue.h' l='506' u='w' c='_ZNSt14priority_queueC1ERKT1_RKT0_'/>
+<use f='include/c++/9/bits/stl_queue.h' l='507' u='c' c='_ZNSt14priority_queueC1ERKT1_RKT0_'/>
+<use f='include/c++/9/bits/stl_queue.h' l='507' u='c' c='_ZNSt14priority_queueC1ERKT1_RKT0_'/>
+<use f='include/c++/9/bits/stl_queue.h' l='511' u='w' c='_ZNSt14priority_queueC1ERKT1_OT0_'/>
+<use f='include/c++/9/bits/stl_queue.h' l='512' u='c' c='_ZNSt14priority_queueC1ERKT1_OT0_'/>
+<use f='include/c++/9/bits/stl_queue.h' l='512' u='c' c='_ZNSt14priority_queueC1ERKT1_OT0_'/>
+<use f='include/c++/9/bits/stl_queue.h' l='517' u='w' c='_ZNSt14priority_queueC1ERKTL0__'/>
+<use f='include/c++/9/bits/stl_queue.h' l='521' u='w' c='_ZNSt14priority_queueC1ERKT1_RKTL0__'/>
+<use f='include/c++/9/bits/stl_queue.h' l='528' u='w' c='_ZNSt14priority_queueC1ERKT1_RKT0_RKTL0__'/>
+<use f='include/c++/9/bits/stl_queue.h' l='529' u='c' c='_ZNSt14priority_queueC1ERKT1_RKT0_RKTL0__'/>
+<use f='include/c++/9/bits/stl_queue.h' l='529' u='c' c='_ZNSt14priority_queueC1ERKT1_RKT0_RKTL0__'/>
+<use f='include/c++/9/bits/stl_queue.h' l='533' u='w' c='_ZNSt14priority_queueC1ERKT1_OT0_RKTL0__'/>
+<use f='include/c++/9/bits/stl_queue.h' l='534' u='c' c='_ZNSt14priority_queueC1ERKT1_OT0_RKTL0__'/>
+<use f='include/c++/9/bits/stl_queue.h' l='534' u='c' c='_ZNSt14priority_queueC1ERKT1_OT0_RKTL0__'/>
+<use f='include/c++/9/bits/stl_queue.h' l='538' u='w' c='_ZNSt14priority_queueC1ERKSt14priority_queueIT_T0_T1_ERKTL0__'/>
+<use f='include/c++/9/bits/stl_queue.h' l='542' u='w' c='_ZNSt14priority_queueC1EOSt14priority_queueIT_T0_T1_ERKTL0__'/>
+<use f='include/c++/9/bits/stl_queue.h' l='576' u='w' c='_ZNSt14priority_queueC1ETL0__S0_RKT1_RKT0_'/>
+<use f='include/c++/9/bits/stl_queue.h' l='579' u='c' c='_ZNSt14priority_queueC1ETL0__S0_RKT1_RKT0_'/>
+<use f='include/c++/9/bits/stl_queue.h' l='579' u='c' c='_ZNSt14priority_queueC1ETL0__S0_RKT1_RKT0_'/>
+<use f='include/c++/9/bits/stl_queue.h' l='580' u='c' c='_ZNSt14priority_queueC1ETL0__S0_RKT1_RKT0_'/>
+<use f='include/c++/9/bits/stl_queue.h' l='580' u='c' c='_ZNSt14priority_queueC1ETL0__S0_RKT1_RKT0_'/>
+<use f='include/c++/9/bits/stl_queue.h' l='587' u='w' c='_ZNSt14priority_queueC1ETL0__S0_RKT1_OT0_'/>
+<use f='include/c++/9/bits/stl_queue.h' l='590' u='c' c='_ZNSt14priority_queueC1ETL0__S0_RKT1_OT0_'/>
+<use f='include/c++/9/bits/stl_queue.h' l='590' u='c' c='_ZNSt14priority_queueC1ETL0__S0_RKT1_OT0_'/>
+<use f='include/c++/9/bits/stl_queue.h' l='591' u='c' c='_ZNSt14priority_queueC1ETL0__S0_RKT1_OT0_'/>
+<use f='include/c++/9/bits/stl_queue.h' l='591' u='c' c='_ZNSt14priority_queueC1ETL0__S0_RKT1_OT0_'/>
+<use f='include/c++/9/bits/stl_queue.h' l='600' u='c' c='_ZNKSt14priority_queue5emptyEv'/>
+<use f='include/c++/9/bits/stl_queue.h' l='605' u='c' c='_ZNKSt14priority_queue4sizeEv'/>
+<use f='include/c++/9/bits/stl_queue.h' l='615' u='c' c='_ZNKSt14priority_queue3topEv'/>
+<use f='include/c++/9/bits/stl_queue.h' l='629' u='c' c='_ZNSt14priority_queue4pushERKNT0_10value_typeE'/>
+<use f='include/c++/9/bits/stl_queue.h' l='630' u='c' c='_ZNSt14priority_queue4pushERKNT0_10value_typeE'/>
+<use f='include/c++/9/bits/stl_queue.h' l='630' u='c' c='_ZNSt14priority_queue4pushERKNT0_10value_typeE'/>
+<use f='include/c++/9/bits/stl_queue.h' l='637' u='c' c='_ZNSt14priority_queue4pushEONT0_10value_typeE'/>
+<use f='include/c++/9/bits/stl_queue.h' l='638' u='c' c='_ZNSt14priority_queue4pushEONT0_10value_typeE'/>
+<use f='include/c++/9/bits/stl_queue.h' l='638' u='c' c='_ZNSt14priority_queue4pushEONT0_10value_typeE'/>
+<use f='include/c++/9/bits/stl_queue.h' l='645' u='c' c='_ZNSt14priority_queue7emplaceEDpOTL0__'/>
+<use f='include/c++/9/bits/stl_queue.h' l='646' u='c' c='_ZNSt14priority_queue7emplaceEDpOTL0__'/>
+<use f='include/c++/9/bits/stl_queue.h' l='646' u='c' c='_ZNSt14priority_queue7emplaceEDpOTL0__'/>
+<use f='include/c++/9/bits/stl_queue.h' l='665' u='c' c='_ZNSt14priority_queue3popEv'/>
+<use f='include/c++/9/bits/stl_queue.h' l='665' u='c' c='_ZNSt14priority_queue3popEv'/>
+<use f='include/c++/9/bits/stl_queue.h' l='666' u='c' c='_ZNSt14priority_queue3popEv'/>
+<use f='include/c++/9/bits/stl_queue.h' l='682' c='_ZNSt14priority_queue4swapERSt14priority_queueIT_T0_T1_E'/>
+<doc f='include/c++/9/bits/stl_queue.h' l='483'>//  See queue::c for notes on these names.</doc>

@@ -1,0 +1,583 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>qclipboard.cpp source code [qtbase-6.5.0/src/gui/kernel/qclipboard.cpp] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'qtbase-6.5.0/src/gui/kernel/qclipboard.cpp'; var root_path = '../../../..'; var data_path = '../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>qtbase-6.5.0</a>/<a href='../..'>src</a>/<a href='..'>gui</a>/<a href='./'>kernel</a>/<a href='qclipboard.cpp.html'>qclipboard.cpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>// Copyright (C) 2016 The Qt Company Ltd.</i></td></tr>
+<tr><th id="2">2</th><td><i>// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only</i></td></tr>
+<tr><th id="3">3</th><td></td></tr>
+<tr><th id="4">4</th><td><u>#include <a href="qclipboard.h.html">"qclipboard.h"</a></u></td></tr>
+<tr><th id="5">5</th><td></td></tr>
+<tr><th id="6">6</th><td><u>#<span data-ppcond="6">ifndef</span> <span class="macro" data-ref="_M/QT_NO_CLIPBOARD">QT_NO_CLIPBOARD</span></u></td></tr>
+<tr><th id="7">7</th><td></td></tr>
+<tr><th id="8">8</th><td><u>#include <a href="../../../build/include/QtCore/qmimedata.h.html">"qmimedata.h"</a></u></td></tr>
+<tr><th id="9">9</th><td><u>#include <a href="../../../build/include/QtGui/qpixmap.h.html">"qpixmap.h"</a></u></td></tr>
+<tr><th id="10">10</th><td><u>#include <a href="../../../build/include/QtCore/qvariant.h.html">"qvariant.h"</a></u></td></tr>
+<tr><th id="11">11</th><td><u>#include <a href="../../../build/include/QtCore/qbuffer.h.html">"qbuffer.h"</a></u></td></tr>
+<tr><th id="12">12</th><td><u>#include <a href="../../../build/include/QtGui/qimage.h.html">"qimage.h"</a></u></td></tr>
+<tr><th id="13">13</th><td><u>#include <a href="../../../build/include/QtCore/6.5.0/QtCore/private/qstringconverter_p.h.html">"private/qstringconverter_p.h"</a></u></td></tr>
+<tr><th id="14">14</th><td></td></tr>
+<tr><th id="15">15</th><td><u>#include <a href="../../../build/include/QtGui/6.5.0/QtGui/private/qguiapplication_p.h.html">"private/qguiapplication_p.h"</a></u></td></tr>
+<tr><th id="16">16</th><td><u>#include <a href="../../../build/include/QtGui/6.5.0/QtGui/qpa/qplatformintegration.h.html">&lt;qpa/qplatformintegration.h&gt;</a></u></td></tr>
+<tr><th id="17">17</th><td><u>#include <a href="../../../build/include/QtGui/6.5.0/QtGui/qpa/qplatformclipboard.h.html">&lt;qpa/qplatformclipboard.h&gt;</a></u></td></tr>
+<tr><th id="18">18</th><td></td></tr>
+<tr><th id="19">19</th><td><a class="macro" href="../../corelib/global/qtconfigmacros.h.html#103" title="" data-ref="_M/QT_BEGIN_NAMESPACE">QT_BEGIN_NAMESPACE</a></td></tr>
+<tr><th id="20">20</th><td></td></tr>
+<tr><th id="21">21</th><td><b>using</b> <b>namespace</b> <span class="namespace">Qt::StringLiterals</span>;</td></tr>
+<tr><th id="22">22</th><td></td></tr>
+<tr><th id="23">23</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="24">24</th><td><i class="doc">    <span class="command">\class</span> <span class="verb" data-ref="QClipboard">QClipboard</span></i></td></tr>
+<tr><th id="25">25</th><td><i class="doc">    <span class="command">\brief</span> The QClipboard class provides access to the window system clipboard.</i></td></tr>
+<tr><th id="26">26</th><td><i class="doc">   <span class="command"> \inmodule</span> QtGui</i></td></tr>
+<tr><th id="27">27</th><td><i class="doc"></i></td></tr>
+<tr><th id="28">28</th><td><i class="doc">    The clipboard offers a simple mechanism to copy and paste data</i></td></tr>
+<tr><th id="29">29</th><td><i class="doc">    between applications.</i></td></tr>
+<tr><th id="30">30</th><td><i class="doc"></i></td></tr>
+<tr><th id="31">31</th><td><i class="doc">    QClipboard supports the same data types that QDrag does, and uses</i></td></tr>
+<tr><th id="32">32</th><td><i class="doc">    similar mechanisms. For advanced clipboard usage read<span class="command"> \l</span>{Drag and</i></td></tr>
+<tr><th id="33">33</th><td><i class="doc">    Drop}.</i></td></tr>
+<tr><th id="34">34</th><td><i class="doc"></i></td></tr>
+<tr><th id="35">35</th><td><i class="doc">    There is a single QClipboard object in an application, accessible</i></td></tr>
+<tr><th id="36">36</th><td><i class="doc">    as QGuiApplication::clipboard().</i></td></tr>
+<tr><th id="37">37</th><td><i class="doc"></i></td></tr>
+<tr><th id="38">38</th><td><i class="doc">    Example:</i></td></tr>
+<tr><th id="39">39</th><td><i class="doc">    <span class="command">\snippet</span> <span class="verb">code/src_gui_kernel_qclipboard.cpp 0</span></i></td></tr>
+<tr><th id="40">40</th><td><i class="doc"></i></td></tr>
+<tr><th id="41">41</th><td><i class="doc">    QClipboard features some convenience functions to access common</i></td></tr>
+<tr><th id="42">42</th><td><i class="doc">    data types: setText() allows the exchange of Unicode text and</i></td></tr>
+<tr><th id="43">43</th><td><i class="doc">    setPixmap() and setImage() allows the exchange of QPixmaps and</i></td></tr>
+<tr><th id="44">44</th><td><i class="doc">    QImages between applications. The setMimeData() function is the</i></td></tr>
+<tr><th id="45">45</th><td><i class="doc">    ultimate in flexibility: it allows you to add any QMimeData into</i></td></tr>
+<tr><th id="46">46</th><td><i class="doc">    the clipboard. There are corresponding getters for each of these,</i></td></tr>
+<tr><th id="47">47</th><td><i class="doc">    e.g. text(), image() and pixmap(). You can clear the clipboard by</i></td></tr>
+<tr><th id="48">48</th><td><i class="doc">    calling clear().</i></td></tr>
+<tr><th id="49">49</th><td><i class="doc"></i></td></tr>
+<tr><th id="50">50</th><td><i class="doc">    A typical example of the use of these functions follows:</i></td></tr>
+<tr><th id="51">51</th><td><i class="doc"></i></td></tr>
+<tr><th id="52">52</th><td><i class="doc">    <span class="command">\snippet</span> <span class="verb">droparea/droparea.cpp 0</span></i></td></tr>
+<tr><th id="53">53</th><td><i class="doc"></i></td></tr>
+<tr><th id="54">54</th><td><i class="doc">    <span class="command">\section</span>1 <span class="verb">Notes for X11 Users</span></i></td></tr>
+<tr><th id="55">55</th><td><i class="doc"></i></td></tr>
+<tr><th id="56">56</th><td><i class="doc">   <span class="command"> \list</span></i></td></tr>
+<tr><th id="57">57</th><td><i class="doc"></i></td></tr>
+<tr><th id="58">58</th><td><i class="doc">    <span class="command">\li</span> The X11 Window System has the concept of a separate selection</i></td></tr>
+<tr><th id="59">59</th><td><i class="doc">    and clipboard.  When text is selected, it is immediately available</i></td></tr>
+<tr><th id="60">60</th><td><i class="doc">    as the global mouse selection.  The global mouse selection may</i></td></tr>
+<tr><th id="61">61</th><td><i class="doc">    later be copied to the clipboard.  By convention, the middle mouse</i></td></tr>
+<tr><th id="62">62</th><td><i class="doc">    button is used to paste the global mouse selection.</i></td></tr>
+<tr><th id="63">63</th><td><i class="doc"></i></td></tr>
+<tr><th id="64">64</th><td><i class="doc">    <span class="command">\li</span> X11 also has the concept of ownership; if you change the</i></td></tr>
+<tr><th id="65">65</th><td><i class="doc">    selection within a window, X11 will only notify the owner and the</i></td></tr>
+<tr><th id="66">66</th><td><i class="doc">    previous owner of the change, i.e. it will not notify all</i></td></tr>
+<tr><th id="67">67</th><td><i class="doc">    applications that the selection or clipboard data changed.</i></td></tr>
+<tr><th id="68">68</th><td><i class="doc"></i></td></tr>
+<tr><th id="69">69</th><td><i class="doc">    <span class="command">\li</span> Lastly, the X11 clipboard is event driven, i.e. the clipboard</i></td></tr>
+<tr><th id="70">70</th><td><i class="doc">    will not function properly if the event loop is not running.</i></td></tr>
+<tr><th id="71">71</th><td><i class="doc">    Similarly, it is recommended that the contents of the clipboard</i></td></tr>
+<tr><th id="72">72</th><td><i class="doc">    are stored or retrieved in direct response to user-input events,</i></td></tr>
+<tr><th id="73">73</th><td><i class="doc">    e.g. mouse button or key presses and releases.  You should not</i></td></tr>
+<tr><th id="74">74</th><td><i class="doc">    store or retrieve the clipboard contents in response to timer or</i></td></tr>
+<tr><th id="75">75</th><td><i class="doc">    non-user-input events.</i></td></tr>
+<tr><th id="76">76</th><td><i class="doc"></i></td></tr>
+<tr><th id="77">77</th><td><i class="doc">    <span class="command">\li</span> Since there is no standard way to copy and paste files between</i></td></tr>
+<tr><th id="78">78</th><td><i class="doc">    applications on X11, various MIME types and conventions are currently</i></td></tr>
+<tr><th id="79">79</th><td><i class="doc">    in use. For instance, Nautilus expects files to be supplied with a</i></td></tr>
+<tr><th id="80">80</th><td><i class="doc">   <span class="command"> \c</span><span class="arg">{x-special/gnome-copied-files}</span> MIME type with data beginning with</i></td></tr>
+<tr><th id="81">81</th><td><i class="doc">    the cut/copy action, a newline character, and the URL of the file.</i></td></tr>
+<tr><th id="82">82</th><td><i class="doc"></i></td></tr>
+<tr><th id="83">83</th><td><i class="doc">   <span class="command"> \endlist</span></i></td></tr>
+<tr><th id="84">84</th><td><i class="doc"></i></td></tr>
+<tr><th id="85">85</th><td><i class="doc">    <span class="command">\section</span>1 <span class="verb">Notes for \macos Users</span></i></td></tr>
+<tr><th id="86">86</th><td><i class="doc"></i></td></tr>
+<tr><th id="87">87</th><td><i class="doc">   <span class="command"> \macos</span> supports a separate find buffer that holds the current</i></td></tr>
+<tr><th id="88">88</th><td><i class="doc">    search string in Find operations. This find clipboard can be accessed</i></td></tr>
+<tr><th id="89">89</th><td><i class="doc">    by specifying the FindBuffer mode.</i></td></tr>
+<tr><th id="90">90</th><td><i class="doc"></i></td></tr>
+<tr><th id="91">91</th><td><i class="doc">    <span class="command">\section</span>1 <span class="verb">Notes for Windows and \macos Users</span></i></td></tr>
+<tr><th id="92">92</th><td><i class="doc"></i></td></tr>
+<tr><th id="93">93</th><td><i class="doc">   <span class="command"> \list</span></i></td></tr>
+<tr><th id="94">94</th><td><i class="doc"></i></td></tr>
+<tr><th id="95">95</th><td><i class="doc">    <span class="command">\li</span> Windows and<span class="command"> \macos</span> do not support the global mouse</i></td></tr>
+<tr><th id="96">96</th><td><i class="doc">    selection; they only supports the global clipboard, i.e. they</i></td></tr>
+<tr><th id="97">97</th><td><i class="doc">    only add text to the clipboard when an explicit copy or cut is</i></td></tr>
+<tr><th id="98">98</th><td><i class="doc">    made.</i></td></tr>
+<tr><th id="99">99</th><td><i class="doc"></i></td></tr>
+<tr><th id="100">100</th><td><i class="doc">    <span class="command">\li</span> Windows and<span class="command"> \macos</span> does not have the concept of ownership;</i></td></tr>
+<tr><th id="101">101</th><td><i class="doc">    the clipboard is a fully global resource so all applications are</i></td></tr>
+<tr><th id="102">102</th><td><i class="doc">    notified of changes.</i></td></tr>
+<tr><th id="103">103</th><td><i class="doc"></i></td></tr>
+<tr><th id="104">104</th><td><i class="doc">   <span class="command"> \endlist</span></i></td></tr>
+<tr><th id="105">105</th><td><i class="doc"></i></td></tr>
+<tr><th id="106">106</th><td><i class="doc">    <span class="command">\section</span>1 <span class="verb">Notes for Android Users</span></i></td></tr>
+<tr><th id="107">107</th><td><i class="doc"></i></td></tr>
+<tr><th id="108">108</th><td><i class="doc">    On Android only these mime types are supported: text/plain, text/html, and text/uri-list.</i></td></tr>
+<tr><th id="109">109</th><td><i class="doc"></i></td></tr>
+<tr><th id="110">110</th><td><i class="doc">    <span class="command">\sa</span> QGuiApplication</i></td></tr>
+<tr><th id="111">111</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="112">112</th><td></td></tr>
+<tr><th id="113">113</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="114">114</th><td><i class="doc">    <span class="command">\internal</span></i></td></tr>
+<tr><th id="115">115</th><td><i class="doc"><span class="verb"></span></i></td></tr>
+<tr><th id="116">116</th><td><i class="doc"><span class="verb"></span><span class="verb">    Constructs a clipboard object.</span></i></td></tr>
+<tr><th id="117">117</th><td><i class="doc"><span class="verb"></span><span class="verb"></span></i></td></tr>
+<tr><th id="118">118</th><td><i class="doc"><span class="verb"></span><span class="verb">    Do not call this function.</span></i></td></tr>
+<tr><th id="119">119</th><td><i class="doc"><span class="verb"></span><span class="verb"></span></i></td></tr>
+<tr><th id="120">120</th><td><i class="doc"><span class="verb"></span><span class="verb">    Call QGuiApplication::clipboard() instead to get a pointer to the</span></i></td></tr>
+<tr><th id="121">121</th><td><i class="doc"><span class="verb"></span><span class="verb">    application's global clipboard object.</span></i></td></tr>
+<tr><th id="122">122</th><td><i class="doc"><span class="verb"></span><span class="verb"></span></i></td></tr>
+<tr><th id="123">123</th><td><i class="doc"><span class="verb"></span><span class="verb">    There is only one clipboard in the window system, and creating</span></i></td></tr>
+<tr><th id="124">124</th><td><i class="doc"><span class="verb"></span><span class="verb">    more than one object to represent it is almost certainly an error.</span></i></td></tr>
+<tr><th id="125">125</th><td><i class="doc"><span class="verb"></span>*/</i><span class="verb"></span></td></tr>
+<tr><th id="126">126</th><td><span class="verb"></span></td></tr>
+<tr><th id="127">127</th><td><a class="type" href="qclipboard.h.html#QClipboard" title='QClipboard' data-ref="QClipboard">QClipboard</a>::<dfn class="decl def fn" id="_ZN10QClipboardC1EP7QObject" title='QClipboard::QClipboard' data-ref="_ZN10QClipboardC1EP7QObject">QClipboard</dfn>(<a class="type" href="../../corelib/kernel/qobject.h.html#QObject" title='QObject' data-ref="QObject">QObject</a> *<dfn class="local col7 decl" id="7parent" title='parent' data-type='QObject *' data-ref="7parent">parent</dfn>)</td></tr>
+<tr><th id="128">128</th><td>    : <a class="type" href="../../corelib/kernel/qobject.h.html#QObject" title='QObject' data-ref="QObject">QObject</a><a class="ref fn" href="../../corelib/kernel/qobject.h.html#_ZN7QObjectC1EPS_" title='QObject::QObject' data-ref="_ZN7QObjectC1EPS_">(</a><a class="local col7 ref" href="#7parent" title='parent' data-ref="7parent">parent</a>)</td></tr>
+<tr><th id="129">129</th><td>{</td></tr>
+<tr><th id="130">130</th><td>    <i>// nothing</i></td></tr>
+<tr><th id="131">131</th><td>}</td></tr>
+<tr><th id="132">132</th><td></td></tr>
+<tr><th id="133">133</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="134">134</th><td><i class="doc">    <span class="command">\internal</span></i></td></tr>
+<tr><th id="135">135</th><td><i class="doc"><span class="verb"></span></i></td></tr>
+<tr><th id="136">136</th><td><i class="doc"><span class="verb"></span><span class="verb">    Destroys the clipboard.</span></i></td></tr>
+<tr><th id="137">137</th><td><i class="doc"><span class="verb"></span><span class="verb"></span></i></td></tr>
+<tr><th id="138">138</th><td><i class="doc"><span class="verb"></span><span class="verb">    You should never delete the clipboard. QGuiApplication will do this</span></i></td></tr>
+<tr><th id="139">139</th><td><i class="doc"><span class="verb"></span><span class="verb">    when the application terminates.</span></i></td></tr>
+<tr><th id="140">140</th><td><i class="doc"><span class="verb"></span>*/</i><span class="verb"></span></td></tr>
+<tr><th id="141">141</th><td><span class="verb"></span><a class="type" href="qclipboard.h.html#QClipboard" title='QClipboard' data-ref="QClipboard">QClipboard</a>::<dfn class="virtual decl def fn" id="_ZN10QClipboardD1Ev" title='QClipboard::~QClipboard' data-ref="_ZN10QClipboardD1Ev">~QClipboard</dfn>()</td></tr>
+<tr><th id="142">142</th><td>{</td></tr>
+<tr><th id="143">143</th><td>}</td></tr>
+<tr><th id="144">144</th><td></td></tr>
+<tr><th id="145">145</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="146">146</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb" data-ref="_ZN10QClipboard7changedENS_4ModeE">void QClipboard::changed(QClipboard::Mode mode)</span></i></td></tr>
+<tr><th id="147">147</th><td><i class="doc">    <span class="command">\since</span> 4.2</i></td></tr>
+<tr><th id="148">148</th><td><i class="doc"></i></td></tr>
+<tr><th id="149">149</th><td><i class="doc">    This signal is emitted when the data for the given clipboard<span class="command"> \a</span></i></td></tr>
+<tr><th id="150">150</th><td><i class="doc">    <span class="arg">mode</span> is changed.</i></td></tr>
+<tr><th id="151">151</th><td><i class="doc"></i></td></tr>
+<tr><th id="152">152</th><td><i class="doc">    <span class="command">\sa</span> dataChanged(), selectionChanged(), findBufferChanged()</i></td></tr>
+<tr><th id="153">153</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="154">154</th><td></td></tr>
+<tr><th id="155">155</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="156">156</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb" data-ref="_ZN10QClipboard11dataChangedEv">void QClipboard::dataChanged()</span></i></td></tr>
+<tr><th id="157">157</th><td><i class="doc"></i></td></tr>
+<tr><th id="158">158</th><td><i class="doc">    This signal is emitted when the clipboard data is changed.</i></td></tr>
+<tr><th id="159">159</th><td><i class="doc"></i></td></tr>
+<tr><th id="160">160</th><td><i class="doc">    On<span class="command"> \macos</span> and with Qt version 4.3 or higher, clipboard</i></td></tr>
+<tr><th id="161">161</th><td><i class="doc">    changes made by other applications will only be detected</i></td></tr>
+<tr><th id="162">162</th><td><i class="doc">    when the application is activated.</i></td></tr>
+<tr><th id="163">163</th><td><i class="doc"></i></td></tr>
+<tr><th id="164">164</th><td><i class="doc">    <span class="command">\sa</span> findBufferChanged(), selectionChanged(), changed()</i></td></tr>
+<tr><th id="165">165</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="166">166</th><td></td></tr>
+<tr><th id="167">167</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="168">168</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb" data-ref="_ZN10QClipboard16selectionChangedEv">void QClipboard::selectionChanged()</span></i></td></tr>
+<tr><th id="169">169</th><td><i class="doc"></i></td></tr>
+<tr><th id="170">170</th><td><i class="doc">    This signal is emitted when the selection is changed. This only</i></td></tr>
+<tr><th id="171">171</th><td><i class="doc">    applies to windowing systems that support selections, e.g. X11.</i></td></tr>
+<tr><th id="172">172</th><td><i class="doc">    Windows and<span class="command"> \macos</span> don't support selections.</i></td></tr>
+<tr><th id="173">173</th><td><i class="doc"></i></td></tr>
+<tr><th id="174">174</th><td><i class="doc">    <span class="command">\sa</span> dataChanged(), findBufferChanged(), changed()</i></td></tr>
+<tr><th id="175">175</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="176">176</th><td></td></tr>
+<tr><th id="177">177</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="178">178</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb" data-ref="_ZN10QClipboard17findBufferChangedEv">void QClipboard::findBufferChanged()</span></i></td></tr>
+<tr><th id="179">179</th><td><i class="doc">    <span class="command">\since</span> 4.2</i></td></tr>
+<tr><th id="180">180</th><td><i class="doc"></i></td></tr>
+<tr><th id="181">181</th><td><i class="doc">    This signal is emitted when the find buffer is changed. This only</i></td></tr>
+<tr><th id="182">182</th><td><i class="doc">    applies to<span class="command"> \macos</span>.</i></td></tr>
+<tr><th id="183">183</th><td><i class="doc"></i></td></tr>
+<tr><th id="184">184</th><td><i class="doc">    With Qt version 4.3 or higher, clipboard changes made by other</i></td></tr>
+<tr><th id="185">185</th><td><i class="doc">    applications will only be detected when the application is activated.</i></td></tr>
+<tr><th id="186">186</th><td><i class="doc"></i></td></tr>
+<tr><th id="187">187</th><td><i class="doc">    <span class="command">\sa</span> dataChanged(), selectionChanged(), changed()</i></td></tr>
+<tr><th id="188">188</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="189">189</th><td></td></tr>
+<tr><th id="190">190</th><td></td></tr>
+<tr><th id="191">191</th><td><i class="doc">/*! <span class="command">\enum</span> <span class="verb" data-ref="QClipboard::Mode">QClipboard::Mode</span></i></td></tr>
+<tr><th id="192">192</th><td><i class="doc">   <span class="command"> \keyword</span> clipboard mode</i></td></tr>
+<tr><th id="193">193</th><td><i class="doc"></i></td></tr>
+<tr><th id="194">194</th><td><i class="doc">    This enum type is used to control which part of the system clipboard is</i></td></tr>
+<tr><th id="195">195</th><td><i class="doc">    used by QClipboard::mimeData(), QClipboard::setMimeData() and related functions.</i></td></tr>
+<tr><th id="196">196</th><td><i class="doc"></i></td></tr>
+<tr><th id="197">197</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QClipboard::Clipboard">Clipboard </span> indicates that data should be stored and retrieved from</i></td></tr>
+<tr><th id="198">198</th><td><i class="doc">    the global clipboard.</i></td></tr>
+<tr><th id="199">199</th><td><i class="doc"></i></td></tr>
+<tr><th id="200">200</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QClipboard::Selection">Selection </span> indicates that data should be stored and retrieved from</i></td></tr>
+<tr><th id="201">201</th><td><i class="doc">    the global mouse selection. Support for<span class="command"> \c</span> <span class="arg">Selection</span> is provided only on</i></td></tr>
+<tr><th id="202">202</th><td><i class="doc">    systems with a global mouse selection (e.g. X11).</i></td></tr>
+<tr><th id="203">203</th><td><i class="doc"></i></td></tr>
+<tr><th id="204">204</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QClipboard::FindBuffer">FindBuffer </span>indicates that data should be stored and retrieved from</i></td></tr>
+<tr><th id="205">205</th><td><i class="doc">    the Find buffer. This mode is used for holding search strings on<span class="command"> \macos</span>.</i></td></tr>
+<tr><th id="206">206</th><td><i class="doc"></i></td></tr>
+<tr><th id="207">207</th><td><i class="doc">   <span class="command"> \omitvalue</span> LastMode</i></td></tr>
+<tr><th id="208">208</th><td><i class="doc"></i></td></tr>
+<tr><th id="209">209</th><td><i class="doc">    <span class="command">\sa</span> QClipboard::supportsSelection()</i></td></tr>
+<tr><th id="210">210</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="211">211</th><td></td></tr>
+<tr><th id="212">212</th><td></td></tr>
+<tr><th id="213">213</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="214">214</th><td><i class="doc">    <span class="command">\overload</span></i></td></tr>
+<tr><th id="215">215</th><td><i class="doc"></i></td></tr>
+<tr><th id="216">216</th><td><i class="doc">    Returns the clipboard text in subtype<span class="command"> \a</span> <span class="arg">subtype,</span> or an empty string</i></td></tr>
+<tr><th id="217">217</th><td><i class="doc">    if the clipboard does not contain any text. If<span class="command"> \a</span> <span class="arg">subtype</span> is null,</i></td></tr>
+<tr><th id="218">218</th><td><i class="doc">    any subtype is acceptable, and<span class="command"> \a</span> <span class="arg">subtype</span> is set to the chosen</i></td></tr>
+<tr><th id="219">219</th><td><i class="doc">    subtype.</i></td></tr>
+<tr><th id="220">220</th><td><i class="doc"></i></td></tr>
+<tr><th id="221">221</th><td><i class="doc">    The<span class="command"> \a</span> <span class="arg">mode</span> argument is used to control which part of the system</i></td></tr>
+<tr><th id="222">222</th><td><i class="doc">    clipboard is used.  If<span class="command"> \a</span> <span class="arg">mode</span> is QClipboard::Clipboard, the</i></td></tr>
+<tr><th id="223">223</th><td><i class="doc">    text is retrieved from the global clipboard.  If<span class="command"> \a</span> <span class="arg">mode</span> is</i></td></tr>
+<tr><th id="224">224</th><td><i class="doc">    QClipboard::Selection, the text is retrieved from the global</i></td></tr>
+<tr><th id="225">225</th><td><i class="doc">    mouse selection.</i></td></tr>
+<tr><th id="226">226</th><td><i class="doc"></i></td></tr>
+<tr><th id="227">227</th><td><i class="doc">    Common values for<span class="command"> \a</span> <span class="arg">subtype</span> are "plain" and "html".</i></td></tr>
+<tr><th id="228">228</th><td><i class="doc"></i></td></tr>
+<tr><th id="229">229</th><td><i class="doc">    Note that calling this function repeatedly, for instance from a</i></td></tr>
+<tr><th id="230">230</th><td><i class="doc">    key event handler, may be slow. In such cases, you should use the</i></td></tr>
+<tr><th id="231">231</th><td><i class="doc">   <span class="command"> \c</span> <span class="arg">dataChanged()</span> signal instead.</i></td></tr>
+<tr><th id="232">232</th><td><i class="doc"></i></td></tr>
+<tr><th id="233">233</th><td><i class="doc">    <span class="command">\sa</span> setText(), mimeData()</i></td></tr>
+<tr><th id="234">234</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="235">235</th><td><a class="type" href="../../corelib/text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> <a class="type" href="qclipboard.h.html#QClipboard" title='QClipboard' data-ref="QClipboard">QClipboard</a>::<dfn class="decl def fn" id="_ZNK10QClipboard4textER7QStringNS_4ModeE" title='QClipboard::text' data-ref="_ZNK10QClipboard4textER7QStringNS_4ModeE">text</dfn>(<a class="type" href="../../corelib/text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> &amp;<dfn class="local col8 decl" id="8subtype" title='subtype' data-type='QString &amp;' data-ref="8subtype">subtype</dfn>, <a class="type" href="qclipboard.h.html#QClipboard::Mode" title='QClipboard::Mode' data-ref="QClipboard::Mode">Mode</a> <dfn class="local col9 decl" id="9mode" title='mode' data-type='QClipboard::Mode' data-ref="9mode">mode</dfn>) <em>const</em></td></tr>
+<tr><th id="236">236</th><td>{</td></tr>
+<tr><th id="237">237</th><td>    <em>const</em> <a class="type" href="../../corelib/kernel/qmimedata.h.html#QMimeData" title='QMimeData' data-ref="QMimeData">QMimeData</a> *<em>const</em> <dfn class="local col0 decl" id="10data" title='data' data-type='const QMimeData *const' data-ref="10data">data</dfn> = <a class="member fn" href="#_ZNK10QClipboard8mimeDataENS_4ModeE" title='QClipboard::mimeData' data-ref="_ZNK10QClipboard8mimeDataENS_4ModeE">mimeData</a>(<a class="local col9 ref" href="#9mode" title='mode' data-ref="9mode">mode</a>);</td></tr>
+<tr><th id="238">238</th><td>    <b>if</b> (!<a class="local col0 ref" href="#10data" title='data' data-ref="10data">data</a>)</td></tr>
+<tr><th id="239">239</th><td>        <b>return</b> <a class="type" href="../../corelib/text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a><a class="ref fn" href="../../corelib/text/qstring.h.html#_ZN7QStringC1Ev" title='QString::QString' data-ref="_ZN7QStringC1Ev">(</a>);</td></tr>
+<tr><th id="240">240</th><td></td></tr>
+<tr><th id="241">241</th><td>    <em>const</em> <a class="typedef" href="../../corelib/tools/qcontainerfwd.h.html#QStringList" title='QStringList' data-type='QList&lt;QString&gt;' data-ref="QStringList">QStringList</a> <dfn class="local col1 decl" id="11formats" title='formats' data-type='const QStringList' data-ref="11formats">formats</dfn> = <a class="local col0 ref" href="#10data" title='data' data-ref="10data">data</a>-&gt;<a class="virtual ref fn" href="../../corelib/kernel/qmimedata.h.html#_ZNK9QMimeData7formatsEv" title='QMimeData::formats' data-ref="_ZNK9QMimeData7formatsEv">formats</a>();</td></tr>
+<tr><th id="242">242</th><td>    <b>if</b> (<a class="local col8 ref" href="#8subtype" title='subtype' data-ref="8subtype">subtype</a>.<a class="ref fn" href="../../corelib/text/qstring.h.html#_ZNK7QString7isEmptyEv" title='QString::isEmpty' data-ref="_ZNK7QString7isEmptyEv">isEmpty</a>()) {</td></tr>
+<tr><th id="243">243</th><td>        <b>if</b> (<a class="local col1 ref" href="#11formats" title='formats' data-ref="11formats">formats</a>.<a class="ref fn" href="../../corelib/text/qstringlist.h.html#_ZNK19QListSpecialMethodsI7QStringE8containsE13QLatin1StringN2Qt15CaseSensitivityE" title='QListSpecialMethods&lt;QString&gt;::contains' data-ref="_ZNK19QListSpecialMethodsI7QStringE8containsE13QLatin1StringN2Qt15CaseSensitivityE">contains</a>(<span class='inlayHint'>str:&nbsp;</span><q>"text/plain"<a class="ref fn" href="../../corelib/text/qstring.h.html#_ZN2Qt8Literals14StringLiteralsli3_L1EPKcm" title='Qt::operator&quot;&quot;_L1' data-ref="_ZN2Qt8Literals14StringLiteralsli3_L1EPKcm">_L1</a></q>))</td></tr>
+<tr><th id="244">244</th><td>            <a class="local col8 ref" href="#8subtype" title='subtype' data-ref="8subtype">subtype</a> <a class="ref fn" href="../../corelib/text/qstring.h.html#_ZN7QStringaSE13QLatin1String" title='QString::operator=' data-ref="_ZN7QStringaSE13QLatin1String">=</a> <q>"plain"<a class="ref fn" href="../../corelib/text/qstring.h.html#_ZN2Qt8Literals14StringLiteralsli3_L1EPKcm" title='Qt::operator&quot;&quot;_L1' data-ref="_ZN2Qt8Literals14StringLiteralsli3_L1EPKcm">_L1</a></q>;</td></tr>
+<tr><th id="245">245</th><td>        <b>else</b> {</td></tr>
+<tr><th id="246">246</th><td>            <b>for</b> (<em>const</em> <em>auto</em> &amp;<dfn class="local col2 decl" id="12format" title='format' data-type='QString const &amp;' data-ref="12format">format</dfn> : <a class="local col1 ref" href="#11formats" title='formats' data-ref="11formats">formats</a>) {</td></tr>
+<tr><th id="247">247</th><td>                <b>if</b> (<a class="local col2 ref" href="#12format" title='format' data-ref="12format">format</a>.<a class="ref fn" href="../../corelib/text/qstring.h.html#_ZNK7QString10startsWithE13QLatin1StringN2Qt15CaseSensitivityE" title='QString::startsWith' data-ref="_ZNK7QString10startsWithE13QLatin1StringN2Qt15CaseSensitivityE">startsWith</a>(<span class='inlayHint'>s:&nbsp;</span><q>"text/"<a class="ref fn" href="../../corelib/text/qstring.h.html#_ZN2Qt8Literals14StringLiteralsli3_L1EPKcm" title='Qt::operator&quot;&quot;_L1' data-ref="_ZN2Qt8Literals14StringLiteralsli3_L1EPKcm">_L1</a></q>)) {</td></tr>
+<tr><th id="248">248</th><td>                    <a class="local col8 ref" href="#8subtype" title='subtype' data-ref="8subtype">subtype</a> <a class="ref fn" href="../../corelib/text/qstring.h.html#470" title='QString::operator=' data-ref="_ZN7QStringaSEOS_">=</a> <a class="local col2 ref" href="#12format" title='format' data-ref="12format">format</a>.<a class="ref fn" href="../../corelib/text/qstring.h.html#_ZNK7QString6slicedEx" title='QString::sliced' data-ref="_ZNK7QString6slicedEx">sliced</a>(<span class='inlayHint'>pos:&nbsp;</span><var>5</var>);</td></tr>
+<tr><th id="249">249</th><td>                    <b>break</b>;</td></tr>
+<tr><th id="250">250</th><td>                }</td></tr>
+<tr><th id="251">251</th><td>            }</td></tr>
+<tr><th id="252">252</th><td>            <b>if</b> (<a class="local col8 ref" href="#8subtype" title='subtype' data-ref="8subtype">subtype</a>.<a class="ref fn" href="../../corelib/text/qstring.h.html#_ZNK7QString7isEmptyEv" title='QString::isEmpty' data-ref="_ZNK7QString7isEmptyEv">isEmpty</a>())</td></tr>
+<tr><th id="253">253</th><td>                <b>return</b> <a class="type" href="../../corelib/text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a><a class="ref fn" href="../../corelib/text/qstring.h.html#_ZN7QStringC1Ev" title='QString::QString' data-ref="_ZN7QStringC1Ev">(</a>);</td></tr>
+<tr><th id="254">254</th><td>        }</td></tr>
+<tr><th id="255">255</th><td>    } <b>else</b> <b>if</b> (!<a class="local col1 ref" href="#11formats" title='formats' data-ref="11formats">formats</a>.<a class="ref fn" href="../../corelib/tools/qlist.h.html#_ZNK23QListSpecialMethodsBase8containsERKTL0__" title='QListSpecialMethodsBase::contains' data-ref="_ZNK23QListSpecialMethodsBase8containsERKTL0__">contains</a>(<span class='inlayHint'>t:&nbsp;</span><q>"text/"<a class="ref fn" href="../../corelib/text/qstring.h.html#_ZN2Qt8Literals14StringLiteralsli3_L1EPKcm" title='Qt::operator&quot;&quot;_L1' data-ref="_ZN2Qt8Literals14StringLiteralsli3_L1EPKcm">_L1</a></q> <a class="ref fn" href="../../corelib/text/qstringbuilder.h.html#_ZplRKT_RKT0_" title='operator+' data-ref="_ZplRKT_RKT0_">+</a> <a class="local col8 ref" href="#8subtype" title='subtype' data-ref="8subtype">subtype</a>)) {</td></tr>
+<tr><th id="256">256</th><td>        <b>return</b> <a class="type" href="../../corelib/text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a><a class="ref fn" href="../../corelib/text/qstring.h.html#_ZN7QStringC1Ev" title='QString::QString' data-ref="_ZN7QStringC1Ev">(</a>);</td></tr>
+<tr><th id="257">257</th><td>    }</td></tr>
+<tr><th id="258">258</th><td></td></tr>
+<tr><th id="259">259</th><td>    <em>const</em> <a class="type" href="../../corelib/text/qbytearray.h.html#QByteArray" title='QByteArray' data-ref="QByteArray">QByteArray</a> <dfn class="local col3 decl" id="13rawData" title='rawData' data-type='const QByteArray' data-ref="13rawData">rawData</dfn> = <a class="local col0 ref" href="#10data" title='data' data-ref="10data">data</a>-&gt;<a class="ref fn" href="../../corelib/kernel/qmimedata.h.html#_ZNK9QMimeData4dataERK7QString" title='QMimeData::data' data-ref="_ZNK9QMimeData4dataERK7QString">data</a>(<a class="ref fn fake" href="../../corelib/text/qstringbuilder.h.html#_ZNK14QStringBuildercvN13QConcatenableI14QStringBuilderIT_T0_EE9ConvertToEEv" title='QStringBuilder::operator typename QConcatenable&lt;QStringBuilder&lt;type-parameter-0-0, type-parameter-0-1&gt; &gt;::ConvertTo' data-ref="_ZNK14QStringBuildercvN13QConcatenableI14QStringBuilderIT_T0_EE9ConvertToEEv"></a><span class='inlayHint'>mimetype:&nbsp;</span><q>"text/"<a class="ref fn" href="../../corelib/text/qstring.h.html#_ZN2Qt8Literals14StringLiteralsli3_L1EPKcm" title='Qt::operator&quot;&quot;_L1' data-ref="_ZN2Qt8Literals14StringLiteralsli3_L1EPKcm">_L1</a></q> <a class="ref fn" href="../../corelib/text/qstringbuilder.h.html#_ZplRKT_RKT0_" title='operator+' data-ref="_ZplRKT_RKT0_">+</a> <a class="local col8 ref" href="#8subtype" title='subtype' data-ref="8subtype">subtype</a>);</td></tr>
+<tr><th id="260">260</th><td>    <em>auto</em> <dfn class="local col4 decl" id="14encoding" title='encoding' data-type='std::optional&lt;Encoding&gt;' data-ref="14encoding">encoding</dfn> = <a class="type" href="../../corelib/text/qstringconverter_base.h.html#QStringConverter" title='QStringConverter' data-ref="QStringConverter">QStringConverter</a>::<a class="ref fn" href="../../corelib/text/qstringconverter_base.h.html#_ZN16QStringConverter15encodingForDataE14QByteArrayViewDs" title='QStringConverter::encodingForData' data-ref="_ZN16QStringConverter15encodingForDataE14QByteArrayViewDs">encodingForData</a>(<a class="ref fn fake" href="../../corelib/text/qbytearrayview.h.html#_ZN14QByteArrayViewC1ERKT_" title='QByteArrayView::QByteArrayView' data-ref="_ZN14QByteArrayViewC1ERKT_"></a><span class='inlayHint'>data:&nbsp;</span><a class="local col3 ref" href="#13rawData" title='rawData' data-ref="13rawData">rawData</a>);</td></tr>
+<tr><th id="261">261</th><td>    <b>if</b> (!<a class="ref fn fake" href="../../../../include/c++/9/optional.html#_ZNKSt8optionalcvbEv" title='std::optional::operator bool' data-ref="_ZNKSt8optionalcvbEv"></a><a class="local col4 ref" href="#14encoding" title='encoding' data-ref="14encoding">encoding</a>)</td></tr>
+<tr><th id="262">262</th><td>        <a class="local col4 ref" href="#14encoding" title='encoding' data-ref="14encoding">encoding</a> <a class="ref fn" href="../../../../include/c++/9/optional.html#656" title='std::optional&lt;QStringConverter::Encoding&gt;::operator=' data-ref="_ZNSt8optionalIN16QStringConverter8EncodingEEaSEOS2_">=</a> <a class="ref fn fake" href="../../../../include/c++/9/optional.html#_ZNSt8optionalC1EOTL0__" title='std::optional::optional&lt;_Tp&gt;' data-ref="_ZNSt8optionalC1EOTL0__"></a><a class="type" href="../../corelib/text/qstringconverter_base.h.html#QStringConverter" title='QStringConverter' data-ref="QStringConverter">QStringConverter</a>::<a class="enum" href="../../corelib/text/qstringconverter_base.h.html#QStringConverter::Utf8" title='QStringConverter::Utf8' data-ref="QStringConverter::Utf8">Utf8</a>;</td></tr>
+<tr><th id="263">263</th><td>    <b>return</b> <a class="ref fn fake" href="../../corelib/text/qstringconverter.h.html#_ZNK14QStringDecoder11EncodedDatacv7QStringEv" title='QStringDecoder::EncodedData::operator QString' data-ref="_ZNK14QStringDecoder11EncodedDatacv7QStringEv"></a><a class="type" href="../../corelib/text/qstringconverter.h.html#QStringDecoder" title='QStringDecoder' data-ref="QStringDecoder">QStringDecoder</a><a class="ref fn" href="../../corelib/text/qstringconverter.h.html#_ZN14QStringDecoderC1EN16QStringConverter8EncodingE6QFlagsIN20QStringConverterBase4FlagEE" title='QStringDecoder::QStringDecoder' data-ref="_ZN14QStringDecoderC1EN16QStringConverter8EncodingE6QFlagsIN20QStringConverterBase4FlagEE">(</a><a class="ref fn" href="../../../../include/c++/9/optional.html#_ZNRSt8optionaldeEv" title='std::optional::operator*' data-ref="_ZNRSt8optionaldeEv">*</a><a class="local col4 ref" href="#14encoding" title='encoding' data-ref="14encoding">encoding</a>).<a class="ref fn" href="../../corelib/text/qstringconverter.h.html#_ZN14QStringDecoder6decodeERK10QByteArray" title='QStringDecoder::decode' data-ref="_ZN14QStringDecoder6decodeERK10QByteArray">decode</a>(<span class='inlayHint'>ba:&nbsp;</span><a class="local col3 ref" href="#13rawData" title='rawData' data-ref="13rawData">rawData</a>);</td></tr>
+<tr><th id="264">264</th><td>}</td></tr>
+<tr><th id="265">265</th><td></td></tr>
+<tr><th id="266">266</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="267">267</th><td><i class="doc">    Returns the clipboard text as plain text, or an empty string if the</i></td></tr>
+<tr><th id="268">268</th><td><i class="doc">    clipboard does not contain any text.</i></td></tr>
+<tr><th id="269">269</th><td><i class="doc"></i></td></tr>
+<tr><th id="270">270</th><td><i class="doc">    The<span class="command"> \a</span> <span class="arg">mode</span> argument is used to control which part of the system</i></td></tr>
+<tr><th id="271">271</th><td><i class="doc">    clipboard is used.  If<span class="command"> \a</span> <span class="arg">mode</span> is QClipboard::Clipboard, the</i></td></tr>
+<tr><th id="272">272</th><td><i class="doc">    text is retrieved from the global clipboard.  If<span class="command"> \a</span> <span class="arg">mode</span> is</i></td></tr>
+<tr><th id="273">273</th><td><i class="doc">    QClipboard::Selection, the text is retrieved from the global</i></td></tr>
+<tr><th id="274">274</th><td><i class="doc">    mouse selection. If<span class="command"> \a</span> <span class="arg">mode</span> is QClipboard::FindBuffer, the</i></td></tr>
+<tr><th id="275">275</th><td><i class="doc">    text is retrieved from the search string buffer.</i></td></tr>
+<tr><th id="276">276</th><td><i class="doc"></i></td></tr>
+<tr><th id="277">277</th><td><i class="doc">    <span class="command">\sa</span> setText(), mimeData()</i></td></tr>
+<tr><th id="278">278</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="279">279</th><td><a class="type" href="../../corelib/text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> <a class="type" href="qclipboard.h.html#QClipboard" title='QClipboard' data-ref="QClipboard">QClipboard</a>::<dfn class="decl def fn" id="_ZNK10QClipboard4textENS_4ModeE" title='QClipboard::text' data-ref="_ZNK10QClipboard4textENS_4ModeE">text</dfn>(<a class="type" href="qclipboard.h.html#QClipboard::Mode" title='QClipboard::Mode' data-ref="QClipboard::Mode">Mode</a> <dfn class="local col5 decl" id="15mode" title='mode' data-type='QClipboard::Mode' data-ref="15mode">mode</dfn>) <em>const</em></td></tr>
+<tr><th id="280">280</th><td>{</td></tr>
+<tr><th id="281">281</th><td>    <em>const</em> <a class="type" href="../../corelib/kernel/qmimedata.h.html#QMimeData" title='QMimeData' data-ref="QMimeData">QMimeData</a> *<dfn class="local col6 decl" id="16data" title='data' data-type='const QMimeData *' data-ref="16data">data</dfn> = <a class="member fn" href="#_ZNK10QClipboard8mimeDataENS_4ModeE" title='QClipboard::mimeData' data-ref="_ZNK10QClipboard8mimeDataENS_4ModeE">mimeData</a>(<a class="local col5 ref" href="#15mode" title='mode' data-ref="15mode">mode</a>);</td></tr>
+<tr><th id="282">282</th><td>    <b>return</b> <a class="local col6 ref" href="#16data" title='data' data-ref="16data">data</a> ? <a class="local col6 ref" href="#16data" title='data' data-ref="16data">data</a>-&gt;<a class="ref fn" href="../../corelib/kernel/qmimedata.h.html#_ZNK9QMimeData4textEv" title='QMimeData::text' data-ref="_ZNK9QMimeData4textEv">text</a>() : <a class="type" href="../../corelib/text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a><a class="ref fn" href="../../corelib/text/qstring.h.html#_ZN7QStringC1Ev" title='QString::QString' data-ref="_ZN7QStringC1Ev">(</a>);</td></tr>
+<tr><th id="283">283</th><td>}</td></tr>
+<tr><th id="284">284</th><td></td></tr>
+<tr><th id="285">285</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="286">286</th><td><i class="doc">    Copies<span class="command"> \a</span> <span class="arg">text</span> into the clipboard as plain text.</i></td></tr>
+<tr><th id="287">287</th><td><i class="doc"></i></td></tr>
+<tr><th id="288">288</th><td><i class="doc">    The<span class="command"> \a</span> <span class="arg">mode</span> argument is used to control which part of the system</i></td></tr>
+<tr><th id="289">289</th><td><i class="doc">    clipboard is used.  If<span class="command"> \a</span> <span class="arg">mode</span> is QClipboard::Clipboard, the</i></td></tr>
+<tr><th id="290">290</th><td><i class="doc">    text is stored in the global clipboard.  If<span class="command"> \a</span> <span class="arg">mode</span> is</i></td></tr>
+<tr><th id="291">291</th><td><i class="doc">    QClipboard::Selection, the text is stored in the global</i></td></tr>
+<tr><th id="292">292</th><td><i class="doc">    mouse selection. If<span class="command"> \a</span> <span class="arg">mode</span> is QClipboard::FindBuffer, the</i></td></tr>
+<tr><th id="293">293</th><td><i class="doc">    text is stored in the search string buffer.</i></td></tr>
+<tr><th id="294">294</th><td><i class="doc"></i></td></tr>
+<tr><th id="295">295</th><td><i class="doc">    <span class="command">\sa</span> text(), setMimeData()</i></td></tr>
+<tr><th id="296">296</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="297">297</th><td><em>void</em> <a class="type" href="qclipboard.h.html#QClipboard" title='QClipboard' data-ref="QClipboard">QClipboard</a>::<dfn class="decl def fn" id="_ZN10QClipboard7setTextERK7QStringNS_4ModeE" title='QClipboard::setText' data-ref="_ZN10QClipboard7setTextERK7QStringNS_4ModeE">setText</dfn>(<em>const</em> <a class="type" href="../../corelib/text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> &amp;<dfn class="local col7 decl" id="17text" title='text' data-type='const QString &amp;' data-ref="17text">text</dfn>, <a class="type" href="qclipboard.h.html#QClipboard::Mode" title='QClipboard::Mode' data-ref="QClipboard::Mode">Mode</a> <dfn class="local col8 decl" id="18mode" title='mode' data-type='QClipboard::Mode' data-ref="18mode">mode</dfn>)</td></tr>
+<tr><th id="298">298</th><td>{</td></tr>
+<tr><th id="299">299</th><td>    <a class="type" href="../../corelib/kernel/qmimedata.h.html#QMimeData" title='QMimeData' data-ref="QMimeData">QMimeData</a> *<dfn class="local col9 decl" id="19data" title='data' data-type='QMimeData *' data-ref="19data">data</dfn> = <b>new</b> <a class="ref fn fake" href="../../corelib/kernel/qmimedata.h.html#_ZN9QMimeDataC1Ev" title='QMimeData::QMimeData' data-ref="_ZN9QMimeDataC1Ev"></a><a class="type" href="../../corelib/kernel/qmimedata.h.html#QMimeData" title='QMimeData' data-ref="QMimeData">QMimeData</a>;</td></tr>
+<tr><th id="300">300</th><td>    <a class="local col9 ref" href="#19data" title='data' data-ref="19data">data</a>-&gt;<a class="ref fn" href="../../corelib/kernel/qmimedata.h.html#_ZN9QMimeData7setTextERK7QString" title='QMimeData::setText' data-ref="_ZN9QMimeData7setTextERK7QString">setText</a>(<a class="local col7 ref" href="#17text" title='text' data-ref="17text">text</a>);</td></tr>
+<tr><th id="301">301</th><td>    <a class="member fn" href="#_ZN10QClipboard11setMimeDataEP9QMimeDataNS_4ModeE" title='QClipboard::setMimeData' data-ref="_ZN10QClipboard11setMimeDataEP9QMimeDataNS_4ModeE">setMimeData</a>(<a class="local col9 ref" href="#19data" title='data' data-ref="19data">data</a>, <a class="local col8 ref" href="#18mode" title='mode' data-ref="18mode">mode</a>);</td></tr>
+<tr><th id="302">302</th><td>}</td></tr>
+<tr><th id="303">303</th><td></td></tr>
+<tr><th id="304">304</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="305">305</th><td><i class="doc">    Returns the clipboard image, or returns a null image if the</i></td></tr>
+<tr><th id="306">306</th><td><i class="doc">    clipboard does not contain an image or if it contains an image in</i></td></tr>
+<tr><th id="307">307</th><td><i class="doc">    an unsupported image format.</i></td></tr>
+<tr><th id="308">308</th><td><i class="doc"></i></td></tr>
+<tr><th id="309">309</th><td><i class="doc">    The<span class="command"> \a</span> <span class="arg">mode</span> argument is used to control which part of the system</i></td></tr>
+<tr><th id="310">310</th><td><i class="doc">    clipboard is used.  If<span class="command"> \a</span> <span class="arg">mode</span> is QClipboard::Clipboard, the</i></td></tr>
+<tr><th id="311">311</th><td><i class="doc">    image is retrieved from the global clipboard.  If<span class="command"> \a</span> <span class="arg">mode</span> is</i></td></tr>
+<tr><th id="312">312</th><td><i class="doc">    QClipboard::Selection, the image is retrieved from the global</i></td></tr>
+<tr><th id="313">313</th><td><i class="doc">    mouse selection.</i></td></tr>
+<tr><th id="314">314</th><td><i class="doc"></i></td></tr>
+<tr><th id="315">315</th><td><i class="doc">    <span class="command">\sa</span> setImage(), pixmap(), mimeData(), QImage::isNull()</i></td></tr>
+<tr><th id="316">316</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="317">317</th><td><a class="type" href="../image/qimage.h.html#QImage" title='QImage' data-ref="QImage">QImage</a> <a class="type" href="qclipboard.h.html#QClipboard" title='QClipboard' data-ref="QClipboard">QClipboard</a>::<dfn class="decl def fn" id="_ZNK10QClipboard5imageENS_4ModeE" title='QClipboard::image' data-ref="_ZNK10QClipboard5imageENS_4ModeE">image</dfn>(<a class="type" href="qclipboard.h.html#QClipboard::Mode" title='QClipboard::Mode' data-ref="QClipboard::Mode">Mode</a> <dfn class="local col0 decl" id="20mode" title='mode' data-type='QClipboard::Mode' data-ref="20mode">mode</dfn>) <em>const</em></td></tr>
+<tr><th id="318">318</th><td>{</td></tr>
+<tr><th id="319">319</th><td>    <em>const</em> <a class="type" href="../../corelib/kernel/qmimedata.h.html#QMimeData" title='QMimeData' data-ref="QMimeData">QMimeData</a> *<dfn class="local col1 decl" id="21data" title='data' data-type='const QMimeData *' data-ref="21data">data</dfn> = <a class="member fn" href="#_ZNK10QClipboard8mimeDataENS_4ModeE" title='QClipboard::mimeData' data-ref="_ZNK10QClipboard8mimeDataENS_4ModeE">mimeData</a>(<a class="local col0 ref" href="#20mode" title='mode' data-ref="20mode">mode</a>);</td></tr>
+<tr><th id="320">320</th><td>    <b>if</b> (!<a class="local col1 ref" href="#21data" title='data' data-ref="21data">data</a>)</td></tr>
+<tr><th id="321">321</th><td>        <b>return</b> <a class="type" href="../image/qimage.h.html#QImage" title='QImage' data-ref="QImage">QImage</a><a class="ref fn" href="../image/qimage.h.html#_ZN6QImageC1Ev" title='QImage::QImage' data-ref="_ZN6QImageC1Ev">(</a>);</td></tr>
+<tr><th id="322">322</th><td>    <b>return</b> <a class="ref fn" href="../../corelib/kernel/qvariant.h.html#_Z13qvariant_castRK8QVariant" title='qvariant_cast' data-ref="_Z13qvariant_castRK8QVariant">qvariant_cast</a>&lt;<a class="type" href="../image/qimage.h.html#QImage" title='QImage' data-ref="QImage">QImage</a>&gt;(<span class='inlayHint'>v:&nbsp;</span><a class="local col1 ref" href="#21data" title='data' data-ref="21data">data</a>-&gt;<a class="ref fn" href="../../corelib/kernel/qmimedata.h.html#_ZNK9QMimeData9imageDataEv" title='QMimeData::imageData' data-ref="_ZNK9QMimeData9imageDataEv">imageData</a>());</td></tr>
+<tr><th id="323">323</th><td>}</td></tr>
+<tr><th id="324">324</th><td></td></tr>
+<tr><th id="325">325</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="326">326</th><td><i class="doc">    Copies the<span class="command"> \a</span> <span class="arg">image</span> into the clipboard.</i></td></tr>
+<tr><th id="327">327</th><td><i class="doc"></i></td></tr>
+<tr><th id="328">328</th><td><i class="doc">    The<span class="command"> \a</span> <span class="arg">mode</span> argument is used to control which part of the system</i></td></tr>
+<tr><th id="329">329</th><td><i class="doc">    clipboard is used.  If<span class="command"> \a</span> <span class="arg">mode</span> is QClipboard::Clipboard, the</i></td></tr>
+<tr><th id="330">330</th><td><i class="doc">    image is stored in the global clipboard.  If<span class="command"> \a</span> <span class="arg">mode</span> is</i></td></tr>
+<tr><th id="331">331</th><td><i class="doc">    QClipboard::Selection, the data is stored in the global</i></td></tr>
+<tr><th id="332">332</th><td><i class="doc">    mouse selection.</i></td></tr>
+<tr><th id="333">333</th><td><i class="doc"></i></td></tr>
+<tr><th id="334">334</th><td><i class="doc">    This is shorthand for:</i></td></tr>
+<tr><th id="335">335</th><td><i class="doc"></i></td></tr>
+<tr><th id="336">336</th><td><i class="doc">    <span class="command">\snippet</span> <span class="verb">code/src_gui_kernel_qclipboard.cpp 1</span></i></td></tr>
+<tr><th id="337">337</th><td><i class="doc"></i></td></tr>
+<tr><th id="338">338</th><td><i class="doc">    <span class="command">\sa</span> image(), setPixmap(), setMimeData()</i></td></tr>
+<tr><th id="339">339</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="340">340</th><td><em>void</em> <a class="type" href="qclipboard.h.html#QClipboard" title='QClipboard' data-ref="QClipboard">QClipboard</a>::<dfn class="decl def fn" id="_ZN10QClipboard8setImageERK6QImageNS_4ModeE" title='QClipboard::setImage' data-ref="_ZN10QClipboard8setImageERK6QImageNS_4ModeE">setImage</dfn>(<em>const</em> <a class="type" href="../image/qimage.h.html#QImage" title='QImage' data-ref="QImage">QImage</a> &amp;<dfn class="local col2 decl" id="22image" title='image' data-type='const QImage &amp;' data-ref="22image">image</dfn>, <a class="type" href="qclipboard.h.html#QClipboard::Mode" title='QClipboard::Mode' data-ref="QClipboard::Mode">Mode</a> <dfn class="local col3 decl" id="23mode" title='mode' data-type='QClipboard::Mode' data-ref="23mode">mode</dfn>)</td></tr>
+<tr><th id="341">341</th><td>{</td></tr>
+<tr><th id="342">342</th><td>    <a class="type" href="../../corelib/kernel/qmimedata.h.html#QMimeData" title='QMimeData' data-ref="QMimeData">QMimeData</a> *<dfn class="local col4 decl" id="24data" title='data' data-type='QMimeData *' data-ref="24data">data</dfn> = <b>new</b> <a class="ref fn fake" href="../../corelib/kernel/qmimedata.h.html#_ZN9QMimeDataC1Ev" title='QMimeData::QMimeData' data-ref="_ZN9QMimeDataC1Ev"></a><a class="type" href="../../corelib/kernel/qmimedata.h.html#QMimeData" title='QMimeData' data-ref="QMimeData">QMimeData</a>;</td></tr>
+<tr><th id="343">343</th><td>    <a class="local col4 ref" href="#24data" title='data' data-ref="24data">data</a>-&gt;<a class="ref fn" href="../../corelib/kernel/qmimedata.h.html#_ZN9QMimeData12setImageDataERK8QVariant" title='QMimeData::setImageData' data-ref="_ZN9QMimeData12setImageDataERK8QVariant">setImageData</a>(<a class="ref fn fake" href="../image/qimage.h.html#_ZNK6QImagecv8QVariantEv" title='QImage::operator QVariant' data-ref="_ZNK6QImagecv8QVariantEv"></a><a class="local col2 ref" href="#22image" title='image' data-ref="22image">image</a>);</td></tr>
+<tr><th id="344">344</th><td>    <a class="member fn" href="#_ZN10QClipboard11setMimeDataEP9QMimeDataNS_4ModeE" title='QClipboard::setMimeData' data-ref="_ZN10QClipboard11setMimeDataEP9QMimeDataNS_4ModeE">setMimeData</a>(<a class="local col4 ref" href="#24data" title='data' data-ref="24data">data</a>, <a class="local col3 ref" href="#23mode" title='mode' data-ref="23mode">mode</a>);</td></tr>
+<tr><th id="345">345</th><td>}</td></tr>
+<tr><th id="346">346</th><td></td></tr>
+<tr><th id="347">347</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="348">348</th><td><i class="doc">    Returns the clipboard pixmap, or null if the clipboard does not</i></td></tr>
+<tr><th id="349">349</th><td><i class="doc">    contain a pixmap. Note that this can lose information. For</i></td></tr>
+<tr><th id="350">350</th><td><i class="doc">    example, if the image is 24-bit and the display is 8-bit, the</i></td></tr>
+<tr><th id="351">351</th><td><i class="doc">    result is converted to 8 bits, and if the image has an alpha</i></td></tr>
+<tr><th id="352">352</th><td><i class="doc">    channel, the result just has a mask.</i></td></tr>
+<tr><th id="353">353</th><td><i class="doc"></i></td></tr>
+<tr><th id="354">354</th><td><i class="doc">    The<span class="command"> \a</span> <span class="arg">mode</span> argument is used to control which part of the system</i></td></tr>
+<tr><th id="355">355</th><td><i class="doc">    clipboard is used.  If<span class="command"> \a</span> <span class="arg">mode</span> is QClipboard::Clipboard, the</i></td></tr>
+<tr><th id="356">356</th><td><i class="doc">    pixmap is retrieved from the global clipboard.  If<span class="command"> \a</span> <span class="arg">mode</span> is</i></td></tr>
+<tr><th id="357">357</th><td><i class="doc">    QClipboard::Selection, the pixmap is retrieved from the global</i></td></tr>
+<tr><th id="358">358</th><td><i class="doc">    mouse selection.</i></td></tr>
+<tr><th id="359">359</th><td><i class="doc"></i></td></tr>
+<tr><th id="360">360</th><td><i class="doc">    <span class="command">\sa</span> setPixmap(), image(), mimeData(), QPixmap::convertFromImage()</i></td></tr>
+<tr><th id="361">361</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="362">362</th><td><a class="type" href="../image/qpixmap.h.html#QPixmap" title='QPixmap' data-ref="QPixmap">QPixmap</a> <a class="type" href="qclipboard.h.html#QClipboard" title='QClipboard' data-ref="QClipboard">QClipboard</a>::<dfn class="decl def fn" id="_ZNK10QClipboard6pixmapENS_4ModeE" title='QClipboard::pixmap' data-ref="_ZNK10QClipboard6pixmapENS_4ModeE">pixmap</dfn>(<a class="type" href="qclipboard.h.html#QClipboard::Mode" title='QClipboard::Mode' data-ref="QClipboard::Mode">Mode</a> <dfn class="local col5 decl" id="25mode" title='mode' data-type='QClipboard::Mode' data-ref="25mode">mode</dfn>) <em>const</em></td></tr>
+<tr><th id="363">363</th><td>{</td></tr>
+<tr><th id="364">364</th><td>    <em>const</em> <a class="type" href="../../corelib/kernel/qmimedata.h.html#QMimeData" title='QMimeData' data-ref="QMimeData">QMimeData</a> *<dfn class="local col6 decl" id="26data" title='data' data-type='const QMimeData *' data-ref="26data">data</dfn> = <a class="member fn" href="#_ZNK10QClipboard8mimeDataENS_4ModeE" title='QClipboard::mimeData' data-ref="_ZNK10QClipboard8mimeDataENS_4ModeE">mimeData</a>(<a class="local col5 ref" href="#25mode" title='mode' data-ref="25mode">mode</a>);</td></tr>
+<tr><th id="365">365</th><td>    <b>return</b> <a class="local col6 ref" href="#26data" title='data' data-ref="26data">data</a> ? <a class="ref fn" href="../../corelib/kernel/qvariant.h.html#_Z13qvariant_castRK8QVariant" title='qvariant_cast' data-ref="_Z13qvariant_castRK8QVariant">qvariant_cast</a>&lt;<a class="type" href="../image/qpixmap.h.html#QPixmap" title='QPixmap' data-ref="QPixmap">QPixmap</a>&gt;(<span class='inlayHint'>v:&nbsp;</span><a class="local col6 ref" href="#26data" title='data' data-ref="26data">data</a>-&gt;<a class="ref fn" href="../../corelib/kernel/qmimedata.h.html#_ZNK9QMimeData9imageDataEv" title='QMimeData::imageData' data-ref="_ZNK9QMimeData9imageDataEv">imageData</a>()) : <a class="type" href="../image/qpixmap.h.html#QPixmap" title='QPixmap' data-ref="QPixmap">QPixmap</a><a class="ref fn" href="../image/qpixmap.h.html#_ZN7QPixmapC1Ev" title='QPixmap::QPixmap' data-ref="_ZN7QPixmapC1Ev">(</a>);</td></tr>
+<tr><th id="366">366</th><td>}</td></tr>
+<tr><th id="367">367</th><td></td></tr>
+<tr><th id="368">368</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="369">369</th><td><i class="doc">    Copies<span class="command"> \a</span> <span class="arg">pixmap</span> into the clipboard. Note that this is slower</i></td></tr>
+<tr><th id="370">370</th><td><i class="doc">    than setImage() because it needs to convert the QPixmap to a</i></td></tr>
+<tr><th id="371">371</th><td><i class="doc">    QImage first.</i></td></tr>
+<tr><th id="372">372</th><td><i class="doc"></i></td></tr>
+<tr><th id="373">373</th><td><i class="doc">    The<span class="command"> \a</span> <span class="arg">mode</span> argument is used to control which part of the system</i></td></tr>
+<tr><th id="374">374</th><td><i class="doc">    clipboard is used.  If<span class="command"> \a</span> <span class="arg">mode</span> is QClipboard::Clipboard, the</i></td></tr>
+<tr><th id="375">375</th><td><i class="doc">    pixmap is stored in the global clipboard.  If<span class="command"> \a</span> <span class="arg">mode</span> is</i></td></tr>
+<tr><th id="376">376</th><td><i class="doc">    QClipboard::Selection, the pixmap is stored in the global</i></td></tr>
+<tr><th id="377">377</th><td><i class="doc">    mouse selection.</i></td></tr>
+<tr><th id="378">378</th><td><i class="doc"></i></td></tr>
+<tr><th id="379">379</th><td><i class="doc">    <span class="command">\sa</span> pixmap(), setImage(), setMimeData()</i></td></tr>
+<tr><th id="380">380</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="381">381</th><td><em>void</em> <a class="type" href="qclipboard.h.html#QClipboard" title='QClipboard' data-ref="QClipboard">QClipboard</a>::<dfn class="decl def fn" id="_ZN10QClipboard9setPixmapERK7QPixmapNS_4ModeE" title='QClipboard::setPixmap' data-ref="_ZN10QClipboard9setPixmapERK7QPixmapNS_4ModeE">setPixmap</dfn>(<em>const</em> <a class="type" href="../image/qpixmap.h.html#QPixmap" title='QPixmap' data-ref="QPixmap">QPixmap</a> &amp;<dfn class="local col7 decl" id="27pixmap" title='pixmap' data-type='const QPixmap &amp;' data-ref="27pixmap">pixmap</dfn>, <a class="type" href="qclipboard.h.html#QClipboard::Mode" title='QClipboard::Mode' data-ref="QClipboard::Mode">Mode</a> <dfn class="local col8 decl" id="28mode" title='mode' data-type='QClipboard::Mode' data-ref="28mode">mode</dfn>)</td></tr>
+<tr><th id="382">382</th><td>{</td></tr>
+<tr><th id="383">383</th><td>    <a class="type" href="../../corelib/kernel/qmimedata.h.html#QMimeData" title='QMimeData' data-ref="QMimeData">QMimeData</a> *<dfn class="local col9 decl" id="29data" title='data' data-type='QMimeData *' data-ref="29data">data</dfn> = <b>new</b> <a class="ref fn fake" href="../../corelib/kernel/qmimedata.h.html#_ZN9QMimeDataC1Ev" title='QMimeData::QMimeData' data-ref="_ZN9QMimeDataC1Ev"></a><a class="type" href="../../corelib/kernel/qmimedata.h.html#QMimeData" title='QMimeData' data-ref="QMimeData">QMimeData</a>;</td></tr>
+<tr><th id="384">384</th><td>    <a class="local col9 ref" href="#29data" title='data' data-ref="29data">data</a>-&gt;<a class="ref fn" href="../../corelib/kernel/qmimedata.h.html#_ZN9QMimeData12setImageDataERK8QVariant" title='QMimeData::setImageData' data-ref="_ZN9QMimeData12setImageDataERK8QVariant">setImageData</a>(<a class="ref fn fake" href="../image/qpixmap.h.html#_ZNK7QPixmapcv8QVariantEv" title='QPixmap::operator QVariant' data-ref="_ZNK7QPixmapcv8QVariantEv"></a><a class="local col7 ref" href="#27pixmap" title='pixmap' data-ref="27pixmap">pixmap</a>);</td></tr>
+<tr><th id="385">385</th><td>    <a class="member fn" href="#_ZN10QClipboard11setMimeDataEP9QMimeDataNS_4ModeE" title='QClipboard::setMimeData' data-ref="_ZN10QClipboard11setMimeDataEP9QMimeDataNS_4ModeE">setMimeData</a>(<a class="local col9 ref" href="#29data" title='data' data-ref="29data">data</a>, <a class="local col8 ref" href="#28mode" title='mode' data-ref="28mode">mode</a>);</td></tr>
+<tr><th id="386">386</th><td>}</td></tr>
+<tr><th id="387">387</th><td></td></tr>
+<tr><th id="388">388</th><td></td></tr>
+<tr><th id="389">389</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="390">390</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb" data-ref="_ZNK10QClipboard8mimeDataENS_4ModeE">QMimeData *QClipboard::mimeData(Mode mode) const</span></i></td></tr>
+<tr><th id="391">391</th><td><i class="doc"></i></td></tr>
+<tr><th id="392">392</th><td><i class="doc">    Returns a pointer to a QMimeData representation of the current</i></td></tr>
+<tr><th id="393">393</th><td><i class="doc">    clipboard data (can be<span class="command"> \nullptr</span> if the given<span class="command"> \a</span> <span class="arg">mode</span> is not</i></td></tr>
+<tr><th id="394">394</th><td><i class="doc">    supported by the platform).</i></td></tr>
+<tr><th id="395">395</th><td><i class="doc"></i></td></tr>
+<tr><th id="396">396</th><td><i class="doc">    The<span class="command"> \a</span> <span class="arg">mode</span> argument is used to control which part of the system</i></td></tr>
+<tr><th id="397">397</th><td><i class="doc">    clipboard is used.  If<span class="command"> \a</span> <span class="arg">mode</span> is QClipboard::Clipboard, the</i></td></tr>
+<tr><th id="398">398</th><td><i class="doc">    data is retrieved from the global clipboard.  If<span class="command"> \a</span> <span class="arg">mode</span> is</i></td></tr>
+<tr><th id="399">399</th><td><i class="doc">    QClipboard::Selection, the data is retrieved from the global</i></td></tr>
+<tr><th id="400">400</th><td><i class="doc">    mouse selection. If<span class="command"> \a</span> <span class="arg">mode</span> is QClipboard::FindBuffer, the</i></td></tr>
+<tr><th id="401">401</th><td><i class="doc">    data is retrieved from the search string buffer.</i></td></tr>
+<tr><th id="402">402</th><td><i class="doc"></i></td></tr>
+<tr><th id="403">403</th><td><i class="doc">    The text(), image(), and pixmap() functions are simpler</i></td></tr>
+<tr><th id="404">404</th><td><i class="doc">    wrappers for retrieving text, image, and pixmap data.</i></td></tr>
+<tr><th id="405">405</th><td><i class="doc"></i></td></tr>
+<tr><th id="406">406</th><td><i class="doc">    <span class="command">\note</span> The pointer returned might become invalidated when the contents</i></td></tr>
+<tr><th id="407">407</th><td><i class="doc">    of the clipboard changes; either by calling one of the setter functions</i></td></tr>
+<tr><th id="408">408</th><td><i class="doc">    or externally by the system clipboard changing.</i></td></tr>
+<tr><th id="409">409</th><td><i class="doc"></i></td></tr>
+<tr><th id="410">410</th><td><i class="doc">    <span class="command">\sa</span> setMimeData()</i></td></tr>
+<tr><th id="411">411</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="412">412</th><td><em>const</em> <a class="type" href="../../corelib/kernel/qmimedata.h.html#QMimeData" title='QMimeData' data-ref="QMimeData">QMimeData</a>* <a class="type" href="qclipboard.h.html#QClipboard" title='QClipboard' data-ref="QClipboard">QClipboard</a>::<dfn class="decl def fn" id="_ZNK10QClipboard8mimeDataENS_4ModeE" title='QClipboard::mimeData' data-ref="_ZNK10QClipboard8mimeDataENS_4ModeE">mimeData</dfn>(<a class="type" href="qclipboard.h.html#QClipboard::Mode" title='QClipboard::Mode' data-ref="QClipboard::Mode">Mode</a> <dfn class="local col0 decl" id="30mode" title='mode' data-type='QClipboard::Mode' data-ref="30mode">mode</dfn>) <em>const</em></td></tr>
+<tr><th id="413">413</th><td>{</td></tr>
+<tr><th id="414">414</th><td>    <a class="type" href="qplatformclipboard.h.html#QPlatformClipboard" title='QPlatformClipboard' data-ref="QPlatformClipboard">QPlatformClipboard</a> *<dfn class="local col1 decl" id="31clipboard" title='clipboard' data-type='QPlatformClipboard *' data-ref="31clipboard">clipboard</dfn> = <a class="type" href="qguiapplication_p.h.html#QGuiApplicationPrivate" title='QGuiApplicationPrivate' data-ref="QGuiApplicationPrivate">QGuiApplicationPrivate</a>::<a class="ref fn" href="qguiapplication_p.h.html#_ZN22QGuiApplicationPrivate19platformIntegrationEv" title='QGuiApplicationPrivate::platformIntegration' data-ref="_ZN22QGuiApplicationPrivate19platformIntegrationEv">platformIntegration</a>()-&gt;<a class="virtual ref fn" href="qplatformintegration.h.html#_ZNK20QPlatformIntegration9clipboardEv" title='QPlatformIntegration::clipboard' data-ref="_ZNK20QPlatformIntegration9clipboardEv">clipboard</a>();</td></tr>
+<tr><th id="415">415</th><td>    <b>if</b> (!<a class="local col1 ref" href="#31clipboard" title='clipboard' data-ref="31clipboard">clipboard</a>-&gt;<a class="virtual ref fn" href="qplatformclipboard.h.html#_ZNK18QPlatformClipboard12supportsModeEN10QClipboard4ModeE" title='QPlatformClipboard::supportsMode' data-ref="_ZNK18QPlatformClipboard12supportsModeEN10QClipboard4ModeE">supportsMode</a>(<a class="local col0 ref" href="#30mode" title='mode' data-ref="30mode">mode</a>)) <b>return</b> <b>nullptr</b>;</td></tr>
+<tr><th id="416">416</th><td>    <b>return</b> <a class="local col1 ref" href="#31clipboard" title='clipboard' data-ref="31clipboard">clipboard</a>-&gt;<a class="virtual ref fn" href="qplatformclipboard.h.html#_ZN18QPlatformClipboard8mimeDataEN10QClipboard4ModeE" title='QPlatformClipboard::mimeData' data-ref="_ZN18QPlatformClipboard8mimeDataEN10QClipboard4ModeE">mimeData</a>(<a class="local col0 ref" href="#30mode" title='mode' data-ref="30mode">mode</a>);</td></tr>
+<tr><th id="417">417</th><td>}</td></tr>
+<tr><th id="418">418</th><td></td></tr>
+<tr><th id="419">419</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="420">420</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb" data-ref="_ZN10QClipboard11setMimeDataEP9QMimeDataNS_4ModeE">void QClipboard::setMimeData(QMimeData *src, Mode mode)</span></i></td></tr>
+<tr><th id="421">421</th><td><i class="doc"></i></td></tr>
+<tr><th id="422">422</th><td><i class="doc">    Sets the clipboard data to<span class="command"> \a</span> <span class="arg">src.</span> Ownership of the data is</i></td></tr>
+<tr><th id="423">423</th><td><i class="doc">    transferred to the clipboard. If you want to remove the data</i></td></tr>
+<tr><th id="424">424</th><td><i class="doc">    either call clear() or call setMimeData() again with new data.</i></td></tr>
+<tr><th id="425">425</th><td><i class="doc"></i></td></tr>
+<tr><th id="426">426</th><td><i class="doc">    The<span class="command"> \a</span> <span class="arg">mode</span> argument is used to control which part of the system</i></td></tr>
+<tr><th id="427">427</th><td><i class="doc">    clipboard is used.  If<span class="command"> \a</span> <span class="arg">mode</span> is QClipboard::Clipboard, the</i></td></tr>
+<tr><th id="428">428</th><td><i class="doc">    data is stored in the global clipboard.  If<span class="command"> \a</span> <span class="arg">mode</span> is</i></td></tr>
+<tr><th id="429">429</th><td><i class="doc">    QClipboard::Selection, the data is stored in the global</i></td></tr>
+<tr><th id="430">430</th><td><i class="doc">    mouse selection. If<span class="command"> \a</span> <span class="arg">mode</span> is QClipboard::FindBuffer, the</i></td></tr>
+<tr><th id="431">431</th><td><i class="doc">    data is stored in the search string buffer.</i></td></tr>
+<tr><th id="432">432</th><td><i class="doc"></i></td></tr>
+<tr><th id="433">433</th><td><i class="doc">    The setText(), setImage() and setPixmap() functions are simpler</i></td></tr>
+<tr><th id="434">434</th><td><i class="doc">    wrappers for setting text, image and pixmap data respectively.</i></td></tr>
+<tr><th id="435">435</th><td><i class="doc"></i></td></tr>
+<tr><th id="436">436</th><td><i class="doc">    <span class="command">\sa</span> mimeData()</i></td></tr>
+<tr><th id="437">437</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="438">438</th><td><em>void</em> <a class="type" href="qclipboard.h.html#QClipboard" title='QClipboard' data-ref="QClipboard">QClipboard</a>::<dfn class="decl def fn" id="_ZN10QClipboard11setMimeDataEP9QMimeDataNS_4ModeE" title='QClipboard::setMimeData' data-ref="_ZN10QClipboard11setMimeDataEP9QMimeDataNS_4ModeE">setMimeData</dfn>(<a class="type" href="../../corelib/kernel/qmimedata.h.html#QMimeData" title='QMimeData' data-ref="QMimeData">QMimeData</a>* <dfn class="local col2 decl" id="32src" title='src' data-type='QMimeData *' data-ref="32src">src</dfn>, <a class="type" href="qclipboard.h.html#QClipboard::Mode" title='QClipboard::Mode' data-ref="QClipboard::Mode">Mode</a> <dfn class="local col3 decl" id="33mode" title='mode' data-type='QClipboard::Mode' data-ref="33mode">mode</dfn>)</td></tr>
+<tr><th id="439">439</th><td>{</td></tr>
+<tr><th id="440">440</th><td>    <a class="type" href="qplatformclipboard.h.html#QPlatformClipboard" title='QPlatformClipboard' data-ref="QPlatformClipboard">QPlatformClipboard</a> *<dfn class="local col4 decl" id="34clipboard" title='clipboard' data-type='QPlatformClipboard *' data-ref="34clipboard">clipboard</dfn> = <a class="type" href="qguiapplication_p.h.html#QGuiApplicationPrivate" title='QGuiApplicationPrivate' data-ref="QGuiApplicationPrivate">QGuiApplicationPrivate</a>::<a class="ref fn" href="qguiapplication_p.h.html#_ZN22QGuiApplicationPrivate19platformIntegrationEv" title='QGuiApplicationPrivate::platformIntegration' data-ref="_ZN22QGuiApplicationPrivate19platformIntegrationEv">platformIntegration</a>()-&gt;<a class="virtual ref fn" href="qplatformintegration.h.html#_ZNK20QPlatformIntegration9clipboardEv" title='QPlatformIntegration::clipboard' data-ref="_ZNK20QPlatformIntegration9clipboardEv">clipboard</a>();</td></tr>
+<tr><th id="441">441</th><td>    <b>if</b> (!<a class="local col4 ref" href="#34clipboard" title='clipboard' data-ref="34clipboard">clipboard</a>-&gt;<a class="virtual ref fn" href="qplatformclipboard.h.html#_ZNK18QPlatformClipboard12supportsModeEN10QClipboard4ModeE" title='QPlatformClipboard::supportsMode' data-ref="_ZNK18QPlatformClipboard12supportsModeEN10QClipboard4ModeE">supportsMode</a>(<a class="local col3 ref" href="#33mode" title='mode' data-ref="33mode">mode</a>)) {</td></tr>
+<tr><th id="442">442</th><td>        <b>if</b> (<a class="local col2 ref" href="#32src" title='src' data-ref="32src">src</a> != <b>nullptr</b>) {</td></tr>
+<tr><th id="443">443</th><td>            <a class="macro" href="../../corelib/global/qlogging.h.html#156" title="QMessageLogger(nullptr, 0, nullptr).debug" data-ref="_M/qDebug">qDebug</a>(<span class='inlayHint'>msg:&nbsp;</span><q>"Data set on unsupported clipboard mode. QMimeData object will be deleted."</q>);</td></tr>
+<tr><th id="444">444</th><td>            <a class="local col2 ref" href="#32src" title='src' data-ref="32src">src</a>-&gt;<a class="member fn" href="../../corelib/kernel/qobject.h.html#_ZN7QObject11deleteLaterEv" title='QObject::deleteLater' data-ref="_ZN7QObject11deleteLaterEv">deleteLater</a>();</td></tr>
+<tr><th id="445">445</th><td>        }</td></tr>
+<tr><th id="446">446</th><td>    } <b>else</b> {</td></tr>
+<tr><th id="447">447</th><td>        <a class="local col4 ref" href="#34clipboard" title='clipboard' data-ref="34clipboard">clipboard</a>-&gt;<a class="virtual ref fn" href="qplatformclipboard.h.html#_ZN18QPlatformClipboard11setMimeDataEP9QMimeDataN10QClipboard4ModeE" title='QPlatformClipboard::setMimeData' data-ref="_ZN18QPlatformClipboard11setMimeDataEP9QMimeDataN10QClipboard4ModeE">setMimeData</a>(<span class='inlayHint'>data:&nbsp;</span><a class="local col2 ref" href="#32src" title='src' data-ref="32src">src</a>,<a class="local col3 ref" href="#33mode" title='mode' data-ref="33mode">mode</a>);</td></tr>
+<tr><th id="448">448</th><td>    }</td></tr>
+<tr><th id="449">449</th><td>}</td></tr>
+<tr><th id="450">450</th><td></td></tr>
+<tr><th id="451">451</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="452">452</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb" data-ref="_ZN10QClipboard5clearENS_4ModeE">void QClipboard::clear(Mode mode)</span></i></td></tr>
+<tr><th id="453">453</th><td><i class="doc">    Clear the clipboard contents.</i></td></tr>
+<tr><th id="454">454</th><td><i class="doc"></i></td></tr>
+<tr><th id="455">455</th><td><i class="doc">    The<span class="command"> \a</span> <span class="arg">mode</span> argument is used to control which part of the system</i></td></tr>
+<tr><th id="456">456</th><td><i class="doc">    clipboard is used.  If<span class="command"> \a</span> <span class="arg">mode</span> is QClipboard::Clipboard, this</i></td></tr>
+<tr><th id="457">457</th><td><i class="doc">    function clears the global clipboard contents.  If<span class="command"> \a</span> <span class="arg">mode</span> is</i></td></tr>
+<tr><th id="458">458</th><td><i class="doc">    QClipboard::Selection, this function clears the global mouse</i></td></tr>
+<tr><th id="459">459</th><td><i class="doc">    selection contents. If<span class="command"> \a</span> <span class="arg">mode</span> is QClipboard::FindBuffer, this</i></td></tr>
+<tr><th id="460">460</th><td><i class="doc">    function clears the search string buffer.</i></td></tr>
+<tr><th id="461">461</th><td><i class="doc"></i></td></tr>
+<tr><th id="462">462</th><td><i class="doc">    <span class="command">\sa</span> QClipboard::Mode, supportsSelection()</i></td></tr>
+<tr><th id="463">463</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="464">464</th><td><em>void</em> <a class="type" href="qclipboard.h.html#QClipboard" title='QClipboard' data-ref="QClipboard">QClipboard</a>::<dfn class="decl def fn" id="_ZN10QClipboard5clearENS_4ModeE" title='QClipboard::clear' data-ref="_ZN10QClipboard5clearENS_4ModeE">clear</dfn>(<a class="type" href="qclipboard.h.html#QClipboard::Mode" title='QClipboard::Mode' data-ref="QClipboard::Mode">Mode</a> <dfn class="local col5 decl" id="35mode" title='mode' data-type='QClipboard::Mode' data-ref="35mode">mode</dfn>)</td></tr>
+<tr><th id="465">465</th><td>{</td></tr>
+<tr><th id="466">466</th><td>    <a class="member fn" href="#_ZN10QClipboard11setMimeDataEP9QMimeDataNS_4ModeE" title='QClipboard::setMimeData' data-ref="_ZN10QClipboard11setMimeDataEP9QMimeDataNS_4ModeE">setMimeData</a>(<span class='inlayHint'>src:&nbsp;</span><b>nullptr</b>, <a class="local col5 ref" href="#35mode" title='mode' data-ref="35mode">mode</a>);</td></tr>
+<tr><th id="467">467</th><td>}</td></tr>
+<tr><th id="468">468</th><td></td></tr>
+<tr><th id="469">469</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="470">470</th><td><i class="doc">    Returns<span class="command"> \c</span> <span class="arg">true</span> if the clipboard supports mouse selection; otherwise</i></td></tr>
+<tr><th id="471">471</th><td><i class="doc">    returns<span class="command"> \c</span> <span class="arg">false.</span></i></td></tr>
+<tr><th id="472">472</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="473">473</th><td><em>bool</em> <a class="type" href="qclipboard.h.html#QClipboard" title='QClipboard' data-ref="QClipboard">QClipboard</a>::<dfn class="decl def fn" id="_ZNK10QClipboard17supportsSelectionEv" title='QClipboard::supportsSelection' data-ref="_ZNK10QClipboard17supportsSelectionEv">supportsSelection</dfn>() <em>const</em></td></tr>
+<tr><th id="474">474</th><td>{</td></tr>
+<tr><th id="475">475</th><td>    <b>return</b> <a class="member fn" href="#_ZNK10QClipboard12supportsModeENS_4ModeE" title='QClipboard::supportsMode' data-ref="_ZNK10QClipboard12supportsModeENS_4ModeE">supportsMode</a>(<span class='inlayHint'>mode:&nbsp;</span><a class="enum" href="qclipboard.h.html#QClipboard::Selection" title='QClipboard::Selection' data-ref="QClipboard::Selection">Selection</a>);</td></tr>
+<tr><th id="476">476</th><td>}</td></tr>
+<tr><th id="477">477</th><td></td></tr>
+<tr><th id="478">478</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="479">479</th><td><i class="doc">    Returns<span class="command"> \c</span> <span class="arg">true</span> if the clipboard supports a separate search buffer; otherwise</i></td></tr>
+<tr><th id="480">480</th><td><i class="doc">    returns<span class="command"> \c</span> <span class="arg">false.</span></i></td></tr>
+<tr><th id="481">481</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="482">482</th><td><em>bool</em> <a class="type" href="qclipboard.h.html#QClipboard" title='QClipboard' data-ref="QClipboard">QClipboard</a>::<dfn class="decl def fn" id="_ZNK10QClipboard18supportsFindBufferEv" title='QClipboard::supportsFindBuffer' data-ref="_ZNK10QClipboard18supportsFindBufferEv">supportsFindBuffer</dfn>() <em>const</em></td></tr>
+<tr><th id="483">483</th><td>{</td></tr>
+<tr><th id="484">484</th><td>    <b>return</b> <a class="member fn" href="#_ZNK10QClipboard12supportsModeENS_4ModeE" title='QClipboard::supportsMode' data-ref="_ZNK10QClipboard12supportsModeENS_4ModeE">supportsMode</a>(<span class='inlayHint'>mode:&nbsp;</span><a class="enum" href="qclipboard.h.html#QClipboard::FindBuffer" title='QClipboard::FindBuffer' data-ref="QClipboard::FindBuffer">FindBuffer</a>);</td></tr>
+<tr><th id="485">485</th><td>}</td></tr>
+<tr><th id="486">486</th><td></td></tr>
+<tr><th id="487">487</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="488">488</th><td><i class="doc">    Returns<span class="command"> \c</span> <span class="arg">true</span> if this clipboard object owns the clipboard data;</i></td></tr>
+<tr><th id="489">489</th><td><i class="doc">    otherwise returns<span class="command"> \c</span> <span class="arg">false.</span></i></td></tr>
+<tr><th id="490">490</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="491">491</th><td><em>bool</em> <a class="type" href="qclipboard.h.html#QClipboard" title='QClipboard' data-ref="QClipboard">QClipboard</a>::<dfn class="decl def fn" id="_ZNK10QClipboard13ownsClipboardEv" title='QClipboard::ownsClipboard' data-ref="_ZNK10QClipboard13ownsClipboardEv">ownsClipboard</dfn>() <em>const</em></td></tr>
+<tr><th id="492">492</th><td>{</td></tr>
+<tr><th id="493">493</th><td>    <b>return</b> <a class="member fn" href="#_ZNK10QClipboard8ownsModeENS_4ModeE" title='QClipboard::ownsMode' data-ref="_ZNK10QClipboard8ownsModeENS_4ModeE">ownsMode</a>(<span class='inlayHint'>mode:&nbsp;</span><a class="enum" href="qclipboard.h.html#QClipboard::Clipboard" title='QClipboard::Clipboard' data-ref="QClipboard::Clipboard">Clipboard</a>);</td></tr>
+<tr><th id="494">494</th><td>}</td></tr>
+<tr><th id="495">495</th><td></td></tr>
+<tr><th id="496">496</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="497">497</th><td><i class="doc">    Returns<span class="command"> \c</span> <span class="arg">true</span> if this clipboard object owns the mouse selection</i></td></tr>
+<tr><th id="498">498</th><td><i class="doc">    data; otherwise returns<span class="command"> \c</span> <span class="arg">false.</span></i></td></tr>
+<tr><th id="499">499</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="500">500</th><td><em>bool</em> <a class="type" href="qclipboard.h.html#QClipboard" title='QClipboard' data-ref="QClipboard">QClipboard</a>::<dfn class="decl def fn" id="_ZNK10QClipboard13ownsSelectionEv" title='QClipboard::ownsSelection' data-ref="_ZNK10QClipboard13ownsSelectionEv">ownsSelection</dfn>() <em>const</em></td></tr>
+<tr><th id="501">501</th><td>{</td></tr>
+<tr><th id="502">502</th><td>    <b>return</b> <a class="member fn" href="#_ZNK10QClipboard8ownsModeENS_4ModeE" title='QClipboard::ownsMode' data-ref="_ZNK10QClipboard8ownsModeENS_4ModeE">ownsMode</a>(<span class='inlayHint'>mode:&nbsp;</span><a class="enum" href="qclipboard.h.html#QClipboard::Selection" title='QClipboard::Selection' data-ref="QClipboard::Selection">Selection</a>);</td></tr>
+<tr><th id="503">503</th><td>}</td></tr>
+<tr><th id="504">504</th><td></td></tr>
+<tr><th id="505">505</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="506">506</th><td><i class="doc">    <span class="command">\since</span> 4.2</i></td></tr>
+<tr><th id="507">507</th><td><i class="doc"></i></td></tr>
+<tr><th id="508">508</th><td><i class="doc">    Returns<span class="command"> \c</span> <span class="arg">true</span> if this clipboard object owns the find buffer data;</i></td></tr>
+<tr><th id="509">509</th><td><i class="doc">    otherwise returns<span class="command"> \c</span> <span class="arg">false.</span></i></td></tr>
+<tr><th id="510">510</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="511">511</th><td><em>bool</em> <a class="type" href="qclipboard.h.html#QClipboard" title='QClipboard' data-ref="QClipboard">QClipboard</a>::<dfn class="decl def fn" id="_ZNK10QClipboard14ownsFindBufferEv" title='QClipboard::ownsFindBuffer' data-ref="_ZNK10QClipboard14ownsFindBufferEv">ownsFindBuffer</dfn>() <em>const</em></td></tr>
+<tr><th id="512">512</th><td>{</td></tr>
+<tr><th id="513">513</th><td>    <b>return</b> <a class="member fn" href="#_ZNK10QClipboard8ownsModeENS_4ModeE" title='QClipboard::ownsMode' data-ref="_ZNK10QClipboard8ownsModeENS_4ModeE">ownsMode</a>(<span class='inlayHint'>mode:&nbsp;</span><a class="enum" href="qclipboard.h.html#QClipboard::FindBuffer" title='QClipboard::FindBuffer' data-ref="QClipboard::FindBuffer">FindBuffer</a>);</td></tr>
+<tr><th id="514">514</th><td>}</td></tr>
+<tr><th id="515">515</th><td></td></tr>
+<tr><th id="516">516</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="517">517</th><td><i class="doc">    <span class="command">\internal</span></i></td></tr>
+<tr><th id="518">518</th><td><i class="doc"><span class="verb">    \fn bool QClipboard::supportsMode(Mode mode) const;</span></i></td></tr>
+<tr><th id="519">519</th><td><i class="doc"><span class="verb"></span><span class="verb">    Returns \c true if the clipboard supports the clipboard mode speacified by \a mode;</span></i></td></tr>
+<tr><th id="520">520</th><td><i class="doc"><span class="verb"></span><span class="verb">    otherwise returns \c false.</span></i></td></tr>
+<tr><th id="521">521</th><td><i class="doc"><span class="verb"></span>*/</i><span class="verb"></span></td></tr>
+<tr><th id="522">522</th><td><span class="verb"></span><em>bool</em> <a class="type" href="qclipboard.h.html#QClipboard" title='QClipboard' data-ref="QClipboard">QClipboard</a>::<dfn class="decl def fn" id="_ZNK10QClipboard12supportsModeENS_4ModeE" title='QClipboard::supportsMode' data-ref="_ZNK10QClipboard12supportsModeENS_4ModeE">supportsMode</dfn>(<a class="type" href="qclipboard.h.html#QClipboard::Mode" title='QClipboard::Mode' data-ref="QClipboard::Mode">Mode</a> <dfn class="local col6 decl" id="36mode" title='mode' data-type='QClipboard::Mode' data-ref="36mode">mode</dfn>) <em>const</em></td></tr>
+<tr><th id="523">523</th><td>{</td></tr>
+<tr><th id="524">524</th><td>    <a class="type" href="qplatformclipboard.h.html#QPlatformClipboard" title='QPlatformClipboard' data-ref="QPlatformClipboard">QPlatformClipboard</a> *<dfn class="local col7 decl" id="37clipboard" title='clipboard' data-type='QPlatformClipboard *' data-ref="37clipboard">clipboard</dfn> = <a class="type" href="qguiapplication_p.h.html#QGuiApplicationPrivate" title='QGuiApplicationPrivate' data-ref="QGuiApplicationPrivate">QGuiApplicationPrivate</a>::<a class="ref fn" href="qguiapplication_p.h.html#_ZN22QGuiApplicationPrivate19platformIntegrationEv" title='QGuiApplicationPrivate::platformIntegration' data-ref="_ZN22QGuiApplicationPrivate19platformIntegrationEv">platformIntegration</a>()-&gt;<a class="virtual ref fn" href="qplatformintegration.h.html#_ZNK20QPlatformIntegration9clipboardEv" title='QPlatformIntegration::clipboard' data-ref="_ZNK20QPlatformIntegration9clipboardEv">clipboard</a>();</td></tr>
+<tr><th id="525">525</th><td>    <b>return</b> <a class="local col7 ref" href="#37clipboard" title='clipboard' data-ref="37clipboard">clipboard</a> &amp;&amp; <a class="local col7 ref" href="#37clipboard" title='clipboard' data-ref="37clipboard">clipboard</a>-&gt;<a class="virtual ref fn" href="qplatformclipboard.h.html#_ZNK18QPlatformClipboard12supportsModeEN10QClipboard4ModeE" title='QPlatformClipboard::supportsMode' data-ref="_ZNK18QPlatformClipboard12supportsModeEN10QClipboard4ModeE">supportsMode</a>(<a class="local col6 ref" href="#36mode" title='mode' data-ref="36mode">mode</a>);</td></tr>
+<tr><th id="526">526</th><td>}</td></tr>
+<tr><th id="527">527</th><td></td></tr>
+<tr><th id="528">528</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="529">529</th><td><i class="doc">    <span class="command">\internal</span></i></td></tr>
+<tr><th id="530">530</th><td><i class="doc"><span class="verb">    \fn bool QClipboard::ownsMode(Mode mode) const;</span></i></td></tr>
+<tr><th id="531">531</th><td><i class="doc"><span class="verb"></span><span class="verb">    Returns \c true if the clipboard supports the clipboard data speacified by \a mode;</span></i></td></tr>
+<tr><th id="532">532</th><td><i class="doc"><span class="verb"></span><span class="verb">    otherwise returns \c false.</span></i></td></tr>
+<tr><th id="533">533</th><td><i class="doc"><span class="verb"></span>*/</i><span class="verb"></span></td></tr>
+<tr><th id="534">534</th><td><span class="verb"></span><em>bool</em> <a class="type" href="qclipboard.h.html#QClipboard" title='QClipboard' data-ref="QClipboard">QClipboard</a>::<dfn class="decl def fn" id="_ZNK10QClipboard8ownsModeENS_4ModeE" title='QClipboard::ownsMode' data-ref="_ZNK10QClipboard8ownsModeENS_4ModeE">ownsMode</dfn>(<a class="type" href="qclipboard.h.html#QClipboard::Mode" title='QClipboard::Mode' data-ref="QClipboard::Mode">Mode</a> <dfn class="local col8 decl" id="38mode" title='mode' data-type='QClipboard::Mode' data-ref="38mode">mode</dfn>) <em>const</em></td></tr>
+<tr><th id="535">535</th><td>{</td></tr>
+<tr><th id="536">536</th><td>    <a class="type" href="qplatformclipboard.h.html#QPlatformClipboard" title='QPlatformClipboard' data-ref="QPlatformClipboard">QPlatformClipboard</a> *<dfn class="local col9 decl" id="39clipboard" title='clipboard' data-type='QPlatformClipboard *' data-ref="39clipboard">clipboard</dfn> = <a class="type" href="qguiapplication_p.h.html#QGuiApplicationPrivate" title='QGuiApplicationPrivate' data-ref="QGuiApplicationPrivate">QGuiApplicationPrivate</a>::<a class="ref fn" href="qguiapplication_p.h.html#_ZN22QGuiApplicationPrivate19platformIntegrationEv" title='QGuiApplicationPrivate::platformIntegration' data-ref="_ZN22QGuiApplicationPrivate19platformIntegrationEv">platformIntegration</a>()-&gt;<a class="virtual ref fn" href="qplatformintegration.h.html#_ZNK20QPlatformIntegration9clipboardEv" title='QPlatformIntegration::clipboard' data-ref="_ZNK20QPlatformIntegration9clipboardEv">clipboard</a>();</td></tr>
+<tr><th id="537">537</th><td>    <b>return</b> <a class="local col9 ref" href="#39clipboard" title='clipboard' data-ref="39clipboard">clipboard</a> &amp;&amp; <a class="local col9 ref" href="#39clipboard" title='clipboard' data-ref="39clipboard">clipboard</a>-&gt;<a class="virtual ref fn" href="qplatformclipboard.h.html#_ZNK18QPlatformClipboard8ownsModeEN10QClipboard4ModeE" title='QPlatformClipboard::ownsMode' data-ref="_ZNK18QPlatformClipboard8ownsModeEN10QClipboard4ModeE">ownsMode</a>(<a class="local col8 ref" href="#38mode" title='mode' data-ref="38mode">mode</a>);</td></tr>
+<tr><th id="538">538</th><td>}</td></tr>
+<tr><th id="539">539</th><td></td></tr>
+<tr><th id="540">540</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="541">541</th><td><i class="doc">    <span class="command">\internal</span></i></td></tr>
+<tr><th id="542">542</th><td><i class="doc"><span class="verb">    Emits the appropriate changed signal for \a mode.</span></i></td></tr>
+<tr><th id="543">543</th><td><i class="doc"><span class="verb"></span>*/</i><span class="verb"></span></td></tr>
+<tr><th id="544">544</th><td><span class="verb"></span><em>void</em> <a class="type" href="qclipboard.h.html#QClipboard" title='QClipboard' data-ref="QClipboard">QClipboard</a>::<dfn class="decl def fn" id="_ZN10QClipboard11emitChangedENS_4ModeE" title='QClipboard::emitChanged' data-ref="_ZN10QClipboard11emitChangedENS_4ModeE">emitChanged</dfn>(<a class="type" href="qclipboard.h.html#QClipboard::Mode" title='QClipboard::Mode' data-ref="QClipboard::Mode">Mode</a> <dfn class="local col0 decl" id="40mode" title='mode' data-type='QClipboard::Mode' data-ref="40mode">mode</dfn>)</td></tr>
+<tr><th id="545">545</th><td>{</td></tr>
+<tr><th id="546">546</th><td>    <b>switch</b> (<a class="local col0 ref" href="#40mode" title='mode' data-ref="40mode">mode</a>) {</td></tr>
+<tr><th id="547">547</th><td>        <b>case</b> <a class="enum" href="qclipboard.h.html#QClipboard::Clipboard" title='QClipboard::Clipboard' data-ref="QClipboard::Clipboard">Clipboard</a>:</td></tr>
+<tr><th id="548">548</th><td>            <a class="macro" href="../../corelib/kernel/qtmetamacros.h.html#49" title="" data-ref="_M/emit">emit</a> <a class="member fn" href="qclipboard.h.html#_ZN10QClipboard11dataChangedEv" title='QClipboard::dataChanged' data-ref="_ZN10QClipboard11dataChangedEv">dataChanged</a>();</td></tr>
+<tr><th id="549">549</th><td>        <b>break</b>;</td></tr>
+<tr><th id="550">550</th><td>        <b>case</b> <a class="enum" href="qclipboard.h.html#QClipboard::Selection" title='QClipboard::Selection' data-ref="QClipboard::Selection">Selection</a>:</td></tr>
+<tr><th id="551">551</th><td>            <a class="macro" href="../../corelib/kernel/qtmetamacros.h.html#49" title="" data-ref="_M/emit">emit</a> <a class="member fn" href="qclipboard.h.html#_ZN10QClipboard16selectionChangedEv" title='QClipboard::selectionChanged' data-ref="_ZN10QClipboard16selectionChangedEv">selectionChanged</a>();</td></tr>
+<tr><th id="552">552</th><td>        <b>break</b>;</td></tr>
+<tr><th id="553">553</th><td>        <b>case</b> <a class="enum" href="qclipboard.h.html#QClipboard::FindBuffer" title='QClipboard::FindBuffer' data-ref="QClipboard::FindBuffer">FindBuffer</a>:</td></tr>
+<tr><th id="554">554</th><td>            <a class="macro" href="../../corelib/kernel/qtmetamacros.h.html#49" title="" data-ref="_M/emit">emit</a> <a class="member fn" href="qclipboard.h.html#_ZN10QClipboard17findBufferChangedEv" title='QClipboard::findBufferChanged' data-ref="_ZN10QClipboard17findBufferChangedEv">findBufferChanged</a>();</td></tr>
+<tr><th id="555">555</th><td>        <b>break</b>;</td></tr>
+<tr><th id="556">556</th><td>    }</td></tr>
+<tr><th id="557">557</th><td></td></tr>
+<tr><th id="558">558</th><td>    <a class="macro" href="../../corelib/kernel/qtmetamacros.h.html#49" title="" data-ref="_M/emit">emit</a> <a class="member fn" href="qclipboard.h.html#_ZN10QClipboard7changedENS_4ModeE" title='QClipboard::changed' data-ref="_ZN10QClipboard7changedENS_4ModeE">changed</a>(<a class="local col0 ref" href="#40mode" title='mode' data-ref="40mode">mode</a>);</td></tr>
+<tr><th id="559">559</th><td>}</td></tr>
+<tr><th id="560">560</th><td></td></tr>
+<tr><th id="561">561</th><td><a class="macro" href="../../corelib/global/qtconfigmacros.h.html#104" title="" data-ref="_M/QT_END_NAMESPACE">QT_END_NAMESPACE</a></td></tr>
+<tr><th id="562">562</th><td></td></tr>
+<tr><th id="563">563</th><td><u>#include <span class='error' title="&apos;moc_qclipboard.cpp&apos; file not found">"moc_qclipboard.cpp"</span></u></td></tr>
+<tr><th id="564">564</th><td></td></tr>
+<tr><th id="565">565</th><td><u>#<span data-ppcond="6">endif</span> // QT_NO_CLIPBOARD</u></td></tr>
+<tr><th id="566">566</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2024-Jun-13</em> from project qtbase-6.5.0 revision <em>6.5.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

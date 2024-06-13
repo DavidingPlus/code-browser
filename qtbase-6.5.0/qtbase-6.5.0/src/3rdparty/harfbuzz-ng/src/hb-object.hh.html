@@ -1,0 +1,376 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>hb-object.hh source code [qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/hb-object.hh] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="hb_lockable_set_t,hb_object_header_t,hb_reference_count_t,hb_user_data_array_t "/>
+<link rel="stylesheet" href="../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/hb-object.hh'; var root_path = '../../../../..'; var data_path = '../../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../..'>qtbase-6.5.0</a>/<a href='../../..'>src</a>/<a href='../..'>3rdparty</a>/<a href='..'>harfbuzz-ng</a>/<a href='./'>src</a>/<a href='hb-object.hh.html'>hb-object.hh</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*</i></td></tr>
+<tr><th id="2">2</th><td><i> * Copyright © 2007  Chris Wilson</i></td></tr>
+<tr><th id="3">3</th><td><i> * Copyright © 2009,2010  Red Hat, Inc.</i></td></tr>
+<tr><th id="4">4</th><td><i> * Copyright © 2011,2012  Google, Inc.</i></td></tr>
+<tr><th id="5">5</th><td><i> *</i></td></tr>
+<tr><th id="6">6</th><td><i> *  This is part of HarfBuzz, a text shaping library.</i></td></tr>
+<tr><th id="7">7</th><td><i> *</i></td></tr>
+<tr><th id="8">8</th><td><i> * Permission is hereby granted, without written agreement and without</i></td></tr>
+<tr><th id="9">9</th><td><i> * license or royalty fees, to use, copy, modify, and distribute this</i></td></tr>
+<tr><th id="10">10</th><td><i> * software and its documentation for any purpose, provided that the</i></td></tr>
+<tr><th id="11">11</th><td><i> * above copyright notice and the following two paragraphs appear in</i></td></tr>
+<tr><th id="12">12</th><td><i> * all copies of this software.</i></td></tr>
+<tr><th id="13">13</th><td><i> *</i></td></tr>
+<tr><th id="14">14</th><td><i> * IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR</i></td></tr>
+<tr><th id="15">15</th><td><i> * DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES</i></td></tr>
+<tr><th id="16">16</th><td><i> * ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN</i></td></tr>
+<tr><th id="17">17</th><td><i> * IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH</i></td></tr>
+<tr><th id="18">18</th><td><i> * DAMAGE.</i></td></tr>
+<tr><th id="19">19</th><td><i> *</i></td></tr>
+<tr><th id="20">20</th><td><i> * THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,</i></td></tr>
+<tr><th id="21">21</th><td><i> * BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND</i></td></tr>
+<tr><th id="22">22</th><td><i> * FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS</i></td></tr>
+<tr><th id="23">23</th><td><i> * ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO</i></td></tr>
+<tr><th id="24">24</th><td><i> * PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.</i></td></tr>
+<tr><th id="25">25</th><td><i> *</i></td></tr>
+<tr><th id="26">26</th><td><i> * Contributor(s):</i></td></tr>
+<tr><th id="27">27</th><td><i> *	Chris Wilson &lt;chris@chris-wilson.co.uk&gt;</i></td></tr>
+<tr><th id="28">28</th><td><i> * Red Hat Author(s): Behdad Esfahbod</i></td></tr>
+<tr><th id="29">29</th><td><i> * Google Author(s): Behdad Esfahbod</i></td></tr>
+<tr><th id="30">30</th><td><i> */</i></td></tr>
+<tr><th id="31">31</th><td></td></tr>
+<tr><th id="32">32</th><td><u>#<span data-ppcond="32">ifndef</span> <span class="macro" data-ref="_M/HB_OBJECT_HH">HB_OBJECT_HH</span></u></td></tr>
+<tr><th id="33">33</th><td><u>#define <dfn class="macro" id="_M/HB_OBJECT_HH" data-ref="_M/HB_OBJECT_HH">HB_OBJECT_HH</dfn></u></td></tr>
+<tr><th id="34">34</th><td></td></tr>
+<tr><th id="35">35</th><td><u>#include <a href="hb.hh.html">"hb.hh"</a></u></td></tr>
+<tr><th id="36">36</th><td><u>#include <a href="hb-atomic.hh.html">"hb-atomic.hh"</a></u></td></tr>
+<tr><th id="37">37</th><td><u>#include <a href="hb-mutex.hh.html">"hb-mutex.hh"</a></u></td></tr>
+<tr><th id="38">38</th><td><u>#include <a href="hb-vector.hh.html">"hb-vector.hh"</a></u></td></tr>
+<tr><th id="39">39</th><td></td></tr>
+<tr><th id="40">40</th><td></td></tr>
+<tr><th id="41">41</th><td><i>/*</i></td></tr>
+<tr><th id="42">42</th><td><i> * Lockable set</i></td></tr>
+<tr><th id="43">43</th><td><i> */</i></td></tr>
+<tr><th id="44">44</th><td></td></tr>
+<tr><th id="45">45</th><td><b>template</b> &lt;<b>typename</b> item_t, <b>typename</b> lock_t&gt;</td></tr>
+<tr><th id="46">46</th><td><b>struct</b> <dfn class="type def" id="hb_lockable_set_t" title='hb_lockable_set_t' data-ref="hb_lockable_set_t">hb_lockable_set_t</dfn></td></tr>
+<tr><th id="47">47</th><td>{</td></tr>
+<tr><th id="48">48</th><td>  <a class="type" href="hb-vector.hh.html#hb_vector_t" title='hb_vector_t' data-ref="hb_vector_t">hb_vector_t</a>&lt;item_t&gt; <dfn class="decl field" id="hb_lockable_set_t::items" title='hb_lockable_set_t::items' data-ref="hb_lockable_set_t::items">items</dfn>;</td></tr>
+<tr><th id="49">49</th><td></td></tr>
+<tr><th id="50">50</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN17hb_lockable_set_t4initEv" title='hb_lockable_set_t::init' data-ref="_ZN17hb_lockable_set_t4initEv">init</dfn> () { <a class="member field" href="#hb_lockable_set_t::items" title='hb_lockable_set_t::items' data-ref="hb_lockable_set_t::items">items</a>.init (); }</td></tr>
+<tr><th id="51">51</th><td></td></tr>
+<tr><th id="52">52</th><td>  <b>template</b> &lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="53">53</th><td>  item_t *<dfn class="decl def fn" id="_ZN17hb_lockable_set_t17replace_or_insertETL0__RT0_b" title='hb_lockable_set_t::replace_or_insert' data-ref="_ZN17hb_lockable_set_t17replace_or_insertETL0__RT0_b">replace_or_insert</dfn> (T <dfn class="local col3 decl" id="2393v" title='v' data-type='T' data-ref="2393v">v</dfn>, lock_t &amp;<dfn class="local col4 decl" id="2394l" title='l' data-type='lock_t &amp;' data-ref="2394l">l</dfn>, <em>bool</em> <dfn class="local col5 decl" id="2395replace" title='replace' data-type='bool' data-ref="2395replace">replace</dfn>)</td></tr>
+<tr><th id="54">54</th><td>  {</td></tr>
+<tr><th id="55">55</th><td>    <a class="local col4 ref" href="#2394l" title='l' data-ref="2394l">l</a>.lock ();</td></tr>
+<tr><th id="56">56</th><td>    item_t *<dfn class="local col6 decl" id="2396item" title='item' data-type='item_t *' data-ref="2396item">item</dfn> = <a class="member field" href="#hb_lockable_set_t::items" title='hb_lockable_set_t::items' data-ref="hb_lockable_set_t::items">items</a>.lsearch (<a class="local col3 ref" href="#2393v" title='v' data-ref="2393v">v</a>);</td></tr>
+<tr><th id="57">57</th><td>    <b>if</b> (<a class="local col6 ref" href="#2396item" title='item' data-ref="2396item">item</a>) {</td></tr>
+<tr><th id="58">58</th><td>      <b>if</b> (<a class="local col5 ref" href="#2395replace" title='replace' data-ref="2395replace">replace</a>) {</td></tr>
+<tr><th id="59">59</th><td>	item_t <dfn class="local col7 decl" id="2397old" title='old' data-type='item_t' data-ref="2397old">old</dfn> = *<a class="local col6 ref" href="#2396item" title='item' data-ref="2396item">item</a>;</td></tr>
+<tr><th id="60">60</th><td>	*<a class="local col6 ref" href="#2396item" title='item' data-ref="2396item">item</a> = <a class="local col3 ref" href="#2393v" title='v' data-ref="2393v">v</a>;</td></tr>
+<tr><th id="61">61</th><td>	<a class="local col4 ref" href="#2394l" title='l' data-ref="2394l">l</a>.unlock ();</td></tr>
+<tr><th id="62">62</th><td>	<a class="local col7 ref" href="#2397old" title='old' data-ref="2397old">old</a>.fini ();</td></tr>
+<tr><th id="63">63</th><td>      }</td></tr>
+<tr><th id="64">64</th><td>      <b>else</b> {</td></tr>
+<tr><th id="65">65</th><td>	<a class="local col6 ref" href="#2396item" title='item' data-ref="2396item">item</a> = <b>nullptr</b>;</td></tr>
+<tr><th id="66">66</th><td>	<a class="local col4 ref" href="#2394l" title='l' data-ref="2394l">l</a>.unlock ();</td></tr>
+<tr><th id="67">67</th><td>      }</td></tr>
+<tr><th id="68">68</th><td>    } <b>else</b> {</td></tr>
+<tr><th id="69">69</th><td>      <a class="local col6 ref" href="#2396item" title='item' data-ref="2396item">item</a> = <a class="member field" href="#hb_lockable_set_t::items" title='hb_lockable_set_t::items' data-ref="hb_lockable_set_t::items">items</a>.push (<a class="local col3 ref" href="#2393v" title='v' data-ref="2393v">v</a>);</td></tr>
+<tr><th id="70">70</th><td>      <a class="local col4 ref" href="#2394l" title='l' data-ref="2394l">l</a>.unlock ();</td></tr>
+<tr><th id="71">71</th><td>    }</td></tr>
+<tr><th id="72">72</th><td>    <b>return</b> <a class="member field" href="#hb_lockable_set_t::items" title='hb_lockable_set_t::items' data-ref="hb_lockable_set_t::items">items</a>.in_error () ? <b>nullptr</b> : <a class="local col6 ref" href="#2396item" title='item' data-ref="2396item">item</a>;</td></tr>
+<tr><th id="73">73</th><td>  }</td></tr>
+<tr><th id="74">74</th><td></td></tr>
+<tr><th id="75">75</th><td>  <b>template</b> &lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="76">76</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN17hb_lockable_set_t6removeETL0__RT0_" title='hb_lockable_set_t::remove' data-ref="_ZN17hb_lockable_set_t6removeETL0__RT0_">remove</dfn> (T <dfn class="local col8 decl" id="2398v" title='v' data-type='T' data-ref="2398v">v</dfn>, lock_t &amp;<dfn class="local col9 decl" id="2399l" title='l' data-type='lock_t &amp;' data-ref="2399l">l</dfn>)</td></tr>
+<tr><th id="77">77</th><td>  {</td></tr>
+<tr><th id="78">78</th><td>    <a class="local col9 ref" href="#2399l" title='l' data-ref="2399l">l</a>.lock ();</td></tr>
+<tr><th id="79">79</th><td>    item_t *<dfn class="local col0 decl" id="2400item" title='item' data-type='item_t *' data-ref="2400item">item</dfn> = <a class="member field" href="#hb_lockable_set_t::items" title='hb_lockable_set_t::items' data-ref="hb_lockable_set_t::items">items</a>.lsearch (<a class="local col8 ref" href="#2398v" title='v' data-ref="2398v">v</a>);</td></tr>
+<tr><th id="80">80</th><td>    <b>if</b> (<a class="local col0 ref" href="#2400item" title='item' data-ref="2400item">item</a>)</td></tr>
+<tr><th id="81">81</th><td>    {</td></tr>
+<tr><th id="82">82</th><td>      item_t <dfn class="local col1 decl" id="2401old" title='old' data-type='item_t' data-ref="2401old">old</dfn> = *<a class="local col0 ref" href="#2400item" title='item' data-ref="2400item">item</a>;</td></tr>
+<tr><th id="83">83</th><td>      *<a class="local col0 ref" href="#2400item" title='item' data-ref="2400item">item</a> = <span class="namespace">std::</span>move (<a class="member field" href="#hb_lockable_set_t::items" title='hb_lockable_set_t::items' data-ref="hb_lockable_set_t::items">items</a>.tail ());</td></tr>
+<tr><th id="84">84</th><td>      <a class="member field" href="#hb_lockable_set_t::items" title='hb_lockable_set_t::items' data-ref="hb_lockable_set_t::items">items</a>.pop ();</td></tr>
+<tr><th id="85">85</th><td>      <a class="local col9 ref" href="#2399l" title='l' data-ref="2399l">l</a>.unlock ();</td></tr>
+<tr><th id="86">86</th><td>      <a class="local col1 ref" href="#2401old" title='old' data-ref="2401old">old</a>.fini ();</td></tr>
+<tr><th id="87">87</th><td>    } <b>else</b> {</td></tr>
+<tr><th id="88">88</th><td>      <a class="local col9 ref" href="#2399l" title='l' data-ref="2399l">l</a>.unlock ();</td></tr>
+<tr><th id="89">89</th><td>    }</td></tr>
+<tr><th id="90">90</th><td>  }</td></tr>
+<tr><th id="91">91</th><td></td></tr>
+<tr><th id="92">92</th><td>  <b>template</b> &lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="93">93</th><td>  <em>bool</em> <dfn class="decl def fn" id="_ZN17hb_lockable_set_t4findETL0__PT_RT0_" title='hb_lockable_set_t::find' data-ref="_ZN17hb_lockable_set_t4findETL0__PT_RT0_">find</dfn> (T <dfn class="local col2 decl" id="2402v" title='v' data-type='T' data-ref="2402v">v</dfn>, item_t *<dfn class="local col3 decl" id="2403i" title='i' data-type='item_t *' data-ref="2403i">i</dfn>, lock_t &amp;<dfn class="local col4 decl" id="2404l" title='l' data-type='lock_t &amp;' data-ref="2404l">l</dfn>)</td></tr>
+<tr><th id="94">94</th><td>  {</td></tr>
+<tr><th id="95">95</th><td>    <a class="local col4 ref" href="#2404l" title='l' data-ref="2404l">l</a>.lock ();</td></tr>
+<tr><th id="96">96</th><td>    item_t *<dfn class="local col5 decl" id="2405item" title='item' data-type='item_t *' data-ref="2405item">item</dfn> = <a class="member field" href="#hb_lockable_set_t::items" title='hb_lockable_set_t::items' data-ref="hb_lockable_set_t::items">items</a>.lsearch (<a class="local col2 ref" href="#2402v" title='v' data-ref="2402v">v</a>);</td></tr>
+<tr><th id="97">97</th><td>    <b>if</b> (<a class="local col5 ref" href="#2405item" title='item' data-ref="2405item">item</a>)</td></tr>
+<tr><th id="98">98</th><td>      *<a class="local col3 ref" href="#2403i" title='i' data-ref="2403i">i</a> = *<a class="local col5 ref" href="#2405item" title='item' data-ref="2405item">item</a>;</td></tr>
+<tr><th id="99">99</th><td>    <a class="local col4 ref" href="#2404l" title='l' data-ref="2404l">l</a>.unlock ();</td></tr>
+<tr><th id="100">100</th><td>    <b>return</b> !!<a class="local col5 ref" href="#2405item" title='item' data-ref="2405item">item</a>;</td></tr>
+<tr><th id="101">101</th><td>  }</td></tr>
+<tr><th id="102">102</th><td></td></tr>
+<tr><th id="103">103</th><td>  <b>template</b> &lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="104">104</th><td>  item_t *<dfn class="decl def fn" id="_ZN17hb_lockable_set_t14find_or_insertETL0__RT0_" title='hb_lockable_set_t::find_or_insert' data-ref="_ZN17hb_lockable_set_t14find_or_insertETL0__RT0_">find_or_insert</dfn> (T <dfn class="local col6 decl" id="2406v" title='v' data-type='T' data-ref="2406v">v</dfn>, lock_t &amp;<dfn class="local col7 decl" id="2407l" title='l' data-type='lock_t &amp;' data-ref="2407l">l</dfn>)</td></tr>
+<tr><th id="105">105</th><td>  {</td></tr>
+<tr><th id="106">106</th><td>    <a class="local col7 ref" href="#2407l" title='l' data-ref="2407l">l</a>.lock ();</td></tr>
+<tr><th id="107">107</th><td>    item_t *<dfn class="local col8 decl" id="2408item" title='item' data-type='item_t *' data-ref="2408item">item</dfn> = <a class="member field" href="#hb_lockable_set_t::items" title='hb_lockable_set_t::items' data-ref="hb_lockable_set_t::items">items</a>.find (<a class="local col6 ref" href="#2406v" title='v' data-ref="2406v">v</a>);</td></tr>
+<tr><th id="108">108</th><td>    <b>if</b> (!<a class="local col8 ref" href="#2408item" title='item' data-ref="2408item">item</a>) {</td></tr>
+<tr><th id="109">109</th><td>      <a class="local col8 ref" href="#2408item" title='item' data-ref="2408item">item</a> = <a class="member field" href="#hb_lockable_set_t::items" title='hb_lockable_set_t::items' data-ref="hb_lockable_set_t::items">items</a>.push (<a class="local col6 ref" href="#2406v" title='v' data-ref="2406v">v</a>);</td></tr>
+<tr><th id="110">110</th><td>    }</td></tr>
+<tr><th id="111">111</th><td>    <a class="local col7 ref" href="#2407l" title='l' data-ref="2407l">l</a>.unlock ();</td></tr>
+<tr><th id="112">112</th><td>    <b>return</b> <a class="local col8 ref" href="#2408item" title='item' data-ref="2408item">item</a>;</td></tr>
+<tr><th id="113">113</th><td>  }</td></tr>
+<tr><th id="114">114</th><td></td></tr>
+<tr><th id="115">115</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN17hb_lockable_set_t4finiERT0_" title='hb_lockable_set_t::fini' data-ref="_ZN17hb_lockable_set_t4finiERT0_">fini</dfn> (lock_t &amp;<dfn class="local col9 decl" id="2409l" title='l' data-type='lock_t &amp;' data-ref="2409l">l</dfn>)</td></tr>
+<tr><th id="116">116</th><td>  {</td></tr>
+<tr><th id="117">117</th><td>    <b>if</b> (!<a class="member field" href="#hb_lockable_set_t::items" title='hb_lockable_set_t::items' data-ref="hb_lockable_set_t::items">items</a>.length)</td></tr>
+<tr><th id="118">118</th><td>    {</td></tr>
+<tr><th id="119">119</th><td>      <i>/* No need to lock. */</i></td></tr>
+<tr><th id="120">120</th><td>      <a class="member field" href="#hb_lockable_set_t::items" title='hb_lockable_set_t::items' data-ref="hb_lockable_set_t::items">items</a>.fini ();</td></tr>
+<tr><th id="121">121</th><td>      <b>return</b>;</td></tr>
+<tr><th id="122">122</th><td>    }</td></tr>
+<tr><th id="123">123</th><td>    <a class="local col9 ref" href="#2409l" title='l' data-ref="2409l">l</a>.lock ();</td></tr>
+<tr><th id="124">124</th><td>    <b>while</b> (<a class="member field" href="#hb_lockable_set_t::items" title='hb_lockable_set_t::items' data-ref="hb_lockable_set_t::items">items</a>.length)</td></tr>
+<tr><th id="125">125</th><td>    {</td></tr>
+<tr><th id="126">126</th><td>      item_t <dfn class="local col0 decl" id="2410old" title='old' data-type='item_t' data-ref="2410old">old</dfn> = <a class="member field" href="#hb_lockable_set_t::items" title='hb_lockable_set_t::items' data-ref="hb_lockable_set_t::items">items</a>.tail ();</td></tr>
+<tr><th id="127">127</th><td>      <a class="member field" href="#hb_lockable_set_t::items" title='hb_lockable_set_t::items' data-ref="hb_lockable_set_t::items">items</a>.pop ();</td></tr>
+<tr><th id="128">128</th><td>      <a class="local col9 ref" href="#2409l" title='l' data-ref="2409l">l</a>.unlock ();</td></tr>
+<tr><th id="129">129</th><td>      <a class="local col0 ref" href="#2410old" title='old' data-ref="2410old">old</a>.fini ();</td></tr>
+<tr><th id="130">130</th><td>      <a class="local col9 ref" href="#2409l" title='l' data-ref="2409l">l</a>.lock ();</td></tr>
+<tr><th id="131">131</th><td>    }</td></tr>
+<tr><th id="132">132</th><td>    <a class="member field" href="#hb_lockable_set_t::items" title='hb_lockable_set_t::items' data-ref="hb_lockable_set_t::items">items</a>.fini ();</td></tr>
+<tr><th id="133">133</th><td>    <a class="local col9 ref" href="#2409l" title='l' data-ref="2409l">l</a>.unlock ();</td></tr>
+<tr><th id="134">134</th><td>  }</td></tr>
+<tr><th id="135">135</th><td></td></tr>
+<tr><th id="136">136</th><td>};</td></tr>
+<tr><th id="137">137</th><td></td></tr>
+<tr><th id="138">138</th><td></td></tr>
+<tr><th id="139">139</th><td><i>/*</i></td></tr>
+<tr><th id="140">140</th><td><i> * Reference-count.</i></td></tr>
+<tr><th id="141">141</th><td><i> */</i></td></tr>
+<tr><th id="142">142</th><td></td></tr>
+<tr><th id="143">143</th><td><b>struct</b> <dfn class="type def" id="hb_reference_count_t" title='hb_reference_count_t' data-ref="hb_reference_count_t">hb_reference_count_t</dfn></td></tr>
+<tr><th id="144">144</th><td>{</td></tr>
+<tr><th id="145">145</th><td>  <em>mutable</em> <a class="type" href="hb-atomic.hh.html#hb_atomic_int_t" title='hb_atomic_int_t' data-ref="hb_atomic_int_t">hb_atomic_int_t</a> <dfn class="decl field" id="hb_reference_count_t::ref_count" title='hb_reference_count_t::ref_count' data-ref="hb_reference_count_t::ref_count">ref_count</dfn>;</td></tr>
+<tr><th id="146">146</th><td></td></tr>
+<tr><th id="147">147</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN20hb_reference_count_t4initEi" title='hb_reference_count_t::init' data-ref="_ZN20hb_reference_count_t4initEi">init</dfn> (<em>int</em> <dfn class="local col1 decl" id="2411v" title='v' data-type='int' data-ref="2411v">v</dfn> = <var>1</var>) { <a class="member field" href="#hb_reference_count_t::ref_count" title='hb_reference_count_t::ref_count' data-ref="hb_reference_count_t::ref_count">ref_count</a> <a class="ref fn" href="hb-atomic.hh.html#_ZN15hb_atomic_int_taSEi" title='hb_atomic_int_t::operator=' data-ref="_ZN15hb_atomic_int_taSEi">=</a> <a class="local col1 ref" href="#2411v" title='v' data-ref="2411v">v</a>; }</td></tr>
+<tr><th id="148">148</th><td>  <em>int</em> <dfn class="decl def fn" id="_ZNK20hb_reference_count_t11get_relaxedEv" title='hb_reference_count_t::get_relaxed' data-ref="_ZNK20hb_reference_count_t11get_relaxedEv">get_relaxed</dfn> () <em>const</em> { <b>return</b> <a class="ref fn fake" href="hb-atomic.hh.html#_ZNK15hb_atomic_int_tcviEv" title='hb_atomic_int_t::operator int' data-ref="_ZNK15hb_atomic_int_tcviEv"></a><a class="member field" href="#hb_reference_count_t::ref_count" title='hb_reference_count_t::ref_count' data-ref="hb_reference_count_t::ref_count">ref_count</a>; }</td></tr>
+<tr><th id="149">149</th><td>  <em>int</em> <dfn class="decl def fn" id="_ZNK20hb_reference_count_t3incEv" title='hb_reference_count_t::inc' data-ref="_ZNK20hb_reference_count_t3incEv">inc</dfn> () <em>const</em> { <b>return</b> <a class="member field" href="#hb_reference_count_t::ref_count" title='hb_reference_count_t::ref_count' data-ref="hb_reference_count_t::ref_count">ref_count</a>.<a class="ref fn" href="hb-atomic.hh.html#_ZN15hb_atomic_int_t3incEv" title='hb_atomic_int_t::inc' data-ref="_ZN15hb_atomic_int_t3incEv">inc</a> (); }</td></tr>
+<tr><th id="150">150</th><td>  <em>int</em> <dfn class="decl def fn" id="_ZNK20hb_reference_count_t3decEv" title='hb_reference_count_t::dec' data-ref="_ZNK20hb_reference_count_t3decEv">dec</dfn> () <em>const</em> { <b>return</b> <a class="member field" href="#hb_reference_count_t::ref_count" title='hb_reference_count_t::ref_count' data-ref="hb_reference_count_t::ref_count">ref_count</a>.<a class="ref fn" href="hb-atomic.hh.html#_ZN15hb_atomic_int_t3decEv" title='hb_atomic_int_t::dec' data-ref="_ZN15hb_atomic_int_t3decEv">dec</a> (); }</td></tr>
+<tr><th id="151">151</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN20hb_reference_count_t4finiEv" title='hb_reference_count_t::fini' data-ref="_ZN20hb_reference_count_t4finiEv">fini</dfn> () { <a class="member field" href="#hb_reference_count_t::ref_count" title='hb_reference_count_t::ref_count' data-ref="hb_reference_count_t::ref_count">ref_count</a> <a class="ref fn" href="hb-atomic.hh.html#_ZN15hb_atomic_int_taSEi" title='hb_atomic_int_t::operator=' data-ref="_ZN15hb_atomic_int_taSEi">=</a> -<var>0x0000DEAD</var>; }</td></tr>
+<tr><th id="152">152</th><td></td></tr>
+<tr><th id="153">153</th><td>  <em>bool</em> <dfn class="decl def fn" id="_ZNK20hb_reference_count_t8is_inertEv" title='hb_reference_count_t::is_inert' data-ref="_ZNK20hb_reference_count_t8is_inertEv">is_inert</dfn> () <em>const</em> { <b>return</b> !<a class="ref fn fake" href="hb-atomic.hh.html#_ZNK15hb_atomic_int_tcviEv" title='hb_atomic_int_t::operator int' data-ref="_ZNK15hb_atomic_int_tcviEv"></a><a class="member field" href="#hb_reference_count_t::ref_count" title='hb_reference_count_t::ref_count' data-ref="hb_reference_count_t::ref_count">ref_count</a>; }</td></tr>
+<tr><th id="154">154</th><td>  <em>bool</em> <dfn class="decl def fn" id="_ZNK20hb_reference_count_t8is_validEv" title='hb_reference_count_t::is_valid' data-ref="_ZNK20hb_reference_count_t8is_validEv">is_valid</dfn> () <em>const</em> { <b>return</b> <a class="ref fn fake" href="hb-atomic.hh.html#_ZNK15hb_atomic_int_tcviEv" title='hb_atomic_int_t::operator int' data-ref="_ZNK15hb_atomic_int_tcviEv"></a><a class="member field" href="#hb_reference_count_t::ref_count" title='hb_reference_count_t::ref_count' data-ref="hb_reference_count_t::ref_count">ref_count</a> &gt; <var>0</var>; }</td></tr>
+<tr><th id="155">155</th><td>};</td></tr>
+<tr><th id="156">156</th><td></td></tr>
+<tr><th id="157">157</th><td></td></tr>
+<tr><th id="158">158</th><td><i>/* user_data */</i></td></tr>
+<tr><th id="159">159</th><td></td></tr>
+<tr><th id="160">160</th><td><b>struct</b> <dfn class="type def" id="hb_user_data_array_t" title='hb_user_data_array_t' data-ref="hb_user_data_array_t">hb_user_data_array_t</dfn></td></tr>
+<tr><th id="161">161</th><td>{</td></tr>
+<tr><th id="162">162</th><td>  <b>struct</b> <dfn class="type def" id="hb_user_data_array_t::hb_user_data_item_t" title='hb_user_data_array_t::hb_user_data_item_t' data-ref="hb_user_data_array_t::hb_user_data_item_t">hb_user_data_item_t</dfn> {</td></tr>
+<tr><th id="163">163</th><td>    <a class="typedef" href="hb-common.h.html#hb_user_data_key_t" title='hb_user_data_key_t' data-type='struct hb_user_data_key_t' data-ref="hb_user_data_key_t">hb_user_data_key_t</a> *<dfn class="decl field" id="hb_user_data_array_t::hb_user_data_item_t::key" title='hb_user_data_array_t::hb_user_data_item_t::key' data-ref="hb_user_data_array_t::hb_user_data_item_t::key">key</dfn>;</td></tr>
+<tr><th id="164">164</th><td>    <em>void</em> *<dfn class="decl field" id="hb_user_data_array_t::hb_user_data_item_t::data" title='hb_user_data_array_t::hb_user_data_item_t::data' data-ref="hb_user_data_array_t::hb_user_data_item_t::data">data</dfn>;</td></tr>
+<tr><th id="165">165</th><td>    <a class="typedef" href="hb-common.h.html#hb_destroy_func_t" title='hb_destroy_func_t' data-type='void (*)(void *)' data-ref="hb_destroy_func_t">hb_destroy_func_t</a> <dfn class="decl field" id="hb_user_data_array_t::hb_user_data_item_t::destroy" title='hb_user_data_array_t::hb_user_data_item_t::destroy' data-ref="hb_user_data_array_t::hb_user_data_item_t::destroy">destroy</dfn>;</td></tr>
+<tr><th id="166">166</th><td></td></tr>
+<tr><th id="167">167</th><td>    <em>bool</em> <dfn class="decl def fn" id="_ZNK20hb_user_data_array_t19hb_user_data_item_teqEPK18hb_user_data_key_t" title='hb_user_data_array_t::hb_user_data_item_t::operator==' data-ref="_ZNK20hb_user_data_array_t19hb_user_data_item_teqEPK18hb_user_data_key_t"><b>operator</b> ==</dfn> (<em>const</em> <a class="typedef" href="hb-common.h.html#hb_user_data_key_t" title='hb_user_data_key_t' data-type='struct hb_user_data_key_t' data-ref="hb_user_data_key_t">hb_user_data_key_t</a> *<dfn class="local col2 decl" id="2412other_key" title='other_key' data-type='const hb_user_data_key_t *' data-ref="2412other_key">other_key</dfn>) <em>const</em> { <b>return</b> <a class="member field" href="#hb_user_data_array_t::hb_user_data_item_t::key" title='hb_user_data_array_t::hb_user_data_item_t::key' data-ref="hb_user_data_array_t::hb_user_data_item_t::key">key</a> == <a class="local col2 ref" href="#2412other_key" title='other_key' data-ref="2412other_key">other_key</a>; }</td></tr>
+<tr><th id="168">168</th><td>    <em>bool</em> <dfn class="decl def fn" id="_ZNK20hb_user_data_array_t19hb_user_data_item_teqERKS0_" title='hb_user_data_array_t::hb_user_data_item_t::operator==' data-ref="_ZNK20hb_user_data_array_t19hb_user_data_item_teqERKS0_"><b>operator</b> ==</dfn> (<em>const</em> <a class="type" href="#hb_user_data_array_t::hb_user_data_item_t" title='hb_user_data_array_t::hb_user_data_item_t' data-ref="hb_user_data_array_t::hb_user_data_item_t">hb_user_data_item_t</a> &amp;<dfn class="local col3 decl" id="2413other" title='other' data-type='const hb_user_data_array_t::hb_user_data_item_t &amp;' data-ref="2413other">other</dfn>) <em>const</em> { <b>return</b> <a class="member field" href="#hb_user_data_array_t::hb_user_data_item_t::key" title='hb_user_data_array_t::hb_user_data_item_t::key' data-ref="hb_user_data_array_t::hb_user_data_item_t::key">key</a> == <a class="local col3 ref" href="#2413other" title='other' data-ref="2413other">other</a>.<a class="member field" href="#hb_user_data_array_t::hb_user_data_item_t::key" title='hb_user_data_array_t::hb_user_data_item_t::key' data-ref="hb_user_data_array_t::hb_user_data_item_t::key">key</a>; }</td></tr>
+<tr><th id="169">169</th><td></td></tr>
+<tr><th id="170">170</th><td>    <em>void</em> <dfn class="decl def fn" id="_ZN20hb_user_data_array_t19hb_user_data_item_t4finiEv" title='hb_user_data_array_t::hb_user_data_item_t::fini' data-ref="_ZN20hb_user_data_array_t19hb_user_data_item_t4finiEv">fini</dfn> () { <b>if</b> (<a class="member field" href="#hb_user_data_array_t::hb_user_data_item_t::destroy" title='hb_user_data_array_t::hb_user_data_item_t::destroy' data-ref="hb_user_data_array_t::hb_user_data_item_t::destroy">destroy</a>) <a class="member field" href="#hb_user_data_array_t::hb_user_data_item_t::destroy" title='hb_user_data_array_t::hb_user_data_item_t::destroy' data-ref="hb_user_data_array_t::hb_user_data_item_t::destroy">destroy</a> (<a class="member field" href="#hb_user_data_array_t::hb_user_data_item_t::data" title='hb_user_data_array_t::hb_user_data_item_t::data' data-ref="hb_user_data_array_t::hb_user_data_item_t::data">data</a>); }</td></tr>
+<tr><th id="171">171</th><td>  };</td></tr>
+<tr><th id="172">172</th><td></td></tr>
+<tr><th id="173">173</th><td>  <a class="type" href="hb-mutex.hh.html#hb_mutex_t" title='hb_mutex_t' data-ref="hb_mutex_t">hb_mutex_t</a> <dfn class="decl field" id="hb_user_data_array_t::lock" title='hb_user_data_array_t::lock' data-ref="hb_user_data_array_t::lock">lock</dfn>;</td></tr>
+<tr><th id="174">174</th><td>  <a class="type" href="#hb_lockable_set_t" title='hb_lockable_set_t' data-ref="hb_lockable_set_t">hb_lockable_set_t</a>&lt;<a class="type" href="#hb_user_data_array_t::hb_user_data_item_t" title='hb_user_data_array_t::hb_user_data_item_t' data-ref="hb_user_data_array_t::hb_user_data_item_t">hb_user_data_item_t</a>, <a class="type" href="hb-mutex.hh.html#hb_mutex_t" title='hb_mutex_t' data-ref="hb_mutex_t">hb_mutex_t</a>&gt; <dfn class="decl field" id="hb_user_data_array_t::items" title='hb_user_data_array_t::items' data-ref="hb_user_data_array_t::items">items</dfn>;</td></tr>
+<tr><th id="175">175</th><td></td></tr>
+<tr><th id="176">176</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN20hb_user_data_array_t4initEv" title='hb_user_data_array_t::init' data-ref="_ZN20hb_user_data_array_t4initEv">init</dfn> () { <a class="member field" href="#hb_user_data_array_t::lock" title='hb_user_data_array_t::lock' data-ref="hb_user_data_array_t::lock">lock</a>.<a class="ref fn" href="hb-mutex.hh.html#_ZN10hb_mutex_t4initEv" title='hb_mutex_t::init' data-ref="_ZN10hb_mutex_t4initEv">init</a> (); <a class="member field" href="#hb_user_data_array_t::items" title='hb_user_data_array_t::items' data-ref="hb_user_data_array_t::items">items</a>.<a class="ref fn" href="#_ZN17hb_lockable_set_t4initEv" title='hb_lockable_set_t::init' data-ref="_ZN17hb_lockable_set_t4initEv">init</a> (); }</td></tr>
+<tr><th id="177">177</th><td></td></tr>
+<tr><th id="178">178</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN20hb_user_data_array_t4finiEv" title='hb_user_data_array_t::fini' data-ref="_ZN20hb_user_data_array_t4finiEv">fini</dfn> () { <a class="member field" href="#hb_user_data_array_t::items" title='hb_user_data_array_t::items' data-ref="hb_user_data_array_t::items">items</a>.<a class="ref fn" href="#_ZN17hb_lockable_set_t4finiERT0_" title='hb_lockable_set_t::fini' data-ref="_ZN17hb_lockable_set_t4finiERT0_">fini</a> (<span class='inlayHint'>l&amp;:&nbsp;</span><span class='refarg'><a class="member field" href="#hb_user_data_array_t::lock" title='hb_user_data_array_t::lock' data-ref="hb_user_data_array_t::lock">lock</a></span>); <a class="member field" href="#hb_user_data_array_t::lock" title='hb_user_data_array_t::lock' data-ref="hb_user_data_array_t::lock">lock</a>.<a class="ref fn" href="hb-mutex.hh.html#_ZN10hb_mutex_t4finiEv" title='hb_mutex_t::fini' data-ref="_ZN10hb_mutex_t4finiEv">fini</a> (); }</td></tr>
+<tr><th id="179">179</th><td></td></tr>
+<tr><th id="180">180</th><td>  <em>bool</em> <dfn class="decl def fn" id="_ZN20hb_user_data_array_t3setEP18hb_user_data_key_tPvPFvS2_Ei" title='hb_user_data_array_t::set' data-ref="_ZN20hb_user_data_array_t3setEP18hb_user_data_key_tPvPFvS2_Ei">set</dfn> (<a class="typedef" href="hb-common.h.html#hb_user_data_key_t" title='hb_user_data_key_t' data-type='struct hb_user_data_key_t' data-ref="hb_user_data_key_t">hb_user_data_key_t</a> *<dfn class="local col4 decl" id="2414key" title='key' data-type='hb_user_data_key_t *' data-ref="2414key">key</dfn>,</td></tr>
+<tr><th id="181">181</th><td>	    <em>void</em> *              <dfn class="local col5 decl" id="2415data" title='data' data-type='void *' data-ref="2415data">data</dfn>,</td></tr>
+<tr><th id="182">182</th><td>	    <a class="typedef" href="hb-common.h.html#hb_destroy_func_t" title='hb_destroy_func_t' data-type='void (*)(void *)' data-ref="hb_destroy_func_t">hb_destroy_func_t</a>   <dfn class="local col6 decl" id="2416destroy" title='destroy' data-type='hb_destroy_func_t' data-ref="2416destroy">destroy</dfn>,</td></tr>
+<tr><th id="183">183</th><td>	    <a class="typedef" href="hb-common.h.html#hb_bool_t" title='hb_bool_t' data-type='int' data-ref="hb_bool_t">hb_bool_t</a>           <dfn class="local col7 decl" id="2417replace" title='replace' data-type='hb_bool_t' data-ref="2417replace">replace</dfn>)</td></tr>
+<tr><th id="184">184</th><td>  {</td></tr>
+<tr><th id="185">185</th><td>    <b>if</b> (!<a class="local col4 ref" href="#2414key" title='key' data-ref="2414key">key</a>)</td></tr>
+<tr><th id="186">186</th><td>      <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="187">187</th><td></td></tr>
+<tr><th id="188">188</th><td>    <b>if</b> (<a class="local col7 ref" href="#2417replace" title='replace' data-ref="2417replace">replace</a>) {</td></tr>
+<tr><th id="189">189</th><td>      <b>if</b> (!<a class="local col5 ref" href="#2415data" title='data' data-ref="2415data">data</a> &amp;&amp; !<a class="local col6 ref" href="#2416destroy" title='destroy' data-ref="2416destroy">destroy</a>) {</td></tr>
+<tr><th id="190">190</th><td>	<a class="member field" href="#hb_user_data_array_t::items" title='hb_user_data_array_t::items' data-ref="hb_user_data_array_t::items">items</a>.<a class="ref fn" href="#_ZN17hb_lockable_set_t6removeETL0__RT0_" title='hb_lockable_set_t::remove' data-ref="_ZN17hb_lockable_set_t6removeETL0__RT0_">remove</a> (<span class='inlayHint'>v:&nbsp;</span><a class="local col4 ref" href="#2414key" title='key' data-ref="2414key">key</a>, <span class='inlayHint'>l&amp;:&nbsp;</span><span class='refarg'><a class="member field" href="#hb_user_data_array_t::lock" title='hb_user_data_array_t::lock' data-ref="hb_user_data_array_t::lock">lock</a></span>);</td></tr>
+<tr><th id="191">191</th><td>	<b>return</b> <b>true</b>;</td></tr>
+<tr><th id="192">192</th><td>      }</td></tr>
+<tr><th id="193">193</th><td>    }</td></tr>
+<tr><th id="194">194</th><td>    <a class="type" href="#hb_user_data_array_t::hb_user_data_item_t" title='hb_user_data_array_t::hb_user_data_item_t' data-ref="hb_user_data_array_t::hb_user_data_item_t">hb_user_data_item_t</a> <dfn class="local col8 decl" id="2418item" title='item' data-type='hb_user_data_array_t::hb_user_data_item_t' data-ref="2418item">item</dfn> = {<span class='inlayHint'>.key:&nbsp;</span><a class="local col4 ref" href="#2414key" title='key' data-ref="2414key">key</a>, <span class='inlayHint'>.data:&nbsp;</span><a class="local col5 ref" href="#2415data" title='data' data-ref="2415data">data</a>, <span class='inlayHint'>.destroy:&nbsp;</span><a class="local col6 ref" href="#2416destroy" title='destroy' data-ref="2416destroy">destroy</a>};</td></tr>
+<tr><th id="195">195</th><td>    <em>bool</em> <dfn class="local col9 decl" id="2419ret" title='ret' data-type='bool' data-ref="2419ret">ret</dfn> = !!<a class="member field" href="#hb_user_data_array_t::items" title='hb_user_data_array_t::items' data-ref="hb_user_data_array_t::items">items</a>.<a class="ref fn" href="#_ZN17hb_lockable_set_t17replace_or_insertETL0__RT0_b" title='hb_lockable_set_t::replace_or_insert' data-ref="_ZN17hb_lockable_set_t17replace_or_insertETL0__RT0_b">replace_or_insert</a> (<a class="ref fn fake" href="#162" title='hb_user_data_array_t::hb_user_data_item_t::hb_user_data_item_t' data-ref="_ZN20hb_user_data_array_t19hb_user_data_item_tC1ERKS0_"></a><span class='inlayHint'>v:&nbsp;</span><a class="local col8 ref" href="#2418item" title='item' data-ref="2418item">item</a>, <span class='inlayHint'>l&amp;:&nbsp;</span><span class='refarg'><a class="member field" href="#hb_user_data_array_t::lock" title='hb_user_data_array_t::lock' data-ref="hb_user_data_array_t::lock">lock</a></span>, <span class='inlayHint'>replace:&nbsp;</span>(<em>bool</em>) <a class="local col7 ref" href="#2417replace" title='replace' data-ref="2417replace">replace</a>);</td></tr>
+<tr><th id="196">196</th><td></td></tr>
+<tr><th id="197">197</th><td>    <b>return</b> <a class="local col9 ref" href="#2419ret" title='ret' data-ref="2419ret">ret</a>;</td></tr>
+<tr><th id="198">198</th><td>  }</td></tr>
+<tr><th id="199">199</th><td></td></tr>
+<tr><th id="200">200</th><td>  <em>void</em> *<dfn class="decl def fn" id="_ZN20hb_user_data_array_t3getEP18hb_user_data_key_t" title='hb_user_data_array_t::get' data-ref="_ZN20hb_user_data_array_t3getEP18hb_user_data_key_t">get</dfn> (<a class="typedef" href="hb-common.h.html#hb_user_data_key_t" title='hb_user_data_key_t' data-type='struct hb_user_data_key_t' data-ref="hb_user_data_key_t">hb_user_data_key_t</a> *<dfn class="local col0 decl" id="2420key" title='key' data-type='hb_user_data_key_t *' data-ref="2420key">key</dfn>)</td></tr>
+<tr><th id="201">201</th><td>  {</td></tr>
+<tr><th id="202">202</th><td>    <a class="type" href="#hb_user_data_array_t::hb_user_data_item_t" title='hb_user_data_array_t::hb_user_data_item_t' data-ref="hb_user_data_array_t::hb_user_data_item_t">hb_user_data_item_t</a> <dfn class="local col1 decl" id="2421item" title='item' data-type='hb_user_data_array_t::hb_user_data_item_t' data-ref="2421item">item</dfn> = {<span class='inlayHint'>.key:&nbsp;</span><b>nullptr</b>, <span class='inlayHint'>.data:&nbsp;</span><b>nullptr</b>, <span class='inlayHint'>.destroy:&nbsp;</span><b>nullptr</b>};</td></tr>
+<tr><th id="203">203</th><td></td></tr>
+<tr><th id="204">204</th><td>    <b>return</b> <a class="member field" href="#hb_user_data_array_t::items" title='hb_user_data_array_t::items' data-ref="hb_user_data_array_t::items">items</a>.<a class="ref fn" href="#_ZN17hb_lockable_set_t4findETL0__PT_RT0_" title='hb_lockable_set_t::find' data-ref="_ZN17hb_lockable_set_t4findETL0__PT_RT0_">find</a> (<span class='inlayHint'>v:&nbsp;</span><a class="local col0 ref" href="#2420key" title='key' data-ref="2420key">key</a>, <span class='inlayHint'>i:&nbsp;</span>&amp;<a class="local col1 ref" href="#2421item" title='item' data-ref="2421item">item</a>, <span class='inlayHint'>l&amp;:&nbsp;</span><span class='refarg'><a class="member field" href="#hb_user_data_array_t::lock" title='hb_user_data_array_t::lock' data-ref="hb_user_data_array_t::lock">lock</a></span>) ? <a class="local col1 ref" href="#2421item" title='item' data-ref="2421item">item</a>.<a class="ref field" href="#hb_user_data_array_t::hb_user_data_item_t::data" title='hb_user_data_array_t::hb_user_data_item_t::data' data-ref="hb_user_data_array_t::hb_user_data_item_t::data">data</a> : <b>nullptr</b>;</td></tr>
+<tr><th id="205">205</th><td>  }</td></tr>
+<tr><th id="206">206</th><td>};</td></tr>
+<tr><th id="207">207</th><td></td></tr>
+<tr><th id="208">208</th><td></td></tr>
+<tr><th id="209">209</th><td><i>/*</i></td></tr>
+<tr><th id="210">210</th><td><i> * Object header</i></td></tr>
+<tr><th id="211">211</th><td><i> */</i></td></tr>
+<tr><th id="212">212</th><td></td></tr>
+<tr><th id="213">213</th><td><b>struct</b> <dfn class="type def" id="hb_object_header_t" title='hb_object_header_t' data-ref="hb_object_header_t">hb_object_header_t</dfn></td></tr>
+<tr><th id="214">214</th><td>{</td></tr>
+<tr><th id="215">215</th><td>  <a class="type" href="#hb_reference_count_t" title='hb_reference_count_t' data-ref="hb_reference_count_t">hb_reference_count_t</a> <dfn class="decl field" id="hb_object_header_t::ref_count" title='hb_object_header_t::ref_count' data-ref="hb_object_header_t::ref_count">ref_count</dfn>;</td></tr>
+<tr><th id="216">216</th><td>  <em>mutable</em> <a class="type" href="hb-atomic.hh.html#hb_atomic_int_t" title='hb_atomic_int_t' data-ref="hb_atomic_int_t">hb_atomic_int_t</a> <dfn class="decl field" id="hb_object_header_t::writable" title='hb_object_header_t::writable' data-ref="hb_object_header_t::writable">writable</dfn> = <a class="ref fn fake" href="hb-atomic.hh.html#_ZN15hb_atomic_int_tC1Ei" title='hb_atomic_int_t::hb_atomic_int_t' data-ref="_ZN15hb_atomic_int_tC1Ei"></a><var>0</var>;</td></tr>
+<tr><th id="217">217</th><td>  <a class="type" href="hb-atomic.hh.html#hb_atomic_ptr_t" title='hb_atomic_ptr_t' data-ref="hb_atomic_ptr_t">hb_atomic_ptr_t</a>&lt;<a class="type" href="#hb_user_data_array_t" title='hb_user_data_array_t' data-ref="hb_user_data_array_t">hb_user_data_array_t</a>&gt; <dfn class="decl field" id="hb_object_header_t::user_data" title='hb_object_header_t::user_data' data-ref="hb_object_header_t::user_data">user_data</dfn>;</td></tr>
+<tr><th id="218">218</th><td></td></tr>
+<tr><th id="219">219</th><td>  <em>bool</em> <dfn class="decl def fn" id="_ZNK18hb_object_header_t8is_inertEv" title='hb_object_header_t::is_inert' data-ref="_ZNK18hb_object_header_t8is_inertEv">is_inert</dfn> () <em>const</em> { <b>return</b> !<a class="member field" href="#hb_object_header_t::ref_count" title='hb_object_header_t::ref_count' data-ref="hb_object_header_t::ref_count">ref_count</a>.<a class="ref fn" href="#_ZNK20hb_reference_count_t11get_relaxedEv" title='hb_reference_count_t::get_relaxed' data-ref="_ZNK20hb_reference_count_t11get_relaxedEv">get_relaxed</a> (); }</td></tr>
+<tr><th id="220">220</th><td>};</td></tr>
+<tr><th id="221">221</th><td><u>#define <dfn class="macro" id="_M/HB_OBJECT_HEADER_STATIC" data-ref="_M/HB_OBJECT_HEADER_STATIC">HB_OBJECT_HEADER_STATIC</dfn> {}</u></td></tr>
+<tr><th id="222">222</th><td></td></tr>
+<tr><th id="223">223</th><td></td></tr>
+<tr><th id="224">224</th><td><i>/*</i></td></tr>
+<tr><th id="225">225</th><td><i> * Object</i></td></tr>
+<tr><th id="226">226</th><td><i> */</i></td></tr>
+<tr><th id="227">227</th><td></td></tr>
+<tr><th id="228">228</th><td><b>template</b> &lt;<b>typename</b> Type&gt;</td></tr>
+<tr><th id="229">229</th><td><em>static</em> <b>inline</b> <em>void</em> <dfn class="decl def fn" id="_ZL15hb_object_tracePKT_PKc" title='hb_object_trace' data-ref="_ZL15hb_object_tracePKT_PKc">hb_object_trace</dfn> (<em>const</em> Type *<dfn class="local col2 decl" id="2422obj" title='obj' data-type='const Type *' data-ref="2422obj">obj</dfn>, <em>const</em> <em>char</em> *<dfn class="local col3 decl" id="2423function" title='function' data-type='const char *' data-ref="2423function">function</dfn>)</td></tr>
+<tr><th id="230">230</th><td>{</td></tr>
+<tr><th id="231">231</th><td>  <a class="macro" href="hb-debug.hh.html#232" title="_hb_debug_msg&lt;(0+0)&gt; (&quot;OBJECT&quot;, ((void *) obj), nullptr, false, 0, 0, &quot;%s refcount=%d&quot;, function, obj ? obj-&gt;header.ref_count.get_relaxed () : 0)" data-ref="_M/DEBUG_MSG">DEBUG_MSG</a> (OBJECT, (<em>void</em> *) <a class="local col2 ref" href="#2422obj" title='obj' data-ref="2422obj">obj</a>,</td></tr>
+<tr><th id="232">232</th><td>	     <q>"%s refcount=%d"</q>,</td></tr>
+<tr><th id="233">233</th><td>	     <a class="local col3 ref" href="#2423function" title='function' data-ref="2423function">function</a>,</td></tr>
+<tr><th id="234">234</th><td>	     <a class="local col2 ref" href="#2422obj" title='obj' data-ref="2422obj">obj</a> ? <a class="local col2 ref" href="#2422obj" title='obj' data-ref="2422obj">obj</a>-&gt;header.ref_count.get_relaxed () : <var>0</var>);</td></tr>
+<tr><th id="235">235</th><td>}</td></tr>
+<tr><th id="236">236</th><td></td></tr>
+<tr><th id="237">237</th><td><b>template</b> &lt;<b>typename</b> Type, <b>typename</b> ...Ts&gt;</td></tr>
+<tr><th id="238">238</th><td><em>static</em> <b>inline</b> Type *<dfn class="decl def fn" id="_ZL16hb_object_createDpT0_" title='hb_object_create' data-ref="_ZL16hb_object_createDpT0_">hb_object_create</dfn> (Ts... <dfn class="local col4 decl" id="2424ds" title='ds' data-type='Ts...' data-ref="2424ds">ds</dfn>)</td></tr>
+<tr><th id="239">239</th><td>{</td></tr>
+<tr><th id="240">240</th><td>  Type *<dfn class="local col5 decl" id="2425obj" title='obj' data-type='Type *' data-ref="2425obj">obj</dfn> = (Type *) <a class="macro" href="hb.hh.html#239" title="calloc" data-ref="_M/hb_calloc">hb_calloc</a> (<span class='inlayHint'>nmemb:&nbsp;</span><var>1</var>, <span class='inlayHint'>size:&nbsp;</span><b>sizeof</b> (Type));</td></tr>
+<tr><th id="241">241</th><td></td></tr>
+<tr><th id="242">242</th><td>  <b>if</b> (<a class="macro" href="hb.hh.html#251" title="(__builtin_expect (!!(!obj), 0))" data-ref="_M/unlikely">unlikely</a> (!<a class="local col5 ref" href="#2425obj" title='obj' data-ref="2425obj">obj</a>))</td></tr>
+<tr><th id="243">243</th><td>    <b>return</b> <a class="local col5 ref" href="#2425obj" title='obj' data-ref="2425obj">obj</a>;</td></tr>
+<tr><th id="244">244</th><td></td></tr>
+<tr><th id="245">245</th><td>  <b>new</b> (<a class="local col5 ref" href="#2425obj" title='obj' data-ref="2425obj">obj</a>) Type (<span class="namespace">std::</span>forward&lt;Ts&gt; (<a class="local col4 ref" href="#2424ds" title='ds' data-ref="2424ds">ds</a>)...);</td></tr>
+<tr><th id="246">246</th><td></td></tr>
+<tr><th id="247">247</th><td>  hb_object_init (<a class="local col5 ref" href="#2425obj" title='obj' data-ref="2425obj">obj</a>);</td></tr>
+<tr><th id="248">248</th><td>  hb_object_trace (<a class="local col5 ref" href="#2425obj" title='obj' data-ref="2425obj">obj</a>, <a class="macro" href="hb.hh.html#298" title="__PRETTY_FUNCTION__" data-ref="_M/HB_FUNC">HB_FUNC</a>);</td></tr>
+<tr><th id="249">249</th><td></td></tr>
+<tr><th id="250">250</th><td>  <b>return</b> <a class="local col5 ref" href="#2425obj" title='obj' data-ref="2425obj">obj</a>;</td></tr>
+<tr><th id="251">251</th><td>}</td></tr>
+<tr><th id="252">252</th><td><b>template</b> &lt;<b>typename</b> Type&gt;</td></tr>
+<tr><th id="253">253</th><td><em>static</em> <b>inline</b> <em>void</em> <dfn class="decl def fn" id="_ZL14hb_object_initPT_" title='hb_object_init' data-ref="_ZL14hb_object_initPT_">hb_object_init</dfn> (Type *<dfn class="local col6 decl" id="2426obj" title='obj' data-type='Type *' data-ref="2426obj">obj</dfn>)</td></tr>
+<tr><th id="254">254</th><td>{</td></tr>
+<tr><th id="255">255</th><td>  <a class="local col6 ref" href="#2426obj" title='obj' data-ref="2426obj">obj</a>-&gt;header.ref_count.init ();</td></tr>
+<tr><th id="256">256</th><td>  <a class="local col6 ref" href="#2426obj" title='obj' data-ref="2426obj">obj</a>-&gt;header.writable = <b>true</b>;</td></tr>
+<tr><th id="257">257</th><td>  <a class="local col6 ref" href="#2426obj" title='obj' data-ref="2426obj">obj</a>-&gt;header.user_data.init ();</td></tr>
+<tr><th id="258">258</th><td>}</td></tr>
+<tr><th id="259">259</th><td><b>template</b> &lt;<b>typename</b> Type&gt;</td></tr>
+<tr><th id="260">260</th><td><em>static</em> <b>inline</b> <em>bool</em> <dfn class="decl def fn" id="_ZL18hb_object_is_validPKT_" title='hb_object_is_valid' data-ref="_ZL18hb_object_is_validPKT_">hb_object_is_valid</dfn> (<em>const</em> Type *<dfn class="local col7 decl" id="2427obj" title='obj' data-type='const Type *' data-ref="2427obj">obj</dfn>)</td></tr>
+<tr><th id="261">261</th><td>{</td></tr>
+<tr><th id="262">262</th><td>  <b>return</b> <a class="macro" href="hb.hh.html#250" title="(__builtin_expect (!!(obj-&gt;header.ref_count.is_valid ()), 1))" data-ref="_M/likely">likely</a> (<a class="local col7 ref" href="#2427obj" title='obj' data-ref="2427obj">obj</a>-&gt;header.ref_count.is_valid ());</td></tr>
+<tr><th id="263">263</th><td>}</td></tr>
+<tr><th id="264">264</th><td><b>template</b> &lt;<b>typename</b> Type&gt;</td></tr>
+<tr><th id="265">265</th><td><em>static</em> <b>inline</b> <em>bool</em> <dfn class="decl def fn" id="_ZL22hb_object_is_immutablePKT_" title='hb_object_is_immutable' data-ref="_ZL22hb_object_is_immutablePKT_">hb_object_is_immutable</dfn> (<em>const</em> Type *<dfn class="local col8 decl" id="2428obj" title='obj' data-type='const Type *' data-ref="2428obj">obj</dfn>)</td></tr>
+<tr><th id="266">266</th><td>{</td></tr>
+<tr><th id="267">267</th><td>  <b>return</b> !<a class="local col8 ref" href="#2428obj" title='obj' data-ref="2428obj">obj</a>-&gt;header.writable;</td></tr>
+<tr><th id="268">268</th><td>}</td></tr>
+<tr><th id="269">269</th><td><b>template</b> &lt;<b>typename</b> Type&gt;</td></tr>
+<tr><th id="270">270</th><td><em>static</em> <b>inline</b> <em>void</em> <dfn class="decl def fn" id="_ZL24hb_object_make_immutablePKT_" title='hb_object_make_immutable' data-ref="_ZL24hb_object_make_immutablePKT_">hb_object_make_immutable</dfn> (<em>const</em> Type *<dfn class="local col9 decl" id="2429obj" title='obj' data-type='const Type *' data-ref="2429obj">obj</dfn>)</td></tr>
+<tr><th id="271">271</th><td>{</td></tr>
+<tr><th id="272">272</th><td>  <a class="local col9 ref" href="#2429obj" title='obj' data-ref="2429obj">obj</a>-&gt;header.writable = <b>false</b>;</td></tr>
+<tr><th id="273">273</th><td>}</td></tr>
+<tr><th id="274">274</th><td><b>template</b> &lt;<b>typename</b> Type&gt;</td></tr>
+<tr><th id="275">275</th><td><em>static</em> <b>inline</b> Type *<dfn class="decl def fn" id="_ZL19hb_object_referencePT_" title='hb_object_reference' data-ref="_ZL19hb_object_referencePT_">hb_object_reference</dfn> (Type *<dfn class="local col0 decl" id="2430obj" title='obj' data-type='Type *' data-ref="2430obj">obj</dfn>)</td></tr>
+<tr><th id="276">276</th><td>{</td></tr>
+<tr><th id="277">277</th><td>  hb_object_trace (<a class="local col0 ref" href="#2430obj" title='obj' data-ref="2430obj">obj</a>, <a class="macro" href="hb.hh.html#298" title="__PRETTY_FUNCTION__" data-ref="_M/HB_FUNC">HB_FUNC</a>);</td></tr>
+<tr><th id="278">278</th><td>  <b>if</b> (<a class="macro" href="hb.hh.html#251" title="(__builtin_expect (!!(!obj || obj-&gt;header.is_inert ()), 0))" data-ref="_M/unlikely">unlikely</a> (!<a class="local col0 ref" href="#2430obj" title='obj' data-ref="2430obj">obj</a> || <a class="local col0 ref" href="#2430obj" title='obj' data-ref="2430obj">obj</a>-&gt;header.is_inert ()))</td></tr>
+<tr><th id="279">279</th><td>    <b>return</b> <a class="local col0 ref" href="#2430obj" title='obj' data-ref="2430obj">obj</a>;</td></tr>
+<tr><th id="280">280</th><td>  <a class="macro" href="../../../../../include/assert.h.html#50" title="(static_cast&lt;void&gt; (0))" data-ref="_M/assert">assert</a> (hb_object_is_valid (obj));</td></tr>
+<tr><th id="281">281</th><td>  <a class="local col0 ref" href="#2430obj" title='obj' data-ref="2430obj">obj</a>-&gt;header.ref_count.inc ();</td></tr>
+<tr><th id="282">282</th><td>  <b>return</b> <a class="local col0 ref" href="#2430obj" title='obj' data-ref="2430obj">obj</a>;</td></tr>
+<tr><th id="283">283</th><td>}</td></tr>
+<tr><th id="284">284</th><td><b>template</b> &lt;<b>typename</b> Type&gt;</td></tr>
+<tr><th id="285">285</th><td><em>static</em> <b>inline</b> <em>bool</em> <dfn class="decl def fn" id="_ZL17hb_object_destroyPT_" title='hb_object_destroy' data-ref="_ZL17hb_object_destroyPT_">hb_object_destroy</dfn> (Type *<dfn class="local col1 decl" id="2431obj" title='obj' data-type='Type *' data-ref="2431obj">obj</dfn>)</td></tr>
+<tr><th id="286">286</th><td>{</td></tr>
+<tr><th id="287">287</th><td>  hb_object_trace (<a class="local col1 ref" href="#2431obj" title='obj' data-ref="2431obj">obj</a>, <a class="macro" href="hb.hh.html#298" title="__PRETTY_FUNCTION__" data-ref="_M/HB_FUNC">HB_FUNC</a>);</td></tr>
+<tr><th id="288">288</th><td>  <b>if</b> (<a class="macro" href="hb.hh.html#251" title="(__builtin_expect (!!(!obj || obj-&gt;header.is_inert ()), 0))" data-ref="_M/unlikely">unlikely</a> (!<a class="local col1 ref" href="#2431obj" title='obj' data-ref="2431obj">obj</a> || <a class="local col1 ref" href="#2431obj" title='obj' data-ref="2431obj">obj</a>-&gt;header.is_inert ()))</td></tr>
+<tr><th id="289">289</th><td>    <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="290">290</th><td>  <a class="macro" href="../../../../../include/assert.h.html#50" title="(static_cast&lt;void&gt; (0))" data-ref="_M/assert">assert</a> (hb_object_is_valid (obj));</td></tr>
+<tr><th id="291">291</th><td>  <b>if</b> (<a class="local col1 ref" href="#2431obj" title='obj' data-ref="2431obj">obj</a>-&gt;header.ref_count.dec () != <var>1</var>)</td></tr>
+<tr><th id="292">292</th><td>    <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="293">293</th><td></td></tr>
+<tr><th id="294">294</th><td>  hb_object_fini (<a class="local col1 ref" href="#2431obj" title='obj' data-ref="2431obj">obj</a>);</td></tr>
+<tr><th id="295">295</th><td></td></tr>
+<tr><th id="296">296</th><td>  <b>if</b> (!<span class="namespace">std::</span><a class="type" href="../../../../../include/c++/9/type_traits.html#std::is_trivially_destructible" title='std::is_trivially_destructible' data-ref="std::is_trivially_destructible">is_trivially_destructible</a>&lt;Type&gt;::value)</td></tr>
+<tr><th id="297">297</th><td>    <a class="local col1 ref" href="#2431obj" title='obj' data-ref="2431obj">obj</a>-&gt;~Type ();</td></tr>
+<tr><th id="298">298</th><td></td></tr>
+<tr><th id="299">299</th><td>  <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="300">300</th><td>}</td></tr>
+<tr><th id="301">301</th><td><b>template</b> &lt;<b>typename</b> Type&gt;</td></tr>
+<tr><th id="302">302</th><td><em>static</em> <b>inline</b> <em>void</em> <dfn class="decl def fn" id="_ZL14hb_object_finiPT_" title='hb_object_fini' data-ref="_ZL14hb_object_finiPT_">hb_object_fini</dfn> (Type *<dfn class="local col2 decl" id="2432obj" title='obj' data-type='Type *' data-ref="2432obj">obj</dfn>)</td></tr>
+<tr><th id="303">303</th><td>{</td></tr>
+<tr><th id="304">304</th><td>  <a class="local col2 ref" href="#2432obj" title='obj' data-ref="2432obj">obj</a>-&gt;header.ref_count.fini (); <i>/* Do this before user_data */</i></td></tr>
+<tr><th id="305">305</th><td>  <a class="type" href="#hb_user_data_array_t" title='hb_user_data_array_t' data-ref="hb_user_data_array_t">hb_user_data_array_t</a> *<dfn class="local col3 decl" id="2433user_data" title='user_data' data-type='hb_user_data_array_t *' data-ref="2433user_data">user_data</dfn> = <a class="local col2 ref" href="#2432obj" title='obj' data-ref="2432obj">obj</a>-&gt;header.user_data.get_acquire ();</td></tr>
+<tr><th id="306">306</th><td>  <b>if</b> (<a class="local col3 ref" href="#2433user_data" title='user_data' data-ref="2433user_data">user_data</a>)</td></tr>
+<tr><th id="307">307</th><td>  {</td></tr>
+<tr><th id="308">308</th><td>    <a class="local col3 ref" href="#2433user_data" title='user_data' data-ref="2433user_data">user_data</a>-&gt;<a class="ref fn" href="#_ZN20hb_user_data_array_t4finiEv" title='hb_user_data_array_t::fini' data-ref="_ZN20hb_user_data_array_t4finiEv">fini</a> ();</td></tr>
+<tr><th id="309">309</th><td>    <a class="macro" href="hb.hh.html#241" title="free" data-ref="_M/hb_free">hb_free</a> (<span class='inlayHint'>ptr:&nbsp;</span><a class="local col3 ref" href="#2433user_data" title='user_data' data-ref="2433user_data">user_data</a>);</td></tr>
+<tr><th id="310">310</th><td>    <a class="local col2 ref" href="#2432obj" title='obj' data-ref="2432obj">obj</a>-&gt;header.user_data.set_relaxed (<b>nullptr</b>);</td></tr>
+<tr><th id="311">311</th><td>  }</td></tr>
+<tr><th id="312">312</th><td>}</td></tr>
+<tr><th id="313">313</th><td><b>template</b> &lt;<b>typename</b> Type&gt;</td></tr>
+<tr><th id="314">314</th><td><em>static</em> <b>inline</b> <em>bool</em> <dfn class="decl def fn" id="_ZL23hb_object_set_user_dataPT_P18hb_user_data_key_tPvPFvS3_Ei" title='hb_object_set_user_data' data-ref="_ZL23hb_object_set_user_dataPT_P18hb_user_data_key_tPvPFvS3_Ei">hb_object_set_user_data</dfn> (Type               *<dfn class="local col4 decl" id="2434obj" title='obj' data-type='Type *' data-ref="2434obj">obj</dfn>,</td></tr>
+<tr><th id="315">315</th><td>					    <a class="typedef" href="hb-common.h.html#hb_user_data_key_t" title='hb_user_data_key_t' data-type='struct hb_user_data_key_t' data-ref="hb_user_data_key_t">hb_user_data_key_t</a> *<dfn class="local col5 decl" id="2435key" title='key' data-type='hb_user_data_key_t *' data-ref="2435key">key</dfn>,</td></tr>
+<tr><th id="316">316</th><td>					    <em>void</em> *              <dfn class="local col6 decl" id="2436data" title='data' data-type='void *' data-ref="2436data">data</dfn>,</td></tr>
+<tr><th id="317">317</th><td>					    <a class="typedef" href="hb-common.h.html#hb_destroy_func_t" title='hb_destroy_func_t' data-type='void (*)(void *)' data-ref="hb_destroy_func_t">hb_destroy_func_t</a>   <dfn class="local col7 decl" id="2437destroy" title='destroy' data-type='hb_destroy_func_t' data-ref="2437destroy">destroy</dfn>,</td></tr>
+<tr><th id="318">318</th><td>					    <a class="typedef" href="hb-common.h.html#hb_bool_t" title='hb_bool_t' data-type='int' data-ref="hb_bool_t">hb_bool_t</a>           <dfn class="local col8 decl" id="2438replace" title='replace' data-type='hb_bool_t' data-ref="2438replace">replace</dfn>)</td></tr>
+<tr><th id="319">319</th><td>{</td></tr>
+<tr><th id="320">320</th><td>  <b>if</b> (<a class="macro" href="hb.hh.html#251" title="(__builtin_expect (!!(!obj || obj-&gt;header.is_inert ()), 0))" data-ref="_M/unlikely">unlikely</a> (!<a class="local col4 ref" href="#2434obj" title='obj' data-ref="2434obj">obj</a> || <a class="local col4 ref" href="#2434obj" title='obj' data-ref="2434obj">obj</a>-&gt;header.is_inert ()))</td></tr>
+<tr><th id="321">321</th><td>    <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="322">322</th><td>  <a class="macro" href="../../../../../include/assert.h.html#50" title="(static_cast&lt;void&gt; (0))" data-ref="_M/assert">assert</a> (hb_object_is_valid (obj));</td></tr>
+<tr><th id="323">323</th><td></td></tr>
+<tr><th id="324">324</th><td><dfn class="lbl" id="2439retry" data-ref="2439retry">retry</dfn>:</td></tr>
+<tr><th id="325">325</th><td>  <a class="type" href="#hb_user_data_array_t" title='hb_user_data_array_t' data-ref="hb_user_data_array_t">hb_user_data_array_t</a> *<dfn class="local col0 decl" id="2440user_data" title='user_data' data-type='hb_user_data_array_t *' data-ref="2440user_data">user_data</dfn> = <a class="local col4 ref" href="#2434obj" title='obj' data-ref="2434obj">obj</a>-&gt;header.user_data.get_acquire ();</td></tr>
+<tr><th id="326">326</th><td>  <b>if</b> (<a class="macro" href="hb.hh.html#251" title="(__builtin_expect (!!(!user_data), 0))" data-ref="_M/unlikely">unlikely</a> (!<a class="local col0 ref" href="#2440user_data" title='user_data' data-ref="2440user_data">user_data</a>))</td></tr>
+<tr><th id="327">327</th><td>  {</td></tr>
+<tr><th id="328">328</th><td>    <a class="local col0 ref" href="#2440user_data" title='user_data' data-ref="2440user_data">user_data</a> = (<a class="type" href="#hb_user_data_array_t" title='hb_user_data_array_t' data-ref="hb_user_data_array_t">hb_user_data_array_t</a> *) <a class="macro" href="hb.hh.html#239" title="calloc" data-ref="_M/hb_calloc">hb_calloc</a> (<span class='inlayHint'>nmemb:&nbsp;</span><b>sizeof</b> (<a class="type" href="#hb_user_data_array_t" title='hb_user_data_array_t' data-ref="hb_user_data_array_t">hb_user_data_array_t</a>), <span class='inlayHint'>size:&nbsp;</span><var>1</var>);</td></tr>
+<tr><th id="329">329</th><td>    <b>if</b> (<a class="macro" href="hb.hh.html#251" title="(__builtin_expect (!!(!user_data), 0))" data-ref="_M/unlikely">unlikely</a> (!<a class="local col0 ref" href="#2440user_data" title='user_data' data-ref="2440user_data">user_data</a>))</td></tr>
+<tr><th id="330">330</th><td>      <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="331">331</th><td>    <a class="local col0 ref" href="#2440user_data" title='user_data' data-ref="2440user_data">user_data</a>-&gt;<a class="ref fn" href="#_ZN20hb_user_data_array_t4initEv" title='hb_user_data_array_t::init' data-ref="_ZN20hb_user_data_array_t4initEv">init</a> ();</td></tr>
+<tr><th id="332">332</th><td>    <b>if</b> (<a class="macro" href="hb.hh.html#251" title="(__builtin_expect (!!(!obj-&gt;header.user_data.cmpexch (nullptr, user_data)), 0))" data-ref="_M/unlikely">unlikely</a> (!<a class="local col4 ref" href="#2434obj" title='obj' data-ref="2434obj">obj</a>-&gt;header.user_data.cmpexch (<b>nullptr</b>, <a class="local col0 ref" href="#2440user_data" title='user_data' data-ref="2440user_data">user_data</a>)))</td></tr>
+<tr><th id="333">333</th><td>    {</td></tr>
+<tr><th id="334">334</th><td>      <a class="local col0 ref" href="#2440user_data" title='user_data' data-ref="2440user_data">user_data</a>-&gt;<a class="ref fn" href="#_ZN20hb_user_data_array_t4finiEv" title='hb_user_data_array_t::fini' data-ref="_ZN20hb_user_data_array_t4finiEv">fini</a> ();</td></tr>
+<tr><th id="335">335</th><td>      <a class="macro" href="hb.hh.html#241" title="free" data-ref="_M/hb_free">hb_free</a> (<span class='inlayHint'>ptr:&nbsp;</span><a class="local col0 ref" href="#2440user_data" title='user_data' data-ref="2440user_data">user_data</a>);</td></tr>
+<tr><th id="336">336</th><td>      <b>goto</b> <a class="lbl" href="#2439retry" data-ref="2439retry">retry</a>;</td></tr>
+<tr><th id="337">337</th><td>    }</td></tr>
+<tr><th id="338">338</th><td>  }</td></tr>
+<tr><th id="339">339</th><td></td></tr>
+<tr><th id="340">340</th><td>  <b>return</b> <a class="local col0 ref" href="#2440user_data" title='user_data' data-ref="2440user_data">user_data</a>-&gt;<a class="ref fn" href="#_ZN20hb_user_data_array_t3setEP18hb_user_data_key_tPvPFvS2_Ei" title='hb_user_data_array_t::set' data-ref="_ZN20hb_user_data_array_t3setEP18hb_user_data_key_tPvPFvS2_Ei">set</a> (<a class="local col5 ref" href="#2435key" title='key' data-ref="2435key">key</a>, <a class="local col6 ref" href="#2436data" title='data' data-ref="2436data">data</a>, <a class="local col7 ref" href="#2437destroy" title='destroy' data-ref="2437destroy">destroy</a>, <a class="local col8 ref" href="#2438replace" title='replace' data-ref="2438replace">replace</a>);</td></tr>
+<tr><th id="341">341</th><td>}</td></tr>
+<tr><th id="342">342</th><td></td></tr>
+<tr><th id="343">343</th><td><b>template</b> &lt;<b>typename</b> Type&gt;</td></tr>
+<tr><th id="344">344</th><td><em>static</em> <b>inline</b> <em>void</em> *<dfn class="decl def fn" id="_ZL23hb_object_get_user_dataPT_P18hb_user_data_key_t" title='hb_object_get_user_data' data-ref="_ZL23hb_object_get_user_dataPT_P18hb_user_data_key_t">hb_object_get_user_data</dfn> (Type               *<dfn class="local col1 decl" id="2441obj" title='obj' data-type='Type *' data-ref="2441obj">obj</dfn>,</td></tr>
+<tr><th id="345">345</th><td>					     <a class="typedef" href="hb-common.h.html#hb_user_data_key_t" title='hb_user_data_key_t' data-type='struct hb_user_data_key_t' data-ref="hb_user_data_key_t">hb_user_data_key_t</a> *<dfn class="local col2 decl" id="2442key" title='key' data-type='hb_user_data_key_t *' data-ref="2442key">key</dfn>)</td></tr>
+<tr><th id="346">346</th><td>{</td></tr>
+<tr><th id="347">347</th><td>  <b>if</b> (<a class="macro" href="hb.hh.html#251" title="(__builtin_expect (!!(!obj || obj-&gt;header.is_inert ()), 0))" data-ref="_M/unlikely">unlikely</a> (!<a class="local col1 ref" href="#2441obj" title='obj' data-ref="2441obj">obj</a> || <a class="local col1 ref" href="#2441obj" title='obj' data-ref="2441obj">obj</a>-&gt;header.is_inert ()))</td></tr>
+<tr><th id="348">348</th><td>    <b>return</b> <b>nullptr</b>;</td></tr>
+<tr><th id="349">349</th><td>  <a class="macro" href="../../../../../include/assert.h.html#50" title="(static_cast&lt;void&gt; (0))" data-ref="_M/assert">assert</a> (hb_object_is_valid (obj));</td></tr>
+<tr><th id="350">350</th><td>  <a class="type" href="#hb_user_data_array_t" title='hb_user_data_array_t' data-ref="hb_user_data_array_t">hb_user_data_array_t</a> *<dfn class="local col3 decl" id="2443user_data" title='user_data' data-type='hb_user_data_array_t *' data-ref="2443user_data">user_data</dfn> = <a class="local col1 ref" href="#2441obj" title='obj' data-ref="2441obj">obj</a>-&gt;header.user_data.get_acquire ();</td></tr>
+<tr><th id="351">351</th><td>  <b>if</b> (!<a class="local col3 ref" href="#2443user_data" title='user_data' data-ref="2443user_data">user_data</a>)</td></tr>
+<tr><th id="352">352</th><td>    <b>return</b> <b>nullptr</b>;</td></tr>
+<tr><th id="353">353</th><td>  <b>return</b> <a class="local col3 ref" href="#2443user_data" title='user_data' data-ref="2443user_data">user_data</a>-&gt;<a class="ref fn" href="#_ZN20hb_user_data_array_t3getEP18hb_user_data_key_t" title='hb_user_data_array_t::get' data-ref="_ZN20hb_user_data_array_t3getEP18hb_user_data_key_t">get</a> (<a class="local col2 ref" href="#2442key" title='key' data-ref="2442key">key</a>);</td></tr>
+<tr><th id="354">354</th><td>}</td></tr>
+<tr><th id="355">355</th><td></td></tr>
+<tr><th id="356">356</th><td></td></tr>
+<tr><th id="357">357</th><td><u>#<span data-ppcond="32">endif</span> /* HB_OBJECT_HH */</u></td></tr>
+<tr><th id="358">358</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../hb-dummy.cc.html'>qtbase-6.5.0/src/3rdparty/harfbuzz-ng/hb-dummy.cc</a><br/>Generated on <em>2024-Jun-13</em> from project qtbase-6.5.0 revision <em>6.5.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

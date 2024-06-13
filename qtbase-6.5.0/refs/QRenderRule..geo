@@ -1,0 +1,33 @@
+<use f='qtbase-6.5.0/src/widgets/styles/qstylesheetstyle.cpp' l='484' u='w' c='_ZN11QRenderRuleC1Ev'/>
+<use f='qtbase-6.5.0/src/widgets/styles/qstylesheetstyle.cpp' l='514' u='m' c='_ZNK11QRenderRule8geometryEv'/>
+<use f='qtbase-6.5.0/src/widgets/styles/qstylesheetstyle.cpp' l='549' u='r' c='_ZNK11QRenderRule11hasGeometryEv'/>
+<use f='qtbase-6.5.0/src/widgets/styles/qstylesheetstyle.cpp' l='555' u='m' c='_ZNK11QRenderRule19minimumContentsSizeEv'/>
+<use f='qtbase-6.5.0/src/widgets/styles/qstylesheetstyle.cpp' l='555' u='m' c='_ZNK11QRenderRule19minimumContentsSizeEv'/>
+<use f='qtbase-6.5.0/src/widgets/styles/qstylesheetstyle.cpp' l='555' u='m' c='_ZNK11QRenderRule19minimumContentsSizeEv'/>
+<use f='qtbase-6.5.0/src/widgets/styles/qstylesheetstyle.cpp' l='560' u='m' c='_ZNK11QRenderRule12contentsSizeEv'/>
+<use f='qtbase-6.5.0/src/widgets/styles/qstylesheetstyle.cpp' l='560' u='m' c='_ZNK11QRenderRule12contentsSizeEv'/>
+<use f='qtbase-6.5.0/src/widgets/styles/qstylesheetstyle.cpp' l='560' u='m' c='_ZNK11QRenderRule12contentsSizeEv'/>
+<use f='qtbase-6.5.0/src/widgets/styles/qstylesheetstyle.cpp' l='570' u='m' c='_ZNK11QRenderRule15hasContentsSizeEv'/>
+<use f='qtbase-6.5.0/src/widgets/styles/qstylesheetstyle.cpp' l='570' u='m' c='_ZNK11QRenderRule15hasContentsSizeEv'/>
+<use f='qtbase-6.5.0/src/widgets/styles/qstylesheetstyle.cpp' l='570' u='m' c='_ZNK11QRenderRule15hasContentsSizeEv'/>
+<use f='qtbase-6.5.0/src/widgets/styles/qstylesheetstyle.cpp' l='576' u='m' c='_ZN11QRenderRule10adjustSizeERK5QSize'/>
+<use f='qtbase-6.5.0/src/widgets/styles/qstylesheetstyle.cpp' l='581' u='m' c='_ZN11QRenderRule10adjustSizeERK5QSize'/>
+<use f='qtbase-6.5.0/src/widgets/styles/qstylesheetstyle.cpp' l='581' u='m' c='_ZN11QRenderRule10adjustSizeERK5QSize'/>
+<use f='qtbase-6.5.0/src/widgets/styles/qstylesheetstyle.cpp' l='581' u='m' c='_ZN11QRenderRule10adjustSizeERK5QSize'/>
+<use f='qtbase-6.5.0/src/widgets/styles/qstylesheetstyle.cpp' l='582' u='m' c='_ZN11QRenderRule10adjustSizeERK5QSize'/>
+<use f='qtbase-6.5.0/src/widgets/styles/qstylesheetstyle.cpp' l='582' u='m' c='_ZN11QRenderRule10adjustSizeERK5QSize'/>
+<use f='qtbase-6.5.0/src/widgets/styles/qstylesheetstyle.cpp' l='582' u='m' c='_ZN11QRenderRule10adjustSizeERK5QSize'/>
+<use f='qtbase-6.5.0/src/widgets/styles/qstylesheetstyle.cpp' l='583' u='m' c='_ZN11QRenderRule10adjustSizeERK5QSize'/>
+<use f='qtbase-6.5.0/src/widgets/styles/qstylesheetstyle.cpp' l='583' u='m' c='_ZN11QRenderRule10adjustSizeERK5QSize'/>
+<dec f='qtbase-6.5.0/src/widgets/styles/qstylesheetstyle.cpp' l='609' type='QSharedDataPointer&lt;QStyleSheetGeometryData&gt;'/>
+<use f='qtbase-6.5.0/src/widgets/styles/qstylesheetstyle.cpp' l='829' u='w' c='_ZNK16QStyleSheetStyle14titleBarLayoutEPK7QWidgetPK20QStyleOptionTitleBar'/>
+<use f='qtbase-6.5.0/src/widgets/styles/qstylesheetstyle.cpp' l='900' u='w' c='_ZN11QRenderRuleC1ERK5QListIN4QCss11DeclarationEEPK7QObject'/>
+<use f='qtbase-6.5.0/src/widgets/styles/qstylesheetstyle.cpp' l='911' u='w' c='_ZN11QRenderRuleC1ERK5QListIN4QCss11DeclarationEEPK7QObject'/>
+<use f='qtbase-6.5.0/src/widgets/styles/qstylesheetstyle.cpp' l='3612' u='w' c='_ZNK16QStyleSheetStyle18renderMenuItemIconEPK20QStyleOptionMenuItemP8QPainterPK7QWidgetRK5QRectR11QRenderRule'/>
+<use f='qtbase-6.5.0/src/widgets/styles/qstylesheetstyle.cpp' l='3614' u='m' c='_ZNK16QStyleSheetStyle18renderMenuItemIconEPK20QStyleOptionMenuItemP8QPainterPK7QWidgetRK5QRectR11QRenderRule'/>
+<use f='qtbase-6.5.0/src/widgets/styles/qstylesheetstyle.cpp' l='3615' u='m' c='_ZNK16QStyleSheetStyle18renderMenuItemIconEPK20QStyleOptionMenuItemP8QPainterPK7QWidgetRK5QRectR11QRenderRule'/>
+<use f='qtbase-6.5.0/src/widgets/styles/qstylesheetstyle.cpp' l='5869' u='w' c='_ZNK16QStyleSheetStyle14subControlRectEN6QStyle14ComplexControlEPK19QStyleOptionComplexNS0_10SubControlEPK7QWidget'/>
+<use f='qtbase-6.5.0/src/widgets/styles/qstylesheetstyle.cpp' l='5871' u='m' c='_ZNK16QStyleSheetStyle14subControlRectEN6QStyle14ComplexControlEPK19QStyleOptionComplexNS0_10SubControlEPK7QWidget'/>
+<use f='qtbase-6.5.0/src/widgets/styles/qstylesheetstyle.cpp' l='5872' u='m' c='_ZNK16QStyleSheetStyle14subControlRectEN6QStyle14ComplexControlEPK19QStyleOptionComplexNS0_10SubControlEPK7QWidget'/>
+<use f='qtbase-6.5.0/src/widgets/styles/qstylesheetstyle.cpp' l='6015' u='w' c='_ZNK16QStyleSheetStyle14subControlRectEN6QStyle14ComplexControlEPK19QStyleOptionComplexNS0_10SubControlEPK7QWidget'/>
+<offset>704</offset>

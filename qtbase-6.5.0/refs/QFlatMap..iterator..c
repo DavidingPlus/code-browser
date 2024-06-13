@@ -1,0 +1,9 @@
+<use f='qtbase-6.5.0/src/corelib/tools/qflatmap_p.h' l='140' u='w' c='_ZN8QFlatMap8iteratorC1EPNS_10containersENT2_9size_typeE'/>
+<use f='qtbase-6.5.0/src/corelib/tools/qflatmap_p.h' l='146' u='r' c='_ZNK8QFlatMap8iteratordeEv'/>
+<use f='qtbase-6.5.0/src/corelib/tools/qflatmap_p.h' l='146' u='r' c='_ZNK8QFlatMap8iteratordeEv'/>
+<use f='qtbase-6.5.0/src/corelib/tools/qflatmap_p.h' l='156' u='r' c='_ZNK8QFlatMap8iteratoreqERKS0_'/>
+<use f='qtbase-6.5.0/src/corelib/tools/qflatmap_p.h' l='228' u='r' c='_ZNK8QFlatMap8iteratorixENT2_9size_typeE'/>
+<use f='qtbase-6.5.0/src/corelib/tools/qflatmap_p.h' l='228' u='r' c='_ZNK8QFlatMap8iteratorixENT2_9size_typeE'/>
+<use f='qtbase-6.5.0/src/corelib/tools/qflatmap_p.h' l='251' u='a' c='_ZNK8QFlatMap8iterator3keyEv'/>
+<use f='qtbase-6.5.0/src/corelib/tools/qflatmap_p.h' l='252' u='a' c='_ZNK8QFlatMap8iterator5valueEv'/>
+<dec f='qtbase-6.5.0/src/corelib/tools/qflatmap_p.h' l='255' type='QFlatMap::containers *'/>

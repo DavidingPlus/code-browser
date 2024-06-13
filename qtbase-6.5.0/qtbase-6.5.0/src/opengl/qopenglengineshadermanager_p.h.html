@@ -1,0 +1,489 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>qopenglengineshadermanager_p.h source code [qtbase-6.5.0/src/opengl/qopenglengineshadermanager_p.h] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="QOpenGLEngineShaderManager,QOpenGLEngineShaderProg,QOpenGLEngineSharedShaders "/>
+<link rel="stylesheet" href="../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'qtbase-6.5.0/src/opengl/qopenglengineshadermanager_p.h'; var root_path = '../../..'; var data_path = '../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../..'>qtbase-6.5.0</a>/<a href='..'>src</a>/<a href='./'>opengl</a>/<a href='qopenglengineshadermanager_p.h.html'>qopenglengineshadermanager_p.h</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>// Copyright (C) 2016 The Qt Company Ltd.</i></td></tr>
+<tr><th id="2">2</th><td><i>// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only</i></td></tr>
+<tr><th id="3">3</th><td><i></i></td></tr>
+<tr><th id="4">4</th><td><i>//</i></td></tr>
+<tr><th id="5">5</th><td><i>//  W A R N I N G</i></td></tr>
+<tr><th id="6">6</th><td><i>//  -------------</i></td></tr>
+<tr><th id="7">7</th><td><i>//</i></td></tr>
+<tr><th id="8">8</th><td><i>// This file is not part of the Qt API.  It exists purely as an</i></td></tr>
+<tr><th id="9">9</th><td><i>// implementation detail.  This header file may change from version to</i></td></tr>
+<tr><th id="10">10</th><td><i>// version without notice, or even be removed.</i></td></tr>
+<tr><th id="11">11</th><td><i>//</i></td></tr>
+<tr><th id="12">12</th><td><i>// We mean it.</i></td></tr>
+<tr><th id="13">13</th><td><i>//</i></td></tr>
+<tr><th id="14">14</th><td></td></tr>
+<tr><th id="15">15</th><td><i>/*</i></td></tr>
+<tr><th id="16">16</th><td><i>    VERTEX SHADERS</i></td></tr>
+<tr><th id="17">17</th><td><i>    ==============</i></td></tr>
+<tr><th id="18">18</th><td><i></i></td></tr>
+<tr><th id="19">19</th><td><i>    Vertex shaders are specified as multiple (partial) shaders. On desktop,</i></td></tr>
+<tr><th id="20">20</th><td><i>    this works fine. On ES, QOpenGLShader &amp; QOpenGLShaderProgram will make partial</i></td></tr>
+<tr><th id="21">21</th><td><i>    shaders work by concatenating the source in each QOpenGLShader and compiling</i></td></tr>
+<tr><th id="22">22</th><td><i>    it as a single shader. This is abstracted nicely by QOpenGLShaderProgram and</i></td></tr>
+<tr><th id="23">23</th><td><i>    the GL2 engine doesn't need to worry about it.</i></td></tr>
+<tr><th id="24">24</th><td><i></i></td></tr>
+<tr><th id="25">25</th><td><i>    Generally, there's two vertex shader objects. The position shaders are</i></td></tr>
+<tr><th id="26">26</th><td><i>    the ones which set gl_Position. There's also two "main" vertex shaders,</i></td></tr>
+<tr><th id="27">27</th><td><i>    one which just calls the position shader and another which also passes</i></td></tr>
+<tr><th id="28">28</th><td><i>    through some texture coordinates from a vertex attribute array to a</i></td></tr>
+<tr><th id="29">29</th><td><i>    varying. These texture coordinates are used for mask position in text</i></td></tr>
+<tr><th id="30">30</th><td><i>    rendering and for the source coordinates in drawImage/drawPixmap. There's</i></td></tr>
+<tr><th id="31">31</th><td><i>    also a "Simple" vertex shader for rendering a solid colour (used to render</i></td></tr>
+<tr><th id="32">32</th><td><i>    into the stencil buffer where the actual colour value is discarded).</i></td></tr>
+<tr><th id="33">33</th><td><i></i></td></tr>
+<tr><th id="34">34</th><td><i>    The position shaders for brushes look scary. This is because many of the</i></td></tr>
+<tr><th id="35">35</th><td><i>    calculations which logically belong in the fragment shader have been moved</i></td></tr>
+<tr><th id="36">36</th><td><i>    into the vertex shader to improve performance. This is why the position</i></td></tr>
+<tr><th id="37">37</th><td><i>    calculation is in a separate shader. Not only does it calculate the</i></td></tr>
+<tr><th id="38">38</th><td><i>    position, but it also calculates some data to be passed to the fragment</i></td></tr>
+<tr><th id="39">39</th><td><i>    shader as a varying. It is optimal to move as much of the calculation as</i></td></tr>
+<tr><th id="40">40</th><td><i>    possible into the vertex shader as this is executed less often.</i></td></tr>
+<tr><th id="41">41</th><td><i></i></td></tr>
+<tr><th id="42">42</th><td><i>    The varyings passed to the fragment shaders are interpolated (which is</i></td></tr>
+<tr><th id="43">43</th><td><i>    cheap). Unfortunately, GL will apply perspective correction to the</i></td></tr>
+<tr><th id="44">44</th><td><i>    interpolation calusing errors. To get around this, the vertex shader must</i></td></tr>
+<tr><th id="45">45</th><td><i>    apply perspective correction itself and set the w-value of gl_Position to</i></td></tr>
+<tr><th id="46">46</th><td><i>    zero. That way, GL will be tricked into thinking it doesn't need to apply a</i></td></tr>
+<tr><th id="47">47</th><td><i>    perspective correction and use linear interpolation instead (which is what</i></td></tr>
+<tr><th id="48">48</th><td><i>    we want). Of course, if the brush transform is affeine, no perspective</i></td></tr>
+<tr><th id="49">49</th><td><i>    correction is needed and a simpler vertex shader can be used instead.</i></td></tr>
+<tr><th id="50">50</th><td><i></i></td></tr>
+<tr><th id="51">51</th><td><i>    So there are the following "main" vertex shaders:</i></td></tr>
+<tr><th id="52">52</th><td><i>        qopenglslMainVertexShader</i></td></tr>
+<tr><th id="53">53</th><td><i>        qopenglslMainWithTexCoordsVertexShader</i></td></tr>
+<tr><th id="54">54</th><td><i></i></td></tr>
+<tr><th id="55">55</th><td><i>    And the following position vertex shaders:</i></td></tr>
+<tr><th id="56">56</th><td><i>        qopenglslPositionOnlyVertexShader</i></td></tr>
+<tr><th id="57">57</th><td><i>        qopenglslPositionWithTextureBrushVertexShader</i></td></tr>
+<tr><th id="58">58</th><td><i>        qopenglslPositionWithPatternBrushVertexShader</i></td></tr>
+<tr><th id="59">59</th><td><i>        qopenglslPositionWithLinearGradientBrushVertexShader</i></td></tr>
+<tr><th id="60">60</th><td><i>        qopenglslPositionWithRadialGradientBrushVertexShader</i></td></tr>
+<tr><th id="61">61</th><td><i>        qopenglslPositionWithConicalGradientBrushVertexShader</i></td></tr>
+<tr><th id="62">62</th><td><i>        qopenglslAffinePositionWithTextureBrushVertexShader</i></td></tr>
+<tr><th id="63">63</th><td><i>        qopenglslAffinePositionWithPatternBrushVertexShader</i></td></tr>
+<tr><th id="64">64</th><td><i>        qopenglslAffinePositionWithLinearGradientBrushVertexShader</i></td></tr>
+<tr><th id="65">65</th><td><i>        qopenglslAffinePositionWithRadialGradientBrushVertexShader</i></td></tr>
+<tr><th id="66">66</th><td><i>        qopenglslAffinePositionWithConicalGradientBrushVertexShader</i></td></tr>
+<tr><th id="67">67</th><td><i></i></td></tr>
+<tr><th id="68">68</th><td><i>    Leading to 23 possible vertex shaders</i></td></tr>
+<tr><th id="69">69</th><td><i></i></td></tr>
+<tr><th id="70">70</th><td><i></i></td></tr>
+<tr><th id="71">71</th><td><i>    FRAGMENT SHADERS</i></td></tr>
+<tr><th id="72">72</th><td><i>    ================</i></td></tr>
+<tr><th id="73">73</th><td><i></i></td></tr>
+<tr><th id="74">74</th><td><i>    Fragment shaders are also specified as multiple (partial) shaders. The</i></td></tr>
+<tr><th id="75">75</th><td><i>    different fragment shaders represent the different stages in Qt's fragment</i></td></tr>
+<tr><th id="76">76</th><td><i>    pipeline. There are 1-3 stages in this pipeline: First stage is to get the</i></td></tr>
+<tr><th id="77">77</th><td><i>    fragment's colour value. The next stage is to get the fragment's mask value</i></td></tr>
+<tr><th id="78">78</th><td><i>    (coverage value for anti-aliasing) and the final stage is to blend the</i></td></tr>
+<tr><th id="79">79</th><td><i>    incoming fragment with the background (for composition modes not supported</i></td></tr>
+<tr><th id="80">80</th><td><i>    by GL).</i></td></tr>
+<tr><th id="81">81</th><td><i></i></td></tr>
+<tr><th id="82">82</th><td><i>    Of these, the first stage will always be present. If Qt doesn't need to</i></td></tr>
+<tr><th id="83">83</th><td><i>    apply anti-aliasing (because it's off or handled by multisampling) then</i></td></tr>
+<tr><th id="84">84</th><td><i>    the coverage value doesn't need to be applied. (Note: There are two types</i></td></tr>
+<tr><th id="85">85</th><td><i>    of mask, one for regular anti-aliasing and one for sub-pixel anti-</i></td></tr>
+<tr><th id="86">86</th><td><i>    aliasing.) If the composition mode is one which GL supports natively then</i></td></tr>
+<tr><th id="87">87</th><td><i>    the blending stage doesn't need to be applied.</i></td></tr>
+<tr><th id="88">88</th><td><i></i></td></tr>
+<tr><th id="89">89</th><td><i>    As eash stage can have multiple implementations, they are abstracted as</i></td></tr>
+<tr><th id="90">90</th><td><i>    GLSL function calls with the following signatures:</i></td></tr>
+<tr><th id="91">91</th><td><i></i></td></tr>
+<tr><th id="92">92</th><td><i>    Brushes &amp; image drawing are implementations of "qcolorp vec4 srcPixel()":</i></td></tr>
+<tr><th id="93">93</th><td><i>        qopenglslImageSrcFragShader</i></td></tr>
+<tr><th id="94">94</th><td><i>        qopenglslImageSrcWithPatternFragShader</i></td></tr>
+<tr><th id="95">95</th><td><i>        qopenglslNonPremultipliedImageSrcFragShader</i></td></tr>
+<tr><th id="96">96</th><td><i>        qopenglslSolidBrushSrcFragShader</i></td></tr>
+<tr><th id="97">97</th><td><i>        qopenglslTextureBrushSrcFragShader</i></td></tr>
+<tr><th id="98">98</th><td><i>        qopenglslTextureBrushWithPatternFragShader</i></td></tr>
+<tr><th id="99">99</th><td><i>        qopenglslPatternBrushSrcFragShader</i></td></tr>
+<tr><th id="100">100</th><td><i>        qopenglslLinearGradientBrushSrcFragShader</i></td></tr>
+<tr><th id="101">101</th><td><i>        qopenglslRadialGradientBrushSrcFragShader</i></td></tr>
+<tr><th id="102">102</th><td><i>        qopenglslConicalGradientBrushSrcFragShader</i></td></tr>
+<tr><th id="103">103</th><td><i>    NOTE: It is assumed the colour returned by srcPixel() is pre-multiplied</i></td></tr>
+<tr><th id="104">104</th><td><i></i></td></tr>
+<tr><th id="105">105</th><td><i>    Masks are implementations of "qcolorp vec4 applyMask(qcolorp vec4 src)":</i></td></tr>
+<tr><th id="106">106</th><td><i>        qopenglslMaskFragmentShader</i></td></tr>
+<tr><th id="107">107</th><td><i>        qopenglslRgbMaskFragmentShaderPass1</i></td></tr>
+<tr><th id="108">108</th><td><i>        qopenglslRgbMaskFragmentShaderPass2</i></td></tr>
+<tr><th id="109">109</th><td><i>        qopenglslRgbMaskWithGammaFragmentShader</i></td></tr>
+<tr><th id="110">110</th><td><i></i></td></tr>
+<tr><th id="111">111</th><td><i>    Composition modes are "qcolorp vec4 compose(qcolorp vec4 src)":</i></td></tr>
+<tr><th id="112">112</th><td><i>        qopenglslColorBurnCompositionModeFragmentShader</i></td></tr>
+<tr><th id="113">113</th><td><i>        qopenglslColorDodgeCompositionModeFragmentShader</i></td></tr>
+<tr><th id="114">114</th><td><i>        qopenglslDarkenCompositionModeFragmentShader</i></td></tr>
+<tr><th id="115">115</th><td><i>        qopenglslDifferenceCompositionModeFragmentShader</i></td></tr>
+<tr><th id="116">116</th><td><i>        qopenglslExclusionCompositionModeFragmentShader</i></td></tr>
+<tr><th id="117">117</th><td><i>        qopenglslHardLightCompositionModeFragmentShader</i></td></tr>
+<tr><th id="118">118</th><td><i>        qopenglslLightenCompositionModeFragmentShader</i></td></tr>
+<tr><th id="119">119</th><td><i>        qopenglslMultiplyCompositionModeFragmentShader</i></td></tr>
+<tr><th id="120">120</th><td><i>        qopenglslOverlayCompositionModeFragmentShader</i></td></tr>
+<tr><th id="121">121</th><td><i>        qopenglslScreenCompositionModeFragmentShader</i></td></tr>
+<tr><th id="122">122</th><td><i>        qopenglslSoftLightCompositionModeFragmentShader</i></td></tr>
+<tr><th id="123">123</th><td><i></i></td></tr>
+<tr><th id="124">124</th><td><i></i></td></tr>
+<tr><th id="125">125</th><td><i>    Note: In the future, some GLSL compilers will support an extension allowing</i></td></tr>
+<tr><th id="126">126</th><td><i>          a new 'color' precision specifier. To support this, qcolorp is used for</i></td></tr>
+<tr><th id="127">127</th><td><i>          all color components so it can be defined to colorp or lowp depending upon</i></td></tr>
+<tr><th id="128">128</th><td><i>          the implementation.</i></td></tr>
+<tr><th id="129">129</th><td><i></i></td></tr>
+<tr><th id="130">130</th><td><i>    So there are different fragment shader main functions, depending on the</i></td></tr>
+<tr><th id="131">131</th><td><i>    number &amp; type of pipelines the fragment needs to go through.</i></td></tr>
+<tr><th id="132">132</th><td><i></i></td></tr>
+<tr><th id="133">133</th><td><i>    The choice of which main() fragment shader string to use depends on:</i></td></tr>
+<tr><th id="134">134</th><td><i>        - Use of global opacity</i></td></tr>
+<tr><th id="135">135</th><td><i>        - Brush style (some brushes apply opacity themselves)</i></td></tr>
+<tr><th id="136">136</th><td><i>        - Use &amp; type of mask (TODO: Need to support high quality anti-aliasing &amp; text)</i></td></tr>
+<tr><th id="137">137</th><td><i>        - Use of non-GL Composition mode</i></td></tr>
+<tr><th id="138">138</th><td><i></i></td></tr>
+<tr><th id="139">139</th><td><i>    Leading to the following fragment shader main functions:</i></td></tr>
+<tr><th id="140">140</th><td><i>        gl_FragColor = compose(applyMask(srcPixel()*globalOpacity));</i></td></tr>
+<tr><th id="141">141</th><td><i>        gl_FragColor = compose(applyMask(srcPixel()));</i></td></tr>
+<tr><th id="142">142</th><td><i>        gl_FragColor = applyMask(srcPixel()*globalOpacity);</i></td></tr>
+<tr><th id="143">143</th><td><i>        gl_FragColor = applyMask(srcPixel());</i></td></tr>
+<tr><th id="144">144</th><td><i>        gl_FragColor = compose(srcPixel()*globalOpacity);</i></td></tr>
+<tr><th id="145">145</th><td><i>        gl_FragColor = compose(srcPixel());</i></td></tr>
+<tr><th id="146">146</th><td><i>        gl_FragColor = srcPixel()*globalOpacity;</i></td></tr>
+<tr><th id="147">147</th><td><i>        gl_FragColor = srcPixel();</i></td></tr>
+<tr><th id="148">148</th><td><i></i></td></tr>
+<tr><th id="149">149</th><td><i>    Called:</i></td></tr>
+<tr><th id="150">150</th><td><i>        qopenglslMainFragmentShader_CMO</i></td></tr>
+<tr><th id="151">151</th><td><i>        qopenglslMainFragmentShader_CM</i></td></tr>
+<tr><th id="152">152</th><td><i>        qopenglslMainFragmentShader_MO</i></td></tr>
+<tr><th id="153">153</th><td><i>        qopenglslMainFragmentShader_M</i></td></tr>
+<tr><th id="154">154</th><td><i>        qopenglslMainFragmentShader_CO</i></td></tr>
+<tr><th id="155">155</th><td><i>        qopenglslMainFragmentShader_C</i></td></tr>
+<tr><th id="156">156</th><td><i>        qopenglslMainFragmentShader_O</i></td></tr>
+<tr><th id="157">157</th><td><i>        qopenglslMainFragmentShader</i></td></tr>
+<tr><th id="158">158</th><td><i></i></td></tr>
+<tr><th id="159">159</th><td><i>    Where:</i></td></tr>
+<tr><th id="160">160</th><td><i>        M = Mask</i></td></tr>
+<tr><th id="161">161</th><td><i>        C = Composition</i></td></tr>
+<tr><th id="162">162</th><td><i>        O = Global Opacity</i></td></tr>
+<tr><th id="163">163</th><td><i></i></td></tr>
+<tr><th id="164">164</th><td><i></i></td></tr>
+<tr><th id="165">165</th><td><i>    CUSTOM SHADER CODE</i></td></tr>
+<tr><th id="166">166</th><td><i>    ==================</i></td></tr>
+<tr><th id="167">167</th><td><i></i></td></tr>
+<tr><th id="168">168</th><td><i>    The use of custom shader code is supported by the engine for drawImage and</i></td></tr>
+<tr><th id="169">169</th><td><i>    drawPixmap calls. This is implemented via hooks in the fragment pipeline.</i></td></tr>
+<tr><th id="170">170</th><td><i></i></td></tr>
+<tr><th id="171">171</th><td><i>    The custom shader is passed to the engine as a partial fragment shader</i></td></tr>
+<tr><th id="172">172</th><td><i>    (QOpenGLCustomShaderStage). The shader will implement a pre-defined method name</i></td></tr>
+<tr><th id="173">173</th><td><i>    which Qt's fragment pipeline will call:</i></td></tr>
+<tr><th id="174">174</th><td><i></i></td></tr>
+<tr><th id="175">175</th><td><i>        lowp vec4 customShader(lowp sampler2d imageTexture, highp vec2 textureCoords)</i></td></tr>
+<tr><th id="176">176</th><td><i></i></td></tr>
+<tr><th id="177">177</th><td><i>    The provided src and srcCoords parameters can be used to sample from the</i></td></tr>
+<tr><th id="178">178</th><td><i>    source image.</i></td></tr>
+<tr><th id="179">179</th><td><i></i></td></tr>
+<tr><th id="180">180</th><td><i>    Transformations, clipping, opacity, and composition modes set using QPainter</i></td></tr>
+<tr><th id="181">181</th><td><i>    will be respected when using the custom shader hook.</i></td></tr>
+<tr><th id="182">182</th><td><i>*/</i></td></tr>
+<tr><th id="183">183</th><td></td></tr>
+<tr><th id="184">184</th><td><u>#<span data-ppcond="184">ifndef</span> <span class="macro" data-ref="_M/QOPENGLENGINE_SHADER_MANAGER_H">QOPENGLENGINE_SHADER_MANAGER_H</span></u></td></tr>
+<tr><th id="185">185</th><td><u>#define <dfn class="macro" id="_M/QOPENGLENGINE_SHADER_MANAGER_H" data-ref="_M/QOPENGLENGINE_SHADER_MANAGER_H">QOPENGLENGINE_SHADER_MANAGER_H</dfn></u></td></tr>
+<tr><th id="186">186</th><td></td></tr>
+<tr><th id="187">187</th><td><u>#include <a href="../../build/include/QtOpenGL/QOpenGLShader.html">&lt;QOpenGLShader&gt;</a></u></td></tr>
+<tr><th id="188">188</th><td><u>#include <a href="../../build/include/QtOpenGL/QOpenGLShaderProgram.html">&lt;QOpenGLShaderProgram&gt;</a></u></td></tr>
+<tr><th id="189">189</th><td><u>#include <a href="../../build/include/QtGui/QPainter.html">&lt;QPainter&gt;</a></u></td></tr>
+<tr><th id="190">190</th><td><u>#include <a href="../../build/include/QtGui/6.5.0/QtGui/private/qopenglcontext_p.h.html">&lt;private/qopenglcontext_p.h&gt;</a></u></td></tr>
+<tr><th id="191">191</th><td><u>#include <a href="../../build/include/QtOpenGL/6.5.0/QtOpenGL/private/qopenglcustomshaderstage_p.h.html">&lt;private/qopenglcustomshaderstage_p.h&gt;</a></u></td></tr>
+<tr><th id="192">192</th><td></td></tr>
+<tr><th id="193">193</th><td><a class="macro" href="../corelib/global/qtconfigmacros.h.html#103" title="" data-ref="_M/QT_BEGIN_NAMESPACE">QT_BEGIN_NAMESPACE</a></td></tr>
+<tr><th id="194">194</th><td></td></tr>
+<tr><th id="195">195</th><td></td></tr>
+<tr><th id="196">196</th><td></td></tr>
+<tr><th id="197">197</th><td><i>/*</i></td></tr>
+<tr><th id="198">198</th><td><i>struct QOpenGLEngineCachedShaderProg</i></td></tr>
+<tr><th id="199">199</th><td><i>{</i></td></tr>
+<tr><th id="200">200</th><td><i>    QOpenGLEngineCachedShaderProg(QOpenGLEngineShaderManager::ShaderName vertexMain,</i></td></tr>
+<tr><th id="201">201</th><td><i>                              QOpenGLEngineShaderManager::ShaderName vertexPosition,</i></td></tr>
+<tr><th id="202">202</th><td><i>                              QOpenGLEngineShaderManager::ShaderName fragMain,</i></td></tr>
+<tr><th id="203">203</th><td><i>                              QOpenGLEngineShaderManager::ShaderName pixelSrc,</i></td></tr>
+<tr><th id="204">204</th><td><i>                              QOpenGLEngineShaderManager::ShaderName mask,</i></td></tr>
+<tr><th id="205">205</th><td><i>                              QOpenGLEngineShaderManager::ShaderName composition);</i></td></tr>
+<tr><th id="206">206</th><td><i></i></td></tr>
+<tr><th id="207">207</th><td><i>    int cacheKey;</i></td></tr>
+<tr><th id="208">208</th><td><i>    QOpenGLShaderProgram* program;</i></td></tr>
+<tr><th id="209">209</th><td><i>}</i></td></tr>
+<tr><th id="210">210</th><td><i>*/</i></td></tr>
+<tr><th id="211">211</th><td></td></tr>
+<tr><th id="212">212</th><td><em>static</em> <em>const</em> <a class="typedef" href="../../../include/GL/gl.h.html#GLuint" title='GLuint' data-type='unsigned int' data-ref="GLuint">GLuint</a> <dfn class="decl def" id="QT_VERTEX_COORDS_ATTR" title='QT_VERTEX_COORDS_ATTR' data-ref="QT_VERTEX_COORDS_ATTR">QT_VERTEX_COORDS_ATTR</dfn>  = <var>0</var>;</td></tr>
+<tr><th id="213">213</th><td><em>static</em> <em>const</em> <a class="typedef" href="../../../include/GL/gl.h.html#GLuint" title='GLuint' data-type='unsigned int' data-ref="GLuint">GLuint</a> <dfn class="decl def" id="QT_TEXTURE_COORDS_ATTR" title='QT_TEXTURE_COORDS_ATTR' data-ref="QT_TEXTURE_COORDS_ATTR">QT_TEXTURE_COORDS_ATTR</dfn> = <var>1</var>;</td></tr>
+<tr><th id="214">214</th><td><em>static</em> <em>const</em> <a class="typedef" href="../../../include/GL/gl.h.html#GLuint" title='GLuint' data-type='unsigned int' data-ref="GLuint">GLuint</a> <dfn class="decl def" id="QT_OPACITY_ATTR" title='QT_OPACITY_ATTR' data-ref="QT_OPACITY_ATTR">QT_OPACITY_ATTR</dfn> = <var>2</var>;</td></tr>
+<tr><th id="215">215</th><td><em>static</em> <em>const</em> <a class="typedef" href="../../../include/GL/gl.h.html#GLuint" title='GLuint' data-type='unsigned int' data-ref="GLuint">GLuint</a> <dfn class="decl def" id="QT_PMV_MATRIX_1_ATTR" title='QT_PMV_MATRIX_1_ATTR' data-ref="QT_PMV_MATRIX_1_ATTR">QT_PMV_MATRIX_1_ATTR</dfn> = <var>3</var>;</td></tr>
+<tr><th id="216">216</th><td><em>static</em> <em>const</em> <a class="typedef" href="../../../include/GL/gl.h.html#GLuint" title='GLuint' data-type='unsigned int' data-ref="GLuint">GLuint</a> <dfn class="decl def" id="QT_PMV_MATRIX_2_ATTR" title='QT_PMV_MATRIX_2_ATTR' data-ref="QT_PMV_MATRIX_2_ATTR">QT_PMV_MATRIX_2_ATTR</dfn> = <var>4</var>;</td></tr>
+<tr><th id="217">217</th><td><em>static</em> <em>const</em> <a class="typedef" href="../../../include/GL/gl.h.html#GLuint" title='GLuint' data-type='unsigned int' data-ref="GLuint">GLuint</a> <dfn class="decl def" id="QT_PMV_MATRIX_3_ATTR" title='QT_PMV_MATRIX_3_ATTR' data-ref="QT_PMV_MATRIX_3_ATTR">QT_PMV_MATRIX_3_ATTR</dfn> = <var>5</var>;</td></tr>
+<tr><th id="218">218</th><td></td></tr>
+<tr><th id="219">219</th><td><b>class</b> <a class="type" href="#QOpenGLEngineShaderProg" title='QOpenGLEngineShaderProg' data-ref="QOpenGLEngineShaderProg">QOpenGLEngineShaderProg</a>;</td></tr>
+<tr><th id="220">220</th><td></td></tr>
+<tr><th id="221">221</th><td><b>class</b> <a class="macro" href="../../build/include/QtOpenGL/qtopenglexports.h.html#11" title="__attribute__((visibility(&quot;default&quot;)))" data-ref="_M/Q_OPENGL_EXPORT">Q_OPENGL_EXPORT</a> <dfn class="type def" id="QOpenGLEngineSharedShaders" title='QOpenGLEngineSharedShaders' data-ref="QOpenGLEngineSharedShaders">QOpenGLEngineSharedShaders</dfn></td></tr>
+<tr><th id="222">222</th><td>{</td></tr>
+<tr><th id="223">223</th><td>    <a class="macro" href="../corelib/kernel/qtmetamacros.h.html#152" title="public: static const QMetaObject staticMetaObject; void qt_check_for_QGADGET_macro(); typedef void QtGadgetHelper; private: __attribute__((visibility(&quot;hidden&quot;))) static void qt_static_metacall(QObject *, QMetaObject::Call, int, void **);" data-ref="_M/Q_GADGET">Q_GADGET</a></td></tr>
+<tr><th id="224">224</th><td><b>public</b>:</td></tr>
+<tr><th id="225">225</th><td></td></tr>
+<tr><th id="226">226</th><td>    <b>enum</b> <dfn class="type def" id="QOpenGLEngineSharedShaders::SnippetName" title='QOpenGLEngineSharedShaders::SnippetName' data-ref="QOpenGLEngineSharedShaders::SnippetName">SnippetName</dfn> {</td></tr>
+<tr><th id="227">227</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::MainVertexShader" title='QOpenGLEngineSharedShaders::MainVertexShader' data-ref="QOpenGLEngineSharedShaders::MainVertexShader">MainVertexShader</dfn>,</td></tr>
+<tr><th id="228">228</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::MainWithTexCoordsVertexShader" title='QOpenGLEngineSharedShaders::MainWithTexCoordsVertexShader' data-ref="QOpenGLEngineSharedShaders::MainWithTexCoordsVertexShader">MainWithTexCoordsVertexShader</dfn>,</td></tr>
+<tr><th id="229">229</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::MainWithTexCoordsAndOpacityVertexShader" title='QOpenGLEngineSharedShaders::MainWithTexCoordsAndOpacityVertexShader' data-ref="QOpenGLEngineSharedShaders::MainWithTexCoordsAndOpacityVertexShader">MainWithTexCoordsAndOpacityVertexShader</dfn>,</td></tr>
+<tr><th id="230">230</th><td></td></tr>
+<tr><th id="231">231</th><td>        <i>// UntransformedPositionVertexShader must be first in the list:</i></td></tr>
+<tr><th id="232">232</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::UntransformedPositionVertexShader" title='QOpenGLEngineSharedShaders::UntransformedPositionVertexShader' data-ref="QOpenGLEngineSharedShaders::UntransformedPositionVertexShader">UntransformedPositionVertexShader</dfn>,</td></tr>
+<tr><th id="233">233</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::PositionOnlyVertexShader" title='QOpenGLEngineSharedShaders::PositionOnlyVertexShader' data-ref="QOpenGLEngineSharedShaders::PositionOnlyVertexShader">PositionOnlyVertexShader</dfn>,</td></tr>
+<tr><th id="234">234</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::ComplexGeometryPositionOnlyVertexShader" title='QOpenGLEngineSharedShaders::ComplexGeometryPositionOnlyVertexShader' data-ref="QOpenGLEngineSharedShaders::ComplexGeometryPositionOnlyVertexShader">ComplexGeometryPositionOnlyVertexShader</dfn>,</td></tr>
+<tr><th id="235">235</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::PositionWithPatternBrushVertexShader" title='QOpenGLEngineSharedShaders::PositionWithPatternBrushVertexShader' data-ref="QOpenGLEngineSharedShaders::PositionWithPatternBrushVertexShader">PositionWithPatternBrushVertexShader</dfn>,</td></tr>
+<tr><th id="236">236</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::PositionWithLinearGradientBrushVertexShader" title='QOpenGLEngineSharedShaders::PositionWithLinearGradientBrushVertexShader' data-ref="QOpenGLEngineSharedShaders::PositionWithLinearGradientBrushVertexShader">PositionWithLinearGradientBrushVertexShader</dfn>,</td></tr>
+<tr><th id="237">237</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::PositionWithConicalGradientBrushVertexShader" title='QOpenGLEngineSharedShaders::PositionWithConicalGradientBrushVertexShader' data-ref="QOpenGLEngineSharedShaders::PositionWithConicalGradientBrushVertexShader">PositionWithConicalGradientBrushVertexShader</dfn>,</td></tr>
+<tr><th id="238">238</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::PositionWithRadialGradientBrushVertexShader" title='QOpenGLEngineSharedShaders::PositionWithRadialGradientBrushVertexShader' data-ref="QOpenGLEngineSharedShaders::PositionWithRadialGradientBrushVertexShader">PositionWithRadialGradientBrushVertexShader</dfn>,</td></tr>
+<tr><th id="239">239</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::PositionWithTextureBrushVertexShader" title='QOpenGLEngineSharedShaders::PositionWithTextureBrushVertexShader' data-ref="QOpenGLEngineSharedShaders::PositionWithTextureBrushVertexShader">PositionWithTextureBrushVertexShader</dfn>,</td></tr>
+<tr><th id="240">240</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::AffinePositionWithPatternBrushVertexShader" title='QOpenGLEngineSharedShaders::AffinePositionWithPatternBrushVertexShader' data-ref="QOpenGLEngineSharedShaders::AffinePositionWithPatternBrushVertexShader">AffinePositionWithPatternBrushVertexShader</dfn>,</td></tr>
+<tr><th id="241">241</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::AffinePositionWithLinearGradientBrushVertexShader" title='QOpenGLEngineSharedShaders::AffinePositionWithLinearGradientBrushVertexShader' data-ref="QOpenGLEngineSharedShaders::AffinePositionWithLinearGradientBrushVertexShader">AffinePositionWithLinearGradientBrushVertexShader</dfn>,</td></tr>
+<tr><th id="242">242</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::AffinePositionWithConicalGradientBrushVertexShader" title='QOpenGLEngineSharedShaders::AffinePositionWithConicalGradientBrushVertexShader' data-ref="QOpenGLEngineSharedShaders::AffinePositionWithConicalGradientBrushVertexShader">AffinePositionWithConicalGradientBrushVertexShader</dfn>,</td></tr>
+<tr><th id="243">243</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::AffinePositionWithRadialGradientBrushVertexShader" title='QOpenGLEngineSharedShaders::AffinePositionWithRadialGradientBrushVertexShader' data-ref="QOpenGLEngineSharedShaders::AffinePositionWithRadialGradientBrushVertexShader">AffinePositionWithRadialGradientBrushVertexShader</dfn>,</td></tr>
+<tr><th id="244">244</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::AffinePositionWithTextureBrushVertexShader" title='QOpenGLEngineSharedShaders::AffinePositionWithTextureBrushVertexShader' data-ref="QOpenGLEngineSharedShaders::AffinePositionWithTextureBrushVertexShader">AffinePositionWithTextureBrushVertexShader</dfn>,</td></tr>
+<tr><th id="245">245</th><td></td></tr>
+<tr><th id="246">246</th><td>        <i>// MainFragmentShader_CMO must be first in the list:</i></td></tr>
+<tr><th id="247">247</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::MainFragmentShader_MO" title='QOpenGLEngineSharedShaders::MainFragmentShader_MO' data-ref="QOpenGLEngineSharedShaders::MainFragmentShader_MO">MainFragmentShader_MO</dfn>,</td></tr>
+<tr><th id="248">248</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::MainFragmentShader_M" title='QOpenGLEngineSharedShaders::MainFragmentShader_M' data-ref="QOpenGLEngineSharedShaders::MainFragmentShader_M">MainFragmentShader_M</dfn>,</td></tr>
+<tr><th id="249">249</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::MainFragmentShader_O" title='QOpenGLEngineSharedShaders::MainFragmentShader_O' data-ref="QOpenGLEngineSharedShaders::MainFragmentShader_O">MainFragmentShader_O</dfn>,</td></tr>
+<tr><th id="250">250</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::MainFragmentShader" title='QOpenGLEngineSharedShaders::MainFragmentShader' data-ref="QOpenGLEngineSharedShaders::MainFragmentShader">MainFragmentShader</dfn>,</td></tr>
+<tr><th id="251">251</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::MainFragmentShader_ImageArrays" title='QOpenGLEngineSharedShaders::MainFragmentShader_ImageArrays' data-ref="QOpenGLEngineSharedShaders::MainFragmentShader_ImageArrays">MainFragmentShader_ImageArrays</dfn>,</td></tr>
+<tr><th id="252">252</th><td></td></tr>
+<tr><th id="253">253</th><td>        <i>// ImageSrcFragmentShader must be first in the list::</i></td></tr>
+<tr><th id="254">254</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::ImageSrcFragmentShader" title='QOpenGLEngineSharedShaders::ImageSrcFragmentShader' data-ref="QOpenGLEngineSharedShaders::ImageSrcFragmentShader">ImageSrcFragmentShader</dfn>,</td></tr>
+<tr><th id="255">255</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::ImageSrcWithPatternFragmentShader" title='QOpenGLEngineSharedShaders::ImageSrcWithPatternFragmentShader' data-ref="QOpenGLEngineSharedShaders::ImageSrcWithPatternFragmentShader">ImageSrcWithPatternFragmentShader</dfn>,</td></tr>
+<tr><th id="256">256</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::NonPremultipliedImageSrcFragmentShader" title='QOpenGLEngineSharedShaders::NonPremultipliedImageSrcFragmentShader' data-ref="QOpenGLEngineSharedShaders::NonPremultipliedImageSrcFragmentShader">NonPremultipliedImageSrcFragmentShader</dfn>,</td></tr>
+<tr><th id="257">257</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::GrayscaleImageSrcFragmentShader" title='QOpenGLEngineSharedShaders::GrayscaleImageSrcFragmentShader' data-ref="QOpenGLEngineSharedShaders::GrayscaleImageSrcFragmentShader">GrayscaleImageSrcFragmentShader</dfn>,</td></tr>
+<tr><th id="258">258</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::AlphaImageSrcFragmentShader" title='QOpenGLEngineSharedShaders::AlphaImageSrcFragmentShader' data-ref="QOpenGLEngineSharedShaders::AlphaImageSrcFragmentShader">AlphaImageSrcFragmentShader</dfn>,</td></tr>
+<tr><th id="259">259</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::CustomImageSrcFragmentShader" title='QOpenGLEngineSharedShaders::CustomImageSrcFragmentShader' data-ref="QOpenGLEngineSharedShaders::CustomImageSrcFragmentShader">CustomImageSrcFragmentShader</dfn>,</td></tr>
+<tr><th id="260">260</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::SolidBrushSrcFragmentShader" title='QOpenGLEngineSharedShaders::SolidBrushSrcFragmentShader' data-ref="QOpenGLEngineSharedShaders::SolidBrushSrcFragmentShader">SolidBrushSrcFragmentShader</dfn>,</td></tr>
+<tr><th id="261">261</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::TextureBrushSrcFragmentShader" title='QOpenGLEngineSharedShaders::TextureBrushSrcFragmentShader' data-ref="QOpenGLEngineSharedShaders::TextureBrushSrcFragmentShader">TextureBrushSrcFragmentShader</dfn>,</td></tr>
+<tr><th id="262">262</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::TextureBrushSrcWithPatternFragmentShader" title='QOpenGLEngineSharedShaders::TextureBrushSrcWithPatternFragmentShader' data-ref="QOpenGLEngineSharedShaders::TextureBrushSrcWithPatternFragmentShader">TextureBrushSrcWithPatternFragmentShader</dfn>,</td></tr>
+<tr><th id="263">263</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::PatternBrushSrcFragmentShader" title='QOpenGLEngineSharedShaders::PatternBrushSrcFragmentShader' data-ref="QOpenGLEngineSharedShaders::PatternBrushSrcFragmentShader">PatternBrushSrcFragmentShader</dfn>,</td></tr>
+<tr><th id="264">264</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::LinearGradientBrushSrcFragmentShader" title='QOpenGLEngineSharedShaders::LinearGradientBrushSrcFragmentShader' data-ref="QOpenGLEngineSharedShaders::LinearGradientBrushSrcFragmentShader">LinearGradientBrushSrcFragmentShader</dfn>,</td></tr>
+<tr><th id="265">265</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::RadialGradientBrushSrcFragmentShader" title='QOpenGLEngineSharedShaders::RadialGradientBrushSrcFragmentShader' data-ref="QOpenGLEngineSharedShaders::RadialGradientBrushSrcFragmentShader">RadialGradientBrushSrcFragmentShader</dfn>,</td></tr>
+<tr><th id="266">266</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::ConicalGradientBrushSrcFragmentShader" title='QOpenGLEngineSharedShaders::ConicalGradientBrushSrcFragmentShader' data-ref="QOpenGLEngineSharedShaders::ConicalGradientBrushSrcFragmentShader">ConicalGradientBrushSrcFragmentShader</dfn>,</td></tr>
+<tr><th id="267">267</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::ShockingPinkSrcFragmentShader" title='QOpenGLEngineSharedShaders::ShockingPinkSrcFragmentShader' data-ref="QOpenGLEngineSharedShaders::ShockingPinkSrcFragmentShader">ShockingPinkSrcFragmentShader</dfn>,</td></tr>
+<tr><th id="268">268</th><td></td></tr>
+<tr><th id="269">269</th><td>        <i>// NoMaskFragmentShader must be first in the list:</i></td></tr>
+<tr><th id="270">270</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::NoMaskFragmentShader" title='QOpenGLEngineSharedShaders::NoMaskFragmentShader' data-ref="QOpenGLEngineSharedShaders::NoMaskFragmentShader">NoMaskFragmentShader</dfn>,</td></tr>
+<tr><th id="271">271</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::MaskFragmentShader" title='QOpenGLEngineSharedShaders::MaskFragmentShader' data-ref="QOpenGLEngineSharedShaders::MaskFragmentShader">MaskFragmentShader</dfn>,</td></tr>
+<tr><th id="272">272</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::RgbMaskFragmentShaderPass1" title='QOpenGLEngineSharedShaders::RgbMaskFragmentShaderPass1' data-ref="QOpenGLEngineSharedShaders::RgbMaskFragmentShaderPass1">RgbMaskFragmentShaderPass1</dfn>,</td></tr>
+<tr><th id="273">273</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::RgbMaskFragmentShaderPass2" title='QOpenGLEngineSharedShaders::RgbMaskFragmentShaderPass2' data-ref="QOpenGLEngineSharedShaders::RgbMaskFragmentShaderPass2">RgbMaskFragmentShaderPass2</dfn>,</td></tr>
+<tr><th id="274">274</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::RgbMaskWithGammaFragmentShader" title='QOpenGLEngineSharedShaders::RgbMaskWithGammaFragmentShader' data-ref="QOpenGLEngineSharedShaders::RgbMaskWithGammaFragmentShader">RgbMaskWithGammaFragmentShader</dfn>,</td></tr>
+<tr><th id="275">275</th><td></td></tr>
+<tr><th id="276">276</th><td>        <i>// NoCompositionModeFragmentShader must be first in the list:</i></td></tr>
+<tr><th id="277">277</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::NoCompositionModeFragmentShader" title='QOpenGLEngineSharedShaders::NoCompositionModeFragmentShader' data-ref="QOpenGLEngineSharedShaders::NoCompositionModeFragmentShader">NoCompositionModeFragmentShader</dfn>,</td></tr>
+<tr><th id="278">278</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::MultiplyCompositionModeFragmentShader" title='QOpenGLEngineSharedShaders::MultiplyCompositionModeFragmentShader' data-ref="QOpenGLEngineSharedShaders::MultiplyCompositionModeFragmentShader">MultiplyCompositionModeFragmentShader</dfn>,</td></tr>
+<tr><th id="279">279</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::ScreenCompositionModeFragmentShader" title='QOpenGLEngineSharedShaders::ScreenCompositionModeFragmentShader' data-ref="QOpenGLEngineSharedShaders::ScreenCompositionModeFragmentShader">ScreenCompositionModeFragmentShader</dfn>,</td></tr>
+<tr><th id="280">280</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::OverlayCompositionModeFragmentShader" title='QOpenGLEngineSharedShaders::OverlayCompositionModeFragmentShader' data-ref="QOpenGLEngineSharedShaders::OverlayCompositionModeFragmentShader">OverlayCompositionModeFragmentShader</dfn>,</td></tr>
+<tr><th id="281">281</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::DarkenCompositionModeFragmentShader" title='QOpenGLEngineSharedShaders::DarkenCompositionModeFragmentShader' data-ref="QOpenGLEngineSharedShaders::DarkenCompositionModeFragmentShader">DarkenCompositionModeFragmentShader</dfn>,</td></tr>
+<tr><th id="282">282</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::LightenCompositionModeFragmentShader" title='QOpenGLEngineSharedShaders::LightenCompositionModeFragmentShader' data-ref="QOpenGLEngineSharedShaders::LightenCompositionModeFragmentShader">LightenCompositionModeFragmentShader</dfn>,</td></tr>
+<tr><th id="283">283</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::ColorDodgeCompositionModeFragmentShader" title='QOpenGLEngineSharedShaders::ColorDodgeCompositionModeFragmentShader' data-ref="QOpenGLEngineSharedShaders::ColorDodgeCompositionModeFragmentShader">ColorDodgeCompositionModeFragmentShader</dfn>,</td></tr>
+<tr><th id="284">284</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::ColorBurnCompositionModeFragmentShader" title='QOpenGLEngineSharedShaders::ColorBurnCompositionModeFragmentShader' data-ref="QOpenGLEngineSharedShaders::ColorBurnCompositionModeFragmentShader">ColorBurnCompositionModeFragmentShader</dfn>,</td></tr>
+<tr><th id="285">285</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::HardLightCompositionModeFragmentShader" title='QOpenGLEngineSharedShaders::HardLightCompositionModeFragmentShader' data-ref="QOpenGLEngineSharedShaders::HardLightCompositionModeFragmentShader">HardLightCompositionModeFragmentShader</dfn>,</td></tr>
+<tr><th id="286">286</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::SoftLightCompositionModeFragmentShader" title='QOpenGLEngineSharedShaders::SoftLightCompositionModeFragmentShader' data-ref="QOpenGLEngineSharedShaders::SoftLightCompositionModeFragmentShader">SoftLightCompositionModeFragmentShader</dfn>,</td></tr>
+<tr><th id="287">287</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::DifferenceCompositionModeFragmentShader" title='QOpenGLEngineSharedShaders::DifferenceCompositionModeFragmentShader' data-ref="QOpenGLEngineSharedShaders::DifferenceCompositionModeFragmentShader">DifferenceCompositionModeFragmentShader</dfn>,</td></tr>
+<tr><th id="288">288</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::ExclusionCompositionModeFragmentShader" title='QOpenGLEngineSharedShaders::ExclusionCompositionModeFragmentShader' data-ref="QOpenGLEngineSharedShaders::ExclusionCompositionModeFragmentShader">ExclusionCompositionModeFragmentShader</dfn>,</td></tr>
+<tr><th id="289">289</th><td></td></tr>
+<tr><th id="290">290</th><td>        <dfn class="enum" id="QOpenGLEngineSharedShaders::TotalSnippetCount" title='QOpenGLEngineSharedShaders::TotalSnippetCount' data-ref="QOpenGLEngineSharedShaders::TotalSnippetCount">TotalSnippetCount</dfn>, <dfn class="enum" id="QOpenGLEngineSharedShaders::InvalidSnippetName" title='QOpenGLEngineSharedShaders::InvalidSnippetName' data-ref="QOpenGLEngineSharedShaders::InvalidSnippetName">InvalidSnippetName</dfn></td></tr>
+<tr><th id="291">291</th><td>    };</td></tr>
+<tr><th id="292">292</th><td><u>#<span data-ppcond="292">if</span> defined (<span class="macro" data-ref="_M/QT_DEBUG">QT_DEBUG</span>)</u></td></tr>
+<tr><th id="293">293</th><td>    Q_ENUM(SnippetName)</td></tr>
+<tr><th id="294">294</th><td>    <em>static</em> QByteArray snippetNameStr(SnippetName snippetName);</td></tr>
+<tr><th id="295">295</th><td><u>#<span data-ppcond="292">endif</span></u></td></tr>
+<tr><th id="296">296</th><td></td></tr>
+<tr><th id="297">297</th><td><i>/*</i></td></tr>
+<tr><th id="298">298</th><td><i>    // These allow the ShaderName enum to be used as a cache key</i></td></tr>
+<tr><th id="299">299</th><td><i>    const int mainVertexOffset = 0;</i></td></tr>
+<tr><th id="300">300</th><td><i>    const int positionVertexOffset = (1&lt;&lt;2) - PositionOnlyVertexShader;</i></td></tr>
+<tr><th id="301">301</th><td><i>    const int mainFragOffset = (1&lt;&lt;6) - MainFragmentShader_CMO;</i></td></tr>
+<tr><th id="302">302</th><td><i>    const int srcPixelOffset = (1&lt;&lt;10) - ImageSrcFragmentShader;</i></td></tr>
+<tr><th id="303">303</th><td><i>    const int maskOffset = (1&lt;&lt;14) - NoMaskShader;</i></td></tr>
+<tr><th id="304">304</th><td><i>    const int compositionOffset = (1 &lt;&lt; 16) - MultiplyCompositionModeFragmentShader;</i></td></tr>
+<tr><th id="305">305</th><td><i>*/</i></td></tr>
+<tr><th id="306">306</th><td></td></tr>
+<tr><th id="307">307</th><td>    <dfn class="decl fn" id="_ZN26QOpenGLEngineSharedShadersC1EP14QOpenGLContext" title='QOpenGLEngineSharedShaders::QOpenGLEngineSharedShaders' data-ref="_ZN26QOpenGLEngineSharedShadersC1EP14QOpenGLContext">QOpenGLEngineSharedShaders</dfn>(<a class="type" href="../gui/kernel/qopenglcontext.h.html#QOpenGLContext" title='QOpenGLContext' data-ref="QOpenGLContext">QOpenGLContext</a> *<dfn class="local col1 decl" id="1context" title='context' data-type='QOpenGLContext *' data-ref="1context">context</dfn>);</td></tr>
+<tr><th id="308">308</th><td>    <dfn class="decl fn" id="_ZN26QOpenGLEngineSharedShadersD1Ev" title='QOpenGLEngineSharedShaders::~QOpenGLEngineSharedShaders' data-ref="_ZN26QOpenGLEngineSharedShadersD1Ev">~QOpenGLEngineSharedShaders</dfn>();</td></tr>
+<tr><th id="309">309</th><td></td></tr>
+<tr><th id="310">310</th><td>    <a class="type" href="qopenglshaderprogram.h.html#QOpenGLShaderProgram" title='QOpenGLShaderProgram' data-ref="QOpenGLShaderProgram">QOpenGLShaderProgram</a> *<dfn class="decl def fn" id="_ZN26QOpenGLEngineSharedShaders13simpleProgramEv" title='QOpenGLEngineSharedShaders::simpleProgram' data-ref="_ZN26QOpenGLEngineSharedShaders13simpleProgramEv">simpleProgram</dfn>() { <b>return</b> <a class="member field" href="#QOpenGLEngineSharedShaders::simpleShaderProg" title='QOpenGLEngineSharedShaders::simpleShaderProg' data-ref="QOpenGLEngineSharedShaders::simpleShaderProg">simpleShaderProg</a>; }</td></tr>
+<tr><th id="311">311</th><td>    <a class="type" href="qopenglshaderprogram.h.html#QOpenGLShaderProgram" title='QOpenGLShaderProgram' data-ref="QOpenGLShaderProgram">QOpenGLShaderProgram</a> *<dfn class="decl def fn" id="_ZN26QOpenGLEngineSharedShaders11blitProgramEv" title='QOpenGLEngineSharedShaders::blitProgram' data-ref="_ZN26QOpenGLEngineSharedShaders11blitProgramEv">blitProgram</dfn>() { <b>return</b> <a class="member field" href="#QOpenGLEngineSharedShaders::blitShaderProg" title='QOpenGLEngineSharedShaders::blitShaderProg' data-ref="QOpenGLEngineSharedShaders::blitShaderProg">blitShaderProg</a>; }</td></tr>
+<tr><th id="312">312</th><td>    <i>// Compile the program if it's not already in the cache, return the item in the cache.</i></td></tr>
+<tr><th id="313">313</th><td>    <a class="type" href="#QOpenGLEngineShaderProg" title='QOpenGLEngineShaderProg' data-ref="QOpenGLEngineShaderProg">QOpenGLEngineShaderProg</a> *<dfn class="decl fn" id="_ZN26QOpenGLEngineSharedShaders18findProgramInCacheERK23QOpenGLEngineShaderProg" title='QOpenGLEngineSharedShaders::findProgramInCache' data-ref="_ZN26QOpenGLEngineSharedShaders18findProgramInCacheERK23QOpenGLEngineShaderProg">findProgramInCache</dfn>(<em>const</em> <a class="type" href="#QOpenGLEngineShaderProg" title='QOpenGLEngineShaderProg' data-ref="QOpenGLEngineShaderProg">QOpenGLEngineShaderProg</a> &amp;<dfn class="local col2 decl" id="2prog" title='prog' data-type='const QOpenGLEngineShaderProg &amp;' data-ref="2prog">prog</dfn>);</td></tr>
+<tr><th id="314">314</th><td>    <i>// Compile the custom shader if it's not already in the cache, return the item in the cache.</i></td></tr>
+<tr><th id="315">315</th><td></td></tr>
+<tr><th id="316">316</th><td>    <em>static</em> <a class="type" href="#QOpenGLEngineSharedShaders" title='QOpenGLEngineSharedShaders' data-ref="QOpenGLEngineSharedShaders">QOpenGLEngineSharedShaders</a> *<dfn class="decl fn" id="_ZN26QOpenGLEngineSharedShaders17shadersForContextEP14QOpenGLContext" title='QOpenGLEngineSharedShaders::shadersForContext' data-ref="_ZN26QOpenGLEngineSharedShaders17shadersForContextEP14QOpenGLContext">shadersForContext</dfn>(<a class="type" href="../gui/kernel/qopenglcontext.h.html#QOpenGLContext" title='QOpenGLContext' data-ref="QOpenGLContext">QOpenGLContext</a> *<dfn class="local col3 decl" id="3context" title='context' data-type='QOpenGLContext *' data-ref="3context">context</dfn>);</td></tr>
+<tr><th id="317">317</th><td></td></tr>
+<tr><th id="318">318</th><td>    <i>// Ideally, this would be static and cleanup all programs in all contexts which</i></td></tr>
+<tr><th id="319">319</th><td><i>    // contain the custom code. Currently it is just a hint and we rely on deleted</i></td></tr>
+<tr><th id="320">320</th><td><i>    // custom shaders being cleaned up by being kicked out of the cache when it's</i></td></tr>
+<tr><th id="321">321</th><td><i>    // full.</i></td></tr>
+<tr><th id="322">322</th><td>    <em>void</em> <dfn class="decl fn" id="_ZN26QOpenGLEngineSharedShaders18cleanupCustomStageEP24QOpenGLCustomShaderStage" title='QOpenGLEngineSharedShaders::cleanupCustomStage' data-ref="_ZN26QOpenGLEngineSharedShaders18cleanupCustomStageEP24QOpenGLCustomShaderStage">cleanupCustomStage</dfn>(<a class="type" href="qopenglcustomshaderstage_p.h.html#QOpenGLCustomShaderStage" title='QOpenGLCustomShaderStage' data-ref="QOpenGLCustomShaderStage">QOpenGLCustomShaderStage</a>* <dfn class="local col4 decl" id="4stage" title='stage' data-type='QOpenGLCustomShaderStage *' data-ref="4stage">stage</dfn>);</td></tr>
+<tr><th id="323">323</th><td></td></tr>
+<tr><th id="324">324</th><td><b>private</b>:</td></tr>
+<tr><th id="325">325</th><td>    <a class="type" href="qopenglshaderprogram.h.html#QOpenGLShaderProgram" title='QOpenGLShaderProgram' data-ref="QOpenGLShaderProgram">QOpenGLShaderProgram</a> *<dfn class="decl field" id="QOpenGLEngineSharedShaders::blitShaderProg" title='QOpenGLEngineSharedShaders::blitShaderProg' data-ref="QOpenGLEngineSharedShaders::blitShaderProg">blitShaderProg</dfn>;</td></tr>
+<tr><th id="326">326</th><td>    <a class="type" href="qopenglshaderprogram.h.html#QOpenGLShaderProgram" title='QOpenGLShaderProgram' data-ref="QOpenGLShaderProgram">QOpenGLShaderProgram</a> *<dfn class="decl field" id="QOpenGLEngineSharedShaders::simpleShaderProg" title='QOpenGLEngineSharedShaders::simpleShaderProg' data-ref="QOpenGLEngineSharedShaders::simpleShaderProg">simpleShaderProg</dfn>;</td></tr>
+<tr><th id="327">327</th><td>    <a class="type" href="../corelib/tools/qcontainerfwd.h.html#QList" title='QList' data-ref="QList">QList</a>&lt;<a class="type" href="#QOpenGLEngineShaderProg" title='QOpenGLEngineShaderProg' data-ref="QOpenGLEngineShaderProg">QOpenGLEngineShaderProg</a>*&gt; <dfn class="decl field" id="QOpenGLEngineSharedShaders::cachedPrograms" title='QOpenGLEngineSharedShaders::cachedPrograms' data-ref="QOpenGLEngineSharedShaders::cachedPrograms">cachedPrograms</dfn>;</td></tr>
+<tr><th id="328">328</th><td></td></tr>
+<tr><th id="329">329</th><td>    <em>static</em> <em>const</em> <em>char</em>* <dfn class="decl" id="QOpenGLEngineSharedShaders::qShaderSnippets" title='QOpenGLEngineSharedShaders::qShaderSnippets' data-ref="QOpenGLEngineSharedShaders::qShaderSnippets">qShaderSnippets</dfn>[<a class="enum" href="#QOpenGLEngineSharedShaders::TotalSnippetCount" title='QOpenGLEngineSharedShaders::TotalSnippetCount' data-ref="QOpenGLEngineSharedShaders::TotalSnippetCount">TotalSnippetCount</a>];</td></tr>
+<tr><th id="330">330</th><td>};</td></tr>
+<tr><th id="331">331</th><td></td></tr>
+<tr><th id="332">332</th><td></td></tr>
+<tr><th id="333">333</th><td><b>class</b> <dfn class="type def" id="QOpenGLEngineShaderProg" title='QOpenGLEngineShaderProg' data-ref="QOpenGLEngineShaderProg">QOpenGLEngineShaderProg</dfn></td></tr>
+<tr><th id="334">334</th><td>{</td></tr>
+<tr><th id="335">335</th><td><b>public</b>:</td></tr>
+<tr><th id="336">336</th><td>    <dfn class="decl def fn" id="_ZN23QOpenGLEngineShaderProgC1Ev" title='QOpenGLEngineShaderProg::QOpenGLEngineShaderProg' data-ref="_ZN23QOpenGLEngineShaderProgC1Ev">QOpenGLEngineShaderProg</dfn>() : <a class="member field" href="#QOpenGLEngineShaderProg::program" title='QOpenGLEngineShaderProg::program' data-ref="QOpenGLEngineShaderProg::program">program</a>(<b>nullptr</b>) {}</td></tr>
+<tr><th id="337">337</th><td></td></tr>
+<tr><th id="338">338</th><td>    <dfn class="decl def fn" id="_ZN23QOpenGLEngineShaderProgD1Ev" title='QOpenGLEngineShaderProg::~QOpenGLEngineShaderProg' data-ref="_ZN23QOpenGLEngineShaderProgD1Ev">~QOpenGLEngineShaderProg</dfn>() {</td></tr>
+<tr><th id="339">339</th><td>        <b>if</b> (<a class="member field" href="#QOpenGLEngineShaderProg::program" title='QOpenGLEngineShaderProg::program' data-ref="QOpenGLEngineShaderProg::program">program</a>)</td></tr>
+<tr><th id="340">340</th><td>            <b>delete</b> <a class="member field" href="#QOpenGLEngineShaderProg::program" title='QOpenGLEngineShaderProg::program' data-ref="QOpenGLEngineShaderProg::program">program</a>;</td></tr>
+<tr><th id="341">341</th><td>    }</td></tr>
+<tr><th id="342">342</th><td></td></tr>
+<tr><th id="343">343</th><td>    <a class="type" href="#QOpenGLEngineSharedShaders" title='QOpenGLEngineSharedShaders' data-ref="QOpenGLEngineSharedShaders">QOpenGLEngineSharedShaders</a>::<a class="type" href="#QOpenGLEngineSharedShaders::SnippetName" title='QOpenGLEngineSharedShaders::SnippetName' data-ref="QOpenGLEngineSharedShaders::SnippetName">SnippetName</a> <dfn class="decl field" id="QOpenGLEngineShaderProg::mainVertexShader" title='QOpenGLEngineShaderProg::mainVertexShader' data-ref="QOpenGLEngineShaderProg::mainVertexShader">mainVertexShader</dfn>;</td></tr>
+<tr><th id="344">344</th><td>    <a class="type" href="#QOpenGLEngineSharedShaders" title='QOpenGLEngineSharedShaders' data-ref="QOpenGLEngineSharedShaders">QOpenGLEngineSharedShaders</a>::<a class="type" href="#QOpenGLEngineSharedShaders::SnippetName" title='QOpenGLEngineSharedShaders::SnippetName' data-ref="QOpenGLEngineSharedShaders::SnippetName">SnippetName</a> <dfn class="decl field" id="QOpenGLEngineShaderProg::positionVertexShader" title='QOpenGLEngineShaderProg::positionVertexShader' data-ref="QOpenGLEngineShaderProg::positionVertexShader">positionVertexShader</dfn>;</td></tr>
+<tr><th id="345">345</th><td>    <a class="type" href="#QOpenGLEngineSharedShaders" title='QOpenGLEngineSharedShaders' data-ref="QOpenGLEngineSharedShaders">QOpenGLEngineSharedShaders</a>::<a class="type" href="#QOpenGLEngineSharedShaders::SnippetName" title='QOpenGLEngineSharedShaders::SnippetName' data-ref="QOpenGLEngineSharedShaders::SnippetName">SnippetName</a> <dfn class="decl field" id="QOpenGLEngineShaderProg::mainFragShader" title='QOpenGLEngineShaderProg::mainFragShader' data-ref="QOpenGLEngineShaderProg::mainFragShader">mainFragShader</dfn>;</td></tr>
+<tr><th id="346">346</th><td>    <a class="type" href="#QOpenGLEngineSharedShaders" title='QOpenGLEngineSharedShaders' data-ref="QOpenGLEngineSharedShaders">QOpenGLEngineSharedShaders</a>::<a class="type" href="#QOpenGLEngineSharedShaders::SnippetName" title='QOpenGLEngineSharedShaders::SnippetName' data-ref="QOpenGLEngineSharedShaders::SnippetName">SnippetName</a> <dfn class="decl field" id="QOpenGLEngineShaderProg::srcPixelFragShader" title='QOpenGLEngineShaderProg::srcPixelFragShader' data-ref="QOpenGLEngineShaderProg::srcPixelFragShader">srcPixelFragShader</dfn>;</td></tr>
+<tr><th id="347">347</th><td>    <a class="type" href="#QOpenGLEngineSharedShaders" title='QOpenGLEngineSharedShaders' data-ref="QOpenGLEngineSharedShaders">QOpenGLEngineSharedShaders</a>::<a class="type" href="#QOpenGLEngineSharedShaders::SnippetName" title='QOpenGLEngineSharedShaders::SnippetName' data-ref="QOpenGLEngineSharedShaders::SnippetName">SnippetName</a> <dfn class="decl field" id="QOpenGLEngineShaderProg::maskFragShader" title='QOpenGLEngineShaderProg::maskFragShader' data-ref="QOpenGLEngineShaderProg::maskFragShader">maskFragShader</dfn>;</td></tr>
+<tr><th id="348">348</th><td>    <a class="type" href="#QOpenGLEngineSharedShaders" title='QOpenGLEngineSharedShaders' data-ref="QOpenGLEngineSharedShaders">QOpenGLEngineSharedShaders</a>::<a class="type" href="#QOpenGLEngineSharedShaders::SnippetName" title='QOpenGLEngineSharedShaders::SnippetName' data-ref="QOpenGLEngineSharedShaders::SnippetName">SnippetName</a> <dfn class="decl field" id="QOpenGLEngineShaderProg::compositionFragShader" title='QOpenGLEngineShaderProg::compositionFragShader' data-ref="QOpenGLEngineShaderProg::compositionFragShader">compositionFragShader</dfn>;</td></tr>
+<tr><th id="349">349</th><td></td></tr>
+<tr><th id="350">350</th><td>    <a class="type" href="../corelib/text/qbytearray.h.html#QByteArray" title='QByteArray' data-ref="QByteArray">QByteArray</a>          <dfn class="decl field" id="QOpenGLEngineShaderProg::customStageSource" title='QOpenGLEngineShaderProg::customStageSource' data-ref="QOpenGLEngineShaderProg::customStageSource">customStageSource</dfn>; <i>//TODO: Decent cache key for custom stages</i></td></tr>
+<tr><th id="351">351</th><td>    <a class="type" href="qopenglshaderprogram.h.html#QOpenGLShaderProgram" title='QOpenGLShaderProgram' data-ref="QOpenGLShaderProgram">QOpenGLShaderProgram</a>*   <dfn class="decl field" id="QOpenGLEngineShaderProg::program" title='QOpenGLEngineShaderProg::program' data-ref="QOpenGLEngineShaderProg::program">program</dfn>;</td></tr>
+<tr><th id="352">352</th><td></td></tr>
+<tr><th id="353">353</th><td>    <a class="type" href="../corelib/tools/qcontainerfwd.h.html#QList" title='QList' data-ref="QList">QList</a>&lt;<a class="typedef" href="../corelib/global/qtypes.h.html#uint" title='uint' data-type='unsigned int' data-ref="uint">uint</a>&gt; <dfn class="decl field" id="QOpenGLEngineShaderProg::uniformLocations" title='QOpenGLEngineShaderProg::uniformLocations' data-ref="QOpenGLEngineShaderProg::uniformLocations">uniformLocations</dfn>;</td></tr>
+<tr><th id="354">354</th><td></td></tr>
+<tr><th id="355">355</th><td>    <em>bool</em>                <dfn class="decl field" id="QOpenGLEngineShaderProg::useTextureCoords" title='QOpenGLEngineShaderProg::useTextureCoords' data-ref="QOpenGLEngineShaderProg::useTextureCoords">useTextureCoords</dfn>;</td></tr>
+<tr><th id="356">356</th><td>    <em>bool</em>                <dfn class="decl field" id="QOpenGLEngineShaderProg::useOpacityAttribute" title='QOpenGLEngineShaderProg::useOpacityAttribute' data-ref="QOpenGLEngineShaderProg::useOpacityAttribute">useOpacityAttribute</dfn>;</td></tr>
+<tr><th id="357">357</th><td>    <em>bool</em>                <dfn class="decl field" id="QOpenGLEngineShaderProg::usePmvMatrixAttribute" title='QOpenGLEngineShaderProg::usePmvMatrixAttribute' data-ref="QOpenGLEngineShaderProg::usePmvMatrixAttribute">usePmvMatrixAttribute</dfn>;</td></tr>
+<tr><th id="358">358</th><td></td></tr>
+<tr><th id="359">359</th><td>    <em>bool</em> <dfn class="decl def fn" id="_ZNK23QOpenGLEngineShaderProgeqERKS_" title='QOpenGLEngineShaderProg::operator==' data-ref="_ZNK23QOpenGLEngineShaderProgeqERKS_"><b>operator</b>==</dfn>(<em>const</em> <a class="type" href="#QOpenGLEngineShaderProg" title='QOpenGLEngineShaderProg' data-ref="QOpenGLEngineShaderProg">QOpenGLEngineShaderProg</a>&amp; <dfn class="local col5 decl" id="5other" title='other' data-type='const QOpenGLEngineShaderProg &amp;' data-ref="5other">other</dfn>) <em>const</em> {</td></tr>
+<tr><th id="360">360</th><td>        <i>// We don't care about the program</i></td></tr>
+<tr><th id="361">361</th><td>        <b>return</b> ( <a class="member field" href="#QOpenGLEngineShaderProg::mainVertexShader" title='QOpenGLEngineShaderProg::mainVertexShader' data-ref="QOpenGLEngineShaderProg::mainVertexShader">mainVertexShader</a>      == <a class="local col5 ref" href="#5other" title='other' data-ref="5other">other</a>.<a class="member field" href="#QOpenGLEngineShaderProg::mainVertexShader" title='QOpenGLEngineShaderProg::mainVertexShader' data-ref="QOpenGLEngineShaderProg::mainVertexShader">mainVertexShader</a> &amp;&amp;</td></tr>
+<tr><th id="362">362</th><td>                 <a class="member field" href="#QOpenGLEngineShaderProg::positionVertexShader" title='QOpenGLEngineShaderProg::positionVertexShader' data-ref="QOpenGLEngineShaderProg::positionVertexShader">positionVertexShader</a>  == <a class="local col5 ref" href="#5other" title='other' data-ref="5other">other</a>.<a class="member field" href="#QOpenGLEngineShaderProg::positionVertexShader" title='QOpenGLEngineShaderProg::positionVertexShader' data-ref="QOpenGLEngineShaderProg::positionVertexShader">positionVertexShader</a> &amp;&amp;</td></tr>
+<tr><th id="363">363</th><td>                 <a class="member field" href="#QOpenGLEngineShaderProg::mainFragShader" title='QOpenGLEngineShaderProg::mainFragShader' data-ref="QOpenGLEngineShaderProg::mainFragShader">mainFragShader</a>        == <a class="local col5 ref" href="#5other" title='other' data-ref="5other">other</a>.<a class="member field" href="#QOpenGLEngineShaderProg::mainFragShader" title='QOpenGLEngineShaderProg::mainFragShader' data-ref="QOpenGLEngineShaderProg::mainFragShader">mainFragShader</a> &amp;&amp;</td></tr>
+<tr><th id="364">364</th><td>                 <a class="member field" href="#QOpenGLEngineShaderProg::srcPixelFragShader" title='QOpenGLEngineShaderProg::srcPixelFragShader' data-ref="QOpenGLEngineShaderProg::srcPixelFragShader">srcPixelFragShader</a>    == <a class="local col5 ref" href="#5other" title='other' data-ref="5other">other</a>.<a class="member field" href="#QOpenGLEngineShaderProg::srcPixelFragShader" title='QOpenGLEngineShaderProg::srcPixelFragShader' data-ref="QOpenGLEngineShaderProg::srcPixelFragShader">srcPixelFragShader</a> &amp;&amp;</td></tr>
+<tr><th id="365">365</th><td>                 <a class="member field" href="#QOpenGLEngineShaderProg::maskFragShader" title='QOpenGLEngineShaderProg::maskFragShader' data-ref="QOpenGLEngineShaderProg::maskFragShader">maskFragShader</a>        == <a class="local col5 ref" href="#5other" title='other' data-ref="5other">other</a>.<a class="member field" href="#QOpenGLEngineShaderProg::maskFragShader" title='QOpenGLEngineShaderProg::maskFragShader' data-ref="QOpenGLEngineShaderProg::maskFragShader">maskFragShader</a> &amp;&amp;</td></tr>
+<tr><th id="366">366</th><td>                 <a class="member field" href="#QOpenGLEngineShaderProg::compositionFragShader" title='QOpenGLEngineShaderProg::compositionFragShader' data-ref="QOpenGLEngineShaderProg::compositionFragShader">compositionFragShader</a> == <a class="local col5 ref" href="#5other" title='other' data-ref="5other">other</a>.<a class="member field" href="#QOpenGLEngineShaderProg::compositionFragShader" title='QOpenGLEngineShaderProg::compositionFragShader' data-ref="QOpenGLEngineShaderProg::compositionFragShader">compositionFragShader</a> &amp;&amp;</td></tr>
+<tr><th id="367">367</th><td>                 <a class="member field" href="#QOpenGLEngineShaderProg::customStageSource" title='QOpenGLEngineShaderProg::customStageSource' data-ref="QOpenGLEngineShaderProg::customStageSource">customStageSource</a>     <a class="ref fn" href="../corelib/text/qbytearray.h.html#_ZeqRK10QByteArrayS1_" title='operator==' data-ref="_ZeqRK10QByteArrayS1_">==</a> <a class="local col5 ref" href="#5other" title='other' data-ref="5other">other</a>.<a class="member field" href="#QOpenGLEngineShaderProg::customStageSource" title='QOpenGLEngineShaderProg::customStageSource' data-ref="QOpenGLEngineShaderProg::customStageSource">customStageSource</a></td></tr>
+<tr><th id="368">368</th><td>               );</td></tr>
+<tr><th id="369">369</th><td>    }</td></tr>
+<tr><th id="370">370</th><td>};</td></tr>
+<tr><th id="371">371</th><td></td></tr>
+<tr><th id="372">372</th><td><b>class</b> <a class="macro" href="../../build/include/QtOpenGL/qtopenglexports.h.html#11" title="__attribute__((visibility(&quot;default&quot;)))" data-ref="_M/Q_OPENGL_EXPORT">Q_OPENGL_EXPORT</a> <dfn class="type def" id="QOpenGLEngineShaderManager" title='QOpenGLEngineShaderManager' data-ref="QOpenGLEngineShaderManager">QOpenGLEngineShaderManager</dfn> : <b>public</b> <a class="type" href="../corelib/kernel/qobject.h.html#QObject" title='QObject' data-ref="QObject">QObject</a></td></tr>
+<tr><th id="373">373</th><td>{</td></tr>
+<tr><th id="374">374</th><td>    <a class="macro" href="../corelib/kernel/qtmetamacros.h.html#117" title="public: static const QMetaObject staticMetaObject; virtual const QMetaObject *metaObject() const; virtual void *qt_metacast(const char *); virtual int qt_metacall(QMetaObject::Call, int, void **); static inline QString tr(const char *s, const char *c = nullptr, int n = -1) { return staticMetaObject.tr(s, c, n); } private: __attribute__((visibility(&quot;hidden&quot;))) static void qt_static_metacall(QObject *, QMetaObject::Call, int, void **); struct QPrivateSignal { explicit QPrivateSignal() = default; };" data-ref="_M/Q_OBJECT">Q_OBJECT</a></td></tr>
+<tr><th id="375">375</th><td><b>public</b>:</td></tr>
+<tr><th id="376">376</th><td>    <dfn class="decl fn" id="_ZN26QOpenGLEngineShaderManagerC1EP14QOpenGLContext" title='QOpenGLEngineShaderManager::QOpenGLEngineShaderManager' data-ref="_ZN26QOpenGLEngineShaderManagerC1EP14QOpenGLContext">QOpenGLEngineShaderManager</dfn>(<a class="type" href="../gui/kernel/qopenglcontext.h.html#QOpenGLContext" title='QOpenGLContext' data-ref="QOpenGLContext">QOpenGLContext</a>* <dfn class="local col6 decl" id="6context" title='context' data-type='QOpenGLContext *' data-ref="6context">context</dfn>);</td></tr>
+<tr><th id="377">377</th><td>    <dfn class="virtual decl fn" id="_ZN26QOpenGLEngineShaderManagerD1Ev" title='QOpenGLEngineShaderManager::~QOpenGLEngineShaderManager' data-ref="_ZN26QOpenGLEngineShaderManagerD1Ev">~QOpenGLEngineShaderManager</dfn>();</td></tr>
+<tr><th id="378">378</th><td></td></tr>
+<tr><th id="379">379</th><td>    <b>enum</b> <dfn class="type def" id="QOpenGLEngineShaderManager::MaskType" title='QOpenGLEngineShaderManager::MaskType' data-ref="QOpenGLEngineShaderManager::MaskType">MaskType</dfn> {<dfn class="enum" id="QOpenGLEngineShaderManager::NoMask" title='QOpenGLEngineShaderManager::NoMask' data-ref="QOpenGLEngineShaderManager::NoMask">NoMask</dfn>, <dfn class="enum" id="QOpenGLEngineShaderManager::PixelMask" title='QOpenGLEngineShaderManager::PixelMask' data-ref="QOpenGLEngineShaderManager::PixelMask">PixelMask</dfn>, <dfn class="enum" id="QOpenGLEngineShaderManager::SubPixelMaskPass1" title='QOpenGLEngineShaderManager::SubPixelMaskPass1' data-ref="QOpenGLEngineShaderManager::SubPixelMaskPass1">SubPixelMaskPass1</dfn>, <dfn class="enum" id="QOpenGLEngineShaderManager::SubPixelMaskPass2" title='QOpenGLEngineShaderManager::SubPixelMaskPass2' data-ref="QOpenGLEngineShaderManager::SubPixelMaskPass2">SubPixelMaskPass2</dfn>, <dfn class="enum" id="QOpenGLEngineShaderManager::SubPixelWithGammaMask" title='QOpenGLEngineShaderManager::SubPixelWithGammaMask' data-ref="QOpenGLEngineShaderManager::SubPixelWithGammaMask">SubPixelWithGammaMask</dfn>};</td></tr>
+<tr><th id="380">380</th><td>    <b>enum</b> <dfn class="type def" id="QOpenGLEngineShaderManager::PixelSrcType" title='QOpenGLEngineShaderManager::PixelSrcType' data-ref="QOpenGLEngineShaderManager::PixelSrcType">PixelSrcType</dfn> {</td></tr>
+<tr><th id="381">381</th><td>        <dfn class="enum" id="QOpenGLEngineShaderManager::ImageSrc" title='QOpenGLEngineShaderManager::ImageSrc' data-ref="QOpenGLEngineShaderManager::ImageSrc">ImageSrc</dfn> = <span class="namespace">Qt::</span><a class="enum" href="../corelib/global/qnamespace.h.html#Qt::TexturePattern" title='Qt::TexturePattern' data-ref="Qt::TexturePattern">TexturePattern</a>+<var>1</var>,</td></tr>
+<tr><th id="382">382</th><td>        <dfn class="enum" id="QOpenGLEngineShaderManager::NonPremultipliedImageSrc" title='QOpenGLEngineShaderManager::NonPremultipliedImageSrc' data-ref="QOpenGLEngineShaderManager::NonPremultipliedImageSrc">NonPremultipliedImageSrc</dfn> = <span class="namespace">Qt::</span><a class="enum" href="../corelib/global/qnamespace.h.html#Qt::TexturePattern" title='Qt::TexturePattern' data-ref="Qt::TexturePattern">TexturePattern</a>+<var>2</var>,</td></tr>
+<tr><th id="383">383</th><td>        <dfn class="enum" id="QOpenGLEngineShaderManager::PatternSrc" title='QOpenGLEngineShaderManager::PatternSrc' data-ref="QOpenGLEngineShaderManager::PatternSrc">PatternSrc</dfn> = <span class="namespace">Qt::</span><a class="enum" href="../corelib/global/qnamespace.h.html#Qt::TexturePattern" title='Qt::TexturePattern' data-ref="Qt::TexturePattern">TexturePattern</a>+<var>3</var>,</td></tr>
+<tr><th id="384">384</th><td>        <dfn class="enum" id="QOpenGLEngineShaderManager::TextureSrcWithPattern" title='QOpenGLEngineShaderManager::TextureSrcWithPattern' data-ref="QOpenGLEngineShaderManager::TextureSrcWithPattern">TextureSrcWithPattern</dfn> = <span class="namespace">Qt::</span><a class="enum" href="../corelib/global/qnamespace.h.html#Qt::TexturePattern" title='Qt::TexturePattern' data-ref="Qt::TexturePattern">TexturePattern</a>+<var>4</var>,</td></tr>
+<tr><th id="385">385</th><td>        <dfn class="enum" id="QOpenGLEngineShaderManager::GrayscaleImageSrc" title='QOpenGLEngineShaderManager::GrayscaleImageSrc' data-ref="QOpenGLEngineShaderManager::GrayscaleImageSrc">GrayscaleImageSrc</dfn> = <span class="namespace">Qt::</span><a class="enum" href="../corelib/global/qnamespace.h.html#Qt::TexturePattern" title='Qt::TexturePattern' data-ref="Qt::TexturePattern">TexturePattern</a>+<var>5</var>,</td></tr>
+<tr><th id="386">386</th><td>        <dfn class="enum" id="QOpenGLEngineShaderManager::AlphaImageSrc" title='QOpenGLEngineShaderManager::AlphaImageSrc' data-ref="QOpenGLEngineShaderManager::AlphaImageSrc">AlphaImageSrc</dfn> = <span class="namespace">Qt::</span><a class="enum" href="../corelib/global/qnamespace.h.html#Qt::TexturePattern" title='Qt::TexturePattern' data-ref="Qt::TexturePattern">TexturePattern</a>+<var>6</var>,</td></tr>
+<tr><th id="387">387</th><td>    };</td></tr>
+<tr><th id="388">388</th><td></td></tr>
+<tr><th id="389">389</th><td>    <b>enum</b> <dfn class="type def" id="QOpenGLEngineShaderManager::Uniform" title='QOpenGLEngineShaderManager::Uniform' data-ref="QOpenGLEngineShaderManager::Uniform">Uniform</dfn> {</td></tr>
+<tr><th id="390">390</th><td>        <dfn class="enum" id="QOpenGLEngineShaderManager::ImageTexture" title='QOpenGLEngineShaderManager::ImageTexture' data-ref="QOpenGLEngineShaderManager::ImageTexture">ImageTexture</dfn>,</td></tr>
+<tr><th id="391">391</th><td>        <dfn class="enum" id="QOpenGLEngineShaderManager::PatternColor" title='QOpenGLEngineShaderManager::PatternColor' data-ref="QOpenGLEngineShaderManager::PatternColor">PatternColor</dfn>,</td></tr>
+<tr><th id="392">392</th><td>        <dfn class="enum" id="QOpenGLEngineShaderManager::GlobalOpacity" title='QOpenGLEngineShaderManager::GlobalOpacity' data-ref="QOpenGLEngineShaderManager::GlobalOpacity">GlobalOpacity</dfn>,</td></tr>
+<tr><th id="393">393</th><td>        <dfn class="enum" id="QOpenGLEngineShaderManager::Depth" title='QOpenGLEngineShaderManager::Depth' data-ref="QOpenGLEngineShaderManager::Depth">Depth</dfn>,</td></tr>
+<tr><th id="394">394</th><td>        <dfn class="enum" id="QOpenGLEngineShaderManager::MaskTexture" title='QOpenGLEngineShaderManager::MaskTexture' data-ref="QOpenGLEngineShaderManager::MaskTexture">MaskTexture</dfn>,</td></tr>
+<tr><th id="395">395</th><td>        <dfn class="enum" id="QOpenGLEngineShaderManager::FragmentColor" title='QOpenGLEngineShaderManager::FragmentColor' data-ref="QOpenGLEngineShaderManager::FragmentColor">FragmentColor</dfn>,</td></tr>
+<tr><th id="396">396</th><td>        <dfn class="enum" id="QOpenGLEngineShaderManager::LinearData" title='QOpenGLEngineShaderManager::LinearData' data-ref="QOpenGLEngineShaderManager::LinearData">LinearData</dfn>,</td></tr>
+<tr><th id="397">397</th><td>        <dfn class="enum" id="QOpenGLEngineShaderManager::Angle" title='QOpenGLEngineShaderManager::Angle' data-ref="QOpenGLEngineShaderManager::Angle">Angle</dfn>,</td></tr>
+<tr><th id="398">398</th><td>        <dfn class="enum" id="QOpenGLEngineShaderManager::HalfViewportSize" title='QOpenGLEngineShaderManager::HalfViewportSize' data-ref="QOpenGLEngineShaderManager::HalfViewportSize">HalfViewportSize</dfn>,</td></tr>
+<tr><th id="399">399</th><td>        <dfn class="enum" id="QOpenGLEngineShaderManager::Fmp" title='QOpenGLEngineShaderManager::Fmp' data-ref="QOpenGLEngineShaderManager::Fmp">Fmp</dfn>,</td></tr>
+<tr><th id="400">400</th><td>        <dfn class="enum" id="QOpenGLEngineShaderManager::Fmp2MRadius2" title='QOpenGLEngineShaderManager::Fmp2MRadius2' data-ref="QOpenGLEngineShaderManager::Fmp2MRadius2">Fmp2MRadius2</dfn>,</td></tr>
+<tr><th id="401">401</th><td>        <dfn class="enum" id="QOpenGLEngineShaderManager::Inverse2Fmp2MRadius2" title='QOpenGLEngineShaderManager::Inverse2Fmp2MRadius2' data-ref="QOpenGLEngineShaderManager::Inverse2Fmp2MRadius2">Inverse2Fmp2MRadius2</dfn>,</td></tr>
+<tr><th id="402">402</th><td>        <dfn class="enum" id="QOpenGLEngineShaderManager::SqrFr" title='QOpenGLEngineShaderManager::SqrFr' data-ref="QOpenGLEngineShaderManager::SqrFr">SqrFr</dfn>,</td></tr>
+<tr><th id="403">403</th><td>        <dfn class="enum" id="QOpenGLEngineShaderManager::BRadius" title='QOpenGLEngineShaderManager::BRadius' data-ref="QOpenGLEngineShaderManager::BRadius">BRadius</dfn>,</td></tr>
+<tr><th id="404">404</th><td>        <dfn class="enum" id="QOpenGLEngineShaderManager::InvertedTextureSize" title='QOpenGLEngineShaderManager::InvertedTextureSize' data-ref="QOpenGLEngineShaderManager::InvertedTextureSize">InvertedTextureSize</dfn>,</td></tr>
+<tr><th id="405">405</th><td>        <dfn class="enum" id="QOpenGLEngineShaderManager::BrushTransform" title='QOpenGLEngineShaderManager::BrushTransform' data-ref="QOpenGLEngineShaderManager::BrushTransform">BrushTransform</dfn>,</td></tr>
+<tr><th id="406">406</th><td>        <dfn class="enum" id="QOpenGLEngineShaderManager::BrushTexture" title='QOpenGLEngineShaderManager::BrushTexture' data-ref="QOpenGLEngineShaderManager::BrushTexture">BrushTexture</dfn>,</td></tr>
+<tr><th id="407">407</th><td>        <dfn class="enum" id="QOpenGLEngineShaderManager::Matrix" title='QOpenGLEngineShaderManager::Matrix' data-ref="QOpenGLEngineShaderManager::Matrix">Matrix</dfn>,</td></tr>
+<tr><th id="408">408</th><td>        <dfn class="enum" id="QOpenGLEngineShaderManager::NumUniforms" title='QOpenGLEngineShaderManager::NumUniforms' data-ref="QOpenGLEngineShaderManager::NumUniforms">NumUniforms</dfn></td></tr>
+<tr><th id="409">409</th><td>    };</td></tr>
+<tr><th id="410">410</th><td></td></tr>
+<tr><th id="411">411</th><td>    <b>enum</b> <dfn class="type def" id="QOpenGLEngineShaderManager::OpacityMode" title='QOpenGLEngineShaderManager::OpacityMode' data-ref="QOpenGLEngineShaderManager::OpacityMode">OpacityMode</dfn> {</td></tr>
+<tr><th id="412">412</th><td>        <dfn class="enum" id="QOpenGLEngineShaderManager::NoOpacity" title='QOpenGLEngineShaderManager::NoOpacity' data-ref="QOpenGLEngineShaderManager::NoOpacity">NoOpacity</dfn>,</td></tr>
+<tr><th id="413">413</th><td>        <dfn class="enum" id="QOpenGLEngineShaderManager::UniformOpacity" title='QOpenGLEngineShaderManager::UniformOpacity' data-ref="QOpenGLEngineShaderManager::UniformOpacity">UniformOpacity</dfn>,</td></tr>
+<tr><th id="414">414</th><td>        <dfn class="enum" id="QOpenGLEngineShaderManager::AttributeOpacity" title='QOpenGLEngineShaderManager::AttributeOpacity' data-ref="QOpenGLEngineShaderManager::AttributeOpacity">AttributeOpacity</dfn></td></tr>
+<tr><th id="415">415</th><td>    };</td></tr>
+<tr><th id="416">416</th><td></td></tr>
+<tr><th id="417">417</th><td>    <i>// There are optimizations we can do, depending on the brush transform:</i></td></tr>
+<tr><th id="418">418</th><td><i>    //    1) May not have to apply perspective-correction</i></td></tr>
+<tr><th id="419">419</th><td><i>    //    2) Can use lower precision for matrix</i></td></tr>
+<tr><th id="420">420</th><td>    <em>void</em> <dfn class="decl fn" id="_ZN26QOpenGLEngineShaderManager25optimiseForBrushTransformEN10QTransform18TransformationTypeE" title='QOpenGLEngineShaderManager::optimiseForBrushTransform' data-ref="_ZN26QOpenGLEngineShaderManager25optimiseForBrushTransformEN10QTransform18TransformationTypeE">optimiseForBrushTransform</dfn>(<a class="type" href="../gui/painting/qtransform.h.html#QTransform" title='QTransform' data-ref="QTransform">QTransform</a>::<a class="type" href="../gui/painting/qtransform.h.html#QTransform::TransformationType" title='QTransform::TransformationType' data-ref="QTransform::TransformationType">TransformationType</a> <dfn class="local col7 decl" id="7transformType" title='transformType' data-type='QTransform::TransformationType' data-ref="7transformType">transformType</dfn>);</td></tr>
+<tr><th id="421">421</th><td>    <em>void</em> <dfn class="decl fn" id="_ZN26QOpenGLEngineShaderManager15setSrcPixelTypeEN2Qt10BrushStyleE" title='QOpenGLEngineShaderManager::setSrcPixelType' data-ref="_ZN26QOpenGLEngineShaderManager15setSrcPixelTypeEN2Qt10BrushStyleE">setSrcPixelType</dfn>(<span class="namespace">Qt::</span><a class="type" href="../corelib/global/qnamespace.h.html#Qt::BrushStyle" title='Qt::BrushStyle' data-ref="Qt::BrushStyle">BrushStyle</a>);</td></tr>
+<tr><th id="422">422</th><td>    <em>void</em> <dfn class="decl fn" id="_ZN26QOpenGLEngineShaderManager15setSrcPixelTypeENS_12PixelSrcTypeE" title='QOpenGLEngineShaderManager::setSrcPixelType' data-ref="_ZN26QOpenGLEngineShaderManager15setSrcPixelTypeENS_12PixelSrcTypeE">setSrcPixelType</dfn>(<a class="type" href="#QOpenGLEngineShaderManager::PixelSrcType" title='QOpenGLEngineShaderManager::PixelSrcType' data-ref="QOpenGLEngineShaderManager::PixelSrcType">PixelSrcType</a>); <i>// For non-brush sources, like pixmaps &amp; images</i></td></tr>
+<tr><th id="423">423</th><td>    <em>void</em> <dfn class="decl fn" id="_ZN26QOpenGLEngineShaderManager14setOpacityModeENS_11OpacityModeE" title='QOpenGLEngineShaderManager::setOpacityMode' data-ref="_ZN26QOpenGLEngineShaderManager14setOpacityModeENS_11OpacityModeE">setOpacityMode</dfn>(<a class="type" href="#QOpenGLEngineShaderManager::OpacityMode" title='QOpenGLEngineShaderManager::OpacityMode' data-ref="QOpenGLEngineShaderManager::OpacityMode">OpacityMode</a>);</td></tr>
+<tr><th id="424">424</th><td>    <em>void</em> <dfn class="decl fn" id="_ZN26QOpenGLEngineShaderManager11setMaskTypeENS_8MaskTypeE" title='QOpenGLEngineShaderManager::setMaskType' data-ref="_ZN26QOpenGLEngineShaderManager11setMaskTypeENS_8MaskTypeE">setMaskType</dfn>(<a class="type" href="#QOpenGLEngineShaderManager::MaskType" title='QOpenGLEngineShaderManager::MaskType' data-ref="QOpenGLEngineShaderManager::MaskType">MaskType</a>);</td></tr>
+<tr><th id="425">425</th><td>    <em>void</em> <dfn class="decl fn" id="_ZN26QOpenGLEngineShaderManager18setCompositionModeEN8QPainter15CompositionModeE" title='QOpenGLEngineShaderManager::setCompositionMode' data-ref="_ZN26QOpenGLEngineShaderManager18setCompositionModeEN8QPainter15CompositionModeE">setCompositionMode</dfn>(<a class="type" href="../gui/painting/qpainter.h.html#QPainter" title='QPainter' data-ref="QPainter">QPainter</a>::<a class="type" href="../gui/painting/qpainter.h.html#QPainter::CompositionMode" title='QPainter::CompositionMode' data-ref="QPainter::CompositionMode">CompositionMode</a>);</td></tr>
+<tr><th id="426">426</th><td>    <em>void</em> <dfn class="decl fn" id="_ZN26QOpenGLEngineShaderManager14setCustomStageEP24QOpenGLCustomShaderStage" title='QOpenGLEngineShaderManager::setCustomStage' data-ref="_ZN26QOpenGLEngineShaderManager14setCustomStageEP24QOpenGLCustomShaderStage">setCustomStage</dfn>(<a class="type" href="qopenglcustomshaderstage_p.h.html#QOpenGLCustomShaderStage" title='QOpenGLCustomShaderStage' data-ref="QOpenGLCustomShaderStage">QOpenGLCustomShaderStage</a>* <dfn class="local col8 decl" id="8stage" title='stage' data-type='QOpenGLCustomShaderStage *' data-ref="8stage">stage</dfn>);</td></tr>
+<tr><th id="427">427</th><td>    <em>void</em> <dfn class="decl fn" id="_ZN26QOpenGLEngineShaderManager17removeCustomStageEv" title='QOpenGLEngineShaderManager::removeCustomStage' data-ref="_ZN26QOpenGLEngineShaderManager17removeCustomStageEv">removeCustomStage</dfn>();</td></tr>
+<tr><th id="428">428</th><td></td></tr>
+<tr><th id="429">429</th><td>    <a class="typedef" href="../../../include/GL/gl.h.html#GLuint" title='GLuint' data-type='unsigned int' data-ref="GLuint">GLuint</a> <dfn class="decl fn" id="_ZN26QOpenGLEngineShaderManager18getUniformLocationENS_7UniformE" title='QOpenGLEngineShaderManager::getUniformLocation' data-ref="_ZN26QOpenGLEngineShaderManager18getUniformLocationENS_7UniformE">getUniformLocation</dfn>(<a class="type" href="#QOpenGLEngineShaderManager::Uniform" title='QOpenGLEngineShaderManager::Uniform' data-ref="QOpenGLEngineShaderManager::Uniform">Uniform</a> <dfn class="local col9 decl" id="9id" title='id' data-type='QOpenGLEngineShaderManager::Uniform' data-ref="9id">id</dfn>);</td></tr>
+<tr><th id="430">430</th><td></td></tr>
+<tr><th id="431">431</th><td>    <em>void</em> <dfn class="decl fn" id="_ZN26QOpenGLEngineShaderManager8setDirtyEv" title='QOpenGLEngineShaderManager::setDirty' data-ref="_ZN26QOpenGLEngineShaderManager8setDirtyEv">setDirty</dfn>(); <i>// someone has manually changed the current shader program</i></td></tr>
+<tr><th id="432">432</th><td>    <em>bool</em> <dfn class="decl fn" id="_ZN26QOpenGLEngineShaderManager20useCorrectShaderProgEv" title='QOpenGLEngineShaderManager::useCorrectShaderProg' data-ref="_ZN26QOpenGLEngineShaderManager20useCorrectShaderProgEv">useCorrectShaderProg</dfn>(); <i>// returns true if the shader program needed to be changed</i></td></tr>
+<tr><th id="433">433</th><td></td></tr>
+<tr><th id="434">434</th><td>    <em>void</em> <dfn class="decl fn" id="_ZN26QOpenGLEngineShaderManager16useSimpleProgramEv" title='QOpenGLEngineShaderManager::useSimpleProgram' data-ref="_ZN26QOpenGLEngineShaderManager16useSimpleProgramEv">useSimpleProgram</dfn>();</td></tr>
+<tr><th id="435">435</th><td>    <em>void</em> <dfn class="decl fn" id="_ZN26QOpenGLEngineShaderManager14useBlitProgramEv" title='QOpenGLEngineShaderManager::useBlitProgram' data-ref="_ZN26QOpenGLEngineShaderManager14useBlitProgramEv">useBlitProgram</dfn>();</td></tr>
+<tr><th id="436">436</th><td>    <em>void</em> <dfn class="decl def fn" id="_ZN26QOpenGLEngineShaderManager21setHasComplexGeometryEb" title='QOpenGLEngineShaderManager::setHasComplexGeometry' data-ref="_ZN26QOpenGLEngineShaderManager21setHasComplexGeometryEb">setHasComplexGeometry</dfn>(<em>bool</em> <dfn class="local col0 decl" id="10hasComplexGeometry" title='hasComplexGeometry' data-type='bool' data-ref="10hasComplexGeometry">hasComplexGeometry</dfn>)</td></tr>
+<tr><th id="437">437</th><td>    {</td></tr>
+<tr><th id="438">438</th><td>        <a class="member field" href="#QOpenGLEngineShaderManager::complexGeometry" title='QOpenGLEngineShaderManager::complexGeometry' data-ref="QOpenGLEngineShaderManager::complexGeometry">complexGeometry</a> = <a class="local col0 ref" href="#10hasComplexGeometry" title='hasComplexGeometry' data-ref="10hasComplexGeometry">hasComplexGeometry</a>;</td></tr>
+<tr><th id="439">439</th><td>        <a class="member field" href="#QOpenGLEngineShaderManager::shaderProgNeedsChanging" title='QOpenGLEngineShaderManager::shaderProgNeedsChanging' data-ref="QOpenGLEngineShaderManager::shaderProgNeedsChanging">shaderProgNeedsChanging</a> = <b>true</b>;</td></tr>
+<tr><th id="440">440</th><td>    }</td></tr>
+<tr><th id="441">441</th><td>    <em>bool</em> <dfn class="decl def fn" id="_ZNK26QOpenGLEngineShaderManager18hasComplexGeometryEv" title='QOpenGLEngineShaderManager::hasComplexGeometry' data-ref="_ZNK26QOpenGLEngineShaderManager18hasComplexGeometryEv">hasComplexGeometry</dfn>() <em>const</em></td></tr>
+<tr><th id="442">442</th><td>    {</td></tr>
+<tr><th id="443">443</th><td>        <b>return</b> <a class="member field" href="#QOpenGLEngineShaderManager::complexGeometry" title='QOpenGLEngineShaderManager::complexGeometry' data-ref="QOpenGLEngineShaderManager::complexGeometry">complexGeometry</a>;</td></tr>
+<tr><th id="444">444</th><td>    }</td></tr>
+<tr><th id="445">445</th><td></td></tr>
+<tr><th id="446">446</th><td>    <a class="type" href="qopenglshaderprogram.h.html#QOpenGLShaderProgram" title='QOpenGLShaderProgram' data-ref="QOpenGLShaderProgram">QOpenGLShaderProgram</a>* <dfn class="decl fn" id="_ZN26QOpenGLEngineShaderManager14currentProgramEv" title='QOpenGLEngineShaderManager::currentProgram' data-ref="_ZN26QOpenGLEngineShaderManager14currentProgramEv">currentProgram</dfn>(); <i>// Returns pointer to the shader the manager has chosen</i></td></tr>
+<tr><th id="447">447</th><td>    <a class="type" href="qopenglshaderprogram.h.html#QOpenGLShaderProgram" title='QOpenGLShaderProgram' data-ref="QOpenGLShaderProgram">QOpenGLShaderProgram</a>* <dfn class="decl fn" id="_ZN26QOpenGLEngineShaderManager13simpleProgramEv" title='QOpenGLEngineShaderManager::simpleProgram' data-ref="_ZN26QOpenGLEngineShaderManager13simpleProgramEv">simpleProgram</dfn>(); <i>// Used to draw into e.g. stencil buffers</i></td></tr>
+<tr><th id="448">448</th><td>    <a class="type" href="qopenglshaderprogram.h.html#QOpenGLShaderProgram" title='QOpenGLShaderProgram' data-ref="QOpenGLShaderProgram">QOpenGLShaderProgram</a>* <dfn class="decl fn" id="_ZN26QOpenGLEngineShaderManager11blitProgramEv" title='QOpenGLEngineShaderManager::blitProgram' data-ref="_ZN26QOpenGLEngineShaderManager11blitProgramEv">blitProgram</dfn>(); <i>// Used to blit a texture into the framebuffer</i></td></tr>
+<tr><th id="449">449</th><td></td></tr>
+<tr><th id="450">450</th><td>    <a class="type" href="#QOpenGLEngineSharedShaders" title='QOpenGLEngineSharedShaders' data-ref="QOpenGLEngineSharedShaders">QOpenGLEngineSharedShaders</a>* <dfn class="decl field" id="QOpenGLEngineShaderManager::sharedShaders" title='QOpenGLEngineShaderManager::sharedShaders' data-ref="QOpenGLEngineShaderManager::sharedShaders">sharedShaders</dfn>;</td></tr>
+<tr><th id="451">451</th><td></td></tr>
+<tr><th id="452">452</th><td><b>private</b>:</td></tr>
+<tr><th id="453">453</th><td>    <a class="type" href="../gui/kernel/qopenglcontext.h.html#QOpenGLContext" title='QOpenGLContext' data-ref="QOpenGLContext">QOpenGLContext</a>*     <dfn class="decl field" id="QOpenGLEngineShaderManager::ctx" title='QOpenGLEngineShaderManager::ctx' data-ref="QOpenGLEngineShaderManager::ctx">ctx</dfn>;</td></tr>
+<tr><th id="454">454</th><td>    <em>bool</em>            <dfn class="decl field" id="QOpenGLEngineShaderManager::shaderProgNeedsChanging" title='QOpenGLEngineShaderManager::shaderProgNeedsChanging' data-ref="QOpenGLEngineShaderManager::shaderProgNeedsChanging">shaderProgNeedsChanging</dfn>;</td></tr>
+<tr><th id="455">455</th><td>    <em>bool</em>            <dfn class="decl field" id="QOpenGLEngineShaderManager::complexGeometry" title='QOpenGLEngineShaderManager::complexGeometry' data-ref="QOpenGLEngineShaderManager::complexGeometry">complexGeometry</dfn>;</td></tr>
+<tr><th id="456">456</th><td></td></tr>
+<tr><th id="457">457</th><td>    <i>// Current state variables which influence the choice of shader:</i></td></tr>
+<tr><th id="458">458</th><td>    <a class="type" href="../gui/painting/qtransform.h.html#QTransform" title='QTransform' data-ref="QTransform">QTransform</a>                  <dfn class="decl field" id="QOpenGLEngineShaderManager::brushTransform" title='QOpenGLEngineShaderManager::brushTransform' data-ref="QOpenGLEngineShaderManager::brushTransform">brushTransform</dfn>;</td></tr>
+<tr><th id="459">459</th><td>    <em>int</em>                         <dfn class="decl field" id="QOpenGLEngineShaderManager::srcPixelType" title='QOpenGLEngineShaderManager::srcPixelType' data-ref="QOpenGLEngineShaderManager::srcPixelType">srcPixelType</dfn>;</td></tr>
+<tr><th id="460">460</th><td>    <a class="type" href="#QOpenGLEngineShaderManager::OpacityMode" title='QOpenGLEngineShaderManager::OpacityMode' data-ref="QOpenGLEngineShaderManager::OpacityMode">OpacityMode</a>                 <dfn class="decl field" id="QOpenGLEngineShaderManager::opacityMode" title='QOpenGLEngineShaderManager::opacityMode' data-ref="QOpenGLEngineShaderManager::opacityMode">opacityMode</dfn>;</td></tr>
+<tr><th id="461">461</th><td>    <a class="type" href="#QOpenGLEngineShaderManager::MaskType" title='QOpenGLEngineShaderManager::MaskType' data-ref="QOpenGLEngineShaderManager::MaskType">MaskType</a>                    <dfn class="decl field" id="QOpenGLEngineShaderManager::maskType" title='QOpenGLEngineShaderManager::maskType' data-ref="QOpenGLEngineShaderManager::maskType">maskType</dfn>;</td></tr>
+<tr><th id="462">462</th><td>    <a class="type" href="../gui/painting/qpainter.h.html#QPainter" title='QPainter' data-ref="QPainter">QPainter</a>::<a class="type" href="../gui/painting/qpainter.h.html#QPainter::CompositionMode" title='QPainter::CompositionMode' data-ref="QPainter::CompositionMode">CompositionMode</a>   <dfn class="decl field" id="QOpenGLEngineShaderManager::compositionMode" title='QOpenGLEngineShaderManager::compositionMode' data-ref="QOpenGLEngineShaderManager::compositionMode">compositionMode</dfn>;</td></tr>
+<tr><th id="463">463</th><td>    <a class="type" href="qopenglcustomshaderstage_p.h.html#QOpenGLCustomShaderStage" title='QOpenGLCustomShaderStage' data-ref="QOpenGLCustomShaderStage">QOpenGLCustomShaderStage</a>*       <dfn class="decl field" id="QOpenGLEngineShaderManager::customSrcStage" title='QOpenGLEngineShaderManager::customSrcStage' data-ref="QOpenGLEngineShaderManager::customSrcStage">customSrcStage</dfn>;</td></tr>
+<tr><th id="464">464</th><td></td></tr>
+<tr><th id="465">465</th><td>    <a class="type" href="#QOpenGLEngineShaderProg" title='QOpenGLEngineShaderProg' data-ref="QOpenGLEngineShaderProg">QOpenGLEngineShaderProg</a>*    <dfn class="decl field" id="QOpenGLEngineShaderManager::currentShaderProg" title='QOpenGLEngineShaderManager::currentShaderProg' data-ref="QOpenGLEngineShaderManager::currentShaderProg">currentShaderProg</dfn>;</td></tr>
+<tr><th id="466">466</th><td>};</td></tr>
+<tr><th id="467">467</th><td></td></tr>
+<tr><th id="468">468</th><td><a class="macro" href="../corelib/global/qtconfigmacros.h.html#104" title="" data-ref="_M/QT_END_NAMESPACE">QT_END_NAMESPACE</a></td></tr>
+<tr><th id="469">469</th><td></td></tr>
+<tr><th id="470">470</th><td><u>#<span data-ppcond="184">endif</span> //QOPENGLENGINE_SHADER_MANAGER_H</u></td></tr>
+<tr><th id="471">471</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='qopenglcustomshaderstage.cpp.html'>qtbase-6.5.0/src/opengl/qopenglcustomshaderstage.cpp</a><br/>Generated on <em>2024-Jun-13</em> from project qtbase-6.5.0 revision <em>6.5.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

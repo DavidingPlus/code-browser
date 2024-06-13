@@ -1,0 +1,651 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>qsemaphore.cpp source code [qtbase-6.5.0/src/corelib/thread/qsemaphore.cpp] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="QSemaphorePrivate "/>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'qtbase-6.5.0/src/corelib/thread/qsemaphore.cpp'; var root_path = '../../../..'; var data_path = '../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>qtbase-6.5.0</a>/<a href='../..'>src</a>/<a href='..'>corelib</a>/<a href='./'>thread</a>/<a href='qsemaphore.cpp.html'>qsemaphore.cpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>// Copyright (C) 2022 The Qt Company Ltd.</i></td></tr>
+<tr><th id="2">2</th><td><i>// Copyright (C) 2018 Intel Corporation.</i></td></tr>
+<tr><th id="3">3</th><td><i>// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only</i></td></tr>
+<tr><th id="4">4</th><td></td></tr>
+<tr><th id="5">5</th><td><u>#include <a href="qsemaphore.h.html">"qsemaphore.h"</a></u></td></tr>
+<tr><th id="6">6</th><td><u>#include <a href="qfutex_p.h.html">"qfutex_p.h"</a></u></td></tr>
+<tr><th id="7">7</th><td><u>#include <a href="../../../build/include/QtCore/qdeadlinetimer.h.html">"qdeadlinetimer.h"</a></u></td></tr>
+<tr><th id="8">8</th><td><u>#include <a href="../../../build/include/QtCore/qdatetime.h.html">"qdatetime.h"</a></u></td></tr>
+<tr><th id="9">9</th><td><u>#include <a href="../../../build/include/QtCore/qdebug.h.html">"qdebug.h"</a></u></td></tr>
+<tr><th id="10">10</th><td><u>#include <a href="qlocking_p.h.html">"qlocking_p.h"</a></u></td></tr>
+<tr><th id="11">11</th><td><u>#include <a href="qwaitcondition_p.h.html">"qwaitcondition_p.h"</a></u></td></tr>
+<tr><th id="12">12</th><td></td></tr>
+<tr><th id="13">13</th><td><u>#include <a href="../../../../include/c++/9/chrono.html">&lt;chrono&gt;</a></u></td></tr>
+<tr><th id="14">14</th><td></td></tr>
+<tr><th id="15">15</th><td><a class="macro" href="../global/qtconfigmacros.h.html#103" title="" data-ref="_M/QT_BEGIN_NAMESPACE">QT_BEGIN_NAMESPACE</a></td></tr>
+<tr><th id="16">16</th><td></td></tr>
+<tr><th id="17">17</th><td><b>using</b> <b>namespace</b> <span class="namespace">QtFutex</span>;</td></tr>
+<tr><th id="18">18</th><td></td></tr>
+<tr><th id="19">19</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="20">20</th><td><i class="doc">    <span class="command">\class</span> <span class="verb" data-ref="QSemaphore">QSemaphore</span></i></td></tr>
+<tr><th id="21">21</th><td><i class="doc">   <span class="command"> \inmodule</span> QtCore</i></td></tr>
+<tr><th id="22">22</th><td><i class="doc">    <span class="command">\brief</span> The QSemaphore class provides a general counting semaphore.</i></td></tr>
+<tr><th id="23">23</th><td><i class="doc"></i></td></tr>
+<tr><th id="24">24</th><td><i class="doc">   <span class="command"> \threadsafe</span></i></td></tr>
+<tr><th id="25">25</th><td><i class="doc"></i></td></tr>
+<tr><th id="26">26</th><td><i class="doc">    <span class="command">\ingroup</span> <span class="verb">thread</span></i></td></tr>
+<tr><th id="27">27</th><td><i class="doc"></i></td></tr>
+<tr><th id="28">28</th><td><i class="doc">    A semaphore is a generalization of a mutex. While a mutex can</i></td></tr>
+<tr><th id="29">29</th><td><i class="doc">    only be locked once, it's possible to acquire a semaphore</i></td></tr>
+<tr><th id="30">30</th><td><i class="doc">    multiple times. Semaphores are typically used to protect a</i></td></tr>
+<tr><th id="31">31</th><td><i class="doc">    certain number of identical resources.</i></td></tr>
+<tr><th id="32">32</th><td><i class="doc"></i></td></tr>
+<tr><th id="33">33</th><td><i class="doc">    Semaphores support two fundamental operations, acquire() and</i></td></tr>
+<tr><th id="34">34</th><td><i class="doc">    release():</i></td></tr>
+<tr><th id="35">35</th><td><i class="doc"></i></td></tr>
+<tr><th id="36">36</th><td><i class="doc">   <span class="command"> \list</span></i></td></tr>
+<tr><th id="37">37</th><td><i class="doc">    <span class="command">\li</span> acquire<span class="command">(\e</span><span class="arg">{n})</span> tries to acquire<span class="command"> \e</span> <span class="arg">n</span> resources. If there aren't</i></td></tr>
+<tr><th id="38">38</th><td><i class="doc">       that many resources available, the call will block until this</i></td></tr>
+<tr><th id="39">39</th><td><i class="doc">       is the case.</i></td></tr>
+<tr><th id="40">40</th><td><i class="doc">    <span class="command">\li</span> release<span class="command">(\e</span><span class="arg">{n})</span> releases<span class="command"> \e</span> <span class="arg">n</span> resources.</i></td></tr>
+<tr><th id="41">41</th><td><i class="doc">   <span class="command"> \endlist</span></i></td></tr>
+<tr><th id="42">42</th><td><i class="doc"></i></td></tr>
+<tr><th id="43">43</th><td><i class="doc">    There's also a tryAcquire() function that returns immediately if</i></td></tr>
+<tr><th id="44">44</th><td><i class="doc">    it cannot acquire the resources, and an available() function that</i></td></tr>
+<tr><th id="45">45</th><td><i class="doc">    returns the number of available resources at any time.</i></td></tr>
+<tr><th id="46">46</th><td><i class="doc"></i></td></tr>
+<tr><th id="47">47</th><td><i class="doc">    Example:</i></td></tr>
+<tr><th id="48">48</th><td><i class="doc"></i></td></tr>
+<tr><th id="49">49</th><td><i class="doc">    <span class="command">\snippet</span> <span class="verb">code/src_corelib_thread_qsemaphore.cpp 0</span></i></td></tr>
+<tr><th id="50">50</th><td><i class="doc"></i></td></tr>
+<tr><th id="51">51</th><td><i class="doc">    A typical application of semaphores is for controlling access to</i></td></tr>
+<tr><th id="52">52</th><td><i class="doc">    a circular buffer shared by a producer thread and a consumer</i></td></tr>
+<tr><th id="53">53</th><td><i class="doc">    thread. The<span class="command"> \l</span>{Semaphores Example} shows how</i></td></tr>
+<tr><th id="54">54</th><td><i class="doc">    to use QSemaphore to solve that problem.</i></td></tr>
+<tr><th id="55">55</th><td><i class="doc"></i></td></tr>
+<tr><th id="56">56</th><td><i class="doc">    A non-computing example of a semaphore would be dining at a</i></td></tr>
+<tr><th id="57">57</th><td><i class="doc">    restaurant. A semaphore is initialized with the number of chairs</i></td></tr>
+<tr><th id="58">58</th><td><i class="doc">    in the restaurant. As people arrive, they want a seat. As seats</i></td></tr>
+<tr><th id="59">59</th><td><i class="doc">    are filled, available() is decremented. As people leave, the</i></td></tr>
+<tr><th id="60">60</th><td><i class="doc">    available() is incremented, allowing more people to enter. If a</i></td></tr>
+<tr><th id="61">61</th><td><i class="doc">    party of 10 people want to be seated, but there are only 9 seats,</i></td></tr>
+<tr><th id="62">62</th><td><i class="doc">    those 10 people will wait, but a party of 4 people would be</i></td></tr>
+<tr><th id="63">63</th><td><i class="doc">    seated (taking the available seats to 5, making the party of 10</i></td></tr>
+<tr><th id="64">64</th><td><i class="doc">    people wait longer).</i></td></tr>
+<tr><th id="65">65</th><td><i class="doc"></i></td></tr>
+<tr><th id="66">66</th><td><i class="doc">    <span class="command">\sa</span> QSemaphoreReleaser, QMutex, QWaitCondition, QThread, {Semaphores Example}</i></td></tr>
+<tr><th id="67">67</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="68">68</th><td></td></tr>
+<tr><th id="69">69</th><td><i>/*</i></td></tr>
+<tr><th id="70">70</th><td><i>    QSemaphore futex operation</i></td></tr>
+<tr><th id="71">71</th><td><i></i></td></tr>
+<tr><th id="72">72</th><td><i>    QSemaphore stores a 32-bit integer with the counter of currently available</i></td></tr>
+<tr><th id="73">73</th><td><i>    tokens (value between 0 and INT_MAX). When a thread attempts to acquire n</i></td></tr>
+<tr><th id="74">74</th><td><i>    tokens and the counter is larger than that, we perform a compare-and-swap</i></td></tr>
+<tr><th id="75">75</th><td><i>    with the new count. If that succeeds, the acquisition worked; if not, we</i></td></tr>
+<tr><th id="76">76</th><td><i>    loop again because the counter changed. If there were not enough tokens,</i></td></tr>
+<tr><th id="77">77</th><td><i>    we'll perform a futex-wait.</i></td></tr>
+<tr><th id="78">78</th><td><i></i></td></tr>
+<tr><th id="79">79</th><td><i>    Before we do, we set the high bit in the futex to indicate that semaphore</i></td></tr>
+<tr><th id="80">80</th><td><i>    is contended: that is, there's a thread waiting for more tokens. On</i></td></tr>
+<tr><th id="81">81</th><td><i>    release() for n tokens, we perform a fetch-and-add of n and then check if</i></td></tr>
+<tr><th id="82">82</th><td><i>    that high bit was set. If it was, then we clear that bit and perform a</i></td></tr>
+<tr><th id="83">83</th><td><i>    futex-wake on the semaphore to indicate the waiting threads can wake up and</i></td></tr>
+<tr><th id="84">84</th><td><i>    acquire tokens. Which ones get woken up is unspecified.</i></td></tr>
+<tr><th id="85">85</th><td><i></i></td></tr>
+<tr><th id="86">86</th><td><i>    If the system has the ability to wake up a precise number of threads, has</i></td></tr>
+<tr><th id="87">87</th><td><i>    Linux's FUTEX_WAKE_OP functionality, and is 64-bit, instead of using a</i></td></tr>
+<tr><th id="88">88</th><td><i>    single bit indicating a contended semaphore, we'll store the number of</i></td></tr>
+<tr><th id="89">89</th><td><i>    tokens *plus* total number of waiters in the high word. Additionally, all</i></td></tr>
+<tr><th id="90">90</th><td><i>    multi-token waiters will be waiting on that high word. So when releasing n</i></td></tr>
+<tr><th id="91">91</th><td><i>    tokens on those systems, we tell the kernel to wake up n single-token</i></td></tr>
+<tr><th id="92">92</th><td><i>    threads and all of the multi-token ones. Which threads get woken up is</i></td></tr>
+<tr><th id="93">93</th><td><i>    unspecified, but it's likely single-token threads will get woken up first.</i></td></tr>
+<tr><th id="94">94</th><td><i> */</i></td></tr>
+<tr><th id="95">95</th><td></td></tr>
+<tr><th id="96">96</th><td><u>#<span data-ppcond="96">if</span> defined(<a class="macro" href="../../../../include/linux/futex.h.html#149" data-ref="_M/FUTEX_OP">FUTEX_OP</a>) &amp;&amp; <a class="macro" href="../global/qprocessordetection.h.html#385" title="8" data-ref="_M/QT_POINTER_SIZE">QT_POINTER_SIZE</a> &gt; 4</u></td></tr>
+<tr><th id="97">97</th><td><em>static</em> <b>constexpr</b> <em>bool</em> <dfn class="tu decl def" id="futexHasWaiterCount" title='futexHasWaiterCount' data-type='const bool' data-ref="futexHasWaiterCount">futexHasWaiterCount</dfn> = <b>true</b>;</td></tr>
+<tr><th id="98">98</th><td><u>#<span data-ppcond="96">else</span></u></td></tr>
+<tr><th id="99">99</th><td><em>static</em> <b>constexpr</b> <em>bool</em> futexHasWaiterCount = <b>false</b>;</td></tr>
+<tr><th id="100">100</th><td><u>#<span data-ppcond="96">endif</span></u></td></tr>
+<tr><th id="101">101</th><td></td></tr>
+<tr><th id="102">102</th><td><em>static</em> <b>constexpr</b> <a class="typedef" href="../global/qtypes.h.html#quintptr" title='quintptr' data-type='QIntegerForSizeof&lt;void *&gt;::Unsigned' data-ref="quintptr">quintptr</a> <dfn class="tu decl def" id="futexNeedsWakeAllBit" title='futexNeedsWakeAllBit' data-type='const quintptr' data-ref="futexNeedsWakeAllBit">futexNeedsWakeAllBit</dfn> = <a class="tu ref" href="#futexHasWaiterCount" title='futexHasWaiterCount' data-use='r' data-ref="futexHasWaiterCount">futexHasWaiterCount</a> ?</td></tr>
+<tr><th id="103">103</th><td>        (<a class="macro" href="../global/qtypes.h.html#50" title="static_cast&lt;unsigned long long&gt;(1ULL)" data-ref="_M/Q_UINT64_C">Q_UINT64_C</a>(<var>1</var>) &lt;&lt; (<b>sizeof</b>(<a class="typedef" href="../global/qtypes.h.html#quintptr" title='quintptr' data-type='QIntegerForSizeof&lt;void *&gt;::Unsigned' data-ref="quintptr">quintptr</a>) * <span class="macro" title="8" data-ref="_M/CHAR_BIT">CHAR_BIT</span> - <var>1</var>)) : <var>0x80000000U</var>;</td></tr>
+<tr><th id="104">104</th><td></td></tr>
+<tr><th id="105">105</th><td><em>static</em> <em>int</em> <dfn class="tu decl def fn" id="_ZL17futexAvailCountery" title='futexAvailCounter' data-type='int futexAvailCounter(quintptr v)' data-ref="_ZL17futexAvailCountery">futexAvailCounter</dfn>(<a class="typedef" href="../global/qtypes.h.html#quintptr" title='quintptr' data-type='QIntegerForSizeof&lt;void *&gt;::Unsigned' data-ref="quintptr">quintptr</a> <dfn class="local col1 decl" id="1v" title='v' data-type='quintptr' data-ref="1v">v</dfn>)</td></tr>
+<tr><th id="106">106</th><td>{</td></tr>
+<tr><th id="107">107</th><td>    <i>// the low 31 bits</i></td></tr>
+<tr><th id="108">108</th><td>    <b>if</b> (<a class="tu ref" href="#futexHasWaiterCount" title='futexHasWaiterCount' data-use='r' data-ref="futexHasWaiterCount">futexHasWaiterCount</a>) {</td></tr>
+<tr><th id="109">109</th><td>        <i>// the high bit of the low word isn't used</i></td></tr>
+<tr><th id="110">110</th><td>        <a class="macro" href="../global/qassert.h.html#28" title="static_cast&lt;void&gt;(false &amp;&amp; ((v &amp; 0x80000000U) == 0))" data-ref="_M/Q_ASSERT">Q_ASSERT</a>((<a class="local col1 ref" href="#1v" title='v' data-ref="1v">v</a> &amp; <var>0x80000000U</var>) == <var>0</var>);</td></tr>
+<tr><th id="111">111</th><td></td></tr>
+<tr><th id="112">112</th><td>        <i>// so we can be a little faster</i></td></tr>
+<tr><th id="113">113</th><td>        <b>return</b> <em>int</em>(<em>unsigned</em>(<a class="local col1 ref" href="#1v" title='v' data-ref="1v">v</a>));</td></tr>
+<tr><th id="114">114</th><td>    }</td></tr>
+<tr><th id="115">115</th><td>    <b>return</b> <em>int</em>(<a class="local col1 ref" href="#1v" title='v' data-ref="1v">v</a> &amp; <var>0x7fffffffU</var>);</td></tr>
+<tr><th id="116">116</th><td>}</td></tr>
+<tr><th id="117">117</th><td></td></tr>
+<tr><th id="118">118</th><td><em>static</em> <em>bool</em> <dfn class="tu decl def fn" id="_ZL14futexNeedsWakey" title='futexNeedsWake' data-type='bool futexNeedsWake(quintptr v)' data-ref="_ZL14futexNeedsWakey">futexNeedsWake</dfn>(<a class="typedef" href="../global/qtypes.h.html#quintptr" title='quintptr' data-type='QIntegerForSizeof&lt;void *&gt;::Unsigned' data-ref="quintptr">quintptr</a> <dfn class="local col2 decl" id="2v" title='v' data-type='quintptr' data-ref="2v">v</dfn>)</td></tr>
+<tr><th id="119">119</th><td>{</td></tr>
+<tr><th id="120">120</th><td>    <i>// If we're counting waiters, the number of waiters plus value is stored in the</i></td></tr>
+<tr><th id="121">121</th><td><i>    // low 31 bits of the high word (that is, bits 32-62). If we're not, then we only</i></td></tr>
+<tr><th id="122">122</th><td><i>    // use futexNeedsWakeAllBit to indicate anyone is waiting.</i></td></tr>
+<tr><th id="123">123</th><td>    <b>if</b> <b>constexpr</b> (<a class="tu ref" href="#futexHasWaiterCount" title='futexHasWaiterCount' data-use='r' data-ref="futexHasWaiterCount">futexHasWaiterCount</a>)</td></tr>
+<tr><th id="124">124</th><td>        <b>return</b> <em>unsigned</em>(<a class="typedef" href="../global/qtypes.h.html#quint64" title='quint64' data-type='unsigned long long' data-ref="quint64">quint64</a>(<a class="local col2 ref" href="#2v" title='v' data-ref="2v">v</a>) &gt;&gt; <var>32</var>) &gt; <em>unsigned</em>(<a class="local col2 ref" href="#2v" title='v' data-ref="2v">v</a>);</td></tr>
+<tr><th id="125">125</th><td>    <b>return</b> <a class="local col2 ref" href="#2v" title='v' data-ref="2v">v</a> &gt;&gt; <var>31</var>;</td></tr>
+<tr><th id="126">126</th><td>}</td></tr>
+<tr><th id="127">127</th><td></td></tr>
+<tr><th id="128">128</th><td><em>static</em> <a class="type" href="qbasicatomic.h.html#QBasicAtomicInteger" title='QBasicAtomicInteger' data-ref="QBasicAtomicInteger">QBasicAtomicInteger</a>&lt;<a class="typedef" href="../global/qtypes.h.html#quint32" title='quint32' data-type='unsigned int' data-ref="quint32">quint32</a>&gt; *<dfn class="tu decl def fn" id="_ZL10futexLow32P19QBasicAtomicIntegerIyE" title='futexLow32' data-type='QBasicAtomicInteger&lt;quint32&gt; * futexLow32(QBasicAtomicInteger&lt;quintptr&gt; * ptr)' data-ref="_ZL10futexLow32P19QBasicAtomicIntegerIyE">futexLow32</dfn>(<a class="type" href="qbasicatomic.h.html#QBasicAtomicInteger" title='QBasicAtomicInteger' data-ref="QBasicAtomicInteger">QBasicAtomicInteger</a>&lt;<a class="typedef" href="../global/qtypes.h.html#quintptr" title='quintptr' data-type='QIntegerForSizeof&lt;void *&gt;::Unsigned' data-ref="quintptr">quintptr</a>&gt; *<dfn class="local col3 decl" id="3ptr" title='ptr' data-type='QBasicAtomicInteger&lt;quintptr&gt; *' data-ref="3ptr">ptr</dfn>)</td></tr>
+<tr><th id="129">129</th><td>{</td></tr>
+<tr><th id="130">130</th><td>    <em>auto</em> <dfn class="local col4 decl" id="4result" title='result' data-type='QBasicAtomicInteger&lt;quint32&gt; *' data-ref="4result">result</dfn> = <b>reinterpret_cast</b>&lt;<a class="type" href="qbasicatomic.h.html#QBasicAtomicInteger" title='QBasicAtomicInteger' data-ref="QBasicAtomicInteger">QBasicAtomicInteger</a>&lt;<a class="typedef" href="../global/qtypes.h.html#quint32" title='quint32' data-type='unsigned int' data-ref="quint32">quint32</a>&gt; *&gt;(<a class="local col3 ref" href="#3ptr" title='ptr' data-ref="3ptr">ptr</a>);</td></tr>
+<tr><th id="131">131</th><td><u>#<span data-ppcond="131">if</span> <a class="macro" href="../global/qprocessordetection.h.html#189" title="1234" data-ref="_M/Q_BYTE_ORDER">Q_BYTE_ORDER</a> == <a class="macro" href="../global/qprocessordetection.h.html#39" title="4321" data-ref="_M/Q_BIG_ENDIAN">Q_BIG_ENDIAN</a> &amp;&amp; <a class="macro" href="../global/qprocessordetection.h.html#385" title="8" data-ref="_M/QT_POINTER_SIZE">QT_POINTER_SIZE</a> &gt; 4</u></td></tr>
+<tr><th id="132">132</th><td>    ++result;</td></tr>
+<tr><th id="133">133</th><td><u>#<span data-ppcond="131">endif</span></u></td></tr>
+<tr><th id="134">134</th><td>    <b>return</b> <a class="local col4 ref" href="#4result" title='result' data-ref="4result">result</a>;</td></tr>
+<tr><th id="135">135</th><td>}</td></tr>
+<tr><th id="136">136</th><td></td></tr>
+<tr><th id="137">137</th><td><em>static</em> <a class="type" href="qbasicatomic.h.html#QBasicAtomicInteger" title='QBasicAtomicInteger' data-ref="QBasicAtomicInteger">QBasicAtomicInteger</a>&lt;<a class="typedef" href="../global/qtypes.h.html#quint32" title='quint32' data-type='unsigned int' data-ref="quint32">quint32</a>&gt; *<dfn class="tu decl def fn" id="_ZL11futexHigh32P19QBasicAtomicIntegerIyE" title='futexHigh32' data-type='QBasicAtomicInteger&lt;quint32&gt; * futexHigh32(QBasicAtomicInteger&lt;quintptr&gt; * ptr)' data-ref="_ZL11futexHigh32P19QBasicAtomicIntegerIyE">futexHigh32</dfn>(<a class="type" href="qbasicatomic.h.html#QBasicAtomicInteger" title='QBasicAtomicInteger' data-ref="QBasicAtomicInteger">QBasicAtomicInteger</a>&lt;<a class="typedef" href="../global/qtypes.h.html#quintptr" title='quintptr' data-type='QIntegerForSizeof&lt;void *&gt;::Unsigned' data-ref="quintptr">quintptr</a>&gt; *<dfn class="local col5 decl" id="5ptr" title='ptr' data-type='QBasicAtomicInteger&lt;quintptr&gt; *' data-ref="5ptr">ptr</dfn>)</td></tr>
+<tr><th id="138">138</th><td>{</td></tr>
+<tr><th id="139">139</th><td>    <a class="macro" href="../global/qassert.h.html#28" title="static_cast&lt;void&gt;(false &amp;&amp; (futexHasWaiterCount))" data-ref="_M/Q_ASSERT">Q_ASSERT</a>(<a class="tu ref" href="#futexHasWaiterCount" title='futexHasWaiterCount' data-use='r' data-ref="futexHasWaiterCount">futexHasWaiterCount</a>);</td></tr>
+<tr><th id="140">140</th><td>    <em>auto</em> <dfn class="local col6 decl" id="6result" title='result' data-type='QBasicAtomicInteger&lt;quint32&gt; *' data-ref="6result">result</dfn> = <b>reinterpret_cast</b>&lt;<a class="type" href="qbasicatomic.h.html#QBasicAtomicInteger" title='QBasicAtomicInteger' data-ref="QBasicAtomicInteger">QBasicAtomicInteger</a>&lt;<a class="typedef" href="../global/qtypes.h.html#quint32" title='quint32' data-type='unsigned int' data-ref="quint32">quint32</a>&gt; *&gt;(<a class="local col5 ref" href="#5ptr" title='ptr' data-ref="5ptr">ptr</a>);</td></tr>
+<tr><th id="141">141</th><td><u>#<span data-ppcond="141">if</span> <a class="macro" href="../global/qprocessordetection.h.html#189" title="1234" data-ref="_M/Q_BYTE_ORDER">Q_BYTE_ORDER</a> == <a class="macro" href="../global/qprocessordetection.h.html#44" title="1234" data-ref="_M/Q_LITTLE_ENDIAN">Q_LITTLE_ENDIAN</a> &amp;&amp; <a class="macro" href="../global/qprocessordetection.h.html#385" title="8" data-ref="_M/QT_POINTER_SIZE">QT_POINTER_SIZE</a> &gt; 4</u></td></tr>
+<tr><th id="142">142</th><td>    ++<a class="local col6 ref" href="#6result" title='result' data-ref="6result">result</a>;</td></tr>
+<tr><th id="143">143</th><td><u>#<span data-ppcond="141">endif</span></u></td></tr>
+<tr><th id="144">144</th><td>    <b>return</b> <a class="local col6 ref" href="#6result" title='result' data-ref="6result">result</a>;</td></tr>
+<tr><th id="145">145</th><td>}</td></tr>
+<tr><th id="146">146</th><td></td></tr>
+<tr><th id="147">147</th><td><b>template</b> &lt;<em>bool</em> IsTimed&gt; <em>bool</em></td></tr>
+<tr><th id="148">148</th><td><dfn class="decl def fn" id="_Z29futexSemaphoreTryAcquire_loopR19QBasicAtomicIntegerIyEyyi" title='futexSemaphoreTryAcquire_loop' data-ref="_Z29futexSemaphoreTryAcquire_loopR19QBasicAtomicIntegerIyEyyi">futexSemaphoreTryAcquire_loop</dfn>(<a class="type" href="qbasicatomic.h.html#QBasicAtomicInteger" title='QBasicAtomicInteger' data-ref="QBasicAtomicInteger">QBasicAtomicInteger</a>&lt;<a class="typedef" href="../global/qtypes.h.html#quintptr" title='quintptr' data-type='QIntegerForSizeof&lt;void *&gt;::Unsigned' data-ref="quintptr">quintptr</a>&gt; &amp;<dfn class="local col7 decl" id="7u" title='u' data-type='QBasicAtomicInteger&lt;quintptr&gt; &amp;' data-ref="7u">u</dfn>, <a class="typedef" href="../global/qtypes.h.html#quintptr" title='quintptr' data-type='QIntegerForSizeof&lt;void *&gt;::Unsigned' data-ref="quintptr">quintptr</a> <dfn class="local col8 decl" id="8curValue" title='curValue' data-type='quintptr' data-ref="8curValue">curValue</dfn>, <a class="typedef" href="../global/qtypes.h.html#quintptr" title='quintptr' data-type='QIntegerForSizeof&lt;void *&gt;::Unsigned' data-ref="quintptr">quintptr</a> <dfn class="local col9 decl" id="9nn" title='nn' data-type='quintptr' data-ref="9nn">nn</dfn>, <em>int</em> <dfn class="local col0 decl" id="10timeout" title='timeout' data-type='int' data-ref="10timeout">timeout</dfn>)</td></tr>
+<tr><th id="149">149</th><td>{</td></tr>
+<tr><th id="150">150</th><td>    <a class="type" href="../kernel/qdeadlinetimer.h.html#QDeadlineTimer" title='QDeadlineTimer' data-ref="QDeadlineTimer">QDeadlineTimer</a> <dfn class="local col1 decl" id="11timer" title='timer' data-type='QDeadlineTimer' data-ref="11timer">timer</dfn>(<a class="tu ref" href="#IsTimed" title='IsTimed' data-use='r' data-ref="IsTimed">IsTimed</a> ? <a class="type" href="../kernel/qdeadlinetimer.h.html#QDeadlineTimer" title='QDeadlineTimer' data-ref="QDeadlineTimer">QDeadlineTimer</a><a class="ref fn" href="../kernel/qdeadlinetimer.h.html#_ZN14QDeadlineTimerC1ExN2Qt9TimerTypeE" title='QDeadlineTimer::QDeadlineTimer' data-ref="_ZN14QDeadlineTimerC1ExN2Qt9TimerTypeE">(</a><a class="local col0 ref" href="#10timeout" title='timeout' data-ref="10timeout">timeout</a>) : <a class="type" href="../kernel/qdeadlinetimer.h.html#QDeadlineTimer" title='QDeadlineTimer' data-ref="QDeadlineTimer">QDeadlineTimer</a><a class="ref fn" href="../kernel/qdeadlinetimer.h.html#_ZN14QDeadlineTimerC1EN2Qt9TimerTypeE" title='QDeadlineTimer::QDeadlineTimer' data-ref="_ZN14QDeadlineTimerC1EN2Qt9TimerTypeE">(</a>));</td></tr>
+<tr><th id="151">151</th><td>    <a class="typedef" href="../global/qtypes.h.html#qint64" title='qint64' data-type='long long' data-ref="qint64">qint64</a> <dfn class="local col2 decl" id="12remainingTime" title='remainingTime' data-type='qint64' data-ref="12remainingTime">remainingTime</dfn> = <a class="local col0 ref" href="#10timeout" title='timeout' data-ref="10timeout">timeout</a> * <a class="macro" href="../global/qtypes.h.html#49" title="static_cast&lt;long long&gt;(1000LL)" data-ref="_M/Q_INT64_C">Q_INT64_C</a>(<var>1000</var>) * <var>1000</var>;</td></tr>
+<tr><th id="152">152</th><td>    <em>int</em> <dfn class="local col3 decl" id="13n" title='n' data-type='int' data-ref="13n">n</dfn> = <em>int</em>(<em>unsigned</em>(<a class="local col9 ref" href="#9nn" title='nn' data-ref="9nn">nn</a>));</td></tr>
+<tr><th id="153">153</th><td></td></tr>
+<tr><th id="154">154</th><td>    <i>// we're called after one testAndSet, so start by waiting first</i></td></tr>
+<tr><th id="155">155</th><td>    <b>for</b> (;;) {</td></tr>
+<tr><th id="156">156</th><td>        <i>// indicate we're waiting</i></td></tr>
+<tr><th id="157">157</th><td>        <em>auto</em> <dfn class="local col4 decl" id="14ptr" title='ptr' data-type='QBasicAtomicInteger&lt;quint32&gt; *' data-ref="14ptr">ptr</dfn> = <a class="tu ref fn" href="#_ZL10futexLow32P19QBasicAtomicIntegerIyE" title='futexLow32' data-use='c' data-ref="_ZL10futexLow32P19QBasicAtomicIntegerIyE">futexLow32</a>(<span class='inlayHint'>ptr:&nbsp;</span>&amp;<a class="local col7 ref" href="#7u" title='u' data-ref="7u">u</a>);</td></tr>
+<tr><th id="158">158</th><td>        <b>if</b> (<a class="local col3 ref" href="#13n" title='n' data-ref="13n">n</a> &gt; <var>1</var> || !<a class="tu ref" href="#futexHasWaiterCount" title='futexHasWaiterCount' data-use='r' data-ref="futexHasWaiterCount">futexHasWaiterCount</a>) {</td></tr>
+<tr><th id="159">159</th><td>            <a class="local col7 ref" href="#7u" title='u' data-ref="7u">u</a>.<a class="ref fn" href="qbasicatomic.h.html#_ZN19QBasicAtomicInteger17fetchAndOrRelaxedET_" title='QBasicAtomicInteger::fetchAndOrRelaxed' data-ref="_ZN19QBasicAtomicInteger17fetchAndOrRelaxedET_">fetchAndOrRelaxed</a>(<span class='inlayHint'>valueToAdd:&nbsp;</span><a class="tu ref" href="#futexNeedsWakeAllBit" title='futexNeedsWakeAllBit' data-use='r' data-ref="futexNeedsWakeAllBit">futexNeedsWakeAllBit</a>);</td></tr>
+<tr><th id="160">160</th><td>            <a class="local col8 ref" href="#8curValue" title='curValue' data-ref="8curValue">curValue</a> |= <a class="tu ref" href="#futexNeedsWakeAllBit" title='futexNeedsWakeAllBit' data-use='r' data-ref="futexNeedsWakeAllBit">futexNeedsWakeAllBit</a>;</td></tr>
+<tr><th id="161">161</th><td>            <b>if</b> <b>constexpr</b> (<a class="tu ref" href="#futexHasWaiterCount" title='futexHasWaiterCount' data-use='r' data-ref="futexHasWaiterCount">futexHasWaiterCount</a>) {</td></tr>
+<tr><th id="162">162</th><td>                <a class="macro" href="../global/qassert.h.html#28" title="static_cast&lt;void&gt;(false &amp;&amp; (n &gt; 1))" data-ref="_M/Q_ASSERT">Q_ASSERT</a>(<a class="local col3 ref" href="#13n" title='n' data-ref="13n">n</a> &gt; <var>1</var>);</td></tr>
+<tr><th id="163">163</th><td>                <a class="local col4 ref" href="#14ptr" title='ptr' data-ref="14ptr">ptr</a> = <a class="tu ref fn" href="#_ZL11futexHigh32P19QBasicAtomicIntegerIyE" title='futexHigh32' data-use='c' data-ref="_ZL11futexHigh32P19QBasicAtomicIntegerIyE">futexHigh32</a>(<span class='inlayHint'>ptr:&nbsp;</span>&amp;<a class="local col7 ref" href="#7u" title='u' data-ref="7u">u</a>);</td></tr>
+<tr><th id="164">164</th><td>                <a class="local col8 ref" href="#8curValue" title='curValue' data-ref="8curValue">curValue</a> = <a class="typedef" href="../global/qtypes.h.html#quint64" title='quint64' data-type='unsigned long long' data-ref="quint64">quint64</a>(<a class="local col8 ref" href="#8curValue" title='curValue' data-ref="8curValue">curValue</a>) &gt;&gt; <var>32</var>;</td></tr>
+<tr><th id="165">165</th><td>            }</td></tr>
+<tr><th id="166">166</th><td>        }</td></tr>
+<tr><th id="167">167</th><td></td></tr>
+<tr><th id="168">168</th><td>        <b>if</b> (<a class="tu ref" href="#IsTimed" title='IsTimed' data-use='r' data-ref="IsTimed">IsTimed</a> &amp;&amp; <a class="local col2 ref" href="#12remainingTime" title='remainingTime' data-ref="12remainingTime">remainingTime</a> &gt; <var>0</var>) {</td></tr>
+<tr><th id="169">169</th><td>            <em>bool</em> <dfn class="local col5 decl" id="15timedout" title='timedout' data-type='bool' data-ref="15timedout">timedout</dfn> = !<a class="ref fn" href="qfutex_p.h.html#_ZN12QtLinuxFutex9futexWaitERT_NS0_4TypeEx" title='QtLinuxFutex::futexWait' data-ref="_ZN12QtLinuxFutex9futexWaitERT_NS0_4TypeEx">futexWait</a>(<span class='inlayHint'>futex&amp;:&nbsp;</span><span class='refarg'>*<a class="local col4 ref" href="#14ptr" title='ptr' data-ref="14ptr">ptr</a></span>, <span class='inlayHint'>expectedValue:&nbsp;</span><a class="local col8 ref" href="#8curValue" title='curValue' data-ref="8curValue">curValue</a>, <span class='inlayHint'>nstimeout:&nbsp;</span><a class="local col2 ref" href="#12remainingTime" title='remainingTime' data-ref="12remainingTime">remainingTime</a>);</td></tr>
+<tr><th id="170">170</th><td>            <b>if</b> (<a class="local col5 ref" href="#15timedout" title='timedout' data-ref="15timedout">timedout</a>)</td></tr>
+<tr><th id="171">171</th><td>                <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="172">172</th><td>        } <b>else</b> {</td></tr>
+<tr><th id="173">173</th><td>            <a class="ref fn" href="qfutex_p.h.html#_ZN12QtLinuxFutex9futexWaitERT_NS0_4TypeE" title='QtLinuxFutex::futexWait' data-ref="_ZN12QtLinuxFutex9futexWaitERT_NS0_4TypeE">futexWait</a>(<span class='inlayHint'>futex&amp;:&nbsp;</span><span class='refarg'>*<a class="local col4 ref" href="#14ptr" title='ptr' data-ref="14ptr">ptr</a></span>, <span class='inlayHint'>expectedValue:&nbsp;</span><a class="local col8 ref" href="#8curValue" title='curValue' data-ref="8curValue">curValue</a>);</td></tr>
+<tr><th id="174">174</th><td>        }</td></tr>
+<tr><th id="175">175</th><td></td></tr>
+<tr><th id="176">176</th><td>        <a class="local col8 ref" href="#8curValue" title='curValue' data-ref="8curValue">curValue</a> = <a class="local col7 ref" href="#7u" title='u' data-ref="7u">u</a>.<a class="ref fn" href="qbasicatomic.h.html#_ZNK19QBasicAtomicInteger11loadAcquireEv" title='QBasicAtomicInteger::loadAcquire' data-ref="_ZNK19QBasicAtomicInteger11loadAcquireEv">loadAcquire</a>();</td></tr>
+<tr><th id="177">177</th><td>        <b>if</b> (<a class="tu ref" href="#IsTimed" title='IsTimed' data-use='r' data-ref="IsTimed">IsTimed</a>)</td></tr>
+<tr><th id="178">178</th><td>            <a class="local col2 ref" href="#12remainingTime" title='remainingTime' data-ref="12remainingTime">remainingTime</a> = <a class="local col1 ref" href="#11timer" title='timer' data-ref="11timer">timer</a>.<a class="ref fn" href="../kernel/qdeadlinetimer.h.html#_ZNK14QDeadlineTimer18remainingTimeNSecsEv" title='QDeadlineTimer::remainingTimeNSecs' data-ref="_ZNK14QDeadlineTimer18remainingTimeNSecsEv">remainingTimeNSecs</a>();</td></tr>
+<tr><th id="179">179</th><td></td></tr>
+<tr><th id="180">180</th><td>        <i>// try to acquire</i></td></tr>
+<tr><th id="181">181</th><td>        <b>while</b> (<a class="tu ref fn" href="#_ZL17futexAvailCountery" title='futexAvailCounter' data-use='c' data-ref="_ZL17futexAvailCountery">futexAvailCounter</a>(<span class='inlayHint'>v:&nbsp;</span><a class="local col8 ref" href="#8curValue" title='curValue' data-ref="8curValue">curValue</a>) &gt;= <a class="local col3 ref" href="#13n" title='n' data-ref="13n">n</a>) {</td></tr>
+<tr><th id="182">182</th><td>            <a class="typedef" href="../global/qtypes.h.html#quintptr" title='quintptr' data-type='QIntegerForSizeof&lt;void *&gt;::Unsigned' data-ref="quintptr">quintptr</a> <dfn class="local col6 decl" id="16newValue" title='newValue' data-type='quintptr' data-ref="16newValue">newValue</dfn> = <a class="local col8 ref" href="#8curValue" title='curValue' data-ref="8curValue">curValue</a> - <a class="local col9 ref" href="#9nn" title='nn' data-ref="9nn">nn</a>;</td></tr>
+<tr><th id="183">183</th><td>            <b>if</b> (<a class="local col7 ref" href="#7u" title='u' data-ref="7u">u</a>.<a class="ref fn" href="qbasicatomic.h.html#_ZN19QBasicAtomicInteger17testAndSetOrderedET_S0_RS0_" title='QBasicAtomicInteger::testAndSetOrdered' data-ref="_ZN19QBasicAtomicInteger17testAndSetOrderedET_S0_RS0_">testAndSetOrdered</a>(<span class='inlayHint'>expectedValue:&nbsp;</span><a class="local col8 ref" href="#8curValue" title='curValue' data-ref="8curValue">curValue</a>, <a class="local col6 ref" href="#16newValue" title='newValue' data-ref="16newValue">newValue</a>, <span class='inlayHint'>currentValue&amp;:&nbsp;</span><span class='refarg'><a class="local col8 ref" href="#8curValue" title='curValue' data-ref="8curValue">curValue</a></span>))</td></tr>
+<tr><th id="184">184</th><td>                <b>return</b> <b>true</b>;        <i>// succeeded!</i></td></tr>
+<tr><th id="185">185</th><td>        }</td></tr>
+<tr><th id="186">186</th><td></td></tr>
+<tr><th id="187">187</th><td>        <i>// not enough tokens available, put us to wait</i></td></tr>
+<tr><th id="188">188</th><td>        <b>if</b> (<a class="local col2 ref" href="#12remainingTime" title='remainingTime' data-ref="12remainingTime">remainingTime</a> == <var>0</var>)</td></tr>
+<tr><th id="189">189</th><td>            <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="190">190</th><td>    }</td></tr>
+<tr><th id="191">191</th><td>}</td></tr>
+<tr><th id="192">192</th><td></td></tr>
+<tr><th id="193">193</th><td><b>template</b> &lt;<em>bool</em> IsTimed&gt; <em>bool</em> <dfn class="decl def fn" id="_Z24futexSemaphoreTryAcquireR19QBasicAtomicIntegerIyEii" title='futexSemaphoreTryAcquire' data-ref="_Z24futexSemaphoreTryAcquireR19QBasicAtomicIntegerIyEii">futexSemaphoreTryAcquire</dfn>(<a class="type" href="qbasicatomic.h.html#QBasicAtomicInteger" title='QBasicAtomicInteger' data-ref="QBasicAtomicInteger">QBasicAtomicInteger</a>&lt;<a class="typedef" href="../global/qtypes.h.html#quintptr" title='quintptr' data-type='QIntegerForSizeof&lt;void *&gt;::Unsigned' data-ref="quintptr">quintptr</a>&gt; &amp;<dfn class="local col7 decl" id="17u" title='u' data-type='QBasicAtomicInteger&lt;quintptr&gt; &amp;' data-ref="17u">u</dfn>, <em>int</em> <dfn class="local col8 decl" id="18n" title='n' data-type='int' data-ref="18n">n</dfn>, <em>int</em> <dfn class="local col9 decl" id="19timeout" title='timeout' data-type='int' data-ref="19timeout">timeout</dfn>)</td></tr>
+<tr><th id="194">194</th><td>{</td></tr>
+<tr><th id="195">195</th><td>    <i>// Try to acquire without waiting (we still loop because the testAndSet</i></td></tr>
+<tr><th id="196">196</th><td><i>    // call can fail).</i></td></tr>
+<tr><th id="197">197</th><td>    <a class="typedef" href="../global/qtypes.h.html#quintptr" title='quintptr' data-type='QIntegerForSizeof&lt;void *&gt;::Unsigned' data-ref="quintptr">quintptr</a> <dfn class="local col0 decl" id="20nn" title='nn' data-type='quintptr' data-ref="20nn">nn</dfn> = <em>unsigned</em>(<a class="local col8 ref" href="#18n" title='n' data-ref="18n">n</a>);</td></tr>
+<tr><th id="198">198</th><td>    <b>if</b> (<a class="tu ref" href="#futexHasWaiterCount" title='futexHasWaiterCount' data-use='r' data-ref="futexHasWaiterCount">futexHasWaiterCount</a>)</td></tr>
+<tr><th id="199">199</th><td>        <a class="local col0 ref" href="#20nn" title='nn' data-ref="20nn">nn</a> |= <a class="typedef" href="../global/qtypes.h.html#quint64" title='quint64' data-type='unsigned long long' data-ref="quint64">quint64</a>(<a class="local col0 ref" href="#20nn" title='nn' data-ref="20nn">nn</a>) &lt;&lt; <var>32</var>;    <i>// token count replicated in high word</i></td></tr>
+<tr><th id="200">200</th><td></td></tr>
+<tr><th id="201">201</th><td>    <a class="typedef" href="../global/qtypes.h.html#quintptr" title='quintptr' data-type='QIntegerForSizeof&lt;void *&gt;::Unsigned' data-ref="quintptr">quintptr</a> <dfn class="local col1 decl" id="21curValue" title='curValue' data-type='quintptr' data-ref="21curValue">curValue</dfn> = <a class="local col7 ref" href="#17u" title='u' data-ref="17u">u</a>.<a class="ref fn" href="qbasicatomic.h.html#_ZNK19QBasicAtomicInteger11loadAcquireEv" title='QBasicAtomicInteger::loadAcquire' data-ref="_ZNK19QBasicAtomicInteger11loadAcquireEv">loadAcquire</a>();</td></tr>
+<tr><th id="202">202</th><td>    <b>while</b> (<a class="tu ref fn" href="#_ZL17futexAvailCountery" title='futexAvailCounter' data-use='c' data-ref="_ZL17futexAvailCountery">futexAvailCounter</a>(<span class='inlayHint'>v:&nbsp;</span><a class="local col1 ref" href="#21curValue" title='curValue' data-ref="21curValue">curValue</a>) &gt;= <a class="local col8 ref" href="#18n" title='n' data-ref="18n">n</a>) {</td></tr>
+<tr><th id="203">203</th><td>        <i>// try to acquire</i></td></tr>
+<tr><th id="204">204</th><td>        <a class="typedef" href="../global/qtypes.h.html#quintptr" title='quintptr' data-type='QIntegerForSizeof&lt;void *&gt;::Unsigned' data-ref="quintptr">quintptr</a> <dfn class="local col2 decl" id="22newValue" title='newValue' data-type='quintptr' data-ref="22newValue">newValue</dfn> = <a class="local col1 ref" href="#21curValue" title='curValue' data-ref="21curValue">curValue</a> - <a class="local col0 ref" href="#20nn" title='nn' data-ref="20nn">nn</a>;</td></tr>
+<tr><th id="205">205</th><td>        <b>if</b> (<a class="local col7 ref" href="#17u" title='u' data-ref="17u">u</a>.<a class="ref fn" href="qbasicatomic.h.html#_ZN19QBasicAtomicInteger17testAndSetOrderedET_S0_RS0_" title='QBasicAtomicInteger::testAndSetOrdered' data-ref="_ZN19QBasicAtomicInteger17testAndSetOrderedET_S0_RS0_">testAndSetOrdered</a>(<span class='inlayHint'>expectedValue:&nbsp;</span><a class="local col1 ref" href="#21curValue" title='curValue' data-ref="21curValue">curValue</a>, <a class="local col2 ref" href="#22newValue" title='newValue' data-ref="22newValue">newValue</a>, <span class='inlayHint'>currentValue&amp;:&nbsp;</span><span class='refarg'><a class="local col1 ref" href="#21curValue" title='curValue' data-ref="21curValue">curValue</a></span>))</td></tr>
+<tr><th id="206">206</th><td>            <b>return</b> <b>true</b>;        <i>// succeeded!</i></td></tr>
+<tr><th id="207">207</th><td>    }</td></tr>
+<tr><th id="208">208</th><td>    <b>if</b> (<a class="local col9 ref" href="#19timeout" title='timeout' data-ref="19timeout">timeout</a> == <var>0</var>)</td></tr>
+<tr><th id="209">209</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="210">210</th><td></td></tr>
+<tr><th id="211">211</th><td>    <i>// we need to wait</i></td></tr>
+<tr><th id="212">212</th><td>    <b>constexpr</b> <a class="typedef" href="../global/qtypes.h.html#quintptr" title='quintptr' data-type='QIntegerForSizeof&lt;void *&gt;::Unsigned' data-ref="quintptr">quintptr</a> <dfn class="local col3 decl" id="23oneWaiter" title='oneWaiter' data-type='const quintptr' data-ref="23oneWaiter">oneWaiter</dfn> = <a class="typedef" href="../global/qtypes.h.html#quintptr" title='quintptr' data-type='QIntegerForSizeof&lt;void *&gt;::Unsigned' data-ref="quintptr">quintptr</a>(<a class="macro" href="../global/qtypes.h.html#50" title="static_cast&lt;unsigned long long&gt;(1ULL)" data-ref="_M/Q_UINT64_C">Q_UINT64_C</a>(<var>1</var>) &lt;&lt; <var>32</var>); <i>// zero on 32-bit</i></td></tr>
+<tr><th id="213">213</th><td>    <b>if</b> <b>constexpr</b> (<a class="tu ref" href="#futexHasWaiterCount" title='futexHasWaiterCount' data-use='r' data-ref="futexHasWaiterCount">futexHasWaiterCount</a>) {</td></tr>
+<tr><th id="214">214</th><td>        <i>// We don't use the fetched value from above so futexWait() fails if</i></td></tr>
+<tr><th id="215">215</th><td><i>        // it changed after the testAndSetOrdered above.</i></td></tr>
+<tr><th id="216">216</th><td>        <a class="typedef" href="../global/qtypes.h.html#quint32" title='quint32' data-type='unsigned int' data-ref="quint32">quint32</a> <dfn class="local col4 decl" id="24waiterCount" title='waiterCount' data-type='quint32' data-ref="24waiterCount">waiterCount</dfn> = (<a class="typedef" href="../global/qtypes.h.html#quint64" title='quint64' data-type='unsigned long long' data-ref="quint64">quint64</a>(<a class="local col1 ref" href="#21curValue" title='curValue' data-ref="21curValue">curValue</a>) &gt;&gt; <var>32</var>) &amp; <var>0x7fffffffU</var>;</td></tr>
+<tr><th id="217">217</th><td>        <b>if</b> (<a class="local col4 ref" href="#24waiterCount" title='waiterCount' data-ref="24waiterCount">waiterCount</a> == <var>0x7fffffffU</var>) {</td></tr>
+<tr><th id="218">218</th><td>            <a class="macro" href="../global/qlogging.h.html#159" title="QMessageLogger(nullptr, 0, nullptr).critical" data-ref="_M/qCritical">qCritical</a>() <a class="ref fn" href="../io/qdebug.h.html#_ZN6QDebuglsEPKc" title='QDebug::operator&lt;&lt;' data-ref="_ZN6QDebuglsEPKc">&lt;&lt;</a> <q>"Waiter count overflow in QSemaphore"</q>;</td></tr>
+<tr><th id="219">219</th><td>            <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="220">220</th><td>        }</td></tr>
+<tr><th id="221">221</th><td></td></tr>
+<tr><th id="222">222</th><td>        <i>// increase the waiter count</i></td></tr>
+<tr><th id="223">223</th><td>        <a class="local col7 ref" href="#17u" title='u' data-ref="17u">u</a>.<a class="ref fn" href="qbasicatomic.h.html#_ZN19QBasicAtomicInteger18fetchAndAddRelaxedET_" title='QBasicAtomicInteger::fetchAndAddRelaxed' data-ref="_ZN19QBasicAtomicInteger18fetchAndAddRelaxedET_">fetchAndAddRelaxed</a>(<span class='inlayHint'>valueToAdd:&nbsp;</span><a class="local col3 ref" href="#23oneWaiter" title='oneWaiter' data-ref="23oneWaiter">oneWaiter</a>);</td></tr>
+<tr><th id="224">224</th><td>        <a class="local col1 ref" href="#21curValue" title='curValue' data-ref="21curValue">curValue</a> += <a class="local col3 ref" href="#23oneWaiter" title='oneWaiter' data-ref="23oneWaiter">oneWaiter</a>;</td></tr>
+<tr><th id="225">225</th><td></td></tr>
+<tr><th id="226">226</th><td>        <i>// Also adjust nn to subtract oneWaiter when we succeed in acquiring.</i></td></tr>
+<tr><th id="227">227</th><td>        <a class="local col0 ref" href="#20nn" title='nn' data-ref="20nn">nn</a> += <a class="local col3 ref" href="#23oneWaiter" title='oneWaiter' data-ref="23oneWaiter">oneWaiter</a>;</td></tr>
+<tr><th id="228">228</th><td>    }</td></tr>
+<tr><th id="229">229</th><td></td></tr>
+<tr><th id="230">230</th><td>    <b>if</b> (futexSemaphoreTryAcquire_loop&lt;<a class="tu ref" href="#IsTimed" title='IsTimed' data-use='c' data-ref="IsTimed">IsTimed</a>&gt;(<a class="local col7 ref" href="#17u" title='u' data-ref="17u">u</a>, <a class="local col1 ref" href="#21curValue" title='curValue' data-ref="21curValue">curValue</a>, <a class="local col0 ref" href="#20nn" title='nn' data-ref="20nn">nn</a>, <a class="local col9 ref" href="#19timeout" title='timeout' data-ref="19timeout">timeout</a>))</td></tr>
+<tr><th id="231">231</th><td>        <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="232">232</th><td></td></tr>
+<tr><th id="233">233</th><td>    <a class="macro" href="../global/qassert.h.html#28" title="static_cast&lt;void&gt;(false &amp;&amp; (IsTimed))" data-ref="_M/Q_ASSERT">Q_ASSERT</a>(<a class="tu ref" href="#IsTimed" title='IsTimed' data-use='r' data-ref="IsTimed">IsTimed</a>);</td></tr>
+<tr><th id="234">234</th><td></td></tr>
+<tr><th id="235">235</th><td>    <b>if</b> (<a class="tu ref" href="#futexHasWaiterCount" title='futexHasWaiterCount' data-use='r' data-ref="futexHasWaiterCount">futexHasWaiterCount</a>) {</td></tr>
+<tr><th id="236">236</th><td>        <i>// decrement the number of threads waiting</i></td></tr>
+<tr><th id="237">237</th><td>        <a class="macro" href="../global/qassert.h.html#28" title="static_cast&lt;void&gt;(false &amp;&amp; (futexHigh32(&amp;u)-&gt;loadRelaxed() &amp; 0x7fffffffU))" data-ref="_M/Q_ASSERT">Q_ASSERT</a>(<a class="tu ref fn" href="#_ZL11futexHigh32P19QBasicAtomicIntegerIyE" title='futexHigh32' data-use='c' data-ref="_ZL11futexHigh32P19QBasicAtomicIntegerIyE">futexHigh32</a>(&amp;<a class="local col7 ref" href="#17u" title='u' data-ref="17u">u</a>)-&gt;<a class="ref fn" href="qbasicatomic.h.html#_ZNK19QBasicAtomicInteger11loadRelaxedEv" title='QBasicAtomicInteger::loadRelaxed' data-ref="_ZNK19QBasicAtomicInteger11loadRelaxedEv">loadRelaxed</a>() &amp; <var>0x7fffffffU</var>);</td></tr>
+<tr><th id="238">238</th><td>        <a class="local col7 ref" href="#17u" title='u' data-ref="17u">u</a>.<a class="ref fn" href="qbasicatomic.h.html#_ZN19QBasicAtomicInteger18fetchAndSubRelaxedET_" title='QBasicAtomicInteger::fetchAndSubRelaxed' data-ref="_ZN19QBasicAtomicInteger18fetchAndSubRelaxedET_">fetchAndSubRelaxed</a>(<span class='inlayHint'>valueToAdd:&nbsp;</span><a class="local col3 ref" href="#23oneWaiter" title='oneWaiter' data-ref="23oneWaiter">oneWaiter</a>);</td></tr>
+<tr><th id="239">239</th><td>    }</td></tr>
+<tr><th id="240">240</th><td>    <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="241">241</th><td>}</td></tr>
+<tr><th id="242">242</th><td></td></tr>
+<tr><th id="243">243</th><td><b>class</b> <dfn class="type def" id="QSemaphorePrivate" title='QSemaphorePrivate' data-ref="QSemaphorePrivate">QSemaphorePrivate</dfn> {</td></tr>
+<tr><th id="244">244</th><td><b>public</b>:</td></tr>
+<tr><th id="245">245</th><td>    <b>explicit</b> <dfn class="decl def fn" id="_ZN17QSemaphorePrivateC1Ei" title='QSemaphorePrivate::QSemaphorePrivate' data-ref="_ZN17QSemaphorePrivateC1Ei">QSemaphorePrivate</dfn>(<em>int</em> <dfn class="local col5 decl" id="25n" title='n' data-type='int' data-ref="25n">n</dfn>) : <a class="member field" href="#QSemaphorePrivate::avail" title='QSemaphorePrivate::avail' data-ref="QSemaphorePrivate::avail">avail</a>(<a class="local col5 ref" href="#25n" title='n' data-ref="25n">n</a>) { }</td></tr>
+<tr><th id="246">246</th><td></td></tr>
+<tr><th id="247">247</th><td>    <span class="namespace">QtPrivate::</span><a class="typedef" href="qwaitcondition_p.h.html#QtPrivate::mutex" title='QtPrivate::mutex' data-type='std::mutex' data-ref="QtPrivate::mutex">mutex</a> <dfn class="decl field" id="QSemaphorePrivate::mutex" title='QSemaphorePrivate::mutex' data-ref="QSemaphorePrivate::mutex">mutex</dfn>;</td></tr>
+<tr><th id="248">248</th><td>    <span class="namespace">QtPrivate::</span><a class="typedef" href="qwaitcondition_p.h.html#QtPrivate::condition_variable" title='QtPrivate::condition_variable' data-type='std::condition_variable' data-ref="QtPrivate::condition_variable">condition_variable</a> <dfn class="decl field" id="QSemaphorePrivate::cond" title='QSemaphorePrivate::cond' data-ref="QSemaphorePrivate::cond">cond</dfn>;</td></tr>
+<tr><th id="249">249</th><td></td></tr>
+<tr><th id="250">250</th><td>    <em>int</em> <dfn class="decl field" id="QSemaphorePrivate::avail" title='QSemaphorePrivate::avail' data-ref="QSemaphorePrivate::avail">avail</dfn>;</td></tr>
+<tr><th id="251">251</th><td>};</td></tr>
+<tr><th id="252">252</th><td></td></tr>
+<tr><th id="253">253</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="254">254</th><td><i class="doc">    Creates a new semaphore and initializes the number of resources</i></td></tr>
+<tr><th id="255">255</th><td><i class="doc">    it guards to<span class="command"> \a</span> <span class="arg">n</span> (by default, 0).</i></td></tr>
+<tr><th id="256">256</th><td><i class="doc"></i></td></tr>
+<tr><th id="257">257</th><td><i class="doc">    <span class="command">\sa</span> release(), available()</i></td></tr>
+<tr><th id="258">258</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="259">259</th><td><a class="type" href="qsemaphore.h.html#QSemaphore" title='QSemaphore' data-ref="QSemaphore">QSemaphore</a>::<dfn class="decl def fn" id="_ZN10QSemaphoreC1Ei" title='QSemaphore::QSemaphore' data-ref="_ZN10QSemaphoreC1Ei">QSemaphore</dfn>(<em>int</em> <dfn class="local col6 decl" id="26n" title='n' data-type='int' data-ref="26n">n</dfn>)</td></tr>
+<tr><th id="260">260</th><td>{</td></tr>
+<tr><th id="261">261</th><td>    <a class="macro" href="../global/qassert.h.html#43" title="static_cast&lt;void&gt;(false &amp;&amp; (n &gt;= 0))" data-ref="_M/Q_ASSERT_X">Q_ASSERT_X</a>(<a class="local col6 ref" href="#26n" title='n' data-ref="26n">n</a> &gt;= <var>0</var>, <q>"QSemaphore"</q>, <q>"parameter 'n' must be non-negative"</q>);</td></tr>
+<tr><th id="262">262</th><td>    <b>if</b> (<a class="ref fn" href="qfutex_p.h.html#_ZN12QtLinuxFutex14futexAvailableEv" title='QtLinuxFutex::futexAvailable' data-ref="_ZN12QtLinuxFutex14futexAvailableEv">futexAvailable</a>()) {</td></tr>
+<tr><th id="263">263</th><td>        <a class="typedef" href="../global/qtypes.h.html#quintptr" title='quintptr' data-type='QIntegerForSizeof&lt;void *&gt;::Unsigned' data-ref="quintptr">quintptr</a> <dfn class="local col7 decl" id="27nn" title='nn' data-type='quintptr' data-ref="27nn">nn</dfn> = <em>unsigned</em>(<a class="local col6 ref" href="#26n" title='n' data-ref="26n">n</a>);</td></tr>
+<tr><th id="264">264</th><td>        <b>if</b> (<a class="tu ref" href="#futexHasWaiterCount" title='futexHasWaiterCount' data-use='r' data-ref="futexHasWaiterCount">futexHasWaiterCount</a>)</td></tr>
+<tr><th id="265">265</th><td>            <a class="local col7 ref" href="#27nn" title='nn' data-ref="27nn">nn</a> |= <a class="typedef" href="../global/qtypes.h.html#quint64" title='quint64' data-type='unsigned long long' data-ref="quint64">quint64</a>(<a class="local col7 ref" href="#27nn" title='nn' data-ref="27nn">nn</a>) &lt;&lt; <var>32</var>;    <i>// token count replicated in high word</i></td></tr>
+<tr><th id="266">266</th><td>        <a class="ref field" href="qsemaphore.h.html#QSemaphore::(anonymous)::u" title='QSemaphore::(anonymous union)::u' data-ref="QSemaphore::(anonymous)::u">u</a>.<a class="ref fn" href="qbasicatomic.h.html#_ZN19QBasicAtomicInteger12storeRelaxedET_" title='QBasicAtomicInteger::storeRelaxed' data-ref="_ZN19QBasicAtomicInteger12storeRelaxedET_">storeRelaxed</a>(<span class='inlayHint'>newValue:&nbsp;</span><a class="local col7 ref" href="#27nn" title='nn' data-ref="27nn">nn</a>);</td></tr>
+<tr><th id="267">267</th><td>    } <b>else</b> {</td></tr>
+<tr><th id="268">268</th><td>        <a class="ref field" href="qsemaphore.h.html#QSemaphore::(anonymous)::d" title='QSemaphore::(anonymous union)::d' data-ref="QSemaphore::(anonymous)::d">d</a> = <b>new</b> <a class="type" href="#QSemaphorePrivate" title='QSemaphorePrivate' data-ref="QSemaphorePrivate">QSemaphorePrivate</a><a class="ref fn" href="#_ZN17QSemaphorePrivateC1Ei" title='QSemaphorePrivate::QSemaphorePrivate' data-ref="_ZN17QSemaphorePrivateC1Ei">(</a><a class="local col6 ref" href="#26n" title='n' data-ref="26n">n</a>);</td></tr>
+<tr><th id="269">269</th><td>    }</td></tr>
+<tr><th id="270">270</th><td>}</td></tr>
+<tr><th id="271">271</th><td></td></tr>
+<tr><th id="272">272</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="273">273</th><td><i class="doc">    Destroys the semaphore.</i></td></tr>
+<tr><th id="274">274</th><td><i class="doc"></i></td></tr>
+<tr><th id="275">275</th><td><i class="doc">    <span class="command">\warning</span> Destroying a semaphore that is in use may result in</i></td></tr>
+<tr><th id="276">276</th><td><i class="doc">    undefined behavior.</i></td></tr>
+<tr><th id="277">277</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="278">278</th><td><a class="type" href="qsemaphore.h.html#QSemaphore" title='QSemaphore' data-ref="QSemaphore">QSemaphore</a>::<dfn class="decl def fn" id="_ZN10QSemaphoreD1Ev" title='QSemaphore::~QSemaphore' data-ref="_ZN10QSemaphoreD1Ev">~QSemaphore</dfn>()</td></tr>
+<tr><th id="279">279</th><td>{</td></tr>
+<tr><th id="280">280</th><td>    <b>if</b> (!<a class="ref fn" href="qfutex_p.h.html#_ZN12QtLinuxFutex14futexAvailableEv" title='QtLinuxFutex::futexAvailable' data-ref="_ZN12QtLinuxFutex14futexAvailableEv">futexAvailable</a>())</td></tr>
+<tr><th id="281">281</th><td>        <b>delete</b> <a class="ref field" href="qsemaphore.h.html#QSemaphore::(anonymous)::d" title='QSemaphore::(anonymous union)::d' data-ref="QSemaphore::(anonymous)::d">d</a>;</td></tr>
+<tr><th id="282">282</th><td>}</td></tr>
+<tr><th id="283">283</th><td></td></tr>
+<tr><th id="284">284</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="285">285</th><td><i class="doc">    Tries to acquire<span class="command"> \c</span> <span class="arg">n</span> resources guarded by the semaphore. If<span class="command"> \a</span> <span class="arg">n</span></i></td></tr>
+<tr><th id="286">286</th><td><i class="doc">    &gt; available(), this call will block until enough resources are</i></td></tr>
+<tr><th id="287">287</th><td><i class="doc">    available.</i></td></tr>
+<tr><th id="288">288</th><td><i class="doc"></i></td></tr>
+<tr><th id="289">289</th><td><i class="doc">    <span class="command">\sa</span> release(), available(), tryAcquire()</i></td></tr>
+<tr><th id="290">290</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="291">291</th><td><em>void</em> <a class="type" href="qsemaphore.h.html#QSemaphore" title='QSemaphore' data-ref="QSemaphore">QSemaphore</a>::<dfn class="decl def fn" id="_ZN10QSemaphore7acquireEi" title='QSemaphore::acquire' data-ref="_ZN10QSemaphore7acquireEi">acquire</dfn>(<em>int</em> <dfn class="local col8 decl" id="28n" title='n' data-type='int' data-ref="28n">n</dfn>)</td></tr>
+<tr><th id="292">292</th><td>{</td></tr>
+<tr><th id="293">293</th><td>    <a class="macro" href="../global/qassert.h.html#43" title="static_cast&lt;void&gt;(false &amp;&amp; (n &gt;= 0))" data-ref="_M/Q_ASSERT_X">Q_ASSERT_X</a>(<a class="local col8 ref" href="#28n" title='n' data-ref="28n">n</a> &gt;= <var>0</var>, <q>"QSemaphore::acquire"</q>, <q>"parameter 'n' must be non-negative"</q>);</td></tr>
+<tr><th id="294">294</th><td></td></tr>
+<tr><th id="295">295</th><td>    <b>if</b> (<a class="ref fn" href="qfutex_p.h.html#_ZN12QtLinuxFutex14futexAvailableEv" title='QtLinuxFutex::futexAvailable' data-ref="_ZN12QtLinuxFutex14futexAvailableEv">futexAvailable</a>()) {</td></tr>
+<tr><th id="296">296</th><td>        <a class="ref fn" href="#_Z24futexSemaphoreTryAcquireR19QBasicAtomicIntegerIyEii" title='futexSemaphoreTryAcquire' data-ref="_Z24futexSemaphoreTryAcquireR19QBasicAtomicIntegerIyEii">futexSemaphoreTryAcquire</a>&lt;<b>false</b>&gt;(<span class='inlayHint'>u&amp;:&nbsp;</span><span class='refarg'><a class="ref field" href="qsemaphore.h.html#QSemaphore::(anonymous)::u" title='QSemaphore::(anonymous union)::u' data-ref="QSemaphore::(anonymous)::u">u</a></span>, <a class="local col8 ref" href="#28n" title='n' data-ref="28n">n</a>, <span class='inlayHint'>timeout:&nbsp;</span>-<var>1</var>);</td></tr>
+<tr><th id="297">297</th><td>        <b>return</b>;</td></tr>
+<tr><th id="298">298</th><td>    }</td></tr>
+<tr><th id="299">299</th><td></td></tr>
+<tr><th id="300">300</th><td>    <em>const</em> <em>auto</em> <dfn class="local col9 decl" id="29sufficientResourcesAvailable" title='sufficientResourcesAvailable' data-type='const (lambda at /home/lzx0626/DavidingPlus/qtbase/src/corelib/thread/qsemaphore.cpp:300:47)' data-ref="29sufficientResourcesAvailable">sufficientResourcesAvailable</dfn> = [<b>this</b>, <a class="local col8 ref" href="#28n" title='n' data-ref="28n">n</a>] { <b>return</b> <a class="ref field" href="qsemaphore.h.html#QSemaphore::(anonymous)::d" title='QSemaphore::(anonymous union)::d' data-ref="QSemaphore::(anonymous)::d">d</a>-&gt;<a class="ref field" href="#QSemaphorePrivate::avail" title='QSemaphorePrivate::avail' data-ref="QSemaphorePrivate::avail">avail</a> &gt;= <a class="local col8 ref" href="#28n" title='n' data-ref="28n">n</a>; };</td></tr>
+<tr><th id="301">301</th><td></td></tr>
+<tr><th id="302">302</th><td>    <em>auto</em> <dfn class="local col0 decl" id="30locker" title='locker' data-type='std::unique_lock&lt;std::mutex&gt;' data-ref="30locker">locker</dfn> = <a class="ref fn" href="qlocking_p.h.html#_ZN12_GLOBAL__N_114qt_unique_lockERT_" title='(anonymous namespace)::qt_unique_lock' data-ref="_ZN12_GLOBAL__N_114qt_unique_lockERT_">qt_unique_lock</a>(<span class='inlayHint'>mutex&amp;:&nbsp;</span><span class='refarg'><a class="ref field" href="qsemaphore.h.html#QSemaphore::(anonymous)::d" title='QSemaphore::(anonymous union)::d' data-ref="QSemaphore::(anonymous)::d">d</a>-&gt;<a class="ref field" href="#QSemaphorePrivate::mutex" title='QSemaphorePrivate::mutex' data-ref="QSemaphorePrivate::mutex">mutex</a></span>);</td></tr>
+<tr><th id="303">303</th><td>    <a class="ref field" href="qsemaphore.h.html#QSemaphore::(anonymous)::d" title='QSemaphore::(anonymous union)::d' data-ref="QSemaphore::(anonymous)::d">d</a>-&gt;<a class="ref field" href="#QSemaphorePrivate::cond" title='QSemaphorePrivate::cond' data-ref="QSemaphorePrivate::cond">cond</a>.<a class="tu ref fn" href="../../../../include/c++/9/condition_variable.html#_ZNSt18condition_variable4waitERSt11unique_lockISt5mutexET_" title='std::condition_variable::wait' data-use='c' data-ref="_ZNSt18condition_variable4waitERSt11unique_lockISt5mutexET_">wait</a>(<span class='inlayHint'>lock&amp;:&nbsp;</span><span class='refarg'><a class="local col0 ref" href="#30locker" title='locker' data-ref="30locker">locker</a></span>, <a class="tu ref fn fake" href="#300" title='QSemaphore::acquire(int)::(anonymous class)::' data-use='c' data-ref="_ZZN10QSemaphore7acquireEiEN3$_0C1ERKS0_"></a><span class='inlayHint'>p:&nbsp;</span><a class="local col9 ref" href="#29sufficientResourcesAvailable" title='sufficientResourcesAvailable' data-ref="29sufficientResourcesAvailable">sufficientResourcesAvailable</a>);</td></tr>
+<tr><th id="304">304</th><td>    <a class="ref field" href="qsemaphore.h.html#QSemaphore::(anonymous)::d" title='QSemaphore::(anonymous union)::d' data-ref="QSemaphore::(anonymous)::d">d</a>-&gt;<a class="ref field" href="#QSemaphorePrivate::avail" title='QSemaphorePrivate::avail' data-ref="QSemaphorePrivate::avail">avail</a> -= <a class="local col8 ref" href="#28n" title='n' data-ref="28n">n</a>;</td></tr>
+<tr><th id="305">305</th><td>}</td></tr>
+<tr><th id="306">306</th><td></td></tr>
+<tr><th id="307">307</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="308">308</th><td><i class="doc">    Releases<span class="command"> \a</span> <span class="arg">n</span> resources guarded by the semaphore.</i></td></tr>
+<tr><th id="309">309</th><td><i class="doc"></i></td></tr>
+<tr><th id="310">310</th><td><i class="doc">    This function can be used to "create" resources as well. For</i></td></tr>
+<tr><th id="311">311</th><td><i class="doc">    example:</i></td></tr>
+<tr><th id="312">312</th><td><i class="doc"></i></td></tr>
+<tr><th id="313">313</th><td><i class="doc">    <span class="command">\snippet</span> <span class="verb">code/src_corelib_thread_qsemaphore.cpp 1</span></i></td></tr>
+<tr><th id="314">314</th><td><i class="doc"></i></td></tr>
+<tr><th id="315">315</th><td><i class="doc">    QSemaphoreReleaser is a<span class="command"> \l</span>{<a href="http://en.cppreference.com/w/cpp/language/raii">http://en.cppreference.com/w/cpp/language/raii</a>}{RAII}</i></td></tr>
+<tr><th id="316">316</th><td><i class="doc">    wrapper around this function.</i></td></tr>
+<tr><th id="317">317</th><td><i class="doc"></i></td></tr>
+<tr><th id="318">318</th><td><i class="doc">    <span class="command">\sa</span> acquire(), available(), QSemaphoreReleaser</i></td></tr>
+<tr><th id="319">319</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="320">320</th><td><em>void</em> <a class="type" href="qsemaphore.h.html#QSemaphore" title='QSemaphore' data-ref="QSemaphore">QSemaphore</a>::<dfn class="decl def fn" id="_ZN10QSemaphore7releaseEi" title='QSemaphore::release' data-ref="_ZN10QSemaphore7releaseEi">release</dfn>(<em>int</em> <dfn class="local col1 decl" id="31n" title='n' data-type='int' data-ref="31n">n</dfn>)</td></tr>
+<tr><th id="321">321</th><td>{</td></tr>
+<tr><th id="322">322</th><td>    <a class="macro" href="../global/qassert.h.html#43" title="static_cast&lt;void&gt;(false &amp;&amp; (n &gt;= 0))" data-ref="_M/Q_ASSERT_X">Q_ASSERT_X</a>(<a class="local col1 ref" href="#31n" title='n' data-ref="31n">n</a> &gt;= <var>0</var>, <q>"QSemaphore::release"</q>, <q>"parameter 'n' must be non-negative"</q>);</td></tr>
+<tr><th id="323">323</th><td></td></tr>
+<tr><th id="324">324</th><td>    <b>if</b> (<a class="ref fn" href="qfutex_p.h.html#_ZN12QtLinuxFutex14futexAvailableEv" title='QtLinuxFutex::futexAvailable' data-ref="_ZN12QtLinuxFutex14futexAvailableEv">futexAvailable</a>()) {</td></tr>
+<tr><th id="325">325</th><td>        <a class="typedef" href="../global/qtypes.h.html#quintptr" title='quintptr' data-type='QIntegerForSizeof&lt;void *&gt;::Unsigned' data-ref="quintptr">quintptr</a> <dfn class="local col2 decl" id="32nn" title='nn' data-type='quintptr' data-ref="32nn">nn</dfn> = <em>unsigned</em>(<a class="local col1 ref" href="#31n" title='n' data-ref="31n">n</a>);</td></tr>
+<tr><th id="326">326</th><td>        <b>if</b> (<a class="tu ref" href="#futexHasWaiterCount" title='futexHasWaiterCount' data-use='r' data-ref="futexHasWaiterCount">futexHasWaiterCount</a>)</td></tr>
+<tr><th id="327">327</th><td>            <a class="local col2 ref" href="#32nn" title='nn' data-ref="32nn">nn</a> |= <a class="typedef" href="../global/qtypes.h.html#quint64" title='quint64' data-type='unsigned long long' data-ref="quint64">quint64</a>(<a class="local col2 ref" href="#32nn" title='nn' data-ref="32nn">nn</a>) &lt;&lt; <var>32</var>;    <i>// token count replicated in high word</i></td></tr>
+<tr><th id="328">328</th><td>        <a class="typedef" href="../global/qtypes.h.html#quintptr" title='quintptr' data-type='QIntegerForSizeof&lt;void *&gt;::Unsigned' data-ref="quintptr">quintptr</a> <dfn class="local col3 decl" id="33prevValue" title='prevValue' data-type='quintptr' data-ref="33prevValue">prevValue</dfn> = <a class="ref field" href="qsemaphore.h.html#QSemaphore::(anonymous)::u" title='QSemaphore::(anonymous union)::u' data-ref="QSemaphore::(anonymous)::u">u</a>.<a class="ref fn" href="qbasicatomic.h.html#_ZNK19QBasicAtomicInteger11loadRelaxedEv" title='QBasicAtomicInteger::loadRelaxed' data-ref="_ZNK19QBasicAtomicInteger11loadRelaxedEv">loadRelaxed</a>();</td></tr>
+<tr><th id="329">329</th><td>        <a class="typedef" href="../global/qtypes.h.html#quintptr" title='quintptr' data-type='QIntegerForSizeof&lt;void *&gt;::Unsigned' data-ref="quintptr">quintptr</a> <dfn class="local col4 decl" id="34newValue" title='newValue' data-type='quintptr' data-ref="34newValue">newValue</dfn>;</td></tr>
+<tr><th id="330">330</th><td>        <b>do</b> { <i>// loop just to ensure the operations are done atomically</i></td></tr>
+<tr><th id="331">331</th><td>            <a class="local col4 ref" href="#34newValue" title='newValue' data-ref="34newValue">newValue</a> = <a class="local col3 ref" href="#33prevValue" title='prevValue' data-ref="33prevValue">prevValue</a> + <a class="local col2 ref" href="#32nn" title='nn' data-ref="32nn">nn</a>;</td></tr>
+<tr><th id="332">332</th><td>            <a class="local col4 ref" href="#34newValue" title='newValue' data-ref="34newValue">newValue</a> &amp;= (<a class="tu ref" href="#futexNeedsWakeAllBit" title='futexNeedsWakeAllBit' data-use='r' data-ref="futexNeedsWakeAllBit">futexNeedsWakeAllBit</a> - <var>1</var>);</td></tr>
+<tr><th id="333">333</th><td>        } <b>while</b> (!<a class="ref field" href="qsemaphore.h.html#QSemaphore::(anonymous)::u" title='QSemaphore::(anonymous union)::u' data-ref="QSemaphore::(anonymous)::u">u</a>.<a class="ref fn" href="qbasicatomic.h.html#_ZN19QBasicAtomicInteger17testAndSetReleaseET_S0_RS0_" title='QBasicAtomicInteger::testAndSetRelease' data-ref="_ZN19QBasicAtomicInteger17testAndSetReleaseET_S0_RS0_">testAndSetRelease</a>(<span class='inlayHint'>expectedValue:&nbsp;</span><a class="local col3 ref" href="#33prevValue" title='prevValue' data-ref="33prevValue">prevValue</a>, <a class="local col4 ref" href="#34newValue" title='newValue' data-ref="34newValue">newValue</a>, <span class='inlayHint'>currentValue&amp;:&nbsp;</span><span class='refarg'><a class="local col3 ref" href="#33prevValue" title='prevValue' data-ref="33prevValue">prevValue</a></span>));</td></tr>
+<tr><th id="334">334</th><td>        <b>if</b> (<a class="tu ref fn" href="#_ZL14futexNeedsWakey" title='futexNeedsWake' data-use='c' data-ref="_ZL14futexNeedsWakey">futexNeedsWake</a>(<span class='inlayHint'>v:&nbsp;</span><a class="local col3 ref" href="#33prevValue" title='prevValue' data-ref="33prevValue">prevValue</a>)) {</td></tr>
+<tr><th id="335">335</th><td><u>#<span data-ppcond="335">ifdef</span> <a class="macro" href="../../../../include/linux/futex.h.html#149" data-ref="_M/FUTEX_OP">FUTEX_OP</a></u></td></tr>
+<tr><th id="336">336</th><td>            <b>if</b> (<a class="tu ref" href="#futexHasWaiterCount" title='futexHasWaiterCount' data-use='r' data-ref="futexHasWaiterCount">futexHasWaiterCount</a>) {</td></tr>
+<tr><th id="337">337</th><td>                <i>/*</i></td></tr>
+<tr><th id="338">338</th><td><i>                   On 64-bit systems, the single-token waiters wait on the low half</i></td></tr>
+<tr><th id="339">339</th><td><i>                   and the multi-token waiters wait on the upper half. So we ask</i></td></tr>
+<tr><th id="340">340</th><td><i>                   the kernel to wake up n single-token waiters and all multi-token</i></td></tr>
+<tr><th id="341">341</th><td><i>                   waiters (if any), and clear the multi-token wait bit.</i></td></tr>
+<tr><th id="342">342</th><td><i></i></td></tr>
+<tr><th id="343">343</th><td><i>                   atomic {</i></td></tr>
+<tr><th id="344">344</th><td><i>                      int oldval = *upper;</i></td></tr>
+<tr><th id="345">345</th><td><i>                      *upper = oldval | 0;</i></td></tr>
+<tr><th id="346">346</th><td><i>                      futexWake(lower, n);</i></td></tr>
+<tr><th id="347">347</th><td><i>                      if (oldval != 0)   // always true</i></td></tr>
+<tr><th id="348">348</th><td><i>                          futexWake(upper, INT_MAX);</i></td></tr>
+<tr><th id="349">349</th><td><i>                   }</i></td></tr>
+<tr><th id="350">350</th><td><i>                */</i></td></tr>
+<tr><th id="351">351</th><td>                <a class="typedef" href="../global/qtypes.h.html#quint32" title='quint32' data-type='unsigned int' data-ref="quint32">quint32</a> <dfn class="local col5 decl" id="35op" title='op' data-type='quint32' data-ref="35op">op</dfn> = <a class="macro" href="../../../../include/linux/futex.h.html#130" title="2" data-ref="_M/FUTEX_OP_OR">FUTEX_OP_OR</a>;</td></tr>
+<tr><th id="352">352</th><td>                <a class="typedef" href="../global/qtypes.h.html#quint32" title='quint32' data-type='unsigned int' data-ref="quint32">quint32</a> <dfn class="local col6 decl" id="36oparg" title='oparg' data-type='quint32' data-ref="36oparg">oparg</dfn> = <var>0</var>;</td></tr>
+<tr><th id="353">353</th><td>                <a class="typedef" href="../global/qtypes.h.html#quint32" title='quint32' data-type='unsigned int' data-ref="quint32">quint32</a> <dfn class="local col7 decl" id="37cmp" title='cmp' data-type='quint32' data-ref="37cmp">cmp</dfn> = <a class="macro" href="../../../../include/linux/futex.h.html#137" title="1" data-ref="_M/FUTEX_OP_CMP_NE">FUTEX_OP_CMP_NE</a>;</td></tr>
+<tr><th id="354">354</th><td>                <a class="typedef" href="../global/qtypes.h.html#quint32" title='quint32' data-type='unsigned int' data-ref="quint32">quint32</a> <dfn class="local col8 decl" id="38cmparg" title='cmparg' data-type='quint32' data-ref="38cmparg">cmparg</dfn> = <var>0</var>;</td></tr>
+<tr><th id="355">355</th><td>                <a class="ref fn" href="qfutex_p.h.html#_ZN12QtLinuxFutex11futexWakeOpERT_iiS1_j" title='QtLinuxFutex::futexWakeOp' data-ref="_ZN12QtLinuxFutex11futexWakeOpERT_iiS1_j">futexWakeOp</a>(<span class='inlayHint'>futex1&amp;:&nbsp;</span><span class='refarg'>*<a class="tu ref fn" href="#_ZL10futexLow32P19QBasicAtomicIntegerIyE" title='futexLow32' data-use='c' data-ref="_ZL10futexLow32P19QBasicAtomicIntegerIyE">futexLow32</a>(<span class='inlayHint'>ptr:&nbsp;</span>&amp;<a class="ref field" href="qsemaphore.h.html#QSemaphore::(anonymous)::u" title='QSemaphore::(anonymous union)::u' data-ref="QSemaphore::(anonymous)::u">u</a>)</span>, <span class='inlayHint'>wake1:&nbsp;</span><a class="local col1 ref" href="#31n" title='n' data-ref="31n">n</a>, <span class="macro" title="2147483647" data-ref="_M/INT_MAX">INT_MAX</span>, <span class='inlayHint'>futex2&amp;:&nbsp;</span><span class='refarg'>*<a class="tu ref fn" href="#_ZL11futexHigh32P19QBasicAtomicIntegerIyE" title='futexHigh32' data-use='c' data-ref="_ZL11futexHigh32P19QBasicAtomicIntegerIyE">futexHigh32</a>(<span class='inlayHint'>ptr:&nbsp;</span>&amp;<a class="ref field" href="qsemaphore.h.html#QSemaphore::(anonymous)::u" title='QSemaphore::(anonymous union)::u' data-ref="QSemaphore::(anonymous)::u">u</a>)</span>, <a class="macro" href="../../../../include/linux/futex.h.html#149" title="(((op &amp; 0xf) &lt;&lt; 28) | ((cmp &amp; 0xf) &lt;&lt; 24) | ((oparg &amp; 0xfff) &lt;&lt; 12) | (cmparg &amp; 0xfff))" data-ref="_M/FUTEX_OP">FUTEX_OP</a>(<a class="local col5 ref" href="#35op" title='op' data-ref="35op">op</a>, <a class="local col6 ref" href="#36oparg" title='oparg' data-ref="36oparg">oparg</a>, <a class="local col7 ref" href="#37cmp" title='cmp' data-ref="37cmp">cmp</a>, <a class="local col8 ref" href="#38cmparg" title='cmparg' data-ref="38cmparg">cmparg</a>));</td></tr>
+<tr><th id="356">356</th><td>                <b>return</b>;</td></tr>
+<tr><th id="357">357</th><td>            }</td></tr>
+<tr><th id="358">358</th><td><u>#<span data-ppcond="335">endif</span></u></td></tr>
+<tr><th id="359">359</th><td>            <i>// Unset the bit and wake everyone. There are two possibilities</i></td></tr>
+<tr><th id="360">360</th><td><i>            // under which a thread can set the bit between the AND and the</i></td></tr>
+<tr><th id="361">361</th><td><i>            // futexWake:</i></td></tr>
+<tr><th id="362">362</th><td><i>            // 1) it did see the new counter value, but it wasn't enough for</i></td></tr>
+<tr><th id="363">363</th><td><i>            //    its acquisition anyway, so it has to wait;</i></td></tr>
+<tr><th id="364">364</th><td><i>            // 2) it did not see the new counter value, in which case its</i></td></tr>
+<tr><th id="365">365</th><td><i>            //    futexWait will fail.</i></td></tr>
+<tr><th id="366">366</th><td>            <b>if</b> (<a class="tu ref" href="#futexHasWaiterCount" title='futexHasWaiterCount' data-use='r' data-ref="futexHasWaiterCount">futexHasWaiterCount</a>) {</td></tr>
+<tr><th id="367">367</th><td>                <a class="ref fn" href="qfutex_p.h.html#_ZN12QtLinuxFutex12futexWakeAllERT_" title='QtLinuxFutex::futexWakeAll' data-ref="_ZN12QtLinuxFutex12futexWakeAllERT_">futexWakeAll</a>(<span class='inlayHint'>futex&amp;:&nbsp;</span><span class='refarg'>*<a class="tu ref fn" href="#_ZL10futexLow32P19QBasicAtomicIntegerIyE" title='futexLow32' data-use='c' data-ref="_ZL10futexLow32P19QBasicAtomicIntegerIyE">futexLow32</a>(<span class='inlayHint'>ptr:&nbsp;</span>&amp;<a class="ref field" href="qsemaphore.h.html#QSemaphore::(anonymous)::u" title='QSemaphore::(anonymous union)::u' data-ref="QSemaphore::(anonymous)::u">u</a>)</span>);</td></tr>
+<tr><th id="368">368</th><td>                <a class="ref fn" href="qfutex_p.h.html#_ZN12QtLinuxFutex12futexWakeAllERT_" title='QtLinuxFutex::futexWakeAll' data-ref="_ZN12QtLinuxFutex12futexWakeAllERT_">futexWakeAll</a>(<span class='inlayHint'>futex&amp;:&nbsp;</span><span class='refarg'>*<a class="tu ref fn" href="#_ZL11futexHigh32P19QBasicAtomicIntegerIyE" title='futexHigh32' data-use='c' data-ref="_ZL11futexHigh32P19QBasicAtomicIntegerIyE">futexHigh32</a>(<span class='inlayHint'>ptr:&nbsp;</span>&amp;<a class="ref field" href="qsemaphore.h.html#QSemaphore::(anonymous)::u" title='QSemaphore::(anonymous union)::u' data-ref="QSemaphore::(anonymous)::u">u</a>)</span>);</td></tr>
+<tr><th id="369">369</th><td>            } <b>else</b> {</td></tr>
+<tr><th id="370">370</th><td>                <a class="ref fn" href="qfutex_p.h.html#_ZN12QtLinuxFutex12futexWakeAllERT_" title='QtLinuxFutex::futexWakeAll' data-ref="_ZN12QtLinuxFutex12futexWakeAllERT_">futexWakeAll</a>(<span class='inlayHint'>futex&amp;:&nbsp;</span><span class='refarg'><a class="ref field" href="qsemaphore.h.html#QSemaphore::(anonymous)::u" title='QSemaphore::(anonymous union)::u' data-ref="QSemaphore::(anonymous)::u">u</a></span>);</td></tr>
+<tr><th id="371">371</th><td>            }</td></tr>
+<tr><th id="372">372</th><td>        }</td></tr>
+<tr><th id="373">373</th><td>        <b>return</b>;</td></tr>
+<tr><th id="374">374</th><td>    }</td></tr>
+<tr><th id="375">375</th><td></td></tr>
+<tr><th id="376">376</th><td>    <em>const</em> <em>auto</em> <dfn class="local col9 decl" id="39locker" title='locker' data-type='std::scoped_lock&lt;std::mutex&gt; const' data-ref="39locker">locker</dfn> = <a class="ref fn" href="qlocking_p.h.html#_ZN12_GLOBAL__N_114qt_scoped_lockERT_" title='(anonymous namespace)::qt_scoped_lock' data-ref="_ZN12_GLOBAL__N_114qt_scoped_lockERT_">qt_scoped_lock</a>(<span class='inlayHint'>mutex&amp;:&nbsp;</span><span class='refarg'><a class="ref field" href="qsemaphore.h.html#QSemaphore::(anonymous)::d" title='QSemaphore::(anonymous union)::d' data-ref="QSemaphore::(anonymous)::d">d</a>-&gt;<a class="ref field" href="#QSemaphorePrivate::mutex" title='QSemaphorePrivate::mutex' data-ref="QSemaphorePrivate::mutex">mutex</a></span>);</td></tr>
+<tr><th id="377">377</th><td>    <a class="ref field" href="qsemaphore.h.html#QSemaphore::(anonymous)::d" title='QSemaphore::(anonymous union)::d' data-ref="QSemaphore::(anonymous)::d">d</a>-&gt;<a class="ref field" href="#QSemaphorePrivate::avail" title='QSemaphorePrivate::avail' data-ref="QSemaphorePrivate::avail">avail</a> += <a class="local col1 ref" href="#31n" title='n' data-ref="31n">n</a>;</td></tr>
+<tr><th id="378">378</th><td>    <a class="ref field" href="qsemaphore.h.html#QSemaphore::(anonymous)::d" title='QSemaphore::(anonymous union)::d' data-ref="QSemaphore::(anonymous)::d">d</a>-&gt;<a class="ref field" href="#QSemaphorePrivate::cond" title='QSemaphorePrivate::cond' data-ref="QSemaphorePrivate::cond">cond</a>.<a class="ref fn" href="../../../../include/c++/9/condition_variable.html#_ZNSt18condition_variable10notify_allEv" title='std::condition_variable::notify_all' data-ref="_ZNSt18condition_variable10notify_allEv">notify_all</a>();</td></tr>
+<tr><th id="379">379</th><td>}</td></tr>
+<tr><th id="380">380</th><td></td></tr>
+<tr><th id="381">381</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="382">382</th><td><i class="doc">    Returns the number of resources currently available to the</i></td></tr>
+<tr><th id="383">383</th><td><i class="doc">    semaphore. This number can never be negative.</i></td></tr>
+<tr><th id="384">384</th><td><i class="doc"></i></td></tr>
+<tr><th id="385">385</th><td><i class="doc">    <span class="command">\sa</span> acquire(), release()</i></td></tr>
+<tr><th id="386">386</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="387">387</th><td><em>int</em> <a class="type" href="qsemaphore.h.html#QSemaphore" title='QSemaphore' data-ref="QSemaphore">QSemaphore</a>::<dfn class="decl def fn" id="_ZNK10QSemaphore9availableEv" title='QSemaphore::available' data-ref="_ZNK10QSemaphore9availableEv">available</dfn>() <em>const</em></td></tr>
+<tr><th id="388">388</th><td>{</td></tr>
+<tr><th id="389">389</th><td>    <b>if</b> (<a class="ref fn" href="qfutex_p.h.html#_ZN12QtLinuxFutex14futexAvailableEv" title='QtLinuxFutex::futexAvailable' data-ref="_ZN12QtLinuxFutex14futexAvailableEv">futexAvailable</a>())</td></tr>
+<tr><th id="390">390</th><td>        <b>return</b> <a class="tu ref fn" href="#_ZL17futexAvailCountery" title='futexAvailCounter' data-use='c' data-ref="_ZL17futexAvailCountery">futexAvailCounter</a>(<span class='inlayHint'>v:&nbsp;</span><a class="ref field" href="qsemaphore.h.html#QSemaphore::(anonymous)::u" title='QSemaphore::(anonymous union)::u' data-ref="QSemaphore::(anonymous)::u">u</a>.<a class="ref fn" href="qbasicatomic.h.html#_ZNK19QBasicAtomicInteger11loadRelaxedEv" title='QBasicAtomicInteger::loadRelaxed' data-ref="_ZNK19QBasicAtomicInteger11loadRelaxedEv">loadRelaxed</a>());</td></tr>
+<tr><th id="391">391</th><td></td></tr>
+<tr><th id="392">392</th><td>    <em>const</em> <em>auto</em> <dfn class="local col0 decl" id="40locker" title='locker' data-type='std::scoped_lock&lt;std::mutex&gt; const' data-ref="40locker">locker</dfn> = <a class="ref fn" href="qlocking_p.h.html#_ZN12_GLOBAL__N_114qt_scoped_lockERT_" title='(anonymous namespace)::qt_scoped_lock' data-ref="_ZN12_GLOBAL__N_114qt_scoped_lockERT_">qt_scoped_lock</a>(<span class='inlayHint'>mutex&amp;:&nbsp;</span><span class='refarg'><a class="ref field" href="qsemaphore.h.html#QSemaphore::(anonymous)::d" title='QSemaphore::(anonymous union)::d' data-ref="QSemaphore::(anonymous)::d">d</a>-&gt;<a class="ref field" href="#QSemaphorePrivate::mutex" title='QSemaphorePrivate::mutex' data-ref="QSemaphorePrivate::mutex">mutex</a></span>);</td></tr>
+<tr><th id="393">393</th><td>    <b>return</b> <a class="ref field" href="qsemaphore.h.html#QSemaphore::(anonymous)::d" title='QSemaphore::(anonymous union)::d' data-ref="QSemaphore::(anonymous)::d">d</a>-&gt;<a class="ref field" href="#QSemaphorePrivate::avail" title='QSemaphorePrivate::avail' data-ref="QSemaphorePrivate::avail">avail</a>;</td></tr>
+<tr><th id="394">394</th><td>}</td></tr>
+<tr><th id="395">395</th><td></td></tr>
+<tr><th id="396">396</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="397">397</th><td><i class="doc">    Tries to acquire<span class="command"> \c</span> <span class="arg">n</span> resources guarded by the semaphore and</i></td></tr>
+<tr><th id="398">398</th><td><i class="doc">    returns<span class="command"> \c</span> <span class="arg">true</span> on success. If available() &lt;<span class="command"> \a</span> <span class="arg">n,</span> this call</i></td></tr>
+<tr><th id="399">399</th><td><i class="doc">    immediately returns<span class="command"> \c</span> <span class="arg">false</span> without acquiring any resources.</i></td></tr>
+<tr><th id="400">400</th><td><i class="doc"></i></td></tr>
+<tr><th id="401">401</th><td><i class="doc">    Example:</i></td></tr>
+<tr><th id="402">402</th><td><i class="doc"></i></td></tr>
+<tr><th id="403">403</th><td><i class="doc">    <span class="command">\snippet</span> <span class="verb">code/src_corelib_thread_qsemaphore.cpp 2</span></i></td></tr>
+<tr><th id="404">404</th><td><i class="doc"></i></td></tr>
+<tr><th id="405">405</th><td><i class="doc">    <span class="command">\sa</span> acquire()</i></td></tr>
+<tr><th id="406">406</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="407">407</th><td><em>bool</em> <a class="type" href="qsemaphore.h.html#QSemaphore" title='QSemaphore' data-ref="QSemaphore">QSemaphore</a>::<dfn class="decl def fn" id="_ZN10QSemaphore10tryAcquireEi" title='QSemaphore::tryAcquire' data-ref="_ZN10QSemaphore10tryAcquireEi">tryAcquire</dfn>(<em>int</em> <dfn class="local col1 decl" id="41n" title='n' data-type='int' data-ref="41n">n</dfn>)</td></tr>
+<tr><th id="408">408</th><td>{</td></tr>
+<tr><th id="409">409</th><td>    <a class="macro" href="../global/qassert.h.html#43" title="static_cast&lt;void&gt;(false &amp;&amp; (n &gt;= 0))" data-ref="_M/Q_ASSERT_X">Q_ASSERT_X</a>(<a class="local col1 ref" href="#41n" title='n' data-ref="41n">n</a> &gt;= <var>0</var>, <q>"QSemaphore::tryAcquire"</q>, <q>"parameter 'n' must be non-negative"</q>);</td></tr>
+<tr><th id="410">410</th><td></td></tr>
+<tr><th id="411">411</th><td>    <b>if</b> (<a class="ref fn" href="qfutex_p.h.html#_ZN12QtLinuxFutex14futexAvailableEv" title='QtLinuxFutex::futexAvailable' data-ref="_ZN12QtLinuxFutex14futexAvailableEv">futexAvailable</a>())</td></tr>
+<tr><th id="412">412</th><td>        <b>return</b> <a class="ref fn" href="#_Z24futexSemaphoreTryAcquireR19QBasicAtomicIntegerIyEii" title='futexSemaphoreTryAcquire' data-ref="_Z24futexSemaphoreTryAcquireR19QBasicAtomicIntegerIyEii">futexSemaphoreTryAcquire</a>&lt;<b>false</b>&gt;(<span class='inlayHint'>u&amp;:&nbsp;</span><span class='refarg'><a class="ref field" href="qsemaphore.h.html#QSemaphore::(anonymous)::u" title='QSemaphore::(anonymous union)::u' data-ref="QSemaphore::(anonymous)::u">u</a></span>, <a class="local col1 ref" href="#41n" title='n' data-ref="41n">n</a>, <span class='inlayHint'>timeout:&nbsp;</span><var>0</var>);</td></tr>
+<tr><th id="413">413</th><td></td></tr>
+<tr><th id="414">414</th><td>    <em>const</em> <em>auto</em> <dfn class="local col2 decl" id="42locker" title='locker' data-type='std::scoped_lock&lt;std::mutex&gt; const' data-ref="42locker">locker</dfn> = <a class="ref fn" href="qlocking_p.h.html#_ZN12_GLOBAL__N_114qt_scoped_lockERT_" title='(anonymous namespace)::qt_scoped_lock' data-ref="_ZN12_GLOBAL__N_114qt_scoped_lockERT_">qt_scoped_lock</a>(<span class='inlayHint'>mutex&amp;:&nbsp;</span><span class='refarg'><a class="ref field" href="qsemaphore.h.html#QSemaphore::(anonymous)::d" title='QSemaphore::(anonymous union)::d' data-ref="QSemaphore::(anonymous)::d">d</a>-&gt;<a class="ref field" href="#QSemaphorePrivate::mutex" title='QSemaphorePrivate::mutex' data-ref="QSemaphorePrivate::mutex">mutex</a></span>);</td></tr>
+<tr><th id="415">415</th><td>    <b>if</b> (<a class="local col1 ref" href="#41n" title='n' data-ref="41n">n</a> &gt; <a class="ref field" href="qsemaphore.h.html#QSemaphore::(anonymous)::d" title='QSemaphore::(anonymous union)::d' data-ref="QSemaphore::(anonymous)::d">d</a>-&gt;<a class="ref field" href="#QSemaphorePrivate::avail" title='QSemaphorePrivate::avail' data-ref="QSemaphorePrivate::avail">avail</a>)</td></tr>
+<tr><th id="416">416</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="417">417</th><td>    <a class="ref field" href="qsemaphore.h.html#QSemaphore::(anonymous)::d" title='QSemaphore::(anonymous union)::d' data-ref="QSemaphore::(anonymous)::d">d</a>-&gt;<a class="ref field" href="#QSemaphorePrivate::avail" title='QSemaphorePrivate::avail' data-ref="QSemaphorePrivate::avail">avail</a> -= <a class="local col1 ref" href="#41n" title='n' data-ref="41n">n</a>;</td></tr>
+<tr><th id="418">418</th><td>    <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="419">419</th><td>}</td></tr>
+<tr><th id="420">420</th><td></td></tr>
+<tr><th id="421">421</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="422">422</th><td><i class="doc">    Tries to acquire<span class="command"> \c</span> <span class="arg">n</span> resources guarded by the semaphore and</i></td></tr>
+<tr><th id="423">423</th><td><i class="doc">    returns<span class="command"> \c</span> <span class="arg">true</span> on success. If available() &lt;<span class="command"> \a</span> <span class="arg">n,</span> this call will</i></td></tr>
+<tr><th id="424">424</th><td><i class="doc">    wait for at most<span class="command"> \a</span> <span class="arg">timeout</span> milliseconds for resources to become</i></td></tr>
+<tr><th id="425">425</th><td><i class="doc">    available.</i></td></tr>
+<tr><th id="426">426</th><td><i class="doc"></i></td></tr>
+<tr><th id="427">427</th><td><i class="doc">    Note: Passing a negative number as the<span class="command"> \a</span> <span class="arg">timeout</span> is equivalent to</i></td></tr>
+<tr><th id="428">428</th><td><i class="doc">    calling acquire(), i.e. this function will wait forever for</i></td></tr>
+<tr><th id="429">429</th><td><i class="doc">    resources to become available if<span class="command"> \a</span> <span class="arg">timeout</span> is negative.</i></td></tr>
+<tr><th id="430">430</th><td><i class="doc"></i></td></tr>
+<tr><th id="431">431</th><td><i class="doc">    Example:</i></td></tr>
+<tr><th id="432">432</th><td><i class="doc"></i></td></tr>
+<tr><th id="433">433</th><td><i class="doc">    <span class="command">\snippet</span> <span class="verb">code/src_corelib_thread_qsemaphore.cpp 3</span></i></td></tr>
+<tr><th id="434">434</th><td><i class="doc"></i></td></tr>
+<tr><th id="435">435</th><td><i class="doc">    <span class="command">\sa</span> acquire()</i></td></tr>
+<tr><th id="436">436</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="437">437</th><td><em>bool</em> <a class="type" href="qsemaphore.h.html#QSemaphore" title='QSemaphore' data-ref="QSemaphore">QSemaphore</a>::<dfn class="decl def fn" id="_ZN10QSemaphore10tryAcquireEii" title='QSemaphore::tryAcquire' data-ref="_ZN10QSemaphore10tryAcquireEii">tryAcquire</dfn>(<em>int</em> <dfn class="local col3 decl" id="43n" title='n' data-type='int' data-ref="43n">n</dfn>, <em>int</em> <dfn class="local col4 decl" id="44timeout" title='timeout' data-type='int' data-ref="44timeout">timeout</dfn>)</td></tr>
+<tr><th id="438">438</th><td>{</td></tr>
+<tr><th id="439">439</th><td>    <b>if</b> (<a class="local col4 ref" href="#44timeout" title='timeout' data-ref="44timeout">timeout</a> &lt; <var>0</var>) {</td></tr>
+<tr><th id="440">440</th><td>        <a class="member fn" href="#_ZN10QSemaphore7acquireEi" title='QSemaphore::acquire' data-ref="_ZN10QSemaphore7acquireEi">acquire</a>(<a class="local col3 ref" href="#43n" title='n' data-ref="43n">n</a>);</td></tr>
+<tr><th id="441">441</th><td>        <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="442">442</th><td>    }</td></tr>
+<tr><th id="443">443</th><td></td></tr>
+<tr><th id="444">444</th><td>    <b>if</b> (<a class="local col4 ref" href="#44timeout" title='timeout' data-ref="44timeout">timeout</a> == <var>0</var>)</td></tr>
+<tr><th id="445">445</th><td>        <b>return</b> <a class="member fn" href="#_ZN10QSemaphore10tryAcquireEi" title='QSemaphore::tryAcquire' data-ref="_ZN10QSemaphore10tryAcquireEi">tryAcquire</a>(<a class="local col3 ref" href="#43n" title='n' data-ref="43n">n</a>);</td></tr>
+<tr><th id="446">446</th><td></td></tr>
+<tr><th id="447">447</th><td>    <a class="macro" href="../global/qassert.h.html#43" title="static_cast&lt;void&gt;(false &amp;&amp; (n &gt;= 0))" data-ref="_M/Q_ASSERT_X">Q_ASSERT_X</a>(<a class="local col3 ref" href="#43n" title='n' data-ref="43n">n</a> &gt;= <var>0</var>, <q>"QSemaphore::tryAcquire"</q>, <q>"parameter 'n' must be non-negative"</q>);</td></tr>
+<tr><th id="448">448</th><td></td></tr>
+<tr><th id="449">449</th><td>    <b>if</b> (<a class="ref fn" href="qfutex_p.h.html#_ZN12QtLinuxFutex14futexAvailableEv" title='QtLinuxFutex::futexAvailable' data-ref="_ZN12QtLinuxFutex14futexAvailableEv">futexAvailable</a>())</td></tr>
+<tr><th id="450">450</th><td>        <b>return</b> <a class="ref fn" href="#_Z24futexSemaphoreTryAcquireR19QBasicAtomicIntegerIyEii" title='futexSemaphoreTryAcquire' data-ref="_Z24futexSemaphoreTryAcquireR19QBasicAtomicIntegerIyEii">futexSemaphoreTryAcquire</a>&lt;<b>true</b>&gt;(<span class='inlayHint'>u&amp;:&nbsp;</span><span class='refarg'><a class="ref field" href="qsemaphore.h.html#QSemaphore::(anonymous)::u" title='QSemaphore::(anonymous union)::u' data-ref="QSemaphore::(anonymous)::u">u</a></span>, <a class="local col3 ref" href="#43n" title='n' data-ref="43n">n</a>, <a class="local col4 ref" href="#44timeout" title='timeout' data-ref="44timeout">timeout</a>);</td></tr>
+<tr><th id="451">451</th><td></td></tr>
+<tr><th id="452">452</th><td>    <b>using</b> <b>namespace</b> <span class="namespace">std::chrono</span>;</td></tr>
+<tr><th id="453">453</th><td>    <em>const</em> <em>auto</em> <dfn class="local col5 decl" id="45sufficientResourcesAvailable" title='sufficientResourcesAvailable' data-type='const (lambda at /home/lzx0626/DavidingPlus/qtbase/src/corelib/thread/qsemaphore.cpp:453:47)' data-ref="45sufficientResourcesAvailable">sufficientResourcesAvailable</dfn> = [<b>this</b>, <a class="local col3 ref" href="#43n" title='n' data-ref="43n">n</a>] { <b>return</b> <a class="ref field" href="qsemaphore.h.html#QSemaphore::(anonymous)::d" title='QSemaphore::(anonymous union)::d' data-ref="QSemaphore::(anonymous)::d">d</a>-&gt;<a class="ref field" href="#QSemaphorePrivate::avail" title='QSemaphorePrivate::avail' data-ref="QSemaphorePrivate::avail">avail</a> &gt;= <a class="local col3 ref" href="#43n" title='n' data-ref="43n">n</a>; };</td></tr>
+<tr><th id="454">454</th><td></td></tr>
+<tr><th id="455">455</th><td>    <em>auto</em> <dfn class="local col6 decl" id="46locker" title='locker' data-type='std::unique_lock&lt;std::mutex&gt;' data-ref="46locker">locker</dfn> = <a class="ref fn" href="qlocking_p.h.html#_ZN12_GLOBAL__N_114qt_unique_lockERT_" title='(anonymous namespace)::qt_unique_lock' data-ref="_ZN12_GLOBAL__N_114qt_unique_lockERT_">qt_unique_lock</a>(<span class='inlayHint'>mutex&amp;:&nbsp;</span><span class='refarg'><a class="ref field" href="qsemaphore.h.html#QSemaphore::(anonymous)::d" title='QSemaphore::(anonymous union)::d' data-ref="QSemaphore::(anonymous)::d">d</a>-&gt;<a class="ref field" href="#QSemaphorePrivate::mutex" title='QSemaphorePrivate::mutex' data-ref="QSemaphorePrivate::mutex">mutex</a></span>);</td></tr>
+<tr><th id="456">456</th><td>    <b>if</b> (!<a class="ref field" href="qsemaphore.h.html#QSemaphore::(anonymous)::d" title='QSemaphore::(anonymous union)::d' data-ref="QSemaphore::(anonymous)::d">d</a>-&gt;<a class="ref field" href="#QSemaphorePrivate::cond" title='QSemaphorePrivate::cond' data-ref="QSemaphorePrivate::cond">cond</a>.<a class="tu ref fn" href="../../../../include/c++/9/condition_variable.html#_ZNSt18condition_variable8wait_forERSt11unique_lockISt5mutexERKNSt6chrono8durationIT_T0_EET1_" title='std::condition_variable::wait_for' data-use='c' data-ref="_ZNSt18condition_variable8wait_forERSt11unique_lockISt5mutexERKNSt6chrono8durationIT_T0_EET1_">wait_for</a>(<span class='inlayHint'>lock&amp;:&nbsp;</span><span class='refarg'><a class="local col6 ref" href="#46locker" title='locker' data-ref="46locker">locker</a></span>, <span class='inlayHint'>rtime:&nbsp;</span><a class="typedef" href="../../../../include/c++/9/chrono.html#std::chrono::milliseconds" title='std::chrono::milliseconds' data-type='duration&lt;int64_t, std::milli&gt;' data-ref="std::chrono::milliseconds">milliseconds</a><a class="ref fn" href="../../../../include/c++/9/chrono.html#_ZNSt6chrono8durationC1ERKTL0__" title='std::chrono::duration::duration&lt;_Rep, _Period&gt;' data-ref="_ZNSt6chrono8durationC1ERKTL0__">{</a><a class="local col4 ref" href="#44timeout" title='timeout' data-ref="44timeout">timeout</a>}, <a class="tu ref fn fake" href="#453" title='QSemaphore::tryAcquire(int, int)::(anonymous class)::' data-use='c' data-ref="_ZZN10QSemaphore10tryAcquireEiiEN3$_1C1ERKS0_"></a><span class='inlayHint'>p:&nbsp;</span><a class="local col5 ref" href="#45sufficientResourcesAvailable" title='sufficientResourcesAvailable' data-ref="45sufficientResourcesAvailable">sufficientResourcesAvailable</a>))</td></tr>
+<tr><th id="457">457</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="458">458</th><td>    <a class="ref field" href="qsemaphore.h.html#QSemaphore::(anonymous)::d" title='QSemaphore::(anonymous union)::d' data-ref="QSemaphore::(anonymous)::d">d</a>-&gt;<a class="ref field" href="#QSemaphorePrivate::avail" title='QSemaphorePrivate::avail' data-ref="QSemaphorePrivate::avail">avail</a> -= <a class="local col3 ref" href="#43n" title='n' data-ref="43n">n</a>;</td></tr>
+<tr><th id="459">459</th><td>    <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="460">460</th><td>}</td></tr>
+<tr><th id="461">461</th><td></td></tr>
+<tr><th id="462">462</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="463">463</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">template &lt;typename Rep, typename Period&gt; QSemaphore::tryAcquire(int n, std::chrono::duration&lt;Rep, Period&gt; timeout)</span></i></td></tr>
+<tr><th id="464">464</th><td><i class="doc">    <span class="command">\overload</span></i></td></tr>
+<tr><th id="465">465</th><td><i class="doc">    <span class="command">\since</span> 6.3</i></td></tr>
+<tr><th id="466">466</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="467">467</th><td></td></tr>
+<tr><th id="468">468</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="469">469</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb" data-ref="_ZN10QSemaphore11try_acquireEv">bool QSemaphore::try_acquire()</span></i></td></tr>
+<tr><th id="470">470</th><td><i class="doc">    <span class="command">\since</span> 6.3</i></td></tr>
+<tr><th id="471">471</th><td><i class="doc"></i></td></tr>
+<tr><th id="472">472</th><td><i class="doc">    This function is provided for<span class="command"> \c</span><span class="arg">{std::counting_semaphore}</span> compatibility.</i></td></tr>
+<tr><th id="473">473</th><td><i class="doc"></i></td></tr>
+<tr><th id="474">474</th><td><i class="doc">    It is equivalent to calling<span class="command"> \c</span><span class="arg">{tryAcquire(1)},</span> where the function returns</i></td></tr>
+<tr><th id="475">475</th><td><i class="doc">   <span class="command"> \c</span> <span class="arg">true</span> on acquiring the resource successfully.</i></td></tr>
+<tr><th id="476">476</th><td><i class="doc"></i></td></tr>
+<tr><th id="477">477</th><td><i class="doc">    <span class="command">\sa</span> tryAcquire(), try_acquire_for(), try_acquire_until()</i></td></tr>
+<tr><th id="478">478</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="479">479</th><td></td></tr>
+<tr><th id="480">480</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="481">481</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">template &lt;typename Rep, typename Period&gt; bool QSemaphore::try_acquire_for(const std::chrono::duration&lt;Rep, Period&gt; &amp;timeout)</span></i></td></tr>
+<tr><th id="482">482</th><td><i class="doc">    <span class="command">\since</span> 6.3</i></td></tr>
+<tr><th id="483">483</th><td><i class="doc"></i></td></tr>
+<tr><th id="484">484</th><td><i class="doc">    This function is provided for<span class="command"> \c</span><span class="arg">{std::counting_semaphore}</span> compatibility.</i></td></tr>
+<tr><th id="485">485</th><td><i class="doc"></i></td></tr>
+<tr><th id="486">486</th><td><i class="doc">    It is equivalent to calling<span class="command"> \c</span><span class="arg">{tryAcquire(1,</span> timeout)}, where the call</i></td></tr>
+<tr><th id="487">487</th><td><i class="doc">    times out on the given<span class="command"> \a</span> <span class="arg">timeout</span> value. The function returns<span class="command"> \c</span> <span class="arg">true</span></i></td></tr>
+<tr><th id="488">488</th><td><i class="doc">    on acquiring the resource successfully.</i></td></tr>
+<tr><th id="489">489</th><td><i class="doc"></i></td></tr>
+<tr><th id="490">490</th><td><i class="doc">    <span class="command">\sa</span> tryAcquire(), try_acquire(), try_acquire_until()</i></td></tr>
+<tr><th id="491">491</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="492">492</th><td></td></tr>
+<tr><th id="493">493</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="494">494</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">template &lt;typename Clock, typename Duration&gt; bool QSemaphore::try_acquire_until(const std::chrono::time_point&lt;Clock, Duration&gt; &amp;tp)</span></i></td></tr>
+<tr><th id="495">495</th><td><i class="doc">    <span class="command">\since</span> 6.3</i></td></tr>
+<tr><th id="496">496</th><td><i class="doc"></i></td></tr>
+<tr><th id="497">497</th><td><i class="doc">    This function is provided for<span class="command"> \c</span><span class="arg">{std::counting_semaphore}</span> compatibility.</i></td></tr>
+<tr><th id="498">498</th><td><i class="doc"></i></td></tr>
+<tr><th id="499">499</th><td><i class="doc">    It is equivalent to calling<span class="command"> \c</span><span class="arg">{tryAcquire(1,</span> tp - Clock::now())},</i></td></tr>
+<tr><th id="500">500</th><td><i class="doc">    which means that the<span class="command"> \a</span> <span class="arg">tp</span> (time point) is recorded, ignoring the</i></td></tr>
+<tr><th id="501">501</th><td><i class="doc">    adjustments to<span class="command"> \c</span><span class="arg">{Clock}</span> while waiting. The function returns<span class="command"> \c</span> <span class="arg">true</span></i></td></tr>
+<tr><th id="502">502</th><td><i class="doc">    on acquiring the resource successfully.</i></td></tr>
+<tr><th id="503">503</th><td><i class="doc"></i></td></tr>
+<tr><th id="504">504</th><td><i class="doc">    <span class="command">\sa</span> tryAcquire(), try_acquire(), try_acquire_for()</i></td></tr>
+<tr><th id="505">505</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="506">506</th><td></td></tr>
+<tr><th id="507">507</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="508">508</th><td><i class="doc">    <span class="command">\class</span> <span class="verb" data-ref="QSemaphoreReleaser">QSemaphoreReleaser</span></i></td></tr>
+<tr><th id="509">509</th><td><i class="doc">    <span class="command">\brief</span> The QSemaphoreReleaser class provides exception-safe deferral of a QSemaphore::release() call.</i></td></tr>
+<tr><th id="510">510</th><td><i class="doc">    <span class="command">\since</span> 5.10</i></td></tr>
+<tr><th id="511">511</th><td><i class="doc">    <span class="command">\ingroup</span> <span class="verb">thread</span></i></td></tr>
+<tr><th id="512">512</th><td><i class="doc">   <span class="command"> \inmodule</span> QtCore</i></td></tr>
+<tr><th id="513">513</th><td><i class="doc"></i></td></tr>
+<tr><th id="514">514</th><td><i class="doc">   <span class="command"> \reentrant</span></i></td></tr>
+<tr><th id="515">515</th><td><i class="doc"></i></td></tr>
+<tr><th id="516">516</th><td><i class="doc">    QSemaphoreReleaser can be used wherever you would otherwise use</i></td></tr>
+<tr><th id="517">517</th><td><i class="doc">    QSemaphore::release(). Constructing a QSemaphoreReleaser defers the</i></td></tr>
+<tr><th id="518">518</th><td><i class="doc">    release() call on the semaphore until the QSemaphoreReleaser is</i></td></tr>
+<tr><th id="519">519</th><td><i class="doc">    destroyed (see</i></td></tr>
+<tr><th id="520">520</th><td><i class="doc">   <span class="command"> \l</span>{<a href="http://en.cppreference.com/w/cpp/language/raii">http://en.cppreference.com/w/cpp/language/raii</a>}{RAII pattern}).</i></td></tr>
+<tr><th id="521">521</th><td><i class="doc"></i></td></tr>
+<tr><th id="522">522</th><td><i class="doc">    You can use this to reliably release a semaphore to avoid dead-lock</i></td></tr>
+<tr><th id="523">523</th><td><i class="doc">    in the face of exceptions or early returns:</i></td></tr>
+<tr><th id="524">524</th><td><i class="doc"></i></td></tr>
+<tr><th id="525">525</th><td><i class="doc">    <span class="command">\snippet</span> <span class="verb">code/src_corelib_thread_qsemaphore.cpp 4</span></i></td></tr>
+<tr><th id="526">526</th><td><i class="doc"></i></td></tr>
+<tr><th id="527">527</th><td><i class="doc">    If an early return is taken or an exception is thrown before the</i></td></tr>
+<tr><th id="528">528</th><td><i class="doc">   <span class="command"> \c</span><span class="arg">{sem.release()}</span> call is reached, the semaphore is not released,</i></td></tr>
+<tr><th id="529">529</th><td><i class="doc">    possibly preventing the thread waiting in the corresponding</i></td></tr>
+<tr><th id="530">530</th><td><i class="doc">   <span class="command"> \c</span><span class="arg">{sem.acquire()}</span> call from ever continuing execution.</i></td></tr>
+<tr><th id="531">531</th><td><i class="doc"></i></td></tr>
+<tr><th id="532">532</th><td><i class="doc">    When using RAII instead:</i></td></tr>
+<tr><th id="533">533</th><td><i class="doc"></i></td></tr>
+<tr><th id="534">534</th><td><i class="doc">    <span class="command">\snippet</span> <span class="verb">code/src_corelib_thread_qsemaphore.cpp 5</span></i></td></tr>
+<tr><th id="535">535</th><td><i class="doc"></i></td></tr>
+<tr><th id="536">536</th><td><i class="doc">    this can no longer happen, because the compiler will make sure that</i></td></tr>
+<tr><th id="537">537</th><td><i class="doc">    the QSemaphoreReleaser destructor is always called, and therefore</i></td></tr>
+<tr><th id="538">538</th><td><i class="doc">    the semaphore is always released.</i></td></tr>
+<tr><th id="539">539</th><td><i class="doc"></i></td></tr>
+<tr><th id="540">540</th><td><i class="doc">    QSemaphoreReleaser is move-enabled and can therefore be returned</i></td></tr>
+<tr><th id="541">541</th><td><i class="doc">    from functions to transfer responsibility for releasing a semaphore</i></td></tr>
+<tr><th id="542">542</th><td><i class="doc">    out of a function or a scope:</i></td></tr>
+<tr><th id="543">543</th><td><i class="doc"></i></td></tr>
+<tr><th id="544">544</th><td><i class="doc">    <span class="command">\snippet</span> <span class="verb">code/src_corelib_thread_qsemaphore.cpp 6</span></i></td></tr>
+<tr><th id="545">545</th><td><i class="doc"></i></td></tr>
+<tr><th id="546">546</th><td><i class="doc">    A QSemaphoreReleaser can be canceled by a call to cancel(). A canceled</i></td></tr>
+<tr><th id="547">547</th><td><i class="doc">    semaphore releaser will no longer call QSemaphore::release() in its</i></td></tr>
+<tr><th id="548">548</th><td><i class="doc">    destructor.</i></td></tr>
+<tr><th id="549">549</th><td><i class="doc"></i></td></tr>
+<tr><th id="550">550</th><td><i class="doc">    <span class="command">\sa</span> QMutexLocker</i></td></tr>
+<tr><th id="551">551</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="552">552</th><td></td></tr>
+<tr><th id="553">553</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="554">554</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">QSemaphoreReleaser::QSemaphoreReleaser()</span></i></td></tr>
+<tr><th id="555">555</th><td><i class="doc"></i></td></tr>
+<tr><th id="556">556</th><td><i class="doc">    Default constructor. Creates a QSemaphoreReleaser that does nothing.</i></td></tr>
+<tr><th id="557">557</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="558">558</th><td></td></tr>
+<tr><th id="559">559</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="560">560</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">QSemaphoreReleaser::QSemaphoreReleaser(QSemaphore &amp;sem, int n)</span></i></td></tr>
+<tr><th id="561">561</th><td><i class="doc"></i></td></tr>
+<tr><th id="562">562</th><td><i class="doc">    Constructor. Stores the arguments and calls<span class="command"> \a</span><span class="arg">{sem}.release<span class="command">(\a</span></span><span class="arg">{n})</span></i></td></tr>
+<tr><th id="563">563</th><td><i class="doc">    in the destructor.</i></td></tr>
+<tr><th id="564">564</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="565">565</th><td></td></tr>
+<tr><th id="566">566</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="567">567</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">QSemaphoreReleaser::QSemaphoreReleaser(QSemaphore *sem, int n)</span></i></td></tr>
+<tr><th id="568">568</th><td><i class="doc"></i></td></tr>
+<tr><th id="569">569</th><td><i class="doc">    Constructor. Stores the arguments and calls<span class="command"> \a</span><span class="arg">{sem}-&gt;release<span class="command">(\a</span></span><span class="arg">{n})</span></i></td></tr>
+<tr><th id="570">570</th><td><i class="doc">    in the destructor.</i></td></tr>
+<tr><th id="571">571</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="572">572</th><td></td></tr>
+<tr><th id="573">573</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="574">574</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">QSemaphoreReleaser::QSemaphoreReleaser(QSemaphoreReleaser &amp;&amp;other)</span></i></td></tr>
+<tr><th id="575">575</th><td><i class="doc"></i></td></tr>
+<tr><th id="576">576</th><td><i class="doc">    Move constructor. Takes over responsibility to call QSemaphore::release()</i></td></tr>
+<tr><th id="577">577</th><td><i class="doc">    from<span class="command"> \a</span> <span class="arg">other,</span> which in turn is canceled.</i></td></tr>
+<tr><th id="578">578</th><td><i class="doc"></i></td></tr>
+<tr><th id="579">579</th><td><i class="doc">    <span class="command">\sa</span> cancel()</i></td></tr>
+<tr><th id="580">580</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="581">581</th><td></td></tr>
+<tr><th id="582">582</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="583">583</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">QSemaphoreReleaser::operator=(QSemaphoreReleaser &amp;&amp;other)</span></i></td></tr>
+<tr><th id="584">584</th><td><i class="doc"></i></td></tr>
+<tr><th id="585">585</th><td><i class="doc">    Move assignment operator. Takes over responsibility to call QSemaphore::release()</i></td></tr>
+<tr><th id="586">586</th><td><i class="doc">    from<span class="command"> \a</span> <span class="arg">other,</span> which in turn is canceled.</i></td></tr>
+<tr><th id="587">587</th><td><i class="doc"></i></td></tr>
+<tr><th id="588">588</th><td><i class="doc">    If this semaphore releaser had the responsibility to call some QSemaphore::release()</i></td></tr>
+<tr><th id="589">589</th><td><i class="doc">    itself, it performs the call before taking over from<span class="command"> \a</span> <span class="arg">other.</span></i></td></tr>
+<tr><th id="590">590</th><td><i class="doc"></i></td></tr>
+<tr><th id="591">591</th><td><i class="doc">    <span class="command">\sa</span> cancel()</i></td></tr>
+<tr><th id="592">592</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="593">593</th><td></td></tr>
+<tr><th id="594">594</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="595">595</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">QSemaphoreReleaser::~QSemaphoreReleaser()</span></i></td></tr>
+<tr><th id="596">596</th><td><i class="doc"></i></td></tr>
+<tr><th id="597">597</th><td><i class="doc">    Unless canceled, calls QSemaphore::release() with the arguments provided</i></td></tr>
+<tr><th id="598">598</th><td><i class="doc">    to the constructor, or by the last move assignment.</i></td></tr>
+<tr><th id="599">599</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="600">600</th><td></td></tr>
+<tr><th id="601">601</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="602">602</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb" data-ref="_ZN18QSemaphoreReleaser4swapERS_">QSemaphoreReleaser::swap(QSemaphoreReleaser &amp;other)</span></i></td></tr>
+<tr><th id="603">603</th><td><i class="doc"></i></td></tr>
+<tr><th id="604">604</th><td><i class="doc">    Exchanges the responsibilities of<span class="command"> \c</span><span class="arg">{*this}</span> and<span class="command"> \a</span> <span class="arg">other.</span></i></td></tr>
+<tr><th id="605">605</th><td><i class="doc"></i></td></tr>
+<tr><th id="606">606</th><td><i class="doc">    Unlike move assignment, neither of the two objects ever releases its</i></td></tr>
+<tr><th id="607">607</th><td><i class="doc">    semaphore, if any, as a consequence of swapping.</i></td></tr>
+<tr><th id="608">608</th><td><i class="doc"></i></td></tr>
+<tr><th id="609">609</th><td><i class="doc">    Therefore this function is very fast and never fails.</i></td></tr>
+<tr><th id="610">610</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="611">611</th><td></td></tr>
+<tr><th id="612">612</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="613">613</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb" data-ref="_ZNK18QSemaphoreReleaser9semaphoreEv">QSemaphoreReleaser::semaphore() const</span></i></td></tr>
+<tr><th id="614">614</th><td><i class="doc"></i></td></tr>
+<tr><th id="615">615</th><td><i class="doc">    Returns a pointer to the QSemaphore object provided to the constructor,</i></td></tr>
+<tr><th id="616">616</th><td><i class="doc">    or by the last move assignment, if any. Otherwise, returns<span class="command"> \nullptr</span>.</i></td></tr>
+<tr><th id="617">617</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="618">618</th><td></td></tr>
+<tr><th id="619">619</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="620">620</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb" data-ref="_ZN18QSemaphoreReleaser6cancelEv">QSemaphoreReleaser::cancel()</span></i></td></tr>
+<tr><th id="621">621</th><td><i class="doc"></i></td></tr>
+<tr><th id="622">622</th><td><i class="doc">    Cancels this QSemaphoreReleaser such that the destructor will no longer</i></td></tr>
+<tr><th id="623">623</th><td><i class="doc">    call<span class="command"> \c</span><span class="arg">{semaphore()-&gt;release()}.</span> Returns the value of semaphore()</i></td></tr>
+<tr><th id="624">624</th><td><i class="doc">    before this call. After this call, semaphore() will return<span class="command"> \nullptr</span>.</i></td></tr>
+<tr><th id="625">625</th><td><i class="doc"></i></td></tr>
+<tr><th id="626">626</th><td><i class="doc">    To enable again, assign a new QSemaphoreReleaser:</i></td></tr>
+<tr><th id="627">627</th><td><i class="doc"></i></td></tr>
+<tr><th id="628">628</th><td><i class="doc">    <span class="command">\snippet</span> <span class="verb">code/src_corelib_thread_qsemaphore.cpp 7</span></i></td></tr>
+<tr><th id="629">629</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="630">630</th><td></td></tr>
+<tr><th id="631">631</th><td></td></tr>
+<tr><th id="632">632</th><td><a class="macro" href="../global/qtconfigmacros.h.html#104" title="" data-ref="_M/QT_END_NAMESPACE">QT_END_NAMESPACE</a></td></tr>
+<tr><th id="633">633</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2024-Jun-13</em> from project qtbase-6.5.0 revision <em>6.5.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

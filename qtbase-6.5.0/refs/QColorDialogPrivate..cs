@@ -1,0 +1,21 @@
+<dec f='qtbase-6.5.0/src/widgets/dialogs/qcolordialog.cpp' l='131' type='QColorShower *'/>
+<use f='qtbase-6.5.0/src/widgets/dialogs/qcolordialog.cpp' l='1325' u='r' c='_ZNK19QColorDialogPrivate12currentColorEv'/>
+<use f='qtbase-6.5.0/src/widgets/dialogs/qcolordialog.cpp' l='1326' u='r' c='_ZNK19QColorDialogPrivate12currentAlphaEv'/>
+<use f='qtbase-6.5.0/src/widgets/dialogs/qcolordialog.cpp' l='1327' u='r' c='_ZN19QColorDialogPrivate15setCurrentAlphaEi'/>
+<use f='qtbase-6.5.0/src/widgets/dialogs/qcolordialog.cpp' l='1328' u='r' c='_ZN19QColorDialogPrivate9showAlphaEb'/>
+<use f='qtbase-6.5.0/src/widgets/dialogs/qcolordialog.cpp' l='1329' u='r' c='_ZNK19QColorDialogPrivate14isAlphaVisibleEv'/>
+<use f='qtbase-6.5.0/src/widgets/dialogs/qcolordialog.cpp' l='1335' u='r' c='_ZNK19QColorDialogPrivate13currentQColorEv'/>
+<use f='qtbase-6.5.0/src/widgets/dialogs/qcolordialog.cpp' l='1476' u='r' c='_ZN19QColorDialogPrivate9_q_newHsvEiii'/>
+<use f='qtbase-6.5.0/src/widgets/dialogs/qcolordialog.cpp' l='1486' u='r' c='_ZN19QColorDialogPrivate18setCurrentRgbColorEj'/>
+<use f='qtbase-6.5.0/src/widgets/dialogs/qcolordialog.cpp' l='1495' u='r' c='_ZN19QColorDialogPrivate16setCurrentQColorERK6QColor'/>
+<use f='qtbase-6.5.0/src/widgets/dialogs/qcolordialog.cpp' l='1496' u='r' c='_ZN19QColorDialogPrivate16setCurrentQColorERK6QColor'/>
+<use f='qtbase-6.5.0/src/widgets/dialogs/qcolordialog.cpp' l='1610' u='r' c='_ZN19QColorDialogPrivate18_q_pickScreenColorEv'/>
+<use f='qtbase-6.5.0/src/widgets/dialogs/qcolordialog.cpp' l='1814' u='w' c='_ZN19QColorDialogPrivate11initWidgetsEv'/>
+<use f='qtbase-6.5.0/src/widgets/dialogs/qcolordialog.cpp' l='1815' u='r' c='_ZN19QColorDialogPrivate11initWidgetsEv'/>
+<use f='qtbase-6.5.0/src/widgets/dialogs/qcolordialog.cpp' l='1816' u='r' c='_ZN19QColorDialogPrivate11initWidgetsEv'/>
+<use f='qtbase-6.5.0/src/widgets/dialogs/qcolordialog.cpp' l='1817' u='r' c='_ZN19QColorDialogPrivate11initWidgetsEv'/>
+<use f='qtbase-6.5.0/src/widgets/dialogs/qcolordialog.cpp' l='1822' u='r' c='_ZN19QColorDialogPrivate11initWidgetsEv'/>
+<use f='qtbase-6.5.0/src/widgets/dialogs/qcolordialog.cpp' l='1824' u='r' c='_ZN19QColorDialogPrivate11initWidgetsEv'/>
+<use f='qtbase-6.5.0/src/widgets/dialogs/qcolordialog.cpp' l='1858' u='r' c='_ZN19QColorDialogPrivate12_q_addCustomEv'/>
+<use f='qtbase-6.5.0/src/widgets/dialogs/qcolordialog.cpp' l='1879' u='r' c='_ZN19QColorDialogPrivate18retranslateStringsEv'/>
+<offset>6080</offset>

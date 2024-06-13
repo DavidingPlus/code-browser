@@ -1,0 +1,21 @@
+<dec f='qtbase-6.5.0/src/gui/rhi/qrhi_p_p.h' l='223' type='QRhi *'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhi.cpp' l='2226' u='r' c='_ZNK12QRhiResource3rhiEv'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhi.cpp' l='5158' u='r' c='_ZN18QRhiImplementationD1Ev'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhi.cpp' l='5585' u='w' c='_ZN4QRhi6createENS_14ImplementationEP14QRhiInitParams6QFlagsINS_4FlagEEP17QRhiNativeHandles'/>
+<offset>64</offset>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhigles2.cpp' l='2212' u='r' c='_ZN9QRhiGles219enqueueSubresUploadEP13QGles2TextureP19QGles2CommandBufferiiRK39QRhiTextureSubresourceUploadDescription'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhigles2.cpp' l='2244' u='r' c='_ZN9QRhiGles219enqueueSubresUploadEP13QGles2TextureP19QGles2CommandBufferiiRK39QRhiTextureSubresourceUploadDescription'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhigles2.cpp' l='2352' u='r' c='_ZN9QRhiGles222enqueueResourceUpdatesEP17QRhiCommandBufferP23QRhiResourceUpdateBatch'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhigles2.cpp' l='2399' u='r' c='_ZN9QRhiGles222enqueueResourceUpdatesEP17QRhiCommandBufferP23QRhiResourceUpdateBatch'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhigles2.cpp' l='5157' u='r' c='_ZN13QGles2Texture13prepareCreateEP5QSize'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhigles2.cpp' l='5208' u='r' c='_ZN13QGles2Texture6createEv'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhigles2.cpp' l='5220' u='r' c='_ZN13QGles2Texture6createEv'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhigles2.cpp' l='5232' u='r' c='_ZN13QGles2Texture6createEv'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhigles2.cpp' l='5476' u='r' c='_ZN25QGles2TextureRenderTarget6createEv'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhinull.cpp' l='396' u='r' c='_ZN8QRhiNull21simulateTextureUploadERKN30QRhiResourceUpdateBatchPrivate9TextureOpE'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhinull.cpp' l='442' u='r' c='_ZN8QRhiNull22simulateTextureGenMipsERKN30QRhiResourceUpdateBatchPrivate9TextureOpE'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhinull.cpp' l='444' u='r' c='_ZN8QRhiNull22simulateTextureGenMipsERKN30QRhiResourceUpdateBatchPrivate9TextureOpE'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhinull.cpp' l='480' u='r' c='_ZN8QRhiNull14resourceUpdateEP17QRhiCommandBufferP23QRhiResourceUpdateBatch'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhinull.cpp' l='668' u='r' c='_ZN12QNullTexture6createEv'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhinull.cpp' l='676' u='r' c='_ZN12QNullTexture6createEv'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhinull.cpp' l='816' u='r' c='_ZN24QNullTextureRenderTarget6createEv'/>

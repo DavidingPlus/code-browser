@@ -1,0 +1,982 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>forkfd.c source code [qtbase-6.5.0/src/3rdparty/forkfd/forkfd.c] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="BigArray,Header,SmallArray,pipe_payload,process_info "/>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'qtbase-6.5.0/src/3rdparty/forkfd/forkfd.c'; var root_path = '../../../..'; var data_path = '../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>qtbase-6.5.0</a>/<a href='../..'>src</a>/<a href='..'>3rdparty</a>/<a href='./'>forkfd</a>/<a href='forkfd.c.html'>forkfd.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/****************************************************************************</i></td></tr>
+<tr><th id="2">2</th><td><i>**</i></td></tr>
+<tr><th id="3">3</th><td><i>** Copyright (C) 2020 Intel Corporation.</i></td></tr>
+<tr><th id="4">4</th><td><i>** Copyright (C) 2015 Klarälvdalens Datakonsult AB, a KDAB Group company, info@kdab.com</i></td></tr>
+<tr><th id="5">5</th><td><i>**</i></td></tr>
+<tr><th id="6">6</th><td><i>** Permission is hereby granted, free of charge, to any person obtaining a copy</i></td></tr>
+<tr><th id="7">7</th><td><i>** of this software and associated documentation files (the "Software"), to deal</i></td></tr>
+<tr><th id="8">8</th><td><i>** in the Software without restriction, including without limitation the rights</i></td></tr>
+<tr><th id="9">9</th><td><i>** to use, copy, modify, merge, publish, distribute, sublicense, and/or sell</i></td></tr>
+<tr><th id="10">10</th><td><i>** copies of the Software, and to permit persons to whom the Software is</i></td></tr>
+<tr><th id="11">11</th><td><i>** furnished to do so, subject to the following conditions:</i></td></tr>
+<tr><th id="12">12</th><td><i>**</i></td></tr>
+<tr><th id="13">13</th><td><i>** The above copyright notice and this permission notice shall be included in</i></td></tr>
+<tr><th id="14">14</th><td><i>** all copies or substantial portions of the Software.</i></td></tr>
+<tr><th id="15">15</th><td><i>**</i></td></tr>
+<tr><th id="16">16</th><td><i>** THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</i></td></tr>
+<tr><th id="17">17</th><td><i>** IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,</i></td></tr>
+<tr><th id="18">18</th><td><i>** FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE</i></td></tr>
+<tr><th id="19">19</th><td><i>** AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER</i></td></tr>
+<tr><th id="20">20</th><td><i>** LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,</i></td></tr>
+<tr><th id="21">21</th><td><i>** OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN</i></td></tr>
+<tr><th id="22">22</th><td><i>** THE SOFTWARE.</i></td></tr>
+<tr><th id="23">23</th><td><i>**</i></td></tr>
+<tr><th id="24">24</th><td><i>****************************************************************************/</i></td></tr>
+<tr><th id="25">25</th><td></td></tr>
+<tr><th id="26">26</th><td><u>#<span data-ppcond="26">ifndef</span> <span class="macro" data-ref="_M/_GNU_SOURCE">_GNU_SOURCE</span></u></td></tr>
+<tr><th id="27">27</th><td><u>#  define _GNU_SOURCE</u></td></tr>
+<tr><th id="28">28</th><td><u>#<span data-ppcond="26">endif</span></u></td></tr>
+<tr><th id="29">29</th><td></td></tr>
+<tr><th id="30">30</th><td><u>#include <a href="forkfd.h.html">"forkfd.h"</a></u></td></tr>
+<tr><th id="31">31</th><td></td></tr>
+<tr><th id="32">32</th><td><i>/* Macros fine-tuning the build: */</i></td></tr>
+<tr><th id="33">33</th><td><i>//#define FORKFD_NO_FORKFD 1                /* disable the forkfd() function */</i></td></tr>
+<tr><th id="34">34</th><td><i>//#define FORKFD_NO_SPAWNFD 1               /* disable the spawnfd() function */</i></td></tr>
+<tr><th id="35">35</th><td><i>//#define FORKFD_DISABLE_FORK_FALLBACK 1    /* disable falling back to fork() from system_forkfd() */</i></td></tr>
+<tr><th id="36">36</th><td></td></tr>
+<tr><th id="37">37</th><td><u>#include <a href="../../../../include/x86_64-linux-gnu/sys/types.h.html">&lt;sys/types.h&gt;</a></u></td></tr>
+<tr><th id="38">38</th><td><u>#<span data-ppcond="38">if</span> defined(<span class="macro" data-ref="_M/__OpenBSD__">__OpenBSD__</span>) || defined(<span class="macro" data-ref="_M/__NetBSD__">__NetBSD__</span>)</u></td></tr>
+<tr><th id="39">39</th><td><u>#  include &lt;sys/param.h&gt;</u></td></tr>
+<tr><th id="40">40</th><td><u>#<span data-ppcond="38">endif</span></u></td></tr>
+<tr><th id="41">41</th><td><u>#include <a href="../../../../include/x86_64-linux-gnu/sys/time.h.html">&lt;sys/time.h&gt;</a></u></td></tr>
+<tr><th id="42">42</th><td><u>#include <a href="../../../../include/x86_64-linux-gnu/sys/resource.h.html">&lt;sys/resource.h&gt;</a></u></td></tr>
+<tr><th id="43">43</th><td><u>#include <a href="../../../../include/x86_64-linux-gnu/sys/wait.h.html">&lt;sys/wait.h&gt;</a></u></td></tr>
+<tr><th id="44">44</th><td><u>#include <a href="../../../../include/assert.h.html">&lt;assert.h&gt;</a></u></td></tr>
+<tr><th id="45">45</th><td><u>#include <a href="../../../../include/errno.h.html">&lt;errno.h&gt;</a></u></td></tr>
+<tr><th id="46">46</th><td><u>#include <a href="../../../../include/pthread.h.html">&lt;pthread.h&gt;</a></u></td></tr>
+<tr><th id="47">47</th><td><u>#include <a href="../../../../include/signal.h.html">&lt;signal.h&gt;</a></u></td></tr>
+<tr><th id="48">48</th><td><u>#include <a href="../../../../include/c++/9/stdlib.h.html">&lt;stdlib.h&gt;</a></u></td></tr>
+<tr><th id="49">49</th><td><u>#include <a href="../../../../include/string.h.html">&lt;string.h&gt;</a></u></td></tr>
+<tr><th id="50">50</th><td><u>#include <a href="../../../../include/time.h.html">&lt;time.h&gt;</a></u></td></tr>
+<tr><th id="51">51</th><td><u>#include <a href="../../../../include/unistd.h.html">&lt;unistd.h&gt;</a></u></td></tr>
+<tr><th id="52">52</th><td></td></tr>
+<tr><th id="53">53</th><td><u>#<span data-ppcond="53">ifdef</span> <span class="macro" data-ref="_M/__linux__">__linux__</span></u></td></tr>
+<tr><th id="54">54</th><td><u>#  define <dfn class="macro" id="_M/HAVE_WAIT4" data-ref="_M/HAVE_WAIT4">HAVE_WAIT4</dfn>    1</u></td></tr>
+<tr><th id="55">55</th><td><u>#  <span data-ppcond="55">if</span> defined(<span class="macro" data-ref="_M/__BIONIC__">__BIONIC__</span>) || (defined(<a class="macro" href="../../../../include/features.h.html#452" data-ref="_M/__GLIBC__">__GLIBC__</a>) &amp;&amp; (<a class="macro" href="../../../../include/features.h.html#452" title="2" data-ref="_M/__GLIBC__">__GLIBC__</a> &lt;&lt; 8) + <a class="macro" href="../../../../include/features.h.html#453" title="31" data-ref="_M/__GLIBC_MINOR__">__GLIBC_MINOR__</a> &gt;= 0x208 &amp;&amp; \</u></td></tr>
+<tr><th id="56">56</th><td><u>       (!defined(<span class="macro" data-ref="_M/__UCLIBC__">__UCLIBC__</span>) || ((__UCLIBC_MAJOR__ &lt;&lt; 16) + (__UCLIBC_MINOR__ &lt;&lt; 8) + __UCLIBC_SUBLEVEL__ &gt; 0x90201)))</u></td></tr>
+<tr><th id="57">57</th><td><u>#    include <a href="../../../../include/x86_64-linux-gnu/sys/eventfd.h.html">&lt;sys/eventfd.h&gt;</a></u></td></tr>
+<tr><th id="58">58</th><td><u>#    <span data-ppcond="58">ifdef</span> <a class="macro" href="../../../../include/x86_64-linux-gnu/bits/eventfd.h.html#28" data-ref="_M/EFD_CLOEXEC">EFD_CLOEXEC</a></u></td></tr>
+<tr><th id="59">59</th><td><u>#      define <dfn class="macro" id="_M/HAVE_EVENTFD" data-ref="_M/HAVE_EVENTFD">HAVE_EVENTFD</dfn>  1</u></td></tr>
+<tr><th id="60">60</th><td><u>#    <span data-ppcond="58">endif</span></u></td></tr>
+<tr><th id="61">61</th><td><u>#  <span data-ppcond="55">endif</span></u></td></tr>
+<tr><th id="62">62</th><td><u>#  <span data-ppcond="62">if</span> defined(<span class="macro" data-ref="_M/__BIONIC__">__BIONIC__</span>) || (defined(<a class="macro" href="../../../../include/features.h.html#452" data-ref="_M/__GLIBC__">__GLIBC__</a>) &amp;&amp; (<a class="macro" href="../../../../include/features.h.html#452" title="2" data-ref="_M/__GLIBC__">__GLIBC__</a> &lt;&lt; 8) + <a class="macro" href="../../../../include/features.h.html#453" title="31" data-ref="_M/__GLIBC_MINOR__">__GLIBC_MINOR__</a> &gt;= 0x209 &amp;&amp; \</u></td></tr>
+<tr><th id="63">63</th><td><u>       (!defined(<span class="macro" data-ref="_M/__UCLIBC__">__UCLIBC__</span>) || ((__UCLIBC_MAJOR__ &lt;&lt; 16) + (__UCLIBC_MINOR__ &lt;&lt; 8) + __UCLIBC_SUBLEVEL__ &gt; 0x90201)))</u></td></tr>
+<tr><th id="64">64</th><td><u>#    define <dfn class="macro" id="_M/HAVE_PIPE2" data-ref="_M/HAVE_PIPE2">HAVE_PIPE2</dfn>    1</u></td></tr>
+<tr><th id="65">65</th><td><u>#  <span data-ppcond="62">endif</span></u></td></tr>
+<tr><th id="66">66</th><td><u>#<span data-ppcond="53">endif</span></u></td></tr>
+<tr><th id="67">67</th><td></td></tr>
+<tr><th id="68">68</th><td><u>#<span data-ppcond="68">if</span> <a class="macro" href="../../../../include/unistd.h.html#34" title="200809L" data-ref="_M/_POSIX_VERSION">_POSIX_VERSION</a>-0 &gt;= 200809L || <a class="macro" href="../../../../include/unistd.h.html#90" title="700" data-ref="_M/_XOPEN_VERSION">_XOPEN_VERSION</a>-0 &gt;= 500</u></td></tr>
+<tr><th id="69">69</th><td><u>#  define <dfn class="macro" id="_M/HAVE_WAITID" data-ref="_M/HAVE_WAITID">HAVE_WAITID</dfn>   1</u></td></tr>
+<tr><th id="70">70</th><td><u>#<span data-ppcond="68">endif</span></u></td></tr>
+<tr><th id="71">71</th><td><u>#<span data-ppcond="71">if</span> !defined(<a class="macro" href="../../../../include/x86_64-linux-gnu/bits/waitflags.h.html#31" data-ref="_M/WEXITED">WEXITED</a>) || !defined(<a class="macro" href="../../../../include/x86_64-linux-gnu/bits/waitflags.h.html#33" data-ref="_M/WNOWAIT">WNOWAIT</a>)</u></td></tr>
+<tr><th id="72">72</th><td><u>#  undef HAVE_WAITID</u></td></tr>
+<tr><th id="73">73</th><td><u>#<span data-ppcond="71">endif</span></u></td></tr>
+<tr><th id="74">74</th><td></td></tr>
+<tr><th id="75">75</th><td><u>#<span data-ppcond="75">if</span> (defined(<span class="macro" data-ref="_M/__FreeBSD__">__FreeBSD__</span>) &amp;&amp; defined(<span class="macro" data-ref="_M/__FreeBSD_version">__FreeBSD_version</span>) &amp;&amp; __FreeBSD_version &gt;= 1000032) || \</u></td></tr>
+<tr><th id="76">76</th><td><u>    (defined(<span class="macro" data-ref="_M/__OpenBSD__">__OpenBSD__</span>) &amp;&amp; OpenBSD &gt;= 201505) || \</u></td></tr>
+<tr><th id="77">77</th><td><u>    (defined(<span class="macro" data-ref="_M/__NetBSD__">__NetBSD__</span>) &amp;&amp; __NetBSD_Version__ &gt;= 600000000)</u></td></tr>
+<tr><th id="78">78</th><td><u>#  define HAVE_PIPE2    1</u></td></tr>
+<tr><th id="79">79</th><td><u>#<span data-ppcond="75">endif</span></u></td></tr>
+<tr><th id="80">80</th><td><u>#<span data-ppcond="80">if</span> defined(<span class="macro" data-ref="_M/__FreeBSD__">__FreeBSD__</span>) || defined(<span class="macro" data-ref="_M/__DragonFly__">__DragonFly__</span>) || defined(<span class="macro" data-ref="_M/__FreeBSD_kernel__">__FreeBSD_kernel__</span>) || \</u></td></tr>
+<tr><th id="81">81</th><td><u>    defined(<span class="macro" data-ref="_M/__OpenBSD__">__OpenBSD__</span>) || defined(<span class="macro" data-ref="_M/__NetBSD__">__NetBSD__</span>) || defined(<span class="macro" data-ref="_M/__APPLE__">__APPLE__</span>)</u></td></tr>
+<tr><th id="82">82</th><td><u>#  define HAVE_WAIT4    1</u></td></tr>
+<tr><th id="83">83</th><td><u>#<span data-ppcond="80">endif</span></u></td></tr>
+<tr><th id="84">84</th><td></td></tr>
+<tr><th id="85">85</th><td><u>#<span data-ppcond="85">if</span> defined(<span class="macro" data-ref="_M/__APPLE__">__APPLE__</span>)</u></td></tr>
+<tr><th id="86">86</th><td><i>/* Up until OS X 10.7, waitid(P_ALL, ...) will return success, but will not</i></td></tr>
+<tr><th id="87">87</th><td><i> * fill in the details of the dead child. That means waitid is not useful to us.</i></td></tr>
+<tr><th id="88">88</th><td><i> * Therefore, we only enable waitid() support if we're targetting OS X 10.8 or</i></td></tr>
+<tr><th id="89">89</th><td><i> * later.</i></td></tr>
+<tr><th id="90">90</th><td><i> */</i></td></tr>
+<tr><th id="91">91</th><td><u>#  include &lt;Availability.h&gt;</u></td></tr>
+<tr><th id="92">92</th><td><u>#  include &lt;AvailabilityMacros.h&gt;</u></td></tr>
+<tr><th id="93">93</th><td><u>#  if MAC_OS_X_VERSION_MIN_REQUIRED &lt;= 1070</u></td></tr>
+<tr><th id="94">94</th><td><u>#    define HAVE_BROKEN_WAITID 1</u></td></tr>
+<tr><th id="95">95</th><td><u>#  endif</u></td></tr>
+<tr><th id="96">96</th><td><u>#<span data-ppcond="85">endif</span></u></td></tr>
+<tr><th id="97">97</th><td></td></tr>
+<tr><th id="98">98</th><td><u>#include <a href="forkfd_atomic.h.html">"forkfd_atomic.h"</a></u></td></tr>
+<tr><th id="99">99</th><td></td></tr>
+<tr><th id="100">100</th><td><em>static</em> <em>int</em> <a class="decl fn" href="forkfd_linux.c.html#_ZL17system_has_forkfdv" title='system_has_forkfd' data-ref="_ZL17system_has_forkfdv" id="_ZL17system_has_forkfdv">system_has_forkfd</a>(<em>void</em>);</td></tr>
+<tr><th id="101">101</th><td><em>static</em> <em>int</em> <a class="decl fn" href="forkfd_linux.c.html#_ZL13system_forkfdiPiS_" title='system_forkfd' data-ref="_ZL13system_forkfdiPiS_" id="_ZL13system_forkfdiPiS_">system_forkfd</a>(<em>int</em> <dfn class="local col4 decl" id="104flags" title='flags' data-type='int' data-ref="104flags">flags</dfn>, <a class="typedef" href="../../../../include/x86_64-linux-gnu/sys/types.h.html#pid_t" title='pid_t' data-type='__pid_t' data-ref="pid_t">pid_t</a> *<dfn class="local col5 decl" id="105ppid" title='ppid' data-type='pid_t *' data-ref="105ppid">ppid</dfn>, <em>int</em> *<dfn class="local col6 decl" id="106system" title='system' data-type='int *' data-ref="106system">system</dfn>);</td></tr>
+<tr><th id="102">102</th><td><em>static</em> <em>int</em> <a class="decl fn" href="forkfd_linux.c.html#_ZL14system_vforkfdiPiPFiPvES0_S_" title='system_vforkfd' data-ref="_ZL14system_vforkfdiPiPFiPvES0_S_" id="_ZL14system_vforkfdiPiPFiPvES0_S_">system_vforkfd</a>(<em>int</em> <dfn class="local col7 decl" id="107flags" title='flags' data-type='int' data-ref="107flags">flags</dfn>, <a class="typedef" href="../../../../include/x86_64-linux-gnu/sys/types.h.html#pid_t" title='pid_t' data-type='__pid_t' data-ref="pid_t">pid_t</a> *<dfn class="local col8 decl" id="108ppid" title='ppid' data-type='pid_t *' data-ref="108ppid">ppid</dfn>, <em>int</em> (*)(<em>void</em> *), <em>void</em> *, <em>int</em> *<dfn class="local col9 decl" id="109system" title='system' data-type='int *' data-ref="109system">system</dfn>);</td></tr>
+<tr><th id="103">103</th><td><em>static</em> <em>int</em> <a class="decl fn" href="forkfd_linux.c.html#_ZL18system_forkfd_waitiP11forkfd_infoiP6rusage" title='system_forkfd_wait' data-ref="_ZL18system_forkfd_waitiP11forkfd_infoiP6rusage" id="_ZL18system_forkfd_waitiP11forkfd_infoiP6rusage">system_forkfd_wait</a>(<em>int</em> <dfn class="local col0 decl" id="110ffd" title='ffd' data-type='int' data-ref="110ffd">ffd</dfn>, <b>struct</b> <a class="type" href="forkfd.h.html#forkfd_info" title='forkfd_info' data-ref="forkfd_info">forkfd_info</a> *<dfn class="local col1 decl" id="111info" title='info' data-type='struct forkfd_info *' data-ref="111info">info</dfn>, <em>int</em> <dfn class="local col2 decl" id="112ffdwoptions" title='ffdwoptions' data-type='int' data-ref="112ffdwoptions">ffdwoptions</dfn>, <b>struct</b> <a class="type" href="../../../../include/x86_64-linux-gnu/bits/types/struct_rusage.h.html#rusage" title='rusage' data-ref="rusage">rusage</a> *<dfn class="local col3 decl" id="113rusage" title='rusage' data-type='struct rusage *' data-ref="113rusage">rusage</dfn>);</td></tr>
+<tr><th id="104">104</th><td></td></tr>
+<tr><th id="105">105</th><td><em>static</em> <em>int</em> <dfn class="decl def fn" id="_ZL21disable_fork_fallbackv" title='disable_fork_fallback' data-ref="_ZL21disable_fork_fallbackv">disable_fork_fallback</dfn>(<em>void</em>)</td></tr>
+<tr><th id="106">106</th><td>{</td></tr>
+<tr><th id="107">107</th><td><u>#<span data-ppcond="107">ifdef</span> <span class="macro" data-ref="_M/FORKFD_DISABLE_FORK_FALLBACK">FORKFD_DISABLE_FORK_FALLBACK</span></u></td></tr>
+<tr><th id="108">108</th><td>    <i>/* if there's no system forkfd, we have to use the fallback */</i></td></tr>
+<tr><th id="109">109</th><td>    <b>return</b> system_has_forkfd();</td></tr>
+<tr><th id="110">110</th><td><u>#<span data-ppcond="107">else</span></u></td></tr>
+<tr><th id="111">111</th><td>    <b>return</b> <var>0</var>;</td></tr>
+<tr><th id="112">112</th><td><u>#<span data-ppcond="107">endif</span></u></td></tr>
+<tr><th id="113">113</th><td>}</td></tr>
+<tr><th id="114">114</th><td></td></tr>
+<tr><th id="115">115</th><td><u>#define <dfn class="macro" id="_M/CHILDREN_IN_SMALL_ARRAY" data-ref="_M/CHILDREN_IN_SMALL_ARRAY">CHILDREN_IN_SMALL_ARRAY</dfn>     16</u></td></tr>
+<tr><th id="116">116</th><td><u>#define <dfn class="macro" id="_M/CHILDREN_IN_BIG_ARRAY" data-ref="_M/CHILDREN_IN_BIG_ARRAY">CHILDREN_IN_BIG_ARRAY</dfn>       256</u></td></tr>
+<tr><th id="117">117</th><td><u>#define <dfn class="macro" id="_M/sizeofarray" data-ref="_M/sizeofarray">sizeofarray</dfn>(array)          (sizeof(array)/sizeof(array[0]))</u></td></tr>
+<tr><th id="118">118</th><td><u>#define <dfn class="macro" id="_M/EINTR_LOOP" data-ref="_M/EINTR_LOOP">EINTR_LOOP</dfn>(ret, call) \</u></td></tr>
+<tr><th id="119">119</th><td><u>    do {                      \</u></td></tr>
+<tr><th id="120">120</th><td><u>        ret = call;           \</u></td></tr>
+<tr><th id="121">121</th><td><u>    } while (ret == -1 &amp;&amp; errno == EINTR)</u></td></tr>
+<tr><th id="122">122</th><td></td></tr>
+<tr><th id="123">123</th><td><b>struct</b> <dfn class="type def" id="pipe_payload" title='pipe_payload' data-ref="pipe_payload">pipe_payload</dfn></td></tr>
+<tr><th id="124">124</th><td>{</td></tr>
+<tr><th id="125">125</th><td>    <b>struct</b> <a class="type" href="forkfd.h.html#forkfd_info" title='forkfd_info' data-ref="forkfd_info">forkfd_info</a> <dfn class="decl field" id="pipe_payload::info" title='pipe_payload::info' data-ref="pipe_payload::info">info</dfn>;</td></tr>
+<tr><th id="126">126</th><td>    <b>struct</b> <a class="type" href="../../../../include/x86_64-linux-gnu/bits/types/struct_rusage.h.html#rusage" title='rusage' data-ref="rusage">rusage</a> <dfn class="decl field" id="pipe_payload::rusage" title='pipe_payload::rusage' data-ref="pipe_payload::rusage">rusage</dfn>;</td></tr>
+<tr><th id="127">127</th><td>};</td></tr>
+<tr><th id="128">128</th><td></td></tr>
+<tr><th id="129">129</th><td><b>typedef</b> <b>struct</b> <dfn class="type def" id="process_info" title='process_info' data-ref="process_info"><a class="type" href="#process_info" title='process_info' data-ref="process_info">process_info</a></dfn></td></tr>
+<tr><th id="130">130</th><td>{</td></tr>
+<tr><th id="131">131</th><td>    <a class="typedef" href="forkfd_c11.h.html#ffd_atomic_int" title='ffd_atomic_int' data-type='std::atomic&lt;int&gt;' data-ref="ffd_atomic_int">ffd_atomic_int</a> <dfn class="decl field" id="process_info::pid" title='process_info::pid' data-ref="process_info::pid">pid</dfn>;</td></tr>
+<tr><th id="132">132</th><td>    <em>int</em> <dfn class="decl field" id="process_info::deathPipe" title='process_info::deathPipe' data-ref="process_info::deathPipe">deathPipe</dfn>;</td></tr>
+<tr><th id="133">133</th><td>} <dfn class="typedef" id="ProcessInfo" title='ProcessInfo' data-type='struct process_info' data-ref="ProcessInfo">ProcessInfo</dfn>;</td></tr>
+<tr><th id="134">134</th><td></td></tr>
+<tr><th id="135">135</th><td><b>struct</b> <a class="type" href="#BigArray" title='BigArray' data-ref="BigArray">BigArray</a>;</td></tr>
+<tr><th id="136">136</th><td><b>typedef</b> <b>struct</b> <dfn class="type def" id="Header" title='Header' data-ref="Header"><a class="type" href="#Header" title='Header' data-ref="Header">Header</a></dfn></td></tr>
+<tr><th id="137">137</th><td>{</td></tr>
+<tr><th id="138">138</th><td>    <a class="macro" href="forkfd_c11.h.html#34" title="std::atomic&lt;struct BigArray*&gt;" data-ref="_M/ffd_atomic_pointer">ffd_atomic_pointer</a>(<b>struct</b> <a class="type" href="#BigArray" title='BigArray' data-ref="BigArray">BigArray</a>) <dfn class="decl field" id="Header::nextArray" title='Header::nextArray' data-ref="Header::nextArray">nextArray</dfn>;</td></tr>
+<tr><th id="139">139</th><td>    <a class="typedef" href="forkfd_c11.h.html#ffd_atomic_int" title='ffd_atomic_int' data-type='std::atomic&lt;int&gt;' data-ref="ffd_atomic_int">ffd_atomic_int</a> <dfn class="decl field" id="Header::busyCount" title='Header::busyCount' data-ref="Header::busyCount">busyCount</dfn>;</td></tr>
+<tr><th id="140">140</th><td>} <dfn class="typedef" id="Header" title='Header' data-type='struct Header' data-ref="Header">Header</dfn>;</td></tr>
+<tr><th id="141">141</th><td></td></tr>
+<tr><th id="142">142</th><td><b>typedef</b> <b>struct</b> <dfn class="type def" id="BigArray" title='BigArray' data-ref="BigArray"><a class="type" href="#BigArray" title='BigArray' data-ref="BigArray">BigArray</a></dfn></td></tr>
+<tr><th id="143">143</th><td>{</td></tr>
+<tr><th id="144">144</th><td>    <a class="typedef" href="#Header" title='Header' data-type='struct Header' data-ref="Header">Header</a> <dfn class="decl field" id="BigArray::header" title='BigArray::header' data-ref="BigArray::header">header</dfn>;</td></tr>
+<tr><th id="145">145</th><td>    <a class="typedef" href="#ProcessInfo" title='ProcessInfo' data-type='struct process_info' data-ref="ProcessInfo">ProcessInfo</a> <dfn class="decl field" id="BigArray::entries" title='BigArray::entries' data-ref="BigArray::entries">entries</dfn>[<a class="macro" href="#116" title="256" data-ref="_M/CHILDREN_IN_BIG_ARRAY">CHILDREN_IN_BIG_ARRAY</a>];</td></tr>
+<tr><th id="146">146</th><td>} <dfn class="typedef" id="BigArray" title='BigArray' data-type='struct BigArray' data-ref="BigArray">BigArray</dfn>;</td></tr>
+<tr><th id="147">147</th><td></td></tr>
+<tr><th id="148">148</th><td><b>typedef</b> <b>struct</b> <dfn class="type def" id="SmallArray" title='SmallArray' data-ref="SmallArray"><a class="type" href="#SmallArray" title='SmallArray' data-ref="SmallArray">SmallArray</a></dfn></td></tr>
+<tr><th id="149">149</th><td>{</td></tr>
+<tr><th id="150">150</th><td>    <a class="typedef" href="#Header" title='Header' data-type='struct Header' data-ref="Header">Header</a> <dfn class="decl field" id="SmallArray::header" title='SmallArray::header' data-ref="SmallArray::header">header</dfn>;</td></tr>
+<tr><th id="151">151</th><td>    <a class="typedef" href="#ProcessInfo" title='ProcessInfo' data-type='struct process_info' data-ref="ProcessInfo">ProcessInfo</a> <dfn class="decl field" id="SmallArray::entries" title='SmallArray::entries' data-ref="SmallArray::entries">entries</dfn>[<a class="macro" href="#115" title="16" data-ref="_M/CHILDREN_IN_SMALL_ARRAY">CHILDREN_IN_SMALL_ARRAY</a>];</td></tr>
+<tr><th id="152">152</th><td>} <dfn class="typedef" id="SmallArray" title='SmallArray' data-type='struct SmallArray' data-ref="SmallArray">SmallArray</dfn>;</td></tr>
+<tr><th id="153">153</th><td><em>static</em> <a class="typedef" href="#SmallArray" title='SmallArray' data-type='struct SmallArray' data-ref="SmallArray">SmallArray</a> <a class="ref fn fake" href="#148" title='SmallArray::SmallArray' data-ref="_ZN10SmallArrayC1Ev"></a><dfn class="decl def" id="children" title='children' data-ref="children">children</dfn>;</td></tr>
+<tr><th id="154">154</th><td></td></tr>
+<tr><th id="155">155</th><td><em>static</em> <b>struct</b> <a class="type" href="../../../../include/x86_64-linux-gnu/bits/sigaction.h.html#sigaction" title='sigaction' data-ref="sigaction">sigaction</a> <a class="ref fn fake" href="../../../../include/x86_64-linux-gnu/bits/sigaction.h.html#27" title='sigaction::sigaction' data-ref="_ZN9sigactionC1Ev"></a><dfn class="decl def" id="old_sigaction" title='old_sigaction' data-ref="old_sigaction">old_sigaction</dfn>;</td></tr>
+<tr><th id="156">156</th><td><em>static</em> <a class="typedef" href="../../../../include/x86_64-linux-gnu/bits/pthreadtypes.h.html#pthread_once_t" title='pthread_once_t' data-type='int' data-ref="pthread_once_t">pthread_once_t</a> <dfn class="decl def" id="forkfd_initialization" title='forkfd_initialization' data-ref="forkfd_initialization">forkfd_initialization</dfn> = <a class="macro" href="../../../../include/pthread.h.html#182" title="0" data-ref="_M/PTHREAD_ONCE_INIT">PTHREAD_ONCE_INIT</a>;</td></tr>
+<tr><th id="157">157</th><td><em>static</em> <a class="typedef" href="forkfd_c11.h.html#ffd_atomic_int" title='ffd_atomic_int' data-type='std::atomic&lt;int&gt;' data-ref="ffd_atomic_int">ffd_atomic_int</a> <dfn class="decl def" id="forkfd_status" title='forkfd_status' data-ref="forkfd_status">forkfd_status</dfn> = <a class="macro" href="forkfd_c11.h.html#54" title="{ 0 }" data-ref="_M/FFD_ATOMIC_INIT">FFD_ATOMIC_INIT</a>(<var>0</var>);</td></tr>
+<tr><th id="158">158</th><td></td></tr>
+<tr><th id="159">159</th><td><u>#<span data-ppcond="159">ifdef</span> <span class="macro" data-ref="_M/HAVE_BROKEN_WAITID">HAVE_BROKEN_WAITID</span></u></td></tr>
+<tr><th id="160">160</th><td><em>static</em> <em>int</em> waitid_works = <var>0</var>;</td></tr>
+<tr><th id="161">161</th><td><u>#<span data-ppcond="159">else</span></u></td></tr>
+<tr><th id="162">162</th><td><em>static</em> <em>const</em> <em>int</em> <dfn class="decl def" id="waitid_works" title='waitid_works' data-ref="waitid_works">waitid_works</dfn> = <var>1</var>;</td></tr>
+<tr><th id="163">163</th><td><u>#<span data-ppcond="159">endif</span></u></td></tr>
+<tr><th id="164">164</th><td></td></tr>
+<tr><th id="165">165</th><td><em>static</em> <a class="typedef" href="#ProcessInfo" title='ProcessInfo' data-type='struct process_info' data-ref="ProcessInfo">ProcessInfo</a> *<dfn class="decl def fn" id="_ZL20tryAllocateInSectionP6HeaderP12process_infoi" title='tryAllocateInSection' data-ref="_ZL20tryAllocateInSectionP6HeaderP12process_infoi">tryAllocateInSection</dfn>(<a class="typedef" href="#Header" title='Header' data-type='struct Header' data-ref="Header">Header</a> *<dfn class="local col4 decl" id="114header" title='header' data-type='Header *' data-ref="114header">header</dfn>, <a class="typedef" href="#ProcessInfo" title='ProcessInfo' data-type='struct process_info' data-ref="ProcessInfo">ProcessInfo</a> <dfn class="local col5 decl" id="115entries" title='entries' data-type='ProcessInfo *' data-ref="115entries">entries</dfn>[], <em>int</em> <dfn class="local col6 decl" id="116maxCount" title='maxCount' data-type='int' data-ref="116maxCount">maxCount</dfn>)</td></tr>
+<tr><th id="166">166</th><td>{</td></tr>
+<tr><th id="167">167</th><td>    <i>/* we use ACQUIRE here because the signal handler might have released the PID */</i></td></tr>
+<tr><th id="168">168</th><td>    <em>int</em> <dfn class="local col7 decl" id="117busyCount" title='busyCount' data-type='int' data-ref="117busyCount">busyCount</dfn> = <a class="macro" href="forkfd_c11.h.html#65" title="(atomic_fetch_add_explicit(&amp;header-&gt;busyCount, 1, std::memory_order_acquire) + (1))" data-ref="_M/ffd_atomic_add_fetch">ffd_atomic_add_fetch</a>(&amp;<a class="local col4 ref" href="#114header" title='header' data-ref="114header">header</a>-&gt;<a class="ref field" href="#Header::busyCount" title='Header::busyCount' data-ref="Header::busyCount">busyCount</a>, <var>1</var>, <a class="macro" href="forkfd_c11.h.html#36" title="std::memory_order_acquire" data-ref="_M/FFD_ATOMIC_ACQUIRE">FFD_ATOMIC_ACQUIRE</a>);</td></tr>
+<tr><th id="169">169</th><td>    <b>if</b> (<a class="local col7 ref" href="#117busyCount" title='busyCount' data-ref="117busyCount">busyCount</a> &lt;= <a class="local col6 ref" href="#116maxCount" title='maxCount' data-ref="116maxCount">maxCount</a>) {</td></tr>
+<tr><th id="170">170</th><td>        <i>/* there's an available entry in this section, find it and take it */</i></td></tr>
+<tr><th id="171">171</th><td>        <em>int</em> <dfn class="local col8 decl" id="118i" title='i' data-type='int' data-ref="118i">i</dfn>;</td></tr>
+<tr><th id="172">172</th><td>        <b>for</b> (<a class="local col8 ref" href="#118i" title='i' data-ref="118i">i</a> = <var>0</var>; <a class="local col8 ref" href="#118i" title='i' data-ref="118i">i</a> &lt; <a class="local col6 ref" href="#116maxCount" title='maxCount' data-ref="116maxCount">maxCount</a>; ++<a class="local col8 ref" href="#118i" title='i' data-ref="118i">i</a>) {</td></tr>
+<tr><th id="173">173</th><td>            <i>/* if the PID is 0, it's free; mark it as used by swapping it with -1 */</i></td></tr>
+<tr><th id="174">174</th><td>            <em>int</em> <dfn class="local col9 decl" id="119expected_pid" title='expected_pid' data-type='int' data-ref="119expected_pid">expected_pid</dfn> = <var>0</var>;</td></tr>
+<tr><th id="175">175</th><td>            <b>if</b> (<a class="macro" href="forkfd_c11.h.html#63" title="atomic_compare_exchange_strong_explicit(&amp;entries[i].pid, &amp;expected_pid, -1, std::memory_order_relaxed, std::memory_order_relaxed)" data-ref="_M/ffd_atomic_compare_exchange">ffd_atomic_compare_exchange</a>(&amp;<a class="local col5 ref" href="#115entries" title='entries' data-ref="115entries">entries</a>[<a class="local col8 ref" href="#118i" title='i' data-ref="118i">i</a>].<a class="ref field" href="#process_info::pid" title='process_info::pid' data-ref="process_info::pid">pid</a>, &amp;<a class="local col9 ref" href="#119expected_pid" title='expected_pid' data-ref="119expected_pid">expected_pid</a>,</td></tr>
+<tr><th id="176">176</th><td>                                            -<var>1</var>, <a class="macro" href="forkfd_c11.h.html#35" title="std::memory_order_relaxed" data-ref="_M/FFD_ATOMIC_RELAXED">FFD_ATOMIC_RELAXED</a>, <a class="macro" href="forkfd_c11.h.html#35" title="std::memory_order_relaxed" data-ref="_M/FFD_ATOMIC_RELAXED">FFD_ATOMIC_RELAXED</a>))</td></tr>
+<tr><th id="177">177</th><td>                <b>return</b> &amp;<a class="local col5 ref" href="#115entries" title='entries' data-ref="115entries">entries</a>[<a class="local col8 ref" href="#118i" title='i' data-ref="118i">i</a>];</td></tr>
+<tr><th id="178">178</th><td>        }</td></tr>
+<tr><th id="179">179</th><td>    }</td></tr>
+<tr><th id="180">180</th><td></td></tr>
+<tr><th id="181">181</th><td>    <i>/* there isn't an available entry, undo our increment */</i></td></tr>
+<tr><th id="182">182</th><td>    (<em>void</em>)<a class="macro" href="forkfd_c11.h.html#65" title="(atomic_fetch_add_explicit(&amp;header-&gt;busyCount, -1, std::memory_order_relaxed) + (-1))" data-ref="_M/ffd_atomic_add_fetch">ffd_atomic_add_fetch</a>(&amp;<a class="local col4 ref" href="#114header" title='header' data-ref="114header">header</a>-&gt;<a class="ref field" href="#Header::busyCount" title='Header::busyCount' data-ref="Header::busyCount">busyCount</a>, -<var>1</var>, <a class="macro" href="forkfd_c11.h.html#35" title="std::memory_order_relaxed" data-ref="_M/FFD_ATOMIC_RELAXED">FFD_ATOMIC_RELAXED</a>);</td></tr>
+<tr><th id="183">183</th><td>    <b>return</b> <span class="macro" title="__null" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="184">184</th><td>}</td></tr>
+<tr><th id="185">185</th><td></td></tr>
+<tr><th id="186">186</th><td><em>static</em> <a class="typedef" href="#ProcessInfo" title='ProcessInfo' data-type='struct process_info' data-ref="ProcessInfo">ProcessInfo</a> *<dfn class="decl def fn" id="_ZL12allocateInfoPP6Header" title='allocateInfo' data-ref="_ZL12allocateInfoPP6Header">allocateInfo</dfn>(<a class="typedef" href="#Header" title='Header' data-type='struct Header' data-ref="Header">Header</a> **<dfn class="local col0 decl" id="120header" title='header' data-type='Header **' data-ref="120header">header</dfn>)</td></tr>
+<tr><th id="187">187</th><td>{</td></tr>
+<tr><th id="188">188</th><td>    <a class="typedef" href="#Header" title='Header' data-type='struct Header' data-ref="Header">Header</a> *<dfn class="local col1 decl" id="121currentHeader" title='currentHeader' data-type='Header *' data-ref="121currentHeader">currentHeader</dfn> = &amp;<a class="ref" href="#children" title='children' data-ref="children">children</a>.<a class="ref field" href="#SmallArray::header" title='SmallArray::header' data-ref="SmallArray::header">header</a>;</td></tr>
+<tr><th id="189">189</th><td></td></tr>
+<tr><th id="190">190</th><td>    <i>/* try to find an available entry in the small array first */</i></td></tr>
+<tr><th id="191">191</th><td>    <a class="typedef" href="#ProcessInfo" title='ProcessInfo' data-type='struct process_info' data-ref="ProcessInfo">ProcessInfo</a> *<dfn class="local col2 decl" id="122info" title='info' data-type='ProcessInfo *' data-ref="122info">info</dfn> =</td></tr>
+<tr><th id="192">192</th><td>            <a class="ref fn" href="#_ZL20tryAllocateInSectionP6HeaderP12process_infoi" title='tryAllocateInSection' data-ref="_ZL20tryAllocateInSectionP6HeaderP12process_infoi">tryAllocateInSection</a>(<span class='inlayHint'>header:&nbsp;</span><a class="local col1 ref" href="#121currentHeader" title='currentHeader' data-ref="121currentHeader">currentHeader</a>, <span class='inlayHint'>entries:&nbsp;</span><a class="ref" href="#children" title='children' data-ref="children">children</a>.<a class="ref field" href="#SmallArray::entries" title='SmallArray::entries' data-ref="SmallArray::entries">entries</a>, <a class="macro" href="#117" title="(sizeof(children.entries)/sizeof(children.entries[0]))" data-ref="_M/sizeofarray">sizeofarray</a>(<a class="ref" href="#children" title='children' data-ref="children">children</a>.<a class="ref field" href="#SmallArray::entries" title='SmallArray::entries' data-ref="SmallArray::entries">entries</a>));</td></tr>
+<tr><th id="193">193</th><td></td></tr>
+<tr><th id="194">194</th><td>    <i>/* go on to the next arrays */</i></td></tr>
+<tr><th id="195">195</th><td>    <b>while</b> (<a class="local col2 ref" href="#122info" title='info' data-ref="122info">info</a> == <span class="macro" title="__null" data-ref="_M/NULL">NULL</span>) {</td></tr>
+<tr><th id="196">196</th><td>        <a class="typedef" href="#BigArray" title='BigArray' data-type='struct BigArray' data-ref="BigArray">BigArray</a> *<dfn class="local col3 decl" id="123array" title='array' data-type='BigArray *' data-ref="123array">array</dfn> = <a class="macro" href="forkfd_c11.h.html#57" title="atomic_load_explicit(&amp;currentHeader-&gt;nextArray, std::memory_order_acquire)" data-ref="_M/ffd_atomic_load">ffd_atomic_load</a>(&amp;<a class="local col1 ref" href="#121currentHeader" title='currentHeader' data-ref="121currentHeader">currentHeader</a>-&gt;<a class="ref field" href="#Header::nextArray" title='Header::nextArray' data-ref="Header::nextArray">nextArray</a>, <a class="macro" href="forkfd_c11.h.html#36" title="std::memory_order_acquire" data-ref="_M/FFD_ATOMIC_ACQUIRE">FFD_ATOMIC_ACQUIRE</a>);</td></tr>
+<tr><th id="197">197</th><td>        <b>if</b> (<a class="local col3 ref" href="#123array" title='array' data-ref="123array">array</a> == <span class="macro" title="__null" data-ref="_M/NULL">NULL</span>) {</td></tr>
+<tr><th id="198">198</th><td>            <i>/* allocate an array and try to use it */</i></td></tr>
+<tr><th id="199">199</th><td>            <a class="typedef" href="#BigArray" title='BigArray' data-type='struct BigArray' data-ref="BigArray">BigArray</a> *<dfn class="local col4 decl" id="124allocatedArray" title='allocatedArray' data-type='BigArray *' data-ref="124allocatedArray">allocatedArray</dfn> = (<a class="typedef" href="#BigArray" title='BigArray' data-type='struct BigArray' data-ref="BigArray">BigArray</a> *)<a class="ref fn" href="../../../../include/stdlib.h.html#calloc" title='calloc' data-ref="calloc">calloc</a>(<span class='inlayHint'>nmemb:&nbsp;</span><var>1</var>, <span class='inlayHint'>size:&nbsp;</span><b>sizeof</b>(<a class="typedef" href="#BigArray" title='BigArray' data-type='struct BigArray' data-ref="BigArray">BigArray</a>));</td></tr>
+<tr><th id="200">200</th><td>            <b>if</b> (<a class="local col4 ref" href="#124allocatedArray" title='allocatedArray' data-ref="124allocatedArray">allocatedArray</a> == <span class="macro" title="__null" data-ref="_M/NULL">NULL</span>)</td></tr>
+<tr><th id="201">201</th><td>                <b>return</b> <span class="macro" title="__null" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="202">202</th><td></td></tr>
+<tr><th id="203">203</th><td>            <b>if</b> (<a class="macro" href="forkfd_c11.h.html#63" title="atomic_compare_exchange_strong_explicit(&amp;currentHeader-&gt;nextArray, &amp;array, allocatedArray, std::memory_order_release, std::memory_order_acquire)" data-ref="_M/ffd_atomic_compare_exchange">ffd_atomic_compare_exchange</a>(&amp;<a class="local col1 ref" href="#121currentHeader" title='currentHeader' data-ref="121currentHeader">currentHeader</a>-&gt;<a class="ref field" href="#Header::nextArray" title='Header::nextArray' data-ref="Header::nextArray">nextArray</a>, &amp;<a class="local col3 ref" href="#123array" title='array' data-ref="123array">array</a>, <a class="local col4 ref" href="#124allocatedArray" title='allocatedArray' data-ref="124allocatedArray">allocatedArray</a>,</td></tr>
+<tr><th id="204">204</th><td>                                             <a class="macro" href="forkfd_c11.h.html#37" title="std::memory_order_release" data-ref="_M/FFD_ATOMIC_RELEASE">FFD_ATOMIC_RELEASE</a>, <a class="macro" href="forkfd_c11.h.html#36" title="std::memory_order_acquire" data-ref="_M/FFD_ATOMIC_ACQUIRE">FFD_ATOMIC_ACQUIRE</a>)) {</td></tr>
+<tr><th id="205">205</th><td>                <i>/* success */</i></td></tr>
+<tr><th id="206">206</th><td>                <a class="local col3 ref" href="#123array" title='array' data-ref="123array">array</a> = <a class="local col4 ref" href="#124allocatedArray" title='allocatedArray' data-ref="124allocatedArray">allocatedArray</a>;</td></tr>
+<tr><th id="207">207</th><td>            } <b>else</b> {</td></tr>
+<tr><th id="208">208</th><td>                <i>/* failed, the atomic updated 'array' */</i></td></tr>
+<tr><th id="209">209</th><td>                <a class="ref fn" href="../../../../include/stdlib.h.html#free" title='free' data-ref="free">free</a>(<span class='inlayHint'>ptr:&nbsp;</span><a class="local col4 ref" href="#124allocatedArray" title='allocatedArray' data-ref="124allocatedArray">allocatedArray</a>);</td></tr>
+<tr><th id="210">210</th><td>            }</td></tr>
+<tr><th id="211">211</th><td>        }</td></tr>
+<tr><th id="212">212</th><td></td></tr>
+<tr><th id="213">213</th><td>        <a class="local col1 ref" href="#121currentHeader" title='currentHeader' data-ref="121currentHeader">currentHeader</a> = &amp;<a class="local col3 ref" href="#123array" title='array' data-ref="123array">array</a>-&gt;<a class="ref field" href="#BigArray::header" title='BigArray::header' data-ref="BigArray::header">header</a>;</td></tr>
+<tr><th id="214">214</th><td>        <a class="local col2 ref" href="#122info" title='info' data-ref="122info">info</a> = <a class="ref fn" href="#_ZL20tryAllocateInSectionP6HeaderP12process_infoi" title='tryAllocateInSection' data-ref="_ZL20tryAllocateInSectionP6HeaderP12process_infoi">tryAllocateInSection</a>(<span class='inlayHint'>header:&nbsp;</span><a class="local col1 ref" href="#121currentHeader" title='currentHeader' data-ref="121currentHeader">currentHeader</a>, <span class='inlayHint'>entries:&nbsp;</span><a class="local col3 ref" href="#123array" title='array' data-ref="123array">array</a>-&gt;<a class="ref field" href="#BigArray::entries" title='BigArray::entries' data-ref="BigArray::entries">entries</a>, <a class="macro" href="#117" title="(sizeof(array-&gt;entries)/sizeof(array-&gt;entries[0]))" data-ref="_M/sizeofarray">sizeofarray</a>(<a class="local col3 ref" href="#123array" title='array' data-ref="123array">array</a>-&gt;<a class="ref field" href="#BigArray::entries" title='BigArray::entries' data-ref="BigArray::entries">entries</a>));</td></tr>
+<tr><th id="215">215</th><td>    }</td></tr>
+<tr><th id="216">216</th><td></td></tr>
+<tr><th id="217">217</th><td>    *<a class="local col0 ref" href="#120header" title='header' data-ref="120header">header</a> = <a class="local col1 ref" href="#121currentHeader" title='currentHeader' data-ref="121currentHeader">currentHeader</a>;</td></tr>
+<tr><th id="218">218</th><td>    <b>return</b> <a class="local col2 ref" href="#122info" title='info' data-ref="122info">info</a>;</td></tr>
+<tr><th id="219">219</th><td>}</td></tr>
+<tr><th id="220">220</th><td></td></tr>
+<tr><th id="221">221</th><td><u>#<span data-ppcond="221">ifdef</span> <a class="macro" href="#69" data-ref="_M/HAVE_WAITID">HAVE_WAITID</a></u></td></tr>
+<tr><th id="222">222</th><td><em>static</em> <em>int</em> <dfn class="decl def fn" id="_ZL12isChildReadyiP9siginfo_t" title='isChildReady' data-ref="_ZL12isChildReadyiP9siginfo_t">isChildReady</dfn>(<a class="typedef" href="../../../../include/x86_64-linux-gnu/sys/types.h.html#pid_t" title='pid_t' data-type='__pid_t' data-ref="pid_t">pid_t</a> <dfn class="local col5 decl" id="125pid" title='pid' data-type='pid_t' data-ref="125pid">pid</dfn>, <a class="typedef" href="../../../../include/x86_64-linux-gnu/bits/types/siginfo_t.h.html#siginfo_t" title='siginfo_t' data-type='struct siginfo_t' data-ref="siginfo_t">siginfo_t</a> *<dfn class="local col6 decl" id="126info" title='info' data-type='siginfo_t *' data-ref="126info">info</dfn>)</td></tr>
+<tr><th id="223">223</th><td>{</td></tr>
+<tr><th id="224">224</th><td>    <a class="local col6 ref" href="#126info" title='info' data-ref="126info">info</a>-&gt;<a class="macro" href="../../../../include/x86_64-linux-gnu/bits/types/siginfo_t.h.html#128" title="_sifields._kill.si_pid" data-ref="_M/si_pid">si_pid</a> = <var>0</var>;</td></tr>
+<tr><th id="225">225</th><td>    <b>return</b> <a class="ref fn" href="../../../../include/x86_64-linux-gnu/sys/wait.h.html#waitid" title='waitid' data-ref="waitid">waitid</a>(<span class='inlayHint'>idtype:&nbsp;</span><a class="enum" href="../../../../include/x86_64-linux-gnu/bits/waitflags.h.html#P_PID" title='P_PID' data-ref="P_PID">P_PID</a>, <span class='inlayHint'>id:&nbsp;</span><a class="local col5 ref" href="#125pid" title='pid' data-ref="125pid">pid</a>, <span class='inlayHint'>infop:&nbsp;</span><a class="local col6 ref" href="#126info" title='info' data-ref="126info">info</a>, <a class="macro" href="../../../../include/x86_64-linux-gnu/bits/waitflags.h.html#31" title="4" data-ref="_M/WEXITED">WEXITED</a> | <a class="macro" href="../../../../include/x86_64-linux-gnu/bits/waitflags.h.html#25" title="1" data-ref="_M/WNOHANG">WNOHANG</a> | <a class="macro" href="../../../../include/x86_64-linux-gnu/bits/waitflags.h.html#33" title="0x01000000" data-ref="_M/WNOWAIT">WNOWAIT</a>) == <var>0</var> &amp;&amp; <a class="local col6 ref" href="#126info" title='info' data-ref="126info">info</a>-&gt;<a class="macro" href="../../../../include/x86_64-linux-gnu/bits/types/siginfo_t.h.html#128" title="_sifields._kill.si_pid" data-ref="_M/si_pid">si_pid</a> == <a class="local col5 ref" href="#125pid" title='pid' data-ref="125pid">pid</a>;</td></tr>
+<tr><th id="226">226</th><td>}</td></tr>
+<tr><th id="227">227</th><td><u>#<span data-ppcond="221">endif</span></u></td></tr>
+<tr><th id="228">228</th><td></td></tr>
+<tr><th id="229">229</th><td><em>static</em> <em>void</em> <dfn class="decl def fn" id="_ZL25convertStatusToForkfdInfoiP11forkfd_info" title='convertStatusToForkfdInfo' data-ref="_ZL25convertStatusToForkfdInfoiP11forkfd_info">convertStatusToForkfdInfo</dfn>(<em>int</em> <dfn class="local col7 decl" id="127status" title='status' data-type='int' data-ref="127status">status</dfn>, <b>struct</b> <a class="type" href="forkfd.h.html#forkfd_info" title='forkfd_info' data-ref="forkfd_info">forkfd_info</a> *<dfn class="local col8 decl" id="128info" title='info' data-type='struct forkfd_info *' data-ref="128info">info</dfn>)</td></tr>
+<tr><th id="230">230</th><td>{</td></tr>
+<tr><th id="231">231</th><td>    <b>if</b> (<a class="macro" href="../../../../include/stdlib.h.html#46" title="(((status) &amp; 0x7f) == 0)" data-ref="_M/WIFEXITED">WIFEXITED</a>(<a class="local col7 ref" href="#127status" title='status' data-ref="127status">status</a>)) {</td></tr>
+<tr><th id="232">232</th><td>        <a class="local col8 ref" href="#128info" title='info' data-ref="128info">info</a>-&gt;<a class="ref field" href="forkfd.h.html#forkfd_info::code" title='forkfd_info::code' data-ref="forkfd_info::code">code</a> = <a class="macro" href="../../../../include/x86_64-linux-gnu/bits/siginfo-consts.h.html#175" title="CLD_EXITED" data-ref="_M/CLD_EXITED">CLD_EXITED</a>;</td></tr>
+<tr><th id="233">233</th><td>        <a class="local col8 ref" href="#128info" title='info' data-ref="128info">info</a>-&gt;<a class="ref field" href="forkfd.h.html#forkfd_info::status" title='forkfd_info::status' data-ref="forkfd_info::status">status</a> = <a class="macro" href="../../../../include/stdlib.h.html#43" title="(((status) &amp; 0xff00) &gt;&gt; 8)" data-ref="_M/WEXITSTATUS">WEXITSTATUS</a>(<a class="local col7 ref" href="#127status" title='status' data-ref="127status">status</a>);</td></tr>
+<tr><th id="234">234</th><td>    } <b>else</b> <b>if</b> (<a class="macro" href="../../../../include/stdlib.h.html#47" title="(((signed char) (((status) &amp; 0x7f) + 1) &gt;&gt; 1) &gt; 0)" data-ref="_M/WIFSIGNALED">WIFSIGNALED</a>(<a class="local col7 ref" href="#127status" title='status' data-ref="127status">status</a>)) {</td></tr>
+<tr><th id="235">235</th><td>        <a class="local col8 ref" href="#128info" title='info' data-ref="128info">info</a>-&gt;<a class="ref field" href="forkfd.h.html#forkfd_info::code" title='forkfd_info::code' data-ref="forkfd_info::code">code</a> = <a class="macro" href="../../../../include/x86_64-linux-gnu/bits/siginfo-consts.h.html#177" title="CLD_KILLED" data-ref="_M/CLD_KILLED">CLD_KILLED</a>;</td></tr>
+<tr><th id="236">236</th><td><u>#  <span data-ppcond="236">ifdef</span> <a class="macro" href="../../../../include/x86_64-linux-gnu/sys/wait.h.html#67" data-ref="_M/WCOREDUMP">WCOREDUMP</a></u></td></tr>
+<tr><th id="237">237</th><td>        <b>if</b> (<a class="macro" href="../../../../include/x86_64-linux-gnu/sys/wait.h.html#67" title="((status) &amp; 0x80)" data-ref="_M/WCOREDUMP">WCOREDUMP</a>(<a class="local col7 ref" href="#127status" title='status' data-ref="127status">status</a>))</td></tr>
+<tr><th id="238">238</th><td>            <a class="local col8 ref" href="#128info" title='info' data-ref="128info">info</a>-&gt;<a class="ref field" href="forkfd.h.html#forkfd_info::code" title='forkfd_info::code' data-ref="forkfd_info::code">code</a> = <a class="macro" href="../../../../include/x86_64-linux-gnu/bits/siginfo-consts.h.html#179" title="CLD_DUMPED" data-ref="_M/CLD_DUMPED">CLD_DUMPED</a>;</td></tr>
+<tr><th id="239">239</th><td><u>#  <span data-ppcond="236">endif</span></u></td></tr>
+<tr><th id="240">240</th><td>        <a class="local col8 ref" href="#128info" title='info' data-ref="128info">info</a>-&gt;<a class="ref field" href="forkfd.h.html#forkfd_info::status" title='forkfd_info::status' data-ref="forkfd_info::status">status</a> = <a class="macro" href="../../../../include/stdlib.h.html#44" title="((status) &amp; 0x7f)" data-ref="_M/WTERMSIG">WTERMSIG</a>(<a class="local col7 ref" href="#127status" title='status' data-ref="127status">status</a>);</td></tr>
+<tr><th id="241">241</th><td>    }</td></tr>
+<tr><th id="242">242</th><td>}</td></tr>
+<tr><th id="243">243</th><td></td></tr>
+<tr><th id="244">244</th><td><u>#<span data-ppcond="244">ifdef</span> <span class="macro" data-ref="_M/__GNUC__">__GNUC__</span></u></td></tr>
+<tr><th id="245">245</th><td><b>__attribute__</b>((unused))</td></tr>
+<tr><th id="246">246</th><td><u>#<span data-ppcond="244">endif</span></u></td></tr>
+<tr><th id="247">247</th><td><em>static</em> <em>int</em> <dfn class="decl def fn" id="_ZL33convertForkfdWaitFlagsToWaitFlagsi" title='convertForkfdWaitFlagsToWaitFlags' data-ref="_ZL33convertForkfdWaitFlagsToWaitFlagsi">convertForkfdWaitFlagsToWaitFlags</dfn>(<em>int</em> <dfn class="local col9 decl" id="129ffdoptions" title='ffdoptions' data-type='int' data-ref="129ffdoptions">ffdoptions</dfn>)</td></tr>
+<tr><th id="248">248</th><td>{</td></tr>
+<tr><th id="249">249</th><td>    <em>int</em> <dfn class="local col0 decl" id="130woptions" title='woptions' data-type='int' data-ref="130woptions">woptions</dfn> = <a class="macro" href="../../../../include/x86_64-linux-gnu/bits/waitflags.h.html#31" title="4" data-ref="_M/WEXITED">WEXITED</a>;</td></tr>
+<tr><th id="250">250</th><td>    <b>if</b> (<a class="local col9 ref" href="#129ffdoptions" title='ffdoptions' data-ref="129ffdoptions">ffdoptions</a> &amp; <a class="macro" href="forkfd.h.html#48" title="2" data-ref="_M/FFDW_NOWAIT">FFDW_NOWAIT</a>)</td></tr>
+<tr><th id="251">251</th><td>        <a class="local col0 ref" href="#130woptions" title='woptions' data-ref="130woptions">woptions</a> |= <a class="macro" href="../../../../include/x86_64-linux-gnu/bits/waitflags.h.html#33" title="0x01000000" data-ref="_M/WNOWAIT">WNOWAIT</a>;</td></tr>
+<tr><th id="252">252</th><td>    <b>if</b> (<a class="local col9 ref" href="#129ffdoptions" title='ffdoptions' data-ref="129ffdoptions">ffdoptions</a> &amp; <a class="macro" href="forkfd.h.html#47" title="1" data-ref="_M/FFDW_NOHANG">FFDW_NOHANG</a>)</td></tr>
+<tr><th id="253">253</th><td>        <a class="local col0 ref" href="#130woptions" title='woptions' data-ref="130woptions">woptions</a> |= <a class="macro" href="../../../../include/x86_64-linux-gnu/bits/waitflags.h.html#25" title="1" data-ref="_M/WNOHANG">WNOHANG</a>;</td></tr>
+<tr><th id="254">254</th><td>    <b>return</b> <a class="local col0 ref" href="#130woptions" title='woptions' data-ref="130woptions">woptions</a>;</td></tr>
+<tr><th id="255">255</th><td>}</td></tr>
+<tr><th id="256">256</th><td></td></tr>
+<tr><th id="257">257</th><td><em>static</em> <em>int</em> <dfn class="decl def fn" id="_ZL10tryReapingiP12pipe_payload" title='tryReaping' data-ref="_ZL10tryReapingiP12pipe_payload">tryReaping</dfn>(<a class="typedef" href="../../../../include/x86_64-linux-gnu/sys/types.h.html#pid_t" title='pid_t' data-type='__pid_t' data-ref="pid_t">pid_t</a> <dfn class="local col1 decl" id="131pid" title='pid' data-type='pid_t' data-ref="131pid">pid</dfn>, <b>struct</b> <a class="type" href="#pipe_payload" title='pipe_payload' data-ref="pipe_payload">pipe_payload</a> *<dfn class="local col2 decl" id="132payload" title='payload' data-type='struct pipe_payload *' data-ref="132payload">payload</dfn>)</td></tr>
+<tr><th id="258">258</th><td>{</td></tr>
+<tr><th id="259">259</th><td>    <i>/* reap the child */</i></td></tr>
+<tr><th id="260">260</th><td><u>#<span data-ppcond="260">if</span> defined(<a class="macro" href="#54" data-ref="_M/HAVE_WAIT4">HAVE_WAIT4</a>)</u></td></tr>
+<tr><th id="261">261</th><td>    <em>int</em> <dfn class="local col3 decl" id="133status" title='status' data-type='int' data-ref="133status">status</dfn>;</td></tr>
+<tr><th id="262">262</th><td>    <b>if</b> (<a class="ref fn" href="../../../../include/x86_64-linux-gnu/sys/wait.h.html#wait4" title='wait4' data-ref="wait4">wait4</a>(<span class='inlayHint'>pid:&nbsp;</span><a class="local col1 ref" href="#131pid" title='pid' data-ref="131pid">pid</a>, <span class='inlayHint'>stat_loc:&nbsp;</span>&amp;<a class="local col3 ref" href="#133status" title='status' data-ref="133status">status</a>, <a class="macro" href="../../../../include/x86_64-linux-gnu/bits/waitflags.h.html#25" title="1" data-ref="_M/WNOHANG">WNOHANG</a>, <span class='inlayHint'>usage:&nbsp;</span>&amp;<a class="local col2 ref" href="#132payload" title='payload' data-ref="132payload">payload</a>-&gt;<a class="ref field" href="#pipe_payload::rusage" title='pipe_payload::rusage' data-ref="pipe_payload::rusage">rusage</a>) &lt;= <var>0</var>)</td></tr>
+<tr><th id="263">263</th><td>        <b>return</b> <var>0</var>;</td></tr>
+<tr><th id="264">264</th><td>    <a class="ref fn" href="#_ZL25convertStatusToForkfdInfoiP11forkfd_info" title='convertStatusToForkfdInfo' data-ref="_ZL25convertStatusToForkfdInfoiP11forkfd_info">convertStatusToForkfdInfo</a>(<a class="local col3 ref" href="#133status" title='status' data-ref="133status">status</a>, <span class='inlayHint'>info:&nbsp;</span>&amp;<a class="local col2 ref" href="#132payload" title='payload' data-ref="132payload">payload</a>-&gt;<a class="ref field" href="#pipe_payload::info" title='pipe_payload::info' data-ref="pipe_payload::info">info</a>);</td></tr>
+<tr><th id="265">265</th><td><u>#<span data-ppcond="260">else</span></u></td></tr>
+<tr><th id="266">266</th><td><u>#  if defined(HAVE_WAITID)</u></td></tr>
+<tr><th id="267">267</th><td>    <b>if</b> (waitid_works) {</td></tr>
+<tr><th id="268">268</th><td>        <i>/* we have waitid(2), which gets us some payload values on some systems */</i></td></tr>
+<tr><th id="269">269</th><td>        siginfo_t info;</td></tr>
+<tr><th id="270">270</th><td>        info.si_pid = <var>0</var>;</td></tr>
+<tr><th id="271">271</th><td>        <em>int</em> ret = waitid(P_PID, pid, &amp;info, WEXITED | WNOHANG) == <var>0</var> &amp;&amp; info.si_pid == pid;</td></tr>
+<tr><th id="272">272</th><td>        <b>if</b> (!ret)</td></tr>
+<tr><th id="273">273</th><td>            <b>return</b> ret;</td></tr>
+<tr><th id="274">274</th><td></td></tr>
+<tr><th id="275">275</th><td>        payload-&gt;info.code = info.si_code;</td></tr>
+<tr><th id="276">276</th><td>        payload-&gt;info.status = info.si_status;</td></tr>
+<tr><th id="277">277</th><td><u>#    ifdef __linux__</u></td></tr>
+<tr><th id="278">278</th><td>        payload-&gt;rusage.ru_utime.tv_sec = info.si_utime / CLOCKS_PER_SEC;</td></tr>
+<tr><th id="279">279</th><td>        payload-&gt;rusage.ru_utime.tv_usec = info.si_utime % CLOCKS_PER_SEC;</td></tr>
+<tr><th id="280">280</th><td>        payload-&gt;rusage.ru_stime.tv_sec = info.si_stime / CLOCKS_PER_SEC;</td></tr>
+<tr><th id="281">281</th><td>        payload-&gt;rusage.ru_stime.tv_usec = info.si_stime % CLOCKS_PER_SEC;</td></tr>
+<tr><th id="282">282</th><td><u>#    endif</u></td></tr>
+<tr><th id="283">283</th><td>        <b>return</b> <var>1</var>;</td></tr>
+<tr><th id="284">284</th><td>    }</td></tr>
+<tr><th id="285">285</th><td><u>#  endif // HAVE_WAITID</u></td></tr>
+<tr><th id="286">286</th><td>    <em>int</em> status;</td></tr>
+<tr><th id="287">287</th><td>    <b>if</b> (waitpid(pid, &amp;status, WNOHANG) &lt;= <var>0</var>)</td></tr>
+<tr><th id="288">288</th><td>        <b>return</b> <var>0</var>;     <i>// child did not change state</i></td></tr>
+<tr><th id="289">289</th><td>    convertStatusToForkfdInfo(status, &amp;payload-&gt;info);</td></tr>
+<tr><th id="290">290</th><td><u>#<span data-ppcond="260">endif</span> // !HAVE_WAIT4</u></td></tr>
+<tr><th id="291">291</th><td></td></tr>
+<tr><th id="292">292</th><td>    <b>return</b> <var>1</var>;</td></tr>
+<tr><th id="293">293</th><td>}</td></tr>
+<tr><th id="294">294</th><td></td></tr>
+<tr><th id="295">295</th><td><em>static</em> <em>void</em> <dfn class="decl def fn" id="_ZL8freeInfoP6HeaderP12process_info" title='freeInfo' data-ref="_ZL8freeInfoP6HeaderP12process_info">freeInfo</dfn>(<a class="typedef" href="#Header" title='Header' data-type='struct Header' data-ref="Header">Header</a> *<dfn class="local col4 decl" id="134header" title='header' data-type='Header *' data-ref="134header">header</dfn>, <a class="typedef" href="#ProcessInfo" title='ProcessInfo' data-type='struct process_info' data-ref="ProcessInfo">ProcessInfo</a> *<dfn class="local col5 decl" id="135entry" title='entry' data-type='ProcessInfo *' data-ref="135entry">entry</dfn>)</td></tr>
+<tr><th id="296">296</th><td>{</td></tr>
+<tr><th id="297">297</th><td>    <a class="local col5 ref" href="#135entry" title='entry' data-ref="135entry">entry</a>-&gt;<a class="ref field" href="#process_info::deathPipe" title='process_info::deathPipe' data-ref="process_info::deathPipe">deathPipe</a> = -<var>1</var>;</td></tr>
+<tr><th id="298">298</th><td>    <a class="macro" href="forkfd_c11.h.html#59" title="atomic_store_explicit(&amp;entry-&gt;pid, 0, std::memory_order_release)" data-ref="_M/ffd_atomic_store">ffd_atomic_store</a>(&amp;<a class="local col5 ref" href="#135entry" title='entry' data-ref="135entry">entry</a>-&gt;<a class="ref field" href="#process_info::pid" title='process_info::pid' data-ref="process_info::pid">pid</a>, <var>0</var>, <a class="macro" href="forkfd_c11.h.html#37" title="std::memory_order_release" data-ref="_M/FFD_ATOMIC_RELEASE">FFD_ATOMIC_RELEASE</a>);</td></tr>
+<tr><th id="299">299</th><td></td></tr>
+<tr><th id="300">300</th><td>    (<em>void</em>)<a class="macro" href="forkfd_c11.h.html#65" title="(atomic_fetch_add_explicit(&amp;header-&gt;busyCount, -1, std::memory_order_release) + (-1))" data-ref="_M/ffd_atomic_add_fetch">ffd_atomic_add_fetch</a>(&amp;<a class="local col4 ref" href="#134header" title='header' data-ref="134header">header</a>-&gt;<a class="ref field" href="#Header::busyCount" title='Header::busyCount' data-ref="Header::busyCount">busyCount</a>, -<var>1</var>, <a class="macro" href="forkfd_c11.h.html#37" title="std::memory_order_release" data-ref="_M/FFD_ATOMIC_RELEASE">FFD_ATOMIC_RELEASE</a>);</td></tr>
+<tr><th id="301">301</th><td>    <a class="macro" href="../../../../include/assert.h.html#50" title="(static_cast&lt;void&gt; (0))" data-ref="_M/assert">assert</a>(header-&gt;busyCount &gt;= <var>0</var>);</td></tr>
+<tr><th id="302">302</th><td>}</td></tr>
+<tr><th id="303">303</th><td></td></tr>
+<tr><th id="304">304</th><td><em>static</em> <em>void</em> <dfn class="decl def fn" id="_ZL17notifyAndFreeInfoP6HeaderP12process_infoPK12pipe_payload" title='notifyAndFreeInfo' data-ref="_ZL17notifyAndFreeInfoP6HeaderP12process_infoPK12pipe_payload">notifyAndFreeInfo</dfn>(<a class="typedef" href="#Header" title='Header' data-type='struct Header' data-ref="Header">Header</a> *<dfn class="local col6 decl" id="136header" title='header' data-type='Header *' data-ref="136header">header</dfn>, <a class="typedef" href="#ProcessInfo" title='ProcessInfo' data-type='struct process_info' data-ref="ProcessInfo">ProcessInfo</a> *<dfn class="local col7 decl" id="137entry" title='entry' data-type='ProcessInfo *' data-ref="137entry">entry</dfn>,</td></tr>
+<tr><th id="305">305</th><td>                              <em>const</em> <b>struct</b> <a class="type" href="#pipe_payload" title='pipe_payload' data-ref="pipe_payload">pipe_payload</a> *<dfn class="local col8 decl" id="138payload" title='payload' data-type='const struct pipe_payload *' data-ref="138payload">payload</dfn>)</td></tr>
+<tr><th id="306">306</th><td>{</td></tr>
+<tr><th id="307">307</th><td>    <a class="typedef" href="../../../../include/x86_64-linux-gnu/sys/types.h.html#ssize_t" title='ssize_t' data-type='__ssize_t' data-ref="ssize_t">ssize_t</a> <dfn class="local col9 decl" id="139ret" title='ret' data-type='ssize_t' data-ref="139ret">ret</dfn>;</td></tr>
+<tr><th id="308">308</th><td>    <a class="macro" href="#118" title="do { ret = write(entry-&gt;deathPipe, payload, sizeof(*payload)); } while (ret == -1 &amp;&amp; (*__errno_location ()) == 4)" data-ref="_M/EINTR_LOOP">EINTR_LOOP</a>(<a class="local col9 ref" href="#139ret" title='ret' data-ref="139ret">ret</a>, <a class="ref fn" href="../../../../include/unistd.h.html#write" title='write' data-ref="write">write</a>(<a class="local col7 ref" href="#137entry" title='entry' data-ref="137entry">entry</a>-&gt;<a class="ref field" href="#process_info::deathPipe" title='process_info::deathPipe' data-ref="process_info::deathPipe">deathPipe</a>, <a class="local col8 ref" href="#138payload" title='payload' data-ref="138payload">payload</a>, <b>sizeof</b>(*<a class="local col8 ref" href="#138payload" title='payload' data-ref="138payload">payload</a>)));</td></tr>
+<tr><th id="309">309</th><td>    <a class="macro" href="#118" title="do { ret = close(entry-&gt;deathPipe); } while (ret == -1 &amp;&amp; (*__errno_location ()) == 4)" data-ref="_M/EINTR_LOOP">EINTR_LOOP</a>(<a class="local col9 ref" href="#139ret" title='ret' data-ref="139ret">ret</a>, <a class="ref fn" href="../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="local col7 ref" href="#137entry" title='entry' data-ref="137entry">entry</a>-&gt;<a class="ref field" href="#process_info::deathPipe" title='process_info::deathPipe' data-ref="process_info::deathPipe">deathPipe</a>));</td></tr>
+<tr><th id="310">310</th><td></td></tr>
+<tr><th id="311">311</th><td>    <a class="ref fn" href="#_ZL8freeInfoP6HeaderP12process_info" title='freeInfo' data-ref="_ZL8freeInfoP6HeaderP12process_info">freeInfo</a>(<a class="local col6 ref" href="#136header" title='header' data-ref="136header">header</a>, <a class="local col7 ref" href="#137entry" title='entry' data-ref="137entry">entry</a>);</td></tr>
+<tr><th id="312">312</th><td>}</td></tr>
+<tr><th id="313">313</th><td></td></tr>
+<tr><th id="314">314</th><td><em>static</em> <em>void</em> <a class="decl fn" href="#_ZL18reapChildProcessesv" title='reapChildProcesses' data-ref="_ZL18reapChildProcessesv">reapChildProcesses</a>();</td></tr>
+<tr><th id="315">315</th><td><em>static</em> <em>void</em> <dfn class="decl def fn" id="_ZL15sigchld_handleriP9siginfo_tPv" title='sigchld_handler' data-ref="_ZL15sigchld_handleriP9siginfo_tPv">sigchld_handler</dfn>(<em>int</em> <dfn class="local col0 decl" id="140signum" title='signum' data-type='int' data-ref="140signum">signum</dfn>, <a class="typedef" href="../../../../include/x86_64-linux-gnu/bits/types/siginfo_t.h.html#siginfo_t" title='siginfo_t' data-type='struct siginfo_t' data-ref="siginfo_t">siginfo_t</a> *<dfn class="local col1 decl" id="141handler_info" title='handler_info' data-type='siginfo_t *' data-ref="141handler_info">handler_info</dfn>, <em>void</em> *<dfn class="local col2 decl" id="142handler_context" title='handler_context' data-type='void *' data-ref="142handler_context">handler_context</dfn>)</td></tr>
+<tr><th id="316">316</th><td>{</td></tr>
+<tr><th id="317">317</th><td>    <i>/*</i></td></tr>
+<tr><th id="318">318</th><td><i>     * This is a signal handler, so we need to be careful about which functions</i></td></tr>
+<tr><th id="319">319</th><td><i>     * we can call. See the full, official listing in the POSIX.1-2008</i></td></tr>
+<tr><th id="320">320</th><td><i>     * specification at:</i></td></tr>
+<tr><th id="321">321</th><td><i>     *   <a href="http://pubs.opengroup.org/onlinepubs/9699919799/functions/V2_chap02.html#tag_15_04_03">http://pubs.opengroup.org/onlinepubs/9699919799/functions/V2_chap02.html#tag_15_04_03</a></i></td></tr>
+<tr><th id="322">322</th><td><i>     *</i></td></tr>
+<tr><th id="323">323</th><td><i>     * The handler_info and handler_context parameters may not be valid, if</i></td></tr>
+<tr><th id="324">324</th><td><i>     * we're a chained handler from another handler that did not use</i></td></tr>
+<tr><th id="325">325</th><td><i>     * SA_SIGINFO. Therefore, we must obtain the siginfo ourselves directly by</i></td></tr>
+<tr><th id="326">326</th><td><i>     * calling waitid.</i></td></tr>
+<tr><th id="327">327</th><td><i>     *</i></td></tr>
+<tr><th id="328">328</th><td><i>     * But we pass them anyway. Let's call the chained handler first, while</i></td></tr>
+<tr><th id="329">329</th><td><i>     * those two arguments have a chance of being correct.</i></td></tr>
+<tr><th id="330">330</th><td><i>     */</i></td></tr>
+<tr><th id="331">331</th><td>    <b>if</b> (<a class="ref" href="#old_sigaction" title='old_sigaction' data-ref="old_sigaction">old_sigaction</a>.<a class="macro" href="../../../../include/x86_64-linux-gnu/bits/sigaction.h.html#39" title="__sigaction_handler.sa_handler" data-ref="_M/sa_handler">sa_handler</a> != <a class="macro" href="../../../../include/x86_64-linux-gnu/bits/signum-generic.h.html#30" title="((__sighandler_t) 1)" data-ref="_M/SIG_IGN">SIG_IGN</a> &amp;&amp; <a class="ref" href="#old_sigaction" title='old_sigaction' data-ref="old_sigaction">old_sigaction</a>.<a class="macro" href="../../../../include/x86_64-linux-gnu/bits/sigaction.h.html#39" title="__sigaction_handler.sa_handler" data-ref="_M/sa_handler">sa_handler</a> != <a class="macro" href="../../../../include/x86_64-linux-gnu/bits/signum-generic.h.html#29" title="((__sighandler_t) 0)" data-ref="_M/SIG_DFL">SIG_DFL</a>) {</td></tr>
+<tr><th id="332">332</th><td>        <b>if</b> (<a class="ref" href="#old_sigaction" title='old_sigaction' data-ref="old_sigaction">old_sigaction</a>.<a class="ref field" href="../../../../include/x86_64-linux-gnu/bits/sigaction.h.html#sigaction::sa_flags" title='sigaction::sa_flags' data-ref="sigaction::sa_flags">sa_flags</a> &amp; <a class="macro" href="../../../../include/x86_64-linux-gnu/bits/sigaction.h.html#58" title="4" data-ref="_M/SA_SIGINFO">SA_SIGINFO</a>)</td></tr>
+<tr><th id="333">333</th><td>            <a class="ref" href="#old_sigaction" title='old_sigaction' data-ref="old_sigaction">old_sigaction</a>.<a class="macro" href="../../../../include/x86_64-linux-gnu/bits/sigaction.h.html#40" title="__sigaction_handler.sa_sigaction" data-ref="_M/sa_sigaction">sa_sigaction</a>(<a class="local col0 ref" href="#140signum" title='signum' data-ref="140signum">signum</a>, <a class="local col1 ref" href="#141handler_info" title='handler_info' data-ref="141handler_info">handler_info</a>, <a class="local col2 ref" href="#142handler_context" title='handler_context' data-ref="142handler_context">handler_context</a>);</td></tr>
+<tr><th id="334">334</th><td>        <b>else</b></td></tr>
+<tr><th id="335">335</th><td>            <a class="ref" href="#old_sigaction" title='old_sigaction' data-ref="old_sigaction">old_sigaction</a>.<a class="macro" href="../../../../include/x86_64-linux-gnu/bits/sigaction.h.html#39" title="__sigaction_handler.sa_handler" data-ref="_M/sa_handler">sa_handler</a>(<a class="local col0 ref" href="#140signum" title='signum' data-ref="140signum">signum</a>);</td></tr>
+<tr><th id="336">336</th><td>    }</td></tr>
+<tr><th id="337">337</th><td></td></tr>
+<tr><th id="338">338</th><td>    <b>if</b> (<a class="macro" href="forkfd_c11.h.html#57" title="atomic_load_explicit(&amp;forkfd_status, std::memory_order_relaxed)" data-ref="_M/ffd_atomic_load">ffd_atomic_load</a>(&amp;<a class="ref" href="#forkfd_status" title='forkfd_status' data-ref="forkfd_status">forkfd_status</a>, <a class="macro" href="forkfd_c11.h.html#35" title="std::memory_order_relaxed" data-ref="_M/FFD_ATOMIC_RELAXED">FFD_ATOMIC_RELAXED</a>) == <var>1</var>) {</td></tr>
+<tr><th id="339">339</th><td>        <em>int</em> <dfn class="local col3 decl" id="143saved_errno" title='saved_errno' data-type='int' data-ref="143saved_errno">saved_errno</dfn> = <a class="macro" href="../../../../include/errno.h.html#38" title="(*__errno_location ())" data-ref="_M/errno">errno</a>;</td></tr>
+<tr><th id="340">340</th><td>        <a class="ref fn" href="#_ZL18reapChildProcessesv" title='reapChildProcesses' data-ref="_ZL18reapChildProcessesv">reapChildProcesses</a>();</td></tr>
+<tr><th id="341">341</th><td>        <a class="macro" href="../../../../include/errno.h.html#38" title="(*__errno_location ())" data-ref="_M/errno">errno</a> = <a class="local col3 ref" href="#143saved_errno" title='saved_errno' data-ref="143saved_errno">saved_errno</a>;</td></tr>
+<tr><th id="342">342</th><td>    }</td></tr>
+<tr><th id="343">343</th><td>}</td></tr>
+<tr><th id="344">344</th><td></td></tr>
+<tr><th id="345">345</th><td><em>static</em> <b>inline</b> <em>void</em> <dfn class="decl def fn" id="_ZL18reapChildProcessesv" title='reapChildProcesses' data-ref="_ZL18reapChildProcessesv">reapChildProcesses</dfn>()</td></tr>
+<tr><th id="346">346</th><td>{</td></tr>
+<tr><th id="347">347</th><td>    <i>/* is this one of our children? */</i></td></tr>
+<tr><th id="348">348</th><td>    <a class="typedef" href="#BigArray" title='BigArray' data-type='struct BigArray' data-ref="BigArray">BigArray</a> *<dfn class="local col4 decl" id="144array" title='array' data-type='BigArray *' data-ref="144array">array</dfn>;</td></tr>
+<tr><th id="349">349</th><td>    <a class="typedef" href="../../../../include/x86_64-linux-gnu/bits/types/siginfo_t.h.html#siginfo_t" title='siginfo_t' data-type='struct siginfo_t' data-ref="siginfo_t">siginfo_t</a> <a class="ref fn fake" href="../../../../include/x86_64-linux-gnu/bits/types/siginfo_t.h.html#36" title='(anonymous struct)::' data-ref="_ZN9siginfo_tC1Ev"></a><dfn class="local col5 decl" id="145info" title='info' data-type='siginfo_t' data-ref="145info">info</dfn>;</td></tr>
+<tr><th id="350">350</th><td>    <b>struct</b> <a class="type" href="#pipe_payload" title='pipe_payload' data-ref="pipe_payload">pipe_payload</a> <a class="ref fn fake" href="#123" title='pipe_payload::pipe_payload' data-ref="_ZN12pipe_payloadC1Ev"></a><dfn class="local col6 decl" id="146payload" title='payload' data-type='struct pipe_payload' data-ref="146payload">payload</dfn>;</td></tr>
+<tr><th id="351">351</th><td>    <em>int</em> <dfn class="local col7 decl" id="147i" title='i' data-type='int' data-ref="147i">i</dfn>;</td></tr>
+<tr><th id="352">352</th><td></td></tr>
+<tr><th id="353">353</th><td>    <a class="ref fn" href="../../../../include/string.h.html#memset" title='memset' data-ref="memset">memset</a>(<span class='inlayHint'>s:&nbsp;</span>&amp;<a class="local col5 ref" href="#145info" title='info' data-ref="145info">info</a>, <span class='inlayHint'>c:&nbsp;</span><var>0</var>, <span class='inlayHint'>n:&nbsp;</span><b>sizeof</b> <a class="local col5 ref" href="#145info" title='info' data-ref="145info">info</a>);</td></tr>
+<tr><th id="354">354</th><td>    <a class="ref fn" href="../../../../include/string.h.html#memset" title='memset' data-ref="memset">memset</a>(<span class='inlayHint'>s:&nbsp;</span>&amp;<a class="local col6 ref" href="#146payload" title='payload' data-ref="146payload">payload</a>, <span class='inlayHint'>c:&nbsp;</span><var>0</var>, <span class='inlayHint'>n:&nbsp;</span><b>sizeof</b> <a class="local col6 ref" href="#146payload" title='payload' data-ref="146payload">payload</a>);</td></tr>
+<tr><th id="355">355</th><td></td></tr>
+<tr><th id="356">356</th><td><u>#<span data-ppcond="356">ifdef</span> <a class="macro" href="#69" data-ref="_M/HAVE_WAITID">HAVE_WAITID</a></u></td></tr>
+<tr><th id="357">357</th><td>    <b>if</b> (<a class="ref" href="#waitid_works" title='waitid_works' data-ref="waitid_works">waitid_works</a>) {</td></tr>
+<tr><th id="358">358</th><td>        <i>/* be optimistic: try to see if we can get the child that exited */</i></td></tr>
+<tr><th id="359">359</th><td><dfn class="lbl" id="148search_next_child" data-ref="148search_next_child">search_next_child</dfn>:</td></tr>
+<tr><th id="360">360</th><td>        <i>/* waitid returns -1 ECHILD if there are no further children at all;</i></td></tr>
+<tr><th id="361">361</th><td><i>         * it returns 0 and sets si_pid to 0 if there are children but they are not ready</i></td></tr>
+<tr><th id="362">362</th><td><i>         * to be waited (we're passing WNOHANG). We should not get EINTR because</i></td></tr>
+<tr><th id="363">363</th><td><i>         * we're passing WNOHANG and we should definitely not get EINVAL or anything else.</i></td></tr>
+<tr><th id="364">364</th><td><i>         * That means we can actually ignore the return code and only inspect si_pid.</i></td></tr>
+<tr><th id="365">365</th><td><i>         */</i></td></tr>
+<tr><th id="366">366</th><td>        <a class="local col5 ref" href="#145info" title='info' data-ref="145info">info</a>.<a class="macro" href="../../../../include/x86_64-linux-gnu/bits/types/siginfo_t.h.html#128" title="_sifields._kill.si_pid" data-ref="_M/si_pid">si_pid</a> = <var>0</var>;</td></tr>
+<tr><th id="367">367</th><td>        <a class="ref fn" href="../../../../include/x86_64-linux-gnu/sys/wait.h.html#waitid" title='waitid' data-ref="waitid">waitid</a>(<span class='inlayHint'>idtype:&nbsp;</span><a class="enum" href="../../../../include/x86_64-linux-gnu/bits/waitflags.h.html#P_ALL" title='P_ALL' data-ref="P_ALL">P_ALL</a>, <span class='inlayHint'>id:&nbsp;</span><var>0</var>, <span class='inlayHint'>infop:&nbsp;</span>&amp;<a class="local col5 ref" href="#145info" title='info' data-ref="145info">info</a>, <a class="macro" href="../../../../include/x86_64-linux-gnu/bits/waitflags.h.html#25" title="1" data-ref="_M/WNOHANG">WNOHANG</a> | <a class="macro" href="../../../../include/x86_64-linux-gnu/bits/waitflags.h.html#33" title="0x01000000" data-ref="_M/WNOWAIT">WNOWAIT</a> | <a class="macro" href="../../../../include/x86_64-linux-gnu/bits/waitflags.h.html#31" title="4" data-ref="_M/WEXITED">WEXITED</a>);</td></tr>
+<tr><th id="368">368</th><td>        <b>if</b> (<a class="local col5 ref" href="#145info" title='info' data-ref="145info">info</a>.<a class="macro" href="../../../../include/x86_64-linux-gnu/bits/types/siginfo_t.h.html#128" title="_sifields._kill.si_pid" data-ref="_M/si_pid">si_pid</a> == <var>0</var>) {</td></tr>
+<tr><th id="369">369</th><td>            <i>/* there are no further un-waited-for children, so we can just exit.</i></td></tr>
+<tr><th id="370">370</th><td><i>             */</i></td></tr>
+<tr><th id="371">371</th><td>            <b>return</b>;</td></tr>
+<tr><th id="372">372</th><td>        }</td></tr>
+<tr><th id="373">373</th><td></td></tr>
+<tr><th id="374">374</th><td>        <b>for</b> (<a class="local col7 ref" href="#147i" title='i' data-ref="147i">i</a> = <var>0</var>; <a class="local col7 ref" href="#147i" title='i' data-ref="147i">i</a> &lt; (<em>int</em>)<a class="macro" href="#117" title="(sizeof(children.entries)/sizeof(children.entries[0]))" data-ref="_M/sizeofarray">sizeofarray</a>(<a class="ref" href="#children" title='children' data-ref="children">children</a>.<a class="ref field" href="#SmallArray::entries" title='SmallArray::entries' data-ref="SmallArray::entries">entries</a>); ++<a class="local col7 ref" href="#147i" title='i' data-ref="147i">i</a>) {</td></tr>
+<tr><th id="375">375</th><td>            <i>/* acquire the child first: swap the PID with -1 to indicate it's busy */</i></td></tr>
+<tr><th id="376">376</th><td>            <em>int</em> <dfn class="local col9 decl" id="149pid" title='pid' data-type='int' data-ref="149pid">pid</dfn> = <a class="local col5 ref" href="#145info" title='info' data-ref="145info">info</a>.<a class="macro" href="../../../../include/x86_64-linux-gnu/bits/types/siginfo_t.h.html#128" title="_sifields._kill.si_pid" data-ref="_M/si_pid">si_pid</a>;</td></tr>
+<tr><th id="377">377</th><td>            <b>if</b> (<a class="macro" href="forkfd_c11.h.html#63" title="atomic_compare_exchange_strong_explicit(&amp;children.entries[i].pid, &amp;pid, -1, std::memory_order_acquire, std::memory_order_relaxed)" data-ref="_M/ffd_atomic_compare_exchange">ffd_atomic_compare_exchange</a>(&amp;<a class="ref" href="#children" title='children' data-ref="children">children</a>.<a class="ref field" href="#SmallArray::entries" title='SmallArray::entries' data-ref="SmallArray::entries">entries</a>[<a class="local col7 ref" href="#147i" title='i' data-ref="147i">i</a>].<a class="ref field" href="#process_info::pid" title='process_info::pid' data-ref="process_info::pid">pid</a>, &amp;<a class="local col9 ref" href="#149pid" title='pid' data-ref="149pid">pid</a>, -<var>1</var>,</td></tr>
+<tr><th id="378">378</th><td>                                            <a class="macro" href="forkfd_c11.h.html#36" title="std::memory_order_acquire" data-ref="_M/FFD_ATOMIC_ACQUIRE">FFD_ATOMIC_ACQUIRE</a>, <a class="macro" href="forkfd_c11.h.html#35" title="std::memory_order_relaxed" data-ref="_M/FFD_ATOMIC_RELAXED">FFD_ATOMIC_RELAXED</a>)) {</td></tr>
+<tr><th id="379">379</th><td>                <i>/* this is our child, send notification and free up this entry */</i></td></tr>
+<tr><th id="380">380</th><td>                <i>/* ### FIXME: what if tryReaping returns false? */</i></td></tr>
+<tr><th id="381">381</th><td>                <b>if</b> (<a class="ref fn" href="#_ZL10tryReapingiP12pipe_payload" title='tryReaping' data-ref="_ZL10tryReapingiP12pipe_payload">tryReaping</a>(<a class="local col9 ref" href="#149pid" title='pid' data-ref="149pid">pid</a>, <span class='inlayHint'>payload:&nbsp;</span>&amp;<a class="local col6 ref" href="#146payload" title='payload' data-ref="146payload">payload</a>))</td></tr>
+<tr><th id="382">382</th><td>                    <a class="ref fn" href="#_ZL17notifyAndFreeInfoP6HeaderP12process_infoPK12pipe_payload" title='notifyAndFreeInfo' data-ref="_ZL17notifyAndFreeInfoP6HeaderP12process_infoPK12pipe_payload">notifyAndFreeInfo</a>(<span class='inlayHint'>header:&nbsp;</span>&amp;<a class="ref" href="#children" title='children' data-ref="children">children</a>.<a class="ref field" href="#SmallArray::header" title='SmallArray::header' data-ref="SmallArray::header">header</a>, <span class='inlayHint'>entry:&nbsp;</span>&amp;<a class="ref" href="#children" title='children' data-ref="children">children</a>.<a class="ref field" href="#SmallArray::entries" title='SmallArray::entries' data-ref="SmallArray::entries">entries</a>[<a class="local col7 ref" href="#147i" title='i' data-ref="147i">i</a>], <span class='inlayHint'>payload:&nbsp;</span>&amp;<a class="local col6 ref" href="#146payload" title='payload' data-ref="146payload">payload</a>);</td></tr>
+<tr><th id="383">383</th><td>                <b>goto</b> <a class="lbl" href="#148search_next_child" data-ref="148search_next_child">search_next_child</a>;</td></tr>
+<tr><th id="384">384</th><td>            }</td></tr>
+<tr><th id="385">385</th><td>        }</td></tr>
+<tr><th id="386">386</th><td></td></tr>
+<tr><th id="387">387</th><td>        <i>/* try the arrays */</i></td></tr>
+<tr><th id="388">388</th><td>        <a class="local col4 ref" href="#144array" title='array' data-ref="144array">array</a> = <a class="macro" href="forkfd_c11.h.html#57" title="atomic_load_explicit(&amp;children.header.nextArray, std::memory_order_acquire)" data-ref="_M/ffd_atomic_load">ffd_atomic_load</a>(&amp;<a class="ref" href="#children" title='children' data-ref="children">children</a>.<a class="ref field" href="#SmallArray::header" title='SmallArray::header' data-ref="SmallArray::header">header</a>.<a class="ref field" href="#Header::nextArray" title='Header::nextArray' data-ref="Header::nextArray">nextArray</a>, <a class="macro" href="forkfd_c11.h.html#36" title="std::memory_order_acquire" data-ref="_M/FFD_ATOMIC_ACQUIRE">FFD_ATOMIC_ACQUIRE</a>);</td></tr>
+<tr><th id="389">389</th><td>        <b>while</b> (<a class="local col4 ref" href="#144array" title='array' data-ref="144array">array</a> != <span class="macro" title="__null" data-ref="_M/NULL">NULL</span>) {</td></tr>
+<tr><th id="390">390</th><td>            <b>for</b> (<a class="local col7 ref" href="#147i" title='i' data-ref="147i">i</a> = <var>0</var>; <a class="local col7 ref" href="#147i" title='i' data-ref="147i">i</a> &lt; (<em>int</em>)<a class="macro" href="#117" title="(sizeof(array-&gt;entries)/sizeof(array-&gt;entries[0]))" data-ref="_M/sizeofarray">sizeofarray</a>(<a class="local col4 ref" href="#144array" title='array' data-ref="144array">array</a>-&gt;<a class="ref field" href="#BigArray::entries" title='BigArray::entries' data-ref="BigArray::entries">entries</a>); ++<a class="local col7 ref" href="#147i" title='i' data-ref="147i">i</a>) {</td></tr>
+<tr><th id="391">391</th><td>                <em>int</em> <dfn class="local col0 decl" id="150pid" title='pid' data-type='int' data-ref="150pid">pid</dfn> = <a class="local col5 ref" href="#145info" title='info' data-ref="145info">info</a>.<a class="macro" href="../../../../include/x86_64-linux-gnu/bits/types/siginfo_t.h.html#128" title="_sifields._kill.si_pid" data-ref="_M/si_pid">si_pid</a>;</td></tr>
+<tr><th id="392">392</th><td>                <b>if</b> (<a class="macro" href="forkfd_c11.h.html#63" title="atomic_compare_exchange_strong_explicit(&amp;array-&gt;entries[i].pid, &amp;pid, -1, std::memory_order_acquire, std::memory_order_relaxed)" data-ref="_M/ffd_atomic_compare_exchange">ffd_atomic_compare_exchange</a>(&amp;<a class="local col4 ref" href="#144array" title='array' data-ref="144array">array</a>-&gt;<a class="ref field" href="#BigArray::entries" title='BigArray::entries' data-ref="BigArray::entries">entries</a>[<a class="local col7 ref" href="#147i" title='i' data-ref="147i">i</a>].<a class="ref field" href="#process_info::pid" title='process_info::pid' data-ref="process_info::pid">pid</a>, &amp;<a class="local col0 ref" href="#150pid" title='pid' data-ref="150pid">pid</a>, -<var>1</var>,</td></tr>
+<tr><th id="393">393</th><td>                                                <a class="macro" href="forkfd_c11.h.html#36" title="std::memory_order_acquire" data-ref="_M/FFD_ATOMIC_ACQUIRE">FFD_ATOMIC_ACQUIRE</a>, <a class="macro" href="forkfd_c11.h.html#35" title="std::memory_order_relaxed" data-ref="_M/FFD_ATOMIC_RELAXED">FFD_ATOMIC_RELAXED</a>)) {</td></tr>
+<tr><th id="394">394</th><td>                    <i>/* this is our child, send notification and free up this entry */</i></td></tr>
+<tr><th id="395">395</th><td>                    <i>/* ### FIXME: what if tryReaping returns false? */</i></td></tr>
+<tr><th id="396">396</th><td>                    <b>if</b> (<a class="ref fn" href="#_ZL10tryReapingiP12pipe_payload" title='tryReaping' data-ref="_ZL10tryReapingiP12pipe_payload">tryReaping</a>(<a class="local col0 ref" href="#150pid" title='pid' data-ref="150pid">pid</a>, <span class='inlayHint'>payload:&nbsp;</span>&amp;<a class="local col6 ref" href="#146payload" title='payload' data-ref="146payload">payload</a>))</td></tr>
+<tr><th id="397">397</th><td>                        <a class="ref fn" href="#_ZL17notifyAndFreeInfoP6HeaderP12process_infoPK12pipe_payload" title='notifyAndFreeInfo' data-ref="_ZL17notifyAndFreeInfoP6HeaderP12process_infoPK12pipe_payload">notifyAndFreeInfo</a>(<span class='inlayHint'>header:&nbsp;</span>&amp;<a class="local col4 ref" href="#144array" title='array' data-ref="144array">array</a>-&gt;<a class="ref field" href="#BigArray::header" title='BigArray::header' data-ref="BigArray::header">header</a>, <span class='inlayHint'>entry:&nbsp;</span>&amp;<a class="local col4 ref" href="#144array" title='array' data-ref="144array">array</a>-&gt;<a class="ref field" href="#BigArray::entries" title='BigArray::entries' data-ref="BigArray::entries">entries</a>[<a class="local col7 ref" href="#147i" title='i' data-ref="147i">i</a>], <span class='inlayHint'>payload:&nbsp;</span>&amp;<a class="local col6 ref" href="#146payload" title='payload' data-ref="146payload">payload</a>);</td></tr>
+<tr><th id="398">398</th><td>                    <b>goto</b> <a class="lbl" href="#148search_next_child" data-ref="148search_next_child">search_next_child</a>;</td></tr>
+<tr><th id="399">399</th><td>                }</td></tr>
+<tr><th id="400">400</th><td>            }</td></tr>
+<tr><th id="401">401</th><td></td></tr>
+<tr><th id="402">402</th><td>            <a class="local col4 ref" href="#144array" title='array' data-ref="144array">array</a> = <a class="macro" href="forkfd_c11.h.html#57" title="atomic_load_explicit(&amp;array-&gt;header.nextArray, std::memory_order_acquire)" data-ref="_M/ffd_atomic_load">ffd_atomic_load</a>(&amp;<a class="local col4 ref" href="#144array" title='array' data-ref="144array">array</a>-&gt;<a class="ref field" href="#BigArray::header" title='BigArray::header' data-ref="BigArray::header">header</a>.<a class="ref field" href="#Header::nextArray" title='Header::nextArray' data-ref="Header::nextArray">nextArray</a>, <a class="macro" href="forkfd_c11.h.html#36" title="std::memory_order_acquire" data-ref="_M/FFD_ATOMIC_ACQUIRE">FFD_ATOMIC_ACQUIRE</a>);</td></tr>
+<tr><th id="403">403</th><td>        }</td></tr>
+<tr><th id="404">404</th><td></td></tr>
+<tr><th id="405">405</th><td>        <i>/* if we got here, we couldn't find this child in our list. That means this child</i></td></tr>
+<tr><th id="406">406</th><td><i>         * belongs to one of the chained SIGCHLD handlers. However, there might be another</i></td></tr>
+<tr><th id="407">407</th><td><i>         * child that exited and does belong to us, so we need to check each one individually.</i></td></tr>
+<tr><th id="408">408</th><td><i>         */</i></td></tr>
+<tr><th id="409">409</th><td>    }</td></tr>
+<tr><th id="410">410</th><td><u>#<span data-ppcond="356">endif</span></u></td></tr>
+<tr><th id="411">411</th><td></td></tr>
+<tr><th id="412">412</th><td>    <b>for</b> (<a class="local col7 ref" href="#147i" title='i' data-ref="147i">i</a> = <var>0</var>; <a class="local col7 ref" href="#147i" title='i' data-ref="147i">i</a> &lt; (<em>int</em>)<a class="macro" href="#117" title="(sizeof(children.entries)/sizeof(children.entries[0]))" data-ref="_M/sizeofarray">sizeofarray</a>(<a class="ref" href="#children" title='children' data-ref="children">children</a>.<a class="ref field" href="#SmallArray::entries" title='SmallArray::entries' data-ref="SmallArray::entries">entries</a>); ++<a class="local col7 ref" href="#147i" title='i' data-ref="147i">i</a>) {</td></tr>
+<tr><th id="413">413</th><td>        <em>int</em> <dfn class="local col1 decl" id="151pid" title='pid' data-type='int' data-ref="151pid">pid</dfn> = <a class="macro" href="forkfd_c11.h.html#57" title="atomic_load_explicit(&amp;children.entries[i].pid, std::memory_order_acquire)" data-ref="_M/ffd_atomic_load">ffd_atomic_load</a>(&amp;<a class="ref" href="#children" title='children' data-ref="children">children</a>.<a class="ref field" href="#SmallArray::entries" title='SmallArray::entries' data-ref="SmallArray::entries">entries</a>[<a class="local col7 ref" href="#147i" title='i' data-ref="147i">i</a>].<a class="ref field" href="#process_info::pid" title='process_info::pid' data-ref="process_info::pid">pid</a>, <a class="macro" href="forkfd_c11.h.html#36" title="std::memory_order_acquire" data-ref="_M/FFD_ATOMIC_ACQUIRE">FFD_ATOMIC_ACQUIRE</a>);</td></tr>
+<tr><th id="414">414</th><td>        <b>if</b> (<a class="local col1 ref" href="#151pid" title='pid' data-ref="151pid">pid</a> &lt;= <var>0</var>)</td></tr>
+<tr><th id="415">415</th><td>            <b>continue</b>;</td></tr>
+<tr><th id="416">416</th><td><u>#<span data-ppcond="416">ifdef</span> <a class="macro" href="#69" data-ref="_M/HAVE_WAITID">HAVE_WAITID</a></u></td></tr>
+<tr><th id="417">417</th><td>        <b>if</b> (<a class="ref" href="#waitid_works" title='waitid_works' data-ref="waitid_works">waitid_works</a>) {</td></tr>
+<tr><th id="418">418</th><td>            <i>/* The child might have been reaped by the block above in another thread,</i></td></tr>
+<tr><th id="419">419</th><td><i>             * so first check if it's ready and, if it is, lock it */</i></td></tr>
+<tr><th id="420">420</th><td>            <b>if</b> (!<a class="ref fn" href="#_ZL12isChildReadyiP9siginfo_t" title='isChildReady' data-ref="_ZL12isChildReadyiP9siginfo_t">isChildReady</a>(<a class="local col1 ref" href="#151pid" title='pid' data-ref="151pid">pid</a>, <span class='inlayHint'>info:&nbsp;</span>&amp;<a class="local col5 ref" href="#145info" title='info' data-ref="145info">info</a>) ||</td></tr>
+<tr><th id="421">421</th><td>                    !<a class="macro" href="forkfd_c11.h.html#63" title="atomic_compare_exchange_strong_explicit(&amp;children.entries[i].pid, &amp;pid, -1, std::memory_order_relaxed, std::memory_order_relaxed)" data-ref="_M/ffd_atomic_compare_exchange">ffd_atomic_compare_exchange</a>(&amp;<a class="ref" href="#children" title='children' data-ref="children">children</a>.<a class="ref field" href="#SmallArray::entries" title='SmallArray::entries' data-ref="SmallArray::entries">entries</a>[<a class="local col7 ref" href="#147i" title='i' data-ref="147i">i</a>].<a class="ref field" href="#process_info::pid" title='process_info::pid' data-ref="process_info::pid">pid</a>, &amp;<a class="local col1 ref" href="#151pid" title='pid' data-ref="151pid">pid</a>, -<var>1</var>,</td></tr>
+<tr><th id="422">422</th><td>                                                 <a class="macro" href="forkfd_c11.h.html#35" title="std::memory_order_relaxed" data-ref="_M/FFD_ATOMIC_RELAXED">FFD_ATOMIC_RELAXED</a>, <a class="macro" href="forkfd_c11.h.html#35" title="std::memory_order_relaxed" data-ref="_M/FFD_ATOMIC_RELAXED">FFD_ATOMIC_RELAXED</a>))</td></tr>
+<tr><th id="423">423</th><td>                <b>continue</b>;</td></tr>
+<tr><th id="424">424</th><td>        }</td></tr>
+<tr><th id="425">425</th><td><u>#<span data-ppcond="416">endif</span></u></td></tr>
+<tr><th id="426">426</th><td>        <b>if</b> (<a class="ref fn" href="#_ZL10tryReapingiP12pipe_payload" title='tryReaping' data-ref="_ZL10tryReapingiP12pipe_payload">tryReaping</a>(<a class="local col1 ref" href="#151pid" title='pid' data-ref="151pid">pid</a>, <span class='inlayHint'>payload:&nbsp;</span>&amp;<a class="local col6 ref" href="#146payload" title='payload' data-ref="146payload">payload</a>)) {</td></tr>
+<tr><th id="427">427</th><td>            <i>/* this is our child, send notification and free up this entry */</i></td></tr>
+<tr><th id="428">428</th><td>            <a class="ref fn" href="#_ZL17notifyAndFreeInfoP6HeaderP12process_infoPK12pipe_payload" title='notifyAndFreeInfo' data-ref="_ZL17notifyAndFreeInfoP6HeaderP12process_infoPK12pipe_payload">notifyAndFreeInfo</a>(<span class='inlayHint'>header:&nbsp;</span>&amp;<a class="ref" href="#children" title='children' data-ref="children">children</a>.<a class="ref field" href="#SmallArray::header" title='SmallArray::header' data-ref="SmallArray::header">header</a>, <span class='inlayHint'>entry:&nbsp;</span>&amp;<a class="ref" href="#children" title='children' data-ref="children">children</a>.<a class="ref field" href="#SmallArray::entries" title='SmallArray::entries' data-ref="SmallArray::entries">entries</a>[<a class="local col7 ref" href="#147i" title='i' data-ref="147i">i</a>], <span class='inlayHint'>payload:&nbsp;</span>&amp;<a class="local col6 ref" href="#146payload" title='payload' data-ref="146payload">payload</a>);</td></tr>
+<tr><th id="429">429</th><td>        }</td></tr>
+<tr><th id="430">430</th><td>    }</td></tr>
+<tr><th id="431">431</th><td></td></tr>
+<tr><th id="432">432</th><td>    <i>/* try the arrays */</i></td></tr>
+<tr><th id="433">433</th><td>    <a class="local col4 ref" href="#144array" title='array' data-ref="144array">array</a> = <a class="macro" href="forkfd_c11.h.html#57" title="atomic_load_explicit(&amp;children.header.nextArray, std::memory_order_acquire)" data-ref="_M/ffd_atomic_load">ffd_atomic_load</a>(&amp;<a class="ref" href="#children" title='children' data-ref="children">children</a>.<a class="ref field" href="#SmallArray::header" title='SmallArray::header' data-ref="SmallArray::header">header</a>.<a class="ref field" href="#Header::nextArray" title='Header::nextArray' data-ref="Header::nextArray">nextArray</a>, <a class="macro" href="forkfd_c11.h.html#36" title="std::memory_order_acquire" data-ref="_M/FFD_ATOMIC_ACQUIRE">FFD_ATOMIC_ACQUIRE</a>);</td></tr>
+<tr><th id="434">434</th><td>    <b>while</b> (<a class="local col4 ref" href="#144array" title='array' data-ref="144array">array</a> != <span class="macro" title="__null" data-ref="_M/NULL">NULL</span>) {</td></tr>
+<tr><th id="435">435</th><td>        <b>for</b> (<a class="local col7 ref" href="#147i" title='i' data-ref="147i">i</a> = <var>0</var>; <a class="local col7 ref" href="#147i" title='i' data-ref="147i">i</a> &lt; (<em>int</em>)<a class="macro" href="#117" title="(sizeof(array-&gt;entries)/sizeof(array-&gt;entries[0]))" data-ref="_M/sizeofarray">sizeofarray</a>(<a class="local col4 ref" href="#144array" title='array' data-ref="144array">array</a>-&gt;<a class="ref field" href="#BigArray::entries" title='BigArray::entries' data-ref="BigArray::entries">entries</a>); ++<a class="local col7 ref" href="#147i" title='i' data-ref="147i">i</a>) {</td></tr>
+<tr><th id="436">436</th><td>            <em>int</em> <dfn class="local col2 decl" id="152pid" title='pid' data-type='int' data-ref="152pid">pid</dfn> = <a class="macro" href="forkfd_c11.h.html#57" title="atomic_load_explicit(&amp;array-&gt;entries[i].pid, std::memory_order_acquire)" data-ref="_M/ffd_atomic_load">ffd_atomic_load</a>(&amp;<a class="local col4 ref" href="#144array" title='array' data-ref="144array">array</a>-&gt;<a class="ref field" href="#BigArray::entries" title='BigArray::entries' data-ref="BigArray::entries">entries</a>[<a class="local col7 ref" href="#147i" title='i' data-ref="147i">i</a>].<a class="ref field" href="#process_info::pid" title='process_info::pid' data-ref="process_info::pid">pid</a>, <a class="macro" href="forkfd_c11.h.html#36" title="std::memory_order_acquire" data-ref="_M/FFD_ATOMIC_ACQUIRE">FFD_ATOMIC_ACQUIRE</a>);</td></tr>
+<tr><th id="437">437</th><td>            <b>if</b> (<a class="local col2 ref" href="#152pid" title='pid' data-ref="152pid">pid</a> &lt;= <var>0</var>)</td></tr>
+<tr><th id="438">438</th><td>                <b>continue</b>;</td></tr>
+<tr><th id="439">439</th><td><u>#<span data-ppcond="439">ifdef</span> <a class="macro" href="#69" data-ref="_M/HAVE_WAITID">HAVE_WAITID</a></u></td></tr>
+<tr><th id="440">440</th><td>            <b>if</b> (<a class="ref" href="#waitid_works" title='waitid_works' data-ref="waitid_works">waitid_works</a>) {</td></tr>
+<tr><th id="441">441</th><td>                <i>/* The child might have been reaped by the block above in another thread,</i></td></tr>
+<tr><th id="442">442</th><td><i>                 * so first check if it's ready and, if it is, lock it */</i></td></tr>
+<tr><th id="443">443</th><td>                <b>if</b> (!<a class="ref fn" href="#_ZL12isChildReadyiP9siginfo_t" title='isChildReady' data-ref="_ZL12isChildReadyiP9siginfo_t">isChildReady</a>(<a class="local col2 ref" href="#152pid" title='pid' data-ref="152pid">pid</a>, <span class='inlayHint'>info:&nbsp;</span>&amp;<a class="local col5 ref" href="#145info" title='info' data-ref="145info">info</a>) ||</td></tr>
+<tr><th id="444">444</th><td>                        !<a class="macro" href="forkfd_c11.h.html#63" title="atomic_compare_exchange_strong_explicit(&amp;array-&gt;entries[i].pid, &amp;pid, -1, std::memory_order_relaxed, std::memory_order_relaxed)" data-ref="_M/ffd_atomic_compare_exchange">ffd_atomic_compare_exchange</a>(&amp;<a class="local col4 ref" href="#144array" title='array' data-ref="144array">array</a>-&gt;<a class="ref field" href="#BigArray::entries" title='BigArray::entries' data-ref="BigArray::entries">entries</a>[<a class="local col7 ref" href="#147i" title='i' data-ref="147i">i</a>].<a class="ref field" href="#process_info::pid" title='process_info::pid' data-ref="process_info::pid">pid</a>, &amp;<a class="local col2 ref" href="#152pid" title='pid' data-ref="152pid">pid</a>, -<var>1</var>,</td></tr>
+<tr><th id="445">445</th><td>                                                     <a class="macro" href="forkfd_c11.h.html#35" title="std::memory_order_relaxed" data-ref="_M/FFD_ATOMIC_RELAXED">FFD_ATOMIC_RELAXED</a>, <a class="macro" href="forkfd_c11.h.html#35" title="std::memory_order_relaxed" data-ref="_M/FFD_ATOMIC_RELAXED">FFD_ATOMIC_RELAXED</a>))</td></tr>
+<tr><th id="446">446</th><td>                    <b>continue</b>;</td></tr>
+<tr><th id="447">447</th><td>            }</td></tr>
+<tr><th id="448">448</th><td><u>#<span data-ppcond="439">endif</span></u></td></tr>
+<tr><th id="449">449</th><td>            <b>if</b> (<a class="ref fn" href="#_ZL10tryReapingiP12pipe_payload" title='tryReaping' data-ref="_ZL10tryReapingiP12pipe_payload">tryReaping</a>(<a class="local col2 ref" href="#152pid" title='pid' data-ref="152pid">pid</a>, <span class='inlayHint'>payload:&nbsp;</span>&amp;<a class="local col6 ref" href="#146payload" title='payload' data-ref="146payload">payload</a>)) {</td></tr>
+<tr><th id="450">450</th><td>                <i>/* this is our child, send notification and free up this entry */</i></td></tr>
+<tr><th id="451">451</th><td>                <a class="ref fn" href="#_ZL17notifyAndFreeInfoP6HeaderP12process_infoPK12pipe_payload" title='notifyAndFreeInfo' data-ref="_ZL17notifyAndFreeInfoP6HeaderP12process_infoPK12pipe_payload">notifyAndFreeInfo</a>(<span class='inlayHint'>header:&nbsp;</span>&amp;<a class="local col4 ref" href="#144array" title='array' data-ref="144array">array</a>-&gt;<a class="ref field" href="#BigArray::header" title='BigArray::header' data-ref="BigArray::header">header</a>, <span class='inlayHint'>entry:&nbsp;</span>&amp;<a class="local col4 ref" href="#144array" title='array' data-ref="144array">array</a>-&gt;<a class="ref field" href="#BigArray::entries" title='BigArray::entries' data-ref="BigArray::entries">entries</a>[<a class="local col7 ref" href="#147i" title='i' data-ref="147i">i</a>], <span class='inlayHint'>payload:&nbsp;</span>&amp;<a class="local col6 ref" href="#146payload" title='payload' data-ref="146payload">payload</a>);</td></tr>
+<tr><th id="452">452</th><td>            }</td></tr>
+<tr><th id="453">453</th><td>        }</td></tr>
+<tr><th id="454">454</th><td></td></tr>
+<tr><th id="455">455</th><td>        <a class="local col4 ref" href="#144array" title='array' data-ref="144array">array</a> = <a class="macro" href="forkfd_c11.h.html#57" title="atomic_load_explicit(&amp;array-&gt;header.nextArray, std::memory_order_acquire)" data-ref="_M/ffd_atomic_load">ffd_atomic_load</a>(&amp;<a class="local col4 ref" href="#144array" title='array' data-ref="144array">array</a>-&gt;<a class="ref field" href="#BigArray::header" title='BigArray::header' data-ref="BigArray::header">header</a>.<a class="ref field" href="#Header::nextArray" title='Header::nextArray' data-ref="Header::nextArray">nextArray</a>, <a class="macro" href="forkfd_c11.h.html#36" title="std::memory_order_acquire" data-ref="_M/FFD_ATOMIC_ACQUIRE">FFD_ATOMIC_ACQUIRE</a>);</td></tr>
+<tr><th id="456">456</th><td>    }</td></tr>
+<tr><th id="457">457</th><td>}</td></tr>
+<tr><th id="458">458</th><td></td></tr>
+<tr><th id="459">459</th><td><em>static</em> <em>void</em> <dfn class="decl def fn" id="_ZL14ignore_sigpipev" title='ignore_sigpipe' data-ref="_ZL14ignore_sigpipev">ignore_sigpipe</dfn>()</td></tr>
+<tr><th id="460">460</th><td>{</td></tr>
+<tr><th id="461">461</th><td><u>#<span data-ppcond="461">ifdef</span> <span class="macro" data-ref="_M/O_NOSIGPIPE">O_NOSIGPIPE</span></u></td></tr>
+<tr><th id="462">462</th><td>    <em>static</em> ffd_atomic_int done = FFD_ATOMIC_INIT(<var>0</var>);</td></tr>
+<tr><th id="463">463</th><td>    <b>if</b> (ffd_atomic_load(&amp;done, FFD_ATOMIC_RELAXED))</td></tr>
+<tr><th id="464">464</th><td>        <b>return</b>;</td></tr>
+<tr><th id="465">465</th><td><u>#<span data-ppcond="461">endif</span></u></td></tr>
+<tr><th id="466">466</th><td></td></tr>
+<tr><th id="467">467</th><td>    <b>struct</b> <a class="type" href="../../../../include/x86_64-linux-gnu/bits/sigaction.h.html#sigaction" title='sigaction' data-ref="sigaction">sigaction</a> <a class="ref fn fake" href="../../../../include/x86_64-linux-gnu/bits/sigaction.h.html#27" title='sigaction::sigaction' data-ref="_ZN9sigactionC1Ev"></a><dfn class="local col3 decl" id="153action" title='action' data-type='struct sigaction' data-ref="153action">action</dfn>;</td></tr>
+<tr><th id="468">468</th><td>    <a class="ref fn" href="../../../../include/string.h.html#memset" title='memset' data-ref="memset">memset</a>(<span class='inlayHint'>s:&nbsp;</span>&amp;<a class="local col3 ref" href="#153action" title='action' data-ref="153action">action</a>, <span class='inlayHint'>c:&nbsp;</span><var>0</var>, <span class='inlayHint'>n:&nbsp;</span><b>sizeof</b> <a class="local col3 ref" href="#153action" title='action' data-ref="153action">action</a>);</td></tr>
+<tr><th id="469">469</th><td>    <a class="ref fn" href="../../../../include/signal.h.html#sigemptyset" title='sigemptyset' data-ref="sigemptyset">sigemptyset</a>(<span class='inlayHint'>set:&nbsp;</span>&amp;<a class="local col3 ref" href="#153action" title='action' data-ref="153action">action</a>.<a class="ref field" href="../../../../include/x86_64-linux-gnu/bits/sigaction.h.html#sigaction::sa_mask" title='sigaction::sa_mask' data-ref="sigaction::sa_mask">sa_mask</a>);</td></tr>
+<tr><th id="470">470</th><td>    <a class="local col3 ref" href="#153action" title='action' data-ref="153action">action</a>.<a class="macro" href="../../../../include/x86_64-linux-gnu/bits/sigaction.h.html#39" title="__sigaction_handler.sa_handler" data-ref="_M/sa_handler">sa_handler</a> = <a class="macro" href="../../../../include/x86_64-linux-gnu/bits/signum-generic.h.html#30" title="((__sighandler_t) 1)" data-ref="_M/SIG_IGN">SIG_IGN</a>;</td></tr>
+<tr><th id="471">471</th><td>    <a class="local col3 ref" href="#153action" title='action' data-ref="153action">action</a>.<a class="ref field" href="../../../../include/x86_64-linux-gnu/bits/sigaction.h.html#sigaction::sa_flags" title='sigaction::sa_flags' data-ref="sigaction::sa_flags">sa_flags</a> = <var>0</var>;</td></tr>
+<tr><th id="472">472</th><td>    <a class="ref fn" href="../../../../include/signal.h.html#sigaction" title='sigaction' data-ref="sigaction">sigaction</a>(<a class="macro" href="../../../../include/x86_64-linux-gnu/bits/signum-generic.h.html#62" title="13" data-ref="_M/SIGPIPE">SIGPIPE</a>, <span class='inlayHint'>act:&nbsp;</span>&amp;<a class="local col3 ref" href="#153action" title='action' data-ref="153action">action</a>, <span class="macro" title="__null" data-ref="_M/NULL">NULL</span>);</td></tr>
+<tr><th id="473">473</th><td></td></tr>
+<tr><th id="474">474</th><td><u>#<span data-ppcond="474">ifdef</span> <span class="macro" data-ref="_M/O_NOSIGPIPE">O_NOSIGPIPE</span></u></td></tr>
+<tr><th id="475">475</th><td>    ffd_atomic_store(&amp;done, <var>1</var>, FFD_ATOMIC_RELAXED);</td></tr>
+<tr><th id="476">476</th><td><u>#<span data-ppcond="474">endif</span></u></td></tr>
+<tr><th id="477">477</th><td>}</td></tr>
+<tr><th id="478">478</th><td></td></tr>
+<tr><th id="479">479</th><td><u>#<span data-ppcond="479">if</span> defined(<span class="macro" data-ref="_M/__GNUC__">__GNUC__</span>) &amp;&amp; (!defined(<span class="macro" data-ref="_M/__FreeBSD__">__FreeBSD__</span>) || __FreeBSD__ &lt; 10)</u></td></tr>
+<tr><th id="480">480</th><td><b>__attribute</b>((destructor, unused)) <em>static</em> <em>void</em> <a class="decl fn" href="#_ZL7cleanupv" title='cleanup' data-ref="_ZL7cleanupv">cleanup</a>();</td></tr>
+<tr><th id="481">481</th><td><u>#<span data-ppcond="479">endif</span></u></td></tr>
+<tr><th id="482">482</th><td></td></tr>
+<tr><th id="483">483</th><td><em>static</em> <em>void</em> <dfn class="decl def fn" id="_ZL7cleanupv" title='cleanup' data-ref="_ZL7cleanupv">cleanup</dfn>()</td></tr>
+<tr><th id="484">484</th><td>{</td></tr>
+<tr><th id="485">485</th><td>    <a class="typedef" href="#BigArray" title='BigArray' data-type='struct BigArray' data-ref="BigArray">BigArray</a> *<dfn class="local col4 decl" id="154array" title='array' data-type='BigArray *' data-ref="154array">array</dfn>;</td></tr>
+<tr><th id="486">486</th><td>    <i>/* This function is not thread-safe!</i></td></tr>
+<tr><th id="487">487</th><td><i>     * It must only be called when the process is shutting down.</i></td></tr>
+<tr><th id="488">488</th><td><i>     * At shutdown, we expect no one to be calling forkfd(), so we don't</i></td></tr>
+<tr><th id="489">489</th><td><i>     * need to be thread-safe with what is done there.</i></td></tr>
+<tr><th id="490">490</th><td><i>     *</i></td></tr>
+<tr><th id="491">491</th><td><i>     * But SIGCHLD might be delivered to any thread, including this one.</i></td></tr>
+<tr><th id="492">492</th><td><i>     * There's no way to prevent that. The correct solution would be to</i></td></tr>
+<tr><th id="493">493</th><td><i>     * cooperatively delete. We don't do that.</i></td></tr>
+<tr><th id="494">494</th><td><i>     */</i></td></tr>
+<tr><th id="495">495</th><td>    <b>if</b> (<a class="macro" href="forkfd_c11.h.html#57" title="atomic_load_explicit(&amp;forkfd_status, std::memory_order_relaxed)" data-ref="_M/ffd_atomic_load">ffd_atomic_load</a>(&amp;<a class="ref" href="#forkfd_status" title='forkfd_status' data-ref="forkfd_status">forkfd_status</a>, <a class="macro" href="forkfd_c11.h.html#35" title="std::memory_order_relaxed" data-ref="_M/FFD_ATOMIC_RELAXED">FFD_ATOMIC_RELAXED</a>) == <var>0</var>)</td></tr>
+<tr><th id="496">496</th><td>        <b>return</b>;</td></tr>
+<tr><th id="497">497</th><td></td></tr>
+<tr><th id="498">498</th><td>    <i>/* notify the handler that we're no longer in operation */</i></td></tr>
+<tr><th id="499">499</th><td>    <a class="macro" href="forkfd_c11.h.html#59" title="atomic_store_explicit(&amp;forkfd_status, 0, std::memory_order_relaxed)" data-ref="_M/ffd_atomic_store">ffd_atomic_store</a>(&amp;<a class="ref" href="#forkfd_status" title='forkfd_status' data-ref="forkfd_status">forkfd_status</a>, <var>0</var>, <a class="macro" href="forkfd_c11.h.html#35" title="std::memory_order_relaxed" data-ref="_M/FFD_ATOMIC_RELAXED">FFD_ATOMIC_RELAXED</a>);</td></tr>
+<tr><th id="500">500</th><td></td></tr>
+<tr><th id="501">501</th><td>    <i>/* free any arrays we might have */</i></td></tr>
+<tr><th id="502">502</th><td>    <a class="local col4 ref" href="#154array" title='array' data-ref="154array">array</a> = <a class="macro" href="forkfd_c11.h.html#57" title="atomic_load_explicit(&amp;children.header.nextArray, std::memory_order_acquire)" data-ref="_M/ffd_atomic_load">ffd_atomic_load</a>(&amp;<a class="ref" href="#children" title='children' data-ref="children">children</a>.<a class="ref field" href="#SmallArray::header" title='SmallArray::header' data-ref="SmallArray::header">header</a>.<a class="ref field" href="#Header::nextArray" title='Header::nextArray' data-ref="Header::nextArray">nextArray</a>, <a class="macro" href="forkfd_c11.h.html#36" title="std::memory_order_acquire" data-ref="_M/FFD_ATOMIC_ACQUIRE">FFD_ATOMIC_ACQUIRE</a>);</td></tr>
+<tr><th id="503">503</th><td>    <b>while</b> (<a class="local col4 ref" href="#154array" title='array' data-ref="154array">array</a> != <span class="macro" title="__null" data-ref="_M/NULL">NULL</span>) {</td></tr>
+<tr><th id="504">504</th><td>        <a class="typedef" href="#BigArray" title='BigArray' data-type='struct BigArray' data-ref="BigArray">BigArray</a> *<dfn class="local col5 decl" id="155next" title='next' data-type='BigArray *' data-ref="155next">next</dfn> = <a class="macro" href="forkfd_c11.h.html#57" title="atomic_load_explicit(&amp;array-&gt;header.nextArray, std::memory_order_acquire)" data-ref="_M/ffd_atomic_load">ffd_atomic_load</a>(&amp;<a class="local col4 ref" href="#154array" title='array' data-ref="154array">array</a>-&gt;<a class="ref field" href="#BigArray::header" title='BigArray::header' data-ref="BigArray::header">header</a>.<a class="ref field" href="#Header::nextArray" title='Header::nextArray' data-ref="Header::nextArray">nextArray</a>, <a class="macro" href="forkfd_c11.h.html#36" title="std::memory_order_acquire" data-ref="_M/FFD_ATOMIC_ACQUIRE">FFD_ATOMIC_ACQUIRE</a>);</td></tr>
+<tr><th id="505">505</th><td>        <a class="ref fn" href="../../../../include/stdlib.h.html#free" title='free' data-ref="free">free</a>(<span class='inlayHint'>ptr:&nbsp;</span><a class="local col4 ref" href="#154array" title='array' data-ref="154array">array</a>);</td></tr>
+<tr><th id="506">506</th><td>        <a class="local col4 ref" href="#154array" title='array' data-ref="154array">array</a> = <a class="local col5 ref" href="#155next" title='next' data-ref="155next">next</a>;</td></tr>
+<tr><th id="507">507</th><td>    }</td></tr>
+<tr><th id="508">508</th><td>}</td></tr>
+<tr><th id="509">509</th><td></td></tr>
+<tr><th id="510">510</th><td><em>static</em> <em>void</em> <dfn class="decl def fn" id="_ZL17forkfd_initializev" title='forkfd_initialize' data-ref="_ZL17forkfd_initializev">forkfd_initialize</dfn>()</td></tr>
+<tr><th id="511">511</th><td>{</td></tr>
+<tr><th id="512">512</th><td><u>#<span data-ppcond="512">if</span> defined(<span class="macro" data-ref="_M/HAVE_BROKEN_WAITID">HAVE_BROKEN_WAITID</span>)</u></td></tr>
+<tr><th id="513">513</th><td>    pid_t pid = fork();</td></tr>
+<tr><th id="514">514</th><td>    <b>if</b> (pid == <var>0</var>) {</td></tr>
+<tr><th id="515">515</th><td>        _exit(<var>0</var>);</td></tr>
+<tr><th id="516">516</th><td>    } <b>else</b> <b>if</b> (pid &gt; <var>0</var>) {</td></tr>
+<tr><th id="517">517</th><td>        siginfo_t info;</td></tr>
+<tr><th id="518">518</th><td>        waitid(P_ALL, <var>0</var>, &amp;info, WNOWAIT | WEXITED);</td></tr>
+<tr><th id="519">519</th><td>        waitid_works = (info.si_pid != <var>0</var>);</td></tr>
+<tr><th id="520">520</th><td>        info.si_pid = <var>0</var>;</td></tr>
+<tr><th id="521">521</th><td></td></tr>
+<tr><th id="522">522</th><td>        <i>// now really reap the child</i></td></tr>
+<tr><th id="523">523</th><td>        waitid(P_PID, pid, &amp;info, WEXITED);</td></tr>
+<tr><th id="524">524</th><td>        waitid_works = waitid_works &amp;&amp; (info.si_pid != <var>0</var>);</td></tr>
+<tr><th id="525">525</th><td>    }</td></tr>
+<tr><th id="526">526</th><td><u>#<span data-ppcond="512">endif</span></u></td></tr>
+<tr><th id="527">527</th><td></td></tr>
+<tr><th id="528">528</th><td>    <i>/* install our signal handler */</i></td></tr>
+<tr><th id="529">529</th><td>    <b>struct</b> <a class="type" href="../../../../include/x86_64-linux-gnu/bits/sigaction.h.html#sigaction" title='sigaction' data-ref="sigaction">sigaction</a> <a class="ref fn fake" href="../../../../include/x86_64-linux-gnu/bits/sigaction.h.html#27" title='sigaction::sigaction' data-ref="_ZN9sigactionC1Ev"></a><dfn class="local col6 decl" id="156action" title='action' data-type='struct sigaction' data-ref="156action">action</dfn>;</td></tr>
+<tr><th id="530">530</th><td>    <a class="ref fn" href="../../../../include/string.h.html#memset" title='memset' data-ref="memset">memset</a>(<span class='inlayHint'>s:&nbsp;</span>&amp;<a class="local col6 ref" href="#156action" title='action' data-ref="156action">action</a>, <span class='inlayHint'>c:&nbsp;</span><var>0</var>, <span class='inlayHint'>n:&nbsp;</span><b>sizeof</b> <a class="local col6 ref" href="#156action" title='action' data-ref="156action">action</a>);</td></tr>
+<tr><th id="531">531</th><td>    <a class="ref fn" href="../../../../include/signal.h.html#sigemptyset" title='sigemptyset' data-ref="sigemptyset">sigemptyset</a>(<span class='inlayHint'>set:&nbsp;</span>&amp;<a class="local col6 ref" href="#156action" title='action' data-ref="156action">action</a>.<a class="ref field" href="../../../../include/x86_64-linux-gnu/bits/sigaction.h.html#sigaction::sa_mask" title='sigaction::sa_mask' data-ref="sigaction::sa_mask">sa_mask</a>);</td></tr>
+<tr><th id="532">532</th><td>    <a class="local col6 ref" href="#156action" title='action' data-ref="156action">action</a>.<a class="ref field" href="../../../../include/x86_64-linux-gnu/bits/sigaction.h.html#sigaction::sa_flags" title='sigaction::sa_flags' data-ref="sigaction::sa_flags">sa_flags</a> = <a class="macro" href="../../../../include/x86_64-linux-gnu/bits/sigaction.h.html#56" title="1" data-ref="_M/SA_NOCLDSTOP">SA_NOCLDSTOP</a> | <a class="macro" href="../../../../include/x86_64-linux-gnu/bits/sigaction.h.html#58" title="4" data-ref="_M/SA_SIGINFO">SA_SIGINFO</a>;</td></tr>
+<tr><th id="533">533</th><td>    <a class="local col6 ref" href="#156action" title='action' data-ref="156action">action</a>.<a class="macro" href="../../../../include/x86_64-linux-gnu/bits/sigaction.h.html#40" title="__sigaction_handler.sa_sigaction" data-ref="_M/sa_sigaction">sa_sigaction</a> = <a class="ref fn" href="#_ZL15sigchld_handleriP9siginfo_tPv" title='sigchld_handler' data-ref="_ZL15sigchld_handleriP9siginfo_tPv">sigchld_handler</a>;</td></tr>
+<tr><th id="534">534</th><td></td></tr>
+<tr><th id="535">535</th><td>    <i>/* ### RACE CONDITION</i></td></tr>
+<tr><th id="536">536</th><td><i>     * The sigaction function does a memcpy from an internal buffer</i></td></tr>
+<tr><th id="537">537</th><td><i>     * to old_sigaction, which we use in the SIGCHLD handler. If a</i></td></tr>
+<tr><th id="538">538</th><td><i>     * SIGCHLD is delivered before or during that memcpy, the handler will</i></td></tr>
+<tr><th id="539">539</th><td><i>     * see an inconsistent state.</i></td></tr>
+<tr><th id="540">540</th><td><i>     *</i></td></tr>
+<tr><th id="541">541</th><td><i>     * There is no solution. pthread_sigmask doesn't work here because the</i></td></tr>
+<tr><th id="542">542</th><td><i>     * signal could be delivered to another thread.</i></td></tr>
+<tr><th id="543">543</th><td><i>     */</i></td></tr>
+<tr><th id="544">544</th><td>    <a class="ref fn" href="../../../../include/signal.h.html#sigaction" title='sigaction' data-ref="sigaction">sigaction</a>(<a class="macro" href="../../../../include/x86_64-linux-gnu/bits/signum.h.html#41" title="17" data-ref="_M/SIGCHLD">SIGCHLD</a>, <span class='inlayHint'>act:&nbsp;</span>&amp;<a class="local col6 ref" href="#156action" title='action' data-ref="156action">action</a>, <span class='inlayHint'>oact:&nbsp;</span>&amp;<a class="ref" href="#old_sigaction" title='old_sigaction' data-ref="old_sigaction">old_sigaction</a>);</td></tr>
+<tr><th id="545">545</th><td></td></tr>
+<tr><th id="546">546</th><td><u>#<span data-ppcond="546">ifndef</span> <span class="macro" data-ref="_M/O_NOSIGPIPE">O_NOSIGPIPE</span></u></td></tr>
+<tr><th id="547">547</th><td>    <i>/* disable SIGPIPE too */</i></td></tr>
+<tr><th id="548">548</th><td>    <a class="ref fn" href="#_ZL14ignore_sigpipev" title='ignore_sigpipe' data-ref="_ZL14ignore_sigpipev">ignore_sigpipe</a>();</td></tr>
+<tr><th id="549">549</th><td><u>#<span data-ppcond="546">endif</span></u></td></tr>
+<tr><th id="550">550</th><td></td></tr>
+<tr><th id="551">551</th><td><u>#<span data-ppcond="551">ifdef</span> <span class="macro" data-ref="_M/__GNUC__">__GNUC__</span></u></td></tr>
+<tr><th id="552">552</th><td>    (<em>void</em>) <a class="ref fn" href="#_ZL7cleanupv" title='cleanup' data-ref="_ZL7cleanupv">cleanup</a>; <i>/* suppress unused static function warning */</i></td></tr>
+<tr><th id="553">553</th><td><u>#<span data-ppcond="551">else</span></u></td></tr>
+<tr><th id="554">554</th><td>    atexit(cleanup);</td></tr>
+<tr><th id="555">555</th><td><u>#<span data-ppcond="551">endif</span></u></td></tr>
+<tr><th id="556">556</th><td></td></tr>
+<tr><th id="557">557</th><td>    <a class="macro" href="forkfd_c11.h.html#59" title="atomic_store_explicit(&amp;forkfd_status, 1, std::memory_order_relaxed)" data-ref="_M/ffd_atomic_store">ffd_atomic_store</a>(&amp;<a class="ref" href="#forkfd_status" title='forkfd_status' data-ref="forkfd_status">forkfd_status</a>, <var>1</var>, <a class="macro" href="forkfd_c11.h.html#35" title="std::memory_order_relaxed" data-ref="_M/FFD_ATOMIC_RELAXED">FFD_ATOMIC_RELAXED</a>);</td></tr>
+<tr><th id="558">558</th><td>}</td></tr>
+<tr><th id="559">559</th><td></td></tr>
+<tr><th id="560">560</th><td><em>static</em> <em>int</em> <dfn class="decl def fn" id="_ZL11create_pipePii" title='create_pipe' data-ref="_ZL11create_pipePii">create_pipe</dfn>(<em>int</em> <dfn class="local col7 decl" id="157filedes" title='filedes' data-type='int *' data-ref="157filedes">filedes</dfn>[], <em>int</em> <dfn class="local col8 decl" id="158flags" title='flags' data-type='int' data-ref="158flags">flags</dfn>)</td></tr>
+<tr><th id="561">561</th><td>{</td></tr>
+<tr><th id="562">562</th><td>    <em>int</em> <dfn class="local col9 decl" id="159ret" title='ret' data-type='int' data-ref="159ret">ret</dfn> = -<var>1</var>;</td></tr>
+<tr><th id="563">563</th><td><u>#<span data-ppcond="563">ifdef</span> <a class="macro" href="#64" data-ref="_M/HAVE_PIPE2">HAVE_PIPE2</a></u></td></tr>
+<tr><th id="564">564</th><td>    <i>/* use pipe2(2) whenever possible, since it can thread-safely create a</i></td></tr>
+<tr><th id="565">565</th><td><i>     * cloexec pair of pipes. Without it, we have a race condition setting</i></td></tr>
+<tr><th id="566">566</th><td><i>     * FD_CLOEXEC</i></td></tr>
+<tr><th id="567">567</th><td><i>     */</i></td></tr>
+<tr><th id="568">568</th><td></td></tr>
+<tr><th id="569">569</th><td><u>#  <span data-ppcond="569">ifdef</span> <span class="macro" data-ref="_M/O_NOSIGPIPE">O_NOSIGPIPE</span></u></td></tr>
+<tr><th id="570">570</th><td>    <i>/* try first with O_NOSIGPIPE */</i></td></tr>
+<tr><th id="571">571</th><td>    ret = pipe2(filedes, O_CLOEXEC | O_NOSIGPIPE);</td></tr>
+<tr><th id="572">572</th><td>    <b>if</b> (ret == -<var>1</var>) {</td></tr>
+<tr><th id="573">573</th><td>        <i>/* O_NOSIGPIPE not supported, ignore SIGPIPE */</i></td></tr>
+<tr><th id="574">574</th><td>        ignore_sigpipe();</td></tr>
+<tr><th id="575">575</th><td>    }</td></tr>
+<tr><th id="576">576</th><td><u>#  <span data-ppcond="569">endif</span></u></td></tr>
+<tr><th id="577">577</th><td>    <b>if</b> (<a class="local col9 ref" href="#159ret" title='ret' data-ref="159ret">ret</a> == -<var>1</var>)</td></tr>
+<tr><th id="578">578</th><td>        <a class="local col9 ref" href="#159ret" title='ret' data-ref="159ret">ret</a> = <a class="ref fn" href="../../../../include/unistd.h.html#pipe2" title='pipe2' data-ref="pipe2">pipe2</a>(<span class='inlayHint'>pipedes:&nbsp;</span><a class="local col7 ref" href="#157filedes" title='filedes' data-ref="157filedes">filedes</a>, <a class="macro" href="../../../../include/x86_64-linux-gnu/bits/fcntl-linux.h.html#144" title="02000000" data-ref="_M/O_CLOEXEC">O_CLOEXEC</a>);</td></tr>
+<tr><th id="579">579</th><td>    <b>if</b> (<a class="local col9 ref" href="#159ret" title='ret' data-ref="159ret">ret</a> == -<var>1</var>)</td></tr>
+<tr><th id="580">580</th><td>        <b>return</b> <a class="local col9 ref" href="#159ret" title='ret' data-ref="159ret">ret</a>;</td></tr>
+<tr><th id="581">581</th><td></td></tr>
+<tr><th id="582">582</th><td>    <b>if</b> ((<a class="local col8 ref" href="#158flags" title='flags' data-ref="158flags">flags</a> &amp; <a class="macro" href="forkfd.h.html#41" title="1" data-ref="_M/FFD_CLOEXEC">FFD_CLOEXEC</a>) == <var>0</var>)</td></tr>
+<tr><th id="583">583</th><td>        <a class="ref fn" href="../../../../include/fcntl.h.html#fcntl" title='fcntl' data-ref="fcntl">fcntl</a>(<span class='inlayHint'>fd:&nbsp;</span><a class="local col7 ref" href="#157filedes" title='filedes' data-ref="157filedes">filedes</a>[<var>0</var>], <a class="macro" href="../../../../include/x86_64-linux-gnu/bits/fcntl-linux.h.html#169" title="2" data-ref="_M/F_SETFD">F_SETFD</a>, <var>0</var>);</td></tr>
+<tr><th id="584">584</th><td><u>#<span data-ppcond="563">else</span></u></td></tr>
+<tr><th id="585">585</th><td>    ret = pipe(filedes);</td></tr>
+<tr><th id="586">586</th><td>    <b>if</b> (ret == -<var>1</var>)</td></tr>
+<tr><th id="587">587</th><td>        <b>return</b> ret;</td></tr>
+<tr><th id="588">588</th><td></td></tr>
+<tr><th id="589">589</th><td>    fcntl(filedes[<var>1</var>], F_SETFD, FD_CLOEXEC);</td></tr>
+<tr><th id="590">590</th><td>    <b>if</b> (flags &amp; FFD_CLOEXEC)</td></tr>
+<tr><th id="591">591</th><td>        fcntl(filedes[<var>0</var>], F_SETFD, FD_CLOEXEC);</td></tr>
+<tr><th id="592">592</th><td><u>#<span data-ppcond="563">endif</span></u></td></tr>
+<tr><th id="593">593</th><td>    <b>if</b> (<a class="local col8 ref" href="#158flags" title='flags' data-ref="158flags">flags</a> &amp; <a class="macro" href="forkfd.h.html#42" title="2" data-ref="_M/FFD_NONBLOCK">FFD_NONBLOCK</a>)</td></tr>
+<tr><th id="594">594</th><td>        <a class="ref fn" href="../../../../include/fcntl.h.html#fcntl" title='fcntl' data-ref="fcntl">fcntl</a>(<span class='inlayHint'>fd:&nbsp;</span><a class="local col7 ref" href="#157filedes" title='filedes' data-ref="157filedes">filedes</a>[<var>0</var>], <a class="macro" href="../../../../include/x86_64-linux-gnu/bits/fcntl-linux.h.html#171" title="4" data-ref="_M/F_SETFL">F_SETFL</a>, <a class="ref fn" href="../../../../include/fcntl.h.html#fcntl" title='fcntl' data-ref="fcntl">fcntl</a>(<span class='inlayHint'>fd:&nbsp;</span><a class="local col7 ref" href="#157filedes" title='filedes' data-ref="157filedes">filedes</a>[<var>0</var>], <a class="macro" href="../../../../include/x86_64-linux-gnu/bits/fcntl-linux.h.html#170" title="3" data-ref="_M/F_GETFL">F_GETFL</a>) | <a class="macro" href="../../../../include/x86_64-linux-gnu/bits/fcntl-linux.h.html#62" title="04000" data-ref="_M/O_NONBLOCK">O_NONBLOCK</a>);</td></tr>
+<tr><th id="595">595</th><td>    <b>return</b> <a class="local col9 ref" href="#159ret" title='ret' data-ref="159ret">ret</a>;</td></tr>
+<tr><th id="596">596</th><td>}</td></tr>
+<tr><th id="597">597</th><td></td></tr>
+<tr><th id="598">598</th><td><u>#<span data-ppcond="598">ifndef</span> <span class="macro" data-ref="_M/FORKFD_NO_FORKFD">FORKFD_NO_FORKFD</span></u></td></tr>
+<tr><th id="599">599</th><td><em>static</em> <em>int</em> <dfn class="decl def fn" id="_ZL20forkfd_fork_fallbackiPi" title='forkfd_fork_fallback' data-ref="_ZL20forkfd_fork_fallbackiPi">forkfd_fork_fallback</dfn>(<em>int</em> <dfn class="local col0 decl" id="160flags" title='flags' data-type='int' data-ref="160flags">flags</dfn>, <a class="typedef" href="../../../../include/x86_64-linux-gnu/sys/types.h.html#pid_t" title='pid_t' data-type='__pid_t' data-ref="pid_t">pid_t</a> *<dfn class="local col1 decl" id="161ppid" title='ppid' data-type='pid_t *' data-ref="161ppid">ppid</dfn>)</td></tr>
+<tr><th id="600">600</th><td>{</td></tr>
+<tr><th id="601">601</th><td>    <a class="typedef" href="#Header" title='Header' data-type='struct Header' data-ref="Header">Header</a> *<dfn class="local col2 decl" id="162header" title='header' data-type='Header *' data-ref="162header">header</dfn>;</td></tr>
+<tr><th id="602">602</th><td>    <a class="typedef" href="#ProcessInfo" title='ProcessInfo' data-type='struct process_info' data-ref="ProcessInfo">ProcessInfo</a> *<dfn class="local col3 decl" id="163info" title='info' data-type='ProcessInfo *' data-ref="163info">info</dfn>;</td></tr>
+<tr><th id="603">603</th><td>    <a class="typedef" href="../../../../include/x86_64-linux-gnu/sys/types.h.html#pid_t" title='pid_t' data-type='__pid_t' data-ref="pid_t">pid_t</a> <dfn class="local col4 decl" id="164pid" title='pid' data-type='pid_t' data-ref="164pid">pid</dfn>;</td></tr>
+<tr><th id="604">604</th><td>    <em>int</em> <dfn class="local col5 decl" id="165fd" title='fd' data-type='int' data-ref="165fd">fd</dfn> = -<var>1</var>;</td></tr>
+<tr><th id="605">605</th><td>    <em>int</em> <dfn class="local col6 decl" id="166death_pipe" title='death_pipe' data-type='int[2]' data-ref="166death_pipe">death_pipe</dfn>[<var>2</var>];</td></tr>
+<tr><th id="606">606</th><td>    <em>int</em> <dfn class="local col7 decl" id="167sync_pipe" title='sync_pipe' data-type='int[2]' data-ref="167sync_pipe">sync_pipe</dfn>[<var>2</var>];</td></tr>
+<tr><th id="607">607</th><td>    <em>int</em> <dfn class="local col8 decl" id="168ret" title='ret' data-type='int' data-ref="168ret">ret</dfn>;</td></tr>
+<tr><th id="608">608</th><td><u>#<span data-ppcond="608">ifdef</span> <span class="macro" data-ref="_M/__linux__">__linux__</span></u></td></tr>
+<tr><th id="609">609</th><td>    <em>int</em> <dfn class="local col9 decl" id="169efd" title='efd' data-type='int' data-ref="169efd">efd</dfn>;</td></tr>
+<tr><th id="610">610</th><td><u>#<span data-ppcond="608">endif</span></u></td></tr>
+<tr><th id="611">611</th><td></td></tr>
+<tr><th id="612">612</th><td>    (<em>void</em>) <a class="ref fn" href="../../../../include/pthread.h.html#pthread_once" title='pthread_once' data-ref="pthread_once">pthread_once</a>(<span class='inlayHint'>once_control:&nbsp;</span>&amp;<a class="ref" href="#forkfd_initialization" title='forkfd_initialization' data-ref="forkfd_initialization">forkfd_initialization</a>, <span class='inlayHint'>init_routine:&nbsp;</span><a class="ref fn" href="#_ZL17forkfd_initializev" title='forkfd_initialize' data-ref="_ZL17forkfd_initializev">forkfd_initialize</a>);</td></tr>
+<tr><th id="613">613</th><td></td></tr>
+<tr><th id="614">614</th><td>    <a class="local col3 ref" href="#163info" title='info' data-ref="163info">info</a> = <a class="ref fn" href="#_ZL12allocateInfoPP6Header" title='allocateInfo' data-ref="_ZL12allocateInfoPP6Header">allocateInfo</a>(<span class='inlayHint'>header:&nbsp;</span>&amp;<a class="local col2 ref" href="#162header" title='header' data-ref="162header">header</a>);</td></tr>
+<tr><th id="615">615</th><td>    <b>if</b> (<a class="local col3 ref" href="#163info" title='info' data-ref="163info">info</a> == <span class="macro" title="__null" data-ref="_M/NULL">NULL</span>) {</td></tr>
+<tr><th id="616">616</th><td>        <a class="macro" href="../../../../include/errno.h.html#38" title="(*__errno_location ())" data-ref="_M/errno">errno</a> = <a class="macro" href="../../../../include/asm-generic/errno-base.h.html#16" title="12" data-ref="_M/ENOMEM">ENOMEM</a>;</td></tr>
+<tr><th id="617">617</th><td>        <b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="618">618</th><td>    }</td></tr>
+<tr><th id="619">619</th><td></td></tr>
+<tr><th id="620">620</th><td>    <i>/* create the pipes before we fork */</i></td></tr>
+<tr><th id="621">621</th><td>    <b>if</b> (<a class="ref fn" href="#_ZL11create_pipePii" title='create_pipe' data-ref="_ZL11create_pipePii">create_pipe</a>(<span class='inlayHint'>filedes:&nbsp;</span><a class="local col6 ref" href="#166death_pipe" title='death_pipe' data-ref="166death_pipe">death_pipe</a>, <a class="local col0 ref" href="#160flags" title='flags' data-ref="160flags">flags</a>) == -<var>1</var>)</td></tr>
+<tr><th id="622">622</th><td>        <b>goto</b> <a class="lbl" href="#170err_free" data-ref="170err_free">err_free</a>; <i>/* failed to create the pipes, pass errno */</i></td></tr>
+<tr><th id="623">623</th><td></td></tr>
+<tr><th id="624">624</th><td><u>#<span data-ppcond="624">ifdef</span> <a class="macro" href="#59" data-ref="_M/HAVE_EVENTFD">HAVE_EVENTFD</a></u></td></tr>
+<tr><th id="625">625</th><td>    <i>/* try using an eventfd, which consumes less resources */</i></td></tr>
+<tr><th id="626">626</th><td>    <a class="local col9 ref" href="#169efd" title='efd' data-ref="169efd">efd</a> = <a class="ref fn" href="../../../../include/x86_64-linux-gnu/sys/eventfd.h.html#eventfd" title='eventfd' data-ref="eventfd">eventfd</a>(<span class='inlayHint'>count:&nbsp;</span><var>0</var>, <a class="macro" href="../../../../include/x86_64-linux-gnu/bits/eventfd.h.html#28" title="EFD_CLOEXEC" data-ref="_M/EFD_CLOEXEC">EFD_CLOEXEC</a>);</td></tr>
+<tr><th id="627">627</th><td>    <b>if</b> (<a class="local col9 ref" href="#169efd" title='efd' data-ref="169efd">efd</a> == -<var>1</var>)</td></tr>
+<tr><th id="628">628</th><td><u>#<span data-ppcond="624">endif</span></u></td></tr>
+<tr><th id="629">629</th><td>    {</td></tr>
+<tr><th id="630">630</th><td>        <i>/* try a pipe */</i></td></tr>
+<tr><th id="631">631</th><td>        <b>if</b> (<a class="ref fn" href="#_ZL11create_pipePii" title='create_pipe' data-ref="_ZL11create_pipePii">create_pipe</a>(<span class='inlayHint'>filedes:&nbsp;</span><a class="local col7 ref" href="#167sync_pipe" title='sync_pipe' data-ref="167sync_pipe">sync_pipe</a>, <a class="macro" href="forkfd.h.html#41" title="1" data-ref="_M/FFD_CLOEXEC">FFD_CLOEXEC</a>) == -<var>1</var>) {</td></tr>
+<tr><th id="632">632</th><td>            <i>/* failed both at eventfd and pipe; fail and pass errno */</i></td></tr>
+<tr><th id="633">633</th><td>            <b>goto</b> <a class="lbl" href="#171err_close" data-ref="171err_close">err_close</a>;</td></tr>
+<tr><th id="634">634</th><td>        }</td></tr>
+<tr><th id="635">635</th><td>    }</td></tr>
+<tr><th id="636">636</th><td></td></tr>
+<tr><th id="637">637</th><td>    <i>/* now fork */</i></td></tr>
+<tr><th id="638">638</th><td>    <a class="local col4 ref" href="#164pid" title='pid' data-ref="164pid">pid</a> = <a class="ref fn" href="../../../../include/unistd.h.html#fork" title='fork' data-ref="fork">fork</a>();</td></tr>
+<tr><th id="639">639</th><td>    <b>if</b> (<a class="local col4 ref" href="#164pid" title='pid' data-ref="164pid">pid</a> == -<var>1</var>)</td></tr>
+<tr><th id="640">640</th><td>        <b>goto</b> <a class="lbl" href="#172err_close2" data-ref="172err_close2">err_close2</a>; <i>/* failed to fork, pass errno */</i></td></tr>
+<tr><th id="641">641</th><td>    <b>if</b> (<a class="local col1 ref" href="#161ppid" title='ppid' data-ref="161ppid">ppid</a>)</td></tr>
+<tr><th id="642">642</th><td>        *<a class="local col1 ref" href="#161ppid" title='ppid' data-ref="161ppid">ppid</a> = <a class="local col4 ref" href="#164pid" title='pid' data-ref="164pid">pid</a>;</td></tr>
+<tr><th id="643">643</th><td></td></tr>
+<tr><th id="644">644</th><td>    <i>/*</i></td></tr>
+<tr><th id="645">645</th><td><i>     * We need to store the child's PID in the info structure, so</i></td></tr>
+<tr><th id="646">646</th><td><i>     * the SIGCHLD handler knows that this child is present and it</i></td></tr>
+<tr><th id="647">647</th><td><i>     * knows the writing end of the pipe to pass information on.</i></td></tr>
+<tr><th id="648">648</th><td><i>     * However, the child process could exit before we stored the</i></td></tr>
+<tr><th id="649">649</th><td><i>     * information (or the handler could run for other children exiting).</i></td></tr>
+<tr><th id="650">650</th><td><i>     * We prevent that from happening by blocking the child process in</i></td></tr>
+<tr><th id="651">651</th><td><i>     * a read(2) until we're finished storing the information.</i></td></tr>
+<tr><th id="652">652</th><td><i>     */</i></td></tr>
+<tr><th id="653">653</th><td>    <b>if</b> (<a class="local col4 ref" href="#164pid" title='pid' data-ref="164pid">pid</a> == <var>0</var>) {</td></tr>
+<tr><th id="654">654</th><td>        <i>/* this is the child process */</i></td></tr>
+<tr><th id="655">655</th><td>        <i>/* first, wait for the all clear */</i></td></tr>
+<tr><th id="656">656</th><td><u>#<span data-ppcond="656">ifdef</span> <a class="macro" href="#59" data-ref="_M/HAVE_EVENTFD">HAVE_EVENTFD</a></u></td></tr>
+<tr><th id="657">657</th><td>        <b>if</b> (<a class="local col9 ref" href="#169efd" title='efd' data-ref="169efd">efd</a> != -<var>1</var>) {</td></tr>
+<tr><th id="658">658</th><td>            <a class="typedef" href="../../../../include/x86_64-linux-gnu/sys/eventfd.h.html#eventfd_t" title='eventfd_t' data-type='uint64_t' data-ref="eventfd_t">eventfd_t</a> <dfn class="local col3 decl" id="173val64" title='val64' data-type='eventfd_t' data-ref="173val64">val64</dfn>;</td></tr>
+<tr><th id="659">659</th><td>            <a class="macro" href="#118" title="do { ret = eventfd_read(efd, &amp;val64); } while (ret == -1 &amp;&amp; (*__errno_location ()) == 4)" data-ref="_M/EINTR_LOOP">EINTR_LOOP</a>(<a class="local col8 ref" href="#168ret" title='ret' data-ref="168ret">ret</a>, <a class="ref fn" href="../../../../include/x86_64-linux-gnu/sys/eventfd.h.html#eventfd_read" title='eventfd_read' data-ref="eventfd_read">eventfd_read</a>(<a class="local col9 ref" href="#169efd" title='efd' data-ref="169efd">efd</a>, &amp;<a class="local col3 ref" href="#173val64" title='val64' data-ref="173val64">val64</a>));</td></tr>
+<tr><th id="660">660</th><td>            <a class="macro" href="#118" title="do { ret = close(efd); } while (ret == -1 &amp;&amp; (*__errno_location ()) == 4)" data-ref="_M/EINTR_LOOP">EINTR_LOOP</a>(<a class="local col8 ref" href="#168ret" title='ret' data-ref="168ret">ret</a>, <a class="ref fn" href="../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="local col9 ref" href="#169efd" title='efd' data-ref="169efd">efd</a>));</td></tr>
+<tr><th id="661">661</th><td>        } <b>else</b></td></tr>
+<tr><th id="662">662</th><td><u>#<span data-ppcond="656">endif</span></u></td></tr>
+<tr><th id="663">663</th><td>        {</td></tr>
+<tr><th id="664">664</th><td>            <em>char</em> <dfn class="local col4 decl" id="174c" title='c' data-type='char' data-ref="174c">c</dfn>;</td></tr>
+<tr><th id="665">665</th><td>            <a class="macro" href="#118" title="do { ret = close(sync_pipe[1]); } while (ret == -1 &amp;&amp; (*__errno_location ()) == 4)" data-ref="_M/EINTR_LOOP">EINTR_LOOP</a>(<a class="local col8 ref" href="#168ret" title='ret' data-ref="168ret">ret</a>, <a class="ref fn" href="../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="local col7 ref" href="#167sync_pipe" title='sync_pipe' data-ref="167sync_pipe">sync_pipe</a>[<var>1</var>]));</td></tr>
+<tr><th id="666">666</th><td>            <a class="macro" href="#118" title="do { ret = read(sync_pipe[0], &amp;c, sizeof c); } while (ret == -1 &amp;&amp; (*__errno_location ()) == 4)" data-ref="_M/EINTR_LOOP">EINTR_LOOP</a>(<a class="local col8 ref" href="#168ret" title='ret' data-ref="168ret">ret</a>, <a class="ref fn" href="../../../../include/unistd.h.html#read" title='read' data-ref="read">read</a>(<a class="local col7 ref" href="#167sync_pipe" title='sync_pipe' data-ref="167sync_pipe">sync_pipe</a>[<var>0</var>], &amp;<a class="local col4 ref" href="#174c" title='c' data-ref="174c">c</a>, <b>sizeof</b> <a class="local col4 ref" href="#174c" title='c' data-ref="174c">c</a>));</td></tr>
+<tr><th id="667">667</th><td>            <a class="macro" href="#118" title="do { ret = close(sync_pipe[0]); } while (ret == -1 &amp;&amp; (*__errno_location ()) == 4)" data-ref="_M/EINTR_LOOP">EINTR_LOOP</a>(<a class="local col8 ref" href="#168ret" title='ret' data-ref="168ret">ret</a>, <a class="ref fn" href="../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="local col7 ref" href="#167sync_pipe" title='sync_pipe' data-ref="167sync_pipe">sync_pipe</a>[<var>0</var>]));</td></tr>
+<tr><th id="668">668</th><td>        }</td></tr>
+<tr><th id="669">669</th><td></td></tr>
+<tr><th id="670">670</th><td>        <i>/* now close the pipes and return to the caller */</i></td></tr>
+<tr><th id="671">671</th><td>        <a class="macro" href="#118" title="do { ret = close(death_pipe[0]); } while (ret == -1 &amp;&amp; (*__errno_location ()) == 4)" data-ref="_M/EINTR_LOOP">EINTR_LOOP</a>(<a class="local col8 ref" href="#168ret" title='ret' data-ref="168ret">ret</a>, <a class="ref fn" href="../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="local col6 ref" href="#166death_pipe" title='death_pipe' data-ref="166death_pipe">death_pipe</a>[<var>0</var>]));</td></tr>
+<tr><th id="672">672</th><td>        <a class="macro" href="#118" title="do { ret = close(death_pipe[1]); } while (ret == -1 &amp;&amp; (*__errno_location ()) == 4)" data-ref="_M/EINTR_LOOP">EINTR_LOOP</a>(<a class="local col8 ref" href="#168ret" title='ret' data-ref="168ret">ret</a>, <a class="ref fn" href="../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="local col6 ref" href="#166death_pipe" title='death_pipe' data-ref="166death_pipe">death_pipe</a>[<var>1</var>]));</td></tr>
+<tr><th id="673">673</th><td>        <a class="local col5 ref" href="#165fd" title='fd' data-ref="165fd">fd</a> = <a class="macro" href="forkfd.h.html#45" title="(-2)" data-ref="_M/FFD_CHILD_PROCESS">FFD_CHILD_PROCESS</a>;</td></tr>
+<tr><th id="674">674</th><td>    } <b>else</b> {</td></tr>
+<tr><th id="675">675</th><td>        <i>/* parent process */</i></td></tr>
+<tr><th id="676">676</th><td>        <a class="local col3 ref" href="#163info" title='info' data-ref="163info">info</a>-&gt;<a class="ref field" href="#process_info::deathPipe" title='process_info::deathPipe' data-ref="process_info::deathPipe">deathPipe</a> = <a class="local col6 ref" href="#166death_pipe" title='death_pipe' data-ref="166death_pipe">death_pipe</a>[<var>1</var>];</td></tr>
+<tr><th id="677">677</th><td>        <a class="local col5 ref" href="#165fd" title='fd' data-ref="165fd">fd</a> = <a class="local col6 ref" href="#166death_pipe" title='death_pipe' data-ref="166death_pipe">death_pipe</a>[<var>0</var>];</td></tr>
+<tr><th id="678">678</th><td>        <a class="macro" href="forkfd_c11.h.html#59" title="atomic_store_explicit(&amp;info-&gt;pid, pid, std::memory_order_release)" data-ref="_M/ffd_atomic_store">ffd_atomic_store</a>(&amp;<a class="local col3 ref" href="#163info" title='info' data-ref="163info">info</a>-&gt;<a class="ref field" href="#process_info::pid" title='process_info::pid' data-ref="process_info::pid">pid</a>, <a class="local col4 ref" href="#164pid" title='pid' data-ref="164pid">pid</a>, <a class="macro" href="forkfd_c11.h.html#37" title="std::memory_order_release" data-ref="_M/FFD_ATOMIC_RELEASE">FFD_ATOMIC_RELEASE</a>);</td></tr>
+<tr><th id="679">679</th><td></td></tr>
+<tr><th id="680">680</th><td>        <i>/* release the child */</i></td></tr>
+<tr><th id="681">681</th><td><u>#<span data-ppcond="681">ifdef</span> <a class="macro" href="#59" data-ref="_M/HAVE_EVENTFD">HAVE_EVENTFD</a></u></td></tr>
+<tr><th id="682">682</th><td>        <b>if</b> (<a class="local col9 ref" href="#169efd" title='efd' data-ref="169efd">efd</a> != -<var>1</var>) {</td></tr>
+<tr><th id="683">683</th><td>            <a class="typedef" href="../../../../include/x86_64-linux-gnu/sys/eventfd.h.html#eventfd_t" title='eventfd_t' data-type='uint64_t' data-ref="eventfd_t">eventfd_t</a> <dfn class="local col5 decl" id="175val64" title='val64' data-type='eventfd_t' data-ref="175val64">val64</dfn> = <var>42</var>;</td></tr>
+<tr><th id="684">684</th><td>            <a class="macro" href="#118" title="do { ret = eventfd_write(efd, val64); } while (ret == -1 &amp;&amp; (*__errno_location ()) == 4)" data-ref="_M/EINTR_LOOP">EINTR_LOOP</a>(<a class="local col8 ref" href="#168ret" title='ret' data-ref="168ret">ret</a>, <a class="ref fn" href="../../../../include/x86_64-linux-gnu/sys/eventfd.h.html#eventfd_write" title='eventfd_write' data-ref="eventfd_write">eventfd_write</a>(<a class="local col9 ref" href="#169efd" title='efd' data-ref="169efd">efd</a>, <a class="local col5 ref" href="#175val64" title='val64' data-ref="175val64">val64</a>));</td></tr>
+<tr><th id="685">685</th><td>            <a class="macro" href="#118" title="do { ret = close(efd); } while (ret == -1 &amp;&amp; (*__errno_location ()) == 4)" data-ref="_M/EINTR_LOOP">EINTR_LOOP</a>(<a class="local col8 ref" href="#168ret" title='ret' data-ref="168ret">ret</a>, <a class="ref fn" href="../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="local col9 ref" href="#169efd" title='efd' data-ref="169efd">efd</a>));</td></tr>
+<tr><th id="686">686</th><td>        } <b>else</b></td></tr>
+<tr><th id="687">687</th><td><u>#<span data-ppcond="681">endif</span></u></td></tr>
+<tr><th id="688">688</th><td>        {</td></tr>
+<tr><th id="689">689</th><td>            <i>/*</i></td></tr>
+<tr><th id="690">690</th><td><i>             * Usually, closing would be enough to make read(2) return and the child process</i></td></tr>
+<tr><th id="691">691</th><td><i>             * continue. We need to write here: another thread could be calling forkfd at the</i></td></tr>
+<tr><th id="692">692</th><td><i>             * same time, which means auxpipe[1] might be open in another child process.</i></td></tr>
+<tr><th id="693">693</th><td><i>             */</i></td></tr>
+<tr><th id="694">694</th><td>            <a class="macro" href="#118" title="do { ret = close(sync_pipe[0]); } while (ret == -1 &amp;&amp; (*__errno_location ()) == 4)" data-ref="_M/EINTR_LOOP">EINTR_LOOP</a>(<a class="local col8 ref" href="#168ret" title='ret' data-ref="168ret">ret</a>, <a class="ref fn" href="../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="local col7 ref" href="#167sync_pipe" title='sync_pipe' data-ref="167sync_pipe">sync_pipe</a>[<var>0</var>]));</td></tr>
+<tr><th id="695">695</th><td>            <a class="macro" href="#118" title="do { ret = write(sync_pipe[1], &quot;&quot;, 1); } while (ret == -1 &amp;&amp; (*__errno_location ()) == 4)" data-ref="_M/EINTR_LOOP">EINTR_LOOP</a>(<a class="local col8 ref" href="#168ret" title='ret' data-ref="168ret">ret</a>, <a class="ref fn" href="../../../../include/unistd.h.html#write" title='write' data-ref="write">write</a>(<a class="local col7 ref" href="#167sync_pipe" title='sync_pipe' data-ref="167sync_pipe">sync_pipe</a>[<var>1</var>], <q>""</q>, <var>1</var>));</td></tr>
+<tr><th id="696">696</th><td>            <a class="macro" href="#118" title="do { ret = close(sync_pipe[1]); } while (ret == -1 &amp;&amp; (*__errno_location ()) == 4)" data-ref="_M/EINTR_LOOP">EINTR_LOOP</a>(<a class="local col8 ref" href="#168ret" title='ret' data-ref="168ret">ret</a>, <a class="ref fn" href="../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="local col7 ref" href="#167sync_pipe" title='sync_pipe' data-ref="167sync_pipe">sync_pipe</a>[<var>1</var>]));</td></tr>
+<tr><th id="697">697</th><td>        }</td></tr>
+<tr><th id="698">698</th><td>    }</td></tr>
+<tr><th id="699">699</th><td></td></tr>
+<tr><th id="700">700</th><td>    <b>return</b> <a class="local col5 ref" href="#165fd" title='fd' data-ref="165fd">fd</a>;</td></tr>
+<tr><th id="701">701</th><td></td></tr>
+<tr><th id="702">702</th><td><dfn class="lbl" id="172err_close2" data-ref="172err_close2">err_close2</dfn>:</td></tr>
+<tr><th id="703">703</th><td><u>#<span data-ppcond="703">ifdef</span> <a class="macro" href="#59" data-ref="_M/HAVE_EVENTFD">HAVE_EVENTFD</a></u></td></tr>
+<tr><th id="704">704</th><td>    <b>if</b> (<a class="local col9 ref" href="#169efd" title='efd' data-ref="169efd">efd</a> != -<var>1</var>) {</td></tr>
+<tr><th id="705">705</th><td>        <a class="macro" href="#118" title="do { ret = close(efd); } while (ret == -1 &amp;&amp; (*__errno_location ()) == 4)" data-ref="_M/EINTR_LOOP">EINTR_LOOP</a>(<a class="local col8 ref" href="#168ret" title='ret' data-ref="168ret">ret</a>, <a class="ref fn" href="../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="local col9 ref" href="#169efd" title='efd' data-ref="169efd">efd</a>));</td></tr>
+<tr><th id="706">706</th><td>    } <b>else</b></td></tr>
+<tr><th id="707">707</th><td><u>#<span data-ppcond="703">endif</span></u></td></tr>
+<tr><th id="708">708</th><td>    {</td></tr>
+<tr><th id="709">709</th><td>        <a class="macro" href="#118" title="do { ret = close(sync_pipe[0]); } while (ret == -1 &amp;&amp; (*__errno_location ()) == 4)" data-ref="_M/EINTR_LOOP">EINTR_LOOP</a>(<a class="local col8 ref" href="#168ret" title='ret' data-ref="168ret">ret</a>, <a class="ref fn" href="../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="local col7 ref" href="#167sync_pipe" title='sync_pipe' data-ref="167sync_pipe">sync_pipe</a>[<var>0</var>]));</td></tr>
+<tr><th id="710">710</th><td>        <a class="macro" href="#118" title="do { ret = close(sync_pipe[1]); } while (ret == -1 &amp;&amp; (*__errno_location ()) == 4)" data-ref="_M/EINTR_LOOP">EINTR_LOOP</a>(<a class="local col8 ref" href="#168ret" title='ret' data-ref="168ret">ret</a>, <a class="ref fn" href="../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="local col7 ref" href="#167sync_pipe" title='sync_pipe' data-ref="167sync_pipe">sync_pipe</a>[<var>1</var>]));</td></tr>
+<tr><th id="711">711</th><td>    }</td></tr>
+<tr><th id="712">712</th><td><dfn class="lbl" id="171err_close" data-ref="171err_close">err_close</dfn>:</td></tr>
+<tr><th id="713">713</th><td>    <a class="macro" href="#118" title="do { ret = close(death_pipe[0]); } while (ret == -1 &amp;&amp; (*__errno_location ()) == 4)" data-ref="_M/EINTR_LOOP">EINTR_LOOP</a>(<a class="local col8 ref" href="#168ret" title='ret' data-ref="168ret">ret</a>, <a class="ref fn" href="../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="local col6 ref" href="#166death_pipe" title='death_pipe' data-ref="166death_pipe">death_pipe</a>[<var>0</var>]));</td></tr>
+<tr><th id="714">714</th><td>    <a class="macro" href="#118" title="do { ret = close(death_pipe[1]); } while (ret == -1 &amp;&amp; (*__errno_location ()) == 4)" data-ref="_M/EINTR_LOOP">EINTR_LOOP</a>(<a class="local col8 ref" href="#168ret" title='ret' data-ref="168ret">ret</a>, <a class="ref fn" href="../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<a class="local col6 ref" href="#166death_pipe" title='death_pipe' data-ref="166death_pipe">death_pipe</a>[<var>1</var>]));</td></tr>
+<tr><th id="715">715</th><td><dfn class="lbl" id="170err_free" data-ref="170err_free">err_free</dfn>:</td></tr>
+<tr><th id="716">716</th><td>    <i>/* free the info pointer */</i></td></tr>
+<tr><th id="717">717</th><td>    <a class="ref fn" href="#_ZL8freeInfoP6HeaderP12process_info" title='freeInfo' data-ref="_ZL8freeInfoP6HeaderP12process_info">freeInfo</a>(<a class="local col2 ref" href="#162header" title='header' data-ref="162header">header</a>, <span class='inlayHint'>entry:&nbsp;</span><a class="local col3 ref" href="#163info" title='info' data-ref="163info">info</a>);</td></tr>
+<tr><th id="718">718</th><td>    <b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="719">719</th><td>}</td></tr>
+<tr><th id="720">720</th><td></td></tr>
+<tr><th id="721">721</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="722">722</th><td><i class="doc"> * <span class="command">@brief</span> forkfd returns a file descriptor representing a child process</i></td></tr>
+<tr><th id="723">723</th><td><i class="doc"> * <span class="command">@return</span> a file descriptor, or -1 in case of failure</i></td></tr>
+<tr><th id="724">724</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="725">725</th><td><i class="doc"> * forkfd() creates a file descriptor that can be used to be notified of when a</i></td></tr>
+<tr><th id="726">726</th><td><i class="doc"> * child process exits. This file descriptor can be monitored using select(2),</i></td></tr>
+<tr><th id="727">727</th><td><i class="doc"> * poll(2) or similar mechanisms.</i></td></tr>
+<tr><th id="728">728</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="729">729</th><td><i class="doc"> * The<span class="command"> @a</span> <span class="arg">flags</span> parameter can contain the following values ORed to change the</i></td></tr>
+<tr><th id="730">730</th><td><i class="doc"> * behaviour of forkfd():</i></td></tr>
+<tr><th id="731">731</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="732">732</th><td><i class="doc"> * <span class="command">@li</span><span class="command"> @c</span> <span class="arg">FFD_NONBLOCK</span> Set the O_NONBLOCK file status flag on the new open file</i></td></tr>
+<tr><th id="733">733</th><td><i class="doc"> * descriptor. Using this flag saves extra calls to fnctl(2) to achieve the same</i></td></tr>
+<tr><th id="734">734</th><td><i class="doc"> * result.</i></td></tr>
+<tr><th id="735">735</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="736">736</th><td><i class="doc"> * <span class="command">@li</span><span class="command"> @c</span> <span class="arg">FFD_CLOEXEC</span> Set the close-on-exec (FD_CLOEXEC) flag on the new file</i></td></tr>
+<tr><th id="737">737</th><td><i class="doc"> * descriptor. You probably want to set this flag, since forkfd() does not work</i></td></tr>
+<tr><th id="738">738</th><td><i class="doc"> * if the original parent process dies.</i></td></tr>
+<tr><th id="739">739</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="740">740</th><td><i class="doc"> * <span class="command">@li</span><span class="command"> @c</span> <span class="arg">FFD_USE_FORK</span> Tell forkfd() to actually call fork() instead of a</i></td></tr>
+<tr><th id="741">741</th><td><i class="doc"> * different system implementation that may be available. On systems where a</i></td></tr>
+<tr><th id="742">742</th><td><i class="doc"> * different implementation is available, its behavior may differ from that of</i></td></tr>
+<tr><th id="743">743</th><td><i class="doc"> * fork(), such as not calling the functions registered with pthread_atfork().</i></td></tr>
+<tr><th id="744">744</th><td><i class="doc"> * If that's necessary, pass this flag.</i></td></tr>
+<tr><th id="745">745</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="746">746</th><td><i class="doc"> * The file descriptor returned by forkfd() supports the following operations:</i></td></tr>
+<tr><th id="747">747</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="748">748</th><td><i class="doc"> * <span class="command">@li</span> read(2) When the child process exits, then the buffer supplied to</i></td></tr>
+<tr><th id="749">749</th><td><i class="doc"> * read(2) is used to return information about the status of the child in the</i></td></tr>
+<tr><th id="750">750</th><td><i class="doc"> * form of one<span class="command"> @c</span> <span class="arg">siginfo_t</span> structure. The buffer must be at least</i></td></tr>
+<tr><th id="751">751</th><td><i class="doc"> * sizeof(siginfo_t) bytes. The return value of read(2) is the total number of</i></td></tr>
+<tr><th id="752">752</th><td><i class="doc"> * bytes read.</i></td></tr>
+<tr><th id="753">753</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="754">754</th><td><i class="doc"> * <span class="command">@li</span> poll(2), select(2) (and similar) The file descriptor is readable (the</i></td></tr>
+<tr><th id="755">755</th><td><i class="doc"> * select(2) readfds argument; the poll(2) POLLIN flag) if the child has exited</i></td></tr>
+<tr><th id="756">756</th><td><i class="doc"> * or signalled via SIGCHLD.</i></td></tr>
+<tr><th id="757">757</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="758">758</th><td><i class="doc"> * <span class="command">@li</span> close(2) When the file descriptor is no longer required it should be closed.</i></td></tr>
+<tr><th id="759">759</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="760">760</th><td><em>int</em> <dfn class="decl def fn" id="forkfd" title='forkfd' data-ref="forkfd">forkfd</dfn>(<em>int</em> <dfn class="local col6 decl" id="176flags" title='flags' data-type='int' data-ref="176flags">flags</dfn>, <a class="typedef" href="../../../../include/x86_64-linux-gnu/sys/types.h.html#pid_t" title='pid_t' data-type='__pid_t' data-ref="pid_t">pid_t</a> *<dfn class="local col7 decl" id="177ppid" title='ppid' data-type='pid_t *' data-ref="177ppid">ppid</dfn>)</td></tr>
+<tr><th id="761">761</th><td>{</td></tr>
+<tr><th id="762">762</th><td>    <em>int</em> <dfn class="local col8 decl" id="178fd" title='fd' data-type='int' data-ref="178fd">fd</dfn>;</td></tr>
+<tr><th id="763">763</th><td>    <b>if</b> (<a class="ref fn" href="#_ZL21disable_fork_fallbackv" title='disable_fork_fallback' data-ref="_ZL21disable_fork_fallbackv">disable_fork_fallback</a>())</td></tr>
+<tr><th id="764">764</th><td>        <a class="local col6 ref" href="#176flags" title='flags' data-ref="176flags">flags</a> &amp;= ~<a class="macro" href="forkfd.h.html#43" title="4" data-ref="_M/FFD_USE_FORK">FFD_USE_FORK</a>;</td></tr>
+<tr><th id="765">765</th><td></td></tr>
+<tr><th id="766">766</th><td>    <b>if</b> ((<a class="local col6 ref" href="#176flags" title='flags' data-ref="176flags">flags</a> &amp; <a class="macro" href="forkfd.h.html#43" title="4" data-ref="_M/FFD_USE_FORK">FFD_USE_FORK</a>) == <var>0</var>) {</td></tr>
+<tr><th id="767">767</th><td>        <em>int</em> <dfn class="local col9 decl" id="179system_forkfd_works" title='system_forkfd_works' data-type='int' data-ref="179system_forkfd_works">system_forkfd_works</dfn>;</td></tr>
+<tr><th id="768">768</th><td>        <a class="local col8 ref" href="#178fd" title='fd' data-ref="178fd">fd</a> = <a class="ref fn" href="forkfd_linux.c.html#_ZL13system_forkfdiPiS_" title='system_forkfd' data-ref="_ZL13system_forkfdiPiS_">system_forkfd</a>(<a class="local col6 ref" href="#176flags" title='flags' data-ref="176flags">flags</a>, <a class="local col7 ref" href="#177ppid" title='ppid' data-ref="177ppid">ppid</a>, <span class='inlayHint'>system:&nbsp;</span>&amp;<a class="local col9 ref" href="#179system_forkfd_works" title='system_forkfd_works' data-ref="179system_forkfd_works">system_forkfd_works</a>);</td></tr>
+<tr><th id="769">769</th><td>        <b>if</b> (<a class="local col9 ref" href="#179system_forkfd_works" title='system_forkfd_works' data-ref="179system_forkfd_works">system_forkfd_works</a> || <a class="ref fn" href="#_ZL21disable_fork_fallbackv" title='disable_fork_fallback' data-ref="_ZL21disable_fork_fallbackv">disable_fork_fallback</a>())</td></tr>
+<tr><th id="770">770</th><td>            <b>return</b> <a class="local col8 ref" href="#178fd" title='fd' data-ref="178fd">fd</a>;</td></tr>
+<tr><th id="771">771</th><td>    }</td></tr>
+<tr><th id="772">772</th><td></td></tr>
+<tr><th id="773">773</th><td>    <b>return</b> <a class="ref fn" href="#_ZL20forkfd_fork_fallbackiPi" title='forkfd_fork_fallback' data-ref="_ZL20forkfd_fork_fallbackiPi">forkfd_fork_fallback</a>(<a class="local col6 ref" href="#176flags" title='flags' data-ref="176flags">flags</a>, <a class="local col7 ref" href="#177ppid" title='ppid' data-ref="177ppid">ppid</a>);</td></tr>
+<tr><th id="774">774</th><td>}</td></tr>
+<tr><th id="775">775</th><td></td></tr>
+<tr><th id="776">776</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="777">777</th><td><i class="doc"> * <span class="command">@brief</span> vforkfd returns a file descriptor representing a child process</i></td></tr>
+<tr><th id="778">778</th><td><i class="doc"> * <span class="command">@return</span> a file descriptor, or -1 in case of failure</i></td></tr>
+<tr><th id="779">779</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="780">780</th><td><i class="doc"> * vforkfd() operates in the same way as forkfd() and the<span class="command"> @a</span> <span class="arg">flags</span> and<span class="command"> @a</span> <span class="arg">ppid</span></i></td></tr>
+<tr><th id="781">781</th><td><i class="doc"> * arguments are the same. See the forkfd() documentation for details on the</i></td></tr>
+<tr><th id="782">782</th><td><i class="doc"> * possible values and information on the returned file descriptor.</i></td></tr>
+<tr><th id="783">783</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="784">784</th><td><i class="doc"> * This function does not return<span class="command"> @c</span> <span class="arg">FFD_CHILD_PROCESS.</span> Instead, the function<span class="command"> @a</span></i></td></tr>
+<tr><th id="785">785</th><td><i class="doc"> * <span class="arg">childFn</span> is called in the child process with the<span class="command"> @a</span> <span class="arg">token</span> parameter as</i></td></tr>
+<tr><th id="786">786</th><td><i class="doc"> * argument. If that function returns, its return value will be passed to</i></td></tr>
+<tr><th id="787">787</th><td><i class="doc"> * _exit(2).</i></td></tr>
+<tr><th id="788">788</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="789">789</th><td><i class="doc"> * This function differs from forkfd() the same way that vfork() differs from</i></td></tr>
+<tr><th id="790">790</th><td><i class="doc"> * fork(): the parent process may be suspended while the child is has not yet</i></td></tr>
+<tr><th id="791">791</th><td><i class="doc"> * called _exit(2) or execve(2). Additionally, on some systems, the child</i></td></tr>
+<tr><th id="792">792</th><td><i class="doc"> * process may share memory with the parent process the same way an auxiliary</i></td></tr>
+<tr><th id="793">793</th><td><i class="doc"> * thread would, so extreme care should be employed on what functions the child</i></td></tr>
+<tr><th id="794">794</th><td><i class="doc"> * process uses before termination.</i></td></tr>
+<tr><th id="795">795</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="796">796</th><td><i class="doc"> * The<span class="command"> @c</span> <span class="arg">FFD_USE_FORK</span> flag retains its behavior as described in the forkfd()</i></td></tr>
+<tr><th id="797">797</th><td><i class="doc"> * documentation, including that of actually using fork(2) and no other</i></td></tr>
+<tr><th id="798">798</th><td><i class="doc"> * implementation.</i></td></tr>
+<tr><th id="799">799</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="800">800</th><td><i class="doc"> * Currently, only on Linux will this function have any behavior different from</i></td></tr>
+<tr><th id="801">801</th><td><i class="doc"> * forkfd(). In all other systems, it is equivalent to the following code:</i></td></tr>
+<tr><th id="802">802</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="803">803</th><td><i class="doc"> * <span class="command">@code</span></i></td></tr>
+<tr><th id="804">804</th><td><i class="doc"> *<span class="verb">     int ffd = forkfd(flags, &amp;pid);</span></i></td></tr>
+<tr><th id="805">805</th><td><i class="doc"><span class="verb"></span> *<span class="verb">     if (ffd == FFD_CHILD_PROCESS)</span></i></td></tr>
+<tr><th id="806">806</th><td><i class="doc"><span class="verb"></span> *<span class="verb">         _exit(childFn(token));</span></i></td></tr>
+<tr><th id="807">807</th><td><i class="doc"><span class="verb"></span> * @endcode</i></td></tr>
+<tr><th id="808">808</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="809">809</th><td><em>int</em> <dfn class="decl def fn" id="vforkfd" title='vforkfd' data-ref="vforkfd">vforkfd</dfn>(<em>int</em> <dfn class="local col0 decl" id="180flags" title='flags' data-type='int' data-ref="180flags">flags</dfn>, <a class="typedef" href="../../../../include/x86_64-linux-gnu/sys/types.h.html#pid_t" title='pid_t' data-type='__pid_t' data-ref="pid_t">pid_t</a> *<dfn class="local col1 decl" id="181ppid" title='ppid' data-type='pid_t *' data-ref="181ppid">ppid</dfn>, <em>int</em> (*<dfn class="local col2 decl" id="182childFn" title='childFn' data-type='int (*)(void *)' data-ref="182childFn">childFn</dfn>)(<em>void</em> *), <em>void</em> *<dfn class="local col3 decl" id="183token" title='token' data-type='void *' data-ref="183token">token</dfn>)</td></tr>
+<tr><th id="810">810</th><td>{</td></tr>
+<tr><th id="811">811</th><td>    <em>int</em> <dfn class="local col4 decl" id="184fd" title='fd' data-type='int' data-ref="184fd">fd</dfn>;</td></tr>
+<tr><th id="812">812</th><td>    <b>if</b> ((<a class="local col0 ref" href="#180flags" title='flags' data-ref="180flags">flags</a> &amp; <a class="macro" href="forkfd.h.html#43" title="4" data-ref="_M/FFD_USE_FORK">FFD_USE_FORK</a>) == <var>0</var>) {</td></tr>
+<tr><th id="813">813</th><td>        <em>int</em> <dfn class="local col5 decl" id="185system_forkfd_works" title='system_forkfd_works' data-type='int' data-ref="185system_forkfd_works">system_forkfd_works</dfn>;</td></tr>
+<tr><th id="814">814</th><td>        <a class="local col4 ref" href="#184fd" title='fd' data-ref="184fd">fd</a> = <a class="ref fn" href="forkfd_linux.c.html#_ZL14system_vforkfdiPiPFiPvES0_S_" title='system_vforkfd' data-ref="_ZL14system_vforkfdiPiPFiPvES0_S_">system_vforkfd</a>(<a class="local col0 ref" href="#180flags" title='flags' data-ref="180flags">flags</a>, <a class="local col1 ref" href="#181ppid" title='ppid' data-ref="181ppid">ppid</a>, <a class="local col2 ref" href="#182childFn" title='childFn' data-ref="182childFn">childFn</a>, <a class="local col3 ref" href="#183token" title='token' data-ref="183token">token</a>, <span class='inlayHint'>system:&nbsp;</span>&amp;<a class="local col5 ref" href="#185system_forkfd_works" title='system_forkfd_works' data-ref="185system_forkfd_works">system_forkfd_works</a>);</td></tr>
+<tr><th id="815">815</th><td>        <b>if</b> (<a class="local col5 ref" href="#185system_forkfd_works" title='system_forkfd_works' data-ref="185system_forkfd_works">system_forkfd_works</a> || <a class="ref fn" href="#_ZL21disable_fork_fallbackv" title='disable_fork_fallback' data-ref="_ZL21disable_fork_fallbackv">disable_fork_fallback</a>())</td></tr>
+<tr><th id="816">816</th><td>            <b>return</b> <a class="local col4 ref" href="#184fd" title='fd' data-ref="184fd">fd</a>;</td></tr>
+<tr><th id="817">817</th><td>    }</td></tr>
+<tr><th id="818">818</th><td></td></tr>
+<tr><th id="819">819</th><td>    <a class="local col4 ref" href="#184fd" title='fd' data-ref="184fd">fd</a> = <a class="ref fn" href="#_ZL20forkfd_fork_fallbackiPi" title='forkfd_fork_fallback' data-ref="_ZL20forkfd_fork_fallbackiPi">forkfd_fork_fallback</a>(<a class="local col0 ref" href="#180flags" title='flags' data-ref="180flags">flags</a>, <a class="local col1 ref" href="#181ppid" title='ppid' data-ref="181ppid">ppid</a>);</td></tr>
+<tr><th id="820">820</th><td>    <b>if</b> (<a class="local col4 ref" href="#184fd" title='fd' data-ref="184fd">fd</a> == <a class="macro" href="forkfd.h.html#45" title="(-2)" data-ref="_M/FFD_CHILD_PROCESS">FFD_CHILD_PROCESS</a>) {</td></tr>
+<tr><th id="821">821</th><td>        <i>/* child process */</i></td></tr>
+<tr><th id="822">822</th><td>        <a class="ref fn" href="../../../../include/unistd.h.html#_exit" title='_exit' data-ref="_exit">_exit</a>(<span class='inlayHint'>status:&nbsp;</span><a class="local col2 ref" href="#182childFn" title='childFn' data-ref="182childFn">childFn</a>(<a class="local col3 ref" href="#183token" title='token' data-ref="183token">token</a>));</td></tr>
+<tr><th id="823">823</th><td>    }</td></tr>
+<tr><th id="824">824</th><td>    <b>return</b> <a class="local col4 ref" href="#184fd" title='fd' data-ref="184fd">fd</a>;</td></tr>
+<tr><th id="825">825</th><td>}</td></tr>
+<tr><th id="826">826</th><td><u>#<span data-ppcond="598">endif</span> // FORKFD_NO_FORKFD</u></td></tr>
+<tr><th id="827">827</th><td></td></tr>
+<tr><th id="828">828</th><td><u>#<span data-ppcond="828">if</span> <a class="macro" href="../../../../include/x86_64-linux-gnu/bits/posix_opt.h.html#149" title="200809L" data-ref="_M/_POSIX_SPAWN">_POSIX_SPAWN</a> &gt; 0 &amp;&amp; !defined(<a class="macro" href="../../corelib/io/forkfd_qt.cpp.html#6" data-ref="_M/FORKFD_NO_SPAWNFD">FORKFD_NO_SPAWNFD</a>)</u></td></tr>
+<tr><th id="829">829</th><td><em>int</em> spawnfd(<em>int</em> flags, pid_t *ppid, <em>const</em> <em>char</em> *path, <em>const</em> posix_spawn_file_actions_t *file_actions,</td></tr>
+<tr><th id="830">830</th><td>            posix_spawnattr_t *attrp, <em>char</em> *<em>const</em> argv[], <em>char</em> *<em>const</em> envp[])</td></tr>
+<tr><th id="831">831</th><td>{</td></tr>
+<tr><th id="832">832</th><td>    Header *header;</td></tr>
+<tr><th id="833">833</th><td>    ProcessInfo *info;</td></tr>
+<tr><th id="834">834</th><td>    <b>struct</b> pipe_payload payload;</td></tr>
+<tr><th id="835">835</th><td>    pid_t pid;</td></tr>
+<tr><th id="836">836</th><td>    <em>int</em> death_pipe[<var>2</var>];</td></tr>
+<tr><th id="837">837</th><td>    <em>int</em> ret = -<var>1</var>;</td></tr>
+<tr><th id="838">838</th><td>    <i>/* we can only do work if we have a way to start the child in stopped mode;</i></td></tr>
+<tr><th id="839">839</th><td><i>     * otherwise, we have a major race condition. */</i></td></tr>
+<tr><th id="840">840</th><td></td></tr>
+<tr><th id="841">841</th><td>    assert(!system_has_forkfd());</td></tr>
+<tr><th id="842">842</th><td></td></tr>
+<tr><th id="843">843</th><td>    (<em>void</em>) pthread_once(&amp;forkfd_initialization, forkfd_initialize);</td></tr>
+<tr><th id="844">844</th><td></td></tr>
+<tr><th id="845">845</th><td>    info = allocateInfo(&amp;header);</td></tr>
+<tr><th id="846">846</th><td>    <b>if</b> (info == NULL) {</td></tr>
+<tr><th id="847">847</th><td>        errno = ENOMEM;</td></tr>
+<tr><th id="848">848</th><td>        <b>goto</b> out;</td></tr>
+<tr><th id="849">849</th><td>    }</td></tr>
+<tr><th id="850">850</th><td></td></tr>
+<tr><th id="851">851</th><td>    <i>/* create the pipe before we spawn */</i></td></tr>
+<tr><th id="852">852</th><td>    <b>if</b> (create_pipe(death_pipe, flags) == -<var>1</var>)</td></tr>
+<tr><th id="853">853</th><td>        <b>goto</b> err_free; <i>/* failed to create the pipes, pass errno */</i></td></tr>
+<tr><th id="854">854</th><td></td></tr>
+<tr><th id="855">855</th><td>    <i>/* start the process */</i></td></tr>
+<tr><th id="856">856</th><td>    <b>if</b> (flags &amp; FFD_SPAWN_SEARCH_PATH) {</td></tr>
+<tr><th id="857">857</th><td>        <i>/* use posix_spawnp */</i></td></tr>
+<tr><th id="858">858</th><td>        <b>if</b> (posix_spawnp(&amp;pid, path, file_actions, attrp, argv, envp) != <var>0</var>)</td></tr>
+<tr><th id="859">859</th><td>            <b>goto</b> err_close;</td></tr>
+<tr><th id="860">860</th><td>    } <b>else</b> {</td></tr>
+<tr><th id="861">861</th><td>        <b>if</b> (posix_spawn(&amp;pid, path, file_actions, attrp, argv, envp) != <var>0</var>)</td></tr>
+<tr><th id="862">862</th><td>            <b>goto</b> err_close;</td></tr>
+<tr><th id="863">863</th><td>    }</td></tr>
+<tr><th id="864">864</th><td></td></tr>
+<tr><th id="865">865</th><td>    <b>if</b> (ppid)</td></tr>
+<tr><th id="866">866</th><td>        *ppid = pid;</td></tr>
+<tr><th id="867">867</th><td></td></tr>
+<tr><th id="868">868</th><td>    <i>/* Store the child's PID in the info structure.</i></td></tr>
+<tr><th id="869">869</th><td><i>     */</i></td></tr>
+<tr><th id="870">870</th><td>    info-&gt;deathPipe = death_pipe[<var>1</var>];</td></tr>
+<tr><th id="871">871</th><td>    ffd_atomic_store(&amp;info-&gt;pid, pid, FFD_ATOMIC_RELEASE);</td></tr>
+<tr><th id="872">872</th><td></td></tr>
+<tr><th id="873">873</th><td>    <i>/* check if the child has already exited */</i></td></tr>
+<tr><th id="874">874</th><td>    <b>if</b> (tryReaping(pid, &amp;payload))</td></tr>
+<tr><th id="875">875</th><td>        notifyAndFreeInfo(header, info, &amp;payload);</td></tr>
+<tr><th id="876">876</th><td></td></tr>
+<tr><th id="877">877</th><td>    ret = death_pipe[<var>0</var>];</td></tr>
+<tr><th id="878">878</th><td>    <b>return</b> ret;</td></tr>
+<tr><th id="879">879</th><td></td></tr>
+<tr><th id="880">880</th><td>err_close:</td></tr>
+<tr><th id="881">881</th><td>    EINTR_LOOP(ret, close(death_pipe[<var>0</var>]));</td></tr>
+<tr><th id="882">882</th><td>    EINTR_LOOP(ret, close(death_pipe[<var>1</var>]));</td></tr>
+<tr><th id="883">883</th><td></td></tr>
+<tr><th id="884">884</th><td>err_free:</td></tr>
+<tr><th id="885">885</th><td>    <i>/* free the info pointer */</i></td></tr>
+<tr><th id="886">886</th><td>    freeInfo(header, info);</td></tr>
+<tr><th id="887">887</th><td></td></tr>
+<tr><th id="888">888</th><td>out:</td></tr>
+<tr><th id="889">889</th><td>    <b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="890">890</th><td>}</td></tr>
+<tr><th id="891">891</th><td><u>#<span data-ppcond="828">endif</span> // _POSIX_SPAWN &amp;&amp; !FORKFD_NO_SPAWNFD</u></td></tr>
+<tr><th id="892">892</th><td></td></tr>
+<tr><th id="893">893</th><td><em>int</em> <dfn class="decl def fn" id="forkfd_wait4" title='forkfd_wait4' data-ref="forkfd_wait4">forkfd_wait4</dfn>(<em>int</em> <dfn class="local col6 decl" id="186ffd" title='ffd' data-type='int' data-ref="186ffd">ffd</dfn>, <b>struct</b> <a class="type" href="forkfd.h.html#forkfd_info" title='forkfd_info' data-ref="forkfd_info">forkfd_info</a> *<dfn class="local col7 decl" id="187info" title='info' data-type='struct forkfd_info *' data-ref="187info">info</dfn>, <em>int</em> <dfn class="local col8 decl" id="188options" title='options' data-type='int' data-ref="188options">options</dfn>, <b>struct</b> <a class="type" href="../../../../include/x86_64-linux-gnu/bits/types/struct_rusage.h.html#rusage" title='rusage' data-ref="rusage">rusage</a> *<dfn class="local col9 decl" id="189rusage" title='rusage' data-type='struct rusage *' data-ref="189rusage">rusage</dfn>)</td></tr>
+<tr><th id="894">894</th><td>{</td></tr>
+<tr><th id="895">895</th><td>    <b>struct</b> <a class="type" href="#pipe_payload" title='pipe_payload' data-ref="pipe_payload">pipe_payload</a> <a class="ref fn fake" href="#123" title='pipe_payload::pipe_payload' data-ref="_ZN12pipe_payloadC1Ev"></a><dfn class="local col0 decl" id="190payload" title='payload' data-type='struct pipe_payload' data-ref="190payload">payload</dfn>;</td></tr>
+<tr><th id="896">896</th><td>    <em>int</em> <dfn class="local col1 decl" id="191ret" title='ret' data-type='int' data-ref="191ret">ret</dfn>;</td></tr>
+<tr><th id="897">897</th><td></td></tr>
+<tr><th id="898">898</th><td>    <b>if</b> (<a class="ref fn" href="forkfd_linux.c.html#_ZL17system_has_forkfdv" title='system_has_forkfd' data-ref="_ZL17system_has_forkfdv">system_has_forkfd</a>()) {</td></tr>
+<tr><th id="899">899</th><td>        <i>/* if this is one of our pipes, not a procdesc/pidfd, we'll get an EBADF */</i></td></tr>
+<tr><th id="900">900</th><td>        <a class="local col1 ref" href="#191ret" title='ret' data-ref="191ret">ret</a> = <a class="ref fn" href="forkfd_linux.c.html#_ZL18system_forkfd_waitiP11forkfd_infoiP6rusage" title='system_forkfd_wait' data-ref="_ZL18system_forkfd_waitiP11forkfd_infoiP6rusage">system_forkfd_wait</a>(<a class="local col6 ref" href="#186ffd" title='ffd' data-ref="186ffd">ffd</a>, <a class="local col7 ref" href="#187info" title='info' data-ref="187info">info</a>, <span class='inlayHint'>ffdwoptions:&nbsp;</span><a class="local col8 ref" href="#188options" title='options' data-ref="188options">options</a>, <a class="local col9 ref" href="#189rusage" title='rusage' data-ref="189rusage">rusage</a>);</td></tr>
+<tr><th id="901">901</th><td>        <b>if</b> (<a class="ref fn" href="#_ZL21disable_fork_fallbackv" title='disable_fork_fallback' data-ref="_ZL21disable_fork_fallbackv">disable_fork_fallback</a>() || <a class="local col1 ref" href="#191ret" title='ret' data-ref="191ret">ret</a> != -<var>1</var> || <a class="macro" href="../../../../include/errno.h.html#38" title="(*__errno_location ())" data-ref="_M/errno">errno</a> != <a class="macro" href="../../../../include/asm-generic/errno-base.h.html#13" title="9" data-ref="_M/EBADF">EBADF</a>)</td></tr>
+<tr><th id="902">902</th><td>            <b>return</b> <a class="local col1 ref" href="#191ret" title='ret' data-ref="191ret">ret</a>;</td></tr>
+<tr><th id="903">903</th><td>    }</td></tr>
+<tr><th id="904">904</th><td></td></tr>
+<tr><th id="905">905</th><td>    <a class="local col1 ref" href="#191ret" title='ret' data-ref="191ret">ret</a> = <a class="ref fn" href="../../../../include/unistd.h.html#read" title='read' data-ref="read">read</a>(<span class='inlayHint'>fd:&nbsp;</span><a class="local col6 ref" href="#186ffd" title='ffd' data-ref="186ffd">ffd</a>, <span class='inlayHint'>buf:&nbsp;</span>&amp;<a class="local col0 ref" href="#190payload" title='payload' data-ref="190payload">payload</a>, <span class='inlayHint'>nbytes:&nbsp;</span><b>sizeof</b>(<a class="local col0 ref" href="#190payload" title='payload' data-ref="190payload">payload</a>));</td></tr>
+<tr><th id="906">906</th><td>    <b>if</b> (<a class="local col1 ref" href="#191ret" title='ret' data-ref="191ret">ret</a> == -<var>1</var>)</td></tr>
+<tr><th id="907">907</th><td>        <b>return</b> <a class="local col1 ref" href="#191ret" title='ret' data-ref="191ret">ret</a>;     <i>/* pass errno, probably EINTR, EBADF or EWOULDBLOCK */</i></td></tr>
+<tr><th id="908">908</th><td></td></tr>
+<tr><th id="909">909</th><td>    <a class="macro" href="../../../../include/assert.h.html#50" title="(static_cast&lt;void&gt; (0))" data-ref="_M/assert">assert</a>(ret == <b>sizeof</b>(payload));</td></tr>
+<tr><th id="910">910</th><td>    <b>if</b> (<a class="local col7 ref" href="#187info" title='info' data-ref="187info">info</a>)</td></tr>
+<tr><th id="911">911</th><td>        *<a class="local col7 ref" href="#187info" title='info' data-ref="187info">info</a> <a class="ref fn" href="forkfd.h.html#50" title='forkfd_info::operator=' data-ref="_ZN11forkfd_infoaSERKS_">=</a> <a class="local col0 ref" href="#190payload" title='payload' data-ref="190payload">payload</a>.<a class="ref field" href="#pipe_payload::info" title='pipe_payload::info' data-ref="pipe_payload::info">info</a>;</td></tr>
+<tr><th id="912">912</th><td>    <b>if</b> (<a class="local col9 ref" href="#189rusage" title='rusage' data-ref="189rusage">rusage</a>)</td></tr>
+<tr><th id="913">913</th><td>        *<a class="local col9 ref" href="#189rusage" title='rusage' data-ref="189rusage">rusage</a> <a class="ref fn" href="../../../../include/x86_64-linux-gnu/bits/types/struct_rusage.h.html#33" title='rusage::operator=' data-ref="_ZN6rusageaSERKS_">=</a> <a class="local col0 ref" href="#190payload" title='payload' data-ref="190payload">payload</a>.<a class="ref field" href="#pipe_payload::rusage" title='pipe_payload::rusage' data-ref="pipe_payload::rusage">rusage</a>;</td></tr>
+<tr><th id="914">914</th><td></td></tr>
+<tr><th id="915">915</th><td>    <b>return</b> <var>0</var>;           <i>/* success */</i></td></tr>
+<tr><th id="916">916</th><td>}</td></tr>
+<tr><th id="917">917</th><td></td></tr>
+<tr><th id="918">918</th><td></td></tr>
+<tr><th id="919">919</th><td><em>int</em> <dfn class="decl def fn" id="forkfd_close" title='forkfd_close' data-ref="forkfd_close">forkfd_close</dfn>(<em>int</em> <dfn class="local col2 decl" id="192ffd" title='ffd' data-type='int' data-ref="192ffd">ffd</dfn>)</td></tr>
+<tr><th id="920">920</th><td>{</td></tr>
+<tr><th id="921">921</th><td>    <b>return</b> <a class="ref fn" href="../../../../include/unistd.h.html#close" title='close' data-ref="close">close</a>(<span class='inlayHint'>fd:&nbsp;</span><a class="local col2 ref" href="#192ffd" title='ffd' data-ref="192ffd">ffd</a>);</td></tr>
+<tr><th id="922">922</th><td>}</td></tr>
+<tr><th id="923">923</th><td></td></tr>
+<tr><th id="924">924</th><td><u>#<span data-ppcond="924">if</span> defined(<span class="macro" data-ref="_M/__FreeBSD__">__FreeBSD__</span>) &amp;&amp; __FreeBSD__ &gt;= 9</u></td></tr>
+<tr><th id="925">925</th><td><u>#  include "forkfd_freebsd.c"</u></td></tr>
+<tr><th id="926">926</th><td><u>#<span data-ppcond="924">elif</span> defined(<span class="macro" data-ref="_M/__linux__">__linux__</span>)</u></td></tr>
+<tr><th id="927">927</th><td><u>#  include <a href="forkfd_linux.c.html">"forkfd_linux.c"</a></u></td></tr>
+<tr><th id="928">928</th><td><u>#<span data-ppcond="924">else</span></u></td></tr>
+<tr><th id="929">929</th><td><em>int</em> system_has_forkfd()</td></tr>
+<tr><th id="930">930</th><td>{</td></tr>
+<tr><th id="931">931</th><td>    <b>return</b> <var>0</var>;</td></tr>
+<tr><th id="932">932</th><td>}</td></tr>
+<tr><th id="933">933</th><td></td></tr>
+<tr><th id="934">934</th><td><em>int</em> system_forkfd(<em>int</em> flags, pid_t *ppid, <em>int</em> *system)</td></tr>
+<tr><th id="935">935</th><td>{</td></tr>
+<tr><th id="936">936</th><td>    (<em>void</em>)flags;</td></tr>
+<tr><th id="937">937</th><td>    (<em>void</em>)ppid;</td></tr>
+<tr><th id="938">938</th><td>    *system = <var>0</var>;</td></tr>
+<tr><th id="939">939</th><td>    <b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="940">940</th><td>}</td></tr>
+<tr><th id="941">941</th><td></td></tr>
+<tr><th id="942">942</th><td><em>int</em> system_forkfd_wait(<em>int</em> ffd, <b>struct</b> forkfd_info *info, <em>int</em> options, <b>struct</b> rusage *rusage)</td></tr>
+<tr><th id="943">943</th><td>{</td></tr>
+<tr><th id="944">944</th><td>    (<em>void</em>)ffd;</td></tr>
+<tr><th id="945">945</th><td>    (<em>void</em>)info;</td></tr>
+<tr><th id="946">946</th><td>    (<em>void</em>)options;</td></tr>
+<tr><th id="947">947</th><td>    (<em>void</em>)rusage;</td></tr>
+<tr><th id="948">948</th><td>    <b>return</b> -<var>1</var>;</td></tr>
+<tr><th id="949">949</th><td>}</td></tr>
+<tr><th id="950">950</th><td><u>#<span data-ppcond="924">endif</span></u></td></tr>
+<tr><th id="951">951</th><td><u>#<span data-ppcond="951">ifndef</span> <a class="macro" href="forkfd_linux.c.html#54" data-ref="_M/SYSTEM_FORKFD_CAN_VFORK">SYSTEM_FORKFD_CAN_VFORK</a></u></td></tr>
+<tr><th id="952">952</th><td><em>int</em> system_vforkfd(<em>int</em> flags, pid_t *ppid, <em>int</em> (*childFn)(<em>void</em> *), <em>void</em> *token, <em>int</em> *system)</td></tr>
+<tr><th id="953">953</th><td>{</td></tr>
+<tr><th id="954">954</th><td>    <i>/* we don't have a way to vfork(), so fake it */</i></td></tr>
+<tr><th id="955">955</th><td>    <em>int</em> ret = system_forkfd(flags, ppid, system);</td></tr>
+<tr><th id="956">956</th><td>    <b>if</b> (ret == FFD_CHILD_PROCESS) {</td></tr>
+<tr><th id="957">957</th><td>        <i>/* child process */</i></td></tr>
+<tr><th id="958">958</th><td>        _exit(childFn(token));</td></tr>
+<tr><th id="959">959</th><td>    }</td></tr>
+<tr><th id="960">960</th><td>    <b>return</b> ret;</td></tr>
+<tr><th id="961">961</th><td>}</td></tr>
+<tr><th id="962">962</th><td><u>#<span data-ppcond="951">endif</span></u></td></tr>
+<tr><th id="963">963</th><td><u>#undef <a class="macro" href="forkfd_linux.c.html#54" data-ref="_M/SYSTEM_FORKFD_CAN_VFORK">SYSTEM_FORKFD_CAN_VFORK</a></u></td></tr>
+<tr><th id="964">964</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../../corelib/io/forkfd_qt.cpp.html'>qtbase-6.5.0/src/corelib/io/forkfd_qt.cpp</a><br/>Generated on <em>2024-Jun-13</em> from project qtbase-6.5.0 revision <em>6.5.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

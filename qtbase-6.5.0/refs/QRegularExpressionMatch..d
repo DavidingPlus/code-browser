@@ -1,0 +1,32 @@
+<use f='qtbase-6.5.0/src/corelib/text/qregularexpression.h' l='200' u='m' c='_ZN23QRegularExpressionMatchaSEOS_'/>
+<use f='qtbase-6.5.0/src/corelib/text/qregularexpression.h' l='200' u='a' c='_ZN23QRegularExpressionMatchaSEOS_'/>
+<use f='qtbase-6.5.0/src/corelib/text/qregularexpression.h' l='201' u='m' c='_ZN23QRegularExpressionMatch4swapERS_'/>
+<use f='qtbase-6.5.0/src/corelib/text/qregularexpression.h' l='201' u='a' c='_ZN23QRegularExpressionMatch4swapERS_'/>
+<dec f='qtbase-6.5.0/src/corelib/text/qregularexpression.h' l='250' type='QExplicitlySharedDataPointer&lt;QRegularExpressionMatchPrivate&gt;'/>
+<offset>0</offset>
+<use f='qtbase-6.5.0/src/corelib/text/qregularexpression.cpp' l='2046' u='w' c='_ZN23QRegularExpressionMatchC1Ev'/>
+<use f='qtbase-6.5.0/src/corelib/text/qregularexpression.cpp' l='2052' u='m' c='_ZN23QRegularExpressionMatchC1Ev'/>
+<use f='qtbase-6.5.0/src/corelib/text/qregularexpression.cpp' l='2070' u='w' c='_ZN23QRegularExpressionMatchC1ERKS_'/>
+<use f='qtbase-6.5.0/src/corelib/text/qregularexpression.cpp' l='2070' u='r' c='_ZN23QRegularExpressionMatchC1ERKS_'/>
+<use f='qtbase-6.5.0/src/corelib/text/qregularexpression.cpp' l='2094' u='w' c='_ZN23QRegularExpressionMatchaSERKS_'/>
+<use f='qtbase-6.5.0/src/corelib/text/qregularexpression.cpp' l='2094' u='r' c='_ZN23QRegularExpressionMatchaSERKS_'/>
+<use f='qtbase-6.5.0/src/corelib/text/qregularexpression.cpp' l='2120' u='w' c='_ZN23QRegularExpressionMatchC1ER30QRegularExpressionMatchPrivate'/>
+<use f='qtbase-6.5.0/src/corelib/text/qregularexpression.cpp' l='2132' u='m' c='_ZNK23QRegularExpressionMatch17regularExpressionEv'/>
+<use f='qtbase-6.5.0/src/corelib/text/qregularexpression.cpp' l='2145' u='m' c='_ZNK23QRegularExpressionMatch9matchTypeEv'/>
+<use f='qtbase-6.5.0/src/corelib/text/qregularexpression.cpp' l='2157' u='m' c='_ZNK23QRegularExpressionMatch12matchOptionsEv'/>
+<use f='qtbase-6.5.0/src/corelib/text/qregularexpression.cpp' l='2176' u='m' c='_ZNK23QRegularExpressionMatch17lastCapturedIndexEv'/>
+<use f='qtbase-6.5.0/src/corelib/text/qregularexpression.cpp' l='2202' u='m' c='_ZNK23QRegularExpressionMatch11hasCapturedE11QStringView'/>
+<use f='qtbase-6.5.0/src/corelib/text/qregularexpression.cpp' l='2233' u='m' c='_ZNK23QRegularExpressionMatch11hasCapturedEi'/>
+<use f='qtbase-6.5.0/src/corelib/text/qregularexpression.cpp' l='2277' u='m' c='_ZNK23QRegularExpressionMatch12capturedViewEi'/>
+<use f='qtbase-6.5.0/src/corelib/text/qregularexpression.cpp' l='2330' u='m' c='_ZNK23QRegularExpressionMatch12capturedViewE11QStringView'/>
+<use f='qtbase-6.5.0/src/corelib/text/qregularexpression.cpp' l='2345' u='m' c='_ZNK23QRegularExpressionMatch13capturedTextsEv'/>
+<use f='qtbase-6.5.0/src/corelib/text/qregularexpression.cpp' l='2346' u='m' c='_ZNK23QRegularExpressionMatch13capturedTextsEv'/>
+<use f='qtbase-6.5.0/src/corelib/text/qregularexpression.cpp' l='2364' u='m' c='_ZNK23QRegularExpressionMatch13capturedStartEi'/>
+<use f='qtbase-6.5.0/src/corelib/text/qregularexpression.cpp' l='2393' u='m' c='_ZNK23QRegularExpressionMatch11capturedEndEi'/>
+<use f='qtbase-6.5.0/src/corelib/text/qregularexpression.cpp' l='2443' u='m' c='_ZNK23QRegularExpressionMatch13capturedStartE11QStringView'/>
+<use f='qtbase-6.5.0/src/corelib/text/qregularexpression.cpp' l='2466' u='m' c='_ZNK23QRegularExpressionMatch14capturedLengthE11QStringView'/>
+<use f='qtbase-6.5.0/src/corelib/text/qregularexpression.cpp' l='2488' u='m' c='_ZNK23QRegularExpressionMatch11capturedEndE11QStringView'/>
+<use f='qtbase-6.5.0/src/corelib/text/qregularexpression.cpp' l='2502' u='m' c='_ZNK23QRegularExpressionMatch8hasMatchEv'/>
+<use f='qtbase-6.5.0/src/corelib/text/qregularexpression.cpp' l='2517' u='m' c='_ZNK23QRegularExpressionMatch15hasPartialMatchEv'/>
+<use f='qtbase-6.5.0/src/corelib/text/qregularexpression.cpp' l='2529' u='m' c='_ZNK23QRegularExpressionMatch7isValidEv'/>
+<use f='qtbase-6.5.0/src/corelib/text/qregularexpression.cpp' l='2674' u='m' c='_ZN31QRegularExpressionMatchIterator4nextEv'/>

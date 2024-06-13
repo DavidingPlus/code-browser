@@ -1,0 +1,370 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>jddctmgr.c source code [qtbase-6.5.0/src/3rdparty/libjpeg/src/jddctmgr.c] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'qtbase-6.5.0/src/3rdparty/libjpeg/src/jddctmgr.c'; var root_path = '../../../../..'; var data_path = '../../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../..'>qtbase-6.5.0</a>/<a href='../../..'>src</a>/<a href='../..'>3rdparty</a>/<a href='..'>libjpeg</a>/<a href='./'>src</a>/<a href='jddctmgr.c.html'>jddctmgr.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*</i></td></tr>
+<tr><th id="2">2</th><td><i> * jddctmgr.c</i></td></tr>
+<tr><th id="3">3</th><td><i> *</i></td></tr>
+<tr><th id="4">4</th><td><i> * This file was part of the Independent JPEG Group's software:</i></td></tr>
+<tr><th id="5">5</th><td><i> * Copyright (C) 1994-1996, Thomas G. Lane.</i></td></tr>
+<tr><th id="6">6</th><td><i> * Modified 2002-2010 by Guido Vollbeding.</i></td></tr>
+<tr><th id="7">7</th><td><i> * libjpeg-turbo Modifications:</i></td></tr>
+<tr><th id="8">8</th><td><i> * Copyright 2009 Pierre Ossman &lt;ossman@cendio.se&gt; for Cendio AB</i></td></tr>
+<tr><th id="9">9</th><td><i> * Copyright (C) 2010, 2015, 2022, D. R. Commander.</i></td></tr>
+<tr><th id="10">10</th><td><i> * Copyright (C) 2013, MIPS Technologies, Inc., California.</i></td></tr>
+<tr><th id="11">11</th><td><i> * For conditions of distribution and use, see the accompanying README.ijg</i></td></tr>
+<tr><th id="12">12</th><td><i> * file.</i></td></tr>
+<tr><th id="13">13</th><td><i> *</i></td></tr>
+<tr><th id="14">14</th><td><i> * This file contains the inverse-DCT management logic.</i></td></tr>
+<tr><th id="15">15</th><td><i> * This code selects a particular IDCT implementation to be used,</i></td></tr>
+<tr><th id="16">16</th><td><i> * and it performs related housekeeping chores.  No code in this file</i></td></tr>
+<tr><th id="17">17</th><td><i> * is executed per IDCT step, only during output pass setup.</i></td></tr>
+<tr><th id="18">18</th><td><i> *</i></td></tr>
+<tr><th id="19">19</th><td><i> * Note that the IDCT routines are responsible for performing coefficient</i></td></tr>
+<tr><th id="20">20</th><td><i> * dequantization as well as the IDCT proper.  This module sets up the</i></td></tr>
+<tr><th id="21">21</th><td><i> * dequantization multiplier table needed by the IDCT routine.</i></td></tr>
+<tr><th id="22">22</th><td><i> */</i></td></tr>
+<tr><th id="23">23</th><td></td></tr>
+<tr><th id="24">24</th><td><u>#define <dfn class="macro" id="_M/JPEG_INTERNALS" data-ref="_M/JPEG_INTERNALS">JPEG_INTERNALS</dfn></u></td></tr>
+<tr><th id="25">25</th><td><u>#include <a href="jinclude.h.html">"jinclude.h"</a></u></td></tr>
+<tr><th id="26">26</th><td><u>#include <a href="jpeglib.h.html">"jpeglib.h"</a></u></td></tr>
+<tr><th id="27">27</th><td><u>#include <a href="jdct.h.html">"jdct.h"</a>               /* Private declarations for DCT subsystem */</u></td></tr>
+<tr><th id="28">28</th><td><u>#include <a href="jsimddct.h.html">"jsimddct.h"</a></u></td></tr>
+<tr><th id="29">29</th><td><u>#include <a href="jpegcomp.h.html">"jpegcomp.h"</a></u></td></tr>
+<tr><th id="30">30</th><td></td></tr>
+<tr><th id="31">31</th><td></td></tr>
+<tr><th id="32">32</th><td><i>/*</i></td></tr>
+<tr><th id="33">33</th><td><i> * The decompressor input side (jdinput.c) saves away the appropriate</i></td></tr>
+<tr><th id="34">34</th><td><i> * quantization table for each component at the start of the first scan</i></td></tr>
+<tr><th id="35">35</th><td><i> * involving that component.  (This is necessary in order to correctly</i></td></tr>
+<tr><th id="36">36</th><td><i> * decode files that reuse Q-table slots.)</i></td></tr>
+<tr><th id="37">37</th><td><i> * When we are ready to make an output pass, the saved Q-table is converted</i></td></tr>
+<tr><th id="38">38</th><td><i> * to a multiplier table that will actually be used by the IDCT routine.</i></td></tr>
+<tr><th id="39">39</th><td><i> * The multiplier table contents are IDCT-method-dependent.  To support</i></td></tr>
+<tr><th id="40">40</th><td><i> * application changes in IDCT method between scans, we can remake the</i></td></tr>
+<tr><th id="41">41</th><td><i> * multiplier tables if necessary.</i></td></tr>
+<tr><th id="42">42</th><td><i> * In buffered-image mode, the first output pass may occur before any data</i></td></tr>
+<tr><th id="43">43</th><td><i> * has been seen for some components, and thus before their Q-tables have</i></td></tr>
+<tr><th id="44">44</th><td><i> * been saved away.  To handle this case, multiplier tables are preset</i></td></tr>
+<tr><th id="45">45</th><td><i> * to zeroes; the result of the IDCT will be a neutral gray level.</i></td></tr>
+<tr><th id="46">46</th><td><i> */</i></td></tr>
+<tr><th id="47">47</th><td></td></tr>
+<tr><th id="48">48</th><td></td></tr>
+<tr><th id="49">49</th><td><i>/* Private subobject for this module */</i></td></tr>
+<tr><th id="50">50</th><td></td></tr>
+<tr><th id="51">51</th><td><b>typedef</b> <b>struct</b> {</td></tr>
+<tr><th id="52">52</th><td>  <b>struct</b> <a class="type" href="jpegint.h.html#jpeg_inverse_dct" title='jpeg_inverse_dct' data-ref="jpeg_inverse_dct">jpeg_inverse_dct</a> <dfn class="tu decl field" id="(anonymous)::pub" title='(anonymous struct)::pub' data-type='struct jpeg_inverse_dct' data-ref="(anonymous)::pub">pub</dfn>;  <i  data-doc="(anonymous)::pub">/* public fields */</i></td></tr>
+<tr><th id="53">53</th><td></td></tr>
+<tr><th id="54">54</th><td>  <i  data-doc="(anonymous)::cur_method">/* This array contains the IDCT method code that each multiplier table</i></td></tr>
+<tr><th id="55">55</th><td><i  data-doc="(anonymous)::cur_method">   * is currently set up for, or -1 if it's not yet set up.</i></td></tr>
+<tr><th id="56">56</th><td><i  data-doc="(anonymous)::cur_method">   * The actual multiplier tables are pointed to by dct_table in the</i></td></tr>
+<tr><th id="57">57</th><td><i  data-doc="(anonymous)::cur_method">   * per-component comp_info structures.</i></td></tr>
+<tr><th id="58">58</th><td><i  data-doc="(anonymous)::cur_method">   */</i></td></tr>
+<tr><th id="59">59</th><td>  <em>int</em> <dfn class="tu decl field" id="(anonymous)::cur_method" title='(anonymous struct)::cur_method' data-type='int[10]' data-ref="(anonymous)::cur_method">cur_method</dfn>[<a class="macro" href="jmorecfg.h.html#27" title="10" data-ref="_M/MAX_COMPONENTS">MAX_COMPONENTS</a>];</td></tr>
+<tr><th id="60">60</th><td>} <dfn class="typedef" id="my_idct_controller" title='my_idct_controller' data-type='struct my_idct_controller' data-ref="my_idct_controller">my_idct_controller</dfn>;</td></tr>
+<tr><th id="61">61</th><td></td></tr>
+<tr><th id="62">62</th><td><b>typedef</b> <a class="typedef" href="#my_idct_controller" title='my_idct_controller' data-type='struct my_idct_controller' data-ref="my_idct_controller">my_idct_controller</a> *<dfn class="typedef" id="my_idct_ptr" title='my_idct_ptr' data-type='my_idct_controller *' data-ref="my_idct_ptr">my_idct_ptr</dfn>;</td></tr>
+<tr><th id="63">63</th><td></td></tr>
+<tr><th id="64">64</th><td></td></tr>
+<tr><th id="65">65</th><td><i>/* Allocated multiplier tables: big enough for any supported variant */</i></td></tr>
+<tr><th id="66">66</th><td></td></tr>
+<tr><th id="67">67</th><td><b>typedef</b> <b>union</b> {</td></tr>
+<tr><th id="68">68</th><td>  <a class="typedef" href="jdct.h.html#ISLOW_MULT_TYPE" title='ISLOW_MULT_TYPE' data-type='int' data-ref="ISLOW_MULT_TYPE">ISLOW_MULT_TYPE</a> <dfn class="tu decl field" id="(anonymous)::islow_array" title='(anonymous union)::islow_array' data-type='ISLOW_MULT_TYPE[64]' data-ref="(anonymous)::islow_array">islow_array</dfn>[<a class="macro" href="jpeglib.h.html#47" title="64" data-ref="_M/DCTSIZE2">DCTSIZE2</a>];</td></tr>
+<tr><th id="69">69</th><td><u>#<span data-ppcond="69">ifdef</span> <a class="macro" href="jmorecfg.h.html#238" data-ref="_M/DCT_IFAST_SUPPORTED">DCT_IFAST_SUPPORTED</a></u></td></tr>
+<tr><th id="70">70</th><td>  <a class="typedef" href="jdct.h.html#IFAST_MULT_TYPE" title='IFAST_MULT_TYPE' data-type='int' data-ref="IFAST_MULT_TYPE">IFAST_MULT_TYPE</a> <dfn class="tu decl field" id="(anonymous)::ifast_array" title='(anonymous union)::ifast_array' data-type='IFAST_MULT_TYPE[64]' data-ref="(anonymous)::ifast_array">ifast_array</dfn>[<a class="macro" href="jpeglib.h.html#47" title="64" data-ref="_M/DCTSIZE2">DCTSIZE2</a>];</td></tr>
+<tr><th id="71">71</th><td><u>#<span data-ppcond="69">endif</span></u></td></tr>
+<tr><th id="72">72</th><td><u>#<span data-ppcond="72">ifdef</span> <a class="macro" href="jmorecfg.h.html#239" data-ref="_M/DCT_FLOAT_SUPPORTED">DCT_FLOAT_SUPPORTED</a></u></td></tr>
+<tr><th id="73">73</th><td>  <a class="typedef" href="jdct.h.html#FLOAT_MULT_TYPE" title='FLOAT_MULT_TYPE' data-type='float' data-ref="FLOAT_MULT_TYPE">FLOAT_MULT_TYPE</a> <dfn class="tu decl field" id="(anonymous)::float_array" title='(anonymous union)::float_array' data-type='FLOAT_MULT_TYPE[64]' data-ref="(anonymous)::float_array">float_array</dfn>[<a class="macro" href="jpeglib.h.html#47" title="64" data-ref="_M/DCTSIZE2">DCTSIZE2</a>];</td></tr>
+<tr><th id="74">74</th><td><u>#<span data-ppcond="72">endif</span></u></td></tr>
+<tr><th id="75">75</th><td>} <dfn class="typedef" id="multiplier_table" title='multiplier_table' data-type='union multiplier_table' data-ref="multiplier_table">multiplier_table</dfn>;</td></tr>
+<tr><th id="76">76</th><td></td></tr>
+<tr><th id="77">77</th><td></td></tr>
+<tr><th id="78">78</th><td><i>/* The current scaled-IDCT routines require ISLOW-style multiplier tables,</i></td></tr>
+<tr><th id="79">79</th><td><i> * so be sure to compile that code if either ISLOW or SCALING is requested.</i></td></tr>
+<tr><th id="80">80</th><td><i> */</i></td></tr>
+<tr><th id="81">81</th><td><u>#<span data-ppcond="81">ifdef</span> <a class="macro" href="jmorecfg.h.html#237" data-ref="_M/DCT_ISLOW_SUPPORTED">DCT_ISLOW_SUPPORTED</a></u></td></tr>
+<tr><th id="82">82</th><td><u>#define <dfn class="macro" id="_M/PROVIDE_ISLOW_TABLES" data-ref="_M/PROVIDE_ISLOW_TABLES">PROVIDE_ISLOW_TABLES</dfn></u></td></tr>
+<tr><th id="83">83</th><td><u>#<span data-ppcond="81">else</span></u></td></tr>
+<tr><th id="84">84</th><td><u>#ifdef IDCT_SCALING_SUPPORTED</u></td></tr>
+<tr><th id="85">85</th><td><u>#define PROVIDE_ISLOW_TABLES</u></td></tr>
+<tr><th id="86">86</th><td><u>#endif</u></td></tr>
+<tr><th id="87">87</th><td><u>#<span data-ppcond="81">endif</span></u></td></tr>
+<tr><th id="88">88</th><td></td></tr>
+<tr><th id="89">89</th><td></td></tr>
+<tr><th id="90">90</th><td><i>/*</i></td></tr>
+<tr><th id="91">91</th><td><i> * Prepare for an output pass.</i></td></tr>
+<tr><th id="92">92</th><td><i> * Here we select the proper IDCT routine for each component and build</i></td></tr>
+<tr><th id="93">93</th><td><i> * a matching multiplier table.</i></td></tr>
+<tr><th id="94">94</th><td><i> */</i></td></tr>
+<tr><th id="95">95</th><td></td></tr>
+<tr><th id="96">96</th><td><a class="macro" href="jmorecfg.h.html#168" title="static void" data-ref="_M/METHODDEF">METHODDEF</a>(<em>void</em>)</td></tr>
+<tr><th id="97">97</th><td><dfn class="decl def fn" id="start_pass" title='start_pass' data-ref="start_pass">start_pass</dfn>(<a class="typedef" href="jpeglib.h.html#j_decompress_ptr" title='j_decompress_ptr' data-type='struct jpeg_decompress_struct *' data-ref="j_decompress_ptr">j_decompress_ptr</a> <dfn class="local col1 decl" id="1cinfo" title='cinfo' data-type='j_decompress_ptr' data-ref="1cinfo">cinfo</dfn>)</td></tr>
+<tr><th id="98">98</th><td>{</td></tr>
+<tr><th id="99">99</th><td>  <a class="typedef" href="#my_idct_ptr" title='my_idct_ptr' data-type='my_idct_controller *' data-ref="my_idct_ptr">my_idct_ptr</a> <dfn class="local col2 decl" id="2idct" title='idct' data-type='my_idct_ptr' data-ref="2idct">idct</dfn> = (<a class="typedef" href="#my_idct_ptr" title='my_idct_ptr' data-type='my_idct_controller *' data-ref="my_idct_ptr">my_idct_ptr</a>)<a class="local col1 ref" href="#1cinfo" title='cinfo' data-ref="1cinfo">cinfo</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_decompress_struct::idct" title='jpeg_decompress_struct::idct' data-ref="jpeg_decompress_struct::idct">idct</a>;</td></tr>
+<tr><th id="100">100</th><td>  <em>int</em> <dfn class="local col3 decl" id="3ci" title='ci' data-type='int' data-ref="3ci">ci</dfn>, <dfn class="local col4 decl" id="4i" title='i' data-type='int' data-ref="4i">i</dfn>;</td></tr>
+<tr><th id="101">101</th><td>  <a class="typedef" href="jpeglib.h.html#jpeg_component_info" title='jpeg_component_info' data-type='struct jpeg_component_info' data-ref="jpeg_component_info">jpeg_component_info</a> *<dfn class="local col5 decl" id="5compptr" title='compptr' data-type='jpeg_component_info *' data-ref="5compptr">compptr</dfn>;</td></tr>
+<tr><th id="102">102</th><td>  <em>int</em> <dfn class="local col6 decl" id="6method" title='method' data-type='int' data-ref="6method">method</dfn> = <var>0</var>;</td></tr>
+<tr><th id="103">103</th><td>  <a class="typedef" href="jpegint.h.html#inverse_DCT_method_ptr" title='inverse_DCT_method_ptr' data-type='void (*)(j_decompress_ptr, jpeg_component_info *, JCOEFPTR, JSAMPARRAY, JDIMENSION)' data-ref="inverse_DCT_method_ptr">inverse_DCT_method_ptr</a> <dfn class="local col7 decl" id="7method_ptr" title='method_ptr' data-type='inverse_DCT_method_ptr' data-ref="7method_ptr">method_ptr</dfn> = <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="104">104</th><td>  <a class="typedef" href="jpeglib.h.html#JQUANT_TBL" title='JQUANT_TBL' data-type='struct JQUANT_TBL' data-ref="JQUANT_TBL">JQUANT_TBL</a> *<dfn class="local col8 decl" id="8qtbl" title='qtbl' data-type='JQUANT_TBL *' data-ref="8qtbl">qtbl</dfn>;</td></tr>
+<tr><th id="105">105</th><td></td></tr>
+<tr><th id="106">106</th><td>  <b>for</b> (<a class="local col3 ref" href="#3ci" title='ci' data-ref="3ci">ci</a> = <var>0</var>, <a class="local col5 ref" href="#5compptr" title='compptr' data-ref="5compptr">compptr</a> = <a class="local col1 ref" href="#1cinfo" title='cinfo' data-ref="1cinfo">cinfo</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_decompress_struct::comp_info" title='jpeg_decompress_struct::comp_info' data-ref="jpeg_decompress_struct::comp_info">comp_info</a>; <a class="local col3 ref" href="#3ci" title='ci' data-ref="3ci">ci</a> &lt; <a class="local col1 ref" href="#1cinfo" title='cinfo' data-ref="1cinfo">cinfo</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_decompress_struct::num_components" title='jpeg_decompress_struct::num_components' data-ref="jpeg_decompress_struct::num_components">num_components</a>;</td></tr>
+<tr><th id="107">107</th><td>       <a class="local col3 ref" href="#3ci" title='ci' data-ref="3ci">ci</a>++, <a class="local col5 ref" href="#5compptr" title='compptr' data-ref="5compptr">compptr</a>++) {</td></tr>
+<tr><th id="108">108</th><td>    <i>/* Select the proper IDCT routine for this component's scaling */</i></td></tr>
+<tr><th id="109">109</th><td>    <b>switch</b> (<a class="local col5 ref" href="#5compptr" title='compptr' data-ref="5compptr">compptr</a>-&gt;<a class="macro" href="jpegcomp.h.html#14" title="DCT_h_scaled_size" data-ref="_M/_DCT_scaled_size">_DCT_scaled_size</a>) {</td></tr>
+<tr><th id="110">110</th><td><u>#<span data-ppcond="110">ifdef</span> <a class="macro" href="jmorecfg.h.html#262" data-ref="_M/IDCT_SCALING_SUPPORTED">IDCT_SCALING_SUPPORTED</a></u></td></tr>
+<tr><th id="111">111</th><td>    <b>case</b> <var>1</var>:</td></tr>
+<tr><th id="112">112</th><td>      <a class="local col7 ref" href="#7method_ptr" title='method_ptr' data-ref="7method_ptr">method_ptr</a> = <a class="ref fn" href="jdct.h.html#jpeg_idct_1x1" title='jpeg_idct_1x1' data-ref="jpeg_idct_1x1">jpeg_idct_1x1</a>;</td></tr>
+<tr><th id="113">113</th><td>      <a class="local col6 ref" href="#6method" title='method' data-ref="6method">method</a> = <a class="enum" href="jpeglib.h.html#JDCT_ISLOW" title='JDCT_ISLOW' data-ref="JDCT_ISLOW">JDCT_ISLOW</a>;      <i>/* jidctred uses islow-style table */</i></td></tr>
+<tr><th id="114">114</th><td>      <b>break</b>;</td></tr>
+<tr><th id="115">115</th><td>    <b>case</b> <var>2</var>:</td></tr>
+<tr><th id="116">116</th><td>      <b>if</b> (<a class="ref fn" href="jsimddct.h.html#jsimd_can_idct_2x2" title='jsimd_can_idct_2x2' data-ref="jsimd_can_idct_2x2">jsimd_can_idct_2x2</a>())</td></tr>
+<tr><th id="117">117</th><td>        <a class="local col7 ref" href="#7method_ptr" title='method_ptr' data-ref="7method_ptr">method_ptr</a> = <a class="ref fn" href="jsimddct.h.html#jsimd_idct_2x2" title='jsimd_idct_2x2' data-ref="jsimd_idct_2x2">jsimd_idct_2x2</a>;</td></tr>
+<tr><th id="118">118</th><td>      <b>else</b></td></tr>
+<tr><th id="119">119</th><td>        <a class="local col7 ref" href="#7method_ptr" title='method_ptr' data-ref="7method_ptr">method_ptr</a> = <a class="ref fn" href="jdct.h.html#jpeg_idct_2x2" title='jpeg_idct_2x2' data-ref="jpeg_idct_2x2">jpeg_idct_2x2</a>;</td></tr>
+<tr><th id="120">120</th><td>      <a class="local col6 ref" href="#6method" title='method' data-ref="6method">method</a> = <a class="enum" href="jpeglib.h.html#JDCT_ISLOW" title='JDCT_ISLOW' data-ref="JDCT_ISLOW">JDCT_ISLOW</a>;      <i>/* jidctred uses islow-style table */</i></td></tr>
+<tr><th id="121">121</th><td>      <b>break</b>;</td></tr>
+<tr><th id="122">122</th><td>    <b>case</b> <var>3</var>:</td></tr>
+<tr><th id="123">123</th><td>      <a class="local col7 ref" href="#7method_ptr" title='method_ptr' data-ref="7method_ptr">method_ptr</a> = <a class="ref fn" href="jdct.h.html#jpeg_idct_3x3" title='jpeg_idct_3x3' data-ref="jpeg_idct_3x3">jpeg_idct_3x3</a>;</td></tr>
+<tr><th id="124">124</th><td>      <a class="local col6 ref" href="#6method" title='method' data-ref="6method">method</a> = <a class="enum" href="jpeglib.h.html#JDCT_ISLOW" title='JDCT_ISLOW' data-ref="JDCT_ISLOW">JDCT_ISLOW</a>;      <i>/* jidctint uses islow-style table */</i></td></tr>
+<tr><th id="125">125</th><td>      <b>break</b>;</td></tr>
+<tr><th id="126">126</th><td>    <b>case</b> <var>4</var>:</td></tr>
+<tr><th id="127">127</th><td>      <b>if</b> (<a class="ref fn" href="jsimddct.h.html#jsimd_can_idct_4x4" title='jsimd_can_idct_4x4' data-ref="jsimd_can_idct_4x4">jsimd_can_idct_4x4</a>())</td></tr>
+<tr><th id="128">128</th><td>        <a class="local col7 ref" href="#7method_ptr" title='method_ptr' data-ref="7method_ptr">method_ptr</a> = <a class="ref fn" href="jsimddct.h.html#jsimd_idct_4x4" title='jsimd_idct_4x4' data-ref="jsimd_idct_4x4">jsimd_idct_4x4</a>;</td></tr>
+<tr><th id="129">129</th><td>      <b>else</b></td></tr>
+<tr><th id="130">130</th><td>        <a class="local col7 ref" href="#7method_ptr" title='method_ptr' data-ref="7method_ptr">method_ptr</a> = <a class="ref fn" href="jdct.h.html#jpeg_idct_4x4" title='jpeg_idct_4x4' data-ref="jpeg_idct_4x4">jpeg_idct_4x4</a>;</td></tr>
+<tr><th id="131">131</th><td>      <a class="local col6 ref" href="#6method" title='method' data-ref="6method">method</a> = <a class="enum" href="jpeglib.h.html#JDCT_ISLOW" title='JDCT_ISLOW' data-ref="JDCT_ISLOW">JDCT_ISLOW</a>;      <i>/* jidctred uses islow-style table */</i></td></tr>
+<tr><th id="132">132</th><td>      <b>break</b>;</td></tr>
+<tr><th id="133">133</th><td>    <b>case</b> <var>5</var>:</td></tr>
+<tr><th id="134">134</th><td>      <a class="local col7 ref" href="#7method_ptr" title='method_ptr' data-ref="7method_ptr">method_ptr</a> = <a class="ref fn" href="jdct.h.html#jpeg_idct_5x5" title='jpeg_idct_5x5' data-ref="jpeg_idct_5x5">jpeg_idct_5x5</a>;</td></tr>
+<tr><th id="135">135</th><td>      <a class="local col6 ref" href="#6method" title='method' data-ref="6method">method</a> = <a class="enum" href="jpeglib.h.html#JDCT_ISLOW" title='JDCT_ISLOW' data-ref="JDCT_ISLOW">JDCT_ISLOW</a>;      <i>/* jidctint uses islow-style table */</i></td></tr>
+<tr><th id="136">136</th><td>      <b>break</b>;</td></tr>
+<tr><th id="137">137</th><td>    <b>case</b> <var>6</var>:</td></tr>
+<tr><th id="138">138</th><td><u>#<span data-ppcond="138">if</span> defined(<span class="macro" data-ref="_M/__mips__">__mips__</span>)</u></td></tr>
+<tr><th id="139">139</th><td>      <b>if</b> (jsimd_can_idct_6x6())</td></tr>
+<tr><th id="140">140</th><td>        method_ptr = jsimd_idct_6x6;</td></tr>
+<tr><th id="141">141</th><td>      <b>else</b></td></tr>
+<tr><th id="142">142</th><td><u>#<span data-ppcond="138">endif</span></u></td></tr>
+<tr><th id="143">143</th><td>      <a class="local col7 ref" href="#7method_ptr" title='method_ptr' data-ref="7method_ptr">method_ptr</a> = <a class="ref fn" href="jdct.h.html#jpeg_idct_6x6" title='jpeg_idct_6x6' data-ref="jpeg_idct_6x6">jpeg_idct_6x6</a>;</td></tr>
+<tr><th id="144">144</th><td>      <a class="local col6 ref" href="#6method" title='method' data-ref="6method">method</a> = <a class="enum" href="jpeglib.h.html#JDCT_ISLOW" title='JDCT_ISLOW' data-ref="JDCT_ISLOW">JDCT_ISLOW</a>;      <i>/* jidctint uses islow-style table */</i></td></tr>
+<tr><th id="145">145</th><td>      <b>break</b>;</td></tr>
+<tr><th id="146">146</th><td>    <b>case</b> <var>7</var>:</td></tr>
+<tr><th id="147">147</th><td>      <a class="local col7 ref" href="#7method_ptr" title='method_ptr' data-ref="7method_ptr">method_ptr</a> = <a class="ref fn" href="jdct.h.html#jpeg_idct_7x7" title='jpeg_idct_7x7' data-ref="jpeg_idct_7x7">jpeg_idct_7x7</a>;</td></tr>
+<tr><th id="148">148</th><td>      <a class="local col6 ref" href="#6method" title='method' data-ref="6method">method</a> = <a class="enum" href="jpeglib.h.html#JDCT_ISLOW" title='JDCT_ISLOW' data-ref="JDCT_ISLOW">JDCT_ISLOW</a>;      <i>/* jidctint uses islow-style table */</i></td></tr>
+<tr><th id="149">149</th><td>      <b>break</b>;</td></tr>
+<tr><th id="150">150</th><td><u>#<span data-ppcond="110">endif</span></u></td></tr>
+<tr><th id="151">151</th><td>    <b>case</b> <a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a>:</td></tr>
+<tr><th id="152">152</th><td>      <b>switch</b> (<a class="local col1 ref" href="#1cinfo" title='cinfo' data-ref="1cinfo">cinfo</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_decompress_struct::dct_method" title='jpeg_decompress_struct::dct_method' data-ref="jpeg_decompress_struct::dct_method">dct_method</a>) {</td></tr>
+<tr><th id="153">153</th><td><u>#<span data-ppcond="153">ifdef</span> <a class="macro" href="jmorecfg.h.html#237" data-ref="_M/DCT_ISLOW_SUPPORTED">DCT_ISLOW_SUPPORTED</a></u></td></tr>
+<tr><th id="154">154</th><td>      <b>case</b> <a class="enum" href="jpeglib.h.html#JDCT_ISLOW" title='JDCT_ISLOW' data-ref="JDCT_ISLOW">JDCT_ISLOW</a>:</td></tr>
+<tr><th id="155">155</th><td>        <b>if</b> (<a class="ref fn" href="jsimddct.h.html#jsimd_can_idct_islow" title='jsimd_can_idct_islow' data-ref="jsimd_can_idct_islow">jsimd_can_idct_islow</a>())</td></tr>
+<tr><th id="156">156</th><td>          <a class="local col7 ref" href="#7method_ptr" title='method_ptr' data-ref="7method_ptr">method_ptr</a> = <a class="ref fn" href="jsimddct.h.html#jsimd_idct_islow" title='jsimd_idct_islow' data-ref="jsimd_idct_islow">jsimd_idct_islow</a>;</td></tr>
+<tr><th id="157">157</th><td>        <b>else</b></td></tr>
+<tr><th id="158">158</th><td>          <a class="local col7 ref" href="#7method_ptr" title='method_ptr' data-ref="7method_ptr">method_ptr</a> = <a class="ref fn" href="jdct.h.html#jpeg_idct_islow" title='jpeg_idct_islow' data-ref="jpeg_idct_islow">jpeg_idct_islow</a>;</td></tr>
+<tr><th id="159">159</th><td>        <a class="local col6 ref" href="#6method" title='method' data-ref="6method">method</a> = <a class="enum" href="jpeglib.h.html#JDCT_ISLOW" title='JDCT_ISLOW' data-ref="JDCT_ISLOW">JDCT_ISLOW</a>;</td></tr>
+<tr><th id="160">160</th><td>        <b>break</b>;</td></tr>
+<tr><th id="161">161</th><td><u>#<span data-ppcond="153">endif</span></u></td></tr>
+<tr><th id="162">162</th><td><u>#<span data-ppcond="162">ifdef</span> <a class="macro" href="jmorecfg.h.html#238" data-ref="_M/DCT_IFAST_SUPPORTED">DCT_IFAST_SUPPORTED</a></u></td></tr>
+<tr><th id="163">163</th><td>      <b>case</b> <a class="enum" href="jpeglib.h.html#JDCT_IFAST" title='JDCT_IFAST' data-ref="JDCT_IFAST">JDCT_IFAST</a>:</td></tr>
+<tr><th id="164">164</th><td>        <b>if</b> (<a class="ref fn" href="jsimddct.h.html#jsimd_can_idct_ifast" title='jsimd_can_idct_ifast' data-ref="jsimd_can_idct_ifast">jsimd_can_idct_ifast</a>())</td></tr>
+<tr><th id="165">165</th><td>          <a class="local col7 ref" href="#7method_ptr" title='method_ptr' data-ref="7method_ptr">method_ptr</a> = <a class="ref fn" href="jsimddct.h.html#jsimd_idct_ifast" title='jsimd_idct_ifast' data-ref="jsimd_idct_ifast">jsimd_idct_ifast</a>;</td></tr>
+<tr><th id="166">166</th><td>        <b>else</b></td></tr>
+<tr><th id="167">167</th><td>          <a class="local col7 ref" href="#7method_ptr" title='method_ptr' data-ref="7method_ptr">method_ptr</a> = <a class="ref fn" href="jdct.h.html#jpeg_idct_ifast" title='jpeg_idct_ifast' data-ref="jpeg_idct_ifast">jpeg_idct_ifast</a>;</td></tr>
+<tr><th id="168">168</th><td>        <a class="local col6 ref" href="#6method" title='method' data-ref="6method">method</a> = <a class="enum" href="jpeglib.h.html#JDCT_IFAST" title='JDCT_IFAST' data-ref="JDCT_IFAST">JDCT_IFAST</a>;</td></tr>
+<tr><th id="169">169</th><td>        <b>break</b>;</td></tr>
+<tr><th id="170">170</th><td><u>#<span data-ppcond="162">endif</span></u></td></tr>
+<tr><th id="171">171</th><td><u>#<span data-ppcond="171">ifdef</span> <a class="macro" href="jmorecfg.h.html#239" data-ref="_M/DCT_FLOAT_SUPPORTED">DCT_FLOAT_SUPPORTED</a></u></td></tr>
+<tr><th id="172">172</th><td>      <b>case</b> <a class="enum" href="jpeglib.h.html#JDCT_FLOAT" title='JDCT_FLOAT' data-ref="JDCT_FLOAT">JDCT_FLOAT</a>:</td></tr>
+<tr><th id="173">173</th><td>        <b>if</b> (<a class="ref fn" href="jsimddct.h.html#jsimd_can_idct_float" title='jsimd_can_idct_float' data-ref="jsimd_can_idct_float">jsimd_can_idct_float</a>())</td></tr>
+<tr><th id="174">174</th><td>          <a class="local col7 ref" href="#7method_ptr" title='method_ptr' data-ref="7method_ptr">method_ptr</a> = <a class="ref fn" href="jsimddct.h.html#jsimd_idct_float" title='jsimd_idct_float' data-ref="jsimd_idct_float">jsimd_idct_float</a>;</td></tr>
+<tr><th id="175">175</th><td>        <b>else</b></td></tr>
+<tr><th id="176">176</th><td>          <a class="local col7 ref" href="#7method_ptr" title='method_ptr' data-ref="7method_ptr">method_ptr</a> = <a class="ref fn" href="jdct.h.html#jpeg_idct_float" title='jpeg_idct_float' data-ref="jpeg_idct_float">jpeg_idct_float</a>;</td></tr>
+<tr><th id="177">177</th><td>        <a class="local col6 ref" href="#6method" title='method' data-ref="6method">method</a> = <a class="enum" href="jpeglib.h.html#JDCT_FLOAT" title='JDCT_FLOAT' data-ref="JDCT_FLOAT">JDCT_FLOAT</a>;</td></tr>
+<tr><th id="178">178</th><td>        <b>break</b>;</td></tr>
+<tr><th id="179">179</th><td><u>#<span data-ppcond="171">endif</span></u></td></tr>
+<tr><th id="180">180</th><td>      <b>default</b>:</td></tr>
+<tr><th id="181">181</th><td>        <a class="macro" href="jerror.h.html#234" title="((cinfo)-&gt;err-&gt;msg_code = (JERR_NOT_COMPILED), (*(cinfo)-&gt;err-&gt;error_exit) ((j_common_ptr)(cinfo)))" data-ref="_M/ERREXIT">ERREXIT</a>(<a class="local col1 ref" href="#1cinfo" title='cinfo' data-ref="1cinfo">cinfo</a>, <a class="enum" href="jerror.h.html#107" title='JERR_NOT_COMPILED' data-ref="JERR_NOT_COMPILED">JERR_NOT_COMPILED</a>);</td></tr>
+<tr><th id="182">182</th><td>        <b>break</b>;</td></tr>
+<tr><th id="183">183</th><td>      }</td></tr>
+<tr><th id="184">184</th><td>      <b>break</b>;</td></tr>
+<tr><th id="185">185</th><td><u>#<span data-ppcond="185">ifdef</span> <a class="macro" href="jmorecfg.h.html#262" data-ref="_M/IDCT_SCALING_SUPPORTED">IDCT_SCALING_SUPPORTED</a></u></td></tr>
+<tr><th id="186">186</th><td>    <b>case</b> <var>9</var>:</td></tr>
+<tr><th id="187">187</th><td>      <a class="local col7 ref" href="#7method_ptr" title='method_ptr' data-ref="7method_ptr">method_ptr</a> = <a class="ref fn" href="jdct.h.html#jpeg_idct_9x9" title='jpeg_idct_9x9' data-ref="jpeg_idct_9x9">jpeg_idct_9x9</a>;</td></tr>
+<tr><th id="188">188</th><td>      <a class="local col6 ref" href="#6method" title='method' data-ref="6method">method</a> = <a class="enum" href="jpeglib.h.html#JDCT_ISLOW" title='JDCT_ISLOW' data-ref="JDCT_ISLOW">JDCT_ISLOW</a>;      <i>/* jidctint uses islow-style table */</i></td></tr>
+<tr><th id="189">189</th><td>      <b>break</b>;</td></tr>
+<tr><th id="190">190</th><td>    <b>case</b> <var>10</var>:</td></tr>
+<tr><th id="191">191</th><td>      <a class="local col7 ref" href="#7method_ptr" title='method_ptr' data-ref="7method_ptr">method_ptr</a> = <a class="ref fn" href="jdct.h.html#jpeg_idct_10x10" title='jpeg_idct_10x10' data-ref="jpeg_idct_10x10">jpeg_idct_10x10</a>;</td></tr>
+<tr><th id="192">192</th><td>      <a class="local col6 ref" href="#6method" title='method' data-ref="6method">method</a> = <a class="enum" href="jpeglib.h.html#JDCT_ISLOW" title='JDCT_ISLOW' data-ref="JDCT_ISLOW">JDCT_ISLOW</a>;      <i>/* jidctint uses islow-style table */</i></td></tr>
+<tr><th id="193">193</th><td>      <b>break</b>;</td></tr>
+<tr><th id="194">194</th><td>    <b>case</b> <var>11</var>:</td></tr>
+<tr><th id="195">195</th><td>      <a class="local col7 ref" href="#7method_ptr" title='method_ptr' data-ref="7method_ptr">method_ptr</a> = <a class="ref fn" href="jdct.h.html#jpeg_idct_11x11" title='jpeg_idct_11x11' data-ref="jpeg_idct_11x11">jpeg_idct_11x11</a>;</td></tr>
+<tr><th id="196">196</th><td>      <a class="local col6 ref" href="#6method" title='method' data-ref="6method">method</a> = <a class="enum" href="jpeglib.h.html#JDCT_ISLOW" title='JDCT_ISLOW' data-ref="JDCT_ISLOW">JDCT_ISLOW</a>;      <i>/* jidctint uses islow-style table */</i></td></tr>
+<tr><th id="197">197</th><td>      <b>break</b>;</td></tr>
+<tr><th id="198">198</th><td>    <b>case</b> <var>12</var>:</td></tr>
+<tr><th id="199">199</th><td><u>#<span data-ppcond="199">if</span> defined(<span class="macro" data-ref="_M/__mips__">__mips__</span>)</u></td></tr>
+<tr><th id="200">200</th><td>      <b>if</b> (jsimd_can_idct_12x12())</td></tr>
+<tr><th id="201">201</th><td>        method_ptr = jsimd_idct_12x12;</td></tr>
+<tr><th id="202">202</th><td>      <b>else</b></td></tr>
+<tr><th id="203">203</th><td><u>#<span data-ppcond="199">endif</span></u></td></tr>
+<tr><th id="204">204</th><td>      <a class="local col7 ref" href="#7method_ptr" title='method_ptr' data-ref="7method_ptr">method_ptr</a> = <a class="ref fn" href="jdct.h.html#jpeg_idct_12x12" title='jpeg_idct_12x12' data-ref="jpeg_idct_12x12">jpeg_idct_12x12</a>;</td></tr>
+<tr><th id="205">205</th><td>      <a class="local col6 ref" href="#6method" title='method' data-ref="6method">method</a> = <a class="enum" href="jpeglib.h.html#JDCT_ISLOW" title='JDCT_ISLOW' data-ref="JDCT_ISLOW">JDCT_ISLOW</a>;      <i>/* jidctint uses islow-style table */</i></td></tr>
+<tr><th id="206">206</th><td>      <b>break</b>;</td></tr>
+<tr><th id="207">207</th><td>    <b>case</b> <var>13</var>:</td></tr>
+<tr><th id="208">208</th><td>      <a class="local col7 ref" href="#7method_ptr" title='method_ptr' data-ref="7method_ptr">method_ptr</a> = <a class="ref fn" href="jdct.h.html#jpeg_idct_13x13" title='jpeg_idct_13x13' data-ref="jpeg_idct_13x13">jpeg_idct_13x13</a>;</td></tr>
+<tr><th id="209">209</th><td>      <a class="local col6 ref" href="#6method" title='method' data-ref="6method">method</a> = <a class="enum" href="jpeglib.h.html#JDCT_ISLOW" title='JDCT_ISLOW' data-ref="JDCT_ISLOW">JDCT_ISLOW</a>;      <i>/* jidctint uses islow-style table */</i></td></tr>
+<tr><th id="210">210</th><td>      <b>break</b>;</td></tr>
+<tr><th id="211">211</th><td>    <b>case</b> <var>14</var>:</td></tr>
+<tr><th id="212">212</th><td>      <a class="local col7 ref" href="#7method_ptr" title='method_ptr' data-ref="7method_ptr">method_ptr</a> = <a class="ref fn" href="jdct.h.html#jpeg_idct_14x14" title='jpeg_idct_14x14' data-ref="jpeg_idct_14x14">jpeg_idct_14x14</a>;</td></tr>
+<tr><th id="213">213</th><td>      <a class="local col6 ref" href="#6method" title='method' data-ref="6method">method</a> = <a class="enum" href="jpeglib.h.html#JDCT_ISLOW" title='JDCT_ISLOW' data-ref="JDCT_ISLOW">JDCT_ISLOW</a>;      <i>/* jidctint uses islow-style table */</i></td></tr>
+<tr><th id="214">214</th><td>      <b>break</b>;</td></tr>
+<tr><th id="215">215</th><td>    <b>case</b> <var>15</var>:</td></tr>
+<tr><th id="216">216</th><td>      <a class="local col7 ref" href="#7method_ptr" title='method_ptr' data-ref="7method_ptr">method_ptr</a> = <a class="ref fn" href="jdct.h.html#jpeg_idct_15x15" title='jpeg_idct_15x15' data-ref="jpeg_idct_15x15">jpeg_idct_15x15</a>;</td></tr>
+<tr><th id="217">217</th><td>      <a class="local col6 ref" href="#6method" title='method' data-ref="6method">method</a> = <a class="enum" href="jpeglib.h.html#JDCT_ISLOW" title='JDCT_ISLOW' data-ref="JDCT_ISLOW">JDCT_ISLOW</a>;      <i>/* jidctint uses islow-style table */</i></td></tr>
+<tr><th id="218">218</th><td>      <b>break</b>;</td></tr>
+<tr><th id="219">219</th><td>    <b>case</b> <var>16</var>:</td></tr>
+<tr><th id="220">220</th><td>      <a class="local col7 ref" href="#7method_ptr" title='method_ptr' data-ref="7method_ptr">method_ptr</a> = <a class="ref fn" href="jdct.h.html#jpeg_idct_16x16" title='jpeg_idct_16x16' data-ref="jpeg_idct_16x16">jpeg_idct_16x16</a>;</td></tr>
+<tr><th id="221">221</th><td>      <a class="local col6 ref" href="#6method" title='method' data-ref="6method">method</a> = <a class="enum" href="jpeglib.h.html#JDCT_ISLOW" title='JDCT_ISLOW' data-ref="JDCT_ISLOW">JDCT_ISLOW</a>;      <i>/* jidctint uses islow-style table */</i></td></tr>
+<tr><th id="222">222</th><td>      <b>break</b>;</td></tr>
+<tr><th id="223">223</th><td><u>#<span data-ppcond="185">endif</span></u></td></tr>
+<tr><th id="224">224</th><td>    <b>default</b>:</td></tr>
+<tr><th id="225">225</th><td>      <a class="macro" href="jerror.h.html#237" title="((cinfo)-&gt;err-&gt;msg_code = (JERR_BAD_DCTSIZE), (cinfo)-&gt;err-&gt;msg_parm.i[0] = (compptr-&gt;DCT_h_scaled_size), (*(cinfo)-&gt;err-&gt;error_exit) ((j_common_ptr)(cinfo)))" data-ref="_M/ERREXIT1">ERREXIT1</a>(<a class="local col1 ref" href="#1cinfo" title='cinfo' data-ref="1cinfo">cinfo</a>, <a class="enum" href="jerror.h.html#57" title='JERR_BAD_DCTSIZE' data-ref="JERR_BAD_DCTSIZE">JERR_BAD_DCTSIZE</a>, <a class="local col5 ref" href="#5compptr" title='compptr' data-ref="5compptr">compptr</a>-&gt;<a class="macro" href="jpegcomp.h.html#14" title="DCT_h_scaled_size" data-ref="_M/_DCT_scaled_size">_DCT_scaled_size</a>);</td></tr>
+<tr><th id="226">226</th><td>      <b>break</b>;</td></tr>
+<tr><th id="227">227</th><td>    }</td></tr>
+<tr><th id="228">228</th><td>    <a class="local col2 ref" href="#2idct" title='idct' data-ref="2idct">idct</a>-&gt;<a class="tu ref field" href="#(anonymous)::pub" title='(anonymous struct)::pub' data-use='m' data-ref="(anonymous)::pub">pub</a>.<a class="ref field" href="jpegint.h.html#jpeg_inverse_dct::inverse_DCT" title='jpeg_inverse_dct::inverse_DCT' data-ref="jpeg_inverse_dct::inverse_DCT">inverse_DCT</a>[<a class="local col3 ref" href="#3ci" title='ci' data-ref="3ci">ci</a>] = <a class="local col7 ref" href="#7method_ptr" title='method_ptr' data-ref="7method_ptr">method_ptr</a>;</td></tr>
+<tr><th id="229">229</th><td>    <i>/* Create multiplier table from quant table.</i></td></tr>
+<tr><th id="230">230</th><td><i>     * However, we can skip this if the component is uninteresting</i></td></tr>
+<tr><th id="231">231</th><td><i>     * or if we already built the table.  Also, if no quant table</i></td></tr>
+<tr><th id="232">232</th><td><i>     * has yet been saved for the component, we leave the</i></td></tr>
+<tr><th id="233">233</th><td><i>     * multiplier table all-zero; we'll be reading zeroes from the</i></td></tr>
+<tr><th id="234">234</th><td><i>     * coefficient controller's buffer anyway.</i></td></tr>
+<tr><th id="235">235</th><td><i>     */</i></td></tr>
+<tr><th id="236">236</th><td>    <b>if</b> (!<a class="local col5 ref" href="#5compptr" title='compptr' data-ref="5compptr">compptr</a>-&gt;<a class="ref field" href="jpeglib.h.html#(anonymous)::component_needed" title='(anonymous struct)::component_needed' data-ref="(anonymous)::component_needed">component_needed</a> || <a class="local col2 ref" href="#2idct" title='idct' data-ref="2idct">idct</a>-&gt;<a class="tu ref field" href="#(anonymous)::cur_method" title='(anonymous struct)::cur_method' data-use='r' data-ref="(anonymous)::cur_method">cur_method</a>[<a class="local col3 ref" href="#3ci" title='ci' data-ref="3ci">ci</a>] == <a class="local col6 ref" href="#6method" title='method' data-ref="6method">method</a>)</td></tr>
+<tr><th id="237">237</th><td>      <b>continue</b>;</td></tr>
+<tr><th id="238">238</th><td>    <a class="local col8 ref" href="#8qtbl" title='qtbl' data-ref="8qtbl">qtbl</a> = <a class="local col5 ref" href="#5compptr" title='compptr' data-ref="5compptr">compptr</a>-&gt;<a class="ref field" href="jpeglib.h.html#(anonymous)::quant_table" title='(anonymous struct)::quant_table' data-ref="(anonymous)::quant_table">quant_table</a>;</td></tr>
+<tr><th id="239">239</th><td>    <b>if</b> (<a class="local col8 ref" href="#8qtbl" title='qtbl' data-ref="8qtbl">qtbl</a> == <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>)           <i>/* happens if no data yet for component */</i></td></tr>
+<tr><th id="240">240</th><td>      <b>continue</b>;</td></tr>
+<tr><th id="241">241</th><td>    <a class="local col2 ref" href="#2idct" title='idct' data-ref="2idct">idct</a>-&gt;<a class="tu ref field" href="#(anonymous)::cur_method" title='(anonymous struct)::cur_method' data-use='w' data-ref="(anonymous)::cur_method">cur_method</a>[<a class="local col3 ref" href="#3ci" title='ci' data-ref="3ci">ci</a>] = <a class="local col6 ref" href="#6method" title='method' data-ref="6method">method</a>;</td></tr>
+<tr><th id="242">242</th><td>    <b>switch</b> (<a class="local col6 ref" href="#6method" title='method' data-ref="6method">method</a>) {</td></tr>
+<tr><th id="243">243</th><td><u>#<span data-ppcond="243">ifdef</span> <a class="macro" href="#82" data-ref="_M/PROVIDE_ISLOW_TABLES">PROVIDE_ISLOW_TABLES</a></u></td></tr>
+<tr><th id="244">244</th><td>    <b>case</b> <a class="enum" href="jpeglib.h.html#JDCT_ISLOW" title='JDCT_ISLOW' data-ref="JDCT_ISLOW">JDCT_ISLOW</a>:</td></tr>
+<tr><th id="245">245</th><td>      {</td></tr>
+<tr><th id="246">246</th><td>        <i>/* For LL&amp;M IDCT method, multipliers are equal to raw quantization</i></td></tr>
+<tr><th id="247">247</th><td><i>         * coefficients, but are stored as ints to ensure access efficiency.</i></td></tr>
+<tr><th id="248">248</th><td><i>         */</i></td></tr>
+<tr><th id="249">249</th><td>        <a class="typedef" href="jdct.h.html#ISLOW_MULT_TYPE" title='ISLOW_MULT_TYPE' data-type='int' data-ref="ISLOW_MULT_TYPE">ISLOW_MULT_TYPE</a> *<dfn class="local col9 decl" id="9ismtbl" title='ismtbl' data-type='ISLOW_MULT_TYPE *' data-ref="9ismtbl">ismtbl</dfn> = (<a class="typedef" href="jdct.h.html#ISLOW_MULT_TYPE" title='ISLOW_MULT_TYPE' data-type='int' data-ref="ISLOW_MULT_TYPE">ISLOW_MULT_TYPE</a> *)<a class="local col5 ref" href="#5compptr" title='compptr' data-ref="5compptr">compptr</a>-&gt;<a class="ref field" href="jpeglib.h.html#(anonymous)::dct_table" title='(anonymous struct)::dct_table' data-ref="(anonymous)::dct_table">dct_table</a>;</td></tr>
+<tr><th id="250">250</th><td>        <b>for</b> (<a class="local col4 ref" href="#4i" title='i' data-ref="4i">i</a> = <var>0</var>; <a class="local col4 ref" href="#4i" title='i' data-ref="4i">i</a> &lt; <a class="macro" href="jpeglib.h.html#47" title="64" data-ref="_M/DCTSIZE2">DCTSIZE2</a>; <a class="local col4 ref" href="#4i" title='i' data-ref="4i">i</a>++) {</td></tr>
+<tr><th id="251">251</th><td>          <a class="local col9 ref" href="#9ismtbl" title='ismtbl' data-ref="9ismtbl">ismtbl</a>[<a class="local col4 ref" href="#4i" title='i' data-ref="4i">i</a>] = (<a class="typedef" href="jdct.h.html#ISLOW_MULT_TYPE" title='ISLOW_MULT_TYPE' data-type='int' data-ref="ISLOW_MULT_TYPE">ISLOW_MULT_TYPE</a>)<a class="local col8 ref" href="#8qtbl" title='qtbl' data-ref="8qtbl">qtbl</a>-&gt;<a class="ref field" href="jpeglib.h.html#(anonymous)::quantval" title='(anonymous struct)::quantval' data-ref="(anonymous)::quantval">quantval</a>[<a class="local col4 ref" href="#4i" title='i' data-ref="4i">i</a>];</td></tr>
+<tr><th id="252">252</th><td>        }</td></tr>
+<tr><th id="253">253</th><td>      }</td></tr>
+<tr><th id="254">254</th><td>      <b>break</b>;</td></tr>
+<tr><th id="255">255</th><td><u>#<span data-ppcond="243">endif</span></u></td></tr>
+<tr><th id="256">256</th><td><u>#<span data-ppcond="256">ifdef</span> <a class="macro" href="jmorecfg.h.html#238" data-ref="_M/DCT_IFAST_SUPPORTED">DCT_IFAST_SUPPORTED</a></u></td></tr>
+<tr><th id="257">257</th><td>    <b>case</b> <a class="enum" href="jpeglib.h.html#JDCT_IFAST" title='JDCT_IFAST' data-ref="JDCT_IFAST">JDCT_IFAST</a>:</td></tr>
+<tr><th id="258">258</th><td>      {</td></tr>
+<tr><th id="259">259</th><td>        <i>/* For AA&amp;N IDCT method, multipliers are equal to quantization</i></td></tr>
+<tr><th id="260">260</th><td><i>         * coefficients scaled by scalefactor[row]*scalefactor[col], where</i></td></tr>
+<tr><th id="261">261</th><td><i>         *   scalefactor[0] = 1</i></td></tr>
+<tr><th id="262">262</th><td><i>         *   scalefactor[k] = cos(k*PI/16) * sqrt(2)    for k=1..7</i></td></tr>
+<tr><th id="263">263</th><td><i>         * For integer operation, the multiplier table is to be scaled by</i></td></tr>
+<tr><th id="264">264</th><td><i>         * IFAST_SCALE_BITS.</i></td></tr>
+<tr><th id="265">265</th><td><i>         */</i></td></tr>
+<tr><th id="266">266</th><td>        <a class="typedef" href="jdct.h.html#IFAST_MULT_TYPE" title='IFAST_MULT_TYPE' data-type='int' data-ref="IFAST_MULT_TYPE">IFAST_MULT_TYPE</a> *<dfn class="local col0 decl" id="10ifmtbl" title='ifmtbl' data-type='IFAST_MULT_TYPE *' data-ref="10ifmtbl">ifmtbl</dfn> = (<a class="typedef" href="jdct.h.html#IFAST_MULT_TYPE" title='IFAST_MULT_TYPE' data-type='int' data-ref="IFAST_MULT_TYPE">IFAST_MULT_TYPE</a> *)<a class="local col5 ref" href="#5compptr" title='compptr' data-ref="5compptr">compptr</a>-&gt;<a class="ref field" href="jpeglib.h.html#(anonymous)::dct_table" title='(anonymous struct)::dct_table' data-ref="(anonymous)::dct_table">dct_table</a>;</td></tr>
+<tr><th id="267">267</th><td><u>#define <dfn class="macro" id="_M/CONST_BITS" data-ref="_M/CONST_BITS">CONST_BITS</dfn>  14</u></td></tr>
+<tr><th id="268">268</th><td>        <em>static</em> <em>const</em> <a class="typedef" href="jmorecfg.h.html#INT16" title='INT16' data-type='short' data-ref="INT16">INT16</a> <dfn class="local col1 decl" id="11aanscales" title='aanscales' data-type='const INT16[64]' data-ref="11aanscales">aanscales</dfn>[<a class="macro" href="jpeglib.h.html#47" title="64" data-ref="_M/DCTSIZE2">DCTSIZE2</a>] = {</td></tr>
+<tr><th id="269">269</th><td>          <i>/* precomputed values scaled up by 14 bits */</i></td></tr>
+<tr><th id="270">270</th><td>          <var>16384</var>, <var>22725</var>, <var>21407</var>, <var>19266</var>, <var>16384</var>, <var>12873</var>,  <var>8867</var>,  <var>4520</var>,</td></tr>
+<tr><th id="271">271</th><td>          <var>22725</var>, <var>31521</var>, <var>29692</var>, <var>26722</var>, <var>22725</var>, <var>17855</var>, <var>12299</var>,  <var>6270</var>,</td></tr>
+<tr><th id="272">272</th><td>          <var>21407</var>, <var>29692</var>, <var>27969</var>, <var>25172</var>, <var>21407</var>, <var>16819</var>, <var>11585</var>,  <var>5906</var>,</td></tr>
+<tr><th id="273">273</th><td>          <var>19266</var>, <var>26722</var>, <var>25172</var>, <var>22654</var>, <var>19266</var>, <var>15137</var>, <var>10426</var>,  <var>5315</var>,</td></tr>
+<tr><th id="274">274</th><td>          <var>16384</var>, <var>22725</var>, <var>21407</var>, <var>19266</var>, <var>16384</var>, <var>12873</var>,  <var>8867</var>,  <var>4520</var>,</td></tr>
+<tr><th id="275">275</th><td>          <var>12873</var>, <var>17855</var>, <var>16819</var>, <var>15137</var>, <var>12873</var>, <var>10114</var>,  <var>6967</var>,  <var>3552</var>,</td></tr>
+<tr><th id="276">276</th><td>           <var>8867</var>, <var>12299</var>, <var>11585</var>, <var>10426</var>,  <var>8867</var>,  <var>6967</var>,  <var>4799</var>,  <var>2446</var>,</td></tr>
+<tr><th id="277">277</th><td>           <var>4520</var>,  <var>6270</var>,  <var>5906</var>,  <var>5315</var>,  <var>4520</var>,  <var>3552</var>,  <var>2446</var>,  <var>1247</var></td></tr>
+<tr><th id="278">278</th><td>        };</td></tr>
+<tr><th id="279">279</th><td>        <a class="macro" href="jpegint.h.html#315" title="" data-ref="_M/SHIFT_TEMPS">SHIFT_TEMPS</a></td></tr>
+<tr><th id="280">280</th><td></td></tr>
+<tr><th id="281">281</th><td>        <b>for</b> (<a class="local col4 ref" href="#4i" title='i' data-ref="4i">i</a> = <var>0</var>; <a class="local col4 ref" href="#4i" title='i' data-ref="4i">i</a> &lt; <a class="macro" href="jpeglib.h.html#47" title="64" data-ref="_M/DCTSIZE2">DCTSIZE2</a>; <a class="local col4 ref" href="#4i" title='i' data-ref="4i">i</a>++) {</td></tr>
+<tr><th id="282">282</th><td>          <a class="local col0 ref" href="#10ifmtbl" title='ifmtbl' data-ref="10ifmtbl">ifmtbl</a>[<a class="local col4 ref" href="#4i" title='i' data-ref="4i">i</a>] = (<a class="typedef" href="jdct.h.html#IFAST_MULT_TYPE" title='IFAST_MULT_TYPE' data-type='int' data-ref="IFAST_MULT_TYPE">IFAST_MULT_TYPE</a>)</td></tr>
+<tr><th id="283">283</th><td>            <a class="macro" href="jdct.h.html#178" title="((((((JLONG)qtbl-&gt;quantval[i]) * ((JLONG)aanscales[i]))) + (((JLONG)1) &lt;&lt; ((14 - 2) - 1))) &gt;&gt; (14 - 2))" data-ref="_M/DESCALE">DESCALE</a>(<a class="macro" href="jdct.h.html#207" title="(((JLONG)qtbl-&gt;quantval[i]) * ((JLONG)aanscales[i]))" data-ref="_M/MULTIPLY16V16">MULTIPLY16V16</a>((<a class="typedef" href="jpegint.h.html#JLONG" title='JLONG' data-type='long' data-ref="JLONG">JLONG</a>)<a class="local col8 ref" href="#8qtbl" title='qtbl' data-ref="8qtbl">qtbl</a>-&gt;<a class="ref field" href="jpeglib.h.html#(anonymous)::quantval" title='(anonymous struct)::quantval' data-ref="(anonymous)::quantval">quantval</a>[<a class="local col4 ref" href="#4i" title='i' data-ref="4i">i</a>],</td></tr>
+<tr><th id="284">284</th><td>                                  (<a class="typedef" href="jpegint.h.html#JLONG" title='JLONG' data-type='long' data-ref="JLONG">JLONG</a>)<a class="local col1 ref" href="#11aanscales" title='aanscales' data-ref="11aanscales">aanscales</a>[<a class="local col4 ref" href="#4i" title='i' data-ref="4i">i</a>]),</td></tr>
+<tr><th id="285">285</th><td>                    <a class="macro" href="#267" title="14" data-ref="_M/CONST_BITS">CONST_BITS</a> - <a class="macro" href="jdct.h.html#69" title="2" data-ref="_M/IFAST_SCALE_BITS">IFAST_SCALE_BITS</a>);</td></tr>
+<tr><th id="286">286</th><td>        }</td></tr>
+<tr><th id="287">287</th><td>      }</td></tr>
+<tr><th id="288">288</th><td>      <b>break</b>;</td></tr>
+<tr><th id="289">289</th><td><u>#<span data-ppcond="256">endif</span></u></td></tr>
+<tr><th id="290">290</th><td><u>#<span data-ppcond="290">ifdef</span> <a class="macro" href="jmorecfg.h.html#239" data-ref="_M/DCT_FLOAT_SUPPORTED">DCT_FLOAT_SUPPORTED</a></u></td></tr>
+<tr><th id="291">291</th><td>    <b>case</b> <a class="enum" href="jpeglib.h.html#JDCT_FLOAT" title='JDCT_FLOAT' data-ref="JDCT_FLOAT">JDCT_FLOAT</a>:</td></tr>
+<tr><th id="292">292</th><td>      {</td></tr>
+<tr><th id="293">293</th><td>        <i>/* For float AA&amp;N IDCT method, multipliers are equal to quantization</i></td></tr>
+<tr><th id="294">294</th><td><i>         * coefficients scaled by scalefactor[row]*scalefactor[col], where</i></td></tr>
+<tr><th id="295">295</th><td><i>         *   scalefactor[0] = 1</i></td></tr>
+<tr><th id="296">296</th><td><i>         *   scalefactor[k] = cos(k*PI/16) * sqrt(2)    for k=1..7</i></td></tr>
+<tr><th id="297">297</th><td><i>         */</i></td></tr>
+<tr><th id="298">298</th><td>        <a class="typedef" href="jdct.h.html#FLOAT_MULT_TYPE" title='FLOAT_MULT_TYPE' data-type='float' data-ref="FLOAT_MULT_TYPE">FLOAT_MULT_TYPE</a> *<dfn class="local col2 decl" id="12fmtbl" title='fmtbl' data-type='FLOAT_MULT_TYPE *' data-ref="12fmtbl">fmtbl</dfn> = (<a class="typedef" href="jdct.h.html#FLOAT_MULT_TYPE" title='FLOAT_MULT_TYPE' data-type='float' data-ref="FLOAT_MULT_TYPE">FLOAT_MULT_TYPE</a> *)<a class="local col5 ref" href="#5compptr" title='compptr' data-ref="5compptr">compptr</a>-&gt;<a class="ref field" href="jpeglib.h.html#(anonymous)::dct_table" title='(anonymous struct)::dct_table' data-ref="(anonymous)::dct_table">dct_table</a>;</td></tr>
+<tr><th id="299">299</th><td>        <em>int</em> <dfn class="local col3 decl" id="13row" title='row' data-type='int' data-ref="13row">row</dfn>, <dfn class="local col4 decl" id="14col" title='col' data-type='int' data-ref="14col">col</dfn>;</td></tr>
+<tr><th id="300">300</th><td>        <em>static</em> <em>const</em> <em>double</em> <dfn class="local col5 decl" id="15aanscalefactor" title='aanscalefactor' data-type='const double[8]' data-ref="15aanscalefactor">aanscalefactor</dfn>[<a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a>] = {</td></tr>
+<tr><th id="301">301</th><td>          <var>1.0</var>, <var>1.387039845</var>, <var>1.306562965</var>, <var>1.175875602</var>,</td></tr>
+<tr><th id="302">302</th><td>          <var>1.0</var>, <var>0.785694958</var>, <var>0.541196100</var>, <var>0.275899379</var></td></tr>
+<tr><th id="303">303</th><td>        };</td></tr>
+<tr><th id="304">304</th><td></td></tr>
+<tr><th id="305">305</th><td>        <a class="local col4 ref" href="#4i" title='i' data-ref="4i">i</a> = <var>0</var>;</td></tr>
+<tr><th id="306">306</th><td>        <b>for</b> (<a class="local col3 ref" href="#13row" title='row' data-ref="13row">row</a> = <var>0</var>; <a class="local col3 ref" href="#13row" title='row' data-ref="13row">row</a> &lt; <a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a>; <a class="local col3 ref" href="#13row" title='row' data-ref="13row">row</a>++) {</td></tr>
+<tr><th id="307">307</th><td>          <b>for</b> (<a class="local col4 ref" href="#14col" title='col' data-ref="14col">col</a> = <var>0</var>; <a class="local col4 ref" href="#14col" title='col' data-ref="14col">col</a> &lt; <a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a>; <a class="local col4 ref" href="#14col" title='col' data-ref="14col">col</a>++) {</td></tr>
+<tr><th id="308">308</th><td>            <a class="local col2 ref" href="#12fmtbl" title='fmtbl' data-ref="12fmtbl">fmtbl</a>[<a class="local col4 ref" href="#4i" title='i' data-ref="4i">i</a>] = (<a class="typedef" href="jdct.h.html#FLOAT_MULT_TYPE" title='FLOAT_MULT_TYPE' data-type='float' data-ref="FLOAT_MULT_TYPE">FLOAT_MULT_TYPE</a>)</td></tr>
+<tr><th id="309">309</th><td>              ((<em>double</em>)<a class="local col8 ref" href="#8qtbl" title='qtbl' data-ref="8qtbl">qtbl</a>-&gt;<a class="ref field" href="jpeglib.h.html#(anonymous)::quantval" title='(anonymous struct)::quantval' data-ref="(anonymous)::quantval">quantval</a>[<a class="local col4 ref" href="#4i" title='i' data-ref="4i">i</a>] *</td></tr>
+<tr><th id="310">310</th><td>               <a class="local col5 ref" href="#15aanscalefactor" title='aanscalefactor' data-ref="15aanscalefactor">aanscalefactor</a>[<a class="local col3 ref" href="#13row" title='row' data-ref="13row">row</a>] * <a class="local col5 ref" href="#15aanscalefactor" title='aanscalefactor' data-ref="15aanscalefactor">aanscalefactor</a>[<a class="local col4 ref" href="#14col" title='col' data-ref="14col">col</a>]);</td></tr>
+<tr><th id="311">311</th><td>            <a class="local col4 ref" href="#4i" title='i' data-ref="4i">i</a>++;</td></tr>
+<tr><th id="312">312</th><td>          }</td></tr>
+<tr><th id="313">313</th><td>        }</td></tr>
+<tr><th id="314">314</th><td>      }</td></tr>
+<tr><th id="315">315</th><td>      <b>break</b>;</td></tr>
+<tr><th id="316">316</th><td><u>#<span data-ppcond="290">endif</span></u></td></tr>
+<tr><th id="317">317</th><td>    <b>default</b>:</td></tr>
+<tr><th id="318">318</th><td>      <a class="macro" href="jerror.h.html#234" title="((cinfo)-&gt;err-&gt;msg_code = (JERR_NOT_COMPILED), (*(cinfo)-&gt;err-&gt;error_exit) ((j_common_ptr)(cinfo)))" data-ref="_M/ERREXIT">ERREXIT</a>(<a class="local col1 ref" href="#1cinfo" title='cinfo' data-ref="1cinfo">cinfo</a>, <a class="enum" href="jerror.h.html#107" title='JERR_NOT_COMPILED' data-ref="JERR_NOT_COMPILED">JERR_NOT_COMPILED</a>);</td></tr>
+<tr><th id="319">319</th><td>      <b>break</b>;</td></tr>
+<tr><th id="320">320</th><td>    }</td></tr>
+<tr><th id="321">321</th><td>  }</td></tr>
+<tr><th id="322">322</th><td>}</td></tr>
+<tr><th id="323">323</th><td></td></tr>
+<tr><th id="324">324</th><td></td></tr>
+<tr><th id="325">325</th><td><i>/*</i></td></tr>
+<tr><th id="326">326</th><td><i> * Initialize IDCT manager.</i></td></tr>
+<tr><th id="327">327</th><td><i> */</i></td></tr>
+<tr><th id="328">328</th><td></td></tr>
+<tr><th id="329">329</th><td><a class="macro" href="jmorecfg.h.html#172" title="void" data-ref="_M/GLOBAL">GLOBAL</a>(<em>void</em>)</td></tr>
+<tr><th id="330">330</th><td><dfn class="decl def fn" id="jinit_inverse_dct" title='jinit_inverse_dct' data-ref="jinit_inverse_dct">jinit_inverse_dct</dfn>(<a class="typedef" href="jpeglib.h.html#j_decompress_ptr" title='j_decompress_ptr' data-type='struct jpeg_decompress_struct *' data-ref="j_decompress_ptr">j_decompress_ptr</a> <dfn class="local col6 decl" id="16cinfo" title='cinfo' data-type='j_decompress_ptr' data-ref="16cinfo">cinfo</dfn>)</td></tr>
+<tr><th id="331">331</th><td>{</td></tr>
+<tr><th id="332">332</th><td>  <a class="typedef" href="#my_idct_ptr" title='my_idct_ptr' data-type='my_idct_controller *' data-ref="my_idct_ptr">my_idct_ptr</a> <dfn class="local col7 decl" id="17idct" title='idct' data-type='my_idct_ptr' data-ref="17idct">idct</dfn>;</td></tr>
+<tr><th id="333">333</th><td>  <em>int</em> <dfn class="local col8 decl" id="18ci" title='ci' data-type='int' data-ref="18ci">ci</dfn>;</td></tr>
+<tr><th id="334">334</th><td>  <a class="typedef" href="jpeglib.h.html#jpeg_component_info" title='jpeg_component_info' data-type='struct jpeg_component_info' data-ref="jpeg_component_info">jpeg_component_info</a> *<dfn class="local col9 decl" id="19compptr" title='compptr' data-type='jpeg_component_info *' data-ref="19compptr">compptr</dfn>;</td></tr>
+<tr><th id="335">335</th><td></td></tr>
+<tr><th id="336">336</th><td>  <a class="local col7 ref" href="#17idct" title='idct' data-ref="17idct">idct</a> = (<a class="typedef" href="#my_idct_ptr" title='my_idct_ptr' data-type='my_idct_controller *' data-ref="my_idct_ptr">my_idct_ptr</a>)</td></tr>
+<tr><th id="337">337</th><td>    (*<a class="local col6 ref" href="#16cinfo" title='cinfo' data-ref="16cinfo">cinfo</a>-&gt;<a class="ref field" href="jpeglib.h.html#473" title='jpeg_decompress_struct::mem' data-ref="jpeg_decompress_struct::mem">mem</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_memory_mgr::alloc_small" title='jpeg_memory_mgr::alloc_small' data-ref="jpeg_memory_mgr::alloc_small">alloc_small</a>) ((<a class="typedef" href="jpeglib.h.html#j_common_ptr" title='j_common_ptr' data-type='struct jpeg_common_struct *' data-ref="j_common_ptr">j_common_ptr</a>)<a class="local col6 ref" href="#16cinfo" title='cinfo' data-ref="16cinfo">cinfo</a>, <a class="macro" href="jpeglib.h.html#826" title="1" data-ref="_M/JPOOL_IMAGE">JPOOL_IMAGE</a>,</td></tr>
+<tr><th id="338">338</th><td>                                <b>sizeof</b>(<a class="typedef" href="#my_idct_controller" title='my_idct_controller' data-type='struct my_idct_controller' data-ref="my_idct_controller">my_idct_controller</a>));</td></tr>
+<tr><th id="339">339</th><td>  <a class="local col6 ref" href="#16cinfo" title='cinfo' data-ref="16cinfo">cinfo</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_decompress_struct::idct" title='jpeg_decompress_struct::idct' data-ref="jpeg_decompress_struct::idct">idct</a> = (<b>struct</b> <a class="type" href="jpegint.h.html#jpeg_inverse_dct" title='jpeg_inverse_dct' data-ref="jpeg_inverse_dct">jpeg_inverse_dct</a> *)<a class="local col7 ref" href="#17idct" title='idct' data-ref="17idct">idct</a>;</td></tr>
+<tr><th id="340">340</th><td>  <a class="local col7 ref" href="#17idct" title='idct' data-ref="17idct">idct</a>-&gt;<a class="tu ref field" href="#(anonymous)::pub" title='(anonymous struct)::pub' data-use='m' data-ref="(anonymous)::pub">pub</a>.<a class="ref field" href="jpegint.h.html#jpeg_inverse_dct::start_pass" title='jpeg_inverse_dct::start_pass' data-ref="jpeg_inverse_dct::start_pass">start_pass</a> = <a class="ref fn" href="#start_pass" title='start_pass' data-ref="start_pass">start_pass</a>;</td></tr>
+<tr><th id="341">341</th><td></td></tr>
+<tr><th id="342">342</th><td>  <b>for</b> (<a class="local col8 ref" href="#18ci" title='ci' data-ref="18ci">ci</a> = <var>0</var>, <a class="local col9 ref" href="#19compptr" title='compptr' data-ref="19compptr">compptr</a> = <a class="local col6 ref" href="#16cinfo" title='cinfo' data-ref="16cinfo">cinfo</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_decompress_struct::comp_info" title='jpeg_decompress_struct::comp_info' data-ref="jpeg_decompress_struct::comp_info">comp_info</a>; <a class="local col8 ref" href="#18ci" title='ci' data-ref="18ci">ci</a> &lt; <a class="local col6 ref" href="#16cinfo" title='cinfo' data-ref="16cinfo">cinfo</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_decompress_struct::num_components" title='jpeg_decompress_struct::num_components' data-ref="jpeg_decompress_struct::num_components">num_components</a>;</td></tr>
+<tr><th id="343">343</th><td>       <a class="local col8 ref" href="#18ci" title='ci' data-ref="18ci">ci</a>++, <a class="local col9 ref" href="#19compptr" title='compptr' data-ref="19compptr">compptr</a>++) {</td></tr>
+<tr><th id="344">344</th><td>    <i>/* Allocate and pre-zero a multiplier table for each component */</i></td></tr>
+<tr><th id="345">345</th><td>    <a class="local col9 ref" href="#19compptr" title='compptr' data-ref="19compptr">compptr</a>-&gt;<a class="ref field" href="jpeglib.h.html#(anonymous)::dct_table" title='(anonymous struct)::dct_table' data-ref="(anonymous)::dct_table">dct_table</a> =</td></tr>
+<tr><th id="346">346</th><td>      (*<a class="local col6 ref" href="#16cinfo" title='cinfo' data-ref="16cinfo">cinfo</a>-&gt;<a class="ref field" href="jpeglib.h.html#473" title='jpeg_decompress_struct::mem' data-ref="jpeg_decompress_struct::mem">mem</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_memory_mgr::alloc_small" title='jpeg_memory_mgr::alloc_small' data-ref="jpeg_memory_mgr::alloc_small">alloc_small</a>) ((<a class="typedef" href="jpeglib.h.html#j_common_ptr" title='j_common_ptr' data-type='struct jpeg_common_struct *' data-ref="j_common_ptr">j_common_ptr</a>)<a class="local col6 ref" href="#16cinfo" title='cinfo' data-ref="16cinfo">cinfo</a>, <a class="macro" href="jpeglib.h.html#826" title="1" data-ref="_M/JPOOL_IMAGE">JPOOL_IMAGE</a>,</td></tr>
+<tr><th id="347">347</th><td>                                  <b>sizeof</b>(<a class="typedef" href="#multiplier_table" title='multiplier_table' data-type='union multiplier_table' data-ref="multiplier_table">multiplier_table</a>));</td></tr>
+<tr><th id="348">348</th><td>    <a class="ref fn" href="../../../../../include/string.h.html#memset" title='memset' data-ref="memset">memset</a>(<span class='inlayHint'>s:&nbsp;</span><a class="local col9 ref" href="#19compptr" title='compptr' data-ref="19compptr">compptr</a>-&gt;<a class="ref field" href="jpeglib.h.html#(anonymous)::dct_table" title='(anonymous struct)::dct_table' data-ref="(anonymous)::dct_table">dct_table</a>, <span class='inlayHint'>c:&nbsp;</span><var>0</var>, <span class='inlayHint'>n:&nbsp;</span><b>sizeof</b>(<a class="typedef" href="#multiplier_table" title='multiplier_table' data-type='union multiplier_table' data-ref="multiplier_table">multiplier_table</a>));</td></tr>
+<tr><th id="349">349</th><td>    <i>/* Mark multiplier table not yet set up for any method */</i></td></tr>
+<tr><th id="350">350</th><td>    <a class="local col7 ref" href="#17idct" title='idct' data-ref="17idct">idct</a>-&gt;<a class="tu ref field" href="#(anonymous)::cur_method" title='(anonymous struct)::cur_method' data-use='w' data-ref="(anonymous)::cur_method">cur_method</a>[<a class="local col8 ref" href="#18ci" title='ci' data-ref="18ci">ci</a>] = -<var>1</var>;</td></tr>
+<tr><th id="351">351</th><td>  }</td></tr>
+<tr><th id="352">352</th><td>}</td></tr>
+<tr><th id="353">353</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2024-Jun-13</em> from project qtbase-6.5.0 revision <em>6.5.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

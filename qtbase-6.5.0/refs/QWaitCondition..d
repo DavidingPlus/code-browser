@@ -1,0 +1,27 @@
+<dec f='qtbase-6.5.0/src/corelib/thread/qwaitcondition.h' l='40' type='QWaitConditionPrivate *'/>
+<offset>0</offset>
+<use f='qtbase-6.5.0/src/corelib/thread/qwaitcondition_unix.cpp' l='139' u='w' c='_ZN14QWaitConditionC1Ev'/>
+<use f='qtbase-6.5.0/src/corelib/thread/qwaitcondition_unix.cpp' l='140' u='r' c='_ZN14QWaitConditionC1Ev'/>
+<use f='qtbase-6.5.0/src/corelib/thread/qwaitcondition_unix.cpp' l='141' u='r' c='_ZN14QWaitConditionC1Ev'/>
+<use f='qtbase-6.5.0/src/corelib/thread/qwaitcondition_unix.cpp' l='142' u='r' c='_ZN14QWaitConditionC1Ev'/>
+<use f='qtbase-6.5.0/src/corelib/thread/qwaitcondition_unix.cpp' l='142' u='r' c='_ZN14QWaitConditionC1Ev'/>
+<use f='qtbase-6.5.0/src/corelib/thread/qwaitcondition_unix.cpp' l='147' u='r' c='_ZN14QWaitConditionD1Ev'/>
+<use f='qtbase-6.5.0/src/corelib/thread/qwaitcondition_unix.cpp' l='148' u='r' c='_ZN14QWaitConditionD1Ev'/>
+<use f='qtbase-6.5.0/src/corelib/thread/qwaitcondition_unix.cpp' l='149' u='r' c='_ZN14QWaitConditionD1Ev'/>
+<use f='qtbase-6.5.0/src/corelib/thread/qwaitcondition_unix.cpp' l='154' u='r' c='_ZN14QWaitCondition7wakeOneEv'/>
+<use f='qtbase-6.5.0/src/corelib/thread/qwaitcondition_unix.cpp' l='155' u='r' c='_ZN14QWaitCondition7wakeOneEv'/>
+<use f='qtbase-6.5.0/src/corelib/thread/qwaitcondition_unix.cpp' l='155' u='r' c='_ZN14QWaitCondition7wakeOneEv'/>
+<use f='qtbase-6.5.0/src/corelib/thread/qwaitcondition_unix.cpp' l='155' u='r' c='_ZN14QWaitCondition7wakeOneEv'/>
+<use f='qtbase-6.5.0/src/corelib/thread/qwaitcondition_unix.cpp' l='156' u='r' c='_ZN14QWaitCondition7wakeOneEv'/>
+<use f='qtbase-6.5.0/src/corelib/thread/qwaitcondition_unix.cpp' l='157' u='r' c='_ZN14QWaitCondition7wakeOneEv'/>
+<use f='qtbase-6.5.0/src/corelib/thread/qwaitcondition_unix.cpp' l='162' u='r' c='_ZN14QWaitCondition7wakeAllEv'/>
+<use f='qtbase-6.5.0/src/corelib/thread/qwaitcondition_unix.cpp' l='163' u='r' c='_ZN14QWaitCondition7wakeAllEv'/>
+<use f='qtbase-6.5.0/src/corelib/thread/qwaitcondition_unix.cpp' l='163' u='r' c='_ZN14QWaitCondition7wakeAllEv'/>
+<use f='qtbase-6.5.0/src/corelib/thread/qwaitcondition_unix.cpp' l='164' u='r' c='_ZN14QWaitCondition7wakeAllEv'/>
+<use f='qtbase-6.5.0/src/corelib/thread/qwaitcondition_unix.cpp' l='165' u='r' c='_ZN14QWaitCondition7wakeAllEv'/>
+<use f='qtbase-6.5.0/src/corelib/thread/qwaitcondition_unix.cpp' l='180' u='r' c='_ZN14QWaitCondition4waitEP6QMutex14QDeadlineTimer'/>
+<use f='qtbase-6.5.0/src/corelib/thread/qwaitcondition_unix.cpp' l='181' u='r' c='_ZN14QWaitCondition4waitEP6QMutex14QDeadlineTimer'/>
+<use f='qtbase-6.5.0/src/corelib/thread/qwaitcondition_unix.cpp' l='184' u='r' c='_ZN14QWaitCondition4waitEP6QMutex14QDeadlineTimer'/>
+<use f='qtbase-6.5.0/src/corelib/thread/qwaitcondition_unix.cpp' l='210' u='r' c='_ZN14QWaitCondition4waitEP14QReadWriteLock14QDeadlineTimer'/>
+<use f='qtbase-6.5.0/src/corelib/thread/qwaitcondition_unix.cpp' l='211' u='r' c='_ZN14QWaitCondition4waitEP14QReadWriteLock14QDeadlineTimer'/>
+<use f='qtbase-6.5.0/src/corelib/thread/qwaitcondition_unix.cpp' l='215' u='r' c='_ZN14QWaitCondition4waitEP14QReadWriteLock14QDeadlineTimer'/>

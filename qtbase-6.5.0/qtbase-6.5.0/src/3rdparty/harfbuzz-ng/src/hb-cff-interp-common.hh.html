@@ -1,0 +1,662 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>hb-cff-interp-common.hh source code [qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/hb-cff-interp-common.hh] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="CFF::UnsizedByteStr,CFF::arg_stack_t,CFF::byte_str_ref_t,CFF::cff_stack_t,CFF::interp_env_t,CFF::interpreter_t,CFF::number_t,CFF::op_serializer_t,CFF::op_str_t,CFF::opset_t,CFF::parsed_values_t "/>
+<link rel="stylesheet" href="../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/hb-cff-interp-common.hh'; var root_path = '../../../../..'; var data_path = '../../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../..'>qtbase-6.5.0</a>/<a href='../../..'>src</a>/<a href='../..'>3rdparty</a>/<a href='..'>harfbuzz-ng</a>/<a href='./'>src</a>/<a href='hb-cff-interp-common.hh.html'>hb-cff-interp-common.hh</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*</i></td></tr>
+<tr><th id="2">2</th><td><i> * Copyright © 2018 Adobe Inc.</i></td></tr>
+<tr><th id="3">3</th><td><i> *</i></td></tr>
+<tr><th id="4">4</th><td><i> *  This is part of HarfBuzz, a text shaping library.</i></td></tr>
+<tr><th id="5">5</th><td><i> *</i></td></tr>
+<tr><th id="6">6</th><td><i> * Permission is hereby granted, without written agreement and without</i></td></tr>
+<tr><th id="7">7</th><td><i> * license or royalty fees, to use, copy, modify, and distribute this</i></td></tr>
+<tr><th id="8">8</th><td><i> * software and its documentation for any purpose, provided that the</i></td></tr>
+<tr><th id="9">9</th><td><i> * above copyright notice and the following two paragraphs appear in</i></td></tr>
+<tr><th id="10">10</th><td><i> * all copies of this software.</i></td></tr>
+<tr><th id="11">11</th><td><i> *</i></td></tr>
+<tr><th id="12">12</th><td><i> * IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR</i></td></tr>
+<tr><th id="13">13</th><td><i> * DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES</i></td></tr>
+<tr><th id="14">14</th><td><i> * ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN</i></td></tr>
+<tr><th id="15">15</th><td><i> * IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH</i></td></tr>
+<tr><th id="16">16</th><td><i> * DAMAGE.</i></td></tr>
+<tr><th id="17">17</th><td><i> *</i></td></tr>
+<tr><th id="18">18</th><td><i> * THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,</i></td></tr>
+<tr><th id="19">19</th><td><i> * BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND</i></td></tr>
+<tr><th id="20">20</th><td><i> * FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS</i></td></tr>
+<tr><th id="21">21</th><td><i> * ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO</i></td></tr>
+<tr><th id="22">22</th><td><i> * PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.</i></td></tr>
+<tr><th id="23">23</th><td><i> *</i></td></tr>
+<tr><th id="24">24</th><td><i> * Adobe Author(s): Michiharu Ariza</i></td></tr>
+<tr><th id="25">25</th><td><i> */</i></td></tr>
+<tr><th id="26">26</th><td><u>#<span data-ppcond="26">ifndef</span> <span class="macro" data-ref="_M/HB_CFF_INTERP_COMMON_HH">HB_CFF_INTERP_COMMON_HH</span></u></td></tr>
+<tr><th id="27">27</th><td><u>#define <dfn class="macro" id="_M/HB_CFF_INTERP_COMMON_HH" data-ref="_M/HB_CFF_INTERP_COMMON_HH">HB_CFF_INTERP_COMMON_HH</dfn></u></td></tr>
+<tr><th id="28">28</th><td></td></tr>
+<tr><th id="29">29</th><td><b>namespace</b> <span class="namespace">CFF</span> {</td></tr>
+<tr><th id="30">30</th><td></td></tr>
+<tr><th id="31">31</th><td><b>using</b> <b>namespace</b> <span class="namespace">OT</span>;</td></tr>
+<tr><th id="32">32</th><td></td></tr>
+<tr><th id="33">33</th><td><b>typedef</b> <em>unsigned</em> <em>int</em> <dfn class="typedef" id="CFF::op_code_t" title='CFF::op_code_t' data-type='unsigned int' data-ref="CFF::op_code_t">op_code_t</dfn>;</td></tr>
+<tr><th id="34">34</th><td></td></tr>
+<tr><th id="35">35</th><td></td></tr>
+<tr><th id="36">36</th><td><i>/* === Dict operators === */</i></td></tr>
+<tr><th id="37">37</th><td></td></tr>
+<tr><th id="38">38</th><td><i>/* One byte operators (0-31) */</i></td></tr>
+<tr><th id="39">39</th><td><u>#define <dfn class="macro" id="_M/OpCode_version" data-ref="_M/OpCode_version">OpCode_version</dfn>		  0 /* CFF Top */</u></td></tr>
+<tr><th id="40">40</th><td><u>#define <dfn class="macro" id="_M/OpCode_Notice" data-ref="_M/OpCode_Notice">OpCode_Notice</dfn>		  1 /* CFF Top */</u></td></tr>
+<tr><th id="41">41</th><td><u>#define <dfn class="macro" id="_M/OpCode_FullName" data-ref="_M/OpCode_FullName">OpCode_FullName</dfn>		  2 /* CFF Top */</u></td></tr>
+<tr><th id="42">42</th><td><u>#define <dfn class="macro" id="_M/OpCode_FamilyName" data-ref="_M/OpCode_FamilyName">OpCode_FamilyName</dfn>	  3 /* CFF Top */</u></td></tr>
+<tr><th id="43">43</th><td><u>#define <dfn class="macro" id="_M/OpCode_Weight" data-ref="_M/OpCode_Weight">OpCode_Weight</dfn>		  4 /* CFF Top */</u></td></tr>
+<tr><th id="44">44</th><td><u>#define <dfn class="macro" id="_M/OpCode_FontBBox" data-ref="_M/OpCode_FontBBox">OpCode_FontBBox</dfn>		  5 /* CFF Top */</u></td></tr>
+<tr><th id="45">45</th><td><u>#define <dfn class="macro" id="_M/OpCode_BlueValues" data-ref="_M/OpCode_BlueValues">OpCode_BlueValues</dfn>	  6 /* CFF Private, CFF2 Private */</u></td></tr>
+<tr><th id="46">46</th><td><u>#define <dfn class="macro" id="_M/OpCode_OtherBlues" data-ref="_M/OpCode_OtherBlues">OpCode_OtherBlues</dfn>	  7 /* CFF Private, CFF2 Private */</u></td></tr>
+<tr><th id="47">47</th><td><u>#define <dfn class="macro" id="_M/OpCode_FamilyBlues" data-ref="_M/OpCode_FamilyBlues">OpCode_FamilyBlues</dfn>	  8 /* CFF Private, CFF2 Private */</u></td></tr>
+<tr><th id="48">48</th><td><u>#define <dfn class="macro" id="_M/OpCode_FamilyOtherBlues" data-ref="_M/OpCode_FamilyOtherBlues">OpCode_FamilyOtherBlues</dfn>	  9 /* CFF Private, CFF2 Private */</u></td></tr>
+<tr><th id="49">49</th><td><u>#define <dfn class="macro" id="_M/OpCode_StdHW" data-ref="_M/OpCode_StdHW">OpCode_StdHW</dfn>		 10 /* CFF Private, CFF2 Private */</u></td></tr>
+<tr><th id="50">50</th><td><u>#define <dfn class="macro" id="_M/OpCode_StdVW" data-ref="_M/OpCode_StdVW">OpCode_StdVW</dfn>		 11 /* CFF Private, CFF2 Private */</u></td></tr>
+<tr><th id="51">51</th><td><u>#define <dfn class="macro" id="_M/OpCode_escape" data-ref="_M/OpCode_escape">OpCode_escape</dfn>		 12 /* All. Shared with CS */</u></td></tr>
+<tr><th id="52">52</th><td><u>#define <dfn class="macro" id="_M/OpCode_UniqueID" data-ref="_M/OpCode_UniqueID">OpCode_UniqueID</dfn>		 13 /* CFF Top */</u></td></tr>
+<tr><th id="53">53</th><td><u>#define <dfn class="macro" id="_M/OpCode_XUID" data-ref="_M/OpCode_XUID">OpCode_XUID</dfn>		 14 /* CFF Top */</u></td></tr>
+<tr><th id="54">54</th><td><u>#define <dfn class="macro" id="_M/OpCode_charset" data-ref="_M/OpCode_charset">OpCode_charset</dfn>		 15 /* CFF Top (0) */</u></td></tr>
+<tr><th id="55">55</th><td><u>#define <dfn class="macro" id="_M/OpCode_Encoding" data-ref="_M/OpCode_Encoding">OpCode_Encoding</dfn>		 16 /* CFF Top (0) */</u></td></tr>
+<tr><th id="56">56</th><td><u>#define <dfn class="macro" id="_M/OpCode_CharStrings" data-ref="_M/OpCode_CharStrings">OpCode_CharStrings</dfn>	 17 /* CFF Top, CFF2 Top */</u></td></tr>
+<tr><th id="57">57</th><td><u>#define <dfn class="macro" id="_M/OpCode_Private" data-ref="_M/OpCode_Private">OpCode_Private</dfn>		 18 /* CFF Top, CFF2 FD */</u></td></tr>
+<tr><th id="58">58</th><td><u>#define <dfn class="macro" id="_M/OpCode_Subrs" data-ref="_M/OpCode_Subrs">OpCode_Subrs</dfn>		 19 /* CFF Private, CFF2 Private */</u></td></tr>
+<tr><th id="59">59</th><td><u>#define <dfn class="macro" id="_M/OpCode_defaultWidthX" data-ref="_M/OpCode_defaultWidthX">OpCode_defaultWidthX</dfn>	 20 /* CFF Private (0) */</u></td></tr>
+<tr><th id="60">60</th><td><u>#define <dfn class="macro" id="_M/OpCode_nominalWidthX" data-ref="_M/OpCode_nominalWidthX">OpCode_nominalWidthX</dfn>	 21 /* CFF Private (0) */</u></td></tr>
+<tr><th id="61">61</th><td><u>#define <dfn class="macro" id="_M/OpCode_vsindexdict" data-ref="_M/OpCode_vsindexdict">OpCode_vsindexdict</dfn>	 22 /* CFF2 Private/CS */</u></td></tr>
+<tr><th id="62">62</th><td><u>#define <dfn class="macro" id="_M/OpCode_blenddict" data-ref="_M/OpCode_blenddict">OpCode_blenddict</dfn>	 23 /* CFF2 Private/CS */</u></td></tr>
+<tr><th id="63">63</th><td><u>#define <dfn class="macro" id="_M/OpCode_vstore" data-ref="_M/OpCode_vstore">OpCode_vstore</dfn>		 24 /* CFF2 Top */</u></td></tr>
+<tr><th id="64">64</th><td><u>#define <dfn class="macro" id="_M/OpCode_reserved25" data-ref="_M/OpCode_reserved25">OpCode_reserved25</dfn>	 25</u></td></tr>
+<tr><th id="65">65</th><td><u>#define <dfn class="macro" id="_M/OpCode_reserved26" data-ref="_M/OpCode_reserved26">OpCode_reserved26</dfn>	 26</u></td></tr>
+<tr><th id="66">66</th><td><u>#define <dfn class="macro" id="_M/OpCode_reserved27" data-ref="_M/OpCode_reserved27">OpCode_reserved27</dfn>	 27</u></td></tr>
+<tr><th id="67">67</th><td></td></tr>
+<tr><th id="68">68</th><td><i>/* Numbers */</i></td></tr>
+<tr><th id="69">69</th><td><u>#define <dfn class="macro" id="_M/OpCode_shortint" data-ref="_M/OpCode_shortint">OpCode_shortint</dfn>		 28 /* 16-bit integer, All */</u></td></tr>
+<tr><th id="70">70</th><td><u>#define <dfn class="macro" id="_M/OpCode_longintdict" data-ref="_M/OpCode_longintdict">OpCode_longintdict</dfn>	 29 /* 32-bit integer, All */</u></td></tr>
+<tr><th id="71">71</th><td><u>#define <dfn class="macro" id="_M/OpCode_BCD" data-ref="_M/OpCode_BCD">OpCode_BCD</dfn>		 30 /* Real number, CFF2 Top/FD */</u></td></tr>
+<tr><th id="72">72</th><td><u>#define <dfn class="macro" id="_M/OpCode_reserved31" data-ref="_M/OpCode_reserved31">OpCode_reserved31</dfn>	 31</u></td></tr>
+<tr><th id="73">73</th><td></td></tr>
+<tr><th id="74">74</th><td><i>/* 1-byte integers */</i></td></tr>
+<tr><th id="75">75</th><td><u>#define <dfn class="macro" id="_M/OpCode_OneByteIntFirst" data-ref="_M/OpCode_OneByteIntFirst">OpCode_OneByteIntFirst</dfn>	 32 /* All. beginning of the range of first byte ints */</u></td></tr>
+<tr><th id="76">76</th><td><u>#define <dfn class="macro" id="_M/OpCode_OneByteIntLast" data-ref="_M/OpCode_OneByteIntLast">OpCode_OneByteIntLast</dfn>	246 /* All. ending of the range of first byte int */</u></td></tr>
+<tr><th id="77">77</th><td></td></tr>
+<tr><th id="78">78</th><td><i>/* 2-byte integers */</i></td></tr>
+<tr><th id="79">79</th><td><u>#define <dfn class="macro" id="_M/OpCode_TwoBytePosInt0" data-ref="_M/OpCode_TwoBytePosInt0">OpCode_TwoBytePosInt0</dfn>	247 /* All. first byte of two byte positive int (+108 to +1131) */</u></td></tr>
+<tr><th id="80">80</th><td><u>#define <dfn class="macro" id="_M/OpCode_TwoBytePosInt1" data-ref="_M/OpCode_TwoBytePosInt1">OpCode_TwoBytePosInt1</dfn>	248</u></td></tr>
+<tr><th id="81">81</th><td><u>#define <dfn class="macro" id="_M/OpCode_TwoBytePosInt2" data-ref="_M/OpCode_TwoBytePosInt2">OpCode_TwoBytePosInt2</dfn>	249</u></td></tr>
+<tr><th id="82">82</th><td><u>#define <dfn class="macro" id="_M/OpCode_TwoBytePosInt3" data-ref="_M/OpCode_TwoBytePosInt3">OpCode_TwoBytePosInt3</dfn>	250</u></td></tr>
+<tr><th id="83">83</th><td></td></tr>
+<tr><th id="84">84</th><td><u>#define <dfn class="macro" id="_M/OpCode_TwoByteNegInt0" data-ref="_M/OpCode_TwoByteNegInt0">OpCode_TwoByteNegInt0</dfn>	251 /* All. first byte of two byte negative int (-1131 to -108) */</u></td></tr>
+<tr><th id="85">85</th><td><u>#define <dfn class="macro" id="_M/OpCode_TwoByteNegInt1" data-ref="_M/OpCode_TwoByteNegInt1">OpCode_TwoByteNegInt1</dfn>	252</u></td></tr>
+<tr><th id="86">86</th><td><u>#define <dfn class="macro" id="_M/OpCode_TwoByteNegInt2" data-ref="_M/OpCode_TwoByteNegInt2">OpCode_TwoByteNegInt2</dfn>	253</u></td></tr>
+<tr><th id="87">87</th><td><u>#define <dfn class="macro" id="_M/OpCode_TwoByteNegInt3" data-ref="_M/OpCode_TwoByteNegInt3">OpCode_TwoByteNegInt3</dfn>	254</u></td></tr>
+<tr><th id="88">88</th><td></td></tr>
+<tr><th id="89">89</th><td><i>/* Two byte escape operators 12, (0-41) */</i></td></tr>
+<tr><th id="90">90</th><td><u>#define <dfn class="macro" id="_M/OpCode_ESC_Base" data-ref="_M/OpCode_ESC_Base">OpCode_ESC_Base</dfn>		256</u></td></tr>
+<tr><th id="91">91</th><td><u>#define <dfn class="macro" id="_M/Make_OpCode_ESC" data-ref="_M/Make_OpCode_ESC">Make_OpCode_ESC</dfn>(byte2)	((<a class="typedef" href="#CFF::op_code_t" title='CFF::op_code_t' data-type='unsigned int' data-ref="CFF::op_code_t">op_code_t</a>)(OpCode_ESC_Base + (byte2)))</u></td></tr>
+<tr><th id="92">92</th><td></td></tr>
+<tr><th id="93">93</th><td><b>inline</b> <a class="typedef" href="#CFF::op_code_t" title='CFF::op_code_t' data-type='unsigned int' data-ref="CFF::op_code_t">op_code_t</a> <dfn class="decl def fn" id="_ZN3CFF17Unmake_OpCode_ESCEj" title='CFF::Unmake_OpCode_ESC' data-ref="_ZN3CFF17Unmake_OpCode_ESCEj">Unmake_OpCode_ESC</dfn> (<a class="typedef" href="#CFF::op_code_t" title='CFF::op_code_t' data-type='unsigned int' data-ref="CFF::op_code_t">op_code_t</a> <dfn class="local col1 decl" id="1op" title='op' data-type='CFF::op_code_t' data-ref="1op">op</dfn>)  { <b>return</b> (<a class="typedef" href="#CFF::op_code_t" title='CFF::op_code_t' data-type='unsigned int' data-ref="CFF::op_code_t">op_code_t</a>)(<a class="local col1 ref" href="#1op" title='op' data-ref="1op">op</a> - <a class="macro" href="#90" title="256" data-ref="_M/OpCode_ESC_Base">OpCode_ESC_Base</a>); }</td></tr>
+<tr><th id="94">94</th><td><b>inline</b> <em>bool</em> <dfn class="decl def fn" id="_ZN3CFF13Is_OpCode_ESCEj" title='CFF::Is_OpCode_ESC' data-ref="_ZN3CFF13Is_OpCode_ESCEj">Is_OpCode_ESC</dfn> (<a class="typedef" href="#CFF::op_code_t" title='CFF::op_code_t' data-type='unsigned int' data-ref="CFF::op_code_t">op_code_t</a> <dfn class="local col2 decl" id="2op" title='op' data-type='CFF::op_code_t' data-ref="2op">op</dfn>) { <b>return</b> <a class="local col2 ref" href="#2op" title='op' data-ref="2op">op</a> &gt;= <a class="macro" href="#90" title="256" data-ref="_M/OpCode_ESC_Base">OpCode_ESC_Base</a>; }</td></tr>
+<tr><th id="95">95</th><td><b>inline</b> <em>unsigned</em> <em>int</em> <dfn class="decl def fn" id="_ZN3CFF11OpCode_SizeEj" title='CFF::OpCode_Size' data-ref="_ZN3CFF11OpCode_SizeEj">OpCode_Size</dfn> (<a class="typedef" href="#CFF::op_code_t" title='CFF::op_code_t' data-type='unsigned int' data-ref="CFF::op_code_t">op_code_t</a> <dfn class="local col3 decl" id="3op" title='op' data-type='CFF::op_code_t' data-ref="3op">op</dfn>) { <b>return</b> <a class="ref fn" href="#_ZN3CFF13Is_OpCode_ESCEj" title='CFF::Is_OpCode_ESC' data-ref="_ZN3CFF13Is_OpCode_ESCEj">Is_OpCode_ESC</a> (<a class="local col3 ref" href="#3op" title='op' data-ref="3op">op</a>) ? <var>2</var>: <var>1</var>; }</td></tr>
+<tr><th id="96">96</th><td></td></tr>
+<tr><th id="97">97</th><td><u>#define <dfn class="macro" id="_M/OpCode_Copyright" data-ref="_M/OpCode_Copyright">OpCode_Copyright</dfn>	Make_OpCode_ESC(0) /* CFF Top */</u></td></tr>
+<tr><th id="98">98</th><td><u>#define <dfn class="macro" id="_M/OpCode_isFixedPitch" data-ref="_M/OpCode_isFixedPitch">OpCode_isFixedPitch</dfn>	Make_OpCode_ESC(1) /* CFF Top (false) */</u></td></tr>
+<tr><th id="99">99</th><td><u>#define <dfn class="macro" id="_M/OpCode_ItalicAngle" data-ref="_M/OpCode_ItalicAngle">OpCode_ItalicAngle</dfn>	Make_OpCode_ESC(2) /* CFF Top (0) */</u></td></tr>
+<tr><th id="100">100</th><td><u>#define <dfn class="macro" id="_M/OpCode_UnderlinePosition" data-ref="_M/OpCode_UnderlinePosition">OpCode_UnderlinePosition</dfn> Make_OpCode_ESC(3) /* CFF Top (-100) */</u></td></tr>
+<tr><th id="101">101</th><td><u>#define <dfn class="macro" id="_M/OpCode_UnderlineThickness" data-ref="_M/OpCode_UnderlineThickness">OpCode_UnderlineThickness</dfn> Make_OpCode_ESC(4) /* CFF Top (50) */</u></td></tr>
+<tr><th id="102">102</th><td><u>#define <dfn class="macro" id="_M/OpCode_PaintType" data-ref="_M/OpCode_PaintType">OpCode_PaintType</dfn>	Make_OpCode_ESC(5) /* CFF Top (0) */</u></td></tr>
+<tr><th id="103">103</th><td><u>#define <dfn class="macro" id="_M/OpCode_CharstringType" data-ref="_M/OpCode_CharstringType">OpCode_CharstringType</dfn>	Make_OpCode_ESC(6) /* CFF Top (2) */</u></td></tr>
+<tr><th id="104">104</th><td><u>#define <dfn class="macro" id="_M/OpCode_FontMatrix" data-ref="_M/OpCode_FontMatrix">OpCode_FontMatrix</dfn>	Make_OpCode_ESC(7) /* CFF Top, CFF2 Top (.001 0 0 .001 0 0)*/</u></td></tr>
+<tr><th id="105">105</th><td><u>#define <dfn class="macro" id="_M/OpCode_StrokeWidth" data-ref="_M/OpCode_StrokeWidth">OpCode_StrokeWidth</dfn>	Make_OpCode_ESC(8) /* CFF Top (0) */</u></td></tr>
+<tr><th id="106">106</th><td><u>#define <dfn class="macro" id="_M/OpCode_BlueScale" data-ref="_M/OpCode_BlueScale">OpCode_BlueScale</dfn>	Make_OpCode_ESC(9) /* CFF Private, CFF2 Private (0.039625) */</u></td></tr>
+<tr><th id="107">107</th><td><u>#define <dfn class="macro" id="_M/OpCode_BlueShift" data-ref="_M/OpCode_BlueShift">OpCode_BlueShift</dfn>	Make_OpCode_ESC(10) /* CFF Private, CFF2 Private (7) */</u></td></tr>
+<tr><th id="108">108</th><td><u>#define <dfn class="macro" id="_M/OpCode_BlueFuzz" data-ref="_M/OpCode_BlueFuzz">OpCode_BlueFuzz</dfn>		Make_OpCode_ESC(11) /* CFF Private, CFF2 Private (1) */</u></td></tr>
+<tr><th id="109">109</th><td><u>#define <dfn class="macro" id="_M/OpCode_StemSnapH" data-ref="_M/OpCode_StemSnapH">OpCode_StemSnapH</dfn>	Make_OpCode_ESC(12) /* CFF Private, CFF2 Private */</u></td></tr>
+<tr><th id="110">110</th><td><u>#define <dfn class="macro" id="_M/OpCode_StemSnapV" data-ref="_M/OpCode_StemSnapV">OpCode_StemSnapV</dfn>	Make_OpCode_ESC(13) /* CFF Private, CFF2 Private */</u></td></tr>
+<tr><th id="111">111</th><td><u>#define <dfn class="macro" id="_M/OpCode_ForceBold" data-ref="_M/OpCode_ForceBold">OpCode_ForceBold</dfn>	Make_OpCode_ESC(14) /* CFF Private (false) */</u></td></tr>
+<tr><th id="112">112</th><td><u>#define <dfn class="macro" id="_M/OpCode_reservedESC15" data-ref="_M/OpCode_reservedESC15">OpCode_reservedESC15</dfn>	Make_OpCode_ESC(15)</u></td></tr>
+<tr><th id="113">113</th><td><u>#define <dfn class="macro" id="_M/OpCode_reservedESC16" data-ref="_M/OpCode_reservedESC16">OpCode_reservedESC16</dfn>	Make_OpCode_ESC(16)</u></td></tr>
+<tr><th id="114">114</th><td><u>#define <dfn class="macro" id="_M/OpCode_LanguageGroup" data-ref="_M/OpCode_LanguageGroup">OpCode_LanguageGroup</dfn>	Make_OpCode_ESC(17) /* CFF Private, CFF2 Private (0) */</u></td></tr>
+<tr><th id="115">115</th><td><u>#define <dfn class="macro" id="_M/OpCode_ExpansionFactor" data-ref="_M/OpCode_ExpansionFactor">OpCode_ExpansionFactor</dfn>	Make_OpCode_ESC(18) /* CFF Private, CFF2 Private (0.06) */</u></td></tr>
+<tr><th id="116">116</th><td><u>#define <dfn class="macro" id="_M/OpCode_initialRandomSeed" data-ref="_M/OpCode_initialRandomSeed">OpCode_initialRandomSeed</dfn> Make_OpCode_ESC(19) /* CFF Private (0) */</u></td></tr>
+<tr><th id="117">117</th><td><u>#define <dfn class="macro" id="_M/OpCode_SyntheticBase" data-ref="_M/OpCode_SyntheticBase">OpCode_SyntheticBase</dfn>	Make_OpCode_ESC(20) /* CFF Top */</u></td></tr>
+<tr><th id="118">118</th><td><u>#define <dfn class="macro" id="_M/OpCode_PostScript" data-ref="_M/OpCode_PostScript">OpCode_PostScript</dfn>	Make_OpCode_ESC(21) /* CFF Top */</u></td></tr>
+<tr><th id="119">119</th><td><u>#define <dfn class="macro" id="_M/OpCode_BaseFontName" data-ref="_M/OpCode_BaseFontName">OpCode_BaseFontName</dfn>	Make_OpCode_ESC(22) /* CFF Top */</u></td></tr>
+<tr><th id="120">120</th><td><u>#define <dfn class="macro" id="_M/OpCode_BaseFontBlend" data-ref="_M/OpCode_BaseFontBlend">OpCode_BaseFontBlend</dfn>	Make_OpCode_ESC(23) /* CFF Top */</u></td></tr>
+<tr><th id="121">121</th><td><u>#define <dfn class="macro" id="_M/OpCode_reservedESC24" data-ref="_M/OpCode_reservedESC24">OpCode_reservedESC24</dfn>	Make_OpCode_ESC(24)</u></td></tr>
+<tr><th id="122">122</th><td><u>#define <dfn class="macro" id="_M/OpCode_reservedESC25" data-ref="_M/OpCode_reservedESC25">OpCode_reservedESC25</dfn>	Make_OpCode_ESC(25)</u></td></tr>
+<tr><th id="123">123</th><td><u>#define <dfn class="macro" id="_M/OpCode_reservedESC26" data-ref="_M/OpCode_reservedESC26">OpCode_reservedESC26</dfn>	Make_OpCode_ESC(26)</u></td></tr>
+<tr><th id="124">124</th><td><u>#define <dfn class="macro" id="_M/OpCode_reservedESC27" data-ref="_M/OpCode_reservedESC27">OpCode_reservedESC27</dfn>	Make_OpCode_ESC(27)</u></td></tr>
+<tr><th id="125">125</th><td><u>#define <dfn class="macro" id="_M/OpCode_reservedESC28" data-ref="_M/OpCode_reservedESC28">OpCode_reservedESC28</dfn>	Make_OpCode_ESC(28)</u></td></tr>
+<tr><th id="126">126</th><td><u>#define <dfn class="macro" id="_M/OpCode_reservedESC29" data-ref="_M/OpCode_reservedESC29">OpCode_reservedESC29</dfn>	Make_OpCode_ESC(29)</u></td></tr>
+<tr><th id="127">127</th><td><u>#define <dfn class="macro" id="_M/OpCode_ROS" data-ref="_M/OpCode_ROS">OpCode_ROS</dfn>		Make_OpCode_ESC(30) /* CFF Top_CID */</u></td></tr>
+<tr><th id="128">128</th><td><u>#define <dfn class="macro" id="_M/OpCode_CIDFontVersion" data-ref="_M/OpCode_CIDFontVersion">OpCode_CIDFontVersion</dfn>	Make_OpCode_ESC(31) /* CFF Top_CID (0) */</u></td></tr>
+<tr><th id="129">129</th><td><u>#define <dfn class="macro" id="_M/OpCode_CIDFontRevision" data-ref="_M/OpCode_CIDFontRevision">OpCode_CIDFontRevision</dfn>	Make_OpCode_ESC(32) /* CFF Top_CID (0) */</u></td></tr>
+<tr><th id="130">130</th><td><u>#define <dfn class="macro" id="_M/OpCode_CIDFontType" data-ref="_M/OpCode_CIDFontType">OpCode_CIDFontType</dfn>	Make_OpCode_ESC(33) /* CFF Top_CID (0) */</u></td></tr>
+<tr><th id="131">131</th><td><u>#define <dfn class="macro" id="_M/OpCode_CIDCount" data-ref="_M/OpCode_CIDCount">OpCode_CIDCount</dfn>		Make_OpCode_ESC(34) /* CFF Top_CID (8720) */</u></td></tr>
+<tr><th id="132">132</th><td><u>#define <dfn class="macro" id="_M/OpCode_UIDBase" data-ref="_M/OpCode_UIDBase">OpCode_UIDBase</dfn>		Make_OpCode_ESC(35) /* CFF Top_CID */</u></td></tr>
+<tr><th id="133">133</th><td><u>#define <dfn class="macro" id="_M/OpCode_FDArray" data-ref="_M/OpCode_FDArray">OpCode_FDArray</dfn>		Make_OpCode_ESC(36) /* CFF Top_CID, CFF2 Top */</u></td></tr>
+<tr><th id="134">134</th><td><u>#define <dfn class="macro" id="_M/OpCode_FDSelect" data-ref="_M/OpCode_FDSelect">OpCode_FDSelect</dfn>		Make_OpCode_ESC(37) /* CFF Top_CID, CFF2 Top */</u></td></tr>
+<tr><th id="135">135</th><td><u>#define <dfn class="macro" id="_M/OpCode_FontName" data-ref="_M/OpCode_FontName">OpCode_FontName</dfn>		Make_OpCode_ESC(38) /* CFF Top_CID */</u></td></tr>
+<tr><th id="136">136</th><td></td></tr>
+<tr><th id="137">137</th><td></td></tr>
+<tr><th id="138">138</th><td><i>/* === CharString operators === */</i></td></tr>
+<tr><th id="139">139</th><td></td></tr>
+<tr><th id="140">140</th><td><u>#define <dfn class="macro" id="_M/OpCode_hstem" data-ref="_M/OpCode_hstem">OpCode_hstem</dfn>		  1 /* CFF, CFF2 */</u></td></tr>
+<tr><th id="141">141</th><td><u>#define <dfn class="macro" id="_M/OpCode_Reserved2" data-ref="_M/OpCode_Reserved2">OpCode_Reserved2</dfn>	  2</u></td></tr>
+<tr><th id="142">142</th><td><u>#define <dfn class="macro" id="_M/OpCode_vstem" data-ref="_M/OpCode_vstem">OpCode_vstem</dfn>		  3 /* CFF, CFF2 */</u></td></tr>
+<tr><th id="143">143</th><td><u>#define <dfn class="macro" id="_M/OpCode_vmoveto" data-ref="_M/OpCode_vmoveto">OpCode_vmoveto</dfn>		  4 /* CFF, CFF2 */</u></td></tr>
+<tr><th id="144">144</th><td><u>#define <dfn class="macro" id="_M/OpCode_rlineto" data-ref="_M/OpCode_rlineto">OpCode_rlineto</dfn>		  5 /* CFF, CFF2 */</u></td></tr>
+<tr><th id="145">145</th><td><u>#define <dfn class="macro" id="_M/OpCode_hlineto" data-ref="_M/OpCode_hlineto">OpCode_hlineto</dfn>		  6 /* CFF, CFF2 */</u></td></tr>
+<tr><th id="146">146</th><td><u>#define <dfn class="macro" id="_M/OpCode_vlineto" data-ref="_M/OpCode_vlineto">OpCode_vlineto</dfn>		  7 /* CFF, CFF2 */</u></td></tr>
+<tr><th id="147">147</th><td><u>#define <dfn class="macro" id="_M/OpCode_rrcurveto" data-ref="_M/OpCode_rrcurveto">OpCode_rrcurveto</dfn>	  8 /* CFF, CFF2 */</u></td></tr>
+<tr><th id="148">148</th><td><u>#define <dfn class="macro" id="_M/OpCode_Reserved9" data-ref="_M/OpCode_Reserved9">OpCode_Reserved9</dfn>	  9</u></td></tr>
+<tr><th id="149">149</th><td><u>#define <dfn class="macro" id="_M/OpCode_callsubr" data-ref="_M/OpCode_callsubr">OpCode_callsubr</dfn>		 10 /* CFF, CFF2 */</u></td></tr>
+<tr><th id="150">150</th><td><u>#define <dfn class="macro" id="_M/OpCode_return" data-ref="_M/OpCode_return">OpCode_return</dfn>		 11 /* CFF */</u></td></tr>
+<tr><th id="151">151</th><td><i>//#define OpCode_escape		 12 /* CFF, CFF2 */</i></td></tr>
+<tr><th id="152">152</th><td><u>#define <dfn class="macro" id="_M/OpCode_Reserved13" data-ref="_M/OpCode_Reserved13">OpCode_Reserved13</dfn>	 13</u></td></tr>
+<tr><th id="153">153</th><td><u>#define <dfn class="macro" id="_M/OpCode_endchar" data-ref="_M/OpCode_endchar">OpCode_endchar</dfn>		 14 /* CFF */</u></td></tr>
+<tr><th id="154">154</th><td><u>#define <dfn class="macro" id="_M/OpCode_vsindexcs" data-ref="_M/OpCode_vsindexcs">OpCode_vsindexcs</dfn>	 15 /* CFF2 */</u></td></tr>
+<tr><th id="155">155</th><td><u>#define <dfn class="macro" id="_M/OpCode_blendcs" data-ref="_M/OpCode_blendcs">OpCode_blendcs</dfn>		 16 /* CFF2 */</u></td></tr>
+<tr><th id="156">156</th><td><u>#define <dfn class="macro" id="_M/OpCode_Reserved17" data-ref="_M/OpCode_Reserved17">OpCode_Reserved17</dfn>	 17</u></td></tr>
+<tr><th id="157">157</th><td><u>#define <dfn class="macro" id="_M/OpCode_hstemhm" data-ref="_M/OpCode_hstemhm">OpCode_hstemhm</dfn>		 18 /* CFF, CFF2 */</u></td></tr>
+<tr><th id="158">158</th><td><u>#define <dfn class="macro" id="_M/OpCode_hintmask" data-ref="_M/OpCode_hintmask">OpCode_hintmask</dfn>		 19 /* CFF, CFF2 */</u></td></tr>
+<tr><th id="159">159</th><td><u>#define <dfn class="macro" id="_M/OpCode_cntrmask" data-ref="_M/OpCode_cntrmask">OpCode_cntrmask</dfn>		 20 /* CFF, CFF2 */</u></td></tr>
+<tr><th id="160">160</th><td><u>#define <dfn class="macro" id="_M/OpCode_rmoveto" data-ref="_M/OpCode_rmoveto">OpCode_rmoveto</dfn>		 21 /* CFF, CFF2 */</u></td></tr>
+<tr><th id="161">161</th><td><u>#define <dfn class="macro" id="_M/OpCode_hmoveto" data-ref="_M/OpCode_hmoveto">OpCode_hmoveto</dfn>		 22 /* CFF, CFF2 */</u></td></tr>
+<tr><th id="162">162</th><td><u>#define <dfn class="macro" id="_M/OpCode_vstemhm" data-ref="_M/OpCode_vstemhm">OpCode_vstemhm</dfn>		 23 /* CFF, CFF2 */</u></td></tr>
+<tr><th id="163">163</th><td><u>#define <dfn class="macro" id="_M/OpCode_rcurveline" data-ref="_M/OpCode_rcurveline">OpCode_rcurveline</dfn>	 24 /* CFF, CFF2 */</u></td></tr>
+<tr><th id="164">164</th><td><u>#define <dfn class="macro" id="_M/OpCode_rlinecurve" data-ref="_M/OpCode_rlinecurve">OpCode_rlinecurve</dfn>	 25 /* CFF, CFF2 */</u></td></tr>
+<tr><th id="165">165</th><td><u>#define <dfn class="macro" id="_M/OpCode_vvcurveto" data-ref="_M/OpCode_vvcurveto">OpCode_vvcurveto</dfn>	 26 /* CFF, CFF2 */</u></td></tr>
+<tr><th id="166">166</th><td><u>#define <dfn class="macro" id="_M/OpCode_hhcurveto" data-ref="_M/OpCode_hhcurveto">OpCode_hhcurveto</dfn>	 27 /* CFF, CFF2 */</u></td></tr>
+<tr><th id="167">167</th><td><i>//#define OpCode_shortint	 28 /* CFF, CFF2 */</i></td></tr>
+<tr><th id="168">168</th><td><u>#define <dfn class="macro" id="_M/OpCode_callgsubr" data-ref="_M/OpCode_callgsubr">OpCode_callgsubr</dfn>	 29 /* CFF, CFF2 */</u></td></tr>
+<tr><th id="169">169</th><td><u>#define <dfn class="macro" id="_M/OpCode_vhcurveto" data-ref="_M/OpCode_vhcurveto">OpCode_vhcurveto</dfn>	 30 /* CFF, CFF2 */</u></td></tr>
+<tr><th id="170">170</th><td><u>#define <dfn class="macro" id="_M/OpCode_hvcurveto" data-ref="_M/OpCode_hvcurveto">OpCode_hvcurveto</dfn>	 31 /* CFF, CFF2 */</u></td></tr>
+<tr><th id="171">171</th><td></td></tr>
+<tr><th id="172">172</th><td><u>#define <dfn class="macro" id="_M/OpCode_fixedcs" data-ref="_M/OpCode_fixedcs">OpCode_fixedcs</dfn>		255 /* 32-bit fixed */</u></td></tr>
+<tr><th id="173">173</th><td></td></tr>
+<tr><th id="174">174</th><td><i>/* Two byte escape operators 12, (0-41) */</i></td></tr>
+<tr><th id="175">175</th><td><u>#define <dfn class="macro" id="_M/OpCode_dotsection" data-ref="_M/OpCode_dotsection">OpCode_dotsection</dfn>	Make_OpCode_ESC(0) /* CFF (obsoleted) */</u></td></tr>
+<tr><th id="176">176</th><td><u>#define <dfn class="macro" id="_M/OpCode_ReservedESC1" data-ref="_M/OpCode_ReservedESC1">OpCode_ReservedESC1</dfn>	Make_OpCode_ESC(1)</u></td></tr>
+<tr><th id="177">177</th><td><u>#define <dfn class="macro" id="_M/OpCode_ReservedESC2" data-ref="_M/OpCode_ReservedESC2">OpCode_ReservedESC2</dfn>	Make_OpCode_ESC(2)</u></td></tr>
+<tr><th id="178">178</th><td><u>#define <dfn class="macro" id="_M/OpCode_and" data-ref="_M/OpCode_and">OpCode_and</dfn>		Make_OpCode_ESC(3) /* CFF */</u></td></tr>
+<tr><th id="179">179</th><td><u>#define <dfn class="macro" id="_M/OpCode_or" data-ref="_M/OpCode_or">OpCode_or</dfn>		Make_OpCode_ESC(4) /* CFF */</u></td></tr>
+<tr><th id="180">180</th><td><u>#define <dfn class="macro" id="_M/OpCode_not" data-ref="_M/OpCode_not">OpCode_not</dfn>		Make_OpCode_ESC(5) /* CFF */</u></td></tr>
+<tr><th id="181">181</th><td><u>#define <dfn class="macro" id="_M/OpCode_ReservedESC6" data-ref="_M/OpCode_ReservedESC6">OpCode_ReservedESC6</dfn>	Make_OpCode_ESC(6)</u></td></tr>
+<tr><th id="182">182</th><td><u>#define <dfn class="macro" id="_M/OpCode_ReservedESC7" data-ref="_M/OpCode_ReservedESC7">OpCode_ReservedESC7</dfn>	Make_OpCode_ESC(7)</u></td></tr>
+<tr><th id="183">183</th><td><u>#define <dfn class="macro" id="_M/OpCode_ReservedESC8" data-ref="_M/OpCode_ReservedESC8">OpCode_ReservedESC8</dfn>	Make_OpCode_ESC(8)</u></td></tr>
+<tr><th id="184">184</th><td><u>#define <dfn class="macro" id="_M/OpCode_abs" data-ref="_M/OpCode_abs">OpCode_abs</dfn>		Make_OpCode_ESC(9) /* CFF */</u></td></tr>
+<tr><th id="185">185</th><td><u>#define <dfn class="macro" id="_M/OpCode_add" data-ref="_M/OpCode_add">OpCode_add</dfn>		Make_OpCode_ESC(10) /* CFF */</u></td></tr>
+<tr><th id="186">186</th><td><u>#define <dfn class="macro" id="_M/OpCode_sub" data-ref="_M/OpCode_sub">OpCode_sub</dfn>		Make_OpCode_ESC(11) /* CFF */</u></td></tr>
+<tr><th id="187">187</th><td><u>#define <dfn class="macro" id="_M/OpCode_div" data-ref="_M/OpCode_div">OpCode_div</dfn>		Make_OpCode_ESC(12) /* CFF */</u></td></tr>
+<tr><th id="188">188</th><td><u>#define <dfn class="macro" id="_M/OpCode_ReservedESC13" data-ref="_M/OpCode_ReservedESC13">OpCode_ReservedESC13</dfn>	Make_OpCode_ESC(13)</u></td></tr>
+<tr><th id="189">189</th><td><u>#define <dfn class="macro" id="_M/OpCode_neg" data-ref="_M/OpCode_neg">OpCode_neg</dfn>		Make_OpCode_ESC(14) /* CFF */</u></td></tr>
+<tr><th id="190">190</th><td><u>#define <dfn class="macro" id="_M/OpCode_eq" data-ref="_M/OpCode_eq">OpCode_eq</dfn>		Make_OpCode_ESC(15) /* CFF */</u></td></tr>
+<tr><th id="191">191</th><td><u>#define <dfn class="macro" id="_M/OpCode_ReservedESC16" data-ref="_M/OpCode_ReservedESC16">OpCode_ReservedESC16</dfn>	Make_OpCode_ESC(16)</u></td></tr>
+<tr><th id="192">192</th><td><u>#define <dfn class="macro" id="_M/OpCode_ReservedESC17" data-ref="_M/OpCode_ReservedESC17">OpCode_ReservedESC17</dfn>	Make_OpCode_ESC(17)</u></td></tr>
+<tr><th id="193">193</th><td><u>#define <dfn class="macro" id="_M/OpCode_drop" data-ref="_M/OpCode_drop">OpCode_drop</dfn>		Make_OpCode_ESC(18) /* CFF */</u></td></tr>
+<tr><th id="194">194</th><td><u>#define <dfn class="macro" id="_M/OpCode_ReservedESC19" data-ref="_M/OpCode_ReservedESC19">OpCode_ReservedESC19</dfn>	Make_OpCode_ESC(19)</u></td></tr>
+<tr><th id="195">195</th><td><u>#define <dfn class="macro" id="_M/OpCode_put" data-ref="_M/OpCode_put">OpCode_put</dfn>		Make_OpCode_ESC(20) /* CFF */</u></td></tr>
+<tr><th id="196">196</th><td><u>#define <dfn class="macro" id="_M/OpCode_get" data-ref="_M/OpCode_get">OpCode_get</dfn>		Make_OpCode_ESC(21) /* CFF */</u></td></tr>
+<tr><th id="197">197</th><td><u>#define <dfn class="macro" id="_M/OpCode_ifelse" data-ref="_M/OpCode_ifelse">OpCode_ifelse</dfn>		Make_OpCode_ESC(22) /* CFF */</u></td></tr>
+<tr><th id="198">198</th><td><u>#define <dfn class="macro" id="_M/OpCode_random" data-ref="_M/OpCode_random">OpCode_random</dfn>		Make_OpCode_ESC(23) /* CFF */</u></td></tr>
+<tr><th id="199">199</th><td><u>#define <dfn class="macro" id="_M/OpCode_mul" data-ref="_M/OpCode_mul">OpCode_mul</dfn>		Make_OpCode_ESC(24) /* CFF */</u></td></tr>
+<tr><th id="200">200</th><td><i>//#define OpCode_reservedESC25	Make_OpCode_ESC(25)</i></td></tr>
+<tr><th id="201">201</th><td><u>#define <dfn class="macro" id="_M/OpCode_sqrt" data-ref="_M/OpCode_sqrt">OpCode_sqrt</dfn>		Make_OpCode_ESC(26) /* CFF */</u></td></tr>
+<tr><th id="202">202</th><td><u>#define <dfn class="macro" id="_M/OpCode_dup" data-ref="_M/OpCode_dup">OpCode_dup</dfn>		Make_OpCode_ESC(27) /* CFF */</u></td></tr>
+<tr><th id="203">203</th><td><u>#define <dfn class="macro" id="_M/OpCode_exch" data-ref="_M/OpCode_exch">OpCode_exch</dfn>		Make_OpCode_ESC(28) /* CFF */</u></td></tr>
+<tr><th id="204">204</th><td><u>#define <dfn class="macro" id="_M/OpCode_index" data-ref="_M/OpCode_index">OpCode_index</dfn>		Make_OpCode_ESC(29) /* CFF */</u></td></tr>
+<tr><th id="205">205</th><td><u>#define <dfn class="macro" id="_M/OpCode_roll" data-ref="_M/OpCode_roll">OpCode_roll</dfn>		Make_OpCode_ESC(30) /* CFF */</u></td></tr>
+<tr><th id="206">206</th><td><u>#define <dfn class="macro" id="_M/OpCode_reservedESC31" data-ref="_M/OpCode_reservedESC31">OpCode_reservedESC31</dfn>	Make_OpCode_ESC(31)</u></td></tr>
+<tr><th id="207">207</th><td><u>#define <dfn class="macro" id="_M/OpCode_reservedESC32" data-ref="_M/OpCode_reservedESC32">OpCode_reservedESC32</dfn>	Make_OpCode_ESC(32)</u></td></tr>
+<tr><th id="208">208</th><td><u>#define <dfn class="macro" id="_M/OpCode_reservedESC33" data-ref="_M/OpCode_reservedESC33">OpCode_reservedESC33</dfn>	Make_OpCode_ESC(33)</u></td></tr>
+<tr><th id="209">209</th><td><u>#define <dfn class="macro" id="_M/OpCode_hflex" data-ref="_M/OpCode_hflex">OpCode_hflex</dfn>		Make_OpCode_ESC(34) /* CFF, CFF2 */</u></td></tr>
+<tr><th id="210">210</th><td><u>#define <dfn class="macro" id="_M/OpCode_flex" data-ref="_M/OpCode_flex">OpCode_flex</dfn>		Make_OpCode_ESC(35) /* CFF, CFF2 */</u></td></tr>
+<tr><th id="211">211</th><td><u>#define <dfn class="macro" id="_M/OpCode_hflex1" data-ref="_M/OpCode_hflex1">OpCode_hflex1</dfn>		Make_OpCode_ESC(36) /* CFF, CFF2 */</u></td></tr>
+<tr><th id="212">212</th><td><u>#define <dfn class="macro" id="_M/OpCode_flex1" data-ref="_M/OpCode_flex1">OpCode_flex1</dfn>		Make_OpCode_ESC(37) /* CFF, CFF2 */</u></td></tr>
+<tr><th id="213">213</th><td></td></tr>
+<tr><th id="214">214</th><td></td></tr>
+<tr><th id="215">215</th><td><u>#define <dfn class="macro" id="_M/OpCode_Invalid" data-ref="_M/OpCode_Invalid">OpCode_Invalid</dfn>		0xFFFFu</u></td></tr>
+<tr><th id="216">216</th><td></td></tr>
+<tr><th id="217">217</th><td></td></tr>
+<tr><th id="218">218</th><td><b>struct</b> <dfn class="type def" id="CFF::number_t" title='CFF::number_t' data-ref="CFF::number_t">number_t</dfn></td></tr>
+<tr><th id="219">219</th><td>{</td></tr>
+<tr><th id="220">220</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN3CFF8number_t7set_intEi" title='CFF::number_t::set_int' data-ref="_ZN3CFF8number_t7set_intEi">set_int</dfn> (<em>int</em> <dfn class="local col4 decl" id="4v" title='v' data-type='int' data-ref="4v">v</dfn>)       { <a class="member field" href="#CFF::number_t::value" title='CFF::number_t::value' data-ref="CFF::number_t::value">value</a> = <a class="local col4 ref" href="#4v" title='v' data-ref="4v">v</a>; }</td></tr>
+<tr><th id="221">221</th><td>  <em>int</em> <dfn class="decl def fn" id="_ZNK3CFF8number_t6to_intEv" title='CFF::number_t::to_int' data-ref="_ZNK3CFF8number_t6to_intEv">to_int</dfn> () <em>const</em>        { <b>return</b> <a class="member field" href="#CFF::number_t::value" title='CFF::number_t::value' data-ref="CFF::number_t::value">value</a>; }</td></tr>
+<tr><th id="222">222</th><td></td></tr>
+<tr><th id="223">223</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN3CFF8number_t9set_fixedEi" title='CFF::number_t::set_fixed' data-ref="_ZN3CFF8number_t9set_fixedEi">set_fixed</dfn> (<a class="typedef" href="../../../../../include/x86_64-linux-gnu/bits/stdint-intn.h.html#int32_t" title='int32_t' data-type='__int32_t' data-ref="int32_t">int32_t</a> <dfn class="local col5 decl" id="5v" title='v' data-type='int32_t' data-ref="5v">v</dfn>) { <a class="member field" href="#CFF::number_t::value" title='CFF::number_t::value' data-ref="CFF::number_t::value">value</a> = <a class="local col5 ref" href="#5v" title='v' data-ref="5v">v</a> / <var>65536.0</var>; }</td></tr>
+<tr><th id="224">224</th><td>  <a class="typedef" href="../../../../../include/x86_64-linux-gnu/bits/stdint-intn.h.html#int32_t" title='int32_t' data-type='__int32_t' data-ref="int32_t">int32_t</a> <dfn class="decl def fn" id="_ZNK3CFF8number_t8to_fixedEv" title='CFF::number_t::to_fixed' data-ref="_ZNK3CFF8number_t8to_fixedEv">to_fixed</dfn> () <em>const</em>  { <b>return</b> <a class="member field" href="#CFF::number_t::value" title='CFF::number_t::value' data-ref="CFF::number_t::value">value</a> * <var>65536.0</var>; }</td></tr>
+<tr><th id="225">225</th><td></td></tr>
+<tr><th id="226">226</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN3CFF8number_t8set_realEd" title='CFF::number_t::set_real' data-ref="_ZN3CFF8number_t8set_realEd">set_real</dfn> (<em>double</em> <dfn class="local col6 decl" id="6v" title='v' data-type='double' data-ref="6v">v</dfn>)   { <a class="member field" href="#CFF::number_t::value" title='CFF::number_t::value' data-ref="CFF::number_t::value">value</a> = <a class="local col6 ref" href="#6v" title='v' data-ref="6v">v</a>; }</td></tr>
+<tr><th id="227">227</th><td>  <em>double</em> <dfn class="decl def fn" id="_ZNK3CFF8number_t7to_realEv" title='CFF::number_t::to_real' data-ref="_ZNK3CFF8number_t7to_realEv">to_real</dfn> () <em>const</em>    { <b>return</b> <a class="member field" href="#CFF::number_t::value" title='CFF::number_t::value' data-ref="CFF::number_t::value">value</a>; }</td></tr>
+<tr><th id="228">228</th><td></td></tr>
+<tr><th id="229">229</th><td>  <em>bool</em> <dfn class="decl def fn" id="_ZNK3CFF8number_t12in_int_rangeEv" title='CFF::number_t::in_int_range' data-ref="_ZNK3CFF8number_t12in_int_rangeEv">in_int_range</dfn> () <em>const</em></td></tr>
+<tr><th id="230">230</th><td>  { <b>return</b> ((<em>double</em>) (<a class="typedef" href="../../../../../include/x86_64-linux-gnu/bits/stdint-intn.h.html#int16_t" title='int16_t' data-type='__int16_t' data-ref="int16_t">int16_t</a>) <a class="member fn" href="#_ZNK3CFF8number_t6to_intEv" title='CFF::number_t::to_int' data-ref="_ZNK3CFF8number_t6to_intEv">to_int</a> () == <a class="member field" href="#CFF::number_t::value" title='CFF::number_t::value' data-ref="CFF::number_t::value">value</a>); }</td></tr>
+<tr><th id="231">231</th><td></td></tr>
+<tr><th id="232">232</th><td>  <em>bool</em> <dfn class="decl def fn" id="_ZNK3CFF8number_tgtERKS0_" title='CFF::number_t::operator&gt;' data-ref="_ZNK3CFF8number_tgtERKS0_"><b>operator</b> &gt;</dfn>  (<em>const</em> <a class="type" href="#CFF::number_t" title='CFF::number_t' data-ref="CFF::number_t">number_t</a> &amp;<dfn class="local col7 decl" id="7n" title='n' data-type='const CFF::number_t &amp;' data-ref="7n">n</dfn>) <em>const</em> { <b>return</b> <a class="member field" href="#CFF::number_t::value" title='CFF::number_t::value' data-ref="CFF::number_t::value">value</a> &gt; <a class="local col7 ref" href="#7n" title='n' data-ref="7n">n</a>.<a class="member fn" href="#_ZNK3CFF8number_t7to_realEv" title='CFF::number_t::to_real' data-ref="_ZNK3CFF8number_t7to_realEv">to_real</a> (); }</td></tr>
+<tr><th id="233">233</th><td>  <em>bool</em> <dfn class="decl def fn" id="_ZNK3CFF8number_tltERKS0_" title='CFF::number_t::operator&lt;' data-ref="_ZNK3CFF8number_tltERKS0_"><b>operator</b> &lt;</dfn>  (<em>const</em> <a class="type" href="#CFF::number_t" title='CFF::number_t' data-ref="CFF::number_t">number_t</a> &amp;<dfn class="local col8 decl" id="8n" title='n' data-type='const CFF::number_t &amp;' data-ref="8n">n</dfn>) <em>const</em> { <b>return</b> <a class="local col8 ref" href="#8n" title='n' data-ref="8n">n</a> <a class="member fn" href="#_ZNK3CFF8number_tgtERKS0_" title='CFF::number_t::operator&gt;' data-ref="_ZNK3CFF8number_tgtERKS0_">&gt;</a> *<b>this</b>; }</td></tr>
+<tr><th id="234">234</th><td>  <em>bool</em> <dfn class="decl def fn" id="_ZNK3CFF8number_tgeERKS0_" title='CFF::number_t::operator&gt;=' data-ref="_ZNK3CFF8number_tgeERKS0_"><b>operator</b> &gt;=</dfn> (<em>const</em> <a class="type" href="#CFF::number_t" title='CFF::number_t' data-ref="CFF::number_t">number_t</a> &amp;<dfn class="local col9 decl" id="9n" title='n' data-type='const CFF::number_t &amp;' data-ref="9n">n</dfn>) <em>const</em> { <b>return</b> !(*<b>this</b> <a class="member fn" href="#_ZNK3CFF8number_tltERKS0_" title='CFF::number_t::operator&lt;' data-ref="_ZNK3CFF8number_tltERKS0_">&lt;</a> <a class="local col9 ref" href="#9n" title='n' data-ref="9n">n</a>); }</td></tr>
+<tr><th id="235">235</th><td>  <em>bool</em> <dfn class="decl def fn" id="_ZNK3CFF8number_tleERKS0_" title='CFF::number_t::operator&lt;=' data-ref="_ZNK3CFF8number_tleERKS0_"><b>operator</b> &lt;=</dfn> (<em>const</em> <a class="type" href="#CFF::number_t" title='CFF::number_t' data-ref="CFF::number_t">number_t</a> &amp;<dfn class="local col0 decl" id="10n" title='n' data-type='const CFF::number_t &amp;' data-ref="10n">n</dfn>) <em>const</em> { <b>return</b> !(*<b>this</b> <a class="member fn" href="#_ZNK3CFF8number_tgtERKS0_" title='CFF::number_t::operator&gt;' data-ref="_ZNK3CFF8number_tgtERKS0_">&gt;</a> <a class="local col0 ref" href="#10n" title='n' data-ref="10n">n</a>); }</td></tr>
+<tr><th id="236">236</th><td></td></tr>
+<tr><th id="237">237</th><td>  <em>const</em> <a class="type" href="#CFF::number_t" title='CFF::number_t' data-ref="CFF::number_t">number_t</a> &amp;<dfn class="decl def fn" id="_ZN3CFF8number_tpLERKS0_" title='CFF::number_t::operator+=' data-ref="_ZN3CFF8number_tpLERKS0_"><b>operator</b> +=</dfn> (<em>const</em> <a class="type" href="#CFF::number_t" title='CFF::number_t' data-ref="CFF::number_t">number_t</a> &amp;<dfn class="local col1 decl" id="11n" title='n' data-type='const CFF::number_t &amp;' data-ref="11n">n</dfn>)</td></tr>
+<tr><th id="238">238</th><td>  {</td></tr>
+<tr><th id="239">239</th><td>    <a class="member fn" href="#_ZN3CFF8number_t8set_realEd" title='CFF::number_t::set_real' data-ref="_ZN3CFF8number_t8set_realEd">set_real</a> (<a class="member fn" href="#_ZNK3CFF8number_t7to_realEv" title='CFF::number_t::to_real' data-ref="_ZNK3CFF8number_t7to_realEv">to_real</a> () + <a class="local col1 ref" href="#11n" title='n' data-ref="11n">n</a>.<a class="member fn" href="#_ZNK3CFF8number_t7to_realEv" title='CFF::number_t::to_real' data-ref="_ZNK3CFF8number_t7to_realEv">to_real</a> ());</td></tr>
+<tr><th id="240">240</th><td></td></tr>
+<tr><th id="241">241</th><td>    <b>return</b> *<b>this</b>;</td></tr>
+<tr><th id="242">242</th><td>  }</td></tr>
+<tr><th id="243">243</th><td></td></tr>
+<tr><th id="244">244</th><td>  <b>protected</b>:</td></tr>
+<tr><th id="245">245</th><td>  <em>double</em> <dfn class="decl field" id="CFF::number_t::value" title='CFF::number_t::value' data-ref="CFF::number_t::value">value</dfn> = <var>0.</var>;</td></tr>
+<tr><th id="246">246</th><td>};</td></tr>
+<tr><th id="247">247</th><td></td></tr>
+<tr><th id="248">248</th><td><i>/* byte string */</i></td></tr>
+<tr><th id="249">249</th><td><b>struct</b> <dfn class="type def" id="CFF::UnsizedByteStr" title='CFF::UnsizedByteStr' data-ref="CFF::UnsizedByteStr">UnsizedByteStr</dfn> : <a class="type" href="hb-open-type.hh.html#OT::UnsizedArrayOf" title='OT::UnsizedArrayOf' data-ref="OT::UnsizedArrayOf">UnsizedArrayOf</a> &lt;<a class="typedef" href="hb-open-type.hh.html#OT::HBUINT8" title='OT::HBUINT8' data-type='IntType&lt;uint8_t&gt;' data-ref="OT::HBUINT8">HBUINT8</a>&gt;</td></tr>
+<tr><th id="250">250</th><td>{</td></tr>
+<tr><th id="251">251</th><td>  <a class="typedef" href="hb-array.hh.html#hb_ubytes_t" title='hb_ubytes_t' data-type='hb_array_t&lt;const unsigned char&gt;' data-ref="hb_ubytes_t">hb_ubytes_t</a> <dfn class="decl def fn" id="_ZNK3CFF14UnsizedByteStr9as_ubytesEj" title='CFF::UnsizedByteStr::as_ubytes' data-ref="_ZNK3CFF14UnsizedByteStr9as_ubytesEj">as_ubytes</dfn> (<em>unsigned</em> <dfn class="local col2 decl" id="12l" title='l' data-type='unsigned int' data-ref="12l">l</dfn>) <em>const</em></td></tr>
+<tr><th id="252">252</th><td>  { <b>return</b> <a class="typedef" href="hb-array.hh.html#hb_ubytes_t" title='hb_ubytes_t' data-type='hb_array_t&lt;const unsigned char&gt;' data-ref="hb_ubytes_t">hb_ubytes_t</a> <a class="ref fn" href="hb-array.hh.html#_ZN10hb_array_tC1EPT_j" title='hb_array_t::hb_array_t&lt;type-parameter-0-0&gt;' data-ref="_ZN10hb_array_tC1EPT_j">(</a>(<em>const</em> <em>unsigned</em> <em>char</em> *) <b>this</b>, <a class="local col2 ref" href="#12l" title='l' data-ref="12l">l</a>); }</td></tr>
+<tr><th id="253">253</th><td></td></tr>
+<tr><th id="254">254</th><td>  <i>// encode 2-byte int (Dict/CharString) or 4-byte int (Dict)</i></td></tr>
+<tr><th id="255">255</th><td>  <b>template</b> &lt;<b>typename</b> T, <b>typename</b> V&gt;</td></tr>
+<tr><th id="256">256</th><td>  <em>static</em> <em>bool</em> <dfn class="decl def fn" id="_ZN3CFF14UnsizedByteStr13serialize_intEP22hb_serialize_context_tjT0_" title='CFF::UnsizedByteStr::serialize_int' data-ref="_ZN3CFF14UnsizedByteStr13serialize_intEP22hb_serialize_context_tjT0_">serialize_int</dfn> (<a class="type" href="hb-serialize.hh.html#hb_serialize_context_t" title='hb_serialize_context_t' data-ref="hb_serialize_context_t">hb_serialize_context_t</a> *<dfn class="local col3 decl" id="13c" title='c' data-type='hb_serialize_context_t *' data-ref="13c">c</dfn>, <a class="typedef" href="#CFF::op_code_t" title='CFF::op_code_t' data-type='unsigned int' data-ref="CFF::op_code_t">op_code_t</a> <dfn class="local col4 decl" id="14intOp" title='intOp' data-type='CFF::op_code_t' data-ref="14intOp">intOp</dfn>, V <dfn class="local col5 decl" id="15value" title='value' data-type='V' data-ref="15value">value</dfn>)</td></tr>
+<tr><th id="257">257</th><td>  {</td></tr>
+<tr><th id="258">258</th><td>    <a class="macro" href="hb-debug.hh.html#426" title="hb_no_trace_t&lt;bool&gt; trace" data-ref="_M/TRACE_SERIALIZE">TRACE_SERIALIZE</a> (<b>this</b>);</td></tr>
+<tr><th id="259">259</th><td></td></tr>
+<tr><th id="260">260</th><td>    <a class="typedef" href="hb-open-type.hh.html#OT::HBUINT8" title='OT::HBUINT8' data-type='IntType&lt;uint8_t&gt;' data-ref="OT::HBUINT8">HBUINT8</a> *<dfn class="local col6 decl" id="16p" title='p' data-type='OT::HBUINT8 *' data-ref="16p">p</dfn> = <a class="local col3 ref" href="#13c" title='c' data-ref="13c">c</a>-&gt;<a class="ref fn" href="hb-serialize.hh.html#_ZN22hb_serialize_context_t13allocate_sizeEmb" title='hb_serialize_context_t::allocate_size' data-ref="_ZN22hb_serialize_context_t13allocate_sizeEmb">allocate_size</a>&lt;<a class="typedef" href="hb-open-type.hh.html#OT::HBUINT8" title='OT::HBUINT8' data-type='IntType&lt;uint8_t&gt;' data-ref="OT::HBUINT8">HBUINT8</a>&gt; (<span class='inlayHint'>size:&nbsp;</span><var>1</var>);</td></tr>
+<tr><th id="261">261</th><td>    <b>if</b> (<a class="macro" href="hb.hh.html#251" title="(__builtin_expect (!!(!p), 0))" data-ref="_M/unlikely">unlikely</a> (!<a class="local col6 ref" href="#16p" title='p' data-ref="16p">p</a>)) <a class="macro" href="hb-debug.hh.html#349" title="return trace.ret (false, __PRETTY_FUNCTION__, 261)" data-ref="_M/return_trace">return_trace</a> (<b>false</b>);</td></tr>
+<tr><th id="262">262</th><td>    *<a class="local col6 ref" href="#16p" title='p' data-ref="16p">p</a> <a class="ref fn" href="hb-open-type.hh.html#_ZN2OT7IntTypeaSET_" title='OT::IntType::operator=' data-ref="_ZN2OT7IntTypeaSET_">=</a> <a class="local col4 ref" href="#14intOp" title='intOp' data-ref="14intOp">intOp</a>;</td></tr>
+<tr><th id="263">263</th><td></td></tr>
+<tr><th id="264">264</th><td>    T *<dfn class="local col7 decl" id="17ip" title='ip' data-type='T *' data-ref="17ip">ip</dfn> = <a class="local col3 ref" href="#13c" title='c' data-ref="13c">c</a>-&gt;allocate_size&lt;T&gt; (T::static_size);</td></tr>
+<tr><th id="265">265</th><td>    <b>if</b> (<a class="macro" href="hb.hh.html#251" title="(__builtin_expect (!!(!ip), 0))" data-ref="_M/unlikely">unlikely</a> (!<a class="local col7 ref" href="#17ip" title='ip' data-ref="17ip">ip</a>)) <a class="macro" href="hb-debug.hh.html#349" title="return trace.ret (false, __PRETTY_FUNCTION__, 265)" data-ref="_M/return_trace">return_trace</a> (<b>false</b>);</td></tr>
+<tr><th id="266">266</th><td>    <a class="macro" href="hb-debug.hh.html#349" title="return trace.ret (c-&gt;check_assign (*ip, value, HB_SERIALIZE_ERROR_INT_OVERFLOW), __PRETTY_FUNCTION__, 266)" data-ref="_M/return_trace">return_trace</a> (<a class="local col3 ref" href="#13c" title='c' data-ref="13c">c</a>-&gt;check_assign (*<a class="local col7 ref" href="#17ip" title='ip' data-ref="17ip">ip</a>, <a class="local col5 ref" href="#15value" title='value' data-ref="15value">value</a>, <a class="enum" href="hb-serialize.hh.html#HB_SERIALIZE_ERROR_INT_OVERFLOW" title='HB_SERIALIZE_ERROR_INT_OVERFLOW' data-ref="HB_SERIALIZE_ERROR_INT_OVERFLOW">HB_SERIALIZE_ERROR_INT_OVERFLOW</a>));</td></tr>
+<tr><th id="267">267</th><td>  }</td></tr>
+<tr><th id="268">268</th><td></td></tr>
+<tr><th id="269">269</th><td>  <b>template</b> &lt;<b>typename</b> V&gt;</td></tr>
+<tr><th id="270">270</th><td>  <em>static</em> <em>bool</em> <dfn class="decl def fn" id="_ZN3CFF14UnsizedByteStr14serialize_int4EP22hb_serialize_context_tT_" title='CFF::UnsizedByteStr::serialize_int4' data-ref="_ZN3CFF14UnsizedByteStr14serialize_int4EP22hb_serialize_context_tT_">serialize_int4</dfn> (<a class="type" href="hb-serialize.hh.html#hb_serialize_context_t" title='hb_serialize_context_t' data-ref="hb_serialize_context_t">hb_serialize_context_t</a> *<dfn class="local col8 decl" id="18c" title='c' data-type='hb_serialize_context_t *' data-ref="18c">c</dfn>, V <dfn class="local col9 decl" id="19value" title='value' data-type='V' data-ref="19value">value</dfn>)</td></tr>
+<tr><th id="271">271</th><td>  { <b>return</b> serialize_int&lt;<a class="typedef" href="hb-open-type.hh.html#OT::HBINT32" title='OT::HBINT32' data-type='IntType&lt;int32_t&gt;' data-ref="OT::HBINT32">HBINT32</a>&gt; (<a class="local col8 ref" href="#18c" title='c' data-ref="18c">c</a>, <a class="macro" href="#70" title="29" data-ref="_M/OpCode_longintdict">OpCode_longintdict</a>, <a class="local col9 ref" href="#19value" title='value' data-ref="19value">value</a>); }</td></tr>
+<tr><th id="272">272</th><td></td></tr>
+<tr><th id="273">273</th><td>  <b>template</b> &lt;<b>typename</b> V&gt;</td></tr>
+<tr><th id="274">274</th><td>  <em>static</em> <em>bool</em> <dfn class="decl def fn" id="_ZN3CFF14UnsizedByteStr14serialize_int2EP22hb_serialize_context_tT_" title='CFF::UnsizedByteStr::serialize_int2' data-ref="_ZN3CFF14UnsizedByteStr14serialize_int2EP22hb_serialize_context_tT_">serialize_int2</dfn> (<a class="type" href="hb-serialize.hh.html#hb_serialize_context_t" title='hb_serialize_context_t' data-ref="hb_serialize_context_t">hb_serialize_context_t</a> *<dfn class="local col0 decl" id="20c" title='c' data-type='hb_serialize_context_t *' data-ref="20c">c</dfn>, V <dfn class="local col1 decl" id="21value" title='value' data-type='V' data-ref="21value">value</dfn>)</td></tr>
+<tr><th id="275">275</th><td>  { <b>return</b> serialize_int&lt;<a class="typedef" href="hb-open-type.hh.html#OT::HBINT16" title='OT::HBINT16' data-type='IntType&lt;int16_t&gt;' data-ref="OT::HBINT16">HBINT16</a>&gt; (<a class="local col0 ref" href="#20c" title='c' data-ref="20c">c</a>, <a class="macro" href="#69" title="28" data-ref="_M/OpCode_shortint">OpCode_shortint</a>, <a class="local col1 ref" href="#21value" title='value' data-ref="21value">value</a>); }</td></tr>
+<tr><th id="276">276</th><td></td></tr>
+<tr><th id="277">277</th><td>  <i>/* Defining null_size allows a Null object may be created. Should be safe because:</i></td></tr>
+<tr><th id="278">278</th><td><i>   * A descendent struct Dict uses a Null pointer to indicate a missing table,</i></td></tr>
+<tr><th id="279">279</th><td><i>   * checked before access.</i></td></tr>
+<tr><th id="280">280</th><td><i>   */</i></td></tr>
+<tr><th id="281">281</th><td>  <a class="macro" href="hb-machinery.hh.html#115" title="void _instance_assertion_on_line_281 () const { static_assert ((sizeof (*this) &gt;= (0)), &quot;&quot;); } static constexpr unsigned null_size = (0); static constexpr unsigned min_size = (0)" data-ref="_M/DEFINE_SIZE_MIN">DEFINE_SIZE_MIN</a>(<var>0</var>);</td></tr>
+<tr><th id="282">282</th><td>};</td></tr>
+<tr><th id="283">283</th><td></td></tr>
+<tr><th id="284">284</th><td><i>/* A byte string associated with the current offset and an error condition */</i></td></tr>
+<tr><th id="285">285</th><td><b>struct</b> <dfn class="type def" id="CFF::byte_str_ref_t" title='CFF::byte_str_ref_t' data-ref="CFF::byte_str_ref_t">byte_str_ref_t</dfn></td></tr>
+<tr><th id="286">286</th><td>{</td></tr>
+<tr><th id="287">287</th><td>  <dfn class="decl def fn" id="_ZN3CFF14byte_str_ref_tC1Ev" title='CFF::byte_str_ref_t::byte_str_ref_t' data-ref="_ZN3CFF14byte_str_ref_tC1Ev">byte_str_ref_t</dfn> ()</td></tr>
+<tr><th id="288">288</th><td>    : <a class="member field" href="#CFF::byte_str_ref_t::str" title='CFF::byte_str_ref_t::str' data-ref="CFF::byte_str_ref_t::str">str</a> <a class="ref fn" href="hb-array.hh.html#_ZN10hb_array_tC1Ev" title='hb_array_t::hb_array_t&lt;type-parameter-0-0&gt;' data-ref="_ZN10hb_array_tC1Ev">(</a>) {}</td></tr>
+<tr><th id="289">289</th><td></td></tr>
+<tr><th id="290">290</th><td>  <dfn class="decl def fn" id="_ZN3CFF14byte_str_ref_tC1ERK10hb_array_tIKhEj" title='CFF::byte_str_ref_t::byte_str_ref_t' data-ref="_ZN3CFF14byte_str_ref_tC1ERK10hb_array_tIKhEj">byte_str_ref_t</dfn> (<em>const</em> <a class="typedef" href="hb-array.hh.html#hb_ubytes_t" title='hb_ubytes_t' data-type='hb_array_t&lt;const unsigned char&gt;' data-ref="hb_ubytes_t">hb_ubytes_t</a> &amp;<dfn class="local col2 decl" id="22str_" title='str_' data-type='const hb_ubytes_t &amp;' data-ref="22str_">str_</dfn>, <em>unsigned</em> <em>int</em> <dfn class="local col3 decl" id="23offset_" title='offset_' data-type='unsigned int' data-ref="23offset_">offset_</dfn> = <var>0</var>)</td></tr>
+<tr><th id="291">291</th><td>    : <a class="member field" href="#CFF::byte_str_ref_t::str" title='CFF::byte_str_ref_t::str' data-ref="CFF::byte_str_ref_t::str">str</a> <a class="ref fn" href="hb-array.hh.html#_ZN10hb_array_tC1ERK10hb_array_tIT_E" title='hb_array_t::hb_array_t&lt;type-parameter-0-0&gt;' data-ref="_ZN10hb_array_tC1ERK10hb_array_tIT_E">(</a><a class="local col2 ref" href="#22str_" title='str_' data-ref="22str_">str_</a>) { <a class="member fn" href="#_ZN3CFF14byte_str_ref_t10set_offsetEj" title='CFF::byte_str_ref_t::set_offset' data-ref="_ZN3CFF14byte_str_ref_t10set_offsetEj">set_offset</a> (<a class="local col3 ref" href="#23offset_" title='offset_' data-ref="23offset_">offset_</a>); }</td></tr>
+<tr><th id="292">292</th><td></td></tr>
+<tr><th id="293">293</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN3CFF14byte_str_ref_t5resetERK10hb_array_tIKhEj" title='CFF::byte_str_ref_t::reset' data-ref="_ZN3CFF14byte_str_ref_t5resetERK10hb_array_tIKhEj">reset</dfn> (<em>const</em> <a class="typedef" href="hb-array.hh.html#hb_ubytes_t" title='hb_ubytes_t' data-type='hb_array_t&lt;const unsigned char&gt;' data-ref="hb_ubytes_t">hb_ubytes_t</a> &amp;<dfn class="local col4 decl" id="24str_" title='str_' data-type='const hb_ubytes_t &amp;' data-ref="24str_">str_</dfn>, <em>unsigned</em> <em>int</em> <dfn class="local col5 decl" id="25offset_" title='offset_' data-type='unsigned int' data-ref="25offset_">offset_</dfn> = <var>0</var>)</td></tr>
+<tr><th id="294">294</th><td>  {</td></tr>
+<tr><th id="295">295</th><td>    <a class="member field" href="#CFF::byte_str_ref_t::str" title='CFF::byte_str_ref_t::str' data-ref="CFF::byte_str_ref_t::str">str</a> <a class="ref fn" href="hb-array.hh.html#_ZN10hb_array_taSERK10hb_array_tIT_E" title='hb_array_t::operator=' data-ref="_ZN10hb_array_taSERK10hb_array_tIT_E">=</a> <a class="local col4 ref" href="#24str_" title='str_' data-ref="24str_">str_</a>;</td></tr>
+<tr><th id="296">296</th><td>    <a class="member fn" href="#_ZN3CFF14byte_str_ref_t10set_offsetEj" title='CFF::byte_str_ref_t::set_offset' data-ref="_ZN3CFF14byte_str_ref_t10set_offsetEj">set_offset</a> (<a class="local col5 ref" href="#25offset_" title='offset_' data-ref="25offset_">offset_</a>);</td></tr>
+<tr><th id="297">297</th><td>  }</td></tr>
+<tr><th id="298">298</th><td></td></tr>
+<tr><th id="299">299</th><td>  <em>const</em> <em>unsigned</em> <em>char</em>&amp; <dfn class="decl def fn" id="_ZN3CFF14byte_str_ref_tixEi" title='CFF::byte_str_ref_t::operator[]' data-ref="_ZN3CFF14byte_str_ref_tixEi"><b>operator</b> []</dfn> (<em>int</em> <dfn class="local col6 decl" id="26i" title='i' data-type='int' data-ref="26i">i</dfn>) {</td></tr>
+<tr><th id="300">300</th><td>    <b>if</b> (<a class="macro" href="hb.hh.html#251" title="(__builtin_expect (!!((unsigned int) (get_offset () + i) &gt;= str.length), 0))" data-ref="_M/unlikely">unlikely</a> ((<em>unsigned</em> <em>int</em>) (<a class="member fn" href="#_ZNK3CFF14byte_str_ref_t10get_offsetEv" title='CFF::byte_str_ref_t::get_offset' data-ref="_ZNK3CFF14byte_str_ref_t10get_offsetEv">get_offset</a> () + <a class="local col6 ref" href="#26i" title='i' data-ref="26i">i</a>) &gt;= <a class="member field" href="#CFF::byte_str_ref_t::str" title='CFF::byte_str_ref_t::str' data-ref="CFF::byte_str_ref_t::str">str</a>.<a class="ref field" href="hb-array.hh.html#hb_array_t::length" title='hb_array_t&lt;const unsigned char&gt;::length' data-ref="hb_array_t::length">length</a>))</td></tr>
+<tr><th id="301">301</th><td>    {</td></tr>
+<tr><th id="302">302</th><td>      <a class="member fn" href="#_ZN3CFF14byte_str_ref_t9set_errorEv" title='CFF::byte_str_ref_t::set_error' data-ref="_ZN3CFF14byte_str_ref_t9set_errorEv">set_error</a> ();</td></tr>
+<tr><th id="303">303</th><td>      <b>return</b> <a class="macro" href="hb-null.hh.html#124" title="NullHelper&lt;unsigned char&gt;::get_null ()" data-ref="_M/Null">Null</a> (<em>unsigned</em> <em>char</em>);</td></tr>
+<tr><th id="304">304</th><td>    }</td></tr>
+<tr><th id="305">305</th><td>    <b>return</b> <a class="member field" href="#CFF::byte_str_ref_t::str" title='CFF::byte_str_ref_t::str' data-ref="CFF::byte_str_ref_t::str">str</a>.<a class="ref field" href="hb-array.hh.html#hb_array_t::arrayZ" title='hb_array_t&lt;const unsigned char&gt;::arrayZ' data-ref="hb_array_t::arrayZ">arrayZ</a>[<a class="member fn" href="#_ZNK3CFF14byte_str_ref_t10get_offsetEv" title='CFF::byte_str_ref_t::get_offset' data-ref="_ZNK3CFF14byte_str_ref_t10get_offsetEv">get_offset</a> () + <a class="local col6 ref" href="#26i" title='i' data-ref="26i">i</a>];</td></tr>
+<tr><th id="306">306</th><td>  }</td></tr>
+<tr><th id="307">307</th><td></td></tr>
+<tr><th id="308">308</th><td>  <em>unsigned</em> <em>char</em> <dfn class="decl def fn" id="_ZNK3CFF14byte_str_ref_t14head_uncheckedEv" title='CFF::byte_str_ref_t::head_unchecked' data-ref="_ZNK3CFF14byte_str_ref_t14head_uncheckedEv">head_unchecked</dfn> () <em>const</em> { <b>return</b> <a class="member field" href="#CFF::byte_str_ref_t::str" title='CFF::byte_str_ref_t::str' data-ref="CFF::byte_str_ref_t::str">str</a>.<a class="ref field" href="hb-array.hh.html#hb_array_t::arrayZ" title='hb_array_t&lt;const unsigned char&gt;::arrayZ' data-ref="hb_array_t::arrayZ">arrayZ</a>[<a class="member fn" href="#_ZNK3CFF14byte_str_ref_t10get_offsetEv" title='CFF::byte_str_ref_t::get_offset' data-ref="_ZNK3CFF14byte_str_ref_t10get_offsetEv">get_offset</a> ()]; }</td></tr>
+<tr><th id="309">309</th><td></td></tr>
+<tr><th id="310">310</th><td>  <i>/* Conversion to hb_ubytes_t */</i></td></tr>
+<tr><th id="311">311</th><td>  <dfn class="decl def fn" id="_ZNK3CFF14byte_str_ref_tcv10hb_array_tIKhEEv" title='CFF::byte_str_ref_t::operator hb_array_t' data-ref="_ZNK3CFF14byte_str_ref_tcv10hb_array_tIKhEEv"><b>operator</b> <a class="typedef" href="hb-array.hh.html#hb_ubytes_t" title='hb_ubytes_t' data-type='hb_array_t&lt;const unsigned char&gt;' data-ref="hb_ubytes_t">hb_ubytes_t</a></dfn> () <em>const</em> { <b>return</b> <a class="member field" href="#CFF::byte_str_ref_t::str" title='CFF::byte_str_ref_t::str' data-ref="CFF::byte_str_ref_t::str">str</a>.<a class="ref fn" href="hb-array.hh.html#_ZNK10hb_array_t9sub_arrayEjPj" title='hb_array_t::sub_array' data-ref="_ZNK10hb_array_t9sub_arrayEjPj">sub_array</a> (<span class='inlayHint'>start_offset:&nbsp;</span><a class="member fn" href="#_ZNK3CFF14byte_str_ref_t10get_offsetEv" title='CFF::byte_str_ref_t::get_offset' data-ref="_ZNK3CFF14byte_str_ref_t10get_offsetEv">get_offset</a> ()); }</td></tr>
+<tr><th id="312">312</th><td></td></tr>
+<tr><th id="313">313</th><td>  <a class="typedef" href="hb-array.hh.html#hb_ubytes_t" title='hb_ubytes_t' data-type='hb_array_t&lt;const unsigned char&gt;' data-ref="hb_ubytes_t">hb_ubytes_t</a> <dfn class="decl def fn" id="_ZNK3CFF14byte_str_ref_t9sub_arrayEjj" title='CFF::byte_str_ref_t::sub_array' data-ref="_ZNK3CFF14byte_str_ref_t9sub_arrayEjj">sub_array</dfn> (<em>unsigned</em> <em>int</em> <dfn class="local col7 decl" id="27offset_" title='offset_' data-type='unsigned int' data-ref="27offset_">offset_</dfn>, <em>unsigned</em> <em>int</em> <dfn class="local col8 decl" id="28len_" title='len_' data-type='unsigned int' data-ref="28len_">len_</dfn>) <em>const</em></td></tr>
+<tr><th id="314">314</th><td>  { <b>return</b> <a class="member field" href="#CFF::byte_str_ref_t::str" title='CFF::byte_str_ref_t::str' data-ref="CFF::byte_str_ref_t::str">str</a>.<a class="ref fn" href="hb-array.hh.html#_ZNK10hb_array_t9sub_arrayEjj" title='hb_array_t::sub_array' data-ref="_ZNK10hb_array_t9sub_arrayEjj">sub_array</a> (<span class='inlayHint'>start_offset:&nbsp;</span><a class="local col7 ref" href="#27offset_" title='offset_' data-ref="27offset_">offset_</a>, <span class='inlayHint'>seg_count:&nbsp;</span><a class="local col8 ref" href="#28len_" title='len_' data-ref="28len_">len_</a>); }</td></tr>
+<tr><th id="315">315</th><td></td></tr>
+<tr><th id="316">316</th><td>  <em>bool</em> <dfn class="decl def fn" id="_ZNK3CFF14byte_str_ref_t5availEj" title='CFF::byte_str_ref_t::avail' data-ref="_ZNK3CFF14byte_str_ref_t5availEj">avail</dfn> (<em>unsigned</em> <em>int</em> <dfn class="local col9 decl" id="29count" title='count' data-type='unsigned int' data-ref="29count">count</dfn>=<var>1</var>) <em>const</em></td></tr>
+<tr><th id="317">317</th><td>  { <b>return</b> <a class="member fn" href="#_ZNK3CFF14byte_str_ref_t10get_offsetEv" title='CFF::byte_str_ref_t::get_offset' data-ref="_ZNK3CFF14byte_str_ref_t10get_offsetEv">get_offset</a> () + <a class="local col9 ref" href="#29count" title='count' data-ref="29count">count</a> &lt;= <a class="member field" href="#CFF::byte_str_ref_t::str" title='CFF::byte_str_ref_t::str' data-ref="CFF::byte_str_ref_t::str">str</a>.<a class="ref field" href="hb-array.hh.html#hb_array_t::length" title='hb_array_t&lt;const unsigned char&gt;::length' data-ref="hb_array_t::length">length</a>; }</td></tr>
+<tr><th id="318">318</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN3CFF14byte_str_ref_t3incEj" title='CFF::byte_str_ref_t::inc' data-ref="_ZN3CFF14byte_str_ref_t3incEj">inc</dfn> (<em>unsigned</em> <em>int</em> <dfn class="local col0 decl" id="30count" title='count' data-type='unsigned int' data-ref="30count">count</dfn>=<var>1</var>)</td></tr>
+<tr><th id="319">319</th><td>  {</td></tr>
+<tr><th id="320">320</th><td>    <i>/* Automatically puts us in error if count is out-of-range. */</i></td></tr>
+<tr><th id="321">321</th><td>    <a class="member fn" href="#_ZN3CFF14byte_str_ref_t10set_offsetEj" title='CFF::byte_str_ref_t::set_offset' data-ref="_ZN3CFF14byte_str_ref_t10set_offsetEj">set_offset</a> (<a class="member fn" href="#_ZNK3CFF14byte_str_ref_t10get_offsetEv" title='CFF::byte_str_ref_t::get_offset' data-ref="_ZNK3CFF14byte_str_ref_t10get_offsetEv">get_offset</a> () + <a class="local col0 ref" href="#30count" title='count' data-ref="30count">count</a>);</td></tr>
+<tr><th id="322">322</th><td>  }</td></tr>
+<tr><th id="323">323</th><td></td></tr>
+<tr><th id="324">324</th><td>  <i>/* We (ab)use ubytes backwards_length as a cursor (called offset),</i></td></tr>
+<tr><th id="325">325</th><td><i>   * as well as to store error condition. */</i></td></tr>
+<tr><th id="326">326</th><td></td></tr>
+<tr><th id="327">327</th><td>  <em>unsigned</em> <dfn class="decl def fn" id="_ZNK3CFF14byte_str_ref_t10get_offsetEv" title='CFF::byte_str_ref_t::get_offset' data-ref="_ZNK3CFF14byte_str_ref_t10get_offsetEv">get_offset</dfn> () <em>const</em> { <b>return</b> <a class="member field" href="#CFF::byte_str_ref_t::str" title='CFF::byte_str_ref_t::str' data-ref="CFF::byte_str_ref_t::str">str</a>.<a class="ref field" href="hb-array.hh.html#hb_array_t::backwards_length" title='hb_array_t&lt;const unsigned char&gt;::backwards_length' data-ref="hb_array_t::backwards_length">backwards_length</a>; }</td></tr>
+<tr><th id="328">328</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN3CFF14byte_str_ref_t10set_offsetEj" title='CFF::byte_str_ref_t::set_offset' data-ref="_ZN3CFF14byte_str_ref_t10set_offsetEj">set_offset</dfn> (<em>unsigned</em> <dfn class="local col1 decl" id="31offset" title='offset' data-type='unsigned int' data-ref="31offset">offset</dfn>) { <a class="member field" href="#CFF::byte_str_ref_t::str" title='CFF::byte_str_ref_t::str' data-ref="CFF::byte_str_ref_t::str">str</a>.<a class="ref field" href="hb-array.hh.html#hb_array_t::backwards_length" title='hb_array_t&lt;const unsigned char&gt;::backwards_length' data-ref="hb_array_t::backwards_length">backwards_length</a> = <a class="local col1 ref" href="#31offset" title='offset' data-ref="31offset">offset</a>; }</td></tr>
+<tr><th id="329">329</th><td></td></tr>
+<tr><th id="330">330</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN3CFF14byte_str_ref_t9set_errorEv" title='CFF::byte_str_ref_t::set_error' data-ref="_ZN3CFF14byte_str_ref_t9set_errorEv">set_error</dfn> ()      { <a class="member field" href="#CFF::byte_str_ref_t::str" title='CFF::byte_str_ref_t::str' data-ref="CFF::byte_str_ref_t::str">str</a>.<a class="ref field" href="hb-array.hh.html#hb_array_t::backwards_length" title='hb_array_t&lt;const unsigned char&gt;::backwards_length' data-ref="hb_array_t::backwards_length">backwards_length</a> = <a class="member field" href="#CFF::byte_str_ref_t::str" title='CFF::byte_str_ref_t::str' data-ref="CFF::byte_str_ref_t::str">str</a>.<a class="ref field" href="hb-array.hh.html#hb_array_t::length" title='hb_array_t&lt;const unsigned char&gt;::length' data-ref="hb_array_t::length">length</a> + <var>1</var>; }</td></tr>
+<tr><th id="331">331</th><td>  <em>bool</em> <dfn class="decl def fn" id="_ZNK3CFF14byte_str_ref_t8in_errorEv" title='CFF::byte_str_ref_t::in_error' data-ref="_ZNK3CFF14byte_str_ref_t8in_errorEv">in_error</dfn> () <em>const</em> { <b>return</b> <a class="member field" href="#CFF::byte_str_ref_t::str" title='CFF::byte_str_ref_t::str' data-ref="CFF::byte_str_ref_t::str">str</a>.<a class="ref field" href="hb-array.hh.html#hb_array_t::backwards_length" title='hb_array_t&lt;const unsigned char&gt;::backwards_length' data-ref="hb_array_t::backwards_length">backwards_length</a> &gt; <a class="member field" href="#CFF::byte_str_ref_t::str" title='CFF::byte_str_ref_t::str' data-ref="CFF::byte_str_ref_t::str">str</a>.<a class="ref field" href="hb-array.hh.html#hb_array_t::length" title='hb_array_t&lt;const unsigned char&gt;::length' data-ref="hb_array_t::length">length</a>; }</td></tr>
+<tr><th id="332">332</th><td></td></tr>
+<tr><th id="333">333</th><td>  <em>unsigned</em> <dfn class="decl def fn" id="_ZNK3CFF14byte_str_ref_t10total_sizeEv" title='CFF::byte_str_ref_t::total_size' data-ref="_ZNK3CFF14byte_str_ref_t10total_sizeEv">total_size</dfn> () <em>const</em> { <b>return</b> <a class="member field" href="#CFF::byte_str_ref_t::str" title='CFF::byte_str_ref_t::str' data-ref="CFF::byte_str_ref_t::str">str</a>.<a class="ref field" href="hb-array.hh.html#hb_array_t::length" title='hb_array_t&lt;const unsigned char&gt;::length' data-ref="hb_array_t::length">length</a>; }</td></tr>
+<tr><th id="334">334</th><td></td></tr>
+<tr><th id="335">335</th><td>  <b>protected</b>:</td></tr>
+<tr><th id="336">336</th><td>  <a class="typedef" href="hb-array.hh.html#hb_ubytes_t" title='hb_ubytes_t' data-type='hb_array_t&lt;const unsigned char&gt;' data-ref="hb_ubytes_t">hb_ubytes_t</a>       <dfn class="decl field" id="CFF::byte_str_ref_t::str" title='CFF::byte_str_ref_t::str' data-ref="CFF::byte_str_ref_t::str">str</dfn>;</td></tr>
+<tr><th id="337">337</th><td>};</td></tr>
+<tr><th id="338">338</th><td></td></tr>
+<tr><th id="339">339</th><td><b>using</b> <dfn class="typedef" id="CFF::byte_str_array_t" title='CFF::byte_str_array_t' data-type='hb_vector_t&lt;hb_ubytes_t&gt;' data-ref="CFF::byte_str_array_t">byte_str_array_t</dfn> = <a class="type" href="hb-vector.hh.html#hb_vector_t" title='hb_vector_t' data-ref="hb_vector_t">hb_vector_t</a>&lt;<a class="typedef" href="hb-array.hh.html#hb_ubytes_t" title='hb_ubytes_t' data-type='hb_array_t&lt;const unsigned char&gt;' data-ref="hb_ubytes_t">hb_ubytes_t</a>&gt;;</td></tr>
+<tr><th id="340">340</th><td></td></tr>
+<tr><th id="341">341</th><td><i>/* stack */</i></td></tr>
+<tr><th id="342">342</th><td><b>template</b> &lt;<b>typename</b> ELEM, <em>int</em> LIMIT&gt;</td></tr>
+<tr><th id="343">343</th><td><b>struct</b> <dfn class="type def" id="CFF::cff_stack_t" title='CFF::cff_stack_t' data-ref="CFF::cff_stack_t">cff_stack_t</dfn></td></tr>
+<tr><th id="344">344</th><td>{</td></tr>
+<tr><th id="345">345</th><td>  ELEM&amp; <dfn class="decl def fn" id="_ZN3CFF11cff_stack_tixEj" title='CFF::cff_stack_t::operator[]' data-ref="_ZN3CFF11cff_stack_tixEj"><b>operator</b> []</dfn> (<em>unsigned</em> <em>int</em> <dfn class="local col2 decl" id="32i" title='i' data-type='unsigned int' data-ref="32i">i</dfn>)</td></tr>
+<tr><th id="346">346</th><td>  {</td></tr>
+<tr><th id="347">347</th><td>    <b>if</b> (<a class="macro" href="hb.hh.html#251" title="(__builtin_expect (!!(i &gt;= count), 0))" data-ref="_M/unlikely">unlikely</a> (<a class="local col2 ref" href="#32i" title='i' data-ref="32i">i</a> &gt;= <a class="member field" href="#CFF::cff_stack_t::count" title='CFF::cff_stack_t::count' data-ref="CFF::cff_stack_t::count">count</a>))</td></tr>
+<tr><th id="348">348</th><td>    {</td></tr>
+<tr><th id="349">349</th><td>      <a class="member fn" href="#_ZN3CFF11cff_stack_t9set_errorEv" title='CFF::cff_stack_t::set_error' data-ref="_ZN3CFF11cff_stack_t9set_errorEv">set_error</a> ();</td></tr>
+<tr><th id="350">350</th><td>      <b>return</b> <a class="macro" href="hb-null.hh.html#188" title="CrapHelper&lt;ELEM&gt;::get_crap ()" data-ref="_M/Crap">Crap</a> (ELEM);</td></tr>
+<tr><th id="351">351</th><td>    }</td></tr>
+<tr><th id="352">352</th><td>    <b>return</b> <a class="member field" href="#CFF::cff_stack_t::elements" title='CFF::cff_stack_t::elements' data-ref="CFF::cff_stack_t::elements">elements</a>[<a class="local col2 ref" href="#32i" title='i' data-ref="32i">i</a>];</td></tr>
+<tr><th id="353">353</th><td>  }</td></tr>
+<tr><th id="354">354</th><td></td></tr>
+<tr><th id="355">355</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN3CFF11cff_stack_t4pushERKT_" title='CFF::cff_stack_t::push' data-ref="_ZN3CFF11cff_stack_t4pushERKT_">push</dfn> (<em>const</em> ELEM &amp;<dfn class="local col3 decl" id="33v" title='v' data-type='const ELEM &amp;' data-ref="33v">v</dfn>)</td></tr>
+<tr><th id="356">356</th><td>  {</td></tr>
+<tr><th id="357">357</th><td>    <b>if</b> (<a class="macro" href="hb.hh.html#250" title="(__builtin_expect (!!(count &lt; LIMIT), 1))" data-ref="_M/likely">likely</a> (<a class="member field" href="#CFF::cff_stack_t::count" title='CFF::cff_stack_t::count' data-ref="CFF::cff_stack_t::count">count</a> &lt; <a class="tu member" href="#CFF::cff_stack_t::LIMIT" title='CFF::cff_stack_t::LIMIT' data-use='r' data-ref="CFF::cff_stack_t::LIMIT">LIMIT</a>))</td></tr>
+<tr><th id="358">358</th><td>      <a class="member field" href="#CFF::cff_stack_t::elements" title='CFF::cff_stack_t::elements' data-ref="CFF::cff_stack_t::elements">elements</a>[<a class="member field" href="#CFF::cff_stack_t::count" title='CFF::cff_stack_t::count' data-ref="CFF::cff_stack_t::count">count</a>++] = <a class="local col3 ref" href="#33v" title='v' data-ref="33v">v</a>;</td></tr>
+<tr><th id="359">359</th><td>    <b>else</b></td></tr>
+<tr><th id="360">360</th><td>      <a class="member fn" href="#_ZN3CFF11cff_stack_t9set_errorEv" title='CFF::cff_stack_t::set_error' data-ref="_ZN3CFF11cff_stack_t9set_errorEv">set_error</a> ();</td></tr>
+<tr><th id="361">361</th><td>  }</td></tr>
+<tr><th id="362">362</th><td>  ELEM &amp;<dfn class="decl def fn" id="_ZN3CFF11cff_stack_t4pushEv" title='CFF::cff_stack_t::push' data-ref="_ZN3CFF11cff_stack_t4pushEv">push</dfn> ()</td></tr>
+<tr><th id="363">363</th><td>  {</td></tr>
+<tr><th id="364">364</th><td>    <b>if</b> (<a class="macro" href="hb.hh.html#250" title="(__builtin_expect (!!(count &lt; LIMIT), 1))" data-ref="_M/likely">likely</a> (<a class="member field" href="#CFF::cff_stack_t::count" title='CFF::cff_stack_t::count' data-ref="CFF::cff_stack_t::count">count</a> &lt; <a class="tu member" href="#CFF::cff_stack_t::LIMIT" title='CFF::cff_stack_t::LIMIT' data-use='r' data-ref="CFF::cff_stack_t::LIMIT">LIMIT</a>))</td></tr>
+<tr><th id="365">365</th><td>      <b>return</b> <a class="member field" href="#CFF::cff_stack_t::elements" title='CFF::cff_stack_t::elements' data-ref="CFF::cff_stack_t::elements">elements</a>[<a class="member field" href="#CFF::cff_stack_t::count" title='CFF::cff_stack_t::count' data-ref="CFF::cff_stack_t::count">count</a>++];</td></tr>
+<tr><th id="366">366</th><td>    <b>else</b></td></tr>
+<tr><th id="367">367</th><td>    {</td></tr>
+<tr><th id="368">368</th><td>      <a class="member fn" href="#_ZN3CFF11cff_stack_t9set_errorEv" title='CFF::cff_stack_t::set_error' data-ref="_ZN3CFF11cff_stack_t9set_errorEv">set_error</a> ();</td></tr>
+<tr><th id="369">369</th><td>      <b>return</b> <a class="macro" href="hb-null.hh.html#188" title="CrapHelper&lt;ELEM&gt;::get_crap ()" data-ref="_M/Crap">Crap</a> (ELEM);</td></tr>
+<tr><th id="370">370</th><td>    }</td></tr>
+<tr><th id="371">371</th><td>  }</td></tr>
+<tr><th id="372">372</th><td></td></tr>
+<tr><th id="373">373</th><td>  ELEM&amp; <dfn class="decl def fn" id="_ZN3CFF11cff_stack_t3popEv" title='CFF::cff_stack_t::pop' data-ref="_ZN3CFF11cff_stack_t3popEv">pop</dfn> ()</td></tr>
+<tr><th id="374">374</th><td>  {</td></tr>
+<tr><th id="375">375</th><td>    <b>if</b> (<a class="macro" href="hb.hh.html#250" title="(__builtin_expect (!!(count &gt; 0), 1))" data-ref="_M/likely">likely</a> (<a class="member field" href="#CFF::cff_stack_t::count" title='CFF::cff_stack_t::count' data-ref="CFF::cff_stack_t::count">count</a> &gt; <var>0</var>))</td></tr>
+<tr><th id="376">376</th><td>      <b>return</b> <a class="member field" href="#CFF::cff_stack_t::elements" title='CFF::cff_stack_t::elements' data-ref="CFF::cff_stack_t::elements">elements</a>[--<a class="member field" href="#CFF::cff_stack_t::count" title='CFF::cff_stack_t::count' data-ref="CFF::cff_stack_t::count">count</a>];</td></tr>
+<tr><th id="377">377</th><td>    <b>else</b></td></tr>
+<tr><th id="378">378</th><td>    {</td></tr>
+<tr><th id="379">379</th><td>      <a class="member fn" href="#_ZN3CFF11cff_stack_t9set_errorEv" title='CFF::cff_stack_t::set_error' data-ref="_ZN3CFF11cff_stack_t9set_errorEv">set_error</a> ();</td></tr>
+<tr><th id="380">380</th><td>      <b>return</b> <a class="macro" href="hb-null.hh.html#188" title="CrapHelper&lt;ELEM&gt;::get_crap ()" data-ref="_M/Crap">Crap</a> (ELEM);</td></tr>
+<tr><th id="381">381</th><td>    }</td></tr>
+<tr><th id="382">382</th><td>  }</td></tr>
+<tr><th id="383">383</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN3CFF11cff_stack_t3popEj" title='CFF::cff_stack_t::pop' data-ref="_ZN3CFF11cff_stack_t3popEj">pop</dfn> (<em>unsigned</em> <em>int</em> <dfn class="local col4 decl" id="34n" title='n' data-type='unsigned int' data-ref="34n">n</dfn>)</td></tr>
+<tr><th id="384">384</th><td>  {</td></tr>
+<tr><th id="385">385</th><td>    <b>if</b> (<a class="macro" href="hb.hh.html#250" title="(__builtin_expect (!!(count &gt;= n), 1))" data-ref="_M/likely">likely</a> (<a class="member field" href="#CFF::cff_stack_t::count" title='CFF::cff_stack_t::count' data-ref="CFF::cff_stack_t::count">count</a> &gt;= <a class="local col4 ref" href="#34n" title='n' data-ref="34n">n</a>))</td></tr>
+<tr><th id="386">386</th><td>      <a class="member field" href="#CFF::cff_stack_t::count" title='CFF::cff_stack_t::count' data-ref="CFF::cff_stack_t::count">count</a> -= <a class="local col4 ref" href="#34n" title='n' data-ref="34n">n</a>;</td></tr>
+<tr><th id="387">387</th><td>    <b>else</b></td></tr>
+<tr><th id="388">388</th><td>      <a class="member fn" href="#_ZN3CFF11cff_stack_t9set_errorEv" title='CFF::cff_stack_t::set_error' data-ref="_ZN3CFF11cff_stack_t9set_errorEv">set_error</a> ();</td></tr>
+<tr><th id="389">389</th><td>  }</td></tr>
+<tr><th id="390">390</th><td></td></tr>
+<tr><th id="391">391</th><td>  <em>const</em> ELEM&amp; <dfn class="decl def fn" id="_ZN3CFF11cff_stack_t4peekEv" title='CFF::cff_stack_t::peek' data-ref="_ZN3CFF11cff_stack_t4peekEv">peek</dfn> ()</td></tr>
+<tr><th id="392">392</th><td>  {</td></tr>
+<tr><th id="393">393</th><td>    <b>if</b> (<a class="macro" href="hb.hh.html#251" title="(__builtin_expect (!!(count == 0), 0))" data-ref="_M/unlikely">unlikely</a> (<a class="member field" href="#CFF::cff_stack_t::count" title='CFF::cff_stack_t::count' data-ref="CFF::cff_stack_t::count">count</a> == <var>0</var>))</td></tr>
+<tr><th id="394">394</th><td>    {</td></tr>
+<tr><th id="395">395</th><td>      <a class="member fn" href="#_ZN3CFF11cff_stack_t9set_errorEv" title='CFF::cff_stack_t::set_error' data-ref="_ZN3CFF11cff_stack_t9set_errorEv">set_error</a> ();</td></tr>
+<tr><th id="396">396</th><td>      <b>return</b> <a class="macro" href="hb-null.hh.html#124" title="NullHelper&lt;ELEM&gt;::get_null ()" data-ref="_M/Null">Null</a> (ELEM);</td></tr>
+<tr><th id="397">397</th><td>    }</td></tr>
+<tr><th id="398">398</th><td>    <b>return</b> <a class="member field" href="#CFF::cff_stack_t::elements" title='CFF::cff_stack_t::elements' data-ref="CFF::cff_stack_t::elements">elements</a>[<a class="member field" href="#CFF::cff_stack_t::count" title='CFF::cff_stack_t::count' data-ref="CFF::cff_stack_t::count">count</a> - <var>1</var>];</td></tr>
+<tr><th id="399">399</th><td>  }</td></tr>
+<tr><th id="400">400</th><td></td></tr>
+<tr><th id="401">401</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN3CFF11cff_stack_t5unpopEv" title='CFF::cff_stack_t::unpop' data-ref="_ZN3CFF11cff_stack_t5unpopEv">unpop</dfn> ()</td></tr>
+<tr><th id="402">402</th><td>  {</td></tr>
+<tr><th id="403">403</th><td>    <b>if</b> (<a class="macro" href="hb.hh.html#250" title="(__builtin_expect (!!(count &lt; LIMIT), 1))" data-ref="_M/likely">likely</a> (<a class="member field" href="#CFF::cff_stack_t::count" title='CFF::cff_stack_t::count' data-ref="CFF::cff_stack_t::count">count</a> &lt; <a class="tu member" href="#CFF::cff_stack_t::LIMIT" title='CFF::cff_stack_t::LIMIT' data-use='r' data-ref="CFF::cff_stack_t::LIMIT">LIMIT</a>))</td></tr>
+<tr><th id="404">404</th><td>      <a class="member field" href="#CFF::cff_stack_t::count" title='CFF::cff_stack_t::count' data-ref="CFF::cff_stack_t::count">count</a>++;</td></tr>
+<tr><th id="405">405</th><td>    <b>else</b></td></tr>
+<tr><th id="406">406</th><td>      <a class="member fn" href="#_ZN3CFF11cff_stack_t9set_errorEv" title='CFF::cff_stack_t::set_error' data-ref="_ZN3CFF11cff_stack_t9set_errorEv">set_error</a> ();</td></tr>
+<tr><th id="407">407</th><td>  }</td></tr>
+<tr><th id="408">408</th><td></td></tr>
+<tr><th id="409">409</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN3CFF11cff_stack_t5clearEv" title='CFF::cff_stack_t::clear' data-ref="_ZN3CFF11cff_stack_t5clearEv">clear</dfn> () { <a class="member field" href="#CFF::cff_stack_t::count" title='CFF::cff_stack_t::count' data-ref="CFF::cff_stack_t::count">count</a> = <var>0</var>; }</td></tr>
+<tr><th id="410">410</th><td></td></tr>
+<tr><th id="411">411</th><td>  <em>bool</em> <dfn class="decl def fn" id="_ZNK3CFF11cff_stack_t8in_errorEv" title='CFF::cff_stack_t::in_error' data-ref="_ZNK3CFF11cff_stack_t8in_errorEv">in_error</dfn> () <em>const</em> { <b>return</b> (<a class="member field" href="#CFF::cff_stack_t::error" title='CFF::cff_stack_t::error' data-ref="CFF::cff_stack_t::error">error</a>); }</td></tr>
+<tr><th id="412">412</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN3CFF11cff_stack_t9set_errorEv" title='CFF::cff_stack_t::set_error' data-ref="_ZN3CFF11cff_stack_t9set_errorEv">set_error</dfn> ()      { <a class="member field" href="#CFF::cff_stack_t::error" title='CFF::cff_stack_t::error' data-ref="CFF::cff_stack_t::error">error</a> = <b>true</b>; }</td></tr>
+<tr><th id="413">413</th><td></td></tr>
+<tr><th id="414">414</th><td>  <em>unsigned</em> <em>int</em> <dfn class="decl def fn" id="_ZNK3CFF11cff_stack_t9get_countEv" title='CFF::cff_stack_t::get_count' data-ref="_ZNK3CFF11cff_stack_t9get_countEv">get_count</dfn> () <em>const</em> { <b>return</b> <a class="member field" href="#CFF::cff_stack_t::count" title='CFF::cff_stack_t::count' data-ref="CFF::cff_stack_t::count">count</a>; }</td></tr>
+<tr><th id="415">415</th><td>  <em>bool</em> <dfn class="decl def fn" id="_ZNK3CFF11cff_stack_t8is_emptyEv" title='CFF::cff_stack_t::is_empty' data-ref="_ZNK3CFF11cff_stack_t8is_emptyEv">is_empty</dfn> () <em>const</em>          { <b>return</b> !<a class="member field" href="#CFF::cff_stack_t::count" title='CFF::cff_stack_t::count' data-ref="CFF::cff_stack_t::count">count</a>; }</td></tr>
+<tr><th id="416">416</th><td></td></tr>
+<tr><th id="417">417</th><td>  <a class="type" href="hb-iter.hh.html#hb_array_t" title='hb_array_t' data-ref="hb_array_t">hb_array_t</a>&lt;<em>const</em> ELEM&gt; <dfn class="decl def fn" id="_ZNK3CFF11cff_stack_t9sub_arrayEjj" title='CFF::cff_stack_t::sub_array' data-ref="_ZNK3CFF11cff_stack_t9sub_arrayEjj">sub_array</dfn> (<em>unsigned</em> <dfn class="local col5 decl" id="35start" title='start' data-type='unsigned int' data-ref="35start">start</dfn>, <em>unsigned</em> <dfn class="local col6 decl" id="36length" title='length' data-type='unsigned int' data-ref="36length">length</dfn>) <em>const</em></td></tr>
+<tr><th id="418">418</th><td>  { <b>return</b> <a class="type" href="hb-iter.hh.html#hb_array_t" title='hb_array_t' data-ref="hb_array_t">hb_array_t</a>&lt;<em>const</em> ELEM&gt; (<a class="member field" href="#CFF::cff_stack_t::elements" title='CFF::cff_stack_t::elements' data-ref="CFF::cff_stack_t::elements">elements</a>).sub_array (<a class="local col5 ref" href="#35start" title='start' data-ref="35start">start</a>, <a class="local col6 ref" href="#36length" title='length' data-ref="36length">length</a>); }</td></tr>
+<tr><th id="419">419</th><td></td></tr>
+<tr><th id="420">420</th><td>  <b>private</b>:</td></tr>
+<tr><th id="421">421</th><td>  <em>bool</em> <dfn class="decl field" id="CFF::cff_stack_t::error" title='CFF::cff_stack_t::error' data-ref="CFF::cff_stack_t::error">error</dfn> = <b>false</b>;</td></tr>
+<tr><th id="422">422</th><td>  <em>unsigned</em> <em>int</em> <dfn class="decl field" id="CFF::cff_stack_t::count" title='CFF::cff_stack_t::count' data-ref="CFF::cff_stack_t::count">count</dfn> = <var>0</var>;</td></tr>
+<tr><th id="423">423</th><td>  ELEM <dfn class="decl field" id="CFF::cff_stack_t::elements" title='CFF::cff_stack_t::elements' data-ref="CFF::cff_stack_t::elements">elements</dfn>[<a class="tu ref" href="#CFF::cff_stack_t::LIMIT" title='CFF::cff_stack_t::LIMIT' data-ref="CFF::cff_stack_t::LIMIT">LIMIT</a>];</td></tr>
+<tr><th id="424">424</th><td>};</td></tr>
+<tr><th id="425">425</th><td></td></tr>
+<tr><th id="426">426</th><td><i>/* argument stack */</i></td></tr>
+<tr><th id="427">427</th><td><b>template</b> &lt;<b>typename</b> ARG=<a class="type" href="#CFF::number_t" title='CFF::number_t' data-ref="CFF::number_t">number_t</a>&gt;</td></tr>
+<tr><th id="428">428</th><td><b>struct</b> <dfn class="type def" id="CFF::arg_stack_t" title='CFF::arg_stack_t' data-ref="CFF::arg_stack_t">arg_stack_t</dfn> : <a class="type" href="#CFF::cff_stack_t" title='CFF::cff_stack_t' data-ref="CFF::cff_stack_t">cff_stack_t</a>&lt;ARG, <var>513</var>&gt;</td></tr>
+<tr><th id="429">429</th><td>{</td></tr>
+<tr><th id="430">430</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN3CFF11arg_stack_t8push_intEi" title='CFF::arg_stack_t::push_int' data-ref="_ZN3CFF11arg_stack_t8push_intEi">push_int</dfn> (<em>int</em> <dfn class="local col7 decl" id="37v" title='v' data-type='int' data-ref="37v">v</dfn>)</td></tr>
+<tr><th id="431">431</th><td>  {</td></tr>
+<tr><th id="432">432</th><td>    ARG &amp;<dfn class="local col8 decl" id="38n" title='n' data-type='ARG &amp;' data-ref="38n">n</dfn> = <a class="typedef" href="#CFF::arg_stack_t::S" title='CFF::arg_stack_t::S' data-type='cff_stack_t&lt;ARG, 513&gt;' data-ref="CFF::arg_stack_t::S">S</a>::push ();</td></tr>
+<tr><th id="433">433</th><td>    <a class="local col8 ref" href="#38n" title='n' data-ref="38n">n</a>.set_int (<a class="local col7 ref" href="#37v" title='v' data-ref="37v">v</a>);</td></tr>
+<tr><th id="434">434</th><td>  }</td></tr>
+<tr><th id="435">435</th><td></td></tr>
+<tr><th id="436">436</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN3CFF11arg_stack_t10push_fixedEi" title='CFF::arg_stack_t::push_fixed' data-ref="_ZN3CFF11arg_stack_t10push_fixedEi">push_fixed</dfn> (<a class="typedef" href="../../../../../include/x86_64-linux-gnu/bits/stdint-intn.h.html#int32_t" title='int32_t' data-type='__int32_t' data-ref="int32_t">int32_t</a> <dfn class="local col9 decl" id="39v" title='v' data-type='int32_t' data-ref="39v">v</dfn>)</td></tr>
+<tr><th id="437">437</th><td>  {</td></tr>
+<tr><th id="438">438</th><td>    ARG &amp;<dfn class="local col0 decl" id="40n" title='n' data-type='ARG &amp;' data-ref="40n">n</dfn> = <a class="typedef" href="#CFF::arg_stack_t::S" title='CFF::arg_stack_t::S' data-type='cff_stack_t&lt;ARG, 513&gt;' data-ref="CFF::arg_stack_t::S">S</a>::push ();</td></tr>
+<tr><th id="439">439</th><td>    <a class="local col0 ref" href="#40n" title='n' data-ref="40n">n</a>.set_fixed (<a class="local col9 ref" href="#39v" title='v' data-ref="39v">v</a>);</td></tr>
+<tr><th id="440">440</th><td>  }</td></tr>
+<tr><th id="441">441</th><td></td></tr>
+<tr><th id="442">442</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN3CFF11arg_stack_t9push_realEd" title='CFF::arg_stack_t::push_real' data-ref="_ZN3CFF11arg_stack_t9push_realEd">push_real</dfn> (<em>double</em> <dfn class="local col1 decl" id="41v" title='v' data-type='double' data-ref="41v">v</dfn>)</td></tr>
+<tr><th id="443">443</th><td>  {</td></tr>
+<tr><th id="444">444</th><td>    ARG &amp;<dfn class="local col2 decl" id="42n" title='n' data-type='ARG &amp;' data-ref="42n">n</dfn> = <a class="typedef" href="#CFF::arg_stack_t::S" title='CFF::arg_stack_t::S' data-type='cff_stack_t&lt;ARG, 513&gt;' data-ref="CFF::arg_stack_t::S">S</a>::push ();</td></tr>
+<tr><th id="445">445</th><td>    <a class="local col2 ref" href="#42n" title='n' data-ref="42n">n</a>.set_real (<a class="local col1 ref" href="#41v" title='v' data-ref="41v">v</a>);</td></tr>
+<tr><th id="446">446</th><td>  }</td></tr>
+<tr><th id="447">447</th><td></td></tr>
+<tr><th id="448">448</th><td>  ARG&amp; <dfn class="decl def fn" id="_ZN3CFF11arg_stack_t7pop_numEv" title='CFF::arg_stack_t::pop_num' data-ref="_ZN3CFF11arg_stack_t7pop_numEv">pop_num</dfn> () { <b>return</b> <b>this</b>-&gt;pop (); }</td></tr>
+<tr><th id="449">449</th><td></td></tr>
+<tr><th id="450">450</th><td>  <em>int</em> <dfn class="decl def fn" id="_ZN3CFF11arg_stack_t7pop_intEv" title='CFF::arg_stack_t::pop_int' data-ref="_ZN3CFF11arg_stack_t7pop_intEv">pop_int</dfn> ()  { <b>return</b> <b>this</b>-&gt;pop ().to_int (); }</td></tr>
+<tr><th id="451">451</th><td></td></tr>
+<tr><th id="452">452</th><td>  <em>unsigned</em> <em>int</em> <dfn class="decl def fn" id="_ZN3CFF11arg_stack_t8pop_uintEv" title='CFF::arg_stack_t::pop_uint' data-ref="_ZN3CFF11arg_stack_t8pop_uintEv">pop_uint</dfn> ()</td></tr>
+<tr><th id="453">453</th><td>  {</td></tr>
+<tr><th id="454">454</th><td>    <em>int</em> <dfn class="local col3 decl" id="43i" title='i' data-type='int' data-ref="43i">i</dfn> = <a class="member fn" href="#_ZN3CFF11arg_stack_t7pop_intEv" title='CFF::arg_stack_t::pop_int' data-ref="_ZN3CFF11arg_stack_t7pop_intEv">pop_int</a> ();</td></tr>
+<tr><th id="455">455</th><td>    <b>if</b> (<a class="macro" href="hb.hh.html#251" title="(__builtin_expect (!!(i &lt; 0), 0))" data-ref="_M/unlikely">unlikely</a> (<a class="local col3 ref" href="#43i" title='i' data-ref="43i">i</a> &lt; <var>0</var>))</td></tr>
+<tr><th id="456">456</th><td>    {</td></tr>
+<tr><th id="457">457</th><td>      <a class="local col3 ref" href="#43i" title='i' data-ref="43i">i</a> = <var>0</var>;</td></tr>
+<tr><th id="458">458</th><td>      <a class="typedef" href="#CFF::arg_stack_t::S" title='CFF::arg_stack_t::S' data-type='cff_stack_t&lt;ARG, 513&gt;' data-ref="CFF::arg_stack_t::S">S</a>::set_error ();</td></tr>
+<tr><th id="459">459</th><td>    }</td></tr>
+<tr><th id="460">460</th><td>    <b>return</b> (<em>unsigned</em>) <a class="local col3 ref" href="#43i" title='i' data-ref="43i">i</a>;</td></tr>
+<tr><th id="461">461</th><td>  }</td></tr>
+<tr><th id="462">462</th><td></td></tr>
+<tr><th id="463">463</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN3CFF11arg_stack_t24push_longint_from_substrERNS_14byte_str_ref_tE" title='CFF::arg_stack_t::push_longint_from_substr' data-ref="_ZN3CFF11arg_stack_t24push_longint_from_substrERNS_14byte_str_ref_tE">push_longint_from_substr</dfn> (<a class="type" href="#CFF::byte_str_ref_t" title='CFF::byte_str_ref_t' data-ref="CFF::byte_str_ref_t">byte_str_ref_t</a>&amp; <dfn class="local col4 decl" id="44str_ref" title='str_ref' data-type='CFF::byte_str_ref_t &amp;' data-ref="44str_ref">str_ref</dfn>)</td></tr>
+<tr><th id="464">464</th><td>  {</td></tr>
+<tr><th id="465">465</th><td>    <a class="member fn" href="#_ZN3CFF11arg_stack_t8push_intEi" title='CFF::arg_stack_t::push_int' data-ref="_ZN3CFF11arg_stack_t8push_intEi">push_int</a> (<span class='inlayHint'>v:&nbsp;</span>(<a class="local col4 ref" href="#44str_ref" title='str_ref' data-ref="44str_ref">str_ref</a><a class="ref fn" href="#_ZN3CFF14byte_str_ref_tixEi" title='CFF::byte_str_ref_t::operator[]' data-ref="_ZN3CFF14byte_str_ref_tixEi">[<var>0</var>]</a> &lt;&lt; <var>24</var>) | (<a class="local col4 ref" href="#44str_ref" title='str_ref' data-ref="44str_ref">str_ref</a><a class="ref fn" href="#_ZN3CFF14byte_str_ref_tixEi" title='CFF::byte_str_ref_t::operator[]' data-ref="_ZN3CFF14byte_str_ref_tixEi">[<var>1</var>]</a> &lt;&lt; <var>16</var>) | (<a class="local col4 ref" href="#44str_ref" title='str_ref' data-ref="44str_ref">str_ref</a><a class="ref fn" href="#_ZN3CFF14byte_str_ref_tixEi" title='CFF::byte_str_ref_t::operator[]' data-ref="_ZN3CFF14byte_str_ref_tixEi">[<var>2</var>]</a> &lt;&lt; <var>8</var>) | (<a class="local col4 ref" href="#44str_ref" title='str_ref' data-ref="44str_ref">str_ref</a><a class="ref fn" href="#_ZN3CFF14byte_str_ref_tixEi" title='CFF::byte_str_ref_t::operator[]' data-ref="_ZN3CFF14byte_str_ref_tixEi">[<var>3</var>]</a>));</td></tr>
+<tr><th id="466">466</th><td>    <a class="local col4 ref" href="#44str_ref" title='str_ref' data-ref="44str_ref">str_ref</a>.<a class="ref fn" href="#_ZN3CFF14byte_str_ref_t3incEj" title='CFF::byte_str_ref_t::inc' data-ref="_ZN3CFF14byte_str_ref_t3incEj">inc</a> (<span class='inlayHint'>count:&nbsp;</span><var>4</var>);</td></tr>
+<tr><th id="467">467</th><td>  }</td></tr>
+<tr><th id="468">468</th><td></td></tr>
+<tr><th id="469">469</th><td>  <em>bool</em> <dfn class="decl def fn" id="_ZN3CFF11arg_stack_t22push_fixed_from_substrERNS_14byte_str_ref_tE" title='CFF::arg_stack_t::push_fixed_from_substr' data-ref="_ZN3CFF11arg_stack_t22push_fixed_from_substrERNS_14byte_str_ref_tE">push_fixed_from_substr</dfn> (<a class="type" href="#CFF::byte_str_ref_t" title='CFF::byte_str_ref_t' data-ref="CFF::byte_str_ref_t">byte_str_ref_t</a>&amp; <dfn class="local col5 decl" id="45str_ref" title='str_ref' data-type='CFF::byte_str_ref_t &amp;' data-ref="45str_ref">str_ref</dfn>)</td></tr>
+<tr><th id="470">470</th><td>  {</td></tr>
+<tr><th id="471">471</th><td>    <b>if</b> (<a class="macro" href="hb.hh.html#251" title="(__builtin_expect (!!(!str_ref.avail (4)), 0))" data-ref="_M/unlikely">unlikely</a> (!<a class="local col5 ref" href="#45str_ref" title='str_ref' data-ref="45str_ref">str_ref</a>.<a class="ref fn" href="#_ZNK3CFF14byte_str_ref_t5availEj" title='CFF::byte_str_ref_t::avail' data-ref="_ZNK3CFF14byte_str_ref_t5availEj">avail</a> (<var>4</var>)))</td></tr>
+<tr><th id="472">472</th><td>      <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="473">473</th><td>    <a class="member fn" href="#_ZN3CFF11arg_stack_t10push_fixedEi" title='CFF::arg_stack_t::push_fixed' data-ref="_ZN3CFF11arg_stack_t10push_fixedEi">push_fixed</a> (<span class='inlayHint'>v:&nbsp;</span>(<a class="typedef" href="../../../../../include/x86_64-linux-gnu/bits/stdint-intn.h.html#int32_t" title='int32_t' data-type='__int32_t' data-ref="int32_t">int32_t</a>)<a class="ref fn fake" href="hb-open-type.hh.html#_ZNK2OT7IntTypecvNSt11conditionalIXsr3std9is_signedIT_EE5valueEijE4typeEEv" title='OT::IntType::operator typename conditional&lt;std::is_signed&lt;Type&gt;::value, int, unsigned int&gt;::type' data-ref="_ZNK2OT7IntTypecvNSt11conditionalIXsr3std9is_signedIT_EE5valueEijE4typeEEv"></a>*(<em>const</em> <a class="typedef" href="hb-open-type.hh.html#OT::HBUINT32" title='OT::HBUINT32' data-type='IntType&lt;uint32_t&gt;' data-ref="OT::HBUINT32">HBUINT32</a>*)&amp;<a class="local col5 ref" href="#45str_ref" title='str_ref' data-ref="45str_ref">str_ref</a><a class="ref fn" href="#_ZN3CFF14byte_str_ref_tixEi" title='CFF::byte_str_ref_t::operator[]' data-ref="_ZN3CFF14byte_str_ref_tixEi">[<var>0</var>]</a>);</td></tr>
+<tr><th id="474">474</th><td>    <a class="local col5 ref" href="#45str_ref" title='str_ref' data-ref="45str_ref">str_ref</a>.<a class="ref fn" href="#_ZN3CFF14byte_str_ref_t3incEj" title='CFF::byte_str_ref_t::inc' data-ref="_ZN3CFF14byte_str_ref_t3incEj">inc</a> (<span class='inlayHint'>count:&nbsp;</span><var>4</var>);</td></tr>
+<tr><th id="475">475</th><td>    <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="476">476</th><td>  }</td></tr>
+<tr><th id="477">477</th><td></td></tr>
+<tr><th id="478">478</th><td>  <b>private</b>:</td></tr>
+<tr><th id="479">479</th><td>  <b>typedef</b> <a class="type" href="#CFF::cff_stack_t" title='CFF::cff_stack_t' data-ref="CFF::cff_stack_t">cff_stack_t</a>&lt;ARG, <var>513</var>&gt; <dfn class="typedef" id="CFF::arg_stack_t::S" title='CFF::arg_stack_t::S' data-type='cff_stack_t&lt;ARG, 513&gt;' data-ref="CFF::arg_stack_t::S">S</dfn>;</td></tr>
+<tr><th id="480">480</th><td>};</td></tr>
+<tr><th id="481">481</th><td></td></tr>
+<tr><th id="482">482</th><td><i>/* an operator prefixed by its operands in a byte string */</i></td></tr>
+<tr><th id="483">483</th><td><b>struct</b> <dfn class="type def" id="CFF::op_str_t" title='CFF::op_str_t' data-ref="CFF::op_str_t">op_str_t</dfn></td></tr>
+<tr><th id="484">484</th><td>{</td></tr>
+<tr><th id="485">485</th><td>  <i>/* This used to have a hb_ubytes_t. Using a pointer and length</i></td></tr>
+<tr><th id="486">486</th><td><i>   * in a particular order, saves 8 bytes in this struct and more</i></td></tr>
+<tr><th id="487">487</th><td><i>   * in our parsed_cs_op_t subclass. */</i></td></tr>
+<tr><th id="488">488</th><td></td></tr>
+<tr><th id="489">489</th><td>  <em>const</em> <em>unsigned</em> <em>char</em> *<dfn class="decl field" id="CFF::op_str_t::ptr" title='CFF::op_str_t::ptr' data-ref="CFF::op_str_t::ptr">ptr</dfn> = <b>nullptr</b>;</td></tr>
+<tr><th id="490">490</th><td></td></tr>
+<tr><th id="491">491</th><td>  <a class="typedef" href="#CFF::op_code_t" title='CFF::op_code_t' data-type='unsigned int' data-ref="CFF::op_code_t">op_code_t</a>  <dfn class="decl field" id="CFF::op_str_t::op" title='CFF::op_str_t::op' data-ref="CFF::op_str_t::op">op</dfn> = <a class="macro" href="#215" title="0xFFFFu" data-ref="_M/OpCode_Invalid">OpCode_Invalid</a>;</td></tr>
+<tr><th id="492">492</th><td></td></tr>
+<tr><th id="493">493</th><td>  <a class="typedef" href="../../../../../include/x86_64-linux-gnu/bits/stdint-uintn.h.html#uint8_t" title='uint8_t' data-type='__uint8_t' data-ref="uint8_t">uint8_t</a> <dfn class="decl field" id="CFF::op_str_t::length" title='CFF::op_str_t::length' data-ref="CFF::op_str_t::length">length</dfn> = <var>0</var>;</td></tr>
+<tr><th id="494">494</th><td>};</td></tr>
+<tr><th id="495">495</th><td></td></tr>
+<tr><th id="496">496</th><td><i>/* base of OP_SERIALIZER */</i></td></tr>
+<tr><th id="497">497</th><td><b>struct</b> <dfn class="type def" id="CFF::op_serializer_t" title='CFF::op_serializer_t' data-ref="CFF::op_serializer_t">op_serializer_t</dfn></td></tr>
+<tr><th id="498">498</th><td>{</td></tr>
+<tr><th id="499">499</th><td>  <b>protected</b>:</td></tr>
+<tr><th id="500">500</th><td>  <em>bool</em> <dfn class="decl def fn" id="_ZNK3CFF15op_serializer_t10copy_opstrEP22hb_serialize_context_tRKNS_8op_str_tE" title='CFF::op_serializer_t::copy_opstr' data-ref="_ZNK3CFF15op_serializer_t10copy_opstrEP22hb_serialize_context_tRKNS_8op_str_tE">copy_opstr</dfn> (<a class="type" href="hb-serialize.hh.html#hb_serialize_context_t" title='hb_serialize_context_t' data-ref="hb_serialize_context_t">hb_serialize_context_t</a> *<dfn class="local col6 decl" id="46c" title='c' data-type='hb_serialize_context_t *' data-ref="46c">c</dfn>, <em>const</em> <a class="type" href="#CFF::op_str_t" title='CFF::op_str_t' data-ref="CFF::op_str_t">op_str_t</a>&amp; <dfn class="local col7 decl" id="47opstr" title='opstr' data-type='const CFF::op_str_t &amp;' data-ref="47opstr">opstr</dfn>) <em>const</em></td></tr>
+<tr><th id="501">501</th><td>  {</td></tr>
+<tr><th id="502">502</th><td>    <a class="macro" href="hb-debug.hh.html#426" title="hb_no_trace_t&lt;bool&gt; trace" data-ref="_M/TRACE_SERIALIZE">TRACE_SERIALIZE</a> (<b>this</b>);</td></tr>
+<tr><th id="503">503</th><td></td></tr>
+<tr><th id="504">504</th><td>    <em>unsigned</em> <em>char</em> *<dfn class="local col8 decl" id="48d" title='d' data-type='unsigned char *' data-ref="48d">d</dfn> = <a class="local col6 ref" href="#46c" title='c' data-ref="46c">c</a>-&gt;<a class="ref fn" href="hb-serialize.hh.html#_ZN22hb_serialize_context_t13allocate_sizeEmb" title='hb_serialize_context_t::allocate_size' data-ref="_ZN22hb_serialize_context_t13allocate_sizeEmb">allocate_size</a>&lt;<em>unsigned</em> <em>char</em>&gt; (<span class='inlayHint'>size:&nbsp;</span><a class="local col7 ref" href="#47opstr" title='opstr' data-ref="47opstr">opstr</a>.<a class="ref field" href="#CFF::op_str_t::length" title='CFF::op_str_t::length' data-ref="CFF::op_str_t::length">length</a>);</td></tr>
+<tr><th id="505">505</th><td>    <b>if</b> (<a class="macro" href="hb.hh.html#251" title="(__builtin_expect (!!(!d), 0))" data-ref="_M/unlikely">unlikely</a> (!<a class="local col8 ref" href="#48d" title='d' data-ref="48d">d</a>)) <a class="macro" href="hb-debug.hh.html#349" title="return trace.ret (false, __PRETTY_FUNCTION__, 505)" data-ref="_M/return_trace">return_trace</a> (<b>false</b>);</td></tr>
+<tr><th id="506">506</th><td>    <i>/* Faster than hb_memcpy for small strings. */</i></td></tr>
+<tr><th id="507">507</th><td>    <b>for</b> (<em>unsigned</em> <dfn class="local col9 decl" id="49i" title='i' data-type='unsigned int' data-ref="49i">i</dfn> = <var>0</var>; <a class="local col9 ref" href="#49i" title='i' data-ref="49i">i</a> &lt; <a class="local col7 ref" href="#47opstr" title='opstr' data-ref="47opstr">opstr</a>.<a class="ref field" href="#CFF::op_str_t::length" title='CFF::op_str_t::length' data-ref="CFF::op_str_t::length">length</a>; <a class="local col9 ref" href="#49i" title='i' data-ref="49i">i</a>++)</td></tr>
+<tr><th id="508">508</th><td>      <a class="local col8 ref" href="#48d" title='d' data-ref="48d">d</a>[<a class="local col9 ref" href="#49i" title='i' data-ref="49i">i</a>] = <a class="local col7 ref" href="#47opstr" title='opstr' data-ref="47opstr">opstr</a>.<a class="ref field" href="#CFF::op_str_t::ptr" title='CFF::op_str_t::ptr' data-ref="CFF::op_str_t::ptr">ptr</a>[<a class="local col9 ref" href="#49i" title='i' data-ref="49i">i</a>];</td></tr>
+<tr><th id="509">509</th><td>    <a class="macro" href="hb-debug.hh.html#349" title="return trace.ret (true, __PRETTY_FUNCTION__, 509)" data-ref="_M/return_trace">return_trace</a> (<b>true</b>);</td></tr>
+<tr><th id="510">510</th><td>  }</td></tr>
+<tr><th id="511">511</th><td>};</td></tr>
+<tr><th id="512">512</th><td></td></tr>
+<tr><th id="513">513</th><td><b>template</b> &lt;<b>typename</b> VAL&gt;</td></tr>
+<tr><th id="514">514</th><td><b>struct</b> <dfn class="type def" id="CFF::parsed_values_t" title='CFF::parsed_values_t' data-ref="CFF::parsed_values_t">parsed_values_t</dfn></td></tr>
+<tr><th id="515">515</th><td>{</td></tr>
+<tr><th id="516">516</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN3CFF15parsed_values_t4initEv" title='CFF::parsed_values_t::init' data-ref="_ZN3CFF15parsed_values_t4initEv">init</dfn> ()</td></tr>
+<tr><th id="517">517</th><td>  {</td></tr>
+<tr><th id="518">518</th><td>    <a class="member field" href="#CFF::parsed_values_t::opStart" title='CFF::parsed_values_t::opStart' data-ref="CFF::parsed_values_t::opStart">opStart</a> = <var>0</var>;</td></tr>
+<tr><th id="519">519</th><td>    <a class="member field" href="#CFF::parsed_values_t::values" title='CFF::parsed_values_t::values' data-ref="CFF::parsed_values_t::values">values</a>.init ();</td></tr>
+<tr><th id="520">520</th><td>  }</td></tr>
+<tr><th id="521">521</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN3CFF15parsed_values_t4finiEv" title='CFF::parsed_values_t::fini' data-ref="_ZN3CFF15parsed_values_t4finiEv">fini</dfn> () { <a class="member field" href="#CFF::parsed_values_t::values" title='CFF::parsed_values_t::values' data-ref="CFF::parsed_values_t::values">values</a>.fini (); }</td></tr>
+<tr><th id="522">522</th><td></td></tr>
+<tr><th id="523">523</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN3CFF15parsed_values_t5allocEj" title='CFF::parsed_values_t::alloc' data-ref="_ZN3CFF15parsed_values_t5allocEj">alloc</dfn> (<em>unsigned</em> <dfn class="local col0 decl" id="50n" title='n' data-type='unsigned int' data-ref="50n">n</dfn>)</td></tr>
+<tr><th id="524">524</th><td>  {</td></tr>
+<tr><th id="525">525</th><td>    <a class="member field" href="#CFF::parsed_values_t::values" title='CFF::parsed_values_t::values' data-ref="CFF::parsed_values_t::values">values</a>.alloc (<a class="local col0 ref" href="#50n" title='n' data-ref="50n">n</a>, <b>true</b>);</td></tr>
+<tr><th id="526">526</th><td>  }</td></tr>
+<tr><th id="527">527</th><td></td></tr>
+<tr><th id="528">528</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN3CFF15parsed_values_t6add_opEjRKNS_14byte_str_ref_tERKT_" title='CFF::parsed_values_t::add_op' data-ref="_ZN3CFF15parsed_values_t6add_opEjRKNS_14byte_str_ref_tERKT_">add_op</dfn> (<a class="typedef" href="#CFF::op_code_t" title='CFF::op_code_t' data-type='unsigned int' data-ref="CFF::op_code_t">op_code_t</a> <dfn class="local col1 decl" id="51op" title='op' data-type='CFF::op_code_t' data-ref="51op">op</dfn>, <em>const</em> <a class="type" href="#CFF::byte_str_ref_t" title='CFF::byte_str_ref_t' data-ref="CFF::byte_str_ref_t">byte_str_ref_t</a>&amp; <dfn class="local col2 decl" id="52str_ref" title='str_ref' data-type='const CFF::byte_str_ref_t &amp;' data-ref="52str_ref">str_ref</dfn> = <a class="type" href="#CFF::byte_str_ref_t" title='CFF::byte_str_ref_t' data-ref="CFF::byte_str_ref_t">byte_str_ref_t</a> <a class="ref fn" href="#_ZN3CFF14byte_str_ref_tC1Ev" title='CFF::byte_str_ref_t::byte_str_ref_t' data-ref="_ZN3CFF14byte_str_ref_tC1Ev">(</a>), <em>const</em> VAL &amp;<dfn class="local col3 decl" id="53v" title='v' data-type='const VAL &amp;' data-ref="53v">v</dfn> = VAL ())</td></tr>
+<tr><th id="529">529</th><td>  {</td></tr>
+<tr><th id="530">530</th><td>    VAL *<dfn class="local col4 decl" id="54val" title='val' data-type='VAL *' data-ref="54val">val</dfn> = <a class="member field" href="#CFF::parsed_values_t::values" title='CFF::parsed_values_t::values' data-ref="CFF::parsed_values_t::values">values</a>.push (<a class="local col3 ref" href="#53v" title='v' data-ref="53v">v</a>);</td></tr>
+<tr><th id="531">531</th><td>    <a class="local col4 ref" href="#54val" title='val' data-ref="54val">val</a>-&gt;op = <a class="local col1 ref" href="#51op" title='op' data-ref="51op">op</a>;</td></tr>
+<tr><th id="532">532</th><td>    <em>auto</em> <dfn class="local col5 decl" id="55arr" title='arr' data-type='hb_ubytes_t' data-ref="55arr">arr</dfn> = <a class="local col2 ref" href="#52str_ref" title='str_ref' data-ref="52str_ref">str_ref</a>.<a class="ref fn" href="#_ZNK3CFF14byte_str_ref_t9sub_arrayEjj" title='CFF::byte_str_ref_t::sub_array' data-ref="_ZNK3CFF14byte_str_ref_t9sub_arrayEjj">sub_array</a> (<span class='inlayHint'>offset_:&nbsp;</span><a class="member field" href="#CFF::parsed_values_t::opStart" title='CFF::parsed_values_t::opStart' data-ref="CFF::parsed_values_t::opStart">opStart</a>, <span class='inlayHint'>len_:&nbsp;</span><a class="local col2 ref" href="#52str_ref" title='str_ref' data-ref="52str_ref">str_ref</a>.<a class="ref fn" href="#_ZNK3CFF14byte_str_ref_t10get_offsetEv" title='CFF::byte_str_ref_t::get_offset' data-ref="_ZNK3CFF14byte_str_ref_t10get_offsetEv">get_offset</a> () - <a class="member field" href="#CFF::parsed_values_t::opStart" title='CFF::parsed_values_t::opStart' data-ref="CFF::parsed_values_t::opStart">opStart</a>);</td></tr>
+<tr><th id="533">533</th><td>    <a class="local col4 ref" href="#54val" title='val' data-ref="54val">val</a>-&gt;ptr = <a class="local col5 ref" href="#55arr" title='arr' data-ref="55arr">arr</a>.<a class="ref field" href="hb-array.hh.html#hb_array_t::arrayZ" title='hb_array_t&lt;const unsigned char&gt;::arrayZ' data-ref="hb_array_t::arrayZ">arrayZ</a>;</td></tr>
+<tr><th id="534">534</th><td>    <a class="local col4 ref" href="#54val" title='val' data-ref="54val">val</a>-&gt;length = <a class="local col5 ref" href="#55arr" title='arr' data-ref="55arr">arr</a>.<a class="ref field" href="hb-array.hh.html#hb_array_t::length" title='hb_array_t&lt;const unsigned char&gt;::length' data-ref="hb_array_t::length">length</a>;</td></tr>
+<tr><th id="535">535</th><td>    <a class="member field" href="#CFF::parsed_values_t::opStart" title='CFF::parsed_values_t::opStart' data-ref="CFF::parsed_values_t::opStart">opStart</a> = <a class="local col2 ref" href="#52str_ref" title='str_ref' data-ref="52str_ref">str_ref</a>.<a class="ref fn" href="#_ZNK3CFF14byte_str_ref_t10get_offsetEv" title='CFF::byte_str_ref_t::get_offset' data-ref="_ZNK3CFF14byte_str_ref_t10get_offsetEv">get_offset</a> ();</td></tr>
+<tr><th id="536">536</th><td>  }</td></tr>
+<tr><th id="537">537</th><td></td></tr>
+<tr><th id="538">538</th><td>  <em>bool</em> <dfn class="decl def fn" id="_ZNK3CFF15parsed_values_t6has_opEj" title='CFF::parsed_values_t::has_op' data-ref="_ZNK3CFF15parsed_values_t6has_opEj">has_op</dfn> (<a class="typedef" href="#CFF::op_code_t" title='CFF::op_code_t' data-type='unsigned int' data-ref="CFF::op_code_t">op_code_t</a> <dfn class="local col6 decl" id="56op" title='op' data-type='CFF::op_code_t' data-ref="56op">op</dfn>) <em>const</em></td></tr>
+<tr><th id="539">539</th><td>  {</td></tr>
+<tr><th id="540">540</th><td>    <b>for</b> (<em>const</em> <em>auto</em>&amp; <dfn class="local col7 decl" id="57v" title='v' data-type='const auto &amp;' data-ref="57v">v</dfn> : <a class="member field" href="#CFF::parsed_values_t::values" title='CFF::parsed_values_t::values' data-ref="CFF::parsed_values_t::values">values</a>)</td></tr>
+<tr><th id="541">541</th><td>      <b>if</b> (<a class="local col7 ref" href="#57v" title='v' data-ref="57v">v</a>.op == <a class="local col6 ref" href="#56op" title='op' data-ref="56op">op</a>) <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="542">542</th><td>    <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="543">543</th><td>  }</td></tr>
+<tr><th id="544">544</th><td></td></tr>
+<tr><th id="545">545</th><td>  <em>unsigned</em> <dfn class="decl def fn" id="_ZNK3CFF15parsed_values_t9get_countEv" title='CFF::parsed_values_t::get_count' data-ref="_ZNK3CFF15parsed_values_t9get_countEv">get_count</dfn> () <em>const</em> { <b>return</b> <a class="member field" href="#CFF::parsed_values_t::values" title='CFF::parsed_values_t::values' data-ref="CFF::parsed_values_t::values">values</a>.length; }</td></tr>
+<tr><th id="546">546</th><td>  <em>const</em> VAL &amp;<dfn class="decl def fn" id="_ZNK3CFF15parsed_values_tixEj" title='CFF::parsed_values_t::operator[]' data-ref="_ZNK3CFF15parsed_values_tixEj"><b>operator</b> []</dfn> (<em>unsigned</em> <em>int</em> <dfn class="local col8 decl" id="58i" title='i' data-type='unsigned int' data-ref="58i">i</dfn>) <em>const</em> { <b>return</b> <a class="member field" href="#CFF::parsed_values_t::values" title='CFF::parsed_values_t::values' data-ref="CFF::parsed_values_t::values">values</a>[<a class="local col8 ref" href="#58i" title='i' data-ref="58i">i</a>]; }</td></tr>
+<tr><th id="547">547</th><td></td></tr>
+<tr><th id="548">548</th><td>  <em>unsigned</em> <em>int</em>       <dfn class="decl field" id="CFF::parsed_values_t::opStart" title='CFF::parsed_values_t::opStart' data-ref="CFF::parsed_values_t::opStart">opStart</dfn>;</td></tr>
+<tr><th id="549">549</th><td>  <a class="type" href="hb-vector.hh.html#hb_vector_t" title='hb_vector_t' data-ref="hb_vector_t">hb_vector_t</a>&lt;VAL&gt;   <dfn class="decl field" id="CFF::parsed_values_t::values" title='CFF::parsed_values_t::values' data-ref="CFF::parsed_values_t::values">values</dfn>;</td></tr>
+<tr><th id="550">550</th><td>};</td></tr>
+<tr><th id="551">551</th><td></td></tr>
+<tr><th id="552">552</th><td><b>template</b> &lt;<b>typename</b> ARG=<a class="type" href="#CFF::number_t" title='CFF::number_t' data-ref="CFF::number_t">number_t</a>&gt;</td></tr>
+<tr><th id="553">553</th><td><b>struct</b> <dfn class="type def" id="CFF::interp_env_t" title='CFF::interp_env_t' data-ref="CFF::interp_env_t">interp_env_t</dfn></td></tr>
+<tr><th id="554">554</th><td>{</td></tr>
+<tr><th id="555">555</th><td>  <dfn class="decl def fn" id="_ZN3CFF12interp_env_tC1Ev" title='CFF::interp_env_t::interp_env_t&lt;ARG&gt;' data-ref="_ZN3CFF12interp_env_tC1Ev">interp_env_t</dfn> () {}</td></tr>
+<tr><th id="556">556</th><td>  <dfn class="decl def fn" id="_ZN3CFF12interp_env_tC1ERK10hb_array_tIKhE" title='CFF::interp_env_t::interp_env_t&lt;ARG&gt;' data-ref="_ZN3CFF12interp_env_tC1ERK10hb_array_tIKhE">interp_env_t</dfn> (<em>const</em> <a class="typedef" href="hb-array.hh.html#hb_ubytes_t" title='hb_ubytes_t' data-type='hb_array_t&lt;const unsigned char&gt;' data-ref="hb_ubytes_t">hb_ubytes_t</a> &amp;<dfn class="local col9 decl" id="59str_" title='str_' data-type='const hb_ubytes_t &amp;' data-ref="59str_">str_</dfn>)</td></tr>
+<tr><th id="557">557</th><td>  {</td></tr>
+<tr><th id="558">558</th><td>    <a class="member field" href="#CFF::interp_env_t::str_ref" title='CFF::interp_env_t::str_ref' data-ref="CFF::interp_env_t::str_ref">str_ref</a>.<a class="ref fn" href="#_ZN3CFF14byte_str_ref_t5resetERK10hb_array_tIKhEj" title='CFF::byte_str_ref_t::reset' data-ref="_ZN3CFF14byte_str_ref_t5resetERK10hb_array_tIKhEj">reset</a> (<a class="local col9 ref" href="#59str_" title='str_' data-ref="59str_">str_</a>);</td></tr>
+<tr><th id="559">559</th><td>  }</td></tr>
+<tr><th id="560">560</th><td>  <em>bool</em> <dfn class="decl def fn" id="_ZNK3CFF12interp_env_t8in_errorEv" title='CFF::interp_env_t::in_error' data-ref="_ZNK3CFF12interp_env_t8in_errorEv">in_error</dfn> () <em>const</em></td></tr>
+<tr><th id="561">561</th><td>  { <b>return</b> <a class="member field" href="#CFF::interp_env_t::str_ref" title='CFF::interp_env_t::str_ref' data-ref="CFF::interp_env_t::str_ref">str_ref</a>.<a class="ref fn" href="#_ZNK3CFF14byte_str_ref_t8in_errorEv" title='CFF::byte_str_ref_t::in_error' data-ref="_ZNK3CFF14byte_str_ref_t8in_errorEv">in_error</a> () || <a class="member field" href="#CFF::interp_env_t::argStack" title='CFF::interp_env_t::argStack' data-ref="CFF::interp_env_t::argStack">argStack</a>.in_error (); }</td></tr>
+<tr><th id="562">562</th><td></td></tr>
+<tr><th id="563">563</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN3CFF12interp_env_t9set_errorEv" title='CFF::interp_env_t::set_error' data-ref="_ZN3CFF12interp_env_t9set_errorEv">set_error</dfn> () { <a class="member field" href="#CFF::interp_env_t::str_ref" title='CFF::interp_env_t::str_ref' data-ref="CFF::interp_env_t::str_ref">str_ref</a>.<a class="ref fn" href="#_ZN3CFF14byte_str_ref_t9set_errorEv" title='CFF::byte_str_ref_t::set_error' data-ref="_ZN3CFF14byte_str_ref_t9set_errorEv">set_error</a> (); }</td></tr>
+<tr><th id="564">564</th><td></td></tr>
+<tr><th id="565">565</th><td>  <a class="typedef" href="#CFF::op_code_t" title='CFF::op_code_t' data-type='unsigned int' data-ref="CFF::op_code_t">op_code_t</a> <dfn class="decl def fn" id="_ZN3CFF12interp_env_t8fetch_opEv" title='CFF::interp_env_t::fetch_op' data-ref="_ZN3CFF12interp_env_t8fetch_opEv">fetch_op</dfn> ()</td></tr>
+<tr><th id="566">566</th><td>  {</td></tr>
+<tr><th id="567">567</th><td>    <a class="typedef" href="#CFF::op_code_t" title='CFF::op_code_t' data-type='unsigned int' data-ref="CFF::op_code_t">op_code_t</a>  <dfn class="local col0 decl" id="60op" title='op' data-type='CFF::op_code_t' data-ref="60op">op</dfn> = <a class="macro" href="#215" title="0xFFFFu" data-ref="_M/OpCode_Invalid">OpCode_Invalid</a>;</td></tr>
+<tr><th id="568">568</th><td>    <b>if</b> (<a class="macro" href="hb.hh.html#251" title="(__builtin_expect (!!(!str_ref.avail ()), 0))" data-ref="_M/unlikely">unlikely</a> (!<a class="member field" href="#CFF::interp_env_t::str_ref" title='CFF::interp_env_t::str_ref' data-ref="CFF::interp_env_t::str_ref">str_ref</a>.<a class="ref fn" href="#_ZNK3CFF14byte_str_ref_t5availEj" title='CFF::byte_str_ref_t::avail' data-ref="_ZNK3CFF14byte_str_ref_t5availEj">avail</a> ()))</td></tr>
+<tr><th id="569">569</th><td>      <b>return</b> <a class="macro" href="#215" title="0xFFFFu" data-ref="_M/OpCode_Invalid">OpCode_Invalid</a>;</td></tr>
+<tr><th id="570">570</th><td>    <a class="local col0 ref" href="#60op" title='op' data-ref="60op">op</a> = (<a class="typedef" href="#CFF::op_code_t" title='CFF::op_code_t' data-type='unsigned int' data-ref="CFF::op_code_t">op_code_t</a>) <a class="member field" href="#CFF::interp_env_t::str_ref" title='CFF::interp_env_t::str_ref' data-ref="CFF::interp_env_t::str_ref">str_ref</a>.<a class="ref fn" href="#_ZNK3CFF14byte_str_ref_t14head_uncheckedEv" title='CFF::byte_str_ref_t::head_unchecked' data-ref="_ZNK3CFF14byte_str_ref_t14head_uncheckedEv">head_unchecked</a> ();</td></tr>
+<tr><th id="571">571</th><td>    <a class="member field" href="#CFF::interp_env_t::str_ref" title='CFF::interp_env_t::str_ref' data-ref="CFF::interp_env_t::str_ref">str_ref</a>.<a class="ref fn" href="#_ZN3CFF14byte_str_ref_t3incEj" title='CFF::byte_str_ref_t::inc' data-ref="_ZN3CFF14byte_str_ref_t3incEj">inc</a> ();</td></tr>
+<tr><th id="572">572</th><td>    <b>if</b> (<a class="local col0 ref" href="#60op" title='op' data-ref="60op">op</a> == <a class="macro" href="#51" title="12" data-ref="_M/OpCode_escape">OpCode_escape</a>) {</td></tr>
+<tr><th id="573">573</th><td>      <b>if</b> (<a class="macro" href="hb.hh.html#251" title="(__builtin_expect (!!(!str_ref.avail ()), 0))" data-ref="_M/unlikely">unlikely</a> (!<a class="member field" href="#CFF::interp_env_t::str_ref" title='CFF::interp_env_t::str_ref' data-ref="CFF::interp_env_t::str_ref">str_ref</a>.<a class="ref fn" href="#_ZNK3CFF14byte_str_ref_t5availEj" title='CFF::byte_str_ref_t::avail' data-ref="_ZNK3CFF14byte_str_ref_t5availEj">avail</a> ()))</td></tr>
+<tr><th id="574">574</th><td>	<b>return</b> <a class="macro" href="#215" title="0xFFFFu" data-ref="_M/OpCode_Invalid">OpCode_Invalid</a>;</td></tr>
+<tr><th id="575">575</th><td>      <a class="local col0 ref" href="#60op" title='op' data-ref="60op">op</a> = <a class="macro" href="#91" title="((op_code_t)(256 + (str_ref.head_unchecked ())))" data-ref="_M/Make_OpCode_ESC">Make_OpCode_ESC</a> (<a class="member field" href="#CFF::interp_env_t::str_ref" title='CFF::interp_env_t::str_ref' data-ref="CFF::interp_env_t::str_ref">str_ref</a>.<a class="ref fn" href="#_ZNK3CFF14byte_str_ref_t14head_uncheckedEv" title='CFF::byte_str_ref_t::head_unchecked' data-ref="_ZNK3CFF14byte_str_ref_t14head_uncheckedEv">head_unchecked</a> ());</td></tr>
+<tr><th id="576">576</th><td>      <a class="member field" href="#CFF::interp_env_t::str_ref" title='CFF::interp_env_t::str_ref' data-ref="CFF::interp_env_t::str_ref">str_ref</a>.<a class="ref fn" href="#_ZN3CFF14byte_str_ref_t3incEj" title='CFF::byte_str_ref_t::inc' data-ref="_ZN3CFF14byte_str_ref_t3incEj">inc</a> ();</td></tr>
+<tr><th id="577">577</th><td>    }</td></tr>
+<tr><th id="578">578</th><td>    <b>return</b> <a class="local col0 ref" href="#60op" title='op' data-ref="60op">op</a>;</td></tr>
+<tr><th id="579">579</th><td>  }</td></tr>
+<tr><th id="580">580</th><td></td></tr>
+<tr><th id="581">581</th><td>  <em>const</em> ARG&amp; <dfn class="decl def fn" id="_ZN3CFF12interp_env_t8eval_argEj" title='CFF::interp_env_t::eval_arg' data-ref="_ZN3CFF12interp_env_t8eval_argEj">eval_arg</dfn> (<em>unsigned</em> <em>int</em> <dfn class="local col1 decl" id="61i" title='i' data-type='unsigned int' data-ref="61i">i</dfn>) { <b>return</b> <a class="member field" href="#CFF::interp_env_t::argStack" title='CFF::interp_env_t::argStack' data-ref="CFF::interp_env_t::argStack">argStack</a>[<a class="local col1 ref" href="#61i" title='i' data-ref="61i">i</a>]; }</td></tr>
+<tr><th id="582">582</th><td></td></tr>
+<tr><th id="583">583</th><td>  ARG&amp; <dfn class="decl def fn" id="_ZN3CFF12interp_env_t7pop_argEv" title='CFF::interp_env_t::pop_arg' data-ref="_ZN3CFF12interp_env_t7pop_argEv">pop_arg</dfn> () { <b>return</b> <a class="member field" href="#CFF::interp_env_t::argStack" title='CFF::interp_env_t::argStack' data-ref="CFF::interp_env_t::argStack">argStack</a>.pop (); }</td></tr>
+<tr><th id="584">584</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN3CFF12interp_env_t10pop_n_argsEj" title='CFF::interp_env_t::pop_n_args' data-ref="_ZN3CFF12interp_env_t10pop_n_argsEj">pop_n_args</dfn> (<em>unsigned</em> <em>int</em> <dfn class="local col2 decl" id="62n" title='n' data-type='unsigned int' data-ref="62n">n</dfn>) { <a class="member field" href="#CFF::interp_env_t::argStack" title='CFF::interp_env_t::argStack' data-ref="CFF::interp_env_t::argStack">argStack</a>.pop (<a class="local col2 ref" href="#62n" title='n' data-ref="62n">n</a>); }</td></tr>
+<tr><th id="585">585</th><td></td></tr>
+<tr><th id="586">586</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN3CFF12interp_env_t10clear_argsEv" title='CFF::interp_env_t::clear_args' data-ref="_ZN3CFF12interp_env_t10clear_argsEv">clear_args</dfn> () { <a class="member fn" href="#_ZN3CFF12interp_env_t10pop_n_argsEj" title='CFF::interp_env_t::pop_n_args' data-ref="_ZN3CFF12interp_env_t10pop_n_argsEj">pop_n_args</a> (<span class='inlayHint'>n:&nbsp;</span><a class="member field" href="#CFF::interp_env_t::argStack" title='CFF::interp_env_t::argStack' data-ref="CFF::interp_env_t::argStack">argStack</a>.get_count ()); }</td></tr>
+<tr><th id="587">587</th><td></td></tr>
+<tr><th id="588">588</th><td>  <a class="type" href="#CFF::byte_str_ref_t" title='CFF::byte_str_ref_t' data-ref="CFF::byte_str_ref_t">byte_str_ref_t</a></td></tr>
+<tr><th id="589">589</th><td>		<dfn class="decl field" id="CFF::interp_env_t::str_ref" title='CFF::interp_env_t::str_ref' data-ref="CFF::interp_env_t::str_ref">str_ref</dfn>;</td></tr>
+<tr><th id="590">590</th><td>  <a class="type" href="#CFF::arg_stack_t" title='CFF::arg_stack_t' data-ref="CFF::arg_stack_t">arg_stack_t</a>&lt;ARG&gt;</td></tr>
+<tr><th id="591">591</th><td>		<dfn class="decl field" id="CFF::interp_env_t::argStack" title='CFF::interp_env_t::argStack' data-ref="CFF::interp_env_t::argStack">argStack</dfn>;</td></tr>
+<tr><th id="592">592</th><td>};</td></tr>
+<tr><th id="593">593</th><td></td></tr>
+<tr><th id="594">594</th><td><b>using</b> <dfn class="typedef" id="CFF::num_interp_env_t" title='CFF::num_interp_env_t' data-type='interp_env_t&lt;&gt;' data-ref="CFF::num_interp_env_t">num_interp_env_t</dfn> =  <a class="type" href="#CFF::interp_env_t" title='CFF::interp_env_t' data-ref="CFF::interp_env_t">interp_env_t</a>&lt;&gt;;</td></tr>
+<tr><th id="595">595</th><td></td></tr>
+<tr><th id="596">596</th><td><b>template</b> &lt;<b>typename</b> ARG=<a class="type" href="#CFF::number_t" title='CFF::number_t' data-ref="CFF::number_t">number_t</a>&gt;</td></tr>
+<tr><th id="597">597</th><td><b>struct</b> <dfn class="type def" id="CFF::opset_t" title='CFF::opset_t' data-ref="CFF::opset_t">opset_t</dfn></td></tr>
+<tr><th id="598">598</th><td>{</td></tr>
+<tr><th id="599">599</th><td>  <em>static</em> <em>void</em> <dfn class="decl def fn" id="_ZN3CFF7opset_t10process_opEjRNS_12interp_env_tIT_EE" title='CFF::opset_t::process_op' data-ref="_ZN3CFF7opset_t10process_opEjRNS_12interp_env_tIT_EE">process_op</dfn> (<a class="typedef" href="#CFF::op_code_t" title='CFF::op_code_t' data-type='unsigned int' data-ref="CFF::op_code_t">op_code_t</a> <dfn class="local col3 decl" id="63op" title='op' data-type='CFF::op_code_t' data-ref="63op">op</dfn>, <a class="type" href="#CFF::interp_env_t" title='CFF::interp_env_t' data-ref="CFF::interp_env_t">interp_env_t</a>&lt;ARG&gt;&amp; <dfn class="local col4 decl" id="64env" title='env' data-type='interp_env_t&lt;ARG&gt; &amp;' data-ref="64env">env</dfn>)</td></tr>
+<tr><th id="600">600</th><td>  {</td></tr>
+<tr><th id="601">601</th><td>    <b>switch</b> (<a class="local col3 ref" href="#63op" title='op' data-ref="63op">op</a>) {</td></tr>
+<tr><th id="602">602</th><td>      <b>case</b> <a class="macro" href="#69" title="28" data-ref="_M/OpCode_shortint">OpCode_shortint</a>:</td></tr>
+<tr><th id="603">603</th><td>	<a class="local col4 ref" href="#64env" title='env' data-ref="64env">env</a>.argStack.push_int ((<a class="typedef" href="../../../../../include/x86_64-linux-gnu/bits/stdint-intn.h.html#int16_t" title='int16_t' data-type='__int16_t' data-ref="int16_t">int16_t</a>)((<a class="local col4 ref" href="#64env" title='env' data-ref="64env">env</a>.str_ref[<var>0</var>] &lt;&lt; <var>8</var>) | <a class="local col4 ref" href="#64env" title='env' data-ref="64env">env</a>.str_ref[<var>1</var>]));</td></tr>
+<tr><th id="604">604</th><td>	<a class="local col4 ref" href="#64env" title='env' data-ref="64env">env</a>.str_ref.inc (<var>2</var>);</td></tr>
+<tr><th id="605">605</th><td>	<b>break</b>;</td></tr>
+<tr><th id="606">606</th><td></td></tr>
+<tr><th id="607">607</th><td>      <b>case</b> <a class="macro" href="#79" title="247" data-ref="_M/OpCode_TwoBytePosInt0">OpCode_TwoBytePosInt0</a>: <b>case</b> <a class="macro" href="#80" title="248" data-ref="_M/OpCode_TwoBytePosInt1">OpCode_TwoBytePosInt1</a>:</td></tr>
+<tr><th id="608">608</th><td>      <b>case</b> <a class="macro" href="#81" title="249" data-ref="_M/OpCode_TwoBytePosInt2">OpCode_TwoBytePosInt2</a>: <b>case</b> <a class="macro" href="#82" title="250" data-ref="_M/OpCode_TwoBytePosInt3">OpCode_TwoBytePosInt3</a>:</td></tr>
+<tr><th id="609">609</th><td>	<a class="local col4 ref" href="#64env" title='env' data-ref="64env">env</a>.argStack.push_int ((<a class="typedef" href="../../../../../include/x86_64-linux-gnu/bits/stdint-intn.h.html#int16_t" title='int16_t' data-type='__int16_t' data-ref="int16_t">int16_t</a>)((<a class="local col3 ref" href="#63op" title='op' data-ref="63op">op</a> - <a class="macro" href="#79" title="247" data-ref="_M/OpCode_TwoBytePosInt0">OpCode_TwoBytePosInt0</a>) * <var>256</var> + <a class="local col4 ref" href="#64env" title='env' data-ref="64env">env</a>.str_ref[<var>0</var>] + <var>108</var>));</td></tr>
+<tr><th id="610">610</th><td>	<a class="local col4 ref" href="#64env" title='env' data-ref="64env">env</a>.str_ref.inc ();</td></tr>
+<tr><th id="611">611</th><td>	<b>break</b>;</td></tr>
+<tr><th id="612">612</th><td></td></tr>
+<tr><th id="613">613</th><td>      <b>case</b> <a class="macro" href="#84" title="251" data-ref="_M/OpCode_TwoByteNegInt0">OpCode_TwoByteNegInt0</a>: <b>case</b> <a class="macro" href="#85" title="252" data-ref="_M/OpCode_TwoByteNegInt1">OpCode_TwoByteNegInt1</a>:</td></tr>
+<tr><th id="614">614</th><td>      <b>case</b> <a class="macro" href="#86" title="253" data-ref="_M/OpCode_TwoByteNegInt2">OpCode_TwoByteNegInt2</a>: <b>case</b> <a class="macro" href="#87" title="254" data-ref="_M/OpCode_TwoByteNegInt3">OpCode_TwoByteNegInt3</a>:</td></tr>
+<tr><th id="615">615</th><td>	<a class="local col4 ref" href="#64env" title='env' data-ref="64env">env</a>.argStack.push_int ((-(<a class="typedef" href="../../../../../include/x86_64-linux-gnu/bits/stdint-intn.h.html#int16_t" title='int16_t' data-type='__int16_t' data-ref="int16_t">int16_t</a>)(<a class="local col3 ref" href="#63op" title='op' data-ref="63op">op</a> - <a class="macro" href="#84" title="251" data-ref="_M/OpCode_TwoByteNegInt0">OpCode_TwoByteNegInt0</a>) * <var>256</var> - <a class="local col4 ref" href="#64env" title='env' data-ref="64env">env</a>.str_ref[<var>0</var>] - <var>108</var>));</td></tr>
+<tr><th id="616">616</th><td>	<a class="local col4 ref" href="#64env" title='env' data-ref="64env">env</a>.str_ref.inc ();</td></tr>
+<tr><th id="617">617</th><td>	<b>break</b>;</td></tr>
+<tr><th id="618">618</th><td></td></tr>
+<tr><th id="619">619</th><td>      <b>default</b>:</td></tr>
+<tr><th id="620">620</th><td>	<i>/* 1-byte integer */</i></td></tr>
+<tr><th id="621">621</th><td>	<b>if</b> (<a class="macro" href="hb.hh.html#250" title="(__builtin_expect (!!((32 &lt;= op) &amp;&amp; (op &lt;= 246)), 1))" data-ref="_M/likely">likely</a> ((<a class="macro" href="#75" title="32" data-ref="_M/OpCode_OneByteIntFirst">OpCode_OneByteIntFirst</a> &lt;= <a class="local col3 ref" href="#63op" title='op' data-ref="63op">op</a>) &amp;&amp; (<a class="local col3 ref" href="#63op" title='op' data-ref="63op">op</a> &lt;= <a class="macro" href="#76" title="246" data-ref="_M/OpCode_OneByteIntLast">OpCode_OneByteIntLast</a>)))</td></tr>
+<tr><th id="622">622</th><td>	{</td></tr>
+<tr><th id="623">623</th><td>	  <a class="local col4 ref" href="#64env" title='env' data-ref="64env">env</a>.argStack.push_int ((<em>int</em>)<a class="local col3 ref" href="#63op" title='op' data-ref="63op">op</a> - <var>139</var>);</td></tr>
+<tr><th id="624">624</th><td>	} <b>else</b> {</td></tr>
+<tr><th id="625">625</th><td>	  <i>/* invalid unknown operator */</i></td></tr>
+<tr><th id="626">626</th><td>	  <a class="local col4 ref" href="#64env" title='env' data-ref="64env">env</a>.clear_args ();</td></tr>
+<tr><th id="627">627</th><td>	  <a class="local col4 ref" href="#64env" title='env' data-ref="64env">env</a>.set_error ();</td></tr>
+<tr><th id="628">628</th><td>	}</td></tr>
+<tr><th id="629">629</th><td>	<b>break</b>;</td></tr>
+<tr><th id="630">630</th><td>    }</td></tr>
+<tr><th id="631">631</th><td>  }</td></tr>
+<tr><th id="632">632</th><td>};</td></tr>
+<tr><th id="633">633</th><td></td></tr>
+<tr><th id="634">634</th><td><b>template</b> &lt;<b>typename</b> ENV&gt;</td></tr>
+<tr><th id="635">635</th><td><b>struct</b> <dfn class="type def" id="CFF::interpreter_t" title='CFF::interpreter_t' data-ref="CFF::interpreter_t">interpreter_t</dfn></td></tr>
+<tr><th id="636">636</th><td>{</td></tr>
+<tr><th id="637">637</th><td>  <dfn class="decl def fn" id="_ZN3CFF13interpreter_tC1ERT_" title='CFF::interpreter_t::interpreter_t&lt;ENV&gt;' data-ref="_ZN3CFF13interpreter_tC1ERT_">interpreter_t</dfn> (ENV&amp; <dfn class="local col5 decl" id="65env_" title='env_' data-type='ENV &amp;' data-ref="65env_">env_</dfn>) : <a class="member field" href="#CFF::interpreter_t::env" title='CFF::interpreter_t::env' data-ref="CFF::interpreter_t::env">env</a> (<a class="local col5 ref" href="#65env_" title='env_' data-ref="65env_">env_</a>) {}</td></tr>
+<tr><th id="638">638</th><td>  ENV&amp; <dfn class="decl field" id="CFF::interpreter_t::env" title='CFF::interpreter_t::env' data-ref="CFF::interpreter_t::env">env</dfn>;</td></tr>
+<tr><th id="639">639</th><td>};</td></tr>
+<tr><th id="640">640</th><td></td></tr>
+<tr><th id="641">641</th><td>} <i>/* namespace CFF */</i></td></tr>
+<tr><th id="642">642</th><td></td></tr>
+<tr><th id="643">643</th><td><u>#<span data-ppcond="26">endif</span> /* HB_CFF_INTERP_COMMON_HH */</u></td></tr>
+<tr><th id="644">644</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='hb-ot-cff1-table.cc.html'>qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/hb-ot-cff1-table.cc</a><br/>Generated on <em>2024-Jun-13</em> from project qtbase-6.5.0 revision <em>6.5.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

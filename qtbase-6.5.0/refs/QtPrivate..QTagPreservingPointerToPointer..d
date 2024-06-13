@@ -1,0 +1,9 @@
+<use f='qtbase-6.5.0/src/corelib/kernel/qpropertyprivate.h' l='332' u='w' c='_ZN9QtPrivate30QTagPreservingPointerToPointerC1EPPT_'/>
+<use f='qtbase-6.5.0/src/corelib/kernel/qpropertyprivate.h' l='337' u='w' c='_ZN9QtPrivate30QTagPreservingPointerToPointeraSEPPT_'/>
+<use f='qtbase-6.5.0/src/corelib/kernel/qpropertyprivate.h' l='343' u='w' c='_ZN9QtPrivate30QTagPreservingPointerToPointeraSEP14QTaggedPointerIT_T0_E'/>
+<use f='qtbase-6.5.0/src/corelib/kernel/qpropertyprivate.h' l='349' u='w' c='_ZN9QtPrivate30QTagPreservingPointerToPointer5clearEv'/>
+<use f='qtbase-6.5.0/src/corelib/kernel/qpropertyprivate.h' l='354' u='r' c='_ZN9QtPrivate30QTagPreservingPointerToPointer10setPointerEPT_'/>
+<use f='qtbase-6.5.0/src/corelib/kernel/qpropertyprivate.h' l='354' u='r' c='_ZN9QtPrivate30QTagPreservingPointerToPointer10setPointerEPT_'/>
+<use f='qtbase-6.5.0/src/corelib/kernel/qpropertyprivate.h' l='359' u='r' c='_ZNK9QtPrivate30QTagPreservingPointerToPointer3getEv'/>
+<use f='qtbase-6.5.0/src/corelib/kernel/qpropertyprivate.h' l='364' u='r' c='_ZNK9QtPrivate30QTagPreservingPointerToPointercvbEv'/>
+<dec f='qtbase-6.5.0/src/corelib/kernel/qpropertyprivate.h' l='368' type='quintptr *'/>

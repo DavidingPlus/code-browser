@@ -1,0 +1,67 @@
+<use f='qtbase-6.5.0/src/3rdparty/sqlite/sqlite3.c' l='99805'/>
+<def f='qtbase-6.5.0/src/3rdparty/sqlite/sqlite3.c' l='99901' ll='99906'/>
+<size>32</size>
+<doc f='qtbase-6.5.0/src/3rdparty/sqlite/sqlite3.c' l='99837'>/*
+** The MergeEngine object is used to combine two or more smaller PMAs into
+** one big PMA using a merge operation.  Separate PMAs all need to be
+** combined into one big PMA in order to be able to step through the sorted
+** records in order.
+**
+** The aReadr[] array contains a PmaReader object for each of the PMAs being
+** merged.  An aReadr[] object either points to a valid key or else is at EOF.
+** (&quot;EOF&quot; means &quot;End Of File&quot;.  When aReadr[] is at EOF there is no more data.)
+** For the purposes of the paragraphs below, we assume that the array is
+** actually N elements in size, where N is the smallest power of 2 greater
+** to or equal to the number of PMAs being merged. The extra aReadr[] elements
+** are treated as if they are empty (always at EOF).
+**
+** The aTree[] array is also N elements in size. The value of N is stored in
+** the MergeEngine.nTree variable.
+**
+** The final (N/2) elements of aTree[] contain the results of comparing
+** pairs of PMA keys together. Element i contains the result of
+** comparing aReadr[2*i-N] and aReadr[2*i-N+1]. Whichever key is smaller, the
+** aTree element is set to the index of it.
+**
+** For the purposes of this comparison, EOF is considered greater than any
+** other key value. If the keys are equal (only possible with two EOF
+** values), it doesn&apos;t matter which index is stored.
+**
+** The (N/4) elements of aTree[] that precede the final (N/2) described
+** above contains the index of the smallest of each block of 4 PmaReaders
+** And so on. So that aTree[1] contains the index of the PmaReader that
+** currently points to the smallest key value. aTree[0] is unused.
+**
+** Example:
+**
+**     aReadr[0] -&gt; Banana
+**     aReadr[1] -&gt; Feijoa
+**     aReadr[2] -&gt; Elderberry
+**     aReadr[3] -&gt; Currant
+**     aReadr[4] -&gt; Grapefruit
+**     aReadr[5] -&gt; Apple
+**     aReadr[6] -&gt; Durian
+**     aReadr[7] -&gt; EOF
+**
+**     aTree[] = { X, 5   0, 5    0, 3, 5, 6 }
+**
+** The current element is &quot;Apple&quot; (the value of the key indicated by
+** PmaReader 5). When the Next() operation is invoked, PmaReader 5 will
+** be advanced to the next key in its segment. Say the next key is
+** &quot;Eggplant&quot;:
+**
+**     aReadr[5] -&gt; Eggplant
+**
+** The contents of aTree[] are updated first by comparing the new PmaReader
+** 5 key to the current key of PmaReader 4 (still &quot;Grapefruit&quot;). The PmaReader
+** 5 value is still smaller, so aTree[6] is set to 5. And so on up the tree.
+** The value of PmaReader 6 - &quot;Durian&quot; - is now smaller than that of PmaReader
+** 5, so aTree[3] is set to 6. Key 0 is smaller than key 6 (Banana&lt;Durian),
+** so the value written into element 1 of the array is 0. As follows:
+**
+**     aTree[] = { X, 0   0, 6    0, 3, 5, 6 }
+**
+** In other words, each time we advance to the next sorter element, log2(N)
+** key comparison operations are required, where N is the number of segments
+** being merged (rounded up to the next power of 2).
+*/</doc>

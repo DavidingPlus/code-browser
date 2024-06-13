@@ -1,0 +1,26 @@
+<dec f='qtbase-6.5.0/src/gui/util/qundostack.h' l='21' type='QUndoCommandPrivate *'/>
+<offset>64</offset>
+<use f='qtbase-6.5.0/src/gui/util/qundostack.cpp' l='94' u='w' c='_ZN12QUndoCommandC1EPS_'/>
+<use f='qtbase-6.5.0/src/gui/util/qundostack.cpp' l='96' u='r' c='_ZN12QUndoCommandC1EPS_'/>
+<use f='qtbase-6.5.0/src/gui/util/qundostack.cpp' l='107' u='r' c='_ZN12QUndoCommandD1Ev'/>
+<use f='qtbase-6.5.0/src/gui/util/qundostack.cpp' l='108' u='r' c='_ZN12QUndoCommandD1Ev'/>
+<use f='qtbase-6.5.0/src/gui/util/qundostack.cpp' l='125' u='r' c='_ZNK12QUndoCommand10isObsoleteEv'/>
+<use f='qtbase-6.5.0/src/gui/util/qundostack.cpp' l='138' u='r' c='_ZN12QUndoCommand11setObsoleteEb'/>
+<use f='qtbase-6.5.0/src/gui/util/qundostack.cpp' l='199' u='r' c='_ZN12QUndoCommand4redoEv'/>
+<use f='qtbase-6.5.0/src/gui/util/qundostack.cpp' l='200' u='r' c='_ZN12QUndoCommand4redoEv'/>
+<use f='qtbase-6.5.0/src/gui/util/qundostack.cpp' l='217' u='r' c='_ZN12QUndoCommand4undoEv'/>
+<use f='qtbase-6.5.0/src/gui/util/qundostack.cpp' l='218' u='r' c='_ZN12QUndoCommand4undoEv'/>
+<use f='qtbase-6.5.0/src/gui/util/qundostack.cpp' l='232' u='r' c='_ZNK12QUndoCommand4textEv'/>
+<use f='qtbase-6.5.0/src/gui/util/qundostack.cpp' l='249' u='r' c='_ZNK12QUndoCommand10actionTextEv'/>
+<use f='qtbase-6.5.0/src/gui/util/qundostack.cpp' l='271' u='r' c='_ZN12QUndoCommand7setTextERK7QString'/>
+<use f='qtbase-6.5.0/src/gui/util/qundostack.cpp' l='272' u='r' c='_ZN12QUndoCommand7setTextERK7QString'/>
+<use f='qtbase-6.5.0/src/gui/util/qundostack.cpp' l='274' u='r' c='_ZN12QUndoCommand7setTextERK7QString'/>
+<use f='qtbase-6.5.0/src/gui/util/qundostack.cpp' l='275' u='r' c='_ZN12QUndoCommand7setTextERK7QString'/>
+<use f='qtbase-6.5.0/src/gui/util/qundostack.cpp' l='289' u='r' c='_ZNK12QUndoCommand10childCountEv'/>
+<use f='qtbase-6.5.0/src/gui/util/qundostack.cpp' l='302' u='r' c='_ZNK12QUndoCommand5childEi'/>
+<use f='qtbase-6.5.0/src/gui/util/qundostack.cpp' l='304' u='r' c='_ZNK12QUndoCommand5childEi'/>
+<use f='qtbase-6.5.0/src/gui/util/qundostack.cpp' l='578' u='r' c='_ZN10QUndoStack4pushEP12QUndoCommand'/>
+<use f='qtbase-6.5.0/src/gui/util/qundostack.cpp' l='579' u='r' c='_ZN10QUndoStack4pushEP12QUndoCommand'/>
+<use f='qtbase-6.5.0/src/gui/util/qundostack.cpp' l='599' u='r' c='_ZN10QUndoStack4pushEP12QUndoCommand'/>
+<use f='qtbase-6.5.0/src/gui/util/qundostack.cpp' l='617' u='r' c='_ZN10QUndoStack4pushEP12QUndoCommand'/>
+<use f='qtbase-6.5.0/src/gui/util/qundostack.cpp' l='1141' u='r' c='_ZN10QUndoStack10beginMacroERK7QString'/>

@@ -1,0 +1,483 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>hb-subset-instancer-solver.cc source code [qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/hb-subset-instancer-solver.cc] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="Triple "/>
+<link rel="stylesheet" href="../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/hb-subset-instancer-solver.cc'; var root_path = '../../../../..'; var data_path = '../../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../..'>qtbase-6.5.0</a>/<a href='../../..'>src</a>/<a href='../..'>3rdparty</a>/<a href='..'>harfbuzz-ng</a>/<a href='./'>src</a>/<a href='hb-subset-instancer-solver.cc.html'>hb-subset-instancer-solver.cc</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*</i></td></tr>
+<tr><th id="2">2</th><td><i> * Copyright © 2023  Behdad Esfahbod</i></td></tr>
+<tr><th id="3">3</th><td><i> *</i></td></tr>
+<tr><th id="4">4</th><td><i> *  This is part of HarfBuzz, a text shaping library.</i></td></tr>
+<tr><th id="5">5</th><td><i> *</i></td></tr>
+<tr><th id="6">6</th><td><i> * Permission is hereby granted, without written agreement and without</i></td></tr>
+<tr><th id="7">7</th><td><i> * license or royalty fees, to use, copy, modify, and distribute this</i></td></tr>
+<tr><th id="8">8</th><td><i> * software and its documentation for any purpose, provided that the</i></td></tr>
+<tr><th id="9">9</th><td><i> * above copyright notice and the following two paragraphs appear in</i></td></tr>
+<tr><th id="10">10</th><td><i> * all copies of this software.</i></td></tr>
+<tr><th id="11">11</th><td><i> *</i></td></tr>
+<tr><th id="12">12</th><td><i> * IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR</i></td></tr>
+<tr><th id="13">13</th><td><i> * DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES</i></td></tr>
+<tr><th id="14">14</th><td><i> * ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN</i></td></tr>
+<tr><th id="15">15</th><td><i> * IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH</i></td></tr>
+<tr><th id="16">16</th><td><i> * DAMAGE.</i></td></tr>
+<tr><th id="17">17</th><td><i> *</i></td></tr>
+<tr><th id="18">18</th><td><i> * THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,</i></td></tr>
+<tr><th id="19">19</th><td><i> * BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND</i></td></tr>
+<tr><th id="20">20</th><td><i> * FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS</i></td></tr>
+<tr><th id="21">21</th><td><i> * ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO</i></td></tr>
+<tr><th id="22">22</th><td><i> * PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.</i></td></tr>
+<tr><th id="23">23</th><td><i> */</i></td></tr>
+<tr><th id="24">24</th><td></td></tr>
+<tr><th id="25">25</th><td><u>#include <a href="hb.hh.html">"hb.hh"</a></u></td></tr>
+<tr><th id="26">26</th><td></td></tr>
+<tr><th id="27">27</th><td><i  data-doc="EPSILON">/* This file is a straight port of the following:</i></td></tr>
+<tr><th id="28">28</th><td><i  data-doc="EPSILON"> *</i></td></tr>
+<tr><th id="29">29</th><td><i  data-doc="EPSILON"> * <a href="https://github.com/fonttools/fonttools/blob/f73220816264fc383b8a75f2146e8d69e455d398/Lib/fontTools/varLib/instancer/solver.py">https://github.com/fonttools/fonttools/blob/f73220816264fc383b8a75f2146e8d69e455d398/Lib/fontTools/varLib/instancer/solver.py</a></i></td></tr>
+<tr><th id="30">30</th><td><i  data-doc="EPSILON"> *</i></td></tr>
+<tr><th id="31">31</th><td><i  data-doc="EPSILON"> * Where that file returns None for a triple, we return Triple{}.</i></td></tr>
+<tr><th id="32">32</th><td><i  data-doc="EPSILON"> * This should be safe.</i></td></tr>
+<tr><th id="33">33</th><td><i  data-doc="EPSILON"> */</i></td></tr>
+<tr><th id="34">34</th><td></td></tr>
+<tr><th id="35">35</th><td><b>constexpr</b> <em>static</em> <em>float</em> <dfn class="tu decl def" id="EPSILON" title='EPSILON' data-type='const float' data-ref="EPSILON">EPSILON</dfn> = <var>1.f</var> / (<var>1</var> &lt;&lt; <var>14</var>);</td></tr>
+<tr><th id="36">36</th><td><b>constexpr</b> <em>static</em> <em>float</em> <dfn class="tu decl def" id="MAX_F2DOT14" title='MAX_F2DOT14' data-type='const float' data-ref="MAX_F2DOT14">MAX_F2DOT14</dfn> = <em>float</em> (<var>0x7FFF</var>) / (<var>1</var> &lt;&lt; <var>14</var>);</td></tr>
+<tr><th id="37">37</th><td></td></tr>
+<tr><th id="38">38</th><td><b>struct</b> <dfn class="type def" id="Triple" title='Triple' data-ref="Triple">Triple</dfn> {</td></tr>
+<tr><th id="39">39</th><td></td></tr>
+<tr><th id="40">40</th><td>  <dfn class="tu decl def fn" id="_ZN6TripleC1Ev" title='Triple::Triple' data-type='void Triple::Triple()' data-ref="_ZN6TripleC1Ev">Triple</dfn> () :</td></tr>
+<tr><th id="41">41</th><td>    <a class="tu member field" href="#Triple::minimum" title='Triple::minimum' data-use='w' data-ref="Triple::minimum">minimum</a> (<var>0.f</var>), <a class="tu member field" href="#Triple::middle" title='Triple::middle' data-use='w' data-ref="Triple::middle">middle</a> (<var>0.f</var>), <a class="tu member field" href="#Triple::maximum" title='Triple::maximum' data-use='w' data-ref="Triple::maximum">maximum</a> (<var>0.f</var>) {}</td></tr>
+<tr><th id="42">42</th><td></td></tr>
+<tr><th id="43">43</th><td>  <dfn class="tu decl def fn" id="_ZN6TripleC1Efff" title='Triple::Triple' data-type='void Triple::Triple(float minimum_, float middle_, float maximum_)' data-ref="_ZN6TripleC1Efff">Triple</dfn> (<em>float</em> <dfn class="local col1 decl" id="1minimum_" title='minimum_' data-type='float' data-ref="1minimum_">minimum_</dfn>, <em>float</em> <dfn class="local col2 decl" id="2middle_" title='middle_' data-type='float' data-ref="2middle_">middle_</dfn>, <em>float</em> <dfn class="local col3 decl" id="3maximum_" title='maximum_' data-type='float' data-ref="3maximum_">maximum_</dfn>) :</td></tr>
+<tr><th id="44">44</th><td>    <a class="tu member field" href="#Triple::minimum" title='Triple::minimum' data-use='w' data-ref="Triple::minimum">minimum</a> (<a class="local col1 ref" href="#1minimum_" title='minimum_' data-ref="1minimum_">minimum_</a>), <a class="tu member field" href="#Triple::middle" title='Triple::middle' data-use='w' data-ref="Triple::middle">middle</a> (<a class="local col2 ref" href="#2middle_" title='middle_' data-ref="2middle_">middle_</a>), <a class="tu member field" href="#Triple::maximum" title='Triple::maximum' data-use='w' data-ref="Triple::maximum">maximum</a> (<a class="local col3 ref" href="#3maximum_" title='maximum_' data-ref="3maximum_">maximum_</a>) {}</td></tr>
+<tr><th id="45">45</th><td></td></tr>
+<tr><th id="46">46</th><td>  <em>bool</em> <dfn class="tu decl def fn" id="_ZNK6TripleeqERKS_" title='Triple::operator==' data-type='bool Triple::operator==(const Triple &amp; o) const' data-ref="_ZNK6TripleeqERKS_"><b>operator</b> ==</dfn> (<em>const</em> <a class="type" href="#Triple" title='Triple' data-ref="Triple">Triple</a> &amp;<dfn class="local col4 decl" id="4o" title='o' data-type='const Triple &amp;' data-ref="4o">o</dfn>) <em>const</em></td></tr>
+<tr><th id="47">47</th><td>  {</td></tr>
+<tr><th id="48">48</th><td>    <b>return</b> <a class="tu member field" href="#Triple::minimum" title='Triple::minimum' data-use='r' data-ref="Triple::minimum">minimum</a> == <a class="local col4 ref" href="#4o" title='o' data-ref="4o">o</a>.<a class="tu member field" href="#Triple::minimum" title='Triple::minimum' data-use='r' data-ref="Triple::minimum">minimum</a> &amp;&amp;</td></tr>
+<tr><th id="49">49</th><td>	   <a class="tu member field" href="#Triple::middle" title='Triple::middle' data-use='r' data-ref="Triple::middle">middle</a>  == <a class="local col4 ref" href="#4o" title='o' data-ref="4o">o</a>.<a class="tu member field" href="#Triple::middle" title='Triple::middle' data-use='r' data-ref="Triple::middle">middle</a>  &amp;&amp;</td></tr>
+<tr><th id="50">50</th><td>	   <a class="tu member field" href="#Triple::maximum" title='Triple::maximum' data-use='r' data-ref="Triple::maximum">maximum</a> == <a class="local col4 ref" href="#4o" title='o' data-ref="4o">o</a>.<a class="tu member field" href="#Triple::maximum" title='Triple::maximum' data-use='r' data-ref="Triple::maximum">maximum</a>;</td></tr>
+<tr><th id="51">51</th><td>  }</td></tr>
+<tr><th id="52">52</th><td></td></tr>
+<tr><th id="53">53</th><td>  <em>float</em> <dfn class="tu decl field" id="Triple::minimum" title='Triple::minimum' data-type='float' data-ref="Triple::minimum">minimum</dfn>;</td></tr>
+<tr><th id="54">54</th><td>  <em>float</em> <dfn class="tu decl field" id="Triple::middle" title='Triple::middle' data-type='float' data-ref="Triple::middle">middle</dfn>;</td></tr>
+<tr><th id="55">55</th><td>  <em>float</em> <dfn class="tu decl field" id="Triple::maximum" title='Triple::maximum' data-type='float' data-ref="Triple::maximum">maximum</dfn>;</td></tr>
+<tr><th id="56">56</th><td>};</td></tr>
+<tr><th id="57">57</th><td></td></tr>
+<tr><th id="58">58</th><td><em>static</em> <b>inline</b> <a class="type" href="#Triple" title='Triple' data-ref="Triple">Triple</a> <dfn class="tu decl def fn" id="_ZL15_reverse_negateRK6Triple" title='_reverse_negate' data-type='Triple _reverse_negate(const Triple &amp; v)' data-ref="_ZL15_reverse_negateRK6Triple">_reverse_negate</dfn>(<em>const</em> <a class="type" href="#Triple" title='Triple' data-ref="Triple">Triple</a> &amp;<dfn class="local col5 decl" id="5v" title='v' data-type='const Triple &amp;' data-ref="5v">v</dfn>)</td></tr>
+<tr><th id="59">59</th><td>{ <b>return</b> <a class="tu ref fn" href="#_ZN6TripleC1Efff" title='Triple::Triple' data-use='c' data-ref="_ZN6TripleC1Efff">{</a>-<a class="local col5 ref" href="#5v" title='v' data-ref="5v">v</a>.<a class="tu ref field" href="#Triple::maximum" title='Triple::maximum' data-use='r' data-ref="Triple::maximum">maximum</a>, -<a class="local col5 ref" href="#5v" title='v' data-ref="5v">v</a>.<a class="tu ref field" href="#Triple::middle" title='Triple::middle' data-use='r' data-ref="Triple::middle">middle</a>, -<a class="local col5 ref" href="#5v" title='v' data-ref="5v">v</a>.<a class="tu ref field" href="#Triple::minimum" title='Triple::minimum' data-use='r' data-ref="Triple::minimum">minimum</a>}; }</td></tr>
+<tr><th id="60">60</th><td></td></tr>
+<tr><th id="61">61</th><td></td></tr>
+<tr><th id="62">62</th><td><em>static</em> <b>inline</b> <em>float</em> <dfn class="tu decl def fn" id="_ZL13supportScalarfRK6Triple" title='supportScalar' data-type='float supportScalar(float coord, const Triple &amp; tent)' data-ref="_ZL13supportScalarfRK6Triple">supportScalar</dfn> (<em>float</em> <dfn class="local col6 decl" id="6coord" title='coord' data-type='float' data-ref="6coord">coord</dfn>, <em>const</em> <a class="type" href="#Triple" title='Triple' data-ref="Triple">Triple</a> &amp;<dfn class="local col7 decl" id="7tent" title='tent' data-type='const Triple &amp;' data-ref="7tent">tent</dfn>)</td></tr>
+<tr><th id="63">63</th><td>{</td></tr>
+<tr><th id="64">64</th><td>  <i>/* Copied from VarRegionAxis::evaluate() */</i></td></tr>
+<tr><th id="65">65</th><td>  <em>float</em> <dfn class="local col8 decl" id="8start" title='start' data-type='float' data-ref="8start">start</dfn> = <a class="local col7 ref" href="#7tent" title='tent' data-ref="7tent">tent</a>.<a class="tu ref field" href="#Triple::minimum" title='Triple::minimum' data-use='r' data-ref="Triple::minimum">minimum</a>, <dfn class="local col9 decl" id="9peak" title='peak' data-type='float' data-ref="9peak">peak</dfn> = <a class="local col7 ref" href="#7tent" title='tent' data-ref="7tent">tent</a>.<a class="tu ref field" href="#Triple::middle" title='Triple::middle' data-use='r' data-ref="Triple::middle">middle</a>, <dfn class="local col0 decl" id="10end" title='end' data-type='float' data-ref="10end">end</dfn> = <a class="local col7 ref" href="#7tent" title='tent' data-ref="7tent">tent</a>.<a class="tu ref field" href="#Triple::maximum" title='Triple::maximum' data-use='r' data-ref="Triple::maximum">maximum</a>;</td></tr>
+<tr><th id="66">66</th><td></td></tr>
+<tr><th id="67">67</th><td>  <b>if</b> (<a class="macro" href="hb.hh.html#251" title="(__builtin_expect (!!(start &gt; peak || peak &gt; end), 0))" data-ref="_M/unlikely">unlikely</a> (<a class="local col8 ref" href="#8start" title='start' data-ref="8start">start</a> &gt; <a class="local col9 ref" href="#9peak" title='peak' data-ref="9peak">peak</a> || <a class="local col9 ref" href="#9peak" title='peak' data-ref="9peak">peak</a> &gt; <a class="local col0 ref" href="#10end" title='end' data-ref="10end">end</a>))</td></tr>
+<tr><th id="68">68</th><td>    <b>return</b> <var>1.</var>;</td></tr>
+<tr><th id="69">69</th><td>  <b>if</b> (<a class="macro" href="hb.hh.html#251" title="(__builtin_expect (!!(start &lt; 0 &amp;&amp; end &gt; 0 &amp;&amp; peak != 0), 0))" data-ref="_M/unlikely">unlikely</a> (<a class="local col8 ref" href="#8start" title='start' data-ref="8start">start</a> &lt; <var>0</var> &amp;&amp; <a class="local col0 ref" href="#10end" title='end' data-ref="10end">end</a> &gt; <var>0</var> &amp;&amp; <a class="local col9 ref" href="#9peak" title='peak' data-ref="9peak">peak</a> != <var>0</var>))</td></tr>
+<tr><th id="70">70</th><td>    <b>return</b> <var>1.</var>;</td></tr>
+<tr><th id="71">71</th><td></td></tr>
+<tr><th id="72">72</th><td>  <b>if</b> (<a class="local col9 ref" href="#9peak" title='peak' data-ref="9peak">peak</a> == <var>0</var> || <a class="local col6 ref" href="#6coord" title='coord' data-ref="6coord">coord</a> == <a class="local col9 ref" href="#9peak" title='peak' data-ref="9peak">peak</a>)</td></tr>
+<tr><th id="73">73</th><td>    <b>return</b> <var>1.</var>;</td></tr>
+<tr><th id="74">74</th><td></td></tr>
+<tr><th id="75">75</th><td>  <b>if</b> (<a class="local col6 ref" href="#6coord" title='coord' data-ref="6coord">coord</a> &lt;= <a class="local col8 ref" href="#8start" title='start' data-ref="8start">start</a> || <a class="local col0 ref" href="#10end" title='end' data-ref="10end">end</a> &lt;= <a class="local col6 ref" href="#6coord" title='coord' data-ref="6coord">coord</a>)</td></tr>
+<tr><th id="76">76</th><td>    <b>return</b> <var>0.</var>;</td></tr>
+<tr><th id="77">77</th><td></td></tr>
+<tr><th id="78">78</th><td>  <i>/* Interpolate */</i></td></tr>
+<tr><th id="79">79</th><td>  <b>if</b> (<a class="local col6 ref" href="#6coord" title='coord' data-ref="6coord">coord</a> &lt; <a class="local col9 ref" href="#9peak" title='peak' data-ref="9peak">peak</a>)</td></tr>
+<tr><th id="80">80</th><td>    <b>return</b> (<a class="local col6 ref" href="#6coord" title='coord' data-ref="6coord">coord</a> - <a class="local col8 ref" href="#8start" title='start' data-ref="8start">start</a>) / (<a class="local col9 ref" href="#9peak" title='peak' data-ref="9peak">peak</a> - <a class="local col8 ref" href="#8start" title='start' data-ref="8start">start</a>);</td></tr>
+<tr><th id="81">81</th><td>  <b>else</b></td></tr>
+<tr><th id="82">82</th><td>    <b>return</b>  (<a class="local col0 ref" href="#10end" title='end' data-ref="10end">end</a> - <a class="local col6 ref" href="#6coord" title='coord' data-ref="6coord">coord</a>) / (<a class="local col0 ref" href="#10end" title='end' data-ref="10end">end</a> - <a class="local col9 ref" href="#9peak" title='peak' data-ref="9peak">peak</a>);</td></tr>
+<tr><th id="83">83</th><td>}</td></tr>
+<tr><th id="84">84</th><td></td></tr>
+<tr><th id="85">85</th><td></td></tr>
+<tr><th id="86">86</th><td><b>using</b> <dfn class="typedef" id="result_item_t" title='result_item_t' data-type='hb_pair_t&lt;float, Triple&gt;' data-ref="result_item_t">result_item_t</dfn> = <a class="type" href="hb-algs.hh.html#hb_pair_t" title='hb_pair_t' data-ref="hb_pair_t">hb_pair_t</a>&lt;<em>float</em>, <a class="type" href="#Triple" title='Triple' data-ref="Triple">Triple</a>&gt;;</td></tr>
+<tr><th id="87">87</th><td><b>using</b> <dfn class="typedef" id="result_t" title='result_t' data-type='hb_vector_t&lt;result_item_t&gt;' data-ref="result_t">result_t</dfn> = <a class="type" href="hb-vector.hh.html#hb_vector_t" title='hb_vector_t' data-ref="hb_vector_t">hb_vector_t</a>&lt;<a class="typedef" href="#result_item_t" title='result_item_t' data-type='hb_pair_t&lt;float, Triple&gt;' data-ref="result_item_t">result_item_t</a>&gt;;</td></tr>
+<tr><th id="88">88</th><td></td></tr>
+<tr><th id="89">89</th><td><em>static</em> <b>inline</b> <a class="typedef" href="#result_t" title='result_t' data-type='hb_vector_t&lt;result_item_t&gt;' data-ref="result_t">result_t</a></td></tr>
+<tr><th id="90">90</th><td><dfn class="tu decl def fn" id="_ZL6_solve6TripleS_b" title='_solve' data-type='result_t _solve(Triple tent, Triple axisLimit, bool negative = false)' data-ref="_ZL6_solve6TripleS_b">_solve</dfn> (<a class="type" href="#Triple" title='Triple' data-ref="Triple">Triple</a> <dfn class="local col1 decl" id="11tent" title='tent' data-type='Triple' data-ref="11tent">tent</dfn>, <a class="type" href="#Triple" title='Triple' data-ref="Triple">Triple</a> <dfn class="local col2 decl" id="12axisLimit" title='axisLimit' data-type='Triple' data-ref="12axisLimit">axisLimit</dfn>, <em>bool</em> <dfn class="local col3 decl" id="13negative" title='negative' data-type='bool' data-ref="13negative">negative</dfn> = <b>false</b>)</td></tr>
+<tr><th id="91">91</th><td>{</td></tr>
+<tr><th id="92">92</th><td>  <em>float</em> <dfn class="local col4 decl" id="14axisMin" title='axisMin' data-type='float' data-ref="14axisMin">axisMin</dfn> = <a class="local col2 ref" href="#12axisLimit" title='axisLimit' data-ref="12axisLimit">axisLimit</a>.<a class="tu ref field" href="#Triple::minimum" title='Triple::minimum' data-use='r' data-ref="Triple::minimum">minimum</a>;</td></tr>
+<tr><th id="93">93</th><td>  <em>float</em> <dfn class="local col5 decl" id="15axisDef" title='axisDef' data-type='float' data-ref="15axisDef">axisDef</dfn> = <a class="local col2 ref" href="#12axisLimit" title='axisLimit' data-ref="12axisLimit">axisLimit</a>.<a class="tu ref field" href="#Triple::middle" title='Triple::middle' data-use='r' data-ref="Triple::middle">middle</a>;</td></tr>
+<tr><th id="94">94</th><td>  <em>float</em> <dfn class="local col6 decl" id="16axisMax" title='axisMax' data-type='float' data-ref="16axisMax">axisMax</dfn> = <a class="local col2 ref" href="#12axisLimit" title='axisLimit' data-ref="12axisLimit">axisLimit</a>.<a class="tu ref field" href="#Triple::maximum" title='Triple::maximum' data-use='r' data-ref="Triple::maximum">maximum</a>;</td></tr>
+<tr><th id="95">95</th><td>  <em>float</em> <dfn class="local col7 decl" id="17lower" title='lower' data-type='float' data-ref="17lower">lower</dfn> = <a class="local col1 ref" href="#11tent" title='tent' data-ref="11tent">tent</a>.<a class="tu ref field" href="#Triple::minimum" title='Triple::minimum' data-use='r' data-ref="Triple::minimum">minimum</a>;</td></tr>
+<tr><th id="96">96</th><td>  <em>float</em> <dfn class="local col8 decl" id="18peak" title='peak' data-type='float' data-ref="18peak">peak</dfn>  = <a class="local col1 ref" href="#11tent" title='tent' data-ref="11tent">tent</a>.<a class="tu ref field" href="#Triple::middle" title='Triple::middle' data-use='r' data-ref="Triple::middle">middle</a>;</td></tr>
+<tr><th id="97">97</th><td>  <em>float</em> <dfn class="local col9 decl" id="19upper" title='upper' data-type='float' data-ref="19upper">upper</dfn> = <a class="local col1 ref" href="#11tent" title='tent' data-ref="11tent">tent</a>.<a class="tu ref field" href="#Triple::maximum" title='Triple::maximum' data-use='r' data-ref="Triple::maximum">maximum</a>;</td></tr>
+<tr><th id="98">98</th><td></td></tr>
+<tr><th id="99">99</th><td>  <i>// Mirror the problem such that axisDef &lt;= peak</i></td></tr>
+<tr><th id="100">100</th><td>  <b>if</b> (<a class="local col5 ref" href="#15axisDef" title='axisDef' data-ref="15axisDef">axisDef</a> &gt; <a class="local col8 ref" href="#18peak" title='peak' data-ref="18peak">peak</a>)</td></tr>
+<tr><th id="101">101</th><td>  {</td></tr>
+<tr><th id="102">102</th><td>    <a class="typedef" href="#result_t" title='result_t' data-type='hb_vector_t&lt;result_item_t&gt;' data-ref="result_t">result_t</a> <dfn class="local col0 decl" id="20vec" title='vec' data-type='result_t' data-ref="20vec">vec</dfn> = <a class="tu ref fn" href="#_ZL6_solve6TripleS_b" title='_solve' data-use='c' data-ref="_ZL6_solve6TripleS_b">_solve</a> (<span class='inlayHint'>tent:&nbsp;</span><a class="tu ref fn" href="#_ZL15_reverse_negateRK6Triple" title='_reverse_negate' data-use='c' data-ref="_ZL15_reverse_negateRK6Triple">_reverse_negate</a> (<span class='inlayHint'>v:&nbsp;</span><a class="local col1 ref" href="#11tent" title='tent' data-ref="11tent">tent</a>),</td></tr>
+<tr><th id="103">103</th><td>			   <span class='inlayHint'>axisLimit:&nbsp;</span><a class="tu ref fn" href="#_ZL15_reverse_negateRK6Triple" title='_reverse_negate' data-use='c' data-ref="_ZL15_reverse_negateRK6Triple">_reverse_negate</a> (<span class='inlayHint'>v:&nbsp;</span><a class="local col2 ref" href="#12axisLimit" title='axisLimit' data-ref="12axisLimit">axisLimit</a>),</td></tr>
+<tr><th id="104">104</th><td>			   <span class='inlayHint'>negative:&nbsp;</span>!<a class="local col3 ref" href="#13negative" title='negative' data-ref="13negative">negative</a>);</td></tr>
+<tr><th id="105">105</th><td></td></tr>
+<tr><th id="106">106</th><td>    <b>for</b> (<em>auto</em> &amp;<dfn class="local col1 decl" id="21p" title='p' data-type='hb_pair_t&lt;float, Triple&gt; &amp;' data-ref="21p">p</dfn> : <a class="local col0 ref" href="#20vec" title='vec' data-ref="20vec">vec</a>)</td></tr>
+<tr><th id="107">107</th><td>      <a class="local col1 ref" href="#21p" title='p' data-ref="21p">p</a> <a class="ref fn" href="hb-algs.hh.html#500" title='hb_pair_t&lt;float, Triple&gt;::operator=' data-ref="_ZN9hb_pair_tIf6TripleEaSEOS1_">=</a> <a class="ref fn fake" href="hb-algs.hh.html#_ZN9hb_pair_tcv9hb_pair_tITL0__TL0_0_EEv" title='hb_pair_t::operator hb_pair_t&lt;type-parameter-1-0, type-parameter-1-1&gt;' data-ref="_ZN9hb_pair_tcv9hb_pair_tITL0__TL0_0_EEv"></a><a class="ref fn" href="hb-algs.hh.html#_ZL7hb_pairOT_OT0_" title='hb_pair' data-ref="_ZL7hb_pairOT_OT0_">hb_pair</a> (<span class='inlayHint'>a&amp;:&nbsp;</span><span class='refarg'><a class="local col1 ref" href="#21p" title='p' data-ref="21p">p</a>.<a class="ref field" href="hb-algs.hh.html#hb_pair_t::first" title='hb_pair_t&lt;float, Triple&gt;::first' data-ref="hb_pair_t::first">first</a></span>, <span class='inlayHint'>b:&nbsp;</span><a class="tu ref fn" href="#_ZL15_reverse_negateRK6Triple" title='_reverse_negate' data-use='c' data-ref="_ZL15_reverse_negateRK6Triple">_reverse_negate</a> (<span class='inlayHint'>v:&nbsp;</span><a class="local col1 ref" href="#21p" title='p' data-ref="21p">p</a>.<a class="ref field" href="hb-algs.hh.html#hb_pair_t::second" title='hb_pair_t&lt;float, Triple&gt;::second' data-ref="hb_pair_t::second">second</a>));</td></tr>
+<tr><th id="108">108</th><td></td></tr>
+<tr><th id="109">109</th><td>    <b>return</b> <a class="ref fn fake" href="hb-vector.hh.html#_ZN11hb_vector_tC1EO11hb_vector_tIT_XT0_EE" title='hb_vector_t::hb_vector_t&lt;Type, sorted&gt;' data-ref="_ZN11hb_vector_tC1EO11hb_vector_tIT_XT0_EE"></a><a class="local col0 ref" href="#20vec" title='vec' data-ref="20vec">vec</a>;</td></tr>
+<tr><th id="110">110</th><td>  }</td></tr>
+<tr><th id="111">111</th><td>  <i>// axisDef &lt;= peak</i></td></tr>
+<tr><th id="112">112</th><td></td></tr>
+<tr><th id="113">113</th><td>  <i>/* case 1: The whole deltaset falls outside the new limit; we can drop it</i></td></tr>
+<tr><th id="114">114</th><td><i>   *</i></td></tr>
+<tr><th id="115">115</th><td><i>   *                                          peak</i></td></tr>
+<tr><th id="116">116</th><td><i>   *  1.........................................o..........</i></td></tr>
+<tr><th id="117">117</th><td><i>   *                                           / \</i></td></tr>
+<tr><th id="118">118</th><td><i>   *                                          /   \</i></td></tr>
+<tr><th id="119">119</th><td><i>   *                                         /     \</i></td></tr>
+<tr><th id="120">120</th><td><i>   *                                        /       \</i></td></tr>
+<tr><th id="121">121</th><td><i>   *  0---|-----------|----------|-------- o         o----1</i></td></tr>
+<tr><th id="122">122</th><td><i>   *    axisMin     axisDef    axisMax   lower     upper</i></td></tr>
+<tr><th id="123">123</th><td><i>   */</i></td></tr>
+<tr><th id="124">124</th><td>  <b>if</b> (<a class="local col6 ref" href="#16axisMax" title='axisMax' data-ref="16axisMax">axisMax</a> &lt;= <a class="local col7 ref" href="#17lower" title='lower' data-ref="17lower">lower</a> &amp;&amp; <a class="local col6 ref" href="#16axisMax" title='axisMax' data-ref="16axisMax">axisMax</a> &lt; <a class="local col8 ref" href="#18peak" title='peak' data-ref="18peak">peak</a>)</td></tr>
+<tr><th id="125">125</th><td>      <b>return</b> <a class="typedef" href="#result_t" title='result_t' data-type='hb_vector_t&lt;result_item_t&gt;' data-ref="result_t">result_t</a><a class="ref fn" href="hb-vector.hh.html#_ZN11hb_vector_tC1Ev" title='hb_vector_t::hb_vector_t&lt;Type, sorted&gt;' data-ref="_ZN11hb_vector_tC1Ev">{</a>};  <i>// No overlap</i></td></tr>
+<tr><th id="126">126</th><td></td></tr>
+<tr><th id="127">127</th><td>  <i>/* case 2: Only the peak and outermost bound fall outside the new limit;</i></td></tr>
+<tr><th id="128">128</th><td><i>   * we keep the deltaset, update peak and outermost bound and and scale deltas</i></td></tr>
+<tr><th id="129">129</th><td><i>   * by the scalar value for the restricted axis at the new limit, and solve</i></td></tr>
+<tr><th id="130">130</th><td><i>   * recursively.</i></td></tr>
+<tr><th id="131">131</th><td><i>   *</i></td></tr>
+<tr><th id="132">132</th><td><i>   *                                  |peak</i></td></tr>
+<tr><th id="133">133</th><td><i>   *  1...............................|.o..........</i></td></tr>
+<tr><th id="134">134</th><td><i>   *                                  |/ \</i></td></tr>
+<tr><th id="135">135</th><td><i>   *                                  /   \</i></td></tr>
+<tr><th id="136">136</th><td><i>   *                                 /|    \</i></td></tr>
+<tr><th id="137">137</th><td><i>   *                                / |     \</i></td></tr>
+<tr><th id="138">138</th><td><i>   *  0--------------------------- o  |      o----1</i></td></tr>
+<tr><th id="139">139</th><td><i>   *                           lower  |      upper</i></td></tr>
+<tr><th id="140">140</th><td><i>   *                                  |</i></td></tr>
+<tr><th id="141">141</th><td><i>   *                                axisMax</i></td></tr>
+<tr><th id="142">142</th><td><i>   *</i></td></tr>
+<tr><th id="143">143</th><td><i>   * Convert to:</i></td></tr>
+<tr><th id="144">144</th><td><i>   *</i></td></tr>
+<tr><th id="145">145</th><td><i>   *  1............................................</i></td></tr>
+<tr><th id="146">146</th><td><i>   *                                  |</i></td></tr>
+<tr><th id="147">147</th><td><i>   *                                  o peak</i></td></tr>
+<tr><th id="148">148</th><td><i>   *                                 /|</i></td></tr>
+<tr><th id="149">149</th><td><i>   *                                /x|</i></td></tr>
+<tr><th id="150">150</th><td><i>   *  0--------------------------- o  o upper ----1</i></td></tr>
+<tr><th id="151">151</th><td><i>   *                           lower  |</i></td></tr>
+<tr><th id="152">152</th><td><i>   *                                  |</i></td></tr>
+<tr><th id="153">153</th><td><i>   *                                axisMax</i></td></tr>
+<tr><th id="154">154</th><td><i>   */</i></td></tr>
+<tr><th id="155">155</th><td>  <b>if</b> (<a class="local col6 ref" href="#16axisMax" title='axisMax' data-ref="16axisMax">axisMax</a> &lt; <a class="local col8 ref" href="#18peak" title='peak' data-ref="18peak">peak</a>)</td></tr>
+<tr><th id="156">156</th><td>  {</td></tr>
+<tr><th id="157">157</th><td>    <em>float</em> <dfn class="local col2 decl" id="22mult" title='mult' data-type='float' data-ref="22mult">mult</dfn> = <a class="tu ref fn" href="#_ZL13supportScalarfRK6Triple" title='supportScalar' data-use='c' data-ref="_ZL13supportScalarfRK6Triple">supportScalar</a> (<span class='inlayHint'>coord:&nbsp;</span><a class="local col6 ref" href="#16axisMax" title='axisMax' data-ref="16axisMax">axisMax</a>, <a class="local col1 ref" href="#11tent" title='tent' data-ref="11tent">tent</a>);</td></tr>
+<tr><th id="158">158</th><td>    <a class="local col1 ref" href="#11tent" title='tent' data-ref="11tent">tent</a> <a class="tu ref fn" href="#38" title='Triple::operator=' data-use='c' data-ref="_ZN6TripleaSEOS_">=</a> <a class="type" href="#Triple" title='Triple' data-ref="Triple">Triple</a><a class="tu ref fn" href="#_ZN6TripleC1Efff" title='Triple::Triple' data-use='c' data-ref="_ZN6TripleC1Efff">{</a><a class="local col7 ref" href="#17lower" title='lower' data-ref="17lower">lower</a>, <a class="local col6 ref" href="#16axisMax" title='axisMax' data-ref="16axisMax">axisMax</a>, <a class="local col6 ref" href="#16axisMax" title='axisMax' data-ref="16axisMax">axisMax</a>};</td></tr>
+<tr><th id="159">159</th><td></td></tr>
+<tr><th id="160">160</th><td>    <a class="typedef" href="#result_t" title='result_t' data-type='hb_vector_t&lt;result_item_t&gt;' data-ref="result_t">result_t</a> <dfn class="local col3 decl" id="23vec" title='vec' data-type='result_t' data-ref="23vec">vec</dfn> = <a class="tu ref fn" href="#_ZL6_solve6TripleS_b" title='_solve' data-use='c' data-ref="_ZL6_solve6TripleS_b">_solve</a> (<a class="tu ref fn fake" href="#38" title='Triple::Triple' data-use='c' data-ref="_ZN6TripleC1ERKS_"></a><a class="local col1 ref" href="#11tent" title='tent' data-ref="11tent">tent</a>, <a class="tu ref fn fake" href="#38" title='Triple::Triple' data-use='c' data-ref="_ZN6TripleC1ERKS_"></a><a class="local col2 ref" href="#12axisLimit" title='axisLimit' data-ref="12axisLimit">axisLimit</a>);</td></tr>
+<tr><th id="161">161</th><td></td></tr>
+<tr><th id="162">162</th><td>    <b>for</b> (<em>auto</em> &amp;<dfn class="local col4 decl" id="24p" title='p' data-type='hb_pair_t&lt;float, Triple&gt; &amp;' data-ref="24p">p</dfn> : <a class="local col3 ref" href="#23vec" title='vec' data-ref="23vec">vec</a>)</td></tr>
+<tr><th id="163">163</th><td>      <a class="local col4 ref" href="#24p" title='p' data-ref="24p">p</a> <a class="ref fn" href="hb-algs.hh.html#500" title='hb_pair_t&lt;float, Triple&gt;::operator=' data-ref="_ZN9hb_pair_tIf6TripleEaSEOS1_">=</a> <a class="ref fn fake" href="hb-algs.hh.html#_ZN9hb_pair_tcv9hb_pair_tITL0__TL0_0_EEv" title='hb_pair_t::operator hb_pair_t&lt;type-parameter-1-0, type-parameter-1-1&gt;' data-ref="_ZN9hb_pair_tcv9hb_pair_tITL0__TL0_0_EEv"></a><a class="ref fn" href="hb-algs.hh.html#_ZL7hb_pairOT_OT0_" title='hb_pair' data-ref="_ZL7hb_pairOT_OT0_">hb_pair</a> (<span class='inlayHint'>a:&nbsp;</span><a class="local col4 ref" href="#24p" title='p' data-ref="24p">p</a>.<a class="ref field" href="hb-algs.hh.html#hb_pair_t::first" title='hb_pair_t&lt;float, Triple&gt;::first' data-ref="hb_pair_t::first">first</a> * <a class="local col2 ref" href="#22mult" title='mult' data-ref="22mult">mult</a>, <span class='inlayHint'>b&amp;:&nbsp;</span><span class='refarg'><a class="local col4 ref" href="#24p" title='p' data-ref="24p">p</a>.<a class="ref field" href="hb-algs.hh.html#hb_pair_t::second" title='hb_pair_t&lt;float, Triple&gt;::second' data-ref="hb_pair_t::second">second</a></span>);</td></tr>
+<tr><th id="164">164</th><td></td></tr>
+<tr><th id="165">165</th><td>    <b>return</b> <a class="ref fn fake" href="hb-vector.hh.html#_ZN11hb_vector_tC1EO11hb_vector_tIT_XT0_EE" title='hb_vector_t::hb_vector_t&lt;Type, sorted&gt;' data-ref="_ZN11hb_vector_tC1EO11hb_vector_tIT_XT0_EE"></a><a class="local col3 ref" href="#23vec" title='vec' data-ref="23vec">vec</a>;</td></tr>
+<tr><th id="166">166</th><td>  }</td></tr>
+<tr><th id="167">167</th><td></td></tr>
+<tr><th id="168">168</th><td>  <i>// lower &lt;= axisDef &lt;= peak &lt;= axisMax</i></td></tr>
+<tr><th id="169">169</th><td></td></tr>
+<tr><th id="170">170</th><td>  <em>float</em> <dfn class="local col5 decl" id="25gain" title='gain' data-type='float' data-ref="25gain">gain</dfn> = <a class="tu ref fn" href="#_ZL13supportScalarfRK6Triple" title='supportScalar' data-use='c' data-ref="_ZL13supportScalarfRK6Triple">supportScalar</a> (<span class='inlayHint'>coord:&nbsp;</span><a class="local col5 ref" href="#15axisDef" title='axisDef' data-ref="15axisDef">axisDef</a>, <a class="local col1 ref" href="#11tent" title='tent' data-ref="11tent">tent</a>);</td></tr>
+<tr><th id="171">171</th><td>  <a class="typedef" href="#result_t" title='result_t' data-type='hb_vector_t&lt;result_item_t&gt;' data-ref="result_t">result_t</a> <dfn class="local col6 decl" id="26out" title='out' data-type='result_t' data-ref="26out">out</dfn> <a class="ref fn" href="hb-vector.hh.html#_ZN11hb_vector_tC1ESt16initializer_listIT_E" title='hb_vector_t::hb_vector_t&lt;Type, sorted&gt;' data-ref="_ZN11hb_vector_tC1ESt16initializer_listIT_E">{</a><a class="ref fn" href="hb-algs.hh.html#_ZL7hb_pairOT_OT0_" title='hb_pair' data-ref="_ZL7hb_pairOT_OT0_">hb_pair</a> (<span class='inlayHint'>a&amp;:&nbsp;</span><span class='refarg'><a class="local col5 ref" href="#25gain" title='gain' data-ref="25gain">gain</a></span>, <span class='inlayHint'>b:&nbsp;</span><a class="type" href="#Triple" title='Triple' data-ref="Triple">Triple</a><a class="tu ref fn" href="#_ZN6TripleC1Ev" title='Triple::Triple' data-use='c' data-ref="_ZN6TripleC1Ev">{</a>})};</td></tr>
+<tr><th id="172">172</th><td></td></tr>
+<tr><th id="173">173</th><td>  <i>// First, the positive side</i></td></tr>
+<tr><th id="174">174</th><td><i></i></td></tr>
+<tr><th id="175">175</th><td><i>  // outGain is the scalar of axisMax at the tent.</i></td></tr>
+<tr><th id="176">176</th><td>  <em>float</em> <dfn class="local col7 decl" id="27outGain" title='outGain' data-type='float' data-ref="27outGain">outGain</dfn> = <a class="tu ref fn" href="#_ZL13supportScalarfRK6Triple" title='supportScalar' data-use='c' data-ref="_ZL13supportScalarfRK6Triple">supportScalar</a> (<span class='inlayHint'>coord:&nbsp;</span><a class="local col6 ref" href="#16axisMax" title='axisMax' data-ref="16axisMax">axisMax</a>, <a class="local col1 ref" href="#11tent" title='tent' data-ref="11tent">tent</a>);</td></tr>
+<tr><th id="177">177</th><td></td></tr>
+<tr><th id="178">178</th><td>  <i>/* Case 3a: Gain is more than outGain. The tent down-slope crosses</i></td></tr>
+<tr><th id="179">179</th><td><i>   * the axis into negative. We have to split it into multiples.</i></td></tr>
+<tr><th id="180">180</th><td><i>   *</i></td></tr>
+<tr><th id="181">181</th><td><i>   *                      | peak  |</i></td></tr>
+<tr><th id="182">182</th><td><i>   *  1...................|.o.....|..............</i></td></tr>
+<tr><th id="183">183</th><td><i>   *                      |/x\_   |</i></td></tr>
+<tr><th id="184">184</th><td><i>   *  gain................+....+_.|..............</i></td></tr>
+<tr><th id="185">185</th><td><i>   *                     /|    |y\|</i></td></tr>
+<tr><th id="186">186</th><td><i>   *  ................../.|....|..+_......outGain</i></td></tr>
+<tr><th id="187">187</th><td><i>   *                   /  |    |  | \</i></td></tr>
+<tr><th id="188">188</th><td><i>   *  0---|-----------o   |    |  |  o----------1</i></td></tr>
+<tr><th id="189">189</th><td><i>   *    axisMin    lower  |    |  |   upper</i></td></tr>
+<tr><th id="190">190</th><td><i>   *                      |    |  |</i></td></tr>
+<tr><th id="191">191</th><td><i>   *                axisDef    |  axisMax</i></td></tr>
+<tr><th id="192">192</th><td><i>   *                           |</i></td></tr>
+<tr><th id="193">193</th><td><i>   *                      crossing</i></td></tr>
+<tr><th id="194">194</th><td><i>   */</i></td></tr>
+<tr><th id="195">195</th><td>  <b>if</b> (<a class="local col5 ref" href="#25gain" title='gain' data-ref="25gain">gain</a> &gt; <a class="local col7 ref" href="#27outGain" title='outGain' data-ref="27outGain">outGain</a>)</td></tr>
+<tr><th id="196">196</th><td>  {</td></tr>
+<tr><th id="197">197</th><td>    <i>// Crossing point on the axis.</i></td></tr>
+<tr><th id="198">198</th><td>    <em>float</em> <dfn class="local col8 decl" id="28crossing" title='crossing' data-type='float' data-ref="28crossing">crossing</dfn> = <a class="local col8 ref" href="#18peak" title='peak' data-ref="18peak">peak</a> + ((<var>1</var> - <a class="local col5 ref" href="#25gain" title='gain' data-ref="25gain">gain</a>) * (<a class="local col9 ref" href="#19upper" title='upper' data-ref="19upper">upper</a> - <a class="local col8 ref" href="#18peak" title='peak' data-ref="18peak">peak</a>) / (<var>1</var> - <a class="local col7 ref" href="#27outGain" title='outGain' data-ref="27outGain">outGain</a>));</td></tr>
+<tr><th id="199">199</th><td></td></tr>
+<tr><th id="200">200</th><td>    <a class="type" href="#Triple" title='Triple' data-ref="Triple">Triple</a> <dfn class="local col9 decl" id="29loc" title='loc' data-type='Triple' data-ref="29loc">loc</dfn><a class="tu ref fn" href="#_ZN6TripleC1Efff" title='Triple::Triple' data-use='c' data-ref="_ZN6TripleC1Efff">{</a><a class="local col8 ref" href="#18peak" title='peak' data-ref="18peak">peak</a>, <a class="local col8 ref" href="#18peak" title='peak' data-ref="18peak">peak</a>, <a class="local col8 ref" href="#28crossing" title='crossing' data-ref="28crossing">crossing</a>};</td></tr>
+<tr><th id="201">201</th><td>    <em>float</em> <dfn class="local col0 decl" id="30scalar" title='scalar' data-type='float' data-ref="30scalar">scalar</dfn> = <var>1.f</var>;</td></tr>
+<tr><th id="202">202</th><td></td></tr>
+<tr><th id="203">203</th><td>    <i>// The part before the crossing point.</i></td></tr>
+<tr><th id="204">204</th><td>    <a class="local col6 ref" href="#26out" title='out' data-ref="26out">out</a>.<a class="ref fn" href="hb-vector.hh.html#_ZN11hb_vector_t4pushEOTL0__" title='hb_vector_t::push' data-ref="_ZN11hb_vector_t4pushEOTL0__">push</a> (<span class='inlayHint'>v:&nbsp;</span><a class="ref fn" href="hb-algs.hh.html#_ZL7hb_pairOT_OT0_" title='hb_pair' data-ref="_ZL7hb_pairOT_OT0_">hb_pair</a> (<span class='inlayHint'>a:&nbsp;</span><a class="local col0 ref" href="#30scalar" title='scalar' data-ref="30scalar">scalar</a> - <a class="local col5 ref" href="#25gain" title='gain' data-ref="25gain">gain</a>, <span class='inlayHint'>b&amp;:&nbsp;</span><span class='refarg'><a class="local col9 ref" href="#29loc" title='loc' data-ref="29loc">loc</a></span>));</td></tr>
+<tr><th id="205">205</th><td></td></tr>
+<tr><th id="206">206</th><td>    <i>/* The part after the crossing point may use one or two tents,</i></td></tr>
+<tr><th id="207">207</th><td><i>     * depending on whether upper is before axisMax or not, in one</i></td></tr>
+<tr><th id="208">208</th><td><i>     * case we need to keep it down to eternity.</i></td></tr>
+<tr><th id="209">209</th><td><i>     *</i></td></tr>
+<tr><th id="210">210</th><td><i>     * Case 3a1, similar to case 1neg; just one tent needed, as in</i></td></tr>
+<tr><th id="211">211</th><td><i>     * the drawing above.</i></td></tr>
+<tr><th id="212">212</th><td><i>     */</i></td></tr>
+<tr><th id="213">213</th><td>    <b>if</b> (<a class="local col9 ref" href="#19upper" title='upper' data-ref="19upper">upper</a> &gt;= <a class="local col6 ref" href="#16axisMax" title='axisMax' data-ref="16axisMax">axisMax</a>)</td></tr>
+<tr><th id="214">214</th><td>    {</td></tr>
+<tr><th id="215">215</th><td>      <a class="type" href="#Triple" title='Triple' data-ref="Triple">Triple</a> <dfn class="local col1 decl" id="31loc" title='loc' data-type='Triple' data-ref="31loc">loc</dfn> <a class="tu ref fn" href="#_ZN6TripleC1Efff" title='Triple::Triple' data-use='c' data-ref="_ZN6TripleC1Efff">{</a><a class="local col8 ref" href="#28crossing" title='crossing' data-ref="28crossing">crossing</a>, <a class="local col6 ref" href="#16axisMax" title='axisMax' data-ref="16axisMax">axisMax</a>, <a class="local col6 ref" href="#16axisMax" title='axisMax' data-ref="16axisMax">axisMax</a>};</td></tr>
+<tr><th id="216">216</th><td>      <em>float</em> <dfn class="local col2 decl" id="32scalar" title='scalar' data-type='float' data-ref="32scalar">scalar</dfn> = <a class="tu ref fn" href="#_ZL13supportScalarfRK6Triple" title='supportScalar' data-use='c' data-ref="_ZL13supportScalarfRK6Triple">supportScalar</a> (<span class='inlayHint'>coord:&nbsp;</span><a class="local col6 ref" href="#16axisMax" title='axisMax' data-ref="16axisMax">axisMax</a>, <a class="local col1 ref" href="#11tent" title='tent' data-ref="11tent">tent</a>);</td></tr>
+<tr><th id="217">217</th><td></td></tr>
+<tr><th id="218">218</th><td>      <a class="local col6 ref" href="#26out" title='out' data-ref="26out">out</a>.<a class="ref fn" href="hb-vector.hh.html#_ZN11hb_vector_t4pushEOTL0__" title='hb_vector_t::push' data-ref="_ZN11hb_vector_t4pushEOTL0__">push</a> (<span class='inlayHint'>v:&nbsp;</span><a class="ref fn" href="hb-algs.hh.html#_ZL7hb_pairOT_OT0_" title='hb_pair' data-ref="_ZL7hb_pairOT_OT0_">hb_pair</a> (<span class='inlayHint'>a:&nbsp;</span><a class="local col2 ref" href="#32scalar" title='scalar' data-ref="32scalar">scalar</a> - <a class="local col5 ref" href="#25gain" title='gain' data-ref="25gain">gain</a>, <span class='inlayHint'>b&amp;:&nbsp;</span><span class='refarg'><a class="local col1 ref" href="#31loc" title='loc' data-ref="31loc">loc</a></span>));</td></tr>
+<tr><th id="219">219</th><td>    }</td></tr>
+<tr><th id="220">220</th><td></td></tr>
+<tr><th id="221">221</th><td>    <i>/* Case 3a2: Similar to case 2neg; two tents needed, to keep</i></td></tr>
+<tr><th id="222">222</th><td><i>     * down to eternity.</i></td></tr>
+<tr><th id="223">223</th><td><i>     *</i></td></tr>
+<tr><th id="224">224</th><td><i>     *                      | peak             |</i></td></tr>
+<tr><th id="225">225</th><td><i>     *  1...................|.o................|...</i></td></tr>
+<tr><th id="226">226</th><td><i>     *                      |/ \_              |</i></td></tr>
+<tr><th id="227">227</th><td><i>     *  gain................+....+_............|...</i></td></tr>
+<tr><th id="228">228</th><td><i>     *                     /|    | \xxxxxxxxxxy|</i></td></tr>
+<tr><th id="229">229</th><td><i>     *                    / |    |  \_xxxxxyyyy|</i></td></tr>
+<tr><th id="230">230</th><td><i>     *                   /  |    |    \xxyyyyyy|</i></td></tr>
+<tr><th id="231">231</th><td><i>     *  0---|-----------o   |    |     o-------|--1</i></td></tr>
+<tr><th id="232">232</th><td><i>     *    axisMin    lower  |    |      upper  |</i></td></tr>
+<tr><th id="233">233</th><td><i>     *                      |    |             |</i></td></tr>
+<tr><th id="234">234</th><td><i>     *                axisDef    |             axisMax</i></td></tr>
+<tr><th id="235">235</th><td><i>     *                           |</i></td></tr>
+<tr><th id="236">236</th><td><i>     *                      crossing</i></td></tr>
+<tr><th id="237">237</th><td><i>     */</i></td></tr>
+<tr><th id="238">238</th><td>    <b>else</b></td></tr>
+<tr><th id="239">239</th><td>    {</td></tr>
+<tr><th id="240">240</th><td>      <i>// A tent's peak cannot fall on axis default. Nudge it.</i></td></tr>
+<tr><th id="241">241</th><td>      <b>if</b> (<a class="local col9 ref" href="#19upper" title='upper' data-ref="19upper">upper</a> == <a class="local col5 ref" href="#15axisDef" title='axisDef' data-ref="15axisDef">axisDef</a>)</td></tr>
+<tr><th id="242">242</th><td>	<a class="local col9 ref" href="#19upper" title='upper' data-ref="19upper">upper</a> += <a class="tu ref" href="#EPSILON" title='EPSILON' data-use='r' data-ref="EPSILON">EPSILON</a>;</td></tr>
+<tr><th id="243">243</th><td></td></tr>
+<tr><th id="244">244</th><td>      <i>// Downslope.</i></td></tr>
+<tr><th id="245">245</th><td>      <a class="type" href="#Triple" title='Triple' data-ref="Triple">Triple</a> <dfn class="local col3 decl" id="33loc1" title='loc1' data-type='Triple' data-ref="33loc1">loc1</dfn> <a class="tu ref fn" href="#_ZN6TripleC1Efff" title='Triple::Triple' data-use='c' data-ref="_ZN6TripleC1Efff">{</a><a class="local col8 ref" href="#28crossing" title='crossing' data-ref="28crossing">crossing</a>, <a class="local col9 ref" href="#19upper" title='upper' data-ref="19upper">upper</a>, <a class="local col6 ref" href="#16axisMax" title='axisMax' data-ref="16axisMax">axisMax</a>};</td></tr>
+<tr><th id="246">246</th><td>      <em>float</em> <dfn class="local col4 decl" id="34scalar1" title='scalar1' data-type='float' data-ref="34scalar1">scalar1</dfn> = <var>0.f</var>;</td></tr>
+<tr><th id="247">247</th><td></td></tr>
+<tr><th id="248">248</th><td>      <i>// Eternity justify.</i></td></tr>
+<tr><th id="249">249</th><td>      <a class="type" href="#Triple" title='Triple' data-ref="Triple">Triple</a> <dfn class="local col5 decl" id="35loc2" title='loc2' data-type='Triple' data-ref="35loc2">loc2</dfn> <a class="tu ref fn" href="#_ZN6TripleC1Efff" title='Triple::Triple' data-use='c' data-ref="_ZN6TripleC1Efff">{</a><a class="local col9 ref" href="#19upper" title='upper' data-ref="19upper">upper</a>, <a class="local col6 ref" href="#16axisMax" title='axisMax' data-ref="16axisMax">axisMax</a>, <a class="local col6 ref" href="#16axisMax" title='axisMax' data-ref="16axisMax">axisMax</a>};</td></tr>
+<tr><th id="250">250</th><td>      <em>float</em> <dfn class="local col6 decl" id="36scalar2" title='scalar2' data-type='float' data-ref="36scalar2">scalar2</dfn> = <var>1.f</var>; <i>// supportScalar({"tag": axisMax}, {"tag": tent})</i></td></tr>
+<tr><th id="251">251</th><td></td></tr>
+<tr><th id="252">252</th><td>      <a class="local col6 ref" href="#26out" title='out' data-ref="26out">out</a>.<a class="ref fn" href="hb-vector.hh.html#_ZN11hb_vector_t4pushEOTL0__" title='hb_vector_t::push' data-ref="_ZN11hb_vector_t4pushEOTL0__">push</a> (<span class='inlayHint'>v:&nbsp;</span><a class="ref fn" href="hb-algs.hh.html#_ZL7hb_pairOT_OT0_" title='hb_pair' data-ref="_ZL7hb_pairOT_OT0_">hb_pair</a> (<span class='inlayHint'>a:&nbsp;</span><a class="local col4 ref" href="#34scalar1" title='scalar1' data-ref="34scalar1">scalar1</a> - <a class="local col5 ref" href="#25gain" title='gain' data-ref="25gain">gain</a>, <span class='inlayHint'>b&amp;:&nbsp;</span><span class='refarg'><a class="local col3 ref" href="#33loc1" title='loc1' data-ref="33loc1">loc1</a></span>));</td></tr>
+<tr><th id="253">253</th><td>      <a class="local col6 ref" href="#26out" title='out' data-ref="26out">out</a>.<a class="ref fn" href="hb-vector.hh.html#_ZN11hb_vector_t4pushEOTL0__" title='hb_vector_t::push' data-ref="_ZN11hb_vector_t4pushEOTL0__">push</a> (<span class='inlayHint'>v:&nbsp;</span><a class="ref fn" href="hb-algs.hh.html#_ZL7hb_pairOT_OT0_" title='hb_pair' data-ref="_ZL7hb_pairOT_OT0_">hb_pair</a> (<span class='inlayHint'>a:&nbsp;</span><a class="local col6 ref" href="#36scalar2" title='scalar2' data-ref="36scalar2">scalar2</a> - <a class="local col5 ref" href="#25gain" title='gain' data-ref="25gain">gain</a>, <span class='inlayHint'>b&amp;:&nbsp;</span><span class='refarg'><a class="local col5 ref" href="#35loc2" title='loc2' data-ref="35loc2">loc2</a></span>));</td></tr>
+<tr><th id="254">254</th><td>    }</td></tr>
+<tr><th id="255">255</th><td>  }</td></tr>
+<tr><th id="256">256</th><td></td></tr>
+<tr><th id="257">257</th><td>  <i>/* Case 3: Outermost limit still fits within F2Dot14 bounds;</i></td></tr>
+<tr><th id="258">258</th><td><i>   * we keep deltas as is and only scale the axes bounds. Deltas beyond -1.0</i></td></tr>
+<tr><th id="259">259</th><td><i>   * or +1.0 will never be applied as implementations must clamp to that range.</i></td></tr>
+<tr><th id="260">260</th><td><i>   *</i></td></tr>
+<tr><th id="261">261</th><td><i>   * A second tent is needed for cases when gain is positive, though we add it</i></td></tr>
+<tr><th id="262">262</th><td><i>   * unconditionally and it will be dropped because scalar ends up 0.</i></td></tr>
+<tr><th id="263">263</th><td><i>   *</i></td></tr>
+<tr><th id="264">264</th><td><i>   * TODO: See if we can just move upper closer to adjust the slope, instead of</i></td></tr>
+<tr><th id="265">265</th><td><i>   * second tent.</i></td></tr>
+<tr><th id="266">266</th><td><i>   *</i></td></tr>
+<tr><th id="267">267</th><td><i>   *            |           peak |</i></td></tr>
+<tr><th id="268">268</th><td><i>   *  1.........|............o...|..................</i></td></tr>
+<tr><th id="269">269</th><td><i>   *            |           /x\  |</i></td></tr>
+<tr><th id="270">270</th><td><i>   *            |          /xxx\ |</i></td></tr>
+<tr><th id="271">271</th><td><i>   *            |         /xxxxx\|</i></td></tr>
+<tr><th id="272">272</th><td><i>   *            |        /xxxxxxx+</i></td></tr>
+<tr><th id="273">273</th><td><i>   *            |       /xxxxxxxx|\</i></td></tr>
+<tr><th id="274">274</th><td><i>   *  0---|-----|------oxxxxxxxxx|xo---------------1</i></td></tr>
+<tr><th id="275">275</th><td><i>   *    axisMin |  lower         | upper</i></td></tr>
+<tr><th id="276">276</th><td><i>   *            |                |</i></td></tr>
+<tr><th id="277">277</th><td><i>   *          axisDef          axisMax</i></td></tr>
+<tr><th id="278">278</th><td><i>   */</i></td></tr>
+<tr><th id="279">279</th><td>  <b>else</b> <b>if</b> (<a class="local col5 ref" href="#15axisDef" title='axisDef' data-ref="15axisDef">axisDef</a> + (<a class="local col6 ref" href="#16axisMax" title='axisMax' data-ref="16axisMax">axisMax</a> - <a class="local col5 ref" href="#15axisDef" title='axisDef' data-ref="15axisDef">axisDef</a>) * <var>2</var> &gt;= <a class="local col9 ref" href="#19upper" title='upper' data-ref="19upper">upper</a>)</td></tr>
+<tr><th id="280">280</th><td>  {</td></tr>
+<tr><th id="281">281</th><td>    <b>if</b> (!<a class="local col3 ref" href="#13negative" title='negative' data-ref="13negative">negative</a> &amp;&amp; <a class="local col5 ref" href="#15axisDef" title='axisDef' data-ref="15axisDef">axisDef</a> + (<a class="local col6 ref" href="#16axisMax" title='axisMax' data-ref="16axisMax">axisMax</a> - <a class="local col5 ref" href="#15axisDef" title='axisDef' data-ref="15axisDef">axisDef</a>) * <a class="tu ref" href="#MAX_F2DOT14" title='MAX_F2DOT14' data-use='r' data-ref="MAX_F2DOT14">MAX_F2DOT14</a> &lt; <a class="local col9 ref" href="#19upper" title='upper' data-ref="19upper">upper</a>)</td></tr>
+<tr><th id="282">282</th><td>    {</td></tr>
+<tr><th id="283">283</th><td>      <i>// we clamp +2.0 to the max F2Dot14 (~1.99994) for convenience</i></td></tr>
+<tr><th id="284">284</th><td>      <a class="local col9 ref" href="#19upper" title='upper' data-ref="19upper">upper</a> = <a class="local col5 ref" href="#15axisDef" title='axisDef' data-ref="15axisDef">axisDef</a> + (<a class="local col6 ref" href="#16axisMax" title='axisMax' data-ref="16axisMax">axisMax</a> - <a class="local col5 ref" href="#15axisDef" title='axisDef' data-ref="15axisDef">axisDef</a>) * <a class="tu ref" href="#MAX_F2DOT14" title='MAX_F2DOT14' data-use='r' data-ref="MAX_F2DOT14">MAX_F2DOT14</a>;</td></tr>
+<tr><th id="285">285</th><td>      <a class="macro" href="../../../../../include/assert.h.html#50" title="(static_cast&lt;void&gt; (0))" data-ref="_M/assert">assert</a> (peak &lt; upper);</td></tr>
+<tr><th id="286">286</th><td>    }</td></tr>
+<tr><th id="287">287</th><td></td></tr>
+<tr><th id="288">288</th><td>    <i>// Special-case if peak is at axisMax.</i></td></tr>
+<tr><th id="289">289</th><td>    <b>if</b> (<a class="local col6 ref" href="#16axisMax" title='axisMax' data-ref="16axisMax">axisMax</a> == <a class="local col8 ref" href="#18peak" title='peak' data-ref="18peak">peak</a>)</td></tr>
+<tr><th id="290">290</th><td>	<a class="local col9 ref" href="#19upper" title='upper' data-ref="19upper">upper</a> = <a class="local col8 ref" href="#18peak" title='peak' data-ref="18peak">peak</a>;</td></tr>
+<tr><th id="291">291</th><td></td></tr>
+<tr><th id="292">292</th><td>    <a class="type" href="#Triple" title='Triple' data-ref="Triple">Triple</a> <dfn class="local col7 decl" id="37loc1" title='loc1' data-type='Triple' data-ref="37loc1">loc1</dfn> <a class="tu ref fn" href="#_ZN6TripleC1Efff" title='Triple::Triple' data-use='c' data-ref="_ZN6TripleC1Efff">{</a><a class="ref" href="hb-algs.hh.html#583" title='hb_max' data-ref="hb_max">hb_max</a> (<a class="local col5 ref" href="#15axisDef" title='axisDef' data-ref="15axisDef">axisDef</a>, <a class="local col7 ref" href="#17lower" title='lower' data-ref="17lower">lower</a>), <a class="local col8 ref" href="#18peak" title='peak' data-ref="18peak">peak</a>, <a class="local col9 ref" href="#19upper" title='upper' data-ref="19upper">upper</a>};</td></tr>
+<tr><th id="293">293</th><td>    <em>float</em> <dfn class="local col8 decl" id="38scalar1" title='scalar1' data-type='float' data-ref="38scalar1">scalar1</dfn> = <var>1.f</var>;</td></tr>
+<tr><th id="294">294</th><td></td></tr>
+<tr><th id="295">295</th><td>    <a class="type" href="#Triple" title='Triple' data-ref="Triple">Triple</a> <dfn class="local col9 decl" id="39loc2" title='loc2' data-type='Triple' data-ref="39loc2">loc2</dfn> <a class="tu ref fn" href="#_ZN6TripleC1Efff" title='Triple::Triple' data-use='c' data-ref="_ZN6TripleC1Efff">{</a><a class="local col8 ref" href="#18peak" title='peak' data-ref="18peak">peak</a>, <a class="local col9 ref" href="#19upper" title='upper' data-ref="19upper">upper</a>, <a class="local col9 ref" href="#19upper" title='upper' data-ref="19upper">upper</a>};</td></tr>
+<tr><th id="296">296</th><td>    <em>float</em> <dfn class="local col0 decl" id="40scalar2" title='scalar2' data-type='float' data-ref="40scalar2">scalar2</dfn> = <var>0.f</var>;</td></tr>
+<tr><th id="297">297</th><td></td></tr>
+<tr><th id="298">298</th><td>    <i>// Don't add a dirac delta!</i></td></tr>
+<tr><th id="299">299</th><td>    <b>if</b> (<a class="local col5 ref" href="#15axisDef" title='axisDef' data-ref="15axisDef">axisDef</a> &lt; <a class="local col9 ref" href="#19upper" title='upper' data-ref="19upper">upper</a>)</td></tr>
+<tr><th id="300">300</th><td>	<a class="local col6 ref" href="#26out" title='out' data-ref="26out">out</a>.<a class="ref fn" href="hb-vector.hh.html#_ZN11hb_vector_t4pushEOTL0__" title='hb_vector_t::push' data-ref="_ZN11hb_vector_t4pushEOTL0__">push</a> (<span class='inlayHint'>v:&nbsp;</span><a class="ref fn" href="hb-algs.hh.html#_ZL7hb_pairOT_OT0_" title='hb_pair' data-ref="_ZL7hb_pairOT_OT0_">hb_pair</a> (<span class='inlayHint'>a:&nbsp;</span><a class="local col8 ref" href="#38scalar1" title='scalar1' data-ref="38scalar1">scalar1</a> - <a class="local col5 ref" href="#25gain" title='gain' data-ref="25gain">gain</a>, <span class='inlayHint'>b&amp;:&nbsp;</span><span class='refarg'><a class="local col7 ref" href="#37loc1" title='loc1' data-ref="37loc1">loc1</a></span>));</td></tr>
+<tr><th id="301">301</th><td>    <b>if</b> (<a class="local col8 ref" href="#18peak" title='peak' data-ref="18peak">peak</a> &lt; <a class="local col9 ref" href="#19upper" title='upper' data-ref="19upper">upper</a>)</td></tr>
+<tr><th id="302">302</th><td>	<a class="local col6 ref" href="#26out" title='out' data-ref="26out">out</a>.<a class="ref fn" href="hb-vector.hh.html#_ZN11hb_vector_t4pushEOTL0__" title='hb_vector_t::push' data-ref="_ZN11hb_vector_t4pushEOTL0__">push</a> (<span class='inlayHint'>v:&nbsp;</span><a class="ref fn" href="hb-algs.hh.html#_ZL7hb_pairOT_OT0_" title='hb_pair' data-ref="_ZL7hb_pairOT_OT0_">hb_pair</a> (<span class='inlayHint'>a:&nbsp;</span><a class="local col0 ref" href="#40scalar2" title='scalar2' data-ref="40scalar2">scalar2</a> - <a class="local col5 ref" href="#25gain" title='gain' data-ref="25gain">gain</a>, <span class='inlayHint'>b&amp;:&nbsp;</span><span class='refarg'><a class="local col9 ref" href="#39loc2" title='loc2' data-ref="39loc2">loc2</a></span>));</td></tr>
+<tr><th id="303">303</th><td>  }</td></tr>
+<tr><th id="304">304</th><td></td></tr>
+<tr><th id="305">305</th><td>  <i>/* Case 4: New limit doesn't fit; we need to chop into two tents,</i></td></tr>
+<tr><th id="306">306</th><td><i>   * because the shape of a triangle with part of one side cut off</i></td></tr>
+<tr><th id="307">307</th><td><i>   * cannot be represented as a triangle itself.</i></td></tr>
+<tr><th id="308">308</th><td><i>   *</i></td></tr>
+<tr><th id="309">309</th><td><i>   *            |   peak |</i></td></tr>
+<tr><th id="310">310</th><td><i>   *  1.........|......o.|...................</i></td></tr>
+<tr><th id="311">311</th><td><i>   *            |     /x\|</i></td></tr>
+<tr><th id="312">312</th><td><i>   *            |    |xxy|\_</i></td></tr>
+<tr><th id="313">313</th><td><i>   *            |   /xxxy|  \_</i></td></tr>
+<tr><th id="314">314</th><td><i>   *            |  |xxxxy|    \_</i></td></tr>
+<tr><th id="315">315</th><td><i>   *            |  /xxxxy|      \_</i></td></tr>
+<tr><th id="316">316</th><td><i>   *  0---|-----|-oxxxxxx|        o----------1</i></td></tr>
+<tr><th id="317">317</th><td><i>   *    axisMin | lower  |        upper</i></td></tr>
+<tr><th id="318">318</th><td><i>   *            |        |</i></td></tr>
+<tr><th id="319">319</th><td><i>   *          axisDef  axisMax</i></td></tr>
+<tr><th id="320">320</th><td><i>   */</i></td></tr>
+<tr><th id="321">321</th><td>  <b>else</b></td></tr>
+<tr><th id="322">322</th><td>  {</td></tr>
+<tr><th id="323">323</th><td>    <a class="type" href="#Triple" title='Triple' data-ref="Triple">Triple</a> <dfn class="local col1 decl" id="41loc1" title='loc1' data-type='Triple' data-ref="41loc1">loc1</dfn> <a class="tu ref fn" href="#_ZN6TripleC1Efff" title='Triple::Triple' data-use='c' data-ref="_ZN6TripleC1Efff">{</a><a class="ref" href="hb-algs.hh.html#583" title='hb_max' data-ref="hb_max">hb_max</a> (<a class="local col5 ref" href="#15axisDef" title='axisDef' data-ref="15axisDef">axisDef</a>, <a class="local col7 ref" href="#17lower" title='lower' data-ref="17lower">lower</a>), <a class="local col8 ref" href="#18peak" title='peak' data-ref="18peak">peak</a>, <a class="local col6 ref" href="#16axisMax" title='axisMax' data-ref="16axisMax">axisMax</a>};</td></tr>
+<tr><th id="324">324</th><td>    <em>float</em> <dfn class="local col2 decl" id="42scalar1" title='scalar1' data-type='float' data-ref="42scalar1">scalar1</dfn> = <var>1.f</var>;</td></tr>
+<tr><th id="325">325</th><td></td></tr>
+<tr><th id="326">326</th><td>    <a class="type" href="#Triple" title='Triple' data-ref="Triple">Triple</a> <dfn class="local col3 decl" id="43loc2" title='loc2' data-type='Triple' data-ref="43loc2">loc2</dfn> <a class="tu ref fn" href="#_ZN6TripleC1Efff" title='Triple::Triple' data-use='c' data-ref="_ZN6TripleC1Efff">{</a><a class="local col8 ref" href="#18peak" title='peak' data-ref="18peak">peak</a>, <a class="local col6 ref" href="#16axisMax" title='axisMax' data-ref="16axisMax">axisMax</a>, <a class="local col6 ref" href="#16axisMax" title='axisMax' data-ref="16axisMax">axisMax</a>};</td></tr>
+<tr><th id="327">327</th><td>    <em>float</em> <dfn class="local col4 decl" id="44scalar2" title='scalar2' data-type='float' data-ref="44scalar2">scalar2</dfn> = <a class="tu ref fn" href="#_ZL13supportScalarfRK6Triple" title='supportScalar' data-use='c' data-ref="_ZL13supportScalarfRK6Triple">supportScalar</a> (<span class='inlayHint'>coord:&nbsp;</span><a class="local col6 ref" href="#16axisMax" title='axisMax' data-ref="16axisMax">axisMax</a>, <a class="local col1 ref" href="#11tent" title='tent' data-ref="11tent">tent</a>);</td></tr>
+<tr><th id="328">328</th><td></td></tr>
+<tr><th id="329">329</th><td>    <a class="local col6 ref" href="#26out" title='out' data-ref="26out">out</a>.<a class="ref fn" href="hb-vector.hh.html#_ZN11hb_vector_t4pushEOTL0__" title='hb_vector_t::push' data-ref="_ZN11hb_vector_t4pushEOTL0__">push</a> (<span class='inlayHint'>v:&nbsp;</span><a class="ref fn" href="hb-algs.hh.html#_ZL7hb_pairOT_OT0_" title='hb_pair' data-ref="_ZL7hb_pairOT_OT0_">hb_pair</a> (<span class='inlayHint'>a:&nbsp;</span><a class="local col2 ref" href="#42scalar1" title='scalar1' data-ref="42scalar1">scalar1</a> - <a class="local col5 ref" href="#25gain" title='gain' data-ref="25gain">gain</a>, <span class='inlayHint'>b&amp;:&nbsp;</span><span class='refarg'><a class="local col1 ref" href="#41loc1" title='loc1' data-ref="41loc1">loc1</a></span>));</td></tr>
+<tr><th id="330">330</th><td>    <i>// Don't add a dirac delta!</i></td></tr>
+<tr><th id="331">331</th><td>    <b>if</b> (<a class="local col8 ref" href="#18peak" title='peak' data-ref="18peak">peak</a> &lt; <a class="local col6 ref" href="#16axisMax" title='axisMax' data-ref="16axisMax">axisMax</a>)</td></tr>
+<tr><th id="332">332</th><td>      <a class="local col6 ref" href="#26out" title='out' data-ref="26out">out</a>.<a class="ref fn" href="hb-vector.hh.html#_ZN11hb_vector_t4pushEOTL0__" title='hb_vector_t::push' data-ref="_ZN11hb_vector_t4pushEOTL0__">push</a> (<span class='inlayHint'>v:&nbsp;</span><a class="ref fn" href="hb-algs.hh.html#_ZL7hb_pairOT_OT0_" title='hb_pair' data-ref="_ZL7hb_pairOT_OT0_">hb_pair</a> (<span class='inlayHint'>a:&nbsp;</span><a class="local col4 ref" href="#44scalar2" title='scalar2' data-ref="44scalar2">scalar2</a> - <a class="local col5 ref" href="#25gain" title='gain' data-ref="25gain">gain</a>, <span class='inlayHint'>b&amp;:&nbsp;</span><span class='refarg'><a class="local col3 ref" href="#43loc2" title='loc2' data-ref="43loc2">loc2</a></span>));</td></tr>
+<tr><th id="333">333</th><td>  }</td></tr>
+<tr><th id="334">334</th><td></td></tr>
+<tr><th id="335">335</th><td>  <i>/* Now, the negative side</i></td></tr>
+<tr><th id="336">336</th><td><i>   *</i></td></tr>
+<tr><th id="337">337</th><td><i>   * Case 1neg: Lower extends beyond axisMin: we chop. Simple.</i></td></tr>
+<tr><th id="338">338</th><td><i>   *</i></td></tr>
+<tr><th id="339">339</th><td><i>   *                     |   |peak</i></td></tr>
+<tr><th id="340">340</th><td><i>   *  1..................|...|.o.................</i></td></tr>
+<tr><th id="341">341</th><td><i>   *                     |   |/ \</i></td></tr>
+<tr><th id="342">342</th><td><i>   *  gain...............|...+...\...............</i></td></tr>
+<tr><th id="343">343</th><td><i>   *                     |x_/|    \</i></td></tr>
+<tr><th id="344">344</th><td><i>   *                     |/  |     \</i></td></tr>
+<tr><th id="345">345</th><td><i>   *                   _/|   |      \</i></td></tr>
+<tr><th id="346">346</th><td><i>   *  0---------------o  |   |       o----------1</i></td></tr>
+<tr><th id="347">347</th><td><i>   *              lower  |   |       upper</i></td></tr>
+<tr><th id="348">348</th><td><i>   *                     |   |</i></td></tr>
+<tr><th id="349">349</th><td><i>   *               axisMin   axisDef</i></td></tr>
+<tr><th id="350">350</th><td><i>   */</i></td></tr>
+<tr><th id="351">351</th><td>  <b>if</b> (<a class="local col7 ref" href="#17lower" title='lower' data-ref="17lower">lower</a> &lt;= <a class="local col4 ref" href="#14axisMin" title='axisMin' data-ref="14axisMin">axisMin</a>)</td></tr>
+<tr><th id="352">352</th><td>  {</td></tr>
+<tr><th id="353">353</th><td>    <a class="type" href="#Triple" title='Triple' data-ref="Triple">Triple</a> <dfn class="local col5 decl" id="45loc" title='loc' data-type='Triple' data-ref="45loc">loc</dfn> <a class="tu ref fn" href="#_ZN6TripleC1Efff" title='Triple::Triple' data-use='c' data-ref="_ZN6TripleC1Efff">{</a><a class="local col4 ref" href="#14axisMin" title='axisMin' data-ref="14axisMin">axisMin</a>, <a class="local col4 ref" href="#14axisMin" title='axisMin' data-ref="14axisMin">axisMin</a>, <a class="local col5 ref" href="#15axisDef" title='axisDef' data-ref="15axisDef">axisDef</a>};</td></tr>
+<tr><th id="354">354</th><td>    <em>float</em> <dfn class="local col6 decl" id="46scalar" title='scalar' data-type='float' data-ref="46scalar">scalar</dfn> = <a class="tu ref fn" href="#_ZL13supportScalarfRK6Triple" title='supportScalar' data-use='c' data-ref="_ZL13supportScalarfRK6Triple">supportScalar</a> (<span class='inlayHint'>coord:&nbsp;</span><a class="local col4 ref" href="#14axisMin" title='axisMin' data-ref="14axisMin">axisMin</a>, <a class="local col1 ref" href="#11tent" title='tent' data-ref="11tent">tent</a>);</td></tr>
+<tr><th id="355">355</th><td></td></tr>
+<tr><th id="356">356</th><td>    <a class="local col6 ref" href="#26out" title='out' data-ref="26out">out</a>.<a class="ref fn" href="hb-vector.hh.html#_ZN11hb_vector_t4pushEOTL0__" title='hb_vector_t::push' data-ref="_ZN11hb_vector_t4pushEOTL0__">push</a> (<span class='inlayHint'>v:&nbsp;</span><a class="ref fn" href="hb-algs.hh.html#_ZL7hb_pairOT_OT0_" title='hb_pair' data-ref="_ZL7hb_pairOT_OT0_">hb_pair</a> (<span class='inlayHint'>a:&nbsp;</span><a class="local col6 ref" href="#46scalar" title='scalar' data-ref="46scalar">scalar</a> - <a class="local col5 ref" href="#25gain" title='gain' data-ref="25gain">gain</a>, <span class='inlayHint'>b&amp;:&nbsp;</span><span class='refarg'><a class="local col5 ref" href="#45loc" title='loc' data-ref="45loc">loc</a></span>));</td></tr>
+<tr><th id="357">357</th><td>  }</td></tr>
+<tr><th id="358">358</th><td></td></tr>
+<tr><th id="359">359</th><td>  <i>/* Case 2neg: Lower is betwen axisMin and axisDef: we add two</i></td></tr>
+<tr><th id="360">360</th><td><i>   * tents to keep it down all the way to eternity.</i></td></tr>
+<tr><th id="361">361</th><td><i>   *</i></td></tr>
+<tr><th id="362">362</th><td><i>   *      |               |peak</i></td></tr>
+<tr><th id="363">363</th><td><i>   *  1...|...............|.o.................</i></td></tr>
+<tr><th id="364">364</th><td><i>   *      |               |/ \</i></td></tr>
+<tr><th id="365">365</th><td><i>   *  gain|...............+...\...............</i></td></tr>
+<tr><th id="366">366</th><td><i>   *      |yxxxxxxxxxxxxx/|    \</i></td></tr>
+<tr><th id="367">367</th><td><i>   *      |yyyyyyxxxxxxx/ |     \</i></td></tr>
+<tr><th id="368">368</th><td><i>   *      |yyyyyyyyyyyx/  |      \</i></td></tr>
+<tr><th id="369">369</th><td><i>   *  0---|-----------o   |       o----------1</i></td></tr>
+<tr><th id="370">370</th><td><i>   *    axisMin    lower  |       upper</i></td></tr>
+<tr><th id="371">371</th><td><i>   *                      |</i></td></tr>
+<tr><th id="372">372</th><td><i>   *                    axisDef</i></td></tr>
+<tr><th id="373">373</th><td><i>   */</i></td></tr>
+<tr><th id="374">374</th><td>  <b>else</b></td></tr>
+<tr><th id="375">375</th><td>  {</td></tr>
+<tr><th id="376">376</th><td>    <i>// A tent's peak cannot fall on axis default. Nudge it.</i></td></tr>
+<tr><th id="377">377</th><td>    <b>if</b> (<a class="local col7 ref" href="#17lower" title='lower' data-ref="17lower">lower</a> == <a class="local col5 ref" href="#15axisDef" title='axisDef' data-ref="15axisDef">axisDef</a>)</td></tr>
+<tr><th id="378">378</th><td>      <a class="local col7 ref" href="#17lower" title='lower' data-ref="17lower">lower</a> -= <a class="tu ref" href="#EPSILON" title='EPSILON' data-use='r' data-ref="EPSILON">EPSILON</a>;</td></tr>
+<tr><th id="379">379</th><td></td></tr>
+<tr><th id="380">380</th><td>    <i>// Downslope.</i></td></tr>
+<tr><th id="381">381</th><td>    <a class="type" href="#Triple" title='Triple' data-ref="Triple">Triple</a> <dfn class="local col7 decl" id="47loc1" title='loc1' data-type='Triple' data-ref="47loc1">loc1</dfn> <a class="tu ref fn" href="#_ZN6TripleC1Efff" title='Triple::Triple' data-use='c' data-ref="_ZN6TripleC1Efff">{</a><a class="local col4 ref" href="#14axisMin" title='axisMin' data-ref="14axisMin">axisMin</a>, <a class="local col7 ref" href="#17lower" title='lower' data-ref="17lower">lower</a>, <a class="local col5 ref" href="#15axisDef" title='axisDef' data-ref="15axisDef">axisDef</a>};</td></tr>
+<tr><th id="382">382</th><td>    <em>float</em> <dfn class="local col8 decl" id="48scalar1" title='scalar1' data-type='float' data-ref="48scalar1">scalar1</dfn> = <var>0.f</var>;</td></tr>
+<tr><th id="383">383</th><td></td></tr>
+<tr><th id="384">384</th><td>    <i>// Eternity justify.</i></td></tr>
+<tr><th id="385">385</th><td>    <a class="type" href="#Triple" title='Triple' data-ref="Triple">Triple</a> <dfn class="local col9 decl" id="49loc2" title='loc2' data-type='Triple' data-ref="49loc2">loc2</dfn> <a class="tu ref fn" href="#_ZN6TripleC1Efff" title='Triple::Triple' data-use='c' data-ref="_ZN6TripleC1Efff">{</a><a class="local col4 ref" href="#14axisMin" title='axisMin' data-ref="14axisMin">axisMin</a>, <a class="local col4 ref" href="#14axisMin" title='axisMin' data-ref="14axisMin">axisMin</a>, <a class="local col7 ref" href="#17lower" title='lower' data-ref="17lower">lower</a>};</td></tr>
+<tr><th id="386">386</th><td>    <em>float</em> <dfn class="local col0 decl" id="50scalar2" title='scalar2' data-type='float' data-ref="50scalar2">scalar2</dfn> = <var>0.f</var>;</td></tr>
+<tr><th id="387">387</th><td></td></tr>
+<tr><th id="388">388</th><td>    <a class="local col6 ref" href="#26out" title='out' data-ref="26out">out</a>.<a class="ref fn" href="hb-vector.hh.html#_ZN11hb_vector_t4pushEOTL0__" title='hb_vector_t::push' data-ref="_ZN11hb_vector_t4pushEOTL0__">push</a> (<span class='inlayHint'>v:&nbsp;</span><a class="ref fn" href="hb-algs.hh.html#_ZL7hb_pairOT_OT0_" title='hb_pair' data-ref="_ZL7hb_pairOT_OT0_">hb_pair</a> (<span class='inlayHint'>a:&nbsp;</span><a class="local col8 ref" href="#48scalar1" title='scalar1' data-ref="48scalar1">scalar1</a> - <a class="local col5 ref" href="#25gain" title='gain' data-ref="25gain">gain</a>, <span class='inlayHint'>b&amp;:&nbsp;</span><span class='refarg'><a class="local col7 ref" href="#47loc1" title='loc1' data-ref="47loc1">loc1</a></span>));</td></tr>
+<tr><th id="389">389</th><td>    <a class="local col6 ref" href="#26out" title='out' data-ref="26out">out</a>.<a class="ref fn" href="hb-vector.hh.html#_ZN11hb_vector_t4pushEOTL0__" title='hb_vector_t::push' data-ref="_ZN11hb_vector_t4pushEOTL0__">push</a> (<span class='inlayHint'>v:&nbsp;</span><a class="ref fn" href="hb-algs.hh.html#_ZL7hb_pairOT_OT0_" title='hb_pair' data-ref="_ZL7hb_pairOT_OT0_">hb_pair</a> (<span class='inlayHint'>a:&nbsp;</span><a class="local col0 ref" href="#50scalar2" title='scalar2' data-ref="50scalar2">scalar2</a> - <a class="local col5 ref" href="#25gain" title='gain' data-ref="25gain">gain</a>, <span class='inlayHint'>b&amp;:&nbsp;</span><span class='refarg'><a class="local col9 ref" href="#49loc2" title='loc2' data-ref="49loc2">loc2</a></span>));</td></tr>
+<tr><th id="390">390</th><td>  }</td></tr>
+<tr><th id="391">391</th><td></td></tr>
+<tr><th id="392">392</th><td>  <b>return</b> <a class="ref fn fake" href="hb-vector.hh.html#_ZN11hb_vector_tC1EO11hb_vector_tIT_XT0_EE" title='hb_vector_t::hb_vector_t&lt;Type, sorted&gt;' data-ref="_ZN11hb_vector_tC1EO11hb_vector_tIT_XT0_EE"></a><a class="local col6 ref" href="#26out" title='out' data-ref="26out">out</a>;</td></tr>
+<tr><th id="393">393</th><td>}</td></tr>
+<tr><th id="394">394</th><td></td></tr>
+<tr><th id="395">395</th><td><i  data-doc="_ZL14normalizeValuefRK6Tripleb">/* Normalizes value based on a min/default/max triple. */</i></td></tr>
+<tr><th id="396">396</th><td><em>static</em> <b>inline</b> <em>float</em> <dfn class="tu decl def fn" id="_ZL14normalizeValuefRK6Tripleb" title='normalizeValue' data-type='float normalizeValue(float v, const Triple &amp; triple, bool extrapolate = false)' data-ref="_ZL14normalizeValuefRK6Tripleb">normalizeValue</dfn> (<em>float</em> <dfn class="local col1 decl" id="51v" title='v' data-type='float' data-ref="51v">v</dfn>, <em>const</em> <a class="type" href="#Triple" title='Triple' data-ref="Triple">Triple</a> &amp;<dfn class="local col2 decl" id="52triple" title='triple' data-type='const Triple &amp;' data-ref="52triple">triple</dfn>, <em>bool</em> <dfn class="local col3 decl" id="53extrapolate" title='extrapolate' data-type='bool' data-ref="53extrapolate">extrapolate</dfn> = <b>false</b>)</td></tr>
+<tr><th id="397">397</th><td>{</td></tr>
+<tr><th id="398">398</th><td>  <i>/*</i></td></tr>
+<tr><th id="399">399</th><td><i>  &gt;&gt;&gt; normalizeValue(400, (100, 400, 900))</i></td></tr>
+<tr><th id="400">400</th><td><i>  0.0</i></td></tr>
+<tr><th id="401">401</th><td><i>  &gt;&gt;&gt; normalizeValue(100, (100, 400, 900))</i></td></tr>
+<tr><th id="402">402</th><td><i>  -1.0</i></td></tr>
+<tr><th id="403">403</th><td><i>  &gt;&gt;&gt; normalizeValue(650, (100, 400, 900))</i></td></tr>
+<tr><th id="404">404</th><td><i>  0.5</i></td></tr>
+<tr><th id="405">405</th><td><i>  */</i></td></tr>
+<tr><th id="406">406</th><td>  <em>float</em> <dfn class="local col4 decl" id="54lower" title='lower' data-type='float' data-ref="54lower">lower</dfn> = <a class="local col2 ref" href="#52triple" title='triple' data-ref="52triple">triple</a>.<a class="tu ref field" href="#Triple::minimum" title='Triple::minimum' data-use='r' data-ref="Triple::minimum">minimum</a>, <dfn class="local col5 decl" id="55def" title='def' data-type='float' data-ref="55def">def</dfn> = <a class="local col2 ref" href="#52triple" title='triple' data-ref="52triple">triple</a>.<a class="tu ref field" href="#Triple::middle" title='Triple::middle' data-use='r' data-ref="Triple::middle">middle</a>, <dfn class="local col6 decl" id="56upper" title='upper' data-type='float' data-ref="56upper">upper</dfn> = <a class="local col2 ref" href="#52triple" title='triple' data-ref="52triple">triple</a>.<a class="tu ref field" href="#Triple::maximum" title='Triple::maximum' data-use='r' data-ref="Triple::maximum">maximum</a>;</td></tr>
+<tr><th id="407">407</th><td>  <a class="macro" href="../../../../../include/assert.h.html#50" title="(static_cast&lt;void&gt; (0))" data-ref="_M/assert">assert</a> (lower &lt;= def &amp;&amp; def &lt;= upper);</td></tr>
+<tr><th id="408">408</th><td></td></tr>
+<tr><th id="409">409</th><td>  <b>if</b> (!<a class="local col3 ref" href="#53extrapolate" title='extrapolate' data-ref="53extrapolate">extrapolate</a>)</td></tr>
+<tr><th id="410">410</th><td>      <a class="local col1 ref" href="#51v" title='v' data-ref="51v">v</a> = <a class="ref" href="hb-algs.hh.html#583" title='hb_max' data-ref="hb_max">hb_max</a> (<a class="ref" href="hb-algs.hh.html#576" title='hb_min' data-ref="hb_min">hb_min</a> (<a class="local col1 ref" href="#51v" title='v' data-ref="51v">v</a>, <a class="local col6 ref" href="#56upper" title='upper' data-ref="56upper">upper</a>), <a class="local col4 ref" href="#54lower" title='lower' data-ref="54lower">lower</a>);</td></tr>
+<tr><th id="411">411</th><td></td></tr>
+<tr><th id="412">412</th><td>  <b>if</b> ((<a class="local col1 ref" href="#51v" title='v' data-ref="51v">v</a> == <a class="local col5 ref" href="#55def" title='def' data-ref="55def">def</a>) || (<a class="local col4 ref" href="#54lower" title='lower' data-ref="54lower">lower</a> == <a class="local col6 ref" href="#56upper" title='upper' data-ref="56upper">upper</a>))</td></tr>
+<tr><th id="413">413</th><td>    <b>return</b> <var>0.f</var>;</td></tr>
+<tr><th id="414">414</th><td></td></tr>
+<tr><th id="415">415</th><td>  <b>if</b> ((<a class="local col1 ref" href="#51v" title='v' data-ref="51v">v</a> &lt; <a class="local col5 ref" href="#55def" title='def' data-ref="55def">def</a> &amp;&amp; <a class="local col4 ref" href="#54lower" title='lower' data-ref="54lower">lower</a> != <a class="local col5 ref" href="#55def" title='def' data-ref="55def">def</a>) || (<a class="local col1 ref" href="#51v" title='v' data-ref="51v">v</a> &gt; <a class="local col5 ref" href="#55def" title='def' data-ref="55def">def</a> &amp;&amp; <a class="local col6 ref" href="#56upper" title='upper' data-ref="56upper">upper</a> == <a class="local col5 ref" href="#55def" title='def' data-ref="55def">def</a>))</td></tr>
+<tr><th id="416">416</th><td>    <b>return</b> (<a class="local col1 ref" href="#51v" title='v' data-ref="51v">v</a> - <a class="local col5 ref" href="#55def" title='def' data-ref="55def">def</a>) / (<a class="local col5 ref" href="#55def" title='def' data-ref="55def">def</a> - <a class="local col4 ref" href="#54lower" title='lower' data-ref="54lower">lower</a>);</td></tr>
+<tr><th id="417">417</th><td>  <b>else</b></td></tr>
+<tr><th id="418">418</th><td>  {</td></tr>
+<tr><th id="419">419</th><td>    <a class="macro" href="../../../../../include/assert.h.html#50" title="(static_cast&lt;void&gt; (0))" data-ref="_M/assert">assert</a> ((v &gt; def &amp;&amp; upper != def) ||</td></tr>
+<tr><th id="420">420</th><td>	    (v &lt; def &amp;&amp; lower == def));</td></tr>
+<tr><th id="421">421</th><td>    <b>return</b> (<a class="local col1 ref" href="#51v" title='v' data-ref="51v">v</a> - <a class="local col5 ref" href="#55def" title='def' data-ref="55def">def</a>) / (<a class="local col6 ref" href="#56upper" title='upper' data-ref="56upper">upper</a> - <a class="local col5 ref" href="#55def" title='def' data-ref="55def">def</a>);</td></tr>
+<tr><th id="422">422</th><td>  }</td></tr>
+<tr><th id="423">423</th><td>}</td></tr>
+<tr><th id="424">424</th><td></td></tr>
+<tr><th id="425">425</th><td><i>/* Given a tuple (lower,peak,upper) "tent" and new axis limits</i></td></tr>
+<tr><th id="426">426</th><td><i> * (axisMin,axisDefault,axisMax), solves how to represent the tent</i></td></tr>
+<tr><th id="427">427</th><td><i> * under the new axis configuration.  All values are in normalized</i></td></tr>
+<tr><th id="428">428</th><td><i> * -1,0,+1 coordinate system. Tent values can be outside this range.</i></td></tr>
+<tr><th id="429">429</th><td><i> *</i></td></tr>
+<tr><th id="430">430</th><td><i> * Return value: a list of tuples. Each tuple is of the form</i></td></tr>
+<tr><th id="431">431</th><td><i> * (scalar,tent), where scalar is a multipler to multiply any</i></td></tr>
+<tr><th id="432">432</th><td><i> * delta-sets by, and tent is a new tent for that output delta-set.</i></td></tr>
+<tr><th id="433">433</th><td><i> * If tent value is Triple{}, that is a special deltaset that should</i></td></tr>
+<tr><th id="434">434</th><td><i> * be always-enabled (called "gain").</i></td></tr>
+<tr><th id="435">435</th><td><i> */</i></td></tr>
+<tr><th id="436">436</th><td><a class="macro" href="hb.hh.html#277" title="__attribute__((__visibility__(&quot;hidden&quot;)))" data-ref="_M/HB_INTERNAL">HB_INTERNAL</a> <a class="typedef" href="#result_t" title='result_t' data-type='hb_vector_t&lt;result_item_t&gt;' data-ref="result_t">result_t</a> <a class="decl fn" href="#_Z11rebase_tent6TripleS_" title='rebase_tent' data-ref="_Z11rebase_tent6TripleS_">rebase_tent</a> (<a class="type" href="#Triple" title='Triple' data-ref="Triple">Triple</a> <dfn class="local col7 decl" id="57tent" title='tent' data-type='Triple' data-ref="57tent">tent</dfn>, <a class="type" href="#Triple" title='Triple' data-ref="Triple">Triple</a> <dfn class="local col8 decl" id="58axisLimit" title='axisLimit' data-type='Triple' data-ref="58axisLimit">axisLimit</dfn>);</td></tr>
+<tr><th id="437">437</th><td></td></tr>
+<tr><th id="438">438</th><td><a class="typedef" href="#result_t" title='result_t' data-type='hb_vector_t&lt;result_item_t&gt;' data-ref="result_t">result_t</a></td></tr>
+<tr><th id="439">439</th><td><dfn class="decl def fn" id="_Z11rebase_tent6TripleS_" title='rebase_tent' data-ref="_Z11rebase_tent6TripleS_">rebase_tent</dfn> (<a class="type" href="#Triple" title='Triple' data-ref="Triple">Triple</a> <dfn class="local col9 decl" id="59tent" title='tent' data-type='Triple' data-ref="59tent">tent</dfn>, <a class="type" href="#Triple" title='Triple' data-ref="Triple">Triple</a> <dfn class="local col0 decl" id="60axisLimit" title='axisLimit' data-type='Triple' data-ref="60axisLimit">axisLimit</dfn>)</td></tr>
+<tr><th id="440">440</th><td>{</td></tr>
+<tr><th id="441">441</th><td>  <a class="macro" href="../../../../../include/assert.h.html#50" title="(static_cast&lt;void&gt; (0))" data-ref="_M/assert">assert</a> (-<var>1.f</var> &lt;= axisLimit.minimum &amp;&amp; axisLimit.minimum &lt;= axisLimit.middle &amp;&amp; axisLimit.middle &lt;= axisLimit.maximum &amp;&amp; axisLimit.maximum &lt;= +<var>1.f</var>);</td></tr>
+<tr><th id="442">442</th><td>  <a class="macro" href="../../../../../include/assert.h.html#50" title="(static_cast&lt;void&gt; (0))" data-ref="_M/assert">assert</a> (-<var>2.f</var> &lt;= tent.minimum &amp;&amp; tent.minimum &lt;= tent.middle &amp;&amp; tent.middle &lt;= tent.maximum &amp;&amp; tent.maximum &lt;= +<var>2.f</var>);</td></tr>
+<tr><th id="443">443</th><td>  <a class="macro" href="../../../../../include/assert.h.html#50" title="(static_cast&lt;void&gt; (0))" data-ref="_M/assert">assert</a> (tent.middle != <var>0.f</var>);</td></tr>
+<tr><th id="444">444</th><td></td></tr>
+<tr><th id="445">445</th><td>  <a class="typedef" href="#result_t" title='result_t' data-type='hb_vector_t&lt;result_item_t&gt;' data-ref="result_t">result_t</a> <dfn class="local col1 decl" id="61sols" title='sols' data-type='result_t' data-ref="61sols">sols</dfn> = <a class="tu ref fn" href="#_ZL6_solve6TripleS_b" title='_solve' data-use='c' data-ref="_ZL6_solve6TripleS_b">_solve</a> (<a class="tu ref fn fake" href="#38" title='Triple::Triple' data-use='c' data-ref="_ZN6TripleC1ERKS_"></a><a class="local col9 ref" href="#59tent" title='tent' data-ref="59tent">tent</a>, <a class="tu ref fn fake" href="#38" title='Triple::Triple' data-use='c' data-ref="_ZN6TripleC1ERKS_"></a><a class="local col0 ref" href="#60axisLimit" title='axisLimit' data-ref="60axisLimit">axisLimit</a>);</td></tr>
+<tr><th id="446">446</th><td></td></tr>
+<tr><th id="447">447</th><td>  <em>auto</em> <dfn class="local col2 decl" id="62n" title='n' data-type='(lambda at /home/lzx0626/DavidingPlus/qtbase/src/3rdparty/harfbuzz-ng/src/hb-subset-instancer-solver.cc:447:12)' data-ref="62n">n</dfn> = [&amp;<a class="local col0 ref" href="#60axisLimit" title='axisLimit' data-ref="60axisLimit">axisLimit</a>] (<em>float</em> <dfn class="local col3 decl" id="63v" title='v' data-type='float' data-ref="63v">v</dfn>) { <b>return</b> <a class="tu ref fn" href="#_ZL14normalizeValuefRK6Tripleb" title='normalizeValue' data-use='c' data-ref="_ZL14normalizeValuefRK6Tripleb">normalizeValue</a> (<a class="local col3 ref" href="#63v" title='v' data-ref="63v">v</a>, <span class='inlayHint'>triple:&nbsp;</span><a class="local col0 ref" href="#60axisLimit" title='axisLimit' data-ref="60axisLimit">axisLimit</a>, <span class='inlayHint'>extrapolate:&nbsp;</span><b>true</b>); };</td></tr>
+<tr><th id="448">448</th><td></td></tr>
+<tr><th id="449">449</th><td>  <a class="typedef" href="#result_t" title='result_t' data-type='hb_vector_t&lt;result_item_t&gt;' data-ref="result_t">result_t</a> <a class="ref fn fake" href="hb-vector.hh.html#_ZN11hb_vector_tC1Ev" title='hb_vector_t::hb_vector_t&lt;Type, sorted&gt;' data-ref="_ZN11hb_vector_tC1Ev"></a><dfn class="local col4 decl" id="64out" title='out' data-type='result_t' data-ref="64out">out</dfn>;</td></tr>
+<tr><th id="450">450</th><td>  <b>for</b> (<em>auto</em> &amp;<dfn class="local col5 decl" id="65p" title='p' data-type='hb_pair_t&lt;float, Triple&gt; &amp;' data-ref="65p">p</dfn> : <a class="local col1 ref" href="#61sols" title='sols' data-ref="61sols">sols</a>)</td></tr>
+<tr><th id="451">451</th><td>  {</td></tr>
+<tr><th id="452">452</th><td>    <b>if</b> (!<a class="local col5 ref" href="#65p" title='p' data-ref="65p">p</a>.<a class="ref field" href="hb-algs.hh.html#hb_pair_t::first" title='hb_pair_t&lt;float, Triple&gt;::first' data-ref="hb_pair_t::first">first</a>) <b>continue</b>;</td></tr>
+<tr><th id="453">453</th><td>    <b>if</b> (<a class="local col5 ref" href="#65p" title='p' data-ref="65p">p</a>.<a class="ref field" href="hb-algs.hh.html#hb_pair_t::second" title='hb_pair_t&lt;float, Triple&gt;::second' data-ref="hb_pair_t::second">second</a> <a class="tu ref fn" href="#_ZNK6TripleeqERKS_" title='Triple::operator==' data-use='c' data-ref="_ZNK6TripleeqERKS_">==</a> <a class="type" href="#Triple" title='Triple' data-ref="Triple">Triple</a><a class="tu ref fn" href="#_ZN6TripleC1Ev" title='Triple::Triple' data-use='c' data-ref="_ZN6TripleC1Ev">{</a>})</td></tr>
+<tr><th id="454">454</th><td>    {</td></tr>
+<tr><th id="455">455</th><td>      <a class="local col4 ref" href="#64out" title='out' data-ref="64out">out</a>.<a class="ref fn" href="hb-vector.hh.html#_ZN11hb_vector_t4pushEOTL0__" title='hb_vector_t::push' data-ref="_ZN11hb_vector_t4pushEOTL0__">push</a> (<span class='inlayHint'>v&amp;:&nbsp;</span><span class='refarg'><a class="local col5 ref" href="#65p" title='p' data-ref="65p">p</a></span>);</td></tr>
+<tr><th id="456">456</th><td>      <b>continue</b>;</td></tr>
+<tr><th id="457">457</th><td>    }</td></tr>
+<tr><th id="458">458</th><td>    <a class="type" href="#Triple" title='Triple' data-ref="Triple">Triple</a> <dfn class="local col6 decl" id="66t" title='t' data-type='Triple' data-ref="66t">t</dfn> = <a class="tu ref fn fake" href="#38" title='Triple::Triple' data-use='c' data-ref="_ZN6TripleC1ERKS_"></a><a class="local col5 ref" href="#65p" title='p' data-ref="65p">p</a>.<a class="ref field" href="hb-algs.hh.html#hb_pair_t::second" title='hb_pair_t&lt;float, Triple&gt;::second' data-ref="hb_pair_t::second">second</a>;</td></tr>
+<tr><th id="459">459</th><td>    <a class="local col4 ref" href="#64out" title='out' data-ref="64out">out</a>.<a class="ref fn" href="hb-vector.hh.html#_ZN11hb_vector_t4pushEOTL0__" title='hb_vector_t::push' data-ref="_ZN11hb_vector_t4pushEOTL0__">push</a> (<span class='inlayHint'>v:&nbsp;</span><a class="ref fn" href="hb-algs.hh.html#_ZL7hb_pairOT_OT0_" title='hb_pair' data-ref="_ZL7hb_pairOT_OT0_">hb_pair</a> (<span class='inlayHint'>a&amp;:&nbsp;</span><span class='refarg'><a class="local col5 ref" href="#65p" title='p' data-ref="65p">p</a>.<a class="ref field" href="hb-algs.hh.html#hb_pair_t::first" title='hb_pair_t&lt;float, Triple&gt;::first' data-ref="hb_pair_t::first">first</a></span>,</td></tr>
+<tr><th id="460">460</th><td>		       <span class='inlayHint'>b:&nbsp;</span><a class="type" href="#Triple" title='Triple' data-ref="Triple">Triple</a><a class="tu ref fn" href="#_ZN6TripleC1Efff" title='Triple::Triple' data-use='c' data-ref="_ZN6TripleC1Efff">{</a><a class="local col2 ref" href="#62n" title='n' data-ref="62n">n</a> <a class="tu ref fn" href="#_ZZ11rebase_tent6TripleS_ENK3$_0clEf" title='rebase_tent(Triple, Triple)::(anonymous class)::operator()' data-use='c' data-ref="_ZZ11rebase_tent6TripleS_ENK3$_0clEf">(<a class="local col6 ref" href="#66t" title='t' data-ref="66t">t</a>.<a class="tu ref field" href="#Triple::minimum" title='Triple::minimum' data-use='r' data-ref="Triple::minimum">minimum</a>)</a>, <a class="local col2 ref" href="#62n" title='n' data-ref="62n">n</a> <a class="tu ref fn" href="#_ZZ11rebase_tent6TripleS_ENK3$_0clEf" title='rebase_tent(Triple, Triple)::(anonymous class)::operator()' data-use='c' data-ref="_ZZ11rebase_tent6TripleS_ENK3$_0clEf">(<a class="local col6 ref" href="#66t" title='t' data-ref="66t">t</a>.<a class="tu ref field" href="#Triple::middle" title='Triple::middle' data-use='r' data-ref="Triple::middle">middle</a>)</a>, <a class="local col2 ref" href="#62n" title='n' data-ref="62n">n</a> <a class="tu ref fn" href="#_ZZ11rebase_tent6TripleS_ENK3$_0clEf" title='rebase_tent(Triple, Triple)::(anonymous class)::operator()' data-use='c' data-ref="_ZZ11rebase_tent6TripleS_ENK3$_0clEf">(<a class="local col6 ref" href="#66t" title='t' data-ref="66t">t</a>.<a class="tu ref field" href="#Triple::maximum" title='Triple::maximum' data-use='r' data-ref="Triple::maximum">maximum</a>)</a>}));</td></tr>
+<tr><th id="461">461</th><td>  }</td></tr>
+<tr><th id="462">462</th><td></td></tr>
+<tr><th id="463">463</th><td>  <b>return</b> <a class="ref fn fake" href="hb-vector.hh.html#_ZN11hb_vector_tC1EO11hb_vector_tIT_XT0_EE" title='hb_vector_t::hb_vector_t&lt;Type, sorted&gt;' data-ref="_ZN11hb_vector_tC1EO11hb_vector_tIT_XT0_EE"></a><a class="local col1 ref" href="#61sols" title='sols' data-ref="61sols">sols</a>;</td></tr>
+<tr><th id="464">464</th><td>}</td></tr>
+<tr><th id="465">465</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2024-Jun-13</em> from project qtbase-6.5.0 revision <em>6.5.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

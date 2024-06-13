@@ -1,0 +1,4 @@
+<dec f='qtbase-6.5.0/src/gui/rhi/qrhi_p_p.h' l='511' type='QRhiResourceUpdateBatch *'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhi.cpp' l='5891' u='w' c='_ZN23QRhiResourceUpdateBatchC1EP18QRhiImplementation'/>
+<use f='qtbase-6.5.0/src/gui/rhi/qrhi.cpp' l='6278' u='r' c='_ZN30QRhiResourceUpdateBatchPrivate4freeEv'/>
+<offset>5341696</offset>

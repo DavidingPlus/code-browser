@@ -1,0 +1,349 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>shared_ptr_atomic.h source code [include/c++/9/bits/shared_ptr_atomic.h] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="std::_Sp_locker "/>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'include/c++/9/bits/shared_ptr_atomic.h'; var root_path = '../../../..'; var data_path = '../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>include</a>/<a href='../..'>c++</a>/<a href='..'>9</a>/<a href='./'>bits</a>/<a href='shared_ptr_atomic.h.html'>shared_ptr_atomic.h</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>// shared_ptr atomic access -*- C++ -*-</i></td></tr>
+<tr><th id="2">2</th><td><i></i></td></tr>
+<tr><th id="3">3</th><td><i>// Copyright (C) 2014-2019 Free Software Foundation, Inc.</i></td></tr>
+<tr><th id="4">4</th><td><i>//</i></td></tr>
+<tr><th id="5">5</th><td><i>// This file is part of the GNU ISO C++ Library.  This library is free</i></td></tr>
+<tr><th id="6">6</th><td><i>// software; you can redistribute it and/or modify it under the</i></td></tr>
+<tr><th id="7">7</th><td><i>// terms of the GNU General Public License as published by the</i></td></tr>
+<tr><th id="8">8</th><td><i>// Free Software Foundation; either version 3, or (at your option)</i></td></tr>
+<tr><th id="9">9</th><td><i>// any later version.</i></td></tr>
+<tr><th id="10">10</th><td><i></i></td></tr>
+<tr><th id="11">11</th><td><i>// This library is distributed in the hope that it will be useful,</i></td></tr>
+<tr><th id="12">12</th><td><i>// but WITHOUT ANY WARRANTY; without even the implied warranty of</i></td></tr>
+<tr><th id="13">13</th><td><i>// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</i></td></tr>
+<tr><th id="14">14</th><td><i>// GNU General Public License for more details.</i></td></tr>
+<tr><th id="15">15</th><td><i></i></td></tr>
+<tr><th id="16">16</th><td><i>// Under Section 7 of GPL version 3, you are granted additional</i></td></tr>
+<tr><th id="17">17</th><td><i>// permissions described in the GCC Runtime Library Exception, version</i></td></tr>
+<tr><th id="18">18</th><td><i>// 3.1, as published by the Free Software Foundation.</i></td></tr>
+<tr><th id="19">19</th><td><i></i></td></tr>
+<tr><th id="20">20</th><td><i>// You should have received a copy of the GNU General Public License and</i></td></tr>
+<tr><th id="21">21</th><td><i>// a copy of the GCC Runtime Library Exception along with this program;</i></td></tr>
+<tr><th id="22">22</th><td><i>// see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see</i></td></tr>
+<tr><th id="23">23</th><td><i>// &lt;<a href="http://www.gnu.org/licenses/">http://www.gnu.org/licenses/</a>&gt;.</i></td></tr>
+<tr><th id="24">24</th><td></td></tr>
+<tr><th id="25">25</th><td><i class="doc">/** <span class="command">@file</span> <span class="verb">bits/shared_ptr_atomic.h</span></i></td></tr>
+<tr><th id="26">26</th><td><i class="doc"> *  This is an internal header file, included by other library headers.</i></td></tr>
+<tr><th id="27">27</th><td><i class="doc"> *  Do not attempt to use it directly.<span class="command"> @headername</span>{memory}</i></td></tr>
+<tr><th id="28">28</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="29">29</th><td></td></tr>
+<tr><th id="30">30</th><td><u>#<span data-ppcond="30">ifndef</span> <span class="macro" data-ref="_M/_SHARED_PTR_ATOMIC_H">_SHARED_PTR_ATOMIC_H</span></u></td></tr>
+<tr><th id="31">31</th><td><u>#define <dfn class="macro" id="_M/_SHARED_PTR_ATOMIC_H" data-ref="_M/_SHARED_PTR_ATOMIC_H">_SHARED_PTR_ATOMIC_H</dfn> 1</u></td></tr>
+<tr><th id="32">32</th><td></td></tr>
+<tr><th id="33">33</th><td><u>#include <a href="atomic_base.h.html">&lt;bits/atomic_base.h&gt;</a></u></td></tr>
+<tr><th id="34">34</th><td></td></tr>
+<tr><th id="35">35</th><td><b>namespace</b> <span class="namespace">std</span> <a class="macro" href="../../../x86_64-linux-gnu/c++/9/bits/c++config.h.html#70" title="__attribute__ ((__visibility__ (&quot;default&quot;)))" data-ref="_M/_GLIBCXX_VISIBILITY">_GLIBCXX_VISIBILITY</a>(<b>default</b>)</td></tr>
+<tr><th id="36">36</th><td>{</td></tr>
+<tr><th id="37">37</th><td><a class="macro" href="../../../x86_64-linux-gnu/c++/9/bits/c++config.h.html#328" title="" data-ref="_M/_GLIBCXX_BEGIN_NAMESPACE_VERSION">_GLIBCXX_BEGIN_NAMESPACE_VERSION</a></td></tr>
+<tr><th id="38">38</th><td></td></tr>
+<tr><th id="39">39</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="40">40</th><td><i class="doc">   * <span class="command">@addtogroup</span> <span class="verb">pointer_abstractions</span></i></td></tr>
+<tr><th id="41">41</th><td><i class="doc">   * @{</i></td></tr>
+<tr><th id="42">42</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="43">43</th><td></td></tr>
+<tr><th id="44">44</th><td>  <b>struct</b> <dfn class="type def" id="std::_Sp_locker" title='std::_Sp_locker' data-ref="std::_Sp_locker">_Sp_locker</dfn></td></tr>
+<tr><th id="45">45</th><td>  {</td></tr>
+<tr><th id="46">46</th><td>    <dfn class="decl def fn" id="_ZNSt10_Sp_lockerC1ERKS_" title='std::_Sp_locker::_Sp_locker' data-ref="_ZNSt10_Sp_lockerC1ERKS_">_Sp_locker</dfn>(<em>const</em> <a class="type" href="#std::_Sp_locker" title='std::_Sp_locker' data-ref="std::_Sp_locker">_Sp_locker</a>&amp;) = <b>delete</b>;</td></tr>
+<tr><th id="47">47</th><td>    <a class="type" href="#std::_Sp_locker" title='std::_Sp_locker' data-ref="std::_Sp_locker">_Sp_locker</a>&amp; <dfn class="decl def fn" id="_ZNSt10_Sp_lockeraSERKS_" title='std::_Sp_locker::operator=' data-ref="_ZNSt10_Sp_lockeraSERKS_"><b>operator</b>=</dfn>(<em>const</em> <a class="type" href="#std::_Sp_locker" title='std::_Sp_locker' data-ref="std::_Sp_locker">_Sp_locker</a>&amp;) = <b>delete</b>;</td></tr>
+<tr><th id="48">48</th><td></td></tr>
+<tr><th id="49">49</th><td><u>#<span data-ppcond="49">ifdef</span> <a class="macro" href="../../../x86_64-linux-gnu/c++/9/bits/gthr-default.h.html#32" data-ref="_M/__GTHREADS">__GTHREADS</a></u></td></tr>
+<tr><th id="50">50</th><td>    <b>explicit</b></td></tr>
+<tr><th id="51">51</th><td>    <dfn class="decl fn" id="_ZNSt10_Sp_lockerC1EPKv" title='std::_Sp_locker::_Sp_locker' data-ref="_ZNSt10_Sp_lockerC1EPKv">_Sp_locker</dfn>(<em>const</em> <em>void</em>*) <b>noexcept</b>;</td></tr>
+<tr><th id="52">52</th><td>    <dfn class="decl fn" id="_ZNSt10_Sp_lockerC1EPKvS1_" title='std::_Sp_locker::_Sp_locker' data-ref="_ZNSt10_Sp_lockerC1EPKvS1_">_Sp_locker</dfn>(<em>const</em> <em>void</em>*, <em>const</em> <em>void</em>*) <b>noexcept</b>;</td></tr>
+<tr><th id="53">53</th><td>    <dfn class="decl fn" id="_ZNSt10_Sp_lockerD1Ev" title='std::_Sp_locker::~_Sp_locker' data-ref="_ZNSt10_Sp_lockerD1Ev">~_Sp_locker</dfn>();</td></tr>
+<tr><th id="54">54</th><td></td></tr>
+<tr><th id="55">55</th><td>  <b>private</b>:</td></tr>
+<tr><th id="56">56</th><td>    <em>unsigned</em> <em>char</em> <dfn class="decl field" id="std::_Sp_locker::_M_key1" title='std::_Sp_locker::_M_key1' data-ref="std::_Sp_locker::_M_key1">_M_key1</dfn>;</td></tr>
+<tr><th id="57">57</th><td>    <em>unsigned</em> <em>char</em> <dfn class="decl field" id="std::_Sp_locker::_M_key2" title='std::_Sp_locker::_M_key2' data-ref="std::_Sp_locker::_M_key2">_M_key2</dfn>;</td></tr>
+<tr><th id="58">58</th><td><u>#<span data-ppcond="49">else</span></u></td></tr>
+<tr><th id="59">59</th><td>    <b>explicit</b> _Sp_locker(<em>const</em> <em>void</em>*, <em>const</em> <em>void</em>* = <b>nullptr</b>) { }</td></tr>
+<tr><th id="60">60</th><td><u>#<span data-ppcond="49">endif</span></u></td></tr>
+<tr><th id="61">61</th><td>  };</td></tr>
+<tr><th id="62">62</th><td></td></tr>
+<tr><th id="63">63</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="64">64</th><td><i class="doc">   *  <span class="command">@brief</span>  Report whether shared_ptr atomic operations are lock-free.</i></td></tr>
+<tr><th id="65">65</th><td><i class="doc">   *  <span class="command">@param</span>  <span class="arg">__p</span> A non-null pointer to a shared_ptr object.</i></td></tr>
+<tr><th id="66">66</th><td><i class="doc">   *  <span class="command">@return</span> True if atomic access to<span class="command"> @c</span> <span class="arg">*__p</span> is lock-free, false otherwise.</i></td></tr>
+<tr><th id="67">67</th><td><i class="doc">   *  @{</i></td></tr>
+<tr><th id="68">68</th><td><i class="doc">  */</i></td></tr>
+<tr><th id="69">69</th><td>  <b>template</b>&lt;<b>typename</b> _Tp, _Lock_policy _Lp&gt;</td></tr>
+<tr><th id="70">70</th><td>    <b>inline</b> <em>bool</em></td></tr>
+<tr><th id="71">71</th><td>    <dfn class="decl def fn" id="_ZSt19atomic_is_lock_freePKSt12__shared_ptrIT_XT0_EE" title='std::atomic_is_lock_free' data-ref="_ZSt19atomic_is_lock_freePKSt12__shared_ptrIT_XT0_EE">atomic_is_lock_free</dfn>(<em>const</em> <a class="type" href="shared_ptr_base.h.html#std::__shared_ptr" title='std::__shared_ptr' data-ref="std::__shared_ptr">__shared_ptr</a>&lt;_Tp, <a class="tu ref" href="#_Lp" title='_Lp' data-ref="_Lp">_Lp</a>&gt;* <dfn class="local col1 decl" id="13161__p" title='__p' data-type='const __shared_ptr&lt;_Tp, _Lp&gt; *' data-ref="13161__p">__p</dfn>)</td></tr>
+<tr><th id="72">72</th><td>    {</td></tr>
+<tr><th id="73">73</th><td><u>#<span data-ppcond="73">ifdef</span> <a class="macro" href="../../../x86_64-linux-gnu/c++/9/bits/gthr-default.h.html#32" data-ref="_M/__GTHREADS">__GTHREADS</a></u></td></tr>
+<tr><th id="74">74</th><td>      <b>return</b> <a class="ref fn" href="../../../x86_64-linux-gnu/c++/9/bits/gthr-default.h.html#__gthread_active_p" title='__gthread_active_p' data-ref="__gthread_active_p">__gthread_active_p</a>() == <var>0</var>;</td></tr>
+<tr><th id="75">75</th><td><u>#<span data-ppcond="73">else</span></u></td></tr>
+<tr><th id="76">76</th><td>      <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="77">77</th><td><u>#<span data-ppcond="73">endif</span></u></td></tr>
+<tr><th id="78">78</th><td>    }</td></tr>
+<tr><th id="79">79</th><td></td></tr>
+<tr><th id="80">80</th><td>  <b>template</b>&lt;<b>typename</b> _Tp&gt;</td></tr>
+<tr><th id="81">81</th><td>    <b>inline</b> <em>bool</em></td></tr>
+<tr><th id="82">82</th><td>    <dfn class="decl def fn" id="_ZSt19atomic_is_lock_freePKSt10shared_ptrIT_E" title='std::atomic_is_lock_free' data-ref="_ZSt19atomic_is_lock_freePKSt10shared_ptrIT_E">atomic_is_lock_free</dfn>(<em>const</em> <a class="type" href="shared_ptr_base.h.html#std::shared_ptr" title='std::shared_ptr' data-ref="std::shared_ptr">shared_ptr</a>&lt;_Tp&gt;* <dfn class="local col2 decl" id="13162__p" title='__p' data-type='const shared_ptr&lt;_Tp&gt; *' data-ref="13162__p">__p</dfn>)</td></tr>
+<tr><th id="83">83</th><td>    { <b>return</b> <span class="namespace">std::</span>atomic_is_lock_free&lt;_Tp, <a class="ref" href="../ext/concurrence.h.html#__gnu_cxx::__default_lock_policy" title='__gnu_cxx::__default_lock_policy' data-ref="__gnu_cxx::__default_lock_policy">__default_lock_policy</a>&gt;(<a class="local col2 ref" href="#13162__p" title='__p' data-ref="13162__p">__p</a>); }</td></tr>
+<tr><th id="84">84</th><td></td></tr>
+<tr><th id="85">85</th><td>  <i class="doc">/// @}</i></td></tr>
+<tr><th id="86">86</th><td></td></tr>
+<tr><th id="87">87</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="88">88</th><td><i class="doc">   *  <span class="command">@brief</span>  Atomic load for shared_ptr objects.</i></td></tr>
+<tr><th id="89">89</th><td><i class="doc">   *  <span class="command">@param</span>  <span class="arg">__p</span> A non-null pointer to a shared_ptr object.</i></td></tr>
+<tr><th id="90">90</th><td><i class="doc">   *  <span class="command">@return</span><span class="command"> @c</span> <span class="arg">*__p</span></i></td></tr>
+<tr><th id="91">91</th><td><i class="doc">   *</i></td></tr>
+<tr><th id="92">92</th><td><i class="doc">   *  The memory order shall not be<span class="command"> @c</span> <span class="arg">memory_order_release</span> or</i></td></tr>
+<tr><th id="93">93</th><td><i class="doc">   * <span class="command"> @c</span> <span class="arg">memory_order_acq_rel.</span></i></td></tr>
+<tr><th id="94">94</th><td><i class="doc">   *  @{</i></td></tr>
+<tr><th id="95">95</th><td><i class="doc">  */</i></td></tr>
+<tr><th id="96">96</th><td>  <b>template</b>&lt;<b>typename</b> _Tp&gt;</td></tr>
+<tr><th id="97">97</th><td>    <b>inline</b> <a class="type" href="shared_ptr_base.h.html#std::shared_ptr" title='std::shared_ptr' data-ref="std::shared_ptr">shared_ptr</a>&lt;_Tp&gt;</td></tr>
+<tr><th id="98">98</th><td>    <dfn class="decl def fn" id="_ZSt20atomic_load_explicitPKSt10shared_ptrIT_ESt12memory_order" title='std::atomic_load_explicit' data-ref="_ZSt20atomic_load_explicitPKSt10shared_ptrIT_ESt12memory_order">atomic_load_explicit</dfn>(<em>const</em> <a class="type" href="shared_ptr_base.h.html#std::shared_ptr" title='std::shared_ptr' data-ref="std::shared_ptr">shared_ptr</a>&lt;_Tp&gt;* <dfn class="local col3 decl" id="13163__p" title='__p' data-type='const shared_ptr&lt;_Tp&gt; *' data-ref="13163__p">__p</dfn>, <a class="typedef" href="atomic_base.h.html#std::memory_order" title='std::memory_order' data-type='enum memory_order' data-ref="std::memory_order">memory_order</a>)</td></tr>
+<tr><th id="99">99</th><td>    {</td></tr>
+<tr><th id="100">100</th><td>      <a class="type" href="#std::_Sp_locker" title='std::_Sp_locker' data-ref="std::_Sp_locker">_Sp_locker</a> <dfn class="local col4 decl" id="13164__lock" title='__lock' data-type='std::_Sp_locker' data-ref="13164__lock">__lock</dfn>{<a class="local col3 ref" href="#13163__p" title='__p' data-ref="13163__p">__p</a>};</td></tr>
+<tr><th id="101">101</th><td>      <b>return</b> *<a class="local col3 ref" href="#13163__p" title='__p' data-ref="13163__p">__p</a>;</td></tr>
+<tr><th id="102">102</th><td>    }</td></tr>
+<tr><th id="103">103</th><td></td></tr>
+<tr><th id="104">104</th><td>  <b>template</b>&lt;<b>typename</b> _Tp&gt;</td></tr>
+<tr><th id="105">105</th><td>    <b>inline</b> <a class="type" href="shared_ptr_base.h.html#std::shared_ptr" title='std::shared_ptr' data-ref="std::shared_ptr">shared_ptr</a>&lt;_Tp&gt;</td></tr>
+<tr><th id="106">106</th><td>    <dfn class="decl def fn" id="_ZSt11atomic_loadPKSt10shared_ptrIT_E" title='std::atomic_load' data-ref="_ZSt11atomic_loadPKSt10shared_ptrIT_E">atomic_load</dfn>(<em>const</em> <a class="type" href="shared_ptr_base.h.html#std::shared_ptr" title='std::shared_ptr' data-ref="std::shared_ptr">shared_ptr</a>&lt;_Tp&gt;* <dfn class="local col5 decl" id="13165__p" title='__p' data-type='const shared_ptr&lt;_Tp&gt; *' data-ref="13165__p">__p</dfn>)</td></tr>
+<tr><th id="107">107</th><td>    { <b>return</b> <span class="namespace">std::</span>atomic_load_explicit(<a class="local col5 ref" href="#13165__p" title='__p' data-ref="13165__p">__p</a>, <a class="enum" href="atomic_base.h.html#std::memory_order_seq_cst" title='std::memory_order_seq_cst' data-ref="std::memory_order_seq_cst">memory_order_seq_cst</a>); }</td></tr>
+<tr><th id="108">108</th><td></td></tr>
+<tr><th id="109">109</th><td>  <b>template</b>&lt;<b>typename</b> _Tp, _Lock_policy _Lp&gt;</td></tr>
+<tr><th id="110">110</th><td>    <b>inline</b> <a class="type" href="shared_ptr_base.h.html#std::__shared_ptr" title='std::__shared_ptr' data-ref="std::__shared_ptr">__shared_ptr</a>&lt;_Tp, <a class="tu ref" href="#_Lp" title='_Lp' data-ref="_Lp">_Lp</a>&gt;</td></tr>
+<tr><th id="111">111</th><td>    <dfn class="decl def fn" id="_ZSt20atomic_load_explicitPKSt12__shared_ptrIT_XT0_EESt12memory_order" title='std::atomic_load_explicit' data-ref="_ZSt20atomic_load_explicitPKSt12__shared_ptrIT_XT0_EESt12memory_order">atomic_load_explicit</dfn>(<em>const</em> <a class="type" href="shared_ptr_base.h.html#std::__shared_ptr" title='std::__shared_ptr' data-ref="std::__shared_ptr">__shared_ptr</a>&lt;_Tp, <a class="tu ref" href="#_Lp" title='_Lp' data-ref="_Lp">_Lp</a>&gt;* <dfn class="local col6 decl" id="13166__p" title='__p' data-type='const __shared_ptr&lt;_Tp, _Lp&gt; *' data-ref="13166__p">__p</dfn>, <a class="typedef" href="atomic_base.h.html#std::memory_order" title='std::memory_order' data-type='enum memory_order' data-ref="std::memory_order">memory_order</a>)</td></tr>
+<tr><th id="112">112</th><td>    {</td></tr>
+<tr><th id="113">113</th><td>      <a class="type" href="#std::_Sp_locker" title='std::_Sp_locker' data-ref="std::_Sp_locker">_Sp_locker</a> <dfn class="local col7 decl" id="13167__lock" title='__lock' data-type='std::_Sp_locker' data-ref="13167__lock">__lock</dfn>{<a class="local col6 ref" href="#13166__p" title='__p' data-ref="13166__p">__p</a>};</td></tr>
+<tr><th id="114">114</th><td>      <b>return</b> *<a class="local col6 ref" href="#13166__p" title='__p' data-ref="13166__p">__p</a>;</td></tr>
+<tr><th id="115">115</th><td>    }</td></tr>
+<tr><th id="116">116</th><td></td></tr>
+<tr><th id="117">117</th><td>  <b>template</b>&lt;<b>typename</b> _Tp, _Lock_policy _Lp&gt;</td></tr>
+<tr><th id="118">118</th><td>    <b>inline</b> <a class="type" href="shared_ptr_base.h.html#std::__shared_ptr" title='std::__shared_ptr' data-ref="std::__shared_ptr">__shared_ptr</a>&lt;_Tp, <a class="tu ref" href="#_Lp" title='_Lp' data-ref="_Lp">_Lp</a>&gt;</td></tr>
+<tr><th id="119">119</th><td>    <dfn class="decl def fn" id="_ZSt11atomic_loadPKSt12__shared_ptrIT_XT0_EE" title='std::atomic_load' data-ref="_ZSt11atomic_loadPKSt12__shared_ptrIT_XT0_EE">atomic_load</dfn>(<em>const</em> <a class="type" href="shared_ptr_base.h.html#std::__shared_ptr" title='std::__shared_ptr' data-ref="std::__shared_ptr">__shared_ptr</a>&lt;_Tp, <a class="tu ref" href="#_Lp" title='_Lp' data-ref="_Lp">_Lp</a>&gt;* <dfn class="local col8 decl" id="13168__p" title='__p' data-type='const __shared_ptr&lt;_Tp, _Lp&gt; *' data-ref="13168__p">__p</dfn>)</td></tr>
+<tr><th id="120">120</th><td>    { <b>return</b> <span class="namespace">std::</span>atomic_load_explicit(<a class="local col8 ref" href="#13168__p" title='__p' data-ref="13168__p">__p</a>, <a class="enum" href="atomic_base.h.html#std::memory_order_seq_cst" title='std::memory_order_seq_cst' data-ref="std::memory_order_seq_cst">memory_order_seq_cst</a>); }</td></tr>
+<tr><th id="121">121</th><td>  <i class="doc">/// @}</i></td></tr>
+<tr><th id="122">122</th><td></td></tr>
+<tr><th id="123">123</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="124">124</th><td><i class="doc">   *  <span class="command">@brief</span>  Atomic store for shared_ptr objects.</i></td></tr>
+<tr><th id="125">125</th><td><i class="doc">   *  <span class="command">@param</span>  <span class="arg">__p</span> A non-null pointer to a shared_ptr object.</i></td></tr>
+<tr><th id="126">126</th><td><i class="doc">   *  <span class="command">@param</span>  <span class="arg">__r</span> The value to store.</i></td></tr>
+<tr><th id="127">127</th><td><i class="doc">   *</i></td></tr>
+<tr><th id="128">128</th><td><i class="doc">   *  The memory order shall not be<span class="command"> @c</span> <span class="arg">memory_order_acquire</span> or</i></td></tr>
+<tr><th id="129">129</th><td><i class="doc">   * <span class="command"> @c</span> <span class="arg">memory_order_acq_rel.</span></i></td></tr>
+<tr><th id="130">130</th><td><i class="doc">   *  @{</i></td></tr>
+<tr><th id="131">131</th><td><i class="doc">  */</i></td></tr>
+<tr><th id="132">132</th><td>  <b>template</b>&lt;<b>typename</b> _Tp&gt;</td></tr>
+<tr><th id="133">133</th><td>    <b>inline</b> <em>void</em></td></tr>
+<tr><th id="134">134</th><td>    <dfn class="decl def fn" id="_ZSt21atomic_store_explicitPSt10shared_ptrIT_ES1_St12memory_order" title='std::atomic_store_explicit' data-ref="_ZSt21atomic_store_explicitPSt10shared_ptrIT_ES1_St12memory_order">atomic_store_explicit</dfn>(<a class="type" href="shared_ptr_base.h.html#std::shared_ptr" title='std::shared_ptr' data-ref="std::shared_ptr">shared_ptr</a>&lt;_Tp&gt;* <dfn class="local col9 decl" id="13169__p" title='__p' data-type='shared_ptr&lt;_Tp&gt; *' data-ref="13169__p">__p</dfn>, <a class="type" href="shared_ptr_base.h.html#std::shared_ptr" title='std::shared_ptr' data-ref="std::shared_ptr">shared_ptr</a>&lt;_Tp&gt; <dfn class="local col0 decl" id="13170__r" title='__r' data-type='shared_ptr&lt;_Tp&gt;' data-ref="13170__r">__r</dfn>,</td></tr>
+<tr><th id="135">135</th><td>			  <a class="typedef" href="atomic_base.h.html#std::memory_order" title='std::memory_order' data-type='enum memory_order' data-ref="std::memory_order">memory_order</a>)</td></tr>
+<tr><th id="136">136</th><td>    {</td></tr>
+<tr><th id="137">137</th><td>      <a class="type" href="#std::_Sp_locker" title='std::_Sp_locker' data-ref="std::_Sp_locker">_Sp_locker</a> <dfn class="local col1 decl" id="13171__lock" title='__lock' data-type='std::_Sp_locker' data-ref="13171__lock">__lock</dfn>{<a class="local col9 ref" href="#13169__p" title='__p' data-ref="13169__p">__p</a>};</td></tr>
+<tr><th id="138">138</th><td>      <a class="local col9 ref" href="#13169__p" title='__p' data-ref="13169__p">__p</a>-&gt;swap(<a class="local col0 ref" href="#13170__r" title='__r' data-ref="13170__r">__r</a>); <i>// use swap so that **__p not destroyed while lock held</i></td></tr>
+<tr><th id="139">139</th><td>    }</td></tr>
+<tr><th id="140">140</th><td></td></tr>
+<tr><th id="141">141</th><td>  <b>template</b>&lt;<b>typename</b> _Tp&gt;</td></tr>
+<tr><th id="142">142</th><td>    <b>inline</b> <em>void</em></td></tr>
+<tr><th id="143">143</th><td>    <dfn class="decl def fn" id="_ZSt12atomic_storePSt10shared_ptrIT_ES1_" title='std::atomic_store' data-ref="_ZSt12atomic_storePSt10shared_ptrIT_ES1_">atomic_store</dfn>(<a class="type" href="shared_ptr_base.h.html#std::shared_ptr" title='std::shared_ptr' data-ref="std::shared_ptr">shared_ptr</a>&lt;_Tp&gt;* <dfn class="local col2 decl" id="13172__p" title='__p' data-type='shared_ptr&lt;_Tp&gt; *' data-ref="13172__p">__p</dfn>, <a class="type" href="shared_ptr_base.h.html#std::shared_ptr" title='std::shared_ptr' data-ref="std::shared_ptr">shared_ptr</a>&lt;_Tp&gt; <dfn class="local col3 decl" id="13173__r" title='__r' data-type='shared_ptr&lt;_Tp&gt;' data-ref="13173__r">__r</dfn>)</td></tr>
+<tr><th id="144">144</th><td>    { <span class="namespace">std::</span>atomic_store_explicit(<a class="local col2 ref" href="#13172__p" title='__p' data-ref="13172__p">__p</a>, <span class="namespace">std::</span>move(<a class="local col3 ref" href="#13173__r" title='__r' data-ref="13173__r">__r</a>), <a class="enum" href="atomic_base.h.html#std::memory_order_seq_cst" title='std::memory_order_seq_cst' data-ref="std::memory_order_seq_cst">memory_order_seq_cst</a>); }</td></tr>
+<tr><th id="145">145</th><td></td></tr>
+<tr><th id="146">146</th><td>  <b>template</b>&lt;<b>typename</b> _Tp, _Lock_policy _Lp&gt;</td></tr>
+<tr><th id="147">147</th><td>    <b>inline</b> <em>void</em></td></tr>
+<tr><th id="148">148</th><td>    <dfn class="decl def fn" id="_ZSt21atomic_store_explicitPSt12__shared_ptrIT_XT0_EES1_St12memory_order" title='std::atomic_store_explicit' data-ref="_ZSt21atomic_store_explicitPSt12__shared_ptrIT_XT0_EES1_St12memory_order">atomic_store_explicit</dfn>(<a class="type" href="shared_ptr_base.h.html#std::__shared_ptr" title='std::__shared_ptr' data-ref="std::__shared_ptr">__shared_ptr</a>&lt;_Tp, <a class="tu ref" href="#_Lp" title='_Lp' data-ref="_Lp">_Lp</a>&gt;* <dfn class="local col4 decl" id="13174__p" title='__p' data-type='__shared_ptr&lt;_Tp, _Lp&gt; *' data-ref="13174__p">__p</dfn>,</td></tr>
+<tr><th id="149">149</th><td>			  <a class="type" href="shared_ptr_base.h.html#std::__shared_ptr" title='std::__shared_ptr' data-ref="std::__shared_ptr">__shared_ptr</a>&lt;_Tp, <a class="tu ref" href="#_Lp" title='_Lp' data-ref="_Lp">_Lp</a>&gt; <dfn class="local col5 decl" id="13175__r" title='__r' data-type='__shared_ptr&lt;_Tp, _Lp&gt;' data-ref="13175__r">__r</dfn>,</td></tr>
+<tr><th id="150">150</th><td>			  <a class="typedef" href="atomic_base.h.html#std::memory_order" title='std::memory_order' data-type='enum memory_order' data-ref="std::memory_order">memory_order</a>)</td></tr>
+<tr><th id="151">151</th><td>    {</td></tr>
+<tr><th id="152">152</th><td>      <a class="type" href="#std::_Sp_locker" title='std::_Sp_locker' data-ref="std::_Sp_locker">_Sp_locker</a> <dfn class="local col6 decl" id="13176__lock" title='__lock' data-type='std::_Sp_locker' data-ref="13176__lock">__lock</dfn>{<a class="local col4 ref" href="#13174__p" title='__p' data-ref="13174__p">__p</a>};</td></tr>
+<tr><th id="153">153</th><td>      <a class="local col4 ref" href="#13174__p" title='__p' data-ref="13174__p">__p</a>-&gt;swap(<a class="local col5 ref" href="#13175__r" title='__r' data-ref="13175__r">__r</a>); <i>// use swap so that **__p not destroyed while lock held</i></td></tr>
+<tr><th id="154">154</th><td>    }</td></tr>
+<tr><th id="155">155</th><td></td></tr>
+<tr><th id="156">156</th><td>  <b>template</b>&lt;<b>typename</b> _Tp, _Lock_policy _Lp&gt;</td></tr>
+<tr><th id="157">157</th><td>    <b>inline</b> <em>void</em></td></tr>
+<tr><th id="158">158</th><td>    <dfn class="decl def fn" id="_ZSt12atomic_storePSt12__shared_ptrIT_XT0_EES1_" title='std::atomic_store' data-ref="_ZSt12atomic_storePSt12__shared_ptrIT_XT0_EES1_">atomic_store</dfn>(<a class="type" href="shared_ptr_base.h.html#std::__shared_ptr" title='std::__shared_ptr' data-ref="std::__shared_ptr">__shared_ptr</a>&lt;_Tp, <a class="tu ref" href="#_Lp" title='_Lp' data-ref="_Lp">_Lp</a>&gt;* <dfn class="local col7 decl" id="13177__p" title='__p' data-type='__shared_ptr&lt;_Tp, _Lp&gt; *' data-ref="13177__p">__p</dfn>, <a class="type" href="shared_ptr_base.h.html#std::__shared_ptr" title='std::__shared_ptr' data-ref="std::__shared_ptr">__shared_ptr</a>&lt;_Tp, <a class="tu ref" href="#_Lp" title='_Lp' data-ref="_Lp">_Lp</a>&gt; <dfn class="local col8 decl" id="13178__r" title='__r' data-type='__shared_ptr&lt;_Tp, _Lp&gt;' data-ref="13178__r">__r</dfn>)</td></tr>
+<tr><th id="159">159</th><td>    { <span class="namespace">std::</span>atomic_store_explicit(<a class="local col7 ref" href="#13177__p" title='__p' data-ref="13177__p">__p</a>, <span class="namespace">std::</span>move(<a class="local col8 ref" href="#13178__r" title='__r' data-ref="13178__r">__r</a>), <a class="enum" href="atomic_base.h.html#std::memory_order_seq_cst" title='std::memory_order_seq_cst' data-ref="std::memory_order_seq_cst">memory_order_seq_cst</a>); }</td></tr>
+<tr><th id="160">160</th><td>  <i class="doc">/// @}</i></td></tr>
+<tr><th id="161">161</th><td></td></tr>
+<tr><th id="162">162</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="163">163</th><td><i class="doc">   *  <span class="command">@brief</span>  Atomic exchange for shared_ptr objects.</i></td></tr>
+<tr><th id="164">164</th><td><i class="doc">   *  <span class="command">@param</span>  <span class="arg">__p</span> A non-null pointer to a shared_ptr object.</i></td></tr>
+<tr><th id="165">165</th><td><i class="doc">   *  <span class="command">@param</span>  <span class="arg">__r</span> New value to store in<span class="command"> @c</span> <span class="arg">*__p.</span></i></td></tr>
+<tr><th id="166">166</th><td><i class="doc">   *  <span class="command">@return</span> The original value of<span class="command"> @c</span> <span class="arg">*__p</span></i></td></tr>
+<tr><th id="167">167</th><td><i class="doc">   *  @{</i></td></tr>
+<tr><th id="168">168</th><td><i class="doc">  */</i></td></tr>
+<tr><th id="169">169</th><td>  <b>template</b>&lt;<b>typename</b> _Tp&gt;</td></tr>
+<tr><th id="170">170</th><td>    <b>inline</b> <a class="type" href="shared_ptr_base.h.html#std::shared_ptr" title='std::shared_ptr' data-ref="std::shared_ptr">shared_ptr</a>&lt;_Tp&gt;</td></tr>
+<tr><th id="171">171</th><td>    <dfn class="decl def fn" id="_ZSt24atomic_exchange_explicitPSt10shared_ptrIT_ES1_St12memory_order" title='std::atomic_exchange_explicit' data-ref="_ZSt24atomic_exchange_explicitPSt10shared_ptrIT_ES1_St12memory_order">atomic_exchange_explicit</dfn>(<a class="type" href="shared_ptr_base.h.html#std::shared_ptr" title='std::shared_ptr' data-ref="std::shared_ptr">shared_ptr</a>&lt;_Tp&gt;* <dfn class="local col9 decl" id="13179__p" title='__p' data-type='shared_ptr&lt;_Tp&gt; *' data-ref="13179__p">__p</dfn>, <a class="type" href="shared_ptr_base.h.html#std::shared_ptr" title='std::shared_ptr' data-ref="std::shared_ptr">shared_ptr</a>&lt;_Tp&gt; <dfn class="local col0 decl" id="13180__r" title='__r' data-type='shared_ptr&lt;_Tp&gt;' data-ref="13180__r">__r</dfn>,</td></tr>
+<tr><th id="172">172</th><td>			     <a class="typedef" href="atomic_base.h.html#std::memory_order" title='std::memory_order' data-type='enum memory_order' data-ref="std::memory_order">memory_order</a>)</td></tr>
+<tr><th id="173">173</th><td>    {</td></tr>
+<tr><th id="174">174</th><td>      <a class="type" href="#std::_Sp_locker" title='std::_Sp_locker' data-ref="std::_Sp_locker">_Sp_locker</a> <dfn class="local col1 decl" id="13181__lock" title='__lock' data-type='std::_Sp_locker' data-ref="13181__lock">__lock</dfn>{<a class="local col9 ref" href="#13179__p" title='__p' data-ref="13179__p">__p</a>};</td></tr>
+<tr><th id="175">175</th><td>      <a class="local col9 ref" href="#13179__p" title='__p' data-ref="13179__p">__p</a>-&gt;swap(<a class="local col0 ref" href="#13180__r" title='__r' data-ref="13180__r">__r</a>);</td></tr>
+<tr><th id="176">176</th><td>      <b>return</b> <a class="local col0 ref" href="#13180__r" title='__r' data-ref="13180__r">__r</a>;</td></tr>
+<tr><th id="177">177</th><td>    }</td></tr>
+<tr><th id="178">178</th><td></td></tr>
+<tr><th id="179">179</th><td>  <b>template</b>&lt;<b>typename</b> _Tp&gt;</td></tr>
+<tr><th id="180">180</th><td>    <b>inline</b> <a class="type" href="shared_ptr_base.h.html#std::shared_ptr" title='std::shared_ptr' data-ref="std::shared_ptr">shared_ptr</a>&lt;_Tp&gt;</td></tr>
+<tr><th id="181">181</th><td>    <dfn class="decl def fn" id="_ZSt15atomic_exchangePSt10shared_ptrIT_ES1_" title='std::atomic_exchange' data-ref="_ZSt15atomic_exchangePSt10shared_ptrIT_ES1_">atomic_exchange</dfn>(<a class="type" href="shared_ptr_base.h.html#std::shared_ptr" title='std::shared_ptr' data-ref="std::shared_ptr">shared_ptr</a>&lt;_Tp&gt;* <dfn class="local col2 decl" id="13182__p" title='__p' data-type='shared_ptr&lt;_Tp&gt; *' data-ref="13182__p">__p</dfn>, <a class="type" href="shared_ptr_base.h.html#std::shared_ptr" title='std::shared_ptr' data-ref="std::shared_ptr">shared_ptr</a>&lt;_Tp&gt; <dfn class="local col3 decl" id="13183__r" title='__r' data-type='shared_ptr&lt;_Tp&gt;' data-ref="13183__r">__r</dfn>)</td></tr>
+<tr><th id="182">182</th><td>    {</td></tr>
+<tr><th id="183">183</th><td>      <b>return</b> <span class="namespace">std::</span>atomic_exchange_explicit(<a class="local col2 ref" href="#13182__p" title='__p' data-ref="13182__p">__p</a>, <span class="namespace">std::</span>move(<a class="local col3 ref" href="#13183__r" title='__r' data-ref="13183__r">__r</a>),</td></tr>
+<tr><th id="184">184</th><td>					   <a class="enum" href="atomic_base.h.html#std::memory_order_seq_cst" title='std::memory_order_seq_cst' data-ref="std::memory_order_seq_cst">memory_order_seq_cst</a>);</td></tr>
+<tr><th id="185">185</th><td>    }</td></tr>
+<tr><th id="186">186</th><td></td></tr>
+<tr><th id="187">187</th><td>  <b>template</b>&lt;<b>typename</b> _Tp, _Lock_policy _Lp&gt;</td></tr>
+<tr><th id="188">188</th><td>    <b>inline</b> <a class="type" href="shared_ptr_base.h.html#std::__shared_ptr" title='std::__shared_ptr' data-ref="std::__shared_ptr">__shared_ptr</a>&lt;_Tp, <a class="tu ref" href="#_Lp" title='_Lp' data-ref="_Lp">_Lp</a>&gt;</td></tr>
+<tr><th id="189">189</th><td>    <dfn class="decl def fn" id="_ZSt24atomic_exchange_explicitPSt12__shared_ptrIT_XT0_EES1_St12memory_order" title='std::atomic_exchange_explicit' data-ref="_ZSt24atomic_exchange_explicitPSt12__shared_ptrIT_XT0_EES1_St12memory_order">atomic_exchange_explicit</dfn>(<a class="type" href="shared_ptr_base.h.html#std::__shared_ptr" title='std::__shared_ptr' data-ref="std::__shared_ptr">__shared_ptr</a>&lt;_Tp, <a class="tu ref" href="#_Lp" title='_Lp' data-ref="_Lp">_Lp</a>&gt;* <dfn class="local col4 decl" id="13184__p" title='__p' data-type='__shared_ptr&lt;_Tp, _Lp&gt; *' data-ref="13184__p">__p</dfn>,</td></tr>
+<tr><th id="190">190</th><td>			     <a class="type" href="shared_ptr_base.h.html#std::__shared_ptr" title='std::__shared_ptr' data-ref="std::__shared_ptr">__shared_ptr</a>&lt;_Tp, <a class="tu ref" href="#_Lp" title='_Lp' data-ref="_Lp">_Lp</a>&gt; <dfn class="local col5 decl" id="13185__r" title='__r' data-type='__shared_ptr&lt;_Tp, _Lp&gt;' data-ref="13185__r">__r</dfn>,</td></tr>
+<tr><th id="191">191</th><td>			     <a class="typedef" href="atomic_base.h.html#std::memory_order" title='std::memory_order' data-type='enum memory_order' data-ref="std::memory_order">memory_order</a>)</td></tr>
+<tr><th id="192">192</th><td>    {</td></tr>
+<tr><th id="193">193</th><td>      <a class="type" href="#std::_Sp_locker" title='std::_Sp_locker' data-ref="std::_Sp_locker">_Sp_locker</a> <dfn class="local col6 decl" id="13186__lock" title='__lock' data-type='std::_Sp_locker' data-ref="13186__lock">__lock</dfn>{<a class="local col4 ref" href="#13184__p" title='__p' data-ref="13184__p">__p</a>};</td></tr>
+<tr><th id="194">194</th><td>      <a class="local col4 ref" href="#13184__p" title='__p' data-ref="13184__p">__p</a>-&gt;swap(<a class="local col5 ref" href="#13185__r" title='__r' data-ref="13185__r">__r</a>);</td></tr>
+<tr><th id="195">195</th><td>      <b>return</b> <a class="local col5 ref" href="#13185__r" title='__r' data-ref="13185__r">__r</a>;</td></tr>
+<tr><th id="196">196</th><td>    }</td></tr>
+<tr><th id="197">197</th><td></td></tr>
+<tr><th id="198">198</th><td>  <b>template</b>&lt;<b>typename</b> _Tp, _Lock_policy _Lp&gt;</td></tr>
+<tr><th id="199">199</th><td>    <b>inline</b> <a class="type" href="shared_ptr_base.h.html#std::__shared_ptr" title='std::__shared_ptr' data-ref="std::__shared_ptr">__shared_ptr</a>&lt;_Tp, <a class="tu ref" href="#_Lp" title='_Lp' data-ref="_Lp">_Lp</a>&gt;</td></tr>
+<tr><th id="200">200</th><td>    <dfn class="decl def fn" id="_ZSt15atomic_exchangePSt12__shared_ptrIT_XT0_EES1_" title='std::atomic_exchange' data-ref="_ZSt15atomic_exchangePSt12__shared_ptrIT_XT0_EES1_">atomic_exchange</dfn>(<a class="type" href="shared_ptr_base.h.html#std::__shared_ptr" title='std::__shared_ptr' data-ref="std::__shared_ptr">__shared_ptr</a>&lt;_Tp, <a class="tu ref" href="#_Lp" title='_Lp' data-ref="_Lp">_Lp</a>&gt;* <dfn class="local col7 decl" id="13187__p" title='__p' data-type='__shared_ptr&lt;_Tp, _Lp&gt; *' data-ref="13187__p">__p</dfn>, <a class="type" href="shared_ptr_base.h.html#std::__shared_ptr" title='std::__shared_ptr' data-ref="std::__shared_ptr">__shared_ptr</a>&lt;_Tp, <a class="tu ref" href="#_Lp" title='_Lp' data-ref="_Lp">_Lp</a>&gt; <dfn class="local col8 decl" id="13188__r" title='__r' data-type='__shared_ptr&lt;_Tp, _Lp&gt;' data-ref="13188__r">__r</dfn>)</td></tr>
+<tr><th id="201">201</th><td>    {</td></tr>
+<tr><th id="202">202</th><td>      <b>return</b> <span class="namespace">std::</span>atomic_exchange_explicit(<a class="local col7 ref" href="#13187__p" title='__p' data-ref="13187__p">__p</a>, <span class="namespace">std::</span>move(<a class="local col8 ref" href="#13188__r" title='__r' data-ref="13188__r">__r</a>),</td></tr>
+<tr><th id="203">203</th><td>					   <a class="enum" href="atomic_base.h.html#std::memory_order_seq_cst" title='std::memory_order_seq_cst' data-ref="std::memory_order_seq_cst">memory_order_seq_cst</a>);</td></tr>
+<tr><th id="204">204</th><td>    }</td></tr>
+<tr><th id="205">205</th><td>  <i class="doc">/// @}</i></td></tr>
+<tr><th id="206">206</th><td></td></tr>
+<tr><th id="207">207</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="208">208</th><td><i class="doc">   *  <span class="command">@brief</span>  Atomic compare-and-swap for shared_ptr objects.</i></td></tr>
+<tr><th id="209">209</th><td><i class="doc">   *  <span class="command">@param</span>  <span class="arg">__p</span> A non-null pointer to a shared_ptr object.</i></td></tr>
+<tr><th id="210">210</th><td><i class="doc">   *  <span class="command">@param</span>  <span class="arg">__v</span> A non-null pointer to a shared_ptr object.</i></td></tr>
+<tr><th id="211">211</th><td><i class="doc">   *  <span class="command">@param</span>  <span class="arg">__w</span> A non-null pointer to a shared_ptr object.</i></td></tr>
+<tr><th id="212">212</th><td><i class="doc">   *  <span class="command">@return</span> True if<span class="command"> @c</span> <span class="arg">*__p</span> was equivalent to<span class="command"> @c</span> <span class="arg">*__v,</span> false otherwise.</i></td></tr>
+<tr><th id="213">213</th><td><i class="doc">   *</i></td></tr>
+<tr><th id="214">214</th><td><i class="doc">   *  The memory order for failure shall not be<span class="command"> @c</span> <span class="arg">memory_order_release</span> or</i></td></tr>
+<tr><th id="215">215</th><td><i class="doc">   * <span class="command"> @c</span> <span class="arg">memory_order_acq_rel,</span> or stronger than the memory order for success.</i></td></tr>
+<tr><th id="216">216</th><td><i class="doc">   *  @{</i></td></tr>
+<tr><th id="217">217</th><td><i class="doc">  */</i></td></tr>
+<tr><th id="218">218</th><td>  <b>template</b>&lt;<b>typename</b> _Tp&gt;</td></tr>
+<tr><th id="219">219</th><td>    <em>bool</em></td></tr>
+<tr><th id="220">220</th><td>    <dfn class="decl def fn" id="_ZSt39atomic_compare_exchange_strong_explicitPSt10shared_ptrIT_ES2_S1_St12memory_orderS3_" title='std::atomic_compare_exchange_strong_explicit' data-ref="_ZSt39atomic_compare_exchange_strong_explicitPSt10shared_ptrIT_ES2_S1_St12memory_orderS3_">atomic_compare_exchange_strong_explicit</dfn>(<a class="type" href="shared_ptr_base.h.html#std::shared_ptr" title='std::shared_ptr' data-ref="std::shared_ptr">shared_ptr</a>&lt;_Tp&gt;* <dfn class="local col9 decl" id="13189__p" title='__p' data-type='shared_ptr&lt;_Tp&gt; *' data-ref="13189__p">__p</dfn>,</td></tr>
+<tr><th id="221">221</th><td>					    <a class="type" href="shared_ptr_base.h.html#std::shared_ptr" title='std::shared_ptr' data-ref="std::shared_ptr">shared_ptr</a>&lt;_Tp&gt;* <dfn class="local col0 decl" id="13190__v" title='__v' data-type='shared_ptr&lt;_Tp&gt; *' data-ref="13190__v">__v</dfn>,</td></tr>
+<tr><th id="222">222</th><td>					    <a class="type" href="shared_ptr_base.h.html#std::shared_ptr" title='std::shared_ptr' data-ref="std::shared_ptr">shared_ptr</a>&lt;_Tp&gt; <dfn class="local col1 decl" id="13191__w" title='__w' data-type='shared_ptr&lt;_Tp&gt;' data-ref="13191__w">__w</dfn>,</td></tr>
+<tr><th id="223">223</th><td>					    <a class="typedef" href="atomic_base.h.html#std::memory_order" title='std::memory_order' data-type='enum memory_order' data-ref="std::memory_order">memory_order</a>,</td></tr>
+<tr><th id="224">224</th><td>					    <a class="typedef" href="atomic_base.h.html#std::memory_order" title='std::memory_order' data-type='enum memory_order' data-ref="std::memory_order">memory_order</a>)</td></tr>
+<tr><th id="225">225</th><td>    {</td></tr>
+<tr><th id="226">226</th><td>      <a class="type" href="shared_ptr_base.h.html#std::shared_ptr" title='std::shared_ptr' data-ref="std::shared_ptr">shared_ptr</a>&lt;_Tp&gt; <dfn class="local col2 decl" id="13192__x" title='__x' data-type='shared_ptr&lt;_Tp&gt;' data-ref="13192__x">__x</dfn>; <i>// goes out of scope after __lock</i></td></tr>
+<tr><th id="227">227</th><td>      <a class="type" href="#std::_Sp_locker" title='std::_Sp_locker' data-ref="std::_Sp_locker">_Sp_locker</a> <dfn class="local col3 decl" id="13193__lock" title='__lock' data-type='std::_Sp_locker' data-ref="13193__lock">__lock</dfn>{<a class="local col9 ref" href="#13189__p" title='__p' data-ref="13189__p">__p</a>, <a class="local col0 ref" href="#13190__v" title='__v' data-ref="13190__v">__v</a>};</td></tr>
+<tr><th id="228">228</th><td>      <a class="type" href="shared_ptr_base.h.html#std::owner_less" title='std::owner_less' data-ref="std::owner_less">owner_less</a>&lt;<a class="type" href="shared_ptr_base.h.html#std::shared_ptr" title='std::shared_ptr' data-ref="std::shared_ptr">shared_ptr</a>&lt;_Tp&gt;&gt; <dfn class="local col4 decl" id="13194__less" title='__less' data-type='owner_less&lt;shared_ptr&lt;_Tp&gt;&gt;' data-ref="13194__less">__less</dfn>;</td></tr>
+<tr><th id="229">229</th><td>      <b>if</b> (*<a class="local col9 ref" href="#13189__p" title='__p' data-ref="13189__p">__p</a> == *<a class="local col0 ref" href="#13190__v" title='__v' data-ref="13190__v">__v</a> &amp;&amp; !<a class="local col4 ref" href="#13194__less" title='__less' data-ref="13194__less">__less</a>(*<a class="local col9 ref" href="#13189__p" title='__p' data-ref="13189__p">__p</a>, *<a class="local col0 ref" href="#13190__v" title='__v' data-ref="13190__v">__v</a>) &amp;&amp; !<a class="local col4 ref" href="#13194__less" title='__less' data-ref="13194__less">__less</a>(*<a class="local col0 ref" href="#13190__v" title='__v' data-ref="13190__v">__v</a>, *<a class="local col9 ref" href="#13189__p" title='__p' data-ref="13189__p">__p</a>))</td></tr>
+<tr><th id="230">230</th><td>	{</td></tr>
+<tr><th id="231">231</th><td>	  <a class="local col2 ref" href="#13192__x" title='__x' data-ref="13192__x">__x</a> = <span class="namespace">std::</span>move(*<a class="local col9 ref" href="#13189__p" title='__p' data-ref="13189__p">__p</a>);</td></tr>
+<tr><th id="232">232</th><td>	  *<a class="local col9 ref" href="#13189__p" title='__p' data-ref="13189__p">__p</a> = <span class="namespace">std::</span>move(<a class="local col1 ref" href="#13191__w" title='__w' data-ref="13191__w">__w</a>);</td></tr>
+<tr><th id="233">233</th><td>	  <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="234">234</th><td>	}</td></tr>
+<tr><th id="235">235</th><td>      <a class="local col2 ref" href="#13192__x" title='__x' data-ref="13192__x">__x</a> = <span class="namespace">std::</span>move(*<a class="local col0 ref" href="#13190__v" title='__v' data-ref="13190__v">__v</a>);</td></tr>
+<tr><th id="236">236</th><td>      *<a class="local col0 ref" href="#13190__v" title='__v' data-ref="13190__v">__v</a> = *<a class="local col9 ref" href="#13189__p" title='__p' data-ref="13189__p">__p</a>;</td></tr>
+<tr><th id="237">237</th><td>      <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="238">238</th><td>    }</td></tr>
+<tr><th id="239">239</th><td></td></tr>
+<tr><th id="240">240</th><td>  <b>template</b>&lt;<b>typename</b> _Tp&gt;</td></tr>
+<tr><th id="241">241</th><td>    <b>inline</b> <em>bool</em></td></tr>
+<tr><th id="242">242</th><td>    <dfn class="decl def fn" id="_ZSt30atomic_compare_exchange_strongPSt10shared_ptrIT_ES2_S1_" title='std::atomic_compare_exchange_strong' data-ref="_ZSt30atomic_compare_exchange_strongPSt10shared_ptrIT_ES2_S1_">atomic_compare_exchange_strong</dfn>(<a class="type" href="shared_ptr_base.h.html#std::shared_ptr" title='std::shared_ptr' data-ref="std::shared_ptr">shared_ptr</a>&lt;_Tp&gt;* <dfn class="local col5 decl" id="13195__p" title='__p' data-type='shared_ptr&lt;_Tp&gt; *' data-ref="13195__p">__p</dfn>, <a class="type" href="shared_ptr_base.h.html#std::shared_ptr" title='std::shared_ptr' data-ref="std::shared_ptr">shared_ptr</a>&lt;_Tp&gt;* <dfn class="local col6 decl" id="13196__v" title='__v' data-type='shared_ptr&lt;_Tp&gt; *' data-ref="13196__v">__v</dfn>,</td></tr>
+<tr><th id="243">243</th><td>				 <a class="type" href="shared_ptr_base.h.html#std::shared_ptr" title='std::shared_ptr' data-ref="std::shared_ptr">shared_ptr</a>&lt;_Tp&gt; <dfn class="local col7 decl" id="13197__w" title='__w' data-type='shared_ptr&lt;_Tp&gt;' data-ref="13197__w">__w</dfn>)</td></tr>
+<tr><th id="244">244</th><td>    {</td></tr>
+<tr><th id="245">245</th><td>      <b>return</b> <span class="namespace">std::</span>atomic_compare_exchange_strong_explicit(<a class="local col5 ref" href="#13195__p" title='__p' data-ref="13195__p">__p</a>, <a class="local col6 ref" href="#13196__v" title='__v' data-ref="13196__v">__v</a>,</td></tr>
+<tr><th id="246">246</th><td>	  <span class="namespace">std::</span>move(<a class="local col7 ref" href="#13197__w" title='__w' data-ref="13197__w">__w</a>), <a class="enum" href="atomic_base.h.html#std::memory_order_seq_cst" title='std::memory_order_seq_cst' data-ref="std::memory_order_seq_cst">memory_order_seq_cst</a>, <a class="enum" href="atomic_base.h.html#std::memory_order_seq_cst" title='std::memory_order_seq_cst' data-ref="std::memory_order_seq_cst">memory_order_seq_cst</a>);</td></tr>
+<tr><th id="247">247</th><td>    }</td></tr>
+<tr><th id="248">248</th><td></td></tr>
+<tr><th id="249">249</th><td>  <b>template</b>&lt;<b>typename</b> _Tp&gt;</td></tr>
+<tr><th id="250">250</th><td>    <b>inline</b> <em>bool</em></td></tr>
+<tr><th id="251">251</th><td>    <dfn class="decl def fn" id="_ZSt37atomic_compare_exchange_weak_explicitPSt10shared_ptrIT_ES2_S1_St12memory_orderS3_" title='std::atomic_compare_exchange_weak_explicit' data-ref="_ZSt37atomic_compare_exchange_weak_explicitPSt10shared_ptrIT_ES2_S1_St12memory_orderS3_">atomic_compare_exchange_weak_explicit</dfn>(<a class="type" href="shared_ptr_base.h.html#std::shared_ptr" title='std::shared_ptr' data-ref="std::shared_ptr">shared_ptr</a>&lt;_Tp&gt;* <dfn class="local col8 decl" id="13198__p" title='__p' data-type='shared_ptr&lt;_Tp&gt; *' data-ref="13198__p">__p</dfn>,</td></tr>
+<tr><th id="252">252</th><td>					  <a class="type" href="shared_ptr_base.h.html#std::shared_ptr" title='std::shared_ptr' data-ref="std::shared_ptr">shared_ptr</a>&lt;_Tp&gt;* <dfn class="local col9 decl" id="13199__v" title='__v' data-type='shared_ptr&lt;_Tp&gt; *' data-ref="13199__v">__v</dfn>,</td></tr>
+<tr><th id="253">253</th><td>					  <a class="type" href="shared_ptr_base.h.html#std::shared_ptr" title='std::shared_ptr' data-ref="std::shared_ptr">shared_ptr</a>&lt;_Tp&gt; <dfn class="local col0 decl" id="13200__w" title='__w' data-type='shared_ptr&lt;_Tp&gt;' data-ref="13200__w">__w</dfn>,</td></tr>
+<tr><th id="254">254</th><td>					  <a class="typedef" href="atomic_base.h.html#std::memory_order" title='std::memory_order' data-type='enum memory_order' data-ref="std::memory_order">memory_order</a> <dfn class="local col1 decl" id="13201__success" title='__success' data-type='std::memory_order' data-ref="13201__success">__success</dfn>,</td></tr>
+<tr><th id="255">255</th><td>					  <a class="typedef" href="atomic_base.h.html#std::memory_order" title='std::memory_order' data-type='enum memory_order' data-ref="std::memory_order">memory_order</a> <dfn class="local col2 decl" id="13202__failure" title='__failure' data-type='std::memory_order' data-ref="13202__failure">__failure</dfn>)</td></tr>
+<tr><th id="256">256</th><td>    {</td></tr>
+<tr><th id="257">257</th><td>      <b>return</b> <span class="namespace">std::</span>atomic_compare_exchange_strong_explicit(<a class="local col8 ref" href="#13198__p" title='__p' data-ref="13198__p">__p</a>, <a class="local col9 ref" href="#13199__v" title='__v' data-ref="13199__v">__v</a>,</td></tr>
+<tr><th id="258">258</th><td>	  <span class="namespace">std::</span>move(<a class="local col0 ref" href="#13200__w" title='__w' data-ref="13200__w">__w</a>), <a class="local col1 ref" href="#13201__success" title='__success' data-ref="13201__success">__success</a>, <a class="local col2 ref" href="#13202__failure" title='__failure' data-ref="13202__failure">__failure</a>);</td></tr>
+<tr><th id="259">259</th><td>    }</td></tr>
+<tr><th id="260">260</th><td></td></tr>
+<tr><th id="261">261</th><td>  <b>template</b>&lt;<b>typename</b> _Tp&gt;</td></tr>
+<tr><th id="262">262</th><td>    <b>inline</b> <em>bool</em></td></tr>
+<tr><th id="263">263</th><td>    <dfn class="decl def fn" id="_ZSt28atomic_compare_exchange_weakPSt10shared_ptrIT_ES2_S1_" title='std::atomic_compare_exchange_weak' data-ref="_ZSt28atomic_compare_exchange_weakPSt10shared_ptrIT_ES2_S1_">atomic_compare_exchange_weak</dfn>(<a class="type" href="shared_ptr_base.h.html#std::shared_ptr" title='std::shared_ptr' data-ref="std::shared_ptr">shared_ptr</a>&lt;_Tp&gt;* <dfn class="local col3 decl" id="13203__p" title='__p' data-type='shared_ptr&lt;_Tp&gt; *' data-ref="13203__p">__p</dfn>, <a class="type" href="shared_ptr_base.h.html#std::shared_ptr" title='std::shared_ptr' data-ref="std::shared_ptr">shared_ptr</a>&lt;_Tp&gt;* <dfn class="local col4 decl" id="13204__v" title='__v' data-type='shared_ptr&lt;_Tp&gt; *' data-ref="13204__v">__v</dfn>,</td></tr>
+<tr><th id="264">264</th><td>				 <a class="type" href="shared_ptr_base.h.html#std::shared_ptr" title='std::shared_ptr' data-ref="std::shared_ptr">shared_ptr</a>&lt;_Tp&gt; <dfn class="local col5 decl" id="13205__w" title='__w' data-type='shared_ptr&lt;_Tp&gt;' data-ref="13205__w">__w</dfn>)</td></tr>
+<tr><th id="265">265</th><td>    {</td></tr>
+<tr><th id="266">266</th><td>      <b>return</b> <span class="namespace">std::</span>atomic_compare_exchange_weak_explicit(<a class="local col3 ref" href="#13203__p" title='__p' data-ref="13203__p">__p</a>, <a class="local col4 ref" href="#13204__v" title='__v' data-ref="13204__v">__v</a>,</td></tr>
+<tr><th id="267">267</th><td>	  <span class="namespace">std::</span>move(<a class="local col5 ref" href="#13205__w" title='__w' data-ref="13205__w">__w</a>), <a class="enum" href="atomic_base.h.html#std::memory_order_seq_cst" title='std::memory_order_seq_cst' data-ref="std::memory_order_seq_cst">memory_order_seq_cst</a>, <a class="enum" href="atomic_base.h.html#std::memory_order_seq_cst" title='std::memory_order_seq_cst' data-ref="std::memory_order_seq_cst">memory_order_seq_cst</a>);</td></tr>
+<tr><th id="268">268</th><td>    }</td></tr>
+<tr><th id="269">269</th><td></td></tr>
+<tr><th id="270">270</th><td>  <b>template</b>&lt;<b>typename</b> _Tp, _Lock_policy _Lp&gt;</td></tr>
+<tr><th id="271">271</th><td>    <em>bool</em></td></tr>
+<tr><th id="272">272</th><td>    <dfn class="decl def fn" id="_ZSt39atomic_compare_exchange_strong_explicitPSt12__shared_ptrIT_XT0_EES2_S1_St12memory_orderS3_" title='std::atomic_compare_exchange_strong_explicit' data-ref="_ZSt39atomic_compare_exchange_strong_explicitPSt12__shared_ptrIT_XT0_EES2_S1_St12memory_orderS3_">atomic_compare_exchange_strong_explicit</dfn>(<a class="type" href="shared_ptr_base.h.html#std::__shared_ptr" title='std::__shared_ptr' data-ref="std::__shared_ptr">__shared_ptr</a>&lt;_Tp, <a class="tu ref" href="#_Lp" title='_Lp' data-ref="_Lp">_Lp</a>&gt;* <dfn class="local col6 decl" id="13206__p" title='__p' data-type='__shared_ptr&lt;_Tp, _Lp&gt; *' data-ref="13206__p">__p</dfn>,</td></tr>
+<tr><th id="273">273</th><td>					    <a class="type" href="shared_ptr_base.h.html#std::__shared_ptr" title='std::__shared_ptr' data-ref="std::__shared_ptr">__shared_ptr</a>&lt;_Tp, <a class="tu ref" href="#_Lp" title='_Lp' data-ref="_Lp">_Lp</a>&gt;* <dfn class="local col7 decl" id="13207__v" title='__v' data-type='__shared_ptr&lt;_Tp, _Lp&gt; *' data-ref="13207__v">__v</dfn>,</td></tr>
+<tr><th id="274">274</th><td>					    <a class="type" href="shared_ptr_base.h.html#std::__shared_ptr" title='std::__shared_ptr' data-ref="std::__shared_ptr">__shared_ptr</a>&lt;_Tp, <a class="tu ref" href="#_Lp" title='_Lp' data-ref="_Lp">_Lp</a>&gt; <dfn class="local col8 decl" id="13208__w" title='__w' data-type='__shared_ptr&lt;_Tp, _Lp&gt;' data-ref="13208__w">__w</dfn>,</td></tr>
+<tr><th id="275">275</th><td>					    <a class="typedef" href="atomic_base.h.html#std::memory_order" title='std::memory_order' data-type='enum memory_order' data-ref="std::memory_order">memory_order</a>,</td></tr>
+<tr><th id="276">276</th><td>					    <a class="typedef" href="atomic_base.h.html#std::memory_order" title='std::memory_order' data-type='enum memory_order' data-ref="std::memory_order">memory_order</a>)</td></tr>
+<tr><th id="277">277</th><td>    {</td></tr>
+<tr><th id="278">278</th><td>      <a class="type" href="shared_ptr_base.h.html#std::__shared_ptr" title='std::__shared_ptr' data-ref="std::__shared_ptr">__shared_ptr</a>&lt;_Tp, <a class="tu ref" href="#_Lp" title='_Lp' data-ref="_Lp">_Lp</a>&gt; <dfn class="local col9 decl" id="13209__x" title='__x' data-type='__shared_ptr&lt;_Tp, _Lp&gt;' data-ref="13209__x">__x</dfn>; <i>// goes out of scope after __lock</i></td></tr>
+<tr><th id="279">279</th><td>      <a class="type" href="#std::_Sp_locker" title='std::_Sp_locker' data-ref="std::_Sp_locker">_Sp_locker</a> <dfn class="local col0 decl" id="13210__lock" title='__lock' data-type='std::_Sp_locker' data-ref="13210__lock">__lock</dfn>{<a class="local col6 ref" href="#13206__p" title='__p' data-ref="13206__p">__p</a>, <a class="local col7 ref" href="#13207__v" title='__v' data-ref="13207__v">__v</a>};</td></tr>
+<tr><th id="280">280</th><td>      <a class="type" href="shared_ptr_base.h.html#std::owner_less" title='std::owner_less' data-ref="std::owner_less">owner_less</a>&lt;<a class="type" href="shared_ptr_base.h.html#std::__shared_ptr" title='std::__shared_ptr' data-ref="std::__shared_ptr">__shared_ptr</a>&lt;_Tp, <a class="tu ref" href="#_Lp" title='_Lp' data-ref="_Lp">_Lp</a>&gt;&gt; <dfn class="local col1 decl" id="13211__less" title='__less' data-type='owner_less&lt;__shared_ptr&lt;_Tp, _Lp&gt;&gt;' data-ref="13211__less">__less</dfn>;</td></tr>
+<tr><th id="281">281</th><td>      <b>if</b> (*<a class="local col6 ref" href="#13206__p" title='__p' data-ref="13206__p">__p</a> == *<a class="local col7 ref" href="#13207__v" title='__v' data-ref="13207__v">__v</a> &amp;&amp; !<a class="local col1 ref" href="#13211__less" title='__less' data-ref="13211__less">__less</a>(*<a class="local col6 ref" href="#13206__p" title='__p' data-ref="13206__p">__p</a>, *<a class="local col7 ref" href="#13207__v" title='__v' data-ref="13207__v">__v</a>) &amp;&amp; !<a class="local col1 ref" href="#13211__less" title='__less' data-ref="13211__less">__less</a>(*<a class="local col7 ref" href="#13207__v" title='__v' data-ref="13207__v">__v</a>, *<a class="local col6 ref" href="#13206__p" title='__p' data-ref="13206__p">__p</a>))</td></tr>
+<tr><th id="282">282</th><td>	{</td></tr>
+<tr><th id="283">283</th><td>	  <a class="local col9 ref" href="#13209__x" title='__x' data-ref="13209__x">__x</a> = <span class="namespace">std::</span>move(*<a class="local col6 ref" href="#13206__p" title='__p' data-ref="13206__p">__p</a>);</td></tr>
+<tr><th id="284">284</th><td>	  *<a class="local col6 ref" href="#13206__p" title='__p' data-ref="13206__p">__p</a> = <span class="namespace">std::</span>move(<a class="local col8 ref" href="#13208__w" title='__w' data-ref="13208__w">__w</a>);</td></tr>
+<tr><th id="285">285</th><td>	  <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="286">286</th><td>	}</td></tr>
+<tr><th id="287">287</th><td>      <a class="local col9 ref" href="#13209__x" title='__x' data-ref="13209__x">__x</a> = <span class="namespace">std::</span>move(*<a class="local col7 ref" href="#13207__v" title='__v' data-ref="13207__v">__v</a>);</td></tr>
+<tr><th id="288">288</th><td>      *<a class="local col7 ref" href="#13207__v" title='__v' data-ref="13207__v">__v</a> = *<a class="local col6 ref" href="#13206__p" title='__p' data-ref="13206__p">__p</a>;</td></tr>
+<tr><th id="289">289</th><td>      <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="290">290</th><td>    }</td></tr>
+<tr><th id="291">291</th><td></td></tr>
+<tr><th id="292">292</th><td>  <b>template</b>&lt;<b>typename</b> _Tp, _Lock_policy _Lp&gt;</td></tr>
+<tr><th id="293">293</th><td>    <b>inline</b> <em>bool</em></td></tr>
+<tr><th id="294">294</th><td>    <dfn class="decl def fn" id="_ZSt30atomic_compare_exchange_strongPSt12__shared_ptrIT_XT0_EES2_S1_" title='std::atomic_compare_exchange_strong' data-ref="_ZSt30atomic_compare_exchange_strongPSt12__shared_ptrIT_XT0_EES2_S1_">atomic_compare_exchange_strong</dfn>(<a class="type" href="shared_ptr_base.h.html#std::__shared_ptr" title='std::__shared_ptr' data-ref="std::__shared_ptr">__shared_ptr</a>&lt;_Tp, <a class="tu ref" href="#_Lp" title='_Lp' data-ref="_Lp">_Lp</a>&gt;* <dfn class="local col2 decl" id="13212__p" title='__p' data-type='__shared_ptr&lt;_Tp, _Lp&gt; *' data-ref="13212__p">__p</dfn>,</td></tr>
+<tr><th id="295">295</th><td>				   <a class="type" href="shared_ptr_base.h.html#std::__shared_ptr" title='std::__shared_ptr' data-ref="std::__shared_ptr">__shared_ptr</a>&lt;_Tp, <a class="tu ref" href="#_Lp" title='_Lp' data-ref="_Lp">_Lp</a>&gt;* <dfn class="local col3 decl" id="13213__v" title='__v' data-type='__shared_ptr&lt;_Tp, _Lp&gt; *' data-ref="13213__v">__v</dfn>,</td></tr>
+<tr><th id="296">296</th><td>				   <a class="type" href="shared_ptr_base.h.html#std::__shared_ptr" title='std::__shared_ptr' data-ref="std::__shared_ptr">__shared_ptr</a>&lt;_Tp, <a class="tu ref" href="#_Lp" title='_Lp' data-ref="_Lp">_Lp</a>&gt; <dfn class="local col4 decl" id="13214__w" title='__w' data-type='__shared_ptr&lt;_Tp, _Lp&gt;' data-ref="13214__w">__w</dfn>)</td></tr>
+<tr><th id="297">297</th><td>    {</td></tr>
+<tr><th id="298">298</th><td>      <b>return</b> <span class="namespace">std::</span>atomic_compare_exchange_strong_explicit(<a class="local col2 ref" href="#13212__p" title='__p' data-ref="13212__p">__p</a>, <a class="local col3 ref" href="#13213__v" title='__v' data-ref="13213__v">__v</a>,</td></tr>
+<tr><th id="299">299</th><td>	  <span class="namespace">std::</span>move(<a class="local col4 ref" href="#13214__w" title='__w' data-ref="13214__w">__w</a>), <a class="enum" href="atomic_base.h.html#std::memory_order_seq_cst" title='std::memory_order_seq_cst' data-ref="std::memory_order_seq_cst">memory_order_seq_cst</a>, <a class="enum" href="atomic_base.h.html#std::memory_order_seq_cst" title='std::memory_order_seq_cst' data-ref="std::memory_order_seq_cst">memory_order_seq_cst</a>);</td></tr>
+<tr><th id="300">300</th><td>    }</td></tr>
+<tr><th id="301">301</th><td></td></tr>
+<tr><th id="302">302</th><td>  <b>template</b>&lt;<b>typename</b> _Tp, _Lock_policy _Lp&gt;</td></tr>
+<tr><th id="303">303</th><td>    <b>inline</b> <em>bool</em></td></tr>
+<tr><th id="304">304</th><td>    <dfn class="decl def fn" id="_ZSt37atomic_compare_exchange_weak_explicitPSt12__shared_ptrIT_XT0_EES2_S1_St12memory_orderS3_" title='std::atomic_compare_exchange_weak_explicit' data-ref="_ZSt37atomic_compare_exchange_weak_explicitPSt12__shared_ptrIT_XT0_EES2_S1_St12memory_orderS3_">atomic_compare_exchange_weak_explicit</dfn>(<a class="type" href="shared_ptr_base.h.html#std::__shared_ptr" title='std::__shared_ptr' data-ref="std::__shared_ptr">__shared_ptr</a>&lt;_Tp, <a class="tu ref" href="#_Lp" title='_Lp' data-ref="_Lp">_Lp</a>&gt;* <dfn class="local col5 decl" id="13215__p" title='__p' data-type='__shared_ptr&lt;_Tp, _Lp&gt; *' data-ref="13215__p">__p</dfn>,</td></tr>
+<tr><th id="305">305</th><td>					  <a class="type" href="shared_ptr_base.h.html#std::__shared_ptr" title='std::__shared_ptr' data-ref="std::__shared_ptr">__shared_ptr</a>&lt;_Tp, <a class="tu ref" href="#_Lp" title='_Lp' data-ref="_Lp">_Lp</a>&gt;* <dfn class="local col6 decl" id="13216__v" title='__v' data-type='__shared_ptr&lt;_Tp, _Lp&gt; *' data-ref="13216__v">__v</dfn>,</td></tr>
+<tr><th id="306">306</th><td>					  <a class="type" href="shared_ptr_base.h.html#std::__shared_ptr" title='std::__shared_ptr' data-ref="std::__shared_ptr">__shared_ptr</a>&lt;_Tp, <a class="tu ref" href="#_Lp" title='_Lp' data-ref="_Lp">_Lp</a>&gt; <dfn class="local col7 decl" id="13217__w" title='__w' data-type='__shared_ptr&lt;_Tp, _Lp&gt;' data-ref="13217__w">__w</dfn>,</td></tr>
+<tr><th id="307">307</th><td>					  <a class="typedef" href="atomic_base.h.html#std::memory_order" title='std::memory_order' data-type='enum memory_order' data-ref="std::memory_order">memory_order</a> <dfn class="local col8 decl" id="13218__success" title='__success' data-type='std::memory_order' data-ref="13218__success">__success</dfn>,</td></tr>
+<tr><th id="308">308</th><td>					  <a class="typedef" href="atomic_base.h.html#std::memory_order" title='std::memory_order' data-type='enum memory_order' data-ref="std::memory_order">memory_order</a> <dfn class="local col9 decl" id="13219__failure" title='__failure' data-type='std::memory_order' data-ref="13219__failure">__failure</dfn>)</td></tr>
+<tr><th id="309">309</th><td>    {</td></tr>
+<tr><th id="310">310</th><td>      <b>return</b> <span class="namespace">std::</span>atomic_compare_exchange_strong_explicit(<a class="local col5 ref" href="#13215__p" title='__p' data-ref="13215__p">__p</a>, <a class="local col6 ref" href="#13216__v" title='__v' data-ref="13216__v">__v</a>,</td></tr>
+<tr><th id="311">311</th><td>	  <span class="namespace">std::</span>move(<a class="local col7 ref" href="#13217__w" title='__w' data-ref="13217__w">__w</a>), <a class="local col8 ref" href="#13218__success" title='__success' data-ref="13218__success">__success</a>, <a class="local col9 ref" href="#13219__failure" title='__failure' data-ref="13219__failure">__failure</a>);</td></tr>
+<tr><th id="312">312</th><td>    }</td></tr>
+<tr><th id="313">313</th><td></td></tr>
+<tr><th id="314">314</th><td>  <b>template</b>&lt;<b>typename</b> _Tp, _Lock_policy _Lp&gt;</td></tr>
+<tr><th id="315">315</th><td>    <b>inline</b> <em>bool</em></td></tr>
+<tr><th id="316">316</th><td>    <dfn class="decl def fn" id="_ZSt28atomic_compare_exchange_weakPSt12__shared_ptrIT_XT0_EES2_S1_" title='std::atomic_compare_exchange_weak' data-ref="_ZSt28atomic_compare_exchange_weakPSt12__shared_ptrIT_XT0_EES2_S1_">atomic_compare_exchange_weak</dfn>(<a class="type" href="shared_ptr_base.h.html#std::__shared_ptr" title='std::__shared_ptr' data-ref="std::__shared_ptr">__shared_ptr</a>&lt;_Tp, <a class="tu ref" href="#_Lp" title='_Lp' data-ref="_Lp">_Lp</a>&gt;* <dfn class="local col0 decl" id="13220__p" title='__p' data-type='__shared_ptr&lt;_Tp, _Lp&gt; *' data-ref="13220__p">__p</dfn>,</td></tr>
+<tr><th id="317">317</th><td>				 <a class="type" href="shared_ptr_base.h.html#std::__shared_ptr" title='std::__shared_ptr' data-ref="std::__shared_ptr">__shared_ptr</a>&lt;_Tp, <a class="tu ref" href="#_Lp" title='_Lp' data-ref="_Lp">_Lp</a>&gt;* <dfn class="local col1 decl" id="13221__v" title='__v' data-type='__shared_ptr&lt;_Tp, _Lp&gt; *' data-ref="13221__v">__v</dfn>,</td></tr>
+<tr><th id="318">318</th><td>				 <a class="type" href="shared_ptr_base.h.html#std::__shared_ptr" title='std::__shared_ptr' data-ref="std::__shared_ptr">__shared_ptr</a>&lt;_Tp, <a class="tu ref" href="#_Lp" title='_Lp' data-ref="_Lp">_Lp</a>&gt; <dfn class="local col2 decl" id="13222__w" title='__w' data-type='__shared_ptr&lt;_Tp, _Lp&gt;' data-ref="13222__w">__w</dfn>)</td></tr>
+<tr><th id="319">319</th><td>    {</td></tr>
+<tr><th id="320">320</th><td>      <b>return</b> <span class="namespace">std::</span>atomic_compare_exchange_weak_explicit(<a class="local col0 ref" href="#13220__p" title='__p' data-ref="13220__p">__p</a>, <a class="local col1 ref" href="#13221__v" title='__v' data-ref="13221__v">__v</a>,</td></tr>
+<tr><th id="321">321</th><td>	  <span class="namespace">std::</span>move(<a class="local col2 ref" href="#13222__w" title='__w' data-ref="13222__w">__w</a>), <a class="enum" href="atomic_base.h.html#std::memory_order_seq_cst" title='std::memory_order_seq_cst' data-ref="std::memory_order_seq_cst">memory_order_seq_cst</a>, <a class="enum" href="atomic_base.h.html#std::memory_order_seq_cst" title='std::memory_order_seq_cst' data-ref="std::memory_order_seq_cst">memory_order_seq_cst</a>);</td></tr>
+<tr><th id="322">322</th><td>    }</td></tr>
+<tr><th id="323">323</th><td>  <i class="doc">/// @}</i></td></tr>
+<tr><th id="324">324</th><td><i class="doc"></i></td></tr>
+<tr><th id="325">325</th><td><i class="doc">  /// @} group pointer_abstractions</i></td></tr>
+<tr><th id="326">326</th><td></td></tr>
+<tr><th id="327">327</th><td><a class="macro" href="../../../x86_64-linux-gnu/c++/9/bits/c++config.h.html#329" title="" data-ref="_M/_GLIBCXX_END_NAMESPACE_VERSION">_GLIBCXX_END_NAMESPACE_VERSION</a></td></tr>
+<tr><th id="328">328</th><td>} <i>// namespace</i></td></tr>
+<tr><th id="329">329</th><td></td></tr>
+<tr><th id="330">330</th><td><u>#<span data-ppcond="30">endif</span> // _SHARED_PTR_ATOMIC_H</u></td></tr>
+<tr><th id="331">331</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../../../../qtbase-6.5.0/build/qmake/CMakeFiles/qmake.dir/cmake_pch.hxx.cxx.html'>qtbase-6.5.0/build/qmake/CMakeFiles/qmake.dir/cmake_pch.hxx.cxx</a><br/>Generated on <em>2024-Jun-13</em> from project include<br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

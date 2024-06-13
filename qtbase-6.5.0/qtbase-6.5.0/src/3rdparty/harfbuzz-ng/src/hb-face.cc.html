@@ -1,0 +1,677 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>hb-face.cc source code [qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/hb-face.cc] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="hb_face_for_data_closure_t "/>
+<link rel="stylesheet" href="../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/hb-face.cc'; var root_path = '../../../../..'; var data_path = '../../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../..'>qtbase-6.5.0</a>/<a href='../../..'>src</a>/<a href='../..'>3rdparty</a>/<a href='..'>harfbuzz-ng</a>/<a href='./'>src</a>/<a href='hb-face.cc.html'>hb-face.cc</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*</i></td></tr>
+<tr><th id="2">2</th><td><i> * Copyright © 2009  Red Hat, Inc.</i></td></tr>
+<tr><th id="3">3</th><td><i> * Copyright © 2012  Google, Inc.</i></td></tr>
+<tr><th id="4">4</th><td><i> *</i></td></tr>
+<tr><th id="5">5</th><td><i> *  This is part of HarfBuzz, a text shaping library.</i></td></tr>
+<tr><th id="6">6</th><td><i> *</i></td></tr>
+<tr><th id="7">7</th><td><i> * Permission is hereby granted, without written agreement and without</i></td></tr>
+<tr><th id="8">8</th><td><i> * license or royalty fees, to use, copy, modify, and distribute this</i></td></tr>
+<tr><th id="9">9</th><td><i> * software and its documentation for any purpose, provided that the</i></td></tr>
+<tr><th id="10">10</th><td><i> * above copyright notice and the following two paragraphs appear in</i></td></tr>
+<tr><th id="11">11</th><td><i> * all copies of this software.</i></td></tr>
+<tr><th id="12">12</th><td><i> *</i></td></tr>
+<tr><th id="13">13</th><td><i> * IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR</i></td></tr>
+<tr><th id="14">14</th><td><i> * DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES</i></td></tr>
+<tr><th id="15">15</th><td><i> * ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN</i></td></tr>
+<tr><th id="16">16</th><td><i> * IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH</i></td></tr>
+<tr><th id="17">17</th><td><i> * DAMAGE.</i></td></tr>
+<tr><th id="18">18</th><td><i> *</i></td></tr>
+<tr><th id="19">19</th><td><i> * THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,</i></td></tr>
+<tr><th id="20">20</th><td><i> * BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND</i></td></tr>
+<tr><th id="21">21</th><td><i> * FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS</i></td></tr>
+<tr><th id="22">22</th><td><i> * ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO</i></td></tr>
+<tr><th id="23">23</th><td><i> * PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.</i></td></tr>
+<tr><th id="24">24</th><td><i> *</i></td></tr>
+<tr><th id="25">25</th><td><i> * Red Hat Author(s): Behdad Esfahbod</i></td></tr>
+<tr><th id="26">26</th><td><i> * Google Author(s): Behdad Esfahbod</i></td></tr>
+<tr><th id="27">27</th><td><i> */</i></td></tr>
+<tr><th id="28">28</th><td></td></tr>
+<tr><th id="29">29</th><td><u>#include <a href="hb.hh.html">"hb.hh"</a></u></td></tr>
+<tr><th id="30">30</th><td></td></tr>
+<tr><th id="31">31</th><td><u>#include <a href="hb-face.hh.html">"hb-face.hh"</a></u></td></tr>
+<tr><th id="32">32</th><td><u>#include <a href="hb-blob.hh.html">"hb-blob.hh"</a></u></td></tr>
+<tr><th id="33">33</th><td><u>#include <a href="hb-open-file.hh.html">"hb-open-file.hh"</a></u></td></tr>
+<tr><th id="34">34</th><td><u>#include <a href="hb-ot-face.hh.html">"hb-ot-face.hh"</a></u></td></tr>
+<tr><th id="35">35</th><td><u>#include <a href="hb-ot-cmap-table.hh.html">"hb-ot-cmap-table.hh"</a></u></td></tr>
+<tr><th id="36">36</th><td></td></tr>
+<tr><th id="37">37</th><td></td></tr>
+<tr><th id="38">38</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="39">39</th><td><i class="doc"> * SECTION:hb-face</i></td></tr>
+<tr><th id="40">40</th><td><i class="doc"> *<span class="command"> @title</span>: hb-face</i></td></tr>
+<tr><th id="41">41</th><td><i class="doc"> * <span class="command">@short</span>_description: Font face objects</i></td></tr>
+<tr><th id="42">42</th><td><i class="doc"> * <span class="command">@include</span>:<span class="verb"> hb.h</span></i></td></tr>
+<tr><th id="43">43</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="44">44</th><td><i class="doc"> * A font face is an object that represents a single face from within a</i></td></tr>
+<tr><th id="45">45</th><td><i class="doc"> * font family.</i></td></tr>
+<tr><th id="46">46</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="47">47</th><td><i class="doc"> * More precisely, a font face represents a single face in a binary font file.</i></td></tr>
+<tr><th id="48">48</th><td><i class="doc"> * Font faces are typically built from a binary blob and a face index.</i></td></tr>
+<tr><th id="49">49</th><td><i class="doc"> * Font faces are used to create fonts.</i></td></tr>
+<tr><th id="50">50</th><td><i class="doc"> **/</i></td></tr>
+<tr><th id="51">51</th><td></td></tr>
+<tr><th id="52">52</th><td></td></tr>
+<tr><th id="53">53</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="54">54</th><td><i class="doc"> * hb_face_count:</i></td></tr>
+<tr><th id="55">55</th><td><i class="doc"> *<span class="command"> @blob</span>: a blob.</i></td></tr>
+<tr><th id="56">56</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="57">57</th><td><i class="doc"> * Fetches the number of faces in a blob.</i></td></tr>
+<tr><th id="58">58</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="59">59</th><td><i class="doc"> * Return value: Number of faces in<span class="command"> @blob</span></i></td></tr>
+<tr><th id="60">60</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="61">61</th><td><i class="doc"> * Since: 1.7.7</i></td></tr>
+<tr><th id="62">62</th><td><i class="doc"> **/</i></td></tr>
+<tr><th id="63">63</th><td><em>unsigned</em> <em>int</em></td></tr>
+<tr><th id="64">64</th><td><dfn class="decl def fn" id="hb_face_count" title='hb_face_count' data-ref="hb_face_count">hb_face_count</dfn> (<a class="typedef" href="hb-blob.h.html#hb_blob_t" title='hb_blob_t' data-type='struct hb_blob_t' data-ref="hb_blob_t">hb_blob_t</a> *<dfn class="local col1 decl" id="1blob" title='blob' data-type='hb_blob_t *' data-ref="1blob">blob</dfn>)</td></tr>
+<tr><th id="65">65</th><td>{</td></tr>
+<tr><th id="66">66</th><td>  <b>if</b> (<a class="macro" href="hb.hh.html#251" title="(__builtin_expect (!!(!blob), 0))" data-ref="_M/unlikely">unlikely</a> (!<a class="local col1 ref" href="#1blob" title='blob' data-ref="1blob">blob</a>))</td></tr>
+<tr><th id="67">67</th><td>    <b>return</b> <var>0</var>;</td></tr>
+<tr><th id="68">68</th><td></td></tr>
+<tr><th id="69">69</th><td>  <i>/* TODO We shouldn't be sanitizing blob.  Port to run sanitizer and return if not sane. */</i></td></tr>
+<tr><th id="70">70</th><td>  <i>/* Make API signature const after. */</i></td></tr>
+<tr><th id="71">71</th><td>  <a class="typedef" href="hb-blob.h.html#hb_blob_t" title='hb_blob_t' data-type='struct hb_blob_t' data-ref="hb_blob_t">hb_blob_t</a> *<dfn class="local col2 decl" id="2sanitized" title='sanitized' data-type='hb_blob_t *' data-ref="2sanitized">sanitized</dfn> = <a class="type" href="hb-sanitize.hh.html#hb_sanitize_context_t" title='hb_sanitize_context_t' data-ref="hb_sanitize_context_t">hb_sanitize_context_t</a> <a class="ref fn" href="hb-sanitize.hh.html#_ZN21hb_sanitize_context_tC1Ev" title='hb_sanitize_context_t::hb_sanitize_context_t' data-ref="_ZN21hb_sanitize_context_tC1Ev">(</a>).<a class="ref fn" href="hb-sanitize.hh.html#_ZN21hb_sanitize_context_t13sanitize_blobEP9hb_blob_t" title='hb_sanitize_context_t::sanitize_blob' data-ref="_ZN21hb_sanitize_context_t13sanitize_blobEP9hb_blob_t">sanitize_blob</a>&lt;<span class="namespace">OT::</span><a class="type" href="hb-open-file.hh.html#OT::OpenTypeFontFile" title='OT::OpenTypeFontFile' data-ref="OT::OpenTypeFontFile">OpenTypeFontFile</a>&gt; (<span class='inlayHint'>blob:&nbsp;</span><a class="ref fn" href="hb-blob.h.html#hb_blob_reference" title='hb_blob_reference' data-ref="hb_blob_reference">hb_blob_reference</a> (<a class="local col1 ref" href="#1blob" title='blob' data-ref="1blob">blob</a>));</td></tr>
+<tr><th id="72">72</th><td>  <em>const</em> <span class="namespace">OT::</span><a class="type" href="hb-open-file.hh.html#OT::OpenTypeFontFile" title='OT::OpenTypeFontFile' data-ref="OT::OpenTypeFontFile">OpenTypeFontFile</a>&amp; <dfn class="local col3 decl" id="3ot" title='ot' data-type='const OT::OpenTypeFontFile &amp;' data-ref="3ot">ot</dfn> = *<a class="local col2 ref" href="#2sanitized" title='sanitized' data-ref="2sanitized">sanitized</a>-&gt;<a class="ref fn" href="hb-blob.hh.html#_ZNK9hb_blob_t2asEv" title='hb_blob_t::as' data-ref="_ZNK9hb_blob_t2asEv">as</a>&lt;<span class="namespace">OT::</span><a class="type" href="hb-open-file.hh.html#OT::OpenTypeFontFile" title='OT::OpenTypeFontFile' data-ref="OT::OpenTypeFontFile">OpenTypeFontFile</a>&gt; ();</td></tr>
+<tr><th id="73">73</th><td>  <em>unsigned</em> <em>int</em> <dfn class="local col4 decl" id="4ret" title='ret' data-type='unsigned int' data-ref="4ret">ret</dfn> = <a class="local col3 ref" href="#3ot" title='ot' data-ref="3ot">ot</a>.<a class="ref fn" href="hb-open-file.hh.html#_ZNK2OT16OpenTypeFontFile14get_face_countEv" title='OT::OpenTypeFontFile::get_face_count' data-ref="_ZNK2OT16OpenTypeFontFile14get_face_countEv">get_face_count</a> ();</td></tr>
+<tr><th id="74">74</th><td>  <a class="ref fn" href="hb-blob.h.html#hb_blob_destroy" title='hb_blob_destroy' data-ref="hb_blob_destroy">hb_blob_destroy</a> (<span class='inlayHint'>blob:&nbsp;</span><a class="local col2 ref" href="#2sanitized" title='sanitized' data-ref="2sanitized">sanitized</a>);</td></tr>
+<tr><th id="75">75</th><td></td></tr>
+<tr><th id="76">76</th><td>  <b>return</b> <a class="local col4 ref" href="#4ret" title='ret' data-ref="4ret">ret</a>;</td></tr>
+<tr><th id="77">77</th><td>}</td></tr>
+<tr><th id="78">78</th><td></td></tr>
+<tr><th id="79">79</th><td><i>/*</i></td></tr>
+<tr><th id="80">80</th><td><i> * hb_face_t</i></td></tr>
+<tr><th id="81">81</th><td><i> */</i></td></tr>
+<tr><th id="82">82</th><td></td></tr>
+<tr><th id="83">83</th><td><a class="macro" href="hb-null.hh.html#162" title="const hb_face_t _hb_Null_hb_face_t" data-ref="_M/DEFINE_NULL_INSTANCE">DEFINE_NULL_INSTANCE</a> (<a class="typedef" href="hb-face.h.html#hb_face_t" title='hb_face_t' data-type='struct hb_face_t' data-ref="hb_face_t">hb_face_t</a>) =</td></tr>
+<tr><th id="84">84</th><td>{</td></tr>
+<tr><th id="85">85</th><td>  <a class="macro" href="hb-object.hh.html#221" title="{}" data-ref="_M/HB_OBJECT_HEADER_STATIC">HB_OBJECT_HEADER_STATIC</a>,</td></tr>
+<tr><th id="86">86</th><td></td></tr>
+<tr><th id="87">87</th><td>  <span class='inlayHint'>.reference_table_func:&nbsp;</span><b>nullptr</b>, <i>/* reference_table_func */</i></td></tr>
+<tr><th id="88">88</th><td>  <span class='inlayHint'>.user_data:&nbsp;</span><b>nullptr</b>, <i>/* user_data */</i></td></tr>
+<tr><th id="89">89</th><td>  <span class='inlayHint'>.destroy:&nbsp;</span><b>nullptr</b>, <i>/* destroy */</i></td></tr>
+<tr><th id="90">90</th><td></td></tr>
+<tr><th id="91">91</th><td>  <span class='inlayHint'>.index:&nbsp;</span><var>0</var>,    <i>/* index */</i></td></tr>
+<tr><th id="92">92</th><td>  <span class='inlayHint'>.upem:&nbsp;</span><var>1000</var>, <i>/* upem */</i></td></tr>
+<tr><th id="93">93</th><td>  <span class='inlayHint'>.num_glyphs:&nbsp;</span><var>0</var>,    <i>/* num_glyphs */</i></td></tr>
+<tr><th id="94">94</th><td></td></tr>
+<tr><th id="95">95</th><td>  <i>/* Zero for the rest is fine. */</i></td></tr>
+<tr><th id="96">96</th><td>};</td></tr>
+<tr><th id="97">97</th><td></td></tr>
+<tr><th id="98">98</th><td></td></tr>
+<tr><th id="99">99</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="100">100</th><td><i class="doc"> * hb_face_create_for_tables:</i></td></tr>
+<tr><th id="101">101</th><td><i class="doc"> *<span class="command"> @reference</span>_table_func: (closure user_data) (destroy destroy) (scope notified): Table-referencing function</i></td></tr>
+<tr><th id="102">102</th><td><i class="doc"> *<span class="command"> @user</span>_data: A pointer to the user data</i></td></tr>
+<tr><th id="103">103</th><td><i class="doc"> *<span class="command"> @destroy</span>: (nullable): A callback to call when <span class="command">@data</span> is not needed anymore</i></td></tr>
+<tr><th id="104">104</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="105">105</th><td><i class="doc"> * Variant of hb_face_create(), built for those cases where it is more</i></td></tr>
+<tr><th id="106">106</th><td><i class="doc"> * convenient to provide data for individual tables instead of the whole font</i></td></tr>
+<tr><th id="107">107</th><td><i class="doc"> * data. With the caveat that hb_face_get_table_tags() does not currently work</i></td></tr>
+<tr><th id="108">108</th><td><i class="doc"> * with faces created this way.</i></td></tr>
+<tr><th id="109">109</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="110">110</th><td><i class="doc"> * Creates a new face object from the specified<span class="command"> @user</span>_data and<span class="command"> @reference</span>_table_func,</i></td></tr>
+<tr><th id="111">111</th><td><i class="doc"> * with the<span class="command"> @destroy</span> callback.</i></td></tr>
+<tr><th id="112">112</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="113">113</th><td><i class="doc"> * Return value: (transfer full): The new face object</i></td></tr>
+<tr><th id="114">114</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="115">115</th><td><i class="doc"> * Since: 0.9.2</i></td></tr>
+<tr><th id="116">116</th><td><i class="doc"> **/</i></td></tr>
+<tr><th id="117">117</th><td><a class="typedef" href="hb-face.h.html#hb_face_t" title='hb_face_t' data-type='struct hb_face_t' data-ref="hb_face_t">hb_face_t</a> *</td></tr>
+<tr><th id="118">118</th><td><dfn class="decl def fn" id="hb_face_create_for_tables" title='hb_face_create_for_tables' data-ref="hb_face_create_for_tables">hb_face_create_for_tables</dfn> (<a class="typedef" href="hb-face.h.html#hb_reference_table_func_t" title='hb_reference_table_func_t' data-type='hb_blob_t *(*)(hb_face_t *, hb_tag_t, void *)' data-ref="hb_reference_table_func_t">hb_reference_table_func_t</a>  <dfn class="local col5 decl" id="5reference_table_func" title='reference_table_func' data-type='hb_reference_table_func_t' data-ref="5reference_table_func">reference_table_func</dfn>,</td></tr>
+<tr><th id="119">119</th><td>			   <em>void</em>                      *<dfn class="local col6 decl" id="6user_data" title='user_data' data-type='void *' data-ref="6user_data">user_data</dfn>,</td></tr>
+<tr><th id="120">120</th><td>			   <a class="typedef" href="hb-common.h.html#hb_destroy_func_t" title='hb_destroy_func_t' data-type='void (*)(void *)' data-ref="hb_destroy_func_t">hb_destroy_func_t</a>          <dfn class="local col7 decl" id="7destroy" title='destroy' data-type='hb_destroy_func_t' data-ref="7destroy">destroy</dfn>)</td></tr>
+<tr><th id="121">121</th><td>{</td></tr>
+<tr><th id="122">122</th><td>  <a class="typedef" href="hb-face.h.html#hb_face_t" title='hb_face_t' data-type='struct hb_face_t' data-ref="hb_face_t">hb_face_t</a> *<dfn class="local col8 decl" id="8face" title='face' data-type='hb_face_t *' data-ref="8face">face</dfn>;</td></tr>
+<tr><th id="123">123</th><td></td></tr>
+<tr><th id="124">124</th><td>  <b>if</b> (!<a class="local col5 ref" href="#5reference_table_func" title='reference_table_func' data-ref="5reference_table_func">reference_table_func</a> || !(<a class="local col8 ref" href="#8face" title='face' data-ref="8face">face</a> = <a class="ref fn" href="hb-object.hh.html#_ZL16hb_object_createDpT0_" title='hb_object_create' data-ref="_ZL16hb_object_createDpT0_">hb_object_create</a>&lt;<a class="typedef" href="hb-face.h.html#hb_face_t" title='hb_face_t' data-type='struct hb_face_t' data-ref="hb_face_t">hb_face_t</a>&gt; ())) {</td></tr>
+<tr><th id="125">125</th><td>    <b>if</b> (<a class="local col7 ref" href="#7destroy" title='destroy' data-ref="7destroy">destroy</a>)</td></tr>
+<tr><th id="126">126</th><td>      <a class="local col7 ref" href="#7destroy" title='destroy' data-ref="7destroy">destroy</a> (<a class="local col6 ref" href="#6user_data" title='user_data' data-ref="6user_data">user_data</a>);</td></tr>
+<tr><th id="127">127</th><td>    <b>return</b> <a class="ref fn" href="#hb_face_get_empty" title='hb_face_get_empty' data-ref="hb_face_get_empty">hb_face_get_empty</a> ();</td></tr>
+<tr><th id="128">128</th><td>  }</td></tr>
+<tr><th id="129">129</th><td></td></tr>
+<tr><th id="130">130</th><td>  <a class="local col8 ref" href="#8face" title='face' data-ref="8face">face</a>-&gt;<a class="ref field" href="hb-face.hh.html#hb_face_t::reference_table_func" title='hb_face_t::reference_table_func' data-ref="hb_face_t::reference_table_func">reference_table_func</a> = <a class="local col5 ref" href="#5reference_table_func" title='reference_table_func' data-ref="5reference_table_func">reference_table_func</a>;</td></tr>
+<tr><th id="131">131</th><td>  <a class="local col8 ref" href="#8face" title='face' data-ref="8face">face</a>-&gt;<a class="ref field" href="hb-face.hh.html#hb_face_t::user_data" title='hb_face_t::user_data' data-ref="hb_face_t::user_data">user_data</a> = <a class="local col6 ref" href="#6user_data" title='user_data' data-ref="6user_data">user_data</a>;</td></tr>
+<tr><th id="132">132</th><td>  <a class="local col8 ref" href="#8face" title='face' data-ref="8face">face</a>-&gt;<a class="ref field" href="hb-face.hh.html#hb_face_t::destroy" title='hb_face_t::destroy' data-ref="hb_face_t::destroy">destroy</a> = <a class="local col7 ref" href="#7destroy" title='destroy' data-ref="7destroy">destroy</a>;</td></tr>
+<tr><th id="133">133</th><td></td></tr>
+<tr><th id="134">134</th><td>  <a class="local col8 ref" href="#8face" title='face' data-ref="8face">face</a>-&gt;<a class="ref field" href="hb-face.hh.html#hb_face_t::num_glyphs" title='hb_face_t::num_glyphs' data-ref="hb_face_t::num_glyphs">num_glyphs</a> <a class="ref fn" href="hb-atomic.hh.html#_ZN15hb_atomic_int_taSEi" title='hb_atomic_int_t::operator=' data-ref="_ZN15hb_atomic_int_taSEi">=</a> -<var>1</var>;</td></tr>
+<tr><th id="135">135</th><td></td></tr>
+<tr><th id="136">136</th><td>  <a class="local col8 ref" href="#8face" title='face' data-ref="8face">face</a>-&gt;<a class="ref field" href="hb-face.hh.html#hb_face_t::data" title='hb_face_t::data' data-ref="hb_face_t::data">data</a>.<a class="ref fn" href="hb-shaper.hh.html#_ZN26hb_shaper_object_dataset_t5init0EPT_" title='hb_shaper_object_dataset_t::init0' data-ref="_ZN26hb_shaper_object_dataset_t5init0EPT_">init0</a> (<span class='inlayHint'>parent_data:&nbsp;</span><a class="local col8 ref" href="#8face" title='face' data-ref="8face">face</a>);</td></tr>
+<tr><th id="137">137</th><td>  <a class="local col8 ref" href="#8face" title='face' data-ref="8face">face</a>-&gt;<a class="ref field" href="hb-face.hh.html#hb_face_t::table" title='hb_face_t::table' data-ref="hb_face_t::table">table</a>.<a class="ref fn" href="hb-ot-face.hh.html#_ZN12hb_ot_face_t5init0EP9hb_face_t" title='hb_ot_face_t::init0' data-ref="_ZN12hb_ot_face_t5init0EP9hb_face_t">init0</a> (<a class="local col8 ref" href="#8face" title='face' data-ref="8face">face</a>);</td></tr>
+<tr><th id="138">138</th><td></td></tr>
+<tr><th id="139">139</th><td>  <b>return</b> <a class="local col8 ref" href="#8face" title='face' data-ref="8face">face</a>;</td></tr>
+<tr><th id="140">140</th><td>}</td></tr>
+<tr><th id="141">141</th><td></td></tr>
+<tr><th id="142">142</th><td></td></tr>
+<tr><th id="143">143</th><td><b>typedef</b> <b>struct</b> <dfn class="type def" id="hb_face_for_data_closure_t" title='hb_face_for_data_closure_t' data-ref="hb_face_for_data_closure_t"><a class="type" href="#hb_face_for_data_closure_t" title='hb_face_for_data_closure_t' data-ref="hb_face_for_data_closure_t">hb_face_for_data_closure_t</a></dfn> {</td></tr>
+<tr><th id="144">144</th><td>  <a class="typedef" href="hb-blob.h.html#hb_blob_t" title='hb_blob_t' data-type='struct hb_blob_t' data-ref="hb_blob_t">hb_blob_t</a> *<dfn class="tu decl field" id="hb_face_for_data_closure_t::blob" title='hb_face_for_data_closure_t::blob' data-type='hb_blob_t *' data-ref="hb_face_for_data_closure_t::blob">blob</dfn>;</td></tr>
+<tr><th id="145">145</th><td>  <a class="typedef" href="../../../../../include/x86_64-linux-gnu/bits/stdint-uintn.h.html#uint16_t" title='uint16_t' data-type='__uint16_t' data-ref="uint16_t">uint16_t</a>  <dfn class="tu decl field" id="hb_face_for_data_closure_t::index" title='hb_face_for_data_closure_t::index' data-type='uint16_t' data-ref="hb_face_for_data_closure_t::index">index</dfn>;</td></tr>
+<tr><th id="146">146</th><td>} <dfn class="typedef" id="hb_face_for_data_closure_t" title='hb_face_for_data_closure_t' data-type='struct hb_face_for_data_closure_t' data-ref="hb_face_for_data_closure_t">hb_face_for_data_closure_t</dfn>;</td></tr>
+<tr><th id="147">147</th><td></td></tr>
+<tr><th id="148">148</th><td><em>static</em> <a class="typedef" href="#hb_face_for_data_closure_t" title='hb_face_for_data_closure_t' data-type='struct hb_face_for_data_closure_t' data-ref="hb_face_for_data_closure_t">hb_face_for_data_closure_t</a> *</td></tr>
+<tr><th id="149">149</th><td><dfn class="tu decl def fn" id="_ZL32_hb_face_for_data_closure_createP9hb_blob_tj" title='_hb_face_for_data_closure_create' data-type='hb_face_for_data_closure_t * _hb_face_for_data_closure_create(hb_blob_t * blob, unsigned int index)' data-ref="_ZL32_hb_face_for_data_closure_createP9hb_blob_tj">_hb_face_for_data_closure_create</dfn> (<a class="typedef" href="hb-blob.h.html#hb_blob_t" title='hb_blob_t' data-type='struct hb_blob_t' data-ref="hb_blob_t">hb_blob_t</a> *<dfn class="local col9 decl" id="9blob" title='blob' data-type='hb_blob_t *' data-ref="9blob">blob</dfn>, <em>unsigned</em> <em>int</em> <dfn class="local col0 decl" id="10index" title='index' data-type='unsigned int' data-ref="10index">index</dfn>)</td></tr>
+<tr><th id="150">150</th><td>{</td></tr>
+<tr><th id="151">151</th><td>  <a class="typedef" href="#hb_face_for_data_closure_t" title='hb_face_for_data_closure_t' data-type='struct hb_face_for_data_closure_t' data-ref="hb_face_for_data_closure_t">hb_face_for_data_closure_t</a> *<dfn class="local col1 decl" id="11closure" title='closure' data-type='hb_face_for_data_closure_t *' data-ref="11closure">closure</dfn>;</td></tr>
+<tr><th id="152">152</th><td></td></tr>
+<tr><th id="153">153</th><td>  <a class="local col1 ref" href="#11closure" title='closure' data-ref="11closure">closure</a> = (<a class="typedef" href="#hb_face_for_data_closure_t" title='hb_face_for_data_closure_t' data-type='struct hb_face_for_data_closure_t' data-ref="hb_face_for_data_closure_t">hb_face_for_data_closure_t</a> *) <a class="macro" href="hb.hh.html#239" title="calloc" data-ref="_M/hb_calloc">hb_calloc</a> (<span class='inlayHint'>nmemb:&nbsp;</span><var>1</var>, <span class='inlayHint'>size:&nbsp;</span><b>sizeof</b> (<a class="typedef" href="#hb_face_for_data_closure_t" title='hb_face_for_data_closure_t' data-type='struct hb_face_for_data_closure_t' data-ref="hb_face_for_data_closure_t">hb_face_for_data_closure_t</a>));</td></tr>
+<tr><th id="154">154</th><td>  <b>if</b> (<a class="macro" href="hb.hh.html#251" title="(__builtin_expect (!!(!closure), 0))" data-ref="_M/unlikely">unlikely</a> (!<a class="local col1 ref" href="#11closure" title='closure' data-ref="11closure">closure</a>))</td></tr>
+<tr><th id="155">155</th><td>    <b>return</b> <b>nullptr</b>;</td></tr>
+<tr><th id="156">156</th><td></td></tr>
+<tr><th id="157">157</th><td>  <a class="local col1 ref" href="#11closure" title='closure' data-ref="11closure">closure</a>-&gt;<a class="tu ref field" href="#hb_face_for_data_closure_t::blob" title='hb_face_for_data_closure_t::blob' data-use='w' data-ref="hb_face_for_data_closure_t::blob">blob</a> = <a class="local col9 ref" href="#9blob" title='blob' data-ref="9blob">blob</a>;</td></tr>
+<tr><th id="158">158</th><td>  <a class="local col1 ref" href="#11closure" title='closure' data-ref="11closure">closure</a>-&gt;<a class="tu ref field" href="#hb_face_for_data_closure_t::index" title='hb_face_for_data_closure_t::index' data-use='w' data-ref="hb_face_for_data_closure_t::index">index</a> = (<a class="typedef" href="../../../../../include/x86_64-linux-gnu/bits/stdint-uintn.h.html#uint16_t" title='uint16_t' data-type='__uint16_t' data-ref="uint16_t">uint16_t</a>) (<a class="local col0 ref" href="#10index" title='index' data-ref="10index">index</a> &amp; <var>0xFFFFu</var>);</td></tr>
+<tr><th id="159">159</th><td></td></tr>
+<tr><th id="160">160</th><td>  <b>return</b> <a class="local col1 ref" href="#11closure" title='closure' data-ref="11closure">closure</a>;</td></tr>
+<tr><th id="161">161</th><td>}</td></tr>
+<tr><th id="162">162</th><td></td></tr>
+<tr><th id="163">163</th><td><em>static</em> <em>void</em></td></tr>
+<tr><th id="164">164</th><td><dfn class="tu decl def fn" id="_ZL33_hb_face_for_data_closure_destroyPv" title='_hb_face_for_data_closure_destroy' data-type='void _hb_face_for_data_closure_destroy(void * data)' data-ref="_ZL33_hb_face_for_data_closure_destroyPv">_hb_face_for_data_closure_destroy</dfn> (<em>void</em> *<dfn class="local col2 decl" id="12data" title='data' data-type='void *' data-ref="12data">data</dfn>)</td></tr>
+<tr><th id="165">165</th><td>{</td></tr>
+<tr><th id="166">166</th><td>  <a class="typedef" href="#hb_face_for_data_closure_t" title='hb_face_for_data_closure_t' data-type='struct hb_face_for_data_closure_t' data-ref="hb_face_for_data_closure_t">hb_face_for_data_closure_t</a> *<dfn class="local col3 decl" id="13closure" title='closure' data-type='hb_face_for_data_closure_t *' data-ref="13closure">closure</dfn> = (<a class="typedef" href="#hb_face_for_data_closure_t" title='hb_face_for_data_closure_t' data-type='struct hb_face_for_data_closure_t' data-ref="hb_face_for_data_closure_t">hb_face_for_data_closure_t</a> *) <a class="local col2 ref" href="#12data" title='data' data-ref="12data">data</a>;</td></tr>
+<tr><th id="167">167</th><td></td></tr>
+<tr><th id="168">168</th><td>  <a class="ref fn" href="hb-blob.h.html#hb_blob_destroy" title='hb_blob_destroy' data-ref="hb_blob_destroy">hb_blob_destroy</a> (<span class='inlayHint'>blob:&nbsp;</span><a class="local col3 ref" href="#13closure" title='closure' data-ref="13closure">closure</a>-&gt;<a class="tu ref field" href="#hb_face_for_data_closure_t::blob" title='hb_face_for_data_closure_t::blob' data-use='r' data-ref="hb_face_for_data_closure_t::blob">blob</a>);</td></tr>
+<tr><th id="169">169</th><td>  <a class="macro" href="hb.hh.html#241" title="free" data-ref="_M/hb_free">hb_free</a> (<span class='inlayHint'>ptr:&nbsp;</span><a class="local col3 ref" href="#13closure" title='closure' data-ref="13closure">closure</a>);</td></tr>
+<tr><th id="170">170</th><td>}</td></tr>
+<tr><th id="171">171</th><td></td></tr>
+<tr><th id="172">172</th><td><em>static</em> <a class="typedef" href="hb-blob.h.html#hb_blob_t" title='hb_blob_t' data-type='struct hb_blob_t' data-ref="hb_blob_t">hb_blob_t</a> *</td></tr>
+<tr><th id="173">173</th><td><dfn class="tu decl def fn" id="_ZL33_hb_face_for_data_reference_tableP9hb_face_tjPv" title='_hb_face_for_data_reference_table' data-type='hb_blob_t * _hb_face_for_data_reference_table(hb_face_t * face, hb_tag_t tag, void * user_data)' data-ref="_ZL33_hb_face_for_data_reference_tableP9hb_face_tjPv">_hb_face_for_data_reference_table</dfn> (<a class="typedef" href="hb-face.h.html#hb_face_t" title='hb_face_t' data-type='struct hb_face_t' data-ref="hb_face_t">hb_face_t</a> *<dfn class="local col4 decl" id="14face" title='face' data-type='hb_face_t *' data-ref="14face">face</dfn> <a class="macro" href="hb.hh.html#268" title="__attribute__((unused))" data-ref="_M/HB_UNUSED">HB_UNUSED</a>, <a class="typedef" href="hb-common.h.html#hb_tag_t" title='hb_tag_t' data-type='uint32_t' data-ref="hb_tag_t">hb_tag_t</a> <dfn class="local col5 decl" id="15tag" title='tag' data-type='hb_tag_t' data-ref="15tag">tag</dfn>, <em>void</em> *<dfn class="local col6 decl" id="16user_data" title='user_data' data-type='void *' data-ref="16user_data">user_data</dfn>)</td></tr>
+<tr><th id="174">174</th><td>{</td></tr>
+<tr><th id="175">175</th><td>  <a class="typedef" href="#hb_face_for_data_closure_t" title='hb_face_for_data_closure_t' data-type='struct hb_face_for_data_closure_t' data-ref="hb_face_for_data_closure_t">hb_face_for_data_closure_t</a> *<dfn class="local col7 decl" id="17data" title='data' data-type='hb_face_for_data_closure_t *' data-ref="17data">data</dfn> = (<a class="typedef" href="#hb_face_for_data_closure_t" title='hb_face_for_data_closure_t' data-type='struct hb_face_for_data_closure_t' data-ref="hb_face_for_data_closure_t">hb_face_for_data_closure_t</a> *) <a class="local col6 ref" href="#16user_data" title='user_data' data-ref="16user_data">user_data</a>;</td></tr>
+<tr><th id="176">176</th><td></td></tr>
+<tr><th id="177">177</th><td>  <b>if</b> (<a class="local col5 ref" href="#15tag" title='tag' data-ref="15tag">tag</a> == <a class="macro" href="hb-common.h.html#187" title="((hb_tag_t)((((uint32_t)(0)&amp;0xFF)&lt;&lt;24)|(((uint32_t)(0)&amp;0xFF)&lt;&lt;16)|(((uint32_t)(0)&amp;0xFF)&lt;&lt;8)|((uint32_t)(0)&amp;0xFF)))" data-ref="_M/HB_TAG_NONE">HB_TAG_NONE</a>)</td></tr>
+<tr><th id="178">178</th><td>    <b>return</b> <a class="ref fn" href="hb-blob.h.html#hb_blob_reference" title='hb_blob_reference' data-ref="hb_blob_reference">hb_blob_reference</a> (<span class='inlayHint'>blob:&nbsp;</span><a class="local col7 ref" href="#17data" title='data' data-ref="17data">data</a>-&gt;<a class="tu ref field" href="#hb_face_for_data_closure_t::blob" title='hb_face_for_data_closure_t::blob' data-use='r' data-ref="hb_face_for_data_closure_t::blob">blob</a>);</td></tr>
+<tr><th id="179">179</th><td></td></tr>
+<tr><th id="180">180</th><td>  <em>const</em> <span class="namespace">OT::</span><a class="type" href="hb-open-file.hh.html#OT::OpenTypeFontFile" title='OT::OpenTypeFontFile' data-ref="OT::OpenTypeFontFile">OpenTypeFontFile</a> &amp;<dfn class="local col8 decl" id="18ot_file" title='ot_file' data-type='const OT::OpenTypeFontFile &amp;' data-ref="18ot_file">ot_file</dfn> = *<a class="local col7 ref" href="#17data" title='data' data-ref="17data">data</a>-&gt;<a class="tu ref field" href="#hb_face_for_data_closure_t::blob" title='hb_face_for_data_closure_t::blob' data-use='r' data-ref="hb_face_for_data_closure_t::blob">blob</a>-&gt;<a class="ref fn" href="hb-blob.hh.html#_ZNK9hb_blob_t2asEv" title='hb_blob_t::as' data-ref="_ZNK9hb_blob_t2asEv">as</a>&lt;<span class="namespace">OT::</span><a class="type" href="hb-open-file.hh.html#OT::OpenTypeFontFile" title='OT::OpenTypeFontFile' data-ref="OT::OpenTypeFontFile">OpenTypeFontFile</a>&gt; ();</td></tr>
+<tr><th id="181">181</th><td>  <em>unsigned</em> <em>int</em> <dfn class="local col9 decl" id="19base_offset" title='base_offset' data-type='unsigned int' data-ref="19base_offset">base_offset</dfn>;</td></tr>
+<tr><th id="182">182</th><td>  <em>const</em> <span class="namespace">OT::</span><a class="typedef" href="hb-open-file.hh.html#OT::OpenTypeFontFace" title='OT::OpenTypeFontFace' data-type='struct OpenTypeOffsetTable' data-ref="OT::OpenTypeFontFace">OpenTypeFontFace</a> &amp;<dfn class="local col0 decl" id="20ot_face" title='ot_face' data-type='const OT::OpenTypeFontFace &amp;' data-ref="20ot_face">ot_face</dfn> = <a class="local col8 ref" href="#18ot_file" title='ot_file' data-ref="18ot_file">ot_file</a>.<a class="ref fn" href="hb-open-file.hh.html#_ZNK2OT16OpenTypeFontFile8get_faceEjPj" title='OT::OpenTypeFontFile::get_face' data-ref="_ZNK2OT16OpenTypeFontFile8get_faceEjPj">get_face</a> (<span class='inlayHint'>i:&nbsp;</span><a class="local col7 ref" href="#17data" title='data' data-ref="17data">data</a>-&gt;<a class="tu ref field" href="#hb_face_for_data_closure_t::index" title='hb_face_for_data_closure_t::index' data-use='r' data-ref="hb_face_for_data_closure_t::index">index</a>, <span class='inlayHint'>base_offset:&nbsp;</span>&amp;<a class="local col9 ref" href="#19base_offset" title='base_offset' data-ref="19base_offset">base_offset</a>);</td></tr>
+<tr><th id="183">183</th><td></td></tr>
+<tr><th id="184">184</th><td>  <em>const</em> <span class="namespace">OT::</span><a class="typedef" href="hb-open-file.hh.html#OT::OpenTypeTable" title='OT::OpenTypeTable' data-type='struct TableRecord' data-ref="OT::OpenTypeTable">OpenTypeTable</a> &amp;<dfn class="local col1 decl" id="21table" title='table' data-type='const OT::OpenTypeTable &amp;' data-ref="21table">table</dfn> = <a class="local col0 ref" href="#20ot_face" title='ot_face' data-ref="20ot_face">ot_face</a>.<a class="ref fn" href="hb-open-file.hh.html#_ZNK2OT19OpenTypeOffsetTable16get_table_by_tagEj" title='OT::OpenTypeOffsetTable::get_table_by_tag' data-ref="_ZNK2OT19OpenTypeOffsetTable16get_table_by_tagEj">get_table_by_tag</a> (<a class="local col5 ref" href="#15tag" title='tag' data-ref="15tag">tag</a>);</td></tr>
+<tr><th id="185">185</th><td></td></tr>
+<tr><th id="186">186</th><td>  <a class="typedef" href="hb-blob.h.html#hb_blob_t" title='hb_blob_t' data-type='struct hb_blob_t' data-ref="hb_blob_t">hb_blob_t</a> *<dfn class="local col2 decl" id="22blob" title='blob' data-type='hb_blob_t *' data-ref="22blob">blob</dfn> = <a class="ref fn" href="hb-blob.h.html#hb_blob_create_sub_blob" title='hb_blob_create_sub_blob' data-ref="hb_blob_create_sub_blob">hb_blob_create_sub_blob</a> (<span class='inlayHint'>parent:&nbsp;</span><a class="local col7 ref" href="#17data" title='data' data-ref="17data">data</a>-&gt;<a class="tu ref field" href="#hb_face_for_data_closure_t::blob" title='hb_face_for_data_closure_t::blob' data-use='r' data-ref="hb_face_for_data_closure_t::blob">blob</a>, <span class='inlayHint'>offset:&nbsp;</span><a class="local col9 ref" href="#19base_offset" title='base_offset' data-ref="19base_offset">base_offset</a> + <a class="ref fn fake" href="hb-open-type.hh.html#_ZNK2OT7IntTypecvNSt11conditionalIXsr3std9is_signedIT_EE5valueEijE4typeEEv" title='OT::IntType::operator typename conditional&lt;std::is_signed&lt;Type&gt;::value, int, unsigned int&gt;::type' data-ref="_ZNK2OT7IntTypecvNSt11conditionalIXsr3std9is_signedIT_EE5valueEijE4typeEEv"></a><a class="local col1 ref" href="#21table" title='table' data-ref="21table">table</a>.<a class="ref field" href="hb-open-file.hh.html#OT::TableRecord::offset" title='OT::TableRecord::offset' data-ref="OT::TableRecord::offset">offset</a>, <a class="ref fn fake" href="hb-open-type.hh.html#_ZNK2OT7IntTypecvNSt11conditionalIXsr3std9is_signedIT_EE5valueEijE4typeEEv" title='OT::IntType::operator typename conditional&lt;std::is_signed&lt;Type&gt;::value, int, unsigned int&gt;::type' data-ref="_ZNK2OT7IntTypecvNSt11conditionalIXsr3std9is_signedIT_EE5valueEijE4typeEEv"></a><span class='inlayHint'>length:&nbsp;</span><a class="local col1 ref" href="#21table" title='table' data-ref="21table">table</a>.<a class="ref field" href="hb-open-file.hh.html#OT::TableRecord::length" title='OT::TableRecord::length' data-ref="OT::TableRecord::length">length</a>);</td></tr>
+<tr><th id="187">187</th><td></td></tr>
+<tr><th id="188">188</th><td>  <b>return</b> <a class="local col2 ref" href="#22blob" title='blob' data-ref="22blob">blob</a>;</td></tr>
+<tr><th id="189">189</th><td>}</td></tr>
+<tr><th id="190">190</th><td></td></tr>
+<tr><th id="191">191</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="192">192</th><td><i class="doc"> * hb_face_create:</i></td></tr>
+<tr><th id="193">193</th><td><i class="doc"> *<span class="command"> @blob</span>: #hb_blob_t to work upon</i></td></tr>
+<tr><th id="194">194</th><td><i class="doc"> *<span class="command"> @index</span>: The index of the face within<span class="command"> @blob</span></i></td></tr>
+<tr><th id="195">195</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="196">196</th><td><i class="doc"> * Constructs a new face object from the specified blob and</i></td></tr>
+<tr><th id="197">197</th><td><i class="doc"> * a face index into that blob.</i></td></tr>
+<tr><th id="198">198</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="199">199</th><td><i class="doc"> * The face index is used for blobs of file formats such as TTC and</i></td></tr>
+<tr><th id="200">200</th><td><i class="doc"> * and DFont that can contain more than one face.  Face indices within</i></td></tr>
+<tr><th id="201">201</th><td><i class="doc"> * such collections are zero-based.</i></td></tr>
+<tr><th id="202">202</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="203">203</th><td><i class="doc"> * &lt;note&gt;Note: If the blob font format is not a collection,<span class="command"> @index</span></i></td></tr>
+<tr><th id="204">204</th><td><i class="doc"> * is ignored.  Otherwise, only the lower 16-bits of<span class="command"> @index</span> are used.</i></td></tr>
+<tr><th id="205">205</th><td><i class="doc"> * The unmodified<span class="command"> @index</span> can be accessed via hb_face_get_index().&lt;/note&gt;</i></td></tr>
+<tr><th id="206">206</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="207">207</th><td><i class="doc"> * &lt;note&gt;Note: The high 16-bits of<span class="command"> @index</span>, if non-zero, are used by</i></td></tr>
+<tr><th id="208">208</th><td><i class="doc"> * hb_font_create() to load named-instances in variable fonts.  See</i></td></tr>
+<tr><th id="209">209</th><td><i class="doc"> * hb_font_create() for details.&lt;/note&gt;</i></td></tr>
+<tr><th id="210">210</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="211">211</th><td><i class="doc"> * Return value: (transfer full): The new face object</i></td></tr>
+<tr><th id="212">212</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="213">213</th><td><i class="doc"> * Since: 0.9.2</i></td></tr>
+<tr><th id="214">214</th><td><i class="doc"> **/</i></td></tr>
+<tr><th id="215">215</th><td><a class="typedef" href="hb-face.h.html#hb_face_t" title='hb_face_t' data-type='struct hb_face_t' data-ref="hb_face_t">hb_face_t</a> *</td></tr>
+<tr><th id="216">216</th><td><dfn class="decl def fn" id="hb_face_create" title='hb_face_create' data-ref="hb_face_create">hb_face_create</dfn> (<a class="typedef" href="hb-blob.h.html#hb_blob_t" title='hb_blob_t' data-type='struct hb_blob_t' data-ref="hb_blob_t">hb_blob_t</a>    *<dfn class="local col3 decl" id="23blob" title='blob' data-type='hb_blob_t *' data-ref="23blob">blob</dfn>,</td></tr>
+<tr><th id="217">217</th><td>		<em>unsigned</em> <em>int</em>  <dfn class="local col4 decl" id="24index" title='index' data-type='unsigned int' data-ref="24index">index</dfn>)</td></tr>
+<tr><th id="218">218</th><td>{</td></tr>
+<tr><th id="219">219</th><td>  <a class="typedef" href="hb-face.h.html#hb_face_t" title='hb_face_t' data-type='struct hb_face_t' data-ref="hb_face_t">hb_face_t</a> *<dfn class="local col5 decl" id="25face" title='face' data-type='hb_face_t *' data-ref="25face">face</dfn>;</td></tr>
+<tr><th id="220">220</th><td></td></tr>
+<tr><th id="221">221</th><td>  <b>if</b> (<a class="macro" href="hb.hh.html#251" title="(__builtin_expect (!!(!blob), 0))" data-ref="_M/unlikely">unlikely</a> (!<a class="local col3 ref" href="#23blob" title='blob' data-ref="23blob">blob</a>))</td></tr>
+<tr><th id="222">222</th><td>    <a class="local col3 ref" href="#23blob" title='blob' data-ref="23blob">blob</a> = <a class="ref fn" href="hb-blob.h.html#hb_blob_get_empty" title='hb_blob_get_empty' data-ref="hb_blob_get_empty">hb_blob_get_empty</a> ();</td></tr>
+<tr><th id="223">223</th><td></td></tr>
+<tr><th id="224">224</th><td>  <a class="local col3 ref" href="#23blob" title='blob' data-ref="23blob">blob</a> = <a class="type" href="hb-sanitize.hh.html#hb_sanitize_context_t" title='hb_sanitize_context_t' data-ref="hb_sanitize_context_t">hb_sanitize_context_t</a> <a class="ref fn" href="hb-sanitize.hh.html#_ZN21hb_sanitize_context_tC1Ev" title='hb_sanitize_context_t::hb_sanitize_context_t' data-ref="_ZN21hb_sanitize_context_tC1Ev">(</a>).<a class="ref fn" href="hb-sanitize.hh.html#_ZN21hb_sanitize_context_t13sanitize_blobEP9hb_blob_t" title='hb_sanitize_context_t::sanitize_blob' data-ref="_ZN21hb_sanitize_context_t13sanitize_blobEP9hb_blob_t">sanitize_blob</a>&lt;<span class="namespace">OT::</span><a class="type" href="hb-open-file.hh.html#OT::OpenTypeFontFile" title='OT::OpenTypeFontFile' data-ref="OT::OpenTypeFontFile">OpenTypeFontFile</a>&gt; (<span class='inlayHint'>blob:&nbsp;</span><a class="ref fn" href="hb-blob.h.html#hb_blob_reference" title='hb_blob_reference' data-ref="hb_blob_reference">hb_blob_reference</a> (<a class="local col3 ref" href="#23blob" title='blob' data-ref="23blob">blob</a>));</td></tr>
+<tr><th id="225">225</th><td></td></tr>
+<tr><th id="226">226</th><td>  <a class="typedef" href="#hb_face_for_data_closure_t" title='hb_face_for_data_closure_t' data-type='struct hb_face_for_data_closure_t' data-ref="hb_face_for_data_closure_t">hb_face_for_data_closure_t</a> *<dfn class="local col6 decl" id="26closure" title='closure' data-type='hb_face_for_data_closure_t *' data-ref="26closure">closure</dfn> = <a class="tu ref fn" href="#_ZL32_hb_face_for_data_closure_createP9hb_blob_tj" title='_hb_face_for_data_closure_create' data-use='c' data-ref="_ZL32_hb_face_for_data_closure_createP9hb_blob_tj">_hb_face_for_data_closure_create</a> (<a class="local col3 ref" href="#23blob" title='blob' data-ref="23blob">blob</a>, <a class="local col4 ref" href="#24index" title='index' data-ref="24index">index</a>);</td></tr>
+<tr><th id="227">227</th><td></td></tr>
+<tr><th id="228">228</th><td>  <b>if</b> (<a class="macro" href="hb.hh.html#251" title="(__builtin_expect (!!(!closure), 0))" data-ref="_M/unlikely">unlikely</a> (!<a class="local col6 ref" href="#26closure" title='closure' data-ref="26closure">closure</a>))</td></tr>
+<tr><th id="229">229</th><td>  {</td></tr>
+<tr><th id="230">230</th><td>    <a class="ref fn" href="hb-blob.h.html#hb_blob_destroy" title='hb_blob_destroy' data-ref="hb_blob_destroy">hb_blob_destroy</a> (<a class="local col3 ref" href="#23blob" title='blob' data-ref="23blob">blob</a>);</td></tr>
+<tr><th id="231">231</th><td>    <b>return</b> <a class="ref fn" href="#hb_face_get_empty" title='hb_face_get_empty' data-ref="hb_face_get_empty">hb_face_get_empty</a> ();</td></tr>
+<tr><th id="232">232</th><td>  }</td></tr>
+<tr><th id="233">233</th><td></td></tr>
+<tr><th id="234">234</th><td>  <a class="local col5 ref" href="#25face" title='face' data-ref="25face">face</a> = <a class="ref fn" href="#hb_face_create_for_tables" title='hb_face_create_for_tables' data-ref="hb_face_create_for_tables">hb_face_create_for_tables</a> (<span class='inlayHint'>reference_table_func:&nbsp;</span><a class="tu ref fn" href="#_ZL33_hb_face_for_data_reference_tableP9hb_face_tjPv" title='_hb_face_for_data_reference_table' data-use='r' data-ref="_ZL33_hb_face_for_data_reference_tableP9hb_face_tjPv">_hb_face_for_data_reference_table</a>,</td></tr>
+<tr><th id="235">235</th><td>				    <span class='inlayHint'>user_data:&nbsp;</span><a class="local col6 ref" href="#26closure" title='closure' data-ref="26closure">closure</a>,</td></tr>
+<tr><th id="236">236</th><td>				    <span class='inlayHint'>destroy:&nbsp;</span><a class="tu ref fn" href="#_ZL33_hb_face_for_data_closure_destroyPv" title='_hb_face_for_data_closure_destroy' data-use='r' data-ref="_ZL33_hb_face_for_data_closure_destroyPv">_hb_face_for_data_closure_destroy</a>);</td></tr>
+<tr><th id="237">237</th><td></td></tr>
+<tr><th id="238">238</th><td>  <a class="local col5 ref" href="#25face" title='face' data-ref="25face">face</a>-&gt;<a class="ref field" href="hb-face.hh.html#hb_face_t::index" title='hb_face_t::index' data-ref="hb_face_t::index">index</a> = <a class="local col4 ref" href="#24index" title='index' data-ref="24index">index</a>;</td></tr>
+<tr><th id="239">239</th><td></td></tr>
+<tr><th id="240">240</th><td>  <b>return</b> <a class="local col5 ref" href="#25face" title='face' data-ref="25face">face</a>;</td></tr>
+<tr><th id="241">241</th><td>}</td></tr>
+<tr><th id="242">242</th><td></td></tr>
+<tr><th id="243">243</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="244">244</th><td><i class="doc"> * hb_face_get_empty:</i></td></tr>
+<tr><th id="245">245</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="246">246</th><td><i class="doc"> * Fetches the singleton empty face object.</i></td></tr>
+<tr><th id="247">247</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="248">248</th><td><i class="doc"> * Return value: (transfer full): The empty face object</i></td></tr>
+<tr><th id="249">249</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="250">250</th><td><i class="doc"> * Since: 0.9.2</i></td></tr>
+<tr><th id="251">251</th><td><i class="doc"> **/</i></td></tr>
+<tr><th id="252">252</th><td><a class="typedef" href="hb-face.h.html#hb_face_t" title='hb_face_t' data-type='struct hb_face_t' data-ref="hb_face_t">hb_face_t</a> *</td></tr>
+<tr><th id="253">253</th><td><dfn class="decl def fn" id="hb_face_get_empty" title='hb_face_get_empty' data-ref="hb_face_get_empty">hb_face_get_empty</dfn> ()</td></tr>
+<tr><th id="254">254</th><td>{</td></tr>
+<tr><th id="255">255</th><td>  <b>return</b> <b>const_cast</b>&lt;<a class="typedef" href="hb-face.h.html#hb_face_t" title='hb_face_t' data-type='struct hb_face_t' data-ref="hb_face_t">hb_face_t</a> *&gt; (&amp;<a class="macro" href="hb-null.hh.html#124" title="NullHelper&lt;hb_face_t&gt;::get_null ()" data-ref="_M/Null">Null</a> (<a class="typedef" href="hb-face.h.html#hb_face_t" title='hb_face_t' data-type='struct hb_face_t' data-ref="hb_face_t">hb_face_t</a>));</td></tr>
+<tr><th id="256">256</th><td>}</td></tr>
+<tr><th id="257">257</th><td></td></tr>
+<tr><th id="258">258</th><td></td></tr>
+<tr><th id="259">259</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="260">260</th><td><i class="doc"> * hb_face_reference: (skip)</i></td></tr>
+<tr><th id="261">261</th><td><i class="doc"> *<span class="command"> @face</span>: A face object</i></td></tr>
+<tr><th id="262">262</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="263">263</th><td><i class="doc"> * Increases the reference count on a face object.</i></td></tr>
+<tr><th id="264">264</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="265">265</th><td><i class="doc"> * Return value: The<span class="command"> @face</span> object</i></td></tr>
+<tr><th id="266">266</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="267">267</th><td><i class="doc"> * Since: 0.9.2</i></td></tr>
+<tr><th id="268">268</th><td><i class="doc"> **/</i></td></tr>
+<tr><th id="269">269</th><td><a class="typedef" href="hb-face.h.html#hb_face_t" title='hb_face_t' data-type='struct hb_face_t' data-ref="hb_face_t">hb_face_t</a> *</td></tr>
+<tr><th id="270">270</th><td><dfn class="decl def fn" id="hb_face_reference" title='hb_face_reference' data-ref="hb_face_reference">hb_face_reference</dfn> (<a class="typedef" href="hb-face.h.html#hb_face_t" title='hb_face_t' data-type='struct hb_face_t' data-ref="hb_face_t">hb_face_t</a> *<dfn class="local col7 decl" id="27face" title='face' data-type='hb_face_t *' data-ref="27face">face</dfn>)</td></tr>
+<tr><th id="271">271</th><td>{</td></tr>
+<tr><th id="272">272</th><td>  <b>return</b> <a class="ref fn" href="hb-object.hh.html#_ZL19hb_object_referencePT_" title='hb_object_reference' data-ref="_ZL19hb_object_referencePT_">hb_object_reference</a> (<span class='inlayHint'>obj:&nbsp;</span><a class="local col7 ref" href="#27face" title='face' data-ref="27face">face</a>);</td></tr>
+<tr><th id="273">273</th><td>}</td></tr>
+<tr><th id="274">274</th><td></td></tr>
+<tr><th id="275">275</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="276">276</th><td><i class="doc"> * hb_face_destroy: (skip)</i></td></tr>
+<tr><th id="277">277</th><td><i class="doc"> *<span class="command"> @face</span>: A face object</i></td></tr>
+<tr><th id="278">278</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="279">279</th><td><i class="doc"> * Decreases the reference count on a face object. When the</i></td></tr>
+<tr><th id="280">280</th><td><i class="doc"> * reference count reaches zero, the face is destroyed,</i></td></tr>
+<tr><th id="281">281</th><td><i class="doc"> * freeing all memory.</i></td></tr>
+<tr><th id="282">282</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="283">283</th><td><i class="doc"> * Since: 0.9.2</i></td></tr>
+<tr><th id="284">284</th><td><i class="doc"> **/</i></td></tr>
+<tr><th id="285">285</th><td><em>void</em></td></tr>
+<tr><th id="286">286</th><td><dfn class="decl def fn" id="hb_face_destroy" title='hb_face_destroy' data-ref="hb_face_destroy">hb_face_destroy</dfn> (<a class="typedef" href="hb-face.h.html#hb_face_t" title='hb_face_t' data-type='struct hb_face_t' data-ref="hb_face_t">hb_face_t</a> *<dfn class="local col8 decl" id="28face" title='face' data-type='hb_face_t *' data-ref="28face">face</dfn>)</td></tr>
+<tr><th id="287">287</th><td>{</td></tr>
+<tr><th id="288">288</th><td>  <b>if</b> (!<a class="ref fn" href="hb-object.hh.html#_ZL17hb_object_destroyPT_" title='hb_object_destroy' data-ref="_ZL17hb_object_destroyPT_">hb_object_destroy</a> (<span class='inlayHint'>obj:&nbsp;</span><a class="local col8 ref" href="#28face" title='face' data-ref="28face">face</a>)) <b>return</b>;</td></tr>
+<tr><th id="289">289</th><td></td></tr>
+<tr><th id="290">290</th><td><u>#<span data-ppcond="290">ifndef</span> <span class="macro" data-ref="_M/HB_NO_SHAPER">HB_NO_SHAPER</span></u></td></tr>
+<tr><th id="291">291</th><td>  <b>for</b> (<a class="typedef" href="hb-face.h.html#hb_face_t" title='hb_face_t' data-type='struct hb_face_t' data-ref="hb_face_t">hb_face_t</a>::<a class="type" href="hb-face.hh.html#hb_face_t::plan_node_t" title='hb_face_t::plan_node_t' data-ref="hb_face_t::plan_node_t">plan_node_t</a> *<dfn class="local col9 decl" id="29node" title='node' data-type='hb_face_t::plan_node_t *' data-ref="29node">node</dfn> = <a class="ref fn fake" href="hb-atomic.hh.html#_ZNK15hb_atomic_ptr_tcvPTL0__Ev" title='hb_atomic_ptr_t::operator type-parameter-1-0 *' data-ref="_ZNK15hb_atomic_ptr_tcvPTL0__Ev"></a><a class="local col8 ref" href="#28face" title='face' data-ref="28face">face</a>-&gt;<a class="ref field" href="hb-face.hh.html#hb_face_t::shape_plans" title='hb_face_t::shape_plans' data-ref="hb_face_t::shape_plans">shape_plans</a>; <a class="local col9 ref" href="#29node" title='node' data-ref="29node">node</a>; )</td></tr>
+<tr><th id="292">292</th><td>  {</td></tr>
+<tr><th id="293">293</th><td>    <a class="typedef" href="hb-face.h.html#hb_face_t" title='hb_face_t' data-type='struct hb_face_t' data-ref="hb_face_t">hb_face_t</a>::<a class="type" href="hb-face.hh.html#hb_face_t::plan_node_t" title='hb_face_t::plan_node_t' data-ref="hb_face_t::plan_node_t">plan_node_t</a> *<dfn class="local col0 decl" id="30next" title='next' data-type='hb_face_t::plan_node_t *' data-ref="30next">next</dfn> = <a class="local col9 ref" href="#29node" title='node' data-ref="29node">node</a>-&gt;<a class="ref field" href="hb-face.hh.html#hb_face_t::plan_node_t::next" title='hb_face_t::plan_node_t::next' data-ref="hb_face_t::plan_node_t::next">next</a>;</td></tr>
+<tr><th id="294">294</th><td>    <a class="ref fn" href="hb-shape-plan.h.html#hb_shape_plan_destroy" title='hb_shape_plan_destroy' data-ref="hb_shape_plan_destroy">hb_shape_plan_destroy</a> (<span class='inlayHint'>shape_plan:&nbsp;</span><a class="local col9 ref" href="#29node" title='node' data-ref="29node">node</a>-&gt;<a class="ref field" href="hb-face.hh.html#hb_face_t::plan_node_t::shape_plan" title='hb_face_t::plan_node_t::shape_plan' data-ref="hb_face_t::plan_node_t::shape_plan">shape_plan</a>);</td></tr>
+<tr><th id="295">295</th><td>    <a class="macro" href="hb.hh.html#241" title="free" data-ref="_M/hb_free">hb_free</a> (<span class='inlayHint'>ptr:&nbsp;</span><a class="local col9 ref" href="#29node" title='node' data-ref="29node">node</a>);</td></tr>
+<tr><th id="296">296</th><td>    <a class="local col9 ref" href="#29node" title='node' data-ref="29node">node</a> = <a class="local col0 ref" href="#30next" title='next' data-ref="30next">next</a>;</td></tr>
+<tr><th id="297">297</th><td>  }</td></tr>
+<tr><th id="298">298</th><td><u>#<span data-ppcond="290">endif</span></u></td></tr>
+<tr><th id="299">299</th><td></td></tr>
+<tr><th id="300">300</th><td>  <a class="local col8 ref" href="#28face" title='face' data-ref="28face">face</a>-&gt;<a class="ref field" href="hb-face.hh.html#hb_face_t::data" title='hb_face_t::data' data-ref="hb_face_t::data">data</a>.<a class="ref fn" href="hb-shaper.hh.html#_ZN26hb_shaper_object_dataset_t4finiEv" title='hb_shaper_object_dataset_t::fini' data-ref="_ZN26hb_shaper_object_dataset_t4finiEv">fini</a> ();</td></tr>
+<tr><th id="301">301</th><td>  <a class="local col8 ref" href="#28face" title='face' data-ref="28face">face</a>-&gt;<a class="ref field" href="hb-face.hh.html#hb_face_t::table" title='hb_face_t::table' data-ref="hb_face_t::table">table</a>.<a class="ref fn" href="hb-ot-face.hh.html#_ZN12hb_ot_face_t4finiEv" title='hb_ot_face_t::fini' data-ref="_ZN12hb_ot_face_t4finiEv">fini</a> ();</td></tr>
+<tr><th id="302">302</th><td></td></tr>
+<tr><th id="303">303</th><td>  <b>if</b> (<a class="local col8 ref" href="#28face" title='face' data-ref="28face">face</a>-&gt;<a class="ref field" href="hb-face.hh.html#hb_face_t::destroy" title='hb_face_t::destroy' data-ref="hb_face_t::destroy">destroy</a>)</td></tr>
+<tr><th id="304">304</th><td>    <a class="local col8 ref" href="#28face" title='face' data-ref="28face">face</a>-&gt;<a class="ref field" href="hb-face.hh.html#hb_face_t::destroy" title='hb_face_t::destroy' data-ref="hb_face_t::destroy">destroy</a> (<a class="local col8 ref" href="#28face" title='face' data-ref="28face">face</a>-&gt;<a class="ref field" href="hb-face.hh.html#hb_face_t::user_data" title='hb_face_t::user_data' data-ref="hb_face_t::user_data">user_data</a>);</td></tr>
+<tr><th id="305">305</th><td></td></tr>
+<tr><th id="306">306</th><td>  <a class="macro" href="hb.hh.html#241" title="free" data-ref="_M/hb_free">hb_free</a> (<span class='inlayHint'>ptr:&nbsp;</span><a class="local col8 ref" href="#28face" title='face' data-ref="28face">face</a>);</td></tr>
+<tr><th id="307">307</th><td>}</td></tr>
+<tr><th id="308">308</th><td></td></tr>
+<tr><th id="309">309</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="310">310</th><td><i class="doc"> * hb_face_set_user_data: (skip)</i></td></tr>
+<tr><th id="311">311</th><td><i class="doc"> *<span class="command"> @face</span>: A face object</i></td></tr>
+<tr><th id="312">312</th><td><i class="doc"> *<span class="command"> @key</span>: The user-data key to set</i></td></tr>
+<tr><th id="313">313</th><td><i class="doc"> * <span class="command">@data</span>: A pointer to the user data</i></td></tr>
+<tr><th id="314">314</th><td><i class="doc"> *<span class="command"> @destroy</span>: (nullable): A callback to call when <span class="command">@data</span> is not needed anymore</i></td></tr>
+<tr><th id="315">315</th><td><i class="doc"> *<span class="command"> @replace</span>: Whether to replace an existing data with the same key</i></td></tr>
+<tr><th id="316">316</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="317">317</th><td><i class="doc"> * Attaches a user-data key/data pair to the given face object.</i></td></tr>
+<tr><th id="318">318</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="319">319</th><td><i class="doc"> * Return value: `true` if success, `false` otherwise</i></td></tr>
+<tr><th id="320">320</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="321">321</th><td><i class="doc"> * Since: 0.9.2</i></td></tr>
+<tr><th id="322">322</th><td><i class="doc"> **/</i></td></tr>
+<tr><th id="323">323</th><td><a class="typedef" href="hb-common.h.html#hb_bool_t" title='hb_bool_t' data-type='int' data-ref="hb_bool_t">hb_bool_t</a></td></tr>
+<tr><th id="324">324</th><td><dfn class="decl def fn" id="hb_face_set_user_data" title='hb_face_set_user_data' data-ref="hb_face_set_user_data">hb_face_set_user_data</dfn> (<a class="typedef" href="hb-face.h.html#hb_face_t" title='hb_face_t' data-type='struct hb_face_t' data-ref="hb_face_t">hb_face_t</a>          *<dfn class="local col1 decl" id="31face" title='face' data-type='hb_face_t *' data-ref="31face">face</dfn>,</td></tr>
+<tr><th id="325">325</th><td>		       <a class="typedef" href="hb-common.h.html#hb_user_data_key_t" title='hb_user_data_key_t' data-type='struct hb_user_data_key_t' data-ref="hb_user_data_key_t">hb_user_data_key_t</a> *<dfn class="local col2 decl" id="32key" title='key' data-type='hb_user_data_key_t *' data-ref="32key">key</dfn>,</td></tr>
+<tr><th id="326">326</th><td>		       <em>void</em> *              <dfn class="local col3 decl" id="33data" title='data' data-type='void *' data-ref="33data">data</dfn>,</td></tr>
+<tr><th id="327">327</th><td>		       <a class="typedef" href="hb-common.h.html#hb_destroy_func_t" title='hb_destroy_func_t' data-type='void (*)(void *)' data-ref="hb_destroy_func_t">hb_destroy_func_t</a>   <dfn class="local col4 decl" id="34destroy" title='destroy' data-type='hb_destroy_func_t' data-ref="34destroy">destroy</dfn>,</td></tr>
+<tr><th id="328">328</th><td>		       <a class="typedef" href="hb-common.h.html#hb_bool_t" title='hb_bool_t' data-type='int' data-ref="hb_bool_t">hb_bool_t</a>           <dfn class="local col5 decl" id="35replace" title='replace' data-type='hb_bool_t' data-ref="35replace">replace</dfn>)</td></tr>
+<tr><th id="329">329</th><td>{</td></tr>
+<tr><th id="330">330</th><td>  <b>return</b> <a class="ref fn" href="hb-object.hh.html#_ZL23hb_object_set_user_dataPT_P18hb_user_data_key_tPvPFvS3_Ei" title='hb_object_set_user_data' data-ref="_ZL23hb_object_set_user_dataPT_P18hb_user_data_key_tPvPFvS3_Ei">hb_object_set_user_data</a> (<span class='inlayHint'>obj:&nbsp;</span><a class="local col1 ref" href="#31face" title='face' data-ref="31face">face</a>, <a class="local col2 ref" href="#32key" title='key' data-ref="32key">key</a>, <a class="local col3 ref" href="#33data" title='data' data-ref="33data">data</a>, <a class="local col4 ref" href="#34destroy" title='destroy' data-ref="34destroy">destroy</a>, <a class="local col5 ref" href="#35replace" title='replace' data-ref="35replace">replace</a>);</td></tr>
+<tr><th id="331">331</th><td>}</td></tr>
+<tr><th id="332">332</th><td></td></tr>
+<tr><th id="333">333</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="334">334</th><td><i class="doc"> * hb_face_get_user_data: (skip)</i></td></tr>
+<tr><th id="335">335</th><td><i class="doc"> *<span class="command"> @face</span>: A face object</i></td></tr>
+<tr><th id="336">336</th><td><i class="doc"> *<span class="command"> @key</span>: The user-data key to query</i></td></tr>
+<tr><th id="337">337</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="338">338</th><td><i class="doc"> * Fetches the user data associated with the specified key,</i></td></tr>
+<tr><th id="339">339</th><td><i class="doc"> * attached to the specified face object.</i></td></tr>
+<tr><th id="340">340</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="341">341</th><td><i class="doc"> * Return value: (transfer none): A pointer to the user data</i></td></tr>
+<tr><th id="342">342</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="343">343</th><td><i class="doc"> * Since: 0.9.2</i></td></tr>
+<tr><th id="344">344</th><td><i class="doc"> **/</i></td></tr>
+<tr><th id="345">345</th><td><em>void</em> *</td></tr>
+<tr><th id="346">346</th><td><dfn class="decl def fn" id="hb_face_get_user_data" title='hb_face_get_user_data' data-ref="hb_face_get_user_data">hb_face_get_user_data</dfn> (<em>const</em> <a class="typedef" href="hb-face.h.html#hb_face_t" title='hb_face_t' data-type='struct hb_face_t' data-ref="hb_face_t">hb_face_t</a>    *<dfn class="local col6 decl" id="36face" title='face' data-type='const hb_face_t *' data-ref="36face">face</dfn>,</td></tr>
+<tr><th id="347">347</th><td>		       <a class="typedef" href="hb-common.h.html#hb_user_data_key_t" title='hb_user_data_key_t' data-type='struct hb_user_data_key_t' data-ref="hb_user_data_key_t">hb_user_data_key_t</a> *<dfn class="local col7 decl" id="37key" title='key' data-type='hb_user_data_key_t *' data-ref="37key">key</dfn>)</td></tr>
+<tr><th id="348">348</th><td>{</td></tr>
+<tr><th id="349">349</th><td>  <b>return</b> <a class="ref fn" href="hb-object.hh.html#_ZL23hb_object_get_user_dataPT_P18hb_user_data_key_t" title='hb_object_get_user_data' data-ref="_ZL23hb_object_get_user_dataPT_P18hb_user_data_key_t">hb_object_get_user_data</a> (<span class='inlayHint'>obj:&nbsp;</span><a class="local col6 ref" href="#36face" title='face' data-ref="36face">face</a>, <a class="local col7 ref" href="#37key" title='key' data-ref="37key">key</a>);</td></tr>
+<tr><th id="350">350</th><td>}</td></tr>
+<tr><th id="351">351</th><td></td></tr>
+<tr><th id="352">352</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="353">353</th><td><i class="doc"> * hb_face_make_immutable:</i></td></tr>
+<tr><th id="354">354</th><td><i class="doc"> *<span class="command"> @face</span>: A face object</i></td></tr>
+<tr><th id="355">355</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="356">356</th><td><i class="doc"> * Makes the given face object immutable.</i></td></tr>
+<tr><th id="357">357</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="358">358</th><td><i class="doc"> * Since: 0.9.2</i></td></tr>
+<tr><th id="359">359</th><td><i class="doc"> **/</i></td></tr>
+<tr><th id="360">360</th><td><em>void</em></td></tr>
+<tr><th id="361">361</th><td><dfn class="decl def fn" id="hb_face_make_immutable" title='hb_face_make_immutable' data-ref="hb_face_make_immutable">hb_face_make_immutable</dfn> (<a class="typedef" href="hb-face.h.html#hb_face_t" title='hb_face_t' data-type='struct hb_face_t' data-ref="hb_face_t">hb_face_t</a> *<dfn class="local col8 decl" id="38face" title='face' data-type='hb_face_t *' data-ref="38face">face</dfn>)</td></tr>
+<tr><th id="362">362</th><td>{</td></tr>
+<tr><th id="363">363</th><td>  <b>if</b> (<a class="ref fn" href="hb-object.hh.html#_ZL22hb_object_is_immutablePKT_" title='hb_object_is_immutable' data-ref="_ZL22hb_object_is_immutablePKT_">hb_object_is_immutable</a> (<span class='inlayHint'>obj:&nbsp;</span><a class="local col8 ref" href="#38face" title='face' data-ref="38face">face</a>))</td></tr>
+<tr><th id="364">364</th><td>    <b>return</b>;</td></tr>
+<tr><th id="365">365</th><td></td></tr>
+<tr><th id="366">366</th><td>  <a class="ref fn" href="hb-object.hh.html#_ZL24hb_object_make_immutablePKT_" title='hb_object_make_immutable' data-ref="_ZL24hb_object_make_immutablePKT_">hb_object_make_immutable</a> (<span class='inlayHint'>obj:&nbsp;</span><a class="local col8 ref" href="#38face" title='face' data-ref="38face">face</a>);</td></tr>
+<tr><th id="367">367</th><td>}</td></tr>
+<tr><th id="368">368</th><td></td></tr>
+<tr><th id="369">369</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="370">370</th><td><i class="doc"> * hb_face_is_immutable:</i></td></tr>
+<tr><th id="371">371</th><td><i class="doc"> *<span class="command"> @face</span>: A face object</i></td></tr>
+<tr><th id="372">372</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="373">373</th><td><i class="doc"> * Tests whether the given face object is immutable.</i></td></tr>
+<tr><th id="374">374</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="375">375</th><td><i class="doc"> * Return value: `true` is<span class="command"> @face</span> is immutable, `false` otherwise</i></td></tr>
+<tr><th id="376">376</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="377">377</th><td><i class="doc"> * Since: 0.9.2</i></td></tr>
+<tr><th id="378">378</th><td><i class="doc"> **/</i></td></tr>
+<tr><th id="379">379</th><td><a class="typedef" href="hb-common.h.html#hb_bool_t" title='hb_bool_t' data-type='int' data-ref="hb_bool_t">hb_bool_t</a></td></tr>
+<tr><th id="380">380</th><td><dfn class="decl def fn" id="hb_face_is_immutable" title='hb_face_is_immutable' data-ref="hb_face_is_immutable">hb_face_is_immutable</dfn> (<em>const</em> <a class="typedef" href="hb-face.h.html#hb_face_t" title='hb_face_t' data-type='struct hb_face_t' data-ref="hb_face_t">hb_face_t</a> *<dfn class="local col9 decl" id="39face" title='face' data-type='const hb_face_t *' data-ref="39face">face</dfn>)</td></tr>
+<tr><th id="381">381</th><td>{</td></tr>
+<tr><th id="382">382</th><td>  <b>return</b> <a class="ref fn" href="hb-object.hh.html#_ZL22hb_object_is_immutablePKT_" title='hb_object_is_immutable' data-ref="_ZL22hb_object_is_immutablePKT_">hb_object_is_immutable</a> (<span class='inlayHint'>obj:&nbsp;</span><a class="local col9 ref" href="#39face" title='face' data-ref="39face">face</a>);</td></tr>
+<tr><th id="383">383</th><td>}</td></tr>
+<tr><th id="384">384</th><td></td></tr>
+<tr><th id="385">385</th><td></td></tr>
+<tr><th id="386">386</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="387">387</th><td><i class="doc"> * hb_face_reference_table:</i></td></tr>
+<tr><th id="388">388</th><td><i class="doc"> *<span class="command"> @face</span>: A face object</i></td></tr>
+<tr><th id="389">389</th><td><i class="doc"> *<span class="command"> @tag</span>: The #hb_tag_t of the table to query</i></td></tr>
+<tr><th id="390">390</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="391">391</th><td><i class="doc"> * Fetches a reference to the specified table within</i></td></tr>
+<tr><th id="392">392</th><td><i class="doc"> * the specified face.</i></td></tr>
+<tr><th id="393">393</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="394">394</th><td><i class="doc"> * Return value: (transfer full): A pointer to the<span class="command"> @tag</span> table within<span class="command"> @face</span></i></td></tr>
+<tr><th id="395">395</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="396">396</th><td><i class="doc"> * Since: 0.9.2</i></td></tr>
+<tr><th id="397">397</th><td><i class="doc"> **/</i></td></tr>
+<tr><th id="398">398</th><td><a class="typedef" href="hb-blob.h.html#hb_blob_t" title='hb_blob_t' data-type='struct hb_blob_t' data-ref="hb_blob_t">hb_blob_t</a> *</td></tr>
+<tr><th id="399">399</th><td><dfn class="decl def fn" id="hb_face_reference_table" title='hb_face_reference_table' data-ref="hb_face_reference_table">hb_face_reference_table</dfn> (<em>const</em> <a class="typedef" href="hb-face.h.html#hb_face_t" title='hb_face_t' data-type='struct hb_face_t' data-ref="hb_face_t">hb_face_t</a> *<dfn class="local col0 decl" id="40face" title='face' data-type='const hb_face_t *' data-ref="40face">face</dfn>,</td></tr>
+<tr><th id="400">400</th><td>			 <a class="typedef" href="hb-common.h.html#hb_tag_t" title='hb_tag_t' data-type='uint32_t' data-ref="hb_tag_t">hb_tag_t</a> <dfn class="local col1 decl" id="41tag" title='tag' data-type='hb_tag_t' data-ref="41tag">tag</dfn>)</td></tr>
+<tr><th id="401">401</th><td>{</td></tr>
+<tr><th id="402">402</th><td>  <b>if</b> (<a class="macro" href="hb.hh.html#251" title="(__builtin_expect (!!(tag == ((hb_tag_t)((((uint32_t)(0)&amp;0xFF)&lt;&lt;24)|(((uint32_t)(0)&amp;0xFF)&lt;&lt;16)|(((uint32_t)(0)&amp;0xFF)&lt;&lt;8)|((uint32_t)(0)&amp;0xFF)))), 0))" data-ref="_M/unlikely">unlikely</a> (<a class="local col1 ref" href="#41tag" title='tag' data-ref="41tag">tag</a> == <a class="macro" href="hb-common.h.html#187" title="((hb_tag_t)((((uint32_t)(0)&amp;0xFF)&lt;&lt;24)|(((uint32_t)(0)&amp;0xFF)&lt;&lt;16)|(((uint32_t)(0)&amp;0xFF)&lt;&lt;8)|((uint32_t)(0)&amp;0xFF)))" data-ref="_M/HB_TAG_NONE">HB_TAG_NONE</a>))</td></tr>
+<tr><th id="403">403</th><td>    <b>return</b> <a class="ref fn" href="hb-blob.h.html#hb_blob_get_empty" title='hb_blob_get_empty' data-ref="hb_blob_get_empty">hb_blob_get_empty</a> ();</td></tr>
+<tr><th id="404">404</th><td></td></tr>
+<tr><th id="405">405</th><td>  <b>return</b> <a class="local col0 ref" href="#40face" title='face' data-ref="40face">face</a>-&gt;<a class="ref fn" href="hb-face.hh.html#_ZNK9hb_face_t15reference_tableEj" title='hb_face_t::reference_table' data-ref="_ZNK9hb_face_t15reference_tableEj">reference_table</a> (<a class="local col1 ref" href="#41tag" title='tag' data-ref="41tag">tag</a>);</td></tr>
+<tr><th id="406">406</th><td>}</td></tr>
+<tr><th id="407">407</th><td></td></tr>
+<tr><th id="408">408</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="409">409</th><td><i class="doc"> * hb_face_reference_blob:</i></td></tr>
+<tr><th id="410">410</th><td><i class="doc"> *<span class="command"> @face</span>: A face object</i></td></tr>
+<tr><th id="411">411</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="412">412</th><td><i class="doc"> * Fetches a pointer to the binary blob that contains the</i></td></tr>
+<tr><th id="413">413</th><td><i class="doc"> * specified face. Returns an empty blob if referencing face data is not</i></td></tr>
+<tr><th id="414">414</th><td><i class="doc"> * possible.</i></td></tr>
+<tr><th id="415">415</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="416">416</th><td><i class="doc"> * Return value: (transfer full): A pointer to the blob for<span class="command"> @face</span></i></td></tr>
+<tr><th id="417">417</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="418">418</th><td><i class="doc"> * Since: 0.9.2</i></td></tr>
+<tr><th id="419">419</th><td><i class="doc"> **/</i></td></tr>
+<tr><th id="420">420</th><td><a class="typedef" href="hb-blob.h.html#hb_blob_t" title='hb_blob_t' data-type='struct hb_blob_t' data-ref="hb_blob_t">hb_blob_t</a> *</td></tr>
+<tr><th id="421">421</th><td><dfn class="decl def fn" id="hb_face_reference_blob" title='hb_face_reference_blob' data-ref="hb_face_reference_blob">hb_face_reference_blob</dfn> (<a class="typedef" href="hb-face.h.html#hb_face_t" title='hb_face_t' data-type='struct hb_face_t' data-ref="hb_face_t">hb_face_t</a> *<dfn class="local col2 decl" id="42face" title='face' data-type='hb_face_t *' data-ref="42face">face</dfn>)</td></tr>
+<tr><th id="422">422</th><td>{</td></tr>
+<tr><th id="423">423</th><td>  <b>return</b> <a class="local col2 ref" href="#42face" title='face' data-ref="42face">face</a>-&gt;<a class="ref fn" href="hb-face.hh.html#_ZNK9hb_face_t15reference_tableEj" title='hb_face_t::reference_table' data-ref="_ZNK9hb_face_t15reference_tableEj">reference_table</a> (<a class="macro" href="hb-common.h.html#187" title="((hb_tag_t)((((uint32_t)(0)&amp;0xFF)&lt;&lt;24)|(((uint32_t)(0)&amp;0xFF)&lt;&lt;16)|(((uint32_t)(0)&amp;0xFF)&lt;&lt;8)|((uint32_t)(0)&amp;0xFF)))" data-ref="_M/HB_TAG_NONE">HB_TAG_NONE</a>);</td></tr>
+<tr><th id="424">424</th><td>}</td></tr>
+<tr><th id="425">425</th><td></td></tr>
+<tr><th id="426">426</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="427">427</th><td><i class="doc"> * hb_face_set_index:</i></td></tr>
+<tr><th id="428">428</th><td><i class="doc"> *<span class="command"> @face</span>: A face object</i></td></tr>
+<tr><th id="429">429</th><td><i class="doc"> *<span class="command"> @index</span>: The index to assign</i></td></tr>
+<tr><th id="430">430</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="431">431</th><td><i class="doc"> * Assigns the specified face-index to<span class="command"> @face</span>. Fails if the</i></td></tr>
+<tr><th id="432">432</th><td><i class="doc"> * face is immutable.</i></td></tr>
+<tr><th id="433">433</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="434">434</th><td><i class="doc"> * &lt;note&gt;Note: changing the index has no effect on the face itself</i></td></tr>
+<tr><th id="435">435</th><td><i class="doc"> * This only changes the value returned by hb_face_get_index().&lt;/note&gt;</i></td></tr>
+<tr><th id="436">436</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="437">437</th><td><i class="doc"> * Since: 0.9.2</i></td></tr>
+<tr><th id="438">438</th><td><i class="doc"> **/</i></td></tr>
+<tr><th id="439">439</th><td><em>void</em></td></tr>
+<tr><th id="440">440</th><td><dfn class="decl def fn" id="hb_face_set_index" title='hb_face_set_index' data-ref="hb_face_set_index">hb_face_set_index</dfn> (<a class="typedef" href="hb-face.h.html#hb_face_t" title='hb_face_t' data-type='struct hb_face_t' data-ref="hb_face_t">hb_face_t</a>    *<dfn class="local col3 decl" id="43face" title='face' data-type='hb_face_t *' data-ref="43face">face</dfn>,</td></tr>
+<tr><th id="441">441</th><td>		   <em>unsigned</em> <em>int</em>  <dfn class="local col4 decl" id="44index" title='index' data-type='unsigned int' data-ref="44index">index</dfn>)</td></tr>
+<tr><th id="442">442</th><td>{</td></tr>
+<tr><th id="443">443</th><td>  <b>if</b> (<a class="ref fn" href="hb-object.hh.html#_ZL22hb_object_is_immutablePKT_" title='hb_object_is_immutable' data-ref="_ZL22hb_object_is_immutablePKT_">hb_object_is_immutable</a> (<span class='inlayHint'>obj:&nbsp;</span><a class="local col3 ref" href="#43face" title='face' data-ref="43face">face</a>))</td></tr>
+<tr><th id="444">444</th><td>    <b>return</b>;</td></tr>
+<tr><th id="445">445</th><td></td></tr>
+<tr><th id="446">446</th><td>  <a class="local col3 ref" href="#43face" title='face' data-ref="43face">face</a>-&gt;<a class="ref field" href="hb-face.hh.html#hb_face_t::index" title='hb_face_t::index' data-ref="hb_face_t::index">index</a> = <a class="local col4 ref" href="#44index" title='index' data-ref="44index">index</a>;</td></tr>
+<tr><th id="447">447</th><td>}</td></tr>
+<tr><th id="448">448</th><td></td></tr>
+<tr><th id="449">449</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="450">450</th><td><i class="doc"> * hb_face_get_index:</i></td></tr>
+<tr><th id="451">451</th><td><i class="doc"> *<span class="command"> @face</span>: A face object</i></td></tr>
+<tr><th id="452">452</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="453">453</th><td><i class="doc"> * Fetches the face-index corresponding to the given face.</i></td></tr>
+<tr><th id="454">454</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="455">455</th><td><i class="doc"> * &lt;note&gt;Note: face indices within a collection are zero-based.&lt;/note&gt;</i></td></tr>
+<tr><th id="456">456</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="457">457</th><td><i class="doc"> * Return value: The index of<span class="command"> @face</span>.</i></td></tr>
+<tr><th id="458">458</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="459">459</th><td><i class="doc"> * Since: 0.9.2</i></td></tr>
+<tr><th id="460">460</th><td><i class="doc"> **/</i></td></tr>
+<tr><th id="461">461</th><td><em>unsigned</em> <em>int</em></td></tr>
+<tr><th id="462">462</th><td><dfn class="decl def fn" id="hb_face_get_index" title='hb_face_get_index' data-ref="hb_face_get_index">hb_face_get_index</dfn> (<em>const</em> <a class="typedef" href="hb-face.h.html#hb_face_t" title='hb_face_t' data-type='struct hb_face_t' data-ref="hb_face_t">hb_face_t</a> *<dfn class="local col5 decl" id="45face" title='face' data-type='const hb_face_t *' data-ref="45face">face</dfn>)</td></tr>
+<tr><th id="463">463</th><td>{</td></tr>
+<tr><th id="464">464</th><td>  <b>return</b> <a class="local col5 ref" href="#45face" title='face' data-ref="45face">face</a>-&gt;<a class="ref field" href="hb-face.hh.html#hb_face_t::index" title='hb_face_t::index' data-ref="hb_face_t::index">index</a>;</td></tr>
+<tr><th id="465">465</th><td>}</td></tr>
+<tr><th id="466">466</th><td></td></tr>
+<tr><th id="467">467</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="468">468</th><td><i class="doc"> * hb_face_set_upem:</i></td></tr>
+<tr><th id="469">469</th><td><i class="doc"> *<span class="command"> @face</span>: A face object</i></td></tr>
+<tr><th id="470">470</th><td><i class="doc"> *<span class="command"> @upem</span>: The units-per-em value to assign</i></td></tr>
+<tr><th id="471">471</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="472">472</th><td><i class="doc"> * Sets the units-per-em (upem) for a face object to the specified value.</i></td></tr>
+<tr><th id="473">473</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="474">474</th><td><i class="doc"> * This API is used in rare circumstances.</i></td></tr>
+<tr><th id="475">475</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="476">476</th><td><i class="doc"> * Since: 0.9.2</i></td></tr>
+<tr><th id="477">477</th><td><i class="doc"> **/</i></td></tr>
+<tr><th id="478">478</th><td><em>void</em></td></tr>
+<tr><th id="479">479</th><td><dfn class="decl def fn" id="hb_face_set_upem" title='hb_face_set_upem' data-ref="hb_face_set_upem">hb_face_set_upem</dfn> (<a class="typedef" href="hb-face.h.html#hb_face_t" title='hb_face_t' data-type='struct hb_face_t' data-ref="hb_face_t">hb_face_t</a>    *<dfn class="local col6 decl" id="46face" title='face' data-type='hb_face_t *' data-ref="46face">face</dfn>,</td></tr>
+<tr><th id="480">480</th><td>		  <em>unsigned</em> <em>int</em>  <dfn class="local col7 decl" id="47upem" title='upem' data-type='unsigned int' data-ref="47upem">upem</dfn>)</td></tr>
+<tr><th id="481">481</th><td>{</td></tr>
+<tr><th id="482">482</th><td>  <b>if</b> (<a class="ref fn" href="hb-object.hh.html#_ZL22hb_object_is_immutablePKT_" title='hb_object_is_immutable' data-ref="_ZL22hb_object_is_immutablePKT_">hb_object_is_immutable</a> (<span class='inlayHint'>obj:&nbsp;</span><a class="local col6 ref" href="#46face" title='face' data-ref="46face">face</a>))</td></tr>
+<tr><th id="483">483</th><td>    <b>return</b>;</td></tr>
+<tr><th id="484">484</th><td></td></tr>
+<tr><th id="485">485</th><td>  <a class="local col6 ref" href="#46face" title='face' data-ref="46face">face</a>-&gt;<a class="ref field" href="hb-face.hh.html#hb_face_t::upem" title='hb_face_t::upem' data-ref="hb_face_t::upem">upem</a> <a class="ref fn" href="hb-atomic.hh.html#_ZN15hb_atomic_int_taSEi" title='hb_atomic_int_t::operator=' data-ref="_ZN15hb_atomic_int_taSEi">=</a> <a class="local col7 ref" href="#47upem" title='upem' data-ref="47upem">upem</a>;</td></tr>
+<tr><th id="486">486</th><td>}</td></tr>
+<tr><th id="487">487</th><td></td></tr>
+<tr><th id="488">488</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="489">489</th><td><i class="doc"> * hb_face_get_upem:</i></td></tr>
+<tr><th id="490">490</th><td><i class="doc"> *<span class="command"> @face</span>: A face object</i></td></tr>
+<tr><th id="491">491</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="492">492</th><td><i class="doc"> * Fetches the units-per-em (UPEM) value of the specified face object.</i></td></tr>
+<tr><th id="493">493</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="494">494</th><td><i class="doc"> * Typical UPEM values for fonts are 1000, or 2048, but any value</i></td></tr>
+<tr><th id="495">495</th><td><i class="doc"> * in between 16 and 16,384 is allowed for OpenType fonts.</i></td></tr>
+<tr><th id="496">496</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="497">497</th><td><i class="doc"> * Return value: The upem value of<span class="command"> @face</span></i></td></tr>
+<tr><th id="498">498</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="499">499</th><td><i class="doc"> * Since: 0.9.2</i></td></tr>
+<tr><th id="500">500</th><td><i class="doc"> **/</i></td></tr>
+<tr><th id="501">501</th><td><em>unsigned</em> <em>int</em></td></tr>
+<tr><th id="502">502</th><td><dfn class="decl def fn" id="hb_face_get_upem" title='hb_face_get_upem' data-ref="hb_face_get_upem">hb_face_get_upem</dfn> (<em>const</em> <a class="typedef" href="hb-face.h.html#hb_face_t" title='hb_face_t' data-type='struct hb_face_t' data-ref="hb_face_t">hb_face_t</a> *<dfn class="local col8 decl" id="48face" title='face' data-type='const hb_face_t *' data-ref="48face">face</dfn>)</td></tr>
+<tr><th id="503">503</th><td>{</td></tr>
+<tr><th id="504">504</th><td>  <b>return</b> <a class="local col8 ref" href="#48face" title='face' data-ref="48face">face</a>-&gt;<a class="ref fn" href="hb-face.hh.html#_ZNK9hb_face_t8get_upemEv" title='hb_face_t::get_upem' data-ref="_ZNK9hb_face_t8get_upemEv">get_upem</a> ();</td></tr>
+<tr><th id="505">505</th><td>}</td></tr>
+<tr><th id="506">506</th><td></td></tr>
+<tr><th id="507">507</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="508">508</th><td><i class="doc"> * hb_face_set_glyph_count:</i></td></tr>
+<tr><th id="509">509</th><td><i class="doc"> *<span class="command"> @face</span>: A face object</i></td></tr>
+<tr><th id="510">510</th><td><i class="doc"> *<span class="command"> @glyph</span>_count: The glyph-count value to assign</i></td></tr>
+<tr><th id="511">511</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="512">512</th><td><i class="doc"> * Sets the glyph count for a face object to the specified value.</i></td></tr>
+<tr><th id="513">513</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="514">514</th><td><i class="doc"> * This API is used in rare circumstances.</i></td></tr>
+<tr><th id="515">515</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="516">516</th><td><i class="doc"> * Since: 0.9.7</i></td></tr>
+<tr><th id="517">517</th><td><i class="doc"> **/</i></td></tr>
+<tr><th id="518">518</th><td><em>void</em></td></tr>
+<tr><th id="519">519</th><td><dfn class="decl def fn" id="hb_face_set_glyph_count" title='hb_face_set_glyph_count' data-ref="hb_face_set_glyph_count">hb_face_set_glyph_count</dfn> (<a class="typedef" href="hb-face.h.html#hb_face_t" title='hb_face_t' data-type='struct hb_face_t' data-ref="hb_face_t">hb_face_t</a>    *<dfn class="local col9 decl" id="49face" title='face' data-type='hb_face_t *' data-ref="49face">face</dfn>,</td></tr>
+<tr><th id="520">520</th><td>			 <em>unsigned</em> <em>int</em>  <dfn class="local col0 decl" id="50glyph_count" title='glyph_count' data-type='unsigned int' data-ref="50glyph_count">glyph_count</dfn>)</td></tr>
+<tr><th id="521">521</th><td>{</td></tr>
+<tr><th id="522">522</th><td>  <b>if</b> (<a class="ref fn" href="hb-object.hh.html#_ZL22hb_object_is_immutablePKT_" title='hb_object_is_immutable' data-ref="_ZL22hb_object_is_immutablePKT_">hb_object_is_immutable</a> (<span class='inlayHint'>obj:&nbsp;</span><a class="local col9 ref" href="#49face" title='face' data-ref="49face">face</a>))</td></tr>
+<tr><th id="523">523</th><td>    <b>return</b>;</td></tr>
+<tr><th id="524">524</th><td></td></tr>
+<tr><th id="525">525</th><td>  <a class="local col9 ref" href="#49face" title='face' data-ref="49face">face</a>-&gt;<a class="ref field" href="hb-face.hh.html#hb_face_t::num_glyphs" title='hb_face_t::num_glyphs' data-ref="hb_face_t::num_glyphs">num_glyphs</a> <a class="ref fn" href="hb-atomic.hh.html#_ZN15hb_atomic_int_taSEi" title='hb_atomic_int_t::operator=' data-ref="_ZN15hb_atomic_int_taSEi">=</a> <a class="local col0 ref" href="#50glyph_count" title='glyph_count' data-ref="50glyph_count">glyph_count</a>;</td></tr>
+<tr><th id="526">526</th><td>}</td></tr>
+<tr><th id="527">527</th><td></td></tr>
+<tr><th id="528">528</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="529">529</th><td><i class="doc"> * hb_face_get_glyph_count:</i></td></tr>
+<tr><th id="530">530</th><td><i class="doc"> *<span class="command"> @face</span>: A face object</i></td></tr>
+<tr><th id="531">531</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="532">532</th><td><i class="doc"> * Fetches the glyph-count value of the specified face object.</i></td></tr>
+<tr><th id="533">533</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="534">534</th><td><i class="doc"> * Return value: The glyph-count value of<span class="command"> @face</span></i></td></tr>
+<tr><th id="535">535</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="536">536</th><td><i class="doc"> * Since: 0.9.7</i></td></tr>
+<tr><th id="537">537</th><td><i class="doc"> **/</i></td></tr>
+<tr><th id="538">538</th><td><em>unsigned</em> <em>int</em></td></tr>
+<tr><th id="539">539</th><td><dfn class="decl def fn" id="hb_face_get_glyph_count" title='hb_face_get_glyph_count' data-ref="hb_face_get_glyph_count">hb_face_get_glyph_count</dfn> (<em>const</em> <a class="typedef" href="hb-face.h.html#hb_face_t" title='hb_face_t' data-type='struct hb_face_t' data-ref="hb_face_t">hb_face_t</a> *<dfn class="local col1 decl" id="51face" title='face' data-type='const hb_face_t *' data-ref="51face">face</dfn>)</td></tr>
+<tr><th id="540">540</th><td>{</td></tr>
+<tr><th id="541">541</th><td>  <b>return</b> <a class="local col1 ref" href="#51face" title='face' data-ref="51face">face</a>-&gt;<a class="ref fn" href="hb-face.hh.html#_ZNK9hb_face_t14get_num_glyphsEv" title='hb_face_t::get_num_glyphs' data-ref="_ZNK9hb_face_t14get_num_glyphsEv">get_num_glyphs</a> ();</td></tr>
+<tr><th id="542">542</th><td>}</td></tr>
+<tr><th id="543">543</th><td></td></tr>
+<tr><th id="544">544</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="545">545</th><td><i class="doc"> * hb_face_get_table_tags:</i></td></tr>
+<tr><th id="546">546</th><td><i class="doc"> *<span class="command"> @face</span>: A face object</i></td></tr>
+<tr><th id="547">547</th><td><i class="doc"> *<span class="command"> @start</span>_offset: The index of first table tag to retrieve</i></td></tr>
+<tr><th id="548">548</th><td><i class="doc"> *<span class="command"> @table</span>_count: (inout): Input = the maximum number of table tags to return;</i></td></tr>
+<tr><th id="549">549</th><td><i class="doc"> *                Output = the actual number of table tags returned (may be zero)</i></td></tr>
+<tr><th id="550">550</th><td><i class="doc"> *<span class="command"> @table</span>_tags: (out) (array length=table_count): The array of table tags found</i></td></tr>
+<tr><th id="551">551</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="552">552</th><td><i class="doc"> * Fetches a list of all table tags for a face, if possible. The list returned will</i></td></tr>
+<tr><th id="553">553</th><td><i class="doc"> * begin at the offset provided</i></td></tr>
+<tr><th id="554">554</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="555">555</th><td><i class="doc"> * Return value: Total number of tables, or zero if it is not possible to list</i></td></tr>
+<tr><th id="556">556</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="557">557</th><td><i class="doc"> * Since: 1.6.0</i></td></tr>
+<tr><th id="558">558</th><td><i class="doc"> **/</i></td></tr>
+<tr><th id="559">559</th><td><em>unsigned</em> <em>int</em></td></tr>
+<tr><th id="560">560</th><td><dfn class="decl def fn" id="hb_face_get_table_tags" title='hb_face_get_table_tags' data-ref="hb_face_get_table_tags">hb_face_get_table_tags</dfn> (<em>const</em> <a class="typedef" href="hb-face.h.html#hb_face_t" title='hb_face_t' data-type='struct hb_face_t' data-ref="hb_face_t">hb_face_t</a> *<dfn class="local col2 decl" id="52face" title='face' data-type='const hb_face_t *' data-ref="52face">face</dfn>,</td></tr>
+<tr><th id="561">561</th><td>			<em>unsigned</em> <em>int</em>  <dfn class="local col3 decl" id="53start_offset" title='start_offset' data-type='unsigned int' data-ref="53start_offset">start_offset</dfn>,</td></tr>
+<tr><th id="562">562</th><td>			<em>unsigned</em> <em>int</em> *<dfn class="local col4 decl" id="54table_count" title='table_count' data-type='unsigned int *' data-ref="54table_count">table_count</dfn>, <i>/* IN/OUT */</i></td></tr>
+<tr><th id="563">563</th><td>			<a class="typedef" href="hb-common.h.html#hb_tag_t" title='hb_tag_t' data-type='uint32_t' data-ref="hb_tag_t">hb_tag_t</a>     *<dfn class="local col5 decl" id="55table_tags" title='table_tags' data-type='hb_tag_t *' data-ref="55table_tags">table_tags</dfn> <i>/* OUT */</i>)</td></tr>
+<tr><th id="564">564</th><td>{</td></tr>
+<tr><th id="565">565</th><td>  <b>if</b> (<a class="local col2 ref" href="#52face" title='face' data-ref="52face">face</a>-&gt;<a class="ref field" href="hb-face.hh.html#hb_face_t::destroy" title='hb_face_t::destroy' data-ref="hb_face_t::destroy">destroy</a> != (<a class="typedef" href="hb-common.h.html#hb_destroy_func_t" title='hb_destroy_func_t' data-type='void (*)(void *)' data-ref="hb_destroy_func_t">hb_destroy_func_t</a>) <a class="tu ref fn" href="#_ZL33_hb_face_for_data_closure_destroyPv" title='_hb_face_for_data_closure_destroy' data-use='r' data-ref="_ZL33_hb_face_for_data_closure_destroyPv">_hb_face_for_data_closure_destroy</a>)</td></tr>
+<tr><th id="566">566</th><td>  {</td></tr>
+<tr><th id="567">567</th><td>    <b>if</b> (<a class="local col4 ref" href="#54table_count" title='table_count' data-ref="54table_count">table_count</a>)</td></tr>
+<tr><th id="568">568</th><td>      *<a class="local col4 ref" href="#54table_count" title='table_count' data-ref="54table_count">table_count</a> = <var>0</var>;</td></tr>
+<tr><th id="569">569</th><td>    <b>return</b> <var>0</var>;</td></tr>
+<tr><th id="570">570</th><td>  }</td></tr>
+<tr><th id="571">571</th><td></td></tr>
+<tr><th id="572">572</th><td>  <a class="typedef" href="#hb_face_for_data_closure_t" title='hb_face_for_data_closure_t' data-type='struct hb_face_for_data_closure_t' data-ref="hb_face_for_data_closure_t">hb_face_for_data_closure_t</a> *<dfn class="local col6 decl" id="56data" title='data' data-type='hb_face_for_data_closure_t *' data-ref="56data">data</dfn> = (<a class="typedef" href="#hb_face_for_data_closure_t" title='hb_face_for_data_closure_t' data-type='struct hb_face_for_data_closure_t' data-ref="hb_face_for_data_closure_t">hb_face_for_data_closure_t</a> *) <a class="local col2 ref" href="#52face" title='face' data-ref="52face">face</a>-&gt;<a class="ref field" href="hb-face.hh.html#hb_face_t::user_data" title='hb_face_t::user_data' data-ref="hb_face_t::user_data">user_data</a>;</td></tr>
+<tr><th id="573">573</th><td></td></tr>
+<tr><th id="574">574</th><td>  <em>const</em> <span class="namespace">OT::</span><a class="type" href="hb-open-file.hh.html#OT::OpenTypeFontFile" title='OT::OpenTypeFontFile' data-ref="OT::OpenTypeFontFile">OpenTypeFontFile</a> &amp;<dfn class="local col7 decl" id="57ot_file" title='ot_file' data-type='const OT::OpenTypeFontFile &amp;' data-ref="57ot_file">ot_file</dfn> = *<a class="local col6 ref" href="#56data" title='data' data-ref="56data">data</a>-&gt;<a class="tu ref field" href="#hb_face_for_data_closure_t::blob" title='hb_face_for_data_closure_t::blob' data-use='r' data-ref="hb_face_for_data_closure_t::blob">blob</a>-&gt;<a class="ref fn" href="hb-blob.hh.html#_ZNK9hb_blob_t2asEv" title='hb_blob_t::as' data-ref="_ZNK9hb_blob_t2asEv">as</a>&lt;<span class="namespace">OT::</span><a class="type" href="hb-open-file.hh.html#OT::OpenTypeFontFile" title='OT::OpenTypeFontFile' data-ref="OT::OpenTypeFontFile">OpenTypeFontFile</a>&gt; ();</td></tr>
+<tr><th id="575">575</th><td>  <em>const</em> <span class="namespace">OT::</span><a class="typedef" href="hb-open-file.hh.html#OT::OpenTypeFontFace" title='OT::OpenTypeFontFace' data-type='struct OpenTypeOffsetTable' data-ref="OT::OpenTypeFontFace">OpenTypeFontFace</a> &amp;<dfn class="local col8 decl" id="58ot_face" title='ot_face' data-type='const OT::OpenTypeFontFace &amp;' data-ref="58ot_face">ot_face</dfn> = <a class="local col7 ref" href="#57ot_file" title='ot_file' data-ref="57ot_file">ot_file</a>.<a class="ref fn" href="hb-open-file.hh.html#_ZNK2OT16OpenTypeFontFile8get_faceEjPj" title='OT::OpenTypeFontFile::get_face' data-ref="_ZNK2OT16OpenTypeFontFile8get_faceEjPj">get_face</a> (<span class='inlayHint'>i:&nbsp;</span><a class="local col6 ref" href="#56data" title='data' data-ref="56data">data</a>-&gt;<a class="tu ref field" href="#hb_face_for_data_closure_t::index" title='hb_face_for_data_closure_t::index' data-use='r' data-ref="hb_face_for_data_closure_t::index">index</a>);</td></tr>
+<tr><th id="576">576</th><td></td></tr>
+<tr><th id="577">577</th><td>  <b>return</b> <a class="local col8 ref" href="#58ot_face" title='ot_face' data-ref="58ot_face">ot_face</a>.<a class="ref fn" href="hb-open-file.hh.html#_ZNK2OT19OpenTypeOffsetTable14get_table_tagsEjPjS1_" title='OT::OpenTypeOffsetTable::get_table_tags' data-ref="_ZNK2OT19OpenTypeOffsetTable14get_table_tagsEjPjS1_">get_table_tags</a> (<a class="local col3 ref" href="#53start_offset" title='start_offset' data-ref="53start_offset">start_offset</a>, <a class="local col4 ref" href="#54table_count" title='table_count' data-ref="54table_count">table_count</a>, <a class="local col5 ref" href="#55table_tags" title='table_tags' data-ref="55table_tags">table_tags</a>);</td></tr>
+<tr><th id="578">578</th><td>}</td></tr>
+<tr><th id="579">579</th><td></td></tr>
+<tr><th id="580">580</th><td></td></tr>
+<tr><th id="581">581</th><td><i>/*</i></td></tr>
+<tr><th id="582">582</th><td><i> * Character set.</i></td></tr>
+<tr><th id="583">583</th><td><i> */</i></td></tr>
+<tr><th id="584">584</th><td></td></tr>
+<tr><th id="585">585</th><td></td></tr>
+<tr><th id="586">586</th><td><u>#<span data-ppcond="586">ifndef</span> <span class="macro" data-ref="_M/HB_NO_FACE_COLLECT_UNICODES">HB_NO_FACE_COLLECT_UNICODES</span></u></td></tr>
+<tr><th id="587">587</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="588">588</th><td><i class="doc"> * hb_face_collect_unicodes:</i></td></tr>
+<tr><th id="589">589</th><td><i class="doc"> *<span class="command"> @face</span>: A face object</i></td></tr>
+<tr><th id="590">590</th><td><i class="doc"> *<span class="command"> @out</span>: (out): The set to add Unicode characters to</i></td></tr>
+<tr><th id="591">591</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="592">592</th><td><i class="doc"> * Collects all of the Unicode characters covered by<span class="command"> @face</span> and adds</i></td></tr>
+<tr><th id="593">593</th><td><i class="doc"> * them to the #hb_set_t set<span class="command"> @out</span>.</i></td></tr>
+<tr><th id="594">594</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="595">595</th><td><i class="doc"> * Since: 1.9.0</i></td></tr>
+<tr><th id="596">596</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="597">597</th><td><em>void</em></td></tr>
+<tr><th id="598">598</th><td><dfn class="decl def fn" id="hb_face_collect_unicodes" title='hb_face_collect_unicodes' data-ref="hb_face_collect_unicodes">hb_face_collect_unicodes</dfn> (<a class="typedef" href="hb-face.h.html#hb_face_t" title='hb_face_t' data-type='struct hb_face_t' data-ref="hb_face_t">hb_face_t</a> *<dfn class="local col9 decl" id="59face" title='face' data-type='hb_face_t *' data-ref="59face">face</dfn>,</td></tr>
+<tr><th id="599">599</th><td>			  <a class="typedef" href="hb-set.h.html#hb_set_t" title='hb_set_t' data-type='struct hb_set_t' data-ref="hb_set_t">hb_set_t</a>  *<dfn class="local col0 decl" id="60out" title='out' data-type='hb_set_t *' data-ref="60out">out</dfn>)</td></tr>
+<tr><th id="600">600</th><td>{</td></tr>
+<tr><th id="601">601</th><td>  <a class="local col9 ref" href="#59face" title='face' data-ref="59face">face</a>-&gt;<a class="ref field" href="hb-face.hh.html#hb_face_t::table" title='hb_face_t::table' data-ref="hb_face_t::table">table</a>.<a class="ref field" href="hb-ot-face-table-list.hh.html#57" title='hb_ot_face_t::cmap' data-ref="hb_ot_face_t::cmap">cmap</a><a class="ref fn" href="hb-machinery.hh.html#_ZNK16hb_lazy_loader_tptEv" title='hb_lazy_loader_t::operator-&gt;' data-ref="_ZNK16hb_lazy_loader_tptEv">-&gt;</a><a class="ref fn" href="hb-ot-cmap-table.hh.html#_ZNK2OT4cmap13accelerator_t16collect_unicodesEP8hb_set_tj" title='OT::cmap::accelerator_t::collect_unicodes' data-ref="_ZNK2OT4cmap13accelerator_t16collect_unicodesEP8hb_set_tj">collect_unicodes</a> (<a class="local col0 ref" href="#60out" title='out' data-ref="60out">out</a>, <span class='inlayHint'>num_glyphs:&nbsp;</span><a class="local col9 ref" href="#59face" title='face' data-ref="59face">face</a>-&gt;<a class="ref fn" href="hb-face.hh.html#_ZNK9hb_face_t14get_num_glyphsEv" title='hb_face_t::get_num_glyphs' data-ref="_ZNK9hb_face_t14get_num_glyphsEv">get_num_glyphs</a> ());</td></tr>
+<tr><th id="602">602</th><td>}</td></tr>
+<tr><th id="603">603</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="604">604</th><td><i class="doc"> * hb_face_collect_nominal_glyph_mapping:</i></td></tr>
+<tr><th id="605">605</th><td><i class="doc"> *<span class="command"> @face</span>: A face object</i></td></tr>
+<tr><th id="606">606</th><td><i class="doc"> *<span class="command"> @mapping</span>: (out): The map to add Unicode-to-glyph mapping to</i></td></tr>
+<tr><th id="607">607</th><td><i class="doc"> *<span class="command"> @unicodes</span>: (nullable) (out): The set to add Unicode characters to, or `NULL`</i></td></tr>
+<tr><th id="608">608</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="609">609</th><td><i class="doc"> * Collects the mapping from Unicode characters to nominal glyphs of the<span class="command"> @face</span>,</i></td></tr>
+<tr><th id="610">610</th><td><i class="doc"> * and optionally all of the Unicode characters covered by<span class="command"> @face</span>.</i></td></tr>
+<tr><th id="611">611</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="612">612</th><td><i class="doc"> * Since: 7.0.0</i></td></tr>
+<tr><th id="613">613</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="614">614</th><td><em>void</em></td></tr>
+<tr><th id="615">615</th><td><dfn class="decl def fn" id="hb_face_collect_nominal_glyph_mapping" title='hb_face_collect_nominal_glyph_mapping' data-ref="hb_face_collect_nominal_glyph_mapping">hb_face_collect_nominal_glyph_mapping</dfn> (<a class="typedef" href="hb-face.h.html#hb_face_t" title='hb_face_t' data-type='struct hb_face_t' data-ref="hb_face_t">hb_face_t</a> *<dfn class="local col1 decl" id="61face" title='face' data-type='hb_face_t *' data-ref="61face">face</dfn>,</td></tr>
+<tr><th id="616">616</th><td>				       <a class="typedef" href="hb-map.h.html#hb_map_t" title='hb_map_t' data-type='struct hb_map_t' data-ref="hb_map_t">hb_map_t</a>  *<dfn class="local col2 decl" id="62mapping" title='mapping' data-type='hb_map_t *' data-ref="62mapping">mapping</dfn>,</td></tr>
+<tr><th id="617">617</th><td>				       <a class="typedef" href="hb-set.h.html#hb_set_t" title='hb_set_t' data-type='struct hb_set_t' data-ref="hb_set_t">hb_set_t</a>  *<dfn class="local col3 decl" id="63unicodes" title='unicodes' data-type='hb_set_t *' data-ref="63unicodes">unicodes</dfn>)</td></tr>
+<tr><th id="618">618</th><td>{</td></tr>
+<tr><th id="619">619</th><td>  <a class="typedef" href="hb-set.h.html#hb_set_t" title='hb_set_t' data-type='struct hb_set_t' data-ref="hb_set_t">hb_set_t</a> <a class="ref fn fake" href="hb-set.hh.html#_ZN8hb_set_tC1Ev" title='hb_set_t::hb_set_t' data-ref="_ZN8hb_set_tC1Ev"></a><dfn class="local col4 decl" id="64stack_unicodes" title='stack_unicodes' data-type='hb_set_t' data-ref="64stack_unicodes">stack_unicodes</dfn>;</td></tr>
+<tr><th id="620">620</th><td>  <b>if</b> (!<a class="local col3 ref" href="#63unicodes" title='unicodes' data-ref="63unicodes">unicodes</a>)</td></tr>
+<tr><th id="621">621</th><td>    <a class="local col3 ref" href="#63unicodes" title='unicodes' data-ref="63unicodes">unicodes</a> = &amp;<a class="local col4 ref" href="#64stack_unicodes" title='stack_unicodes' data-ref="64stack_unicodes">stack_unicodes</a>;</td></tr>
+<tr><th id="622">622</th><td>  <a class="local col1 ref" href="#61face" title='face' data-ref="61face">face</a>-&gt;<a class="ref field" href="hb-face.hh.html#hb_face_t::table" title='hb_face_t::table' data-ref="hb_face_t::table">table</a>.<a class="ref field" href="hb-ot-face-table-list.hh.html#57" title='hb_ot_face_t::cmap' data-ref="hb_ot_face_t::cmap">cmap</a><a class="ref fn" href="hb-machinery.hh.html#_ZNK16hb_lazy_loader_tptEv" title='hb_lazy_loader_t::operator-&gt;' data-ref="_ZNK16hb_lazy_loader_tptEv">-&gt;</a><a class="ref fn" href="hb-ot-cmap-table.hh.html#_ZNK2OT4cmap13accelerator_t15collect_mappingEP8hb_set_tP8hb_map_tj" title='OT::cmap::accelerator_t::collect_mapping' data-ref="_ZNK2OT4cmap13accelerator_t15collect_mappingEP8hb_set_tP8hb_map_tj">collect_mapping</a> (<a class="local col3 ref" href="#63unicodes" title='unicodes' data-ref="63unicodes">unicodes</a>, <a class="local col2 ref" href="#62mapping" title='mapping' data-ref="62mapping">mapping</a>, <span class='inlayHint'>num_glyphs:&nbsp;</span><a class="local col1 ref" href="#61face" title='face' data-ref="61face">face</a>-&gt;<a class="ref fn" href="hb-face.hh.html#_ZNK9hb_face_t14get_num_glyphsEv" title='hb_face_t::get_num_glyphs' data-ref="_ZNK9hb_face_t14get_num_glyphsEv">get_num_glyphs</a> ());</td></tr>
+<tr><th id="623">623</th><td>}</td></tr>
+<tr><th id="624">624</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="625">625</th><td><i class="doc"> * hb_face_collect_variation_selectors:</i></td></tr>
+<tr><th id="626">626</th><td><i class="doc"> *<span class="command"> @face</span>: A face object</i></td></tr>
+<tr><th id="627">627</th><td><i class="doc"> *<span class="command"> @out</span>: (out): The set to add Variation Selector characters to</i></td></tr>
+<tr><th id="628">628</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="629">629</th><td><i class="doc"> * Collects all Unicode "Variation Selector" characters covered by<span class="command"> @face</span> and adds</i></td></tr>
+<tr><th id="630">630</th><td><i class="doc"> * them to the #hb_set_t set<span class="command"> @out</span>.</i></td></tr>
+<tr><th id="631">631</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="632">632</th><td><i class="doc"> * Since: 1.9.0</i></td></tr>
+<tr><th id="633">633</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="634">634</th><td><em>void</em></td></tr>
+<tr><th id="635">635</th><td><dfn class="decl def fn" id="hb_face_collect_variation_selectors" title='hb_face_collect_variation_selectors' data-ref="hb_face_collect_variation_selectors">hb_face_collect_variation_selectors</dfn> (<a class="typedef" href="hb-face.h.html#hb_face_t" title='hb_face_t' data-type='struct hb_face_t' data-ref="hb_face_t">hb_face_t</a> *<dfn class="local col5 decl" id="65face" title='face' data-type='hb_face_t *' data-ref="65face">face</dfn>,</td></tr>
+<tr><th id="636">636</th><td>				     <a class="typedef" href="hb-set.h.html#hb_set_t" title='hb_set_t' data-type='struct hb_set_t' data-ref="hb_set_t">hb_set_t</a>  *<dfn class="local col6 decl" id="66out" title='out' data-type='hb_set_t *' data-ref="66out">out</dfn>)</td></tr>
+<tr><th id="637">637</th><td>{</td></tr>
+<tr><th id="638">638</th><td>  <a class="local col5 ref" href="#65face" title='face' data-ref="65face">face</a>-&gt;<a class="ref field" href="hb-face.hh.html#hb_face_t::table" title='hb_face_t::table' data-ref="hb_face_t::table">table</a>.<a class="ref field" href="hb-ot-face-table-list.hh.html#57" title='hb_ot_face_t::cmap' data-ref="hb_ot_face_t::cmap">cmap</a><a class="ref fn" href="hb-machinery.hh.html#_ZNK16hb_lazy_loader_tptEv" title='hb_lazy_loader_t::operator-&gt;' data-ref="_ZNK16hb_lazy_loader_tptEv">-&gt;</a><a class="ref fn" href="hb-ot-cmap-table.hh.html#_ZNK2OT4cmap13accelerator_t27collect_variation_selectorsEP8hb_set_t" title='OT::cmap::accelerator_t::collect_variation_selectors' data-ref="_ZNK2OT4cmap13accelerator_t27collect_variation_selectorsEP8hb_set_t">collect_variation_selectors</a> (<a class="local col6 ref" href="#66out" title='out' data-ref="66out">out</a>);</td></tr>
+<tr><th id="639">639</th><td>}</td></tr>
+<tr><th id="640">640</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="641">641</th><td><i class="doc"> * hb_face_collect_variation_unicodes:</i></td></tr>
+<tr><th id="642">642</th><td><i class="doc"> *<span class="command"> @face</span>: A face object</i></td></tr>
+<tr><th id="643">643</th><td><i class="doc"> *<span class="command"> @variation</span>_selector: The Variation Selector to query</i></td></tr>
+<tr><th id="644">644</th><td><i class="doc"> *<span class="command"> @out</span>: (out): The set to add Unicode characters to</i></td></tr>
+<tr><th id="645">645</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="646">646</th><td><i class="doc"> * Collects all Unicode characters for<span class="command"> @variation</span>_selector covered by<span class="command"> @face</span> and adds</i></td></tr>
+<tr><th id="647">647</th><td><i class="doc"> * them to the #hb_set_t set<span class="command"> @out</span>.</i></td></tr>
+<tr><th id="648">648</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="649">649</th><td><i class="doc"> * Since: 1.9.0</i></td></tr>
+<tr><th id="650">650</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="651">651</th><td><em>void</em></td></tr>
+<tr><th id="652">652</th><td><dfn class="decl def fn" id="hb_face_collect_variation_unicodes" title='hb_face_collect_variation_unicodes' data-ref="hb_face_collect_variation_unicodes">hb_face_collect_variation_unicodes</dfn> (<a class="typedef" href="hb-face.h.html#hb_face_t" title='hb_face_t' data-type='struct hb_face_t' data-ref="hb_face_t">hb_face_t</a> *<dfn class="local col7 decl" id="67face" title='face' data-type='hb_face_t *' data-ref="67face">face</dfn>,</td></tr>
+<tr><th id="653">653</th><td>				    <a class="typedef" href="hb-common.h.html#hb_codepoint_t" title='hb_codepoint_t' data-type='uint32_t' data-ref="hb_codepoint_t">hb_codepoint_t</a> <dfn class="local col8 decl" id="68variation_selector" title='variation_selector' data-type='hb_codepoint_t' data-ref="68variation_selector">variation_selector</dfn>,</td></tr>
+<tr><th id="654">654</th><td>				    <a class="typedef" href="hb-set.h.html#hb_set_t" title='hb_set_t' data-type='struct hb_set_t' data-ref="hb_set_t">hb_set_t</a>  *<dfn class="local col9 decl" id="69out" title='out' data-type='hb_set_t *' data-ref="69out">out</dfn>)</td></tr>
+<tr><th id="655">655</th><td>{</td></tr>
+<tr><th id="656">656</th><td>  <a class="local col7 ref" href="#67face" title='face' data-ref="67face">face</a>-&gt;<a class="ref field" href="hb-face.hh.html#hb_face_t::table" title='hb_face_t::table' data-ref="hb_face_t::table">table</a>.<a class="ref field" href="hb-ot-face-table-list.hh.html#57" title='hb_ot_face_t::cmap' data-ref="hb_ot_face_t::cmap">cmap</a><a class="ref fn" href="hb-machinery.hh.html#_ZNK16hb_lazy_loader_tptEv" title='hb_lazy_loader_t::operator-&gt;' data-ref="_ZNK16hb_lazy_loader_tptEv">-&gt;</a><a class="ref fn" href="hb-ot-cmap-table.hh.html#_ZNK2OT4cmap13accelerator_t26collect_variation_unicodesEjP8hb_set_t" title='OT::cmap::accelerator_t::collect_variation_unicodes' data-ref="_ZNK2OT4cmap13accelerator_t26collect_variation_unicodesEjP8hb_set_t">collect_variation_unicodes</a> (<a class="local col8 ref" href="#68variation_selector" title='variation_selector' data-ref="68variation_selector">variation_selector</a>, <a class="local col9 ref" href="#69out" title='out' data-ref="69out">out</a>);</td></tr>
+<tr><th id="657">657</th><td>}</td></tr>
+<tr><th id="658">658</th><td><u>#<span data-ppcond="586">endif</span></u></td></tr>
+<tr><th id="659">659</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2024-Jun-13</em> from project qtbase-6.5.0 revision <em>6.5.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

@@ -1,0 +1,381 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>qthread_p.h source code [qtbase-6.5.0/src/corelib/thread/qthread_p.h] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="QAdoptedThread,QDaemonThread,QPostEvent,QPostEventList,QScopedScopeLevelCounter,QThreadData,QThreadPrivate,QtPrivate::BindingStatusOrList "/>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'qtbase-6.5.0/src/corelib/thread/qthread_p.h'; var root_path = '../../../..'; var data_path = '../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>qtbase-6.5.0</a>/<a href='../..'>src</a>/<a href='..'>corelib</a>/<a href='./'>thread</a>/<a href='qthread_p.h.html'>qthread_p.h</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>// Copyright (C) 2016 The Qt Company Ltd.</i></td></tr>
+<tr><th id="2">2</th><td><i>// Copyright (C) 2016 Intel Corporation.</i></td></tr>
+<tr><th id="3">3</th><td><i>// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only</i></td></tr>
+<tr><th id="4">4</th><td></td></tr>
+<tr><th id="5">5</th><td><u>#<span data-ppcond="5">ifndef</span> <span class="macro" data-ref="_M/QTHREAD_P_H">QTHREAD_P_H</span></u></td></tr>
+<tr><th id="6">6</th><td><u>#define <dfn class="macro" id="_M/QTHREAD_P_H" data-ref="_M/QTHREAD_P_H">QTHREAD_P_H</dfn></u></td></tr>
+<tr><th id="7">7</th><td></td></tr>
+<tr><th id="8">8</th><td><i>//</i></td></tr>
+<tr><th id="9">9</th><td><i>//  W A R N I N G</i></td></tr>
+<tr><th id="10">10</th><td><i>//  -------------</i></td></tr>
+<tr><th id="11">11</th><td><i>//</i></td></tr>
+<tr><th id="12">12</th><td><i>// This file is not part of the Qt API.  It exists purely as an</i></td></tr>
+<tr><th id="13">13</th><td><i>// implementation detail.  This header file may change from version to</i></td></tr>
+<tr><th id="14">14</th><td><i>// version without notice, or even be removed.</i></td></tr>
+<tr><th id="15">15</th><td><i>//</i></td></tr>
+<tr><th id="16">16</th><td><i>// We mean it.</i></td></tr>
+<tr><th id="17">17</th><td><i>//</i></td></tr>
+<tr><th id="18">18</th><td><i>//</i></td></tr>
+<tr><th id="19">19</th><td></td></tr>
+<tr><th id="20">20</th><td><u>#include <a href="../../../mkspecs/linux-g++/qplatformdefs.h.html">"qplatformdefs.h"</a></u></td></tr>
+<tr><th id="21">21</th><td><u>#include <a href="../../../build/include/QtCore/qthread.h.html">"QtCore/qthread.h"</a></u></td></tr>
+<tr><th id="22">22</th><td><u>#include <a href="../../../build/include/QtCore/qmutex.h.html">"QtCore/qmutex.h"</a></u></td></tr>
+<tr><th id="23">23</th><td><u>#include <a href="../../../build/include/QtCore/qstack.h.html">"QtCore/qstack.h"</a></u></td></tr>
+<tr><th id="24">24</th><td><u>#<span data-ppcond="24">if</span> <a class="macro" href="../global/qtconfigmacros.h.html#67" title="(1/1 == 1)" data-ref="_M/QT_CONFIG">QT_CONFIG</a>(thread)</u></td></tr>
+<tr><th id="25">25</th><td><u>#include <a href="../../../build/include/QtCore/qwaitcondition.h.html">"QtCore/qwaitcondition.h"</a></u></td></tr>
+<tr><th id="26">26</th><td><u>#<span data-ppcond="24">endif</span></u></td></tr>
+<tr><th id="27">27</th><td><u>#include <a href="../../../build/include/QtCore/qmap.h.html">"QtCore/qmap.h"</a></u></td></tr>
+<tr><th id="28">28</th><td><u>#include <a href="../../../build/include/QtCore/qcoreapplication.h.html">"QtCore/qcoreapplication.h"</a></u></td></tr>
+<tr><th id="29">29</th><td><u>#include <a href="../../../build/include/QtCore/6.5.0/QtCore/private/qobject_p.h.html">"private/qobject_p.h"</a></u></td></tr>
+<tr><th id="30">30</th><td></td></tr>
+<tr><th id="31">31</th><td><u>#include <a href="../../../../include/c++/9/algorithm.html">&lt;algorithm&gt;</a></u></td></tr>
+<tr><th id="32">32</th><td><u>#include <a href="../../../../include/c++/9/atomic.html">&lt;atomic&gt;</a></u></td></tr>
+<tr><th id="33">33</th><td></td></tr>
+<tr><th id="34">34</th><td><a class="macro" href="../global/qtconfigmacros.h.html#103" title="" data-ref="_M/QT_BEGIN_NAMESPACE">QT_BEGIN_NAMESPACE</a></td></tr>
+<tr><th id="35">35</th><td></td></tr>
+<tr><th id="36">36</th><td><b>class</b> <a class="type" href="../kernel/qcoreapplication.h.html#QAbstractEventDispatcher" title='QAbstractEventDispatcher' data-ref="QAbstractEventDispatcher" id="QAbstractEventDispatcher">QAbstractEventDispatcher</a>;</td></tr>
+<tr><th id="37">37</th><td><b>class</b> <a class="type" href="../kernel/qeventloop.h.html#QEventLoop" title='QEventLoop' data-ref="QEventLoop" id="QEventLoop">QEventLoop</a>;</td></tr>
+<tr><th id="38">38</th><td></td></tr>
+<tr><th id="39">39</th><td><b>class</b> <dfn class="type def" id="QPostEvent" title='QPostEvent' data-ref="QPostEvent">QPostEvent</dfn></td></tr>
+<tr><th id="40">40</th><td>{</td></tr>
+<tr><th id="41">41</th><td><b>public</b>:</td></tr>
+<tr><th id="42">42</th><td>    <a class="type" href="../kernel/qobject.h.html#QObject" title='QObject' data-ref="QObject">QObject</a> *<dfn class="decl field" id="QPostEvent::receiver" title='QPostEvent::receiver' data-ref="QPostEvent::receiver">receiver</dfn>;</td></tr>
+<tr><th id="43">43</th><td>    <a class="type" href="../kernel/qcoreevent.h.html#QEvent" title='QEvent' data-ref="QEvent">QEvent</a> *<dfn class="decl field" id="QPostEvent::event" title='QPostEvent::event' data-ref="QPostEvent::event">event</dfn>;</td></tr>
+<tr><th id="44">44</th><td>    <em>int</em> <dfn class="decl field" id="QPostEvent::priority" title='QPostEvent::priority' data-ref="QPostEvent::priority">priority</dfn>;</td></tr>
+<tr><th id="45">45</th><td>    <b>inline</b> <dfn class="decl def fn" id="_ZN10QPostEventC1Ev" title='QPostEvent::QPostEvent' data-ref="_ZN10QPostEventC1Ev">QPostEvent</dfn>()</td></tr>
+<tr><th id="46">46</th><td>        : <a class="member field" href="#QPostEvent::receiver" title='QPostEvent::receiver' data-ref="QPostEvent::receiver">receiver</a>(<b>nullptr</b>), <a class="member field" href="#QPostEvent::event" title='QPostEvent::event' data-ref="QPostEvent::event">event</a>(<b>nullptr</b>), <a class="member field" href="#QPostEvent::priority" title='QPostEvent::priority' data-ref="QPostEvent::priority">priority</a>(<var>0</var>)</td></tr>
+<tr><th id="47">47</th><td>    { }</td></tr>
+<tr><th id="48">48</th><td>    <b>inline</b> <dfn class="decl def fn" id="_ZN10QPostEventC1EP7QObjectP6QEventi" title='QPostEvent::QPostEvent' data-ref="_ZN10QPostEventC1EP7QObjectP6QEventi">QPostEvent</dfn>(<a class="type" href="../kernel/qobject.h.html#QObject" title='QObject' data-ref="QObject">QObject</a> *<dfn class="local col1 decl" id="1r" title='r' data-type='QObject *' data-ref="1r">r</dfn>, <a class="type" href="../kernel/qcoreevent.h.html#QEvent" title='QEvent' data-ref="QEvent">QEvent</a> *<dfn class="local col2 decl" id="2e" title='e' data-type='QEvent *' data-ref="2e">e</dfn>, <em>int</em> <dfn class="local col3 decl" id="3p" title='p' data-type='int' data-ref="3p">p</dfn>)</td></tr>
+<tr><th id="49">49</th><td>        : <a class="member field" href="#QPostEvent::receiver" title='QPostEvent::receiver' data-ref="QPostEvent::receiver">receiver</a>(<a class="local col1 ref" href="#1r" title='r' data-ref="1r">r</a>), <a class="member field" href="#QPostEvent::event" title='QPostEvent::event' data-ref="QPostEvent::event">event</a>(<a class="local col2 ref" href="#2e" title='e' data-ref="2e">e</a>), <a class="member field" href="#QPostEvent::priority" title='QPostEvent::priority' data-ref="QPostEvent::priority">priority</a>(<a class="local col3 ref" href="#3p" title='p' data-ref="3p">p</a>)</td></tr>
+<tr><th id="50">50</th><td>    { }</td></tr>
+<tr><th id="51">51</th><td>};</td></tr>
+<tr><th id="52">52</th><td><a class="macro" href="../global/qtypeinfo.h.html#162" title="template&lt;&gt; class QTypeInfo&lt;QPostEvent &gt; { public: enum { isComplex = (((Q_RELOCATABLE_TYPE) &amp; Q_PRIMITIVE_TYPE) == 0) &amp;&amp; !std::is_trivial_v&lt;QPostEvent&gt;, isRelocatable = !isComplex || ((Q_RELOCATABLE_TYPE) &amp; Q_RELOCATABLE_TYPE) || QtPrivate::qIsRelocatable&lt;QPostEvent&gt;, isPointer = std::is_pointer_v&lt; QPostEvent &gt;, isIntegral = std::is_integral&lt; QPostEvent &gt;::value, isValueInitializationBitwiseZero = QtPrivate::qIsValueInitializationBitwiseZero&lt;QPostEvent&gt;, }; }" data-ref="_M/Q_DECLARE_TYPEINFO">Q_DECLARE_TYPEINFO</a>(<a class="type" href="#QPostEvent" title='QPostEvent' data-ref="QPostEvent">QPostEvent</a>, <a class="enum" href="../global/qtypeinfo.h.html#Q_RELOCATABLE_TYPE" title='Q_RELOCATABLE_TYPE' data-ref="Q_RELOCATABLE_TYPE">Q_RELOCATABLE_TYPE</a>);</td></tr>
+<tr><th id="53">53</th><td></td></tr>
+<tr><th id="54">54</th><td><b>inline</b> <em>bool</em> <dfn class="decl def fn" id="_ZltRK10QPostEventS1_" title='operator&lt;' data-ref="_ZltRK10QPostEventS1_"><b>operator</b>&lt;</dfn>(<em>const</em> <a class="type" href="#QPostEvent" title='QPostEvent' data-ref="QPostEvent">QPostEvent</a> &amp;<dfn class="local col4 decl" id="4first" title='first' data-type='const QPostEvent &amp;' data-ref="4first">first</dfn>, <em>const</em> <a class="type" href="#QPostEvent" title='QPostEvent' data-ref="QPostEvent">QPostEvent</a> &amp;<dfn class="local col5 decl" id="5second" title='second' data-type='const QPostEvent &amp;' data-ref="5second">second</dfn>)</td></tr>
+<tr><th id="55">55</th><td>{</td></tr>
+<tr><th id="56">56</th><td>    <b>return</b> <a class="local col4 ref" href="#4first" title='first' data-ref="4first">first</a>.<a class="ref field" href="#QPostEvent::priority" title='QPostEvent::priority' data-ref="QPostEvent::priority">priority</a> &gt; <a class="local col5 ref" href="#5second" title='second' data-ref="5second">second</a>.<a class="ref field" href="#QPostEvent::priority" title='QPostEvent::priority' data-ref="QPostEvent::priority">priority</a>;</td></tr>
+<tr><th id="57">57</th><td>}</td></tr>
+<tr><th id="58">58</th><td></td></tr>
+<tr><th id="59">59</th><td><i>// This class holds the list of posted events.</i></td></tr>
+<tr><th id="60">60</th><td><i>//  The list has to be kept sorted by priority</i></td></tr>
+<tr><th id="61">61</th><td><i>// It's used in a virtual in QCoreApplication, so ELFVERSION:ignore-next</i></td></tr>
+<tr><th id="62">62</th><td><b>class</b> <dfn class="type def" id="QPostEventList" title='QPostEventList' data-ref="QPostEventList">QPostEventList</dfn> : <b>public</b> <a class="type" href="../tools/qcontainerfwd.h.html#QList" title='QList' data-ref="QList">QList</a>&lt;<a class="type" href="#QPostEvent" title='QPostEvent' data-ref="QPostEvent">QPostEvent</a>&gt;</td></tr>
+<tr><th id="63">63</th><td>{</td></tr>
+<tr><th id="64">64</th><td><b>public</b>:</td></tr>
+<tr><th id="65">65</th><td>    <i>// recursion == recursion count for sendPostedEvents()</i></td></tr>
+<tr><th id="66">66</th><td>    <em>int</em> <dfn class="decl field" id="QPostEventList::recursion" title='QPostEventList::recursion' data-ref="QPostEventList::recursion">recursion</dfn>;</td></tr>
+<tr><th id="67">67</th><td></td></tr>
+<tr><th id="68">68</th><td>    <i>// sendOffset == the current event to start sending</i></td></tr>
+<tr><th id="69">69</th><td>    <a class="typedef" href="../global/qtypes.h.html#qsizetype" title='qsizetype' data-type='QIntegerForSizeof&lt;std::size_t&gt;::Signed' data-ref="qsizetype">qsizetype</a> <dfn class="decl field" id="QPostEventList::startOffset" title='QPostEventList::startOffset' data-ref="QPostEventList::startOffset">startOffset</dfn>;</td></tr>
+<tr><th id="70">70</th><td>    <i>// insertionOffset == set by sendPostedEvents to tell postEvent() where to start insertions</i></td></tr>
+<tr><th id="71">71</th><td>    <a class="typedef" href="../global/qtypes.h.html#qsizetype" title='qsizetype' data-type='QIntegerForSizeof&lt;std::size_t&gt;::Signed' data-ref="qsizetype">qsizetype</a> <dfn class="decl field" id="QPostEventList::insertionOffset" title='QPostEventList::insertionOffset' data-ref="QPostEventList::insertionOffset">insertionOffset</dfn>;</td></tr>
+<tr><th id="72">72</th><td></td></tr>
+<tr><th id="73">73</th><td>    <a class="type" href="qmutex.h.html#QMutex" title='QMutex' data-ref="QMutex">QMutex</a> <dfn class="decl field" id="QPostEventList::mutex" title='QPostEventList::mutex' data-ref="QPostEventList::mutex">mutex</dfn>;</td></tr>
+<tr><th id="74">74</th><td></td></tr>
+<tr><th id="75">75</th><td>    <b>inline</b> <dfn class="decl def fn" id="_ZN14QPostEventListC1Ev" title='QPostEventList::QPostEventList' data-ref="_ZN14QPostEventListC1Ev">QPostEventList</dfn>() : <a class="type" href="../tools/qcontainerfwd.h.html#QList" title='QList' data-ref="QList">QList</a>&lt;<a class="type" href="#QPostEvent" title='QPostEvent' data-ref="QPostEvent">QPostEvent</a>&gt;<a class="ref fn" href="../tools/qlist.h.html#_ZN5QListC1Ev" title='QList::QList&lt;T&gt;' data-ref="_ZN5QListC1Ev">(</a>), <a class="member field" href="#QPostEventList::recursion" title='QPostEventList::recursion' data-ref="QPostEventList::recursion">recursion</a>(<var>0</var>), <a class="member field" href="#QPostEventList::startOffset" title='QPostEventList::startOffset' data-ref="QPostEventList::startOffset">startOffset</a>(<var>0</var>), <a class="member field" href="#QPostEventList::insertionOffset" title='QPostEventList::insertionOffset' data-ref="QPostEventList::insertionOffset">insertionOffset</a>(<var>0</var>) { }</td></tr>
+<tr><th id="76">76</th><td></td></tr>
+<tr><th id="77">77</th><td>    <em>void</em> <dfn class="decl fn" id="_ZN14QPostEventList8addEventERK10QPostEvent" title='QPostEventList::addEvent' data-ref="_ZN14QPostEventList8addEventERK10QPostEvent">addEvent</dfn>(<em>const</em> <a class="type" href="#QPostEvent" title='QPostEvent' data-ref="QPostEvent">QPostEvent</a> &amp;<dfn class="local col6 decl" id="6ev" title='ev' data-type='const QPostEvent &amp;' data-ref="6ev">ev</dfn>);</td></tr>
+<tr><th id="78">78</th><td></td></tr>
+<tr><th id="79">79</th><td><b>private</b>:</td></tr>
+<tr><th id="80">80</th><td>    <i>//hides because they do not keep that list sorted. addEvent must be used</i></td></tr>
+<tr><th id="81">81</th><td>    <b>using</b> <a class="type" href="../tools/qcontainerfwd.h.html#QList" title='QList' data-ref="QList">QList</a>&lt;<a class="type" href="#QPostEvent" title='QPostEvent' data-ref="QPostEvent">QPostEvent</a>&gt;::append;</td></tr>
+<tr><th id="82">82</th><td>    <b>using</b> <a class="type" href="../tools/qcontainerfwd.h.html#QList" title='QList' data-ref="QList">QList</a>&lt;<a class="type" href="#QPostEvent" title='QPostEvent' data-ref="QPostEvent">QPostEvent</a>&gt;::insert;</td></tr>
+<tr><th id="83">83</th><td>};</td></tr>
+<tr><th id="84">84</th><td></td></tr>
+<tr><th id="85">85</th><td><b>namespace</b> <span class="namespace">QtPrivate</span> {</td></tr>
+<tr><th id="86">86</th><td></td></tr>
+<tr><th id="87">87</th><td><i>/* BindingStatusOrList is basically a QBiPointer (as found in declarative)</i></td></tr>
+<tr><th id="88">88</th><td><i>   with some helper methods to manipulate the list. BindingStatusOrList starts</i></td></tr>
+<tr><th id="89">89</th><td><i>   its life in a null state and supports the following transitions</i></td></tr>
+<tr><th id="90">90</th><td><i></i></td></tr>
+<tr><th id="91">91</th><td><i>                        0 state (initial)</i></td></tr>
+<tr><th id="92">92</th><td><i>                       /                \</i></td></tr>
+<tr><th id="93">93</th><td><i>                      /                  \</i></td></tr>
+<tr><th id="94">94</th><td><i>                     v                    v</i></td></tr>
+<tr><th id="95">95</th><td><i>             pending object list-----------&gt;binding status</i></td></tr>
+<tr><th id="96">96</th><td><i>    Note that binding status is the final state, and we never transition away</i></td></tr>
+<tr><th id="97">97</th><td><i>    from it</i></td></tr>
+<tr><th id="98">98</th><td><i>*/</i></td></tr>
+<tr><th id="99">99</th><td><b>class</b> <dfn class="type def" id="QtPrivate::BindingStatusOrList" title='QtPrivate::BindingStatusOrList' data-ref="QtPrivate::BindingStatusOrList">BindingStatusOrList</dfn></td></tr>
+<tr><th id="100">100</th><td>{</td></tr>
+<tr><th id="101">101</th><td>    <a class="macro" href="../global/qtclasshelpermacros.h.html#27" title="BindingStatusOrList(const BindingStatusOrList &amp;) = delete; BindingStatusOrList &amp;operator=(const BindingStatusOrList &amp;) = delete; BindingStatusOrList(BindingStatusOrList &amp;&amp;) = delete; BindingStatusOrList &amp;operator=(BindingStatusOrList &amp;&amp;) = delete;" data-ref="_M/Q_DISABLE_COPY_MOVE">Q_DISABLE_COPY_MOVE</a>(<dfn class="decl def fn" id="_ZN9QtPrivate19BindingStatusOrListC1ERKS0_" title='QtPrivate::BindingStatusOrList::BindingStatusOrList' data-ref="_ZN9QtPrivate19BindingStatusOrListC1ERKS0_"><a class="type" href="#QtPrivate::BindingStatusOrList" title='QtPrivate::BindingStatusOrList' data-ref="QtPrivate::BindingStatusOrList"><a class="type" href="#QtPrivate::BindingStatusOrList" title='QtPrivate::BindingStatusOrList' data-ref="QtPrivate::BindingStatusOrList"><a class="type" href="#QtPrivate::BindingStatusOrList" title='QtPrivate::BindingStatusOrList' data-ref="QtPrivate::BindingStatusOrList"><dfn class="decl def fn" id="_ZN9QtPrivate19BindingStatusOrListC1EOS0_" title='QtPrivate::BindingStatusOrList::BindingStatusOrList' data-ref="_ZN9QtPrivate19BindingStatusOrListC1EOS0_"><a class="type" href="#QtPrivate::BindingStatusOrList" title='QtPrivate::BindingStatusOrList' data-ref="QtPrivate::BindingStatusOrList"><a class="type" href="#QtPrivate::BindingStatusOrList" title='QtPrivate::BindingStatusOrList' data-ref="QtPrivate::BindingStatusOrList"><a class="type" href="#QtPrivate::BindingStatusOrList" title='QtPrivate::BindingStatusOrList' data-ref="QtPrivate::BindingStatusOrList">BindingStatusOrList</a></a></a></dfn></a></a></a></dfn>)</td></tr>
+<tr><th id="102">102</th><td><b>public</b>:</td></tr>
+<tr><th id="103">103</th><td>    <b>using</b> <dfn class="typedef" id="QtPrivate::BindingStatusOrList::List" title='QtPrivate::BindingStatusOrList::List' data-type='std::vector&lt;QObject *&gt;' data-ref="QtPrivate::BindingStatusOrList::List">List</dfn> = <span class="namespace">std::</span><a class="type" href="../../../../include/c++/9/bits/stl_vector.h.html#std::vector" title='std::vector' data-ref="std::vector">vector</a>&lt;<a class="type" href="../kernel/qobject.h.html#QObject" title='QObject' data-ref="QObject">QObject</a> *&gt;;</td></tr>
+<tr><th id="104">104</th><td></td></tr>
+<tr><th id="105">105</th><td>    <b>constexpr</b> <dfn class="decl def fn" id="_ZN9QtPrivate19BindingStatusOrListC1Ev" title='QtPrivate::BindingStatusOrList::BindingStatusOrList' data-ref="_ZN9QtPrivate19BindingStatusOrListC1Ev">BindingStatusOrList</dfn>() <b>noexcept</b> : <a class="member field" href="#QtPrivate::BindingStatusOrList::data" title='QtPrivate::BindingStatusOrList::data' data-ref="QtPrivate::BindingStatusOrList::data">data</a><a class="ref fn" href="../../../../include/c++/9/atomic.html#_ZNSt6atomicIyEC1Ey" title='std::atomic&lt;unsigned long long&gt;::atomic' data-ref="_ZNSt6atomicIyEC1Ey">(</a><var>0</var>) {}</td></tr>
+<tr><th id="106">106</th><td>    <b>explicit</b> <dfn class="decl def fn" id="_ZN9QtPrivate19BindingStatusOrListC1EP14QBindingStatus" title='QtPrivate::BindingStatusOrList::BindingStatusOrList' data-ref="_ZN9QtPrivate19BindingStatusOrListC1EP14QBindingStatus">BindingStatusOrList</dfn>(<a class="type" href="../kernel/qbindingstorage.h.html#QBindingStatus" title='QBindingStatus' data-ref="QBindingStatus">QBindingStatus</a> *<dfn class="local col7 decl" id="7status" title='status' data-type='QBindingStatus *' data-ref="7status">status</dfn>) <b>noexcept</b> :</td></tr>
+<tr><th id="107">107</th><td>        <a class="member field" href="#QtPrivate::BindingStatusOrList::data" title='QtPrivate::BindingStatusOrList::data' data-ref="QtPrivate::BindingStatusOrList::data">data</a><a class="ref fn" href="../../../../include/c++/9/atomic.html#_ZNSt6atomicIyEC1Ey" title='std::atomic&lt;unsigned long long&gt;::atomic' data-ref="_ZNSt6atomicIyEC1Ey">(</a><a class="member fn" href="#_ZN9QtPrivate19BindingStatusOrList19encodeBindingStatusEP14QBindingStatus" title='QtPrivate::BindingStatusOrList::encodeBindingStatus' data-ref="_ZN9QtPrivate19BindingStatusOrList19encodeBindingStatusEP14QBindingStatus">encodeBindingStatus</a>(<a class="local col7 ref" href="#7status" title='status' data-ref="7status">status</a>)) {}</td></tr>
+<tr><th id="108">108</th><td>    <b>explicit</b> <dfn class="decl def fn" id="_ZN9QtPrivate19BindingStatusOrListC1EPSt6vectorIP7QObjectSaIS3_EE" title='QtPrivate::BindingStatusOrList::BindingStatusOrList' data-ref="_ZN9QtPrivate19BindingStatusOrListC1EPSt6vectorIP7QObjectSaIS3_EE">BindingStatusOrList</dfn>(<a class="typedef" href="#QtPrivate::BindingStatusOrList::List" title='QtPrivate::BindingStatusOrList::List' data-type='std::vector&lt;QObject *&gt;' data-ref="QtPrivate::BindingStatusOrList::List">List</a> *<dfn class="local col8 decl" id="8list" title='list' data-type='QtPrivate::BindingStatusOrList::List *' data-ref="8list">list</dfn>) <b>noexcept</b> : <a class="member field" href="#QtPrivate::BindingStatusOrList::data" title='QtPrivate::BindingStatusOrList::data' data-ref="QtPrivate::BindingStatusOrList::data">data</a><a class="ref fn" href="../../../../include/c++/9/atomic.html#_ZNSt6atomicIyEC1Ey" title='std::atomic&lt;unsigned long long&gt;::atomic' data-ref="_ZNSt6atomicIyEC1Ey">(</a><a class="member fn" href="#_ZN9QtPrivate19BindingStatusOrList10encodeListEPSt6vectorIP7QObjectSaIS3_EE" title='QtPrivate::BindingStatusOrList::encodeList' data-ref="_ZN9QtPrivate19BindingStatusOrList10encodeListEPSt6vectorIP7QObjectSaIS3_EE">encodeList</a>(<a class="local col8 ref" href="#8list" title='list' data-ref="8list">list</a>)) {}</td></tr>
+<tr><th id="109">109</th><td></td></tr>
+<tr><th id="110">110</th><td>    <i>// requires external synchronization:</i></td></tr>
+<tr><th id="111">111</th><td>    <a class="type" href="../kernel/qbindingstorage.h.html#QBindingStatus" title='QBindingStatus' data-ref="QBindingStatus">QBindingStatus</a> *<dfn class="decl fn" id="_ZN9QtPrivate19BindingStatusOrList28addObjectUnlessAlreadyStatusEP7QObject" title='QtPrivate::BindingStatusOrList::addObjectUnlessAlreadyStatus' data-ref="_ZN9QtPrivate19BindingStatusOrList28addObjectUnlessAlreadyStatusEP7QObject">addObjectUnlessAlreadyStatus</dfn>(<a class="type" href="../kernel/qobject.h.html#QObject" title='QObject' data-ref="QObject">QObject</a> *<dfn class="local col9 decl" id="9object" title='object' data-type='QObject *' data-ref="9object">object</dfn>);</td></tr>
+<tr><th id="112">112</th><td>    <em>void</em> <dfn class="decl fn" id="_ZN9QtPrivate19BindingStatusOrList12removeObjectEP7QObject" title='QtPrivate::BindingStatusOrList::removeObject' data-ref="_ZN9QtPrivate19BindingStatusOrList12removeObjectEP7QObject">removeObject</dfn>(<a class="type" href="../kernel/qobject.h.html#QObject" title='QObject' data-ref="QObject">QObject</a> *<dfn class="local col0 decl" id="10object" title='object' data-type='QObject *' data-ref="10object">object</dfn>);</td></tr>
+<tr><th id="113">113</th><td>    <em>void</em> <dfn class="decl fn" id="_ZN9QtPrivate19BindingStatusOrList21setStatusAndClearListEP14QBindingStatus" title='QtPrivate::BindingStatusOrList::setStatusAndClearList' data-ref="_ZN9QtPrivate19BindingStatusOrList21setStatusAndClearListEP14QBindingStatus">setStatusAndClearList</dfn>(<a class="type" href="../kernel/qbindingstorage.h.html#QBindingStatus" title='QBindingStatus' data-ref="QBindingStatus">QBindingStatus</a> *<dfn class="local col1 decl" id="11status" title='status' data-type='QBindingStatus *' data-ref="11status">status</dfn>) <b>noexcept</b>;</td></tr>
+<tr><th id="114">114</th><td></td></tr>
+<tr><th id="115">115</th><td></td></tr>
+<tr><th id="116">116</th><td>    <em>static</em> <em>bool</em> <dfn class="decl def fn" id="_ZN9QtPrivate19BindingStatusOrList15isBindingStatusEy" title='QtPrivate::BindingStatusOrList::isBindingStatus' data-ref="_ZN9QtPrivate19BindingStatusOrList15isBindingStatusEy">isBindingStatus</dfn>(<a class="typedef" href="../global/qtypes.h.html#quintptr" title='quintptr' data-type='QIntegerForSizeof&lt;void *&gt;::Unsigned' data-ref="quintptr">quintptr</a> <dfn class="local col2 decl" id="12data" title='data' data-type='quintptr' data-ref="12data">data</dfn>) <b>noexcept</b></td></tr>
+<tr><th id="117">117</th><td>    {</td></tr>
+<tr><th id="118">118</th><td>        <b>return</b> !<a class="member fn" href="#_ZN9QtPrivate19BindingStatusOrList6isNullEy" title='QtPrivate::BindingStatusOrList::isNull' data-ref="_ZN9QtPrivate19BindingStatusOrList6isNullEy">isNull</a>(<a class="local col2 ref" href="#12data" title='data' data-ref="12data">data</a>) &amp;&amp; !<a class="member fn" href="#_ZN9QtPrivate19BindingStatusOrList6isListEy" title='QtPrivate::BindingStatusOrList::isList' data-ref="_ZN9QtPrivate19BindingStatusOrList6isListEy">isList</a>(<a class="local col2 ref" href="#12data" title='data' data-ref="12data">data</a>);</td></tr>
+<tr><th id="119">119</th><td>    }</td></tr>
+<tr><th id="120">120</th><td>    <em>static</em> <em>bool</em> <dfn class="decl def fn" id="_ZN9QtPrivate19BindingStatusOrList6isListEy" title='QtPrivate::BindingStatusOrList::isList' data-ref="_ZN9QtPrivate19BindingStatusOrList6isListEy">isList</dfn>(<a class="typedef" href="../global/qtypes.h.html#quintptr" title='quintptr' data-type='QIntegerForSizeof&lt;void *&gt;::Unsigned' data-ref="quintptr">quintptr</a> <dfn class="local col3 decl" id="13data" title='data' data-type='quintptr' data-ref="13data">data</dfn>) <b>noexcept</b> { <b>return</b> <a class="local col3 ref" href="#13data" title='data' data-ref="13data">data</a> &amp; <var>1</var>; }</td></tr>
+<tr><th id="121">121</th><td>    <em>static</em> <em>bool</em> <dfn class="decl def fn" id="_ZN9QtPrivate19BindingStatusOrList6isNullEy" title='QtPrivate::BindingStatusOrList::isNull' data-ref="_ZN9QtPrivate19BindingStatusOrList6isNullEy">isNull</dfn>(<a class="typedef" href="../global/qtypes.h.html#quintptr" title='quintptr' data-type='QIntegerForSizeof&lt;void *&gt;::Unsigned' data-ref="quintptr">quintptr</a> <dfn class="local col4 decl" id="14data" title='data' data-type='quintptr' data-ref="14data">data</dfn>) <b>noexcept</b> { <b>return</b> <a class="local col4 ref" href="#14data" title='data' data-ref="14data">data</a> == <var>0</var>; }</td></tr>
+<tr><th id="122">122</th><td></td></tr>
+<tr><th id="123">123</th><td>    <i>// thread-safe:</i></td></tr>
+<tr><th id="124">124</th><td>    <a class="type" href="../kernel/qbindingstorage.h.html#QBindingStatus" title='QBindingStatus' data-ref="QBindingStatus">QBindingStatus</a> *<dfn class="decl def fn" id="_ZNK9QtPrivate19BindingStatusOrList13bindingStatusEv" title='QtPrivate::BindingStatusOrList::bindingStatus' data-ref="_ZNK9QtPrivate19BindingStatusOrList13bindingStatusEv">bindingStatus</dfn>() <em>const</em> <b>noexcept</b></td></tr>
+<tr><th id="125">125</th><td>    {</td></tr>
+<tr><th id="126">126</th><td>        <i>// synchronizes-with the store-release in setStatusAndClearList():</i></td></tr>
+<tr><th id="127">127</th><td>        <em>const</em> <em>auto</em> <dfn class="local col5 decl" id="15d" title='d' data-type='const std::__atomic_base&lt;unsigned long long&gt;::__int_type' data-ref="15d">d</dfn> = <a class="member field" href="#QtPrivate::BindingStatusOrList::data" title='QtPrivate::BindingStatusOrList::data' data-ref="QtPrivate::BindingStatusOrList::data">data</a>.<a class="ref fn" href="../../../../include/c++/9/bits/atomic_base.h.html#_ZNKSt13__atomic_base4loadESt12memory_order" title='std::__atomic_base::load' data-ref="_ZNKSt13__atomic_base4loadESt12memory_order">load</a>(<span class='inlayHint'>m:&nbsp;</span><span class="namespace">std::</span><a class="enum" href="../../../../include/c++/9/bits/atomic_base.h.html#std::memory_order_acquire" title='std::memory_order_acquire' data-ref="std::memory_order_acquire">memory_order_acquire</a>);</td></tr>
+<tr><th id="128">128</th><td>        <b>if</b> (<a class="member fn" href="#_ZN9QtPrivate19BindingStatusOrList15isBindingStatusEy" title='QtPrivate::BindingStatusOrList::isBindingStatus' data-ref="_ZN9QtPrivate19BindingStatusOrList15isBindingStatusEy">isBindingStatus</a>(<span class='inlayHint'>data:&nbsp;</span><a class="local col5 ref" href="#15d" title='d' data-ref="15d">d</a>))</td></tr>
+<tr><th id="129">129</th><td>            <b>return</b> <b>reinterpret_cast</b>&lt;<a class="type" href="../kernel/qbindingstorage.h.html#QBindingStatus" title='QBindingStatus' data-ref="QBindingStatus">QBindingStatus</a> *&gt;(<a class="local col5 ref" href="#15d" title='d' data-ref="15d">d</a>);</td></tr>
+<tr><th id="130">130</th><td>        <b>else</b></td></tr>
+<tr><th id="131">131</th><td>            <b>return</b> <b>nullptr</b>;</td></tr>
+<tr><th id="132">132</th><td>    }</td></tr>
+<tr><th id="133">133</th><td></td></tr>
+<tr><th id="134">134</th><td>    <i>// requires external synchronization:</i></td></tr>
+<tr><th id="135">135</th><td>    <a class="typedef" href="#QtPrivate::BindingStatusOrList::List" title='QtPrivate::BindingStatusOrList::List' data-type='std::vector&lt;QObject *&gt;' data-ref="QtPrivate::BindingStatusOrList::List">List</a> *<dfn class="decl def fn" id="_ZNK9QtPrivate19BindingStatusOrList4listEv" title='QtPrivate::BindingStatusOrList::list' data-ref="_ZNK9QtPrivate19BindingStatusOrList4listEv">list</dfn>() <em>const</em> <b>noexcept</b></td></tr>
+<tr><th id="136">136</th><td>    {</td></tr>
+<tr><th id="137">137</th><td>        <b>return</b> <a class="member fn" href="#_ZN9QtPrivate19BindingStatusOrList10decodeListEy" title='QtPrivate::BindingStatusOrList::decodeList' data-ref="_ZN9QtPrivate19BindingStatusOrList10decodeListEy">decodeList</a>(<span class='inlayHint'>ptr:&nbsp;</span><a class="member field" href="#QtPrivate::BindingStatusOrList::data" title='QtPrivate::BindingStatusOrList::data' data-ref="QtPrivate::BindingStatusOrList::data">data</a>.<a class="ref fn" href="../../../../include/c++/9/bits/atomic_base.h.html#_ZNKSt13__atomic_base4loadESt12memory_order" title='std::__atomic_base::load' data-ref="_ZNKSt13__atomic_base4loadESt12memory_order">load</a>(<span class='inlayHint'>m:&nbsp;</span><span class="namespace">std::</span><a class="enum" href="../../../../include/c++/9/bits/atomic_base.h.html#std::memory_order_relaxed" title='std::memory_order_relaxed' data-ref="std::memory_order_relaxed">memory_order_relaxed</a>));</td></tr>
+<tr><th id="138">138</th><td>    }</td></tr>
+<tr><th id="139">139</th><td></td></tr>
+<tr><th id="140">140</th><td><b>private</b>:</td></tr>
+<tr><th id="141">141</th><td>    <em>static</em> <a class="typedef" href="#QtPrivate::BindingStatusOrList::List" title='QtPrivate::BindingStatusOrList::List' data-type='std::vector&lt;QObject *&gt;' data-ref="QtPrivate::BindingStatusOrList::List">List</a> *<dfn class="decl def fn" id="_ZN9QtPrivate19BindingStatusOrList10decodeListEy" title='QtPrivate::BindingStatusOrList::decodeList' data-ref="_ZN9QtPrivate19BindingStatusOrList10decodeListEy">decodeList</dfn>(<a class="typedef" href="../global/qtypes.h.html#quintptr" title='quintptr' data-type='QIntegerForSizeof&lt;void *&gt;::Unsigned' data-ref="quintptr">quintptr</a> <dfn class="local col6 decl" id="16ptr" title='ptr' data-type='quintptr' data-ref="16ptr">ptr</dfn>) <b>noexcept</b></td></tr>
+<tr><th id="142">142</th><td>    {</td></tr>
+<tr><th id="143">143</th><td>        <b>if</b> (<a class="member fn" href="#_ZN9QtPrivate19BindingStatusOrList6isListEy" title='QtPrivate::BindingStatusOrList::isList' data-ref="_ZN9QtPrivate19BindingStatusOrList6isListEy">isList</a>(<span class='inlayHint'>data:&nbsp;</span><a class="local col6 ref" href="#16ptr" title='ptr' data-ref="16ptr">ptr</a>))</td></tr>
+<tr><th id="144">144</th><td>            <b>return</b> <b>reinterpret_cast</b>&lt;<a class="typedef" href="#QtPrivate::BindingStatusOrList::List" title='QtPrivate::BindingStatusOrList::List' data-type='std::vector&lt;QObject *&gt;' data-ref="QtPrivate::BindingStatusOrList::List">List</a> *&gt;(<a class="local col6 ref" href="#16ptr" title='ptr' data-ref="16ptr">ptr</a> &amp; ~<var>1</var>);</td></tr>
+<tr><th id="145">145</th><td>        <b>else</b></td></tr>
+<tr><th id="146">146</th><td>            <b>return</b> <b>nullptr</b>;</td></tr>
+<tr><th id="147">147</th><td>    }</td></tr>
+<tr><th id="148">148</th><td></td></tr>
+<tr><th id="149">149</th><td>    <em>static</em> <a class="typedef" href="../global/qtypes.h.html#quintptr" title='quintptr' data-type='QIntegerForSizeof&lt;void *&gt;::Unsigned' data-ref="quintptr">quintptr</a> <dfn class="decl def fn" id="_ZN9QtPrivate19BindingStatusOrList19encodeBindingStatusEP14QBindingStatus" title='QtPrivate::BindingStatusOrList::encodeBindingStatus' data-ref="_ZN9QtPrivate19BindingStatusOrList19encodeBindingStatusEP14QBindingStatus">encodeBindingStatus</dfn>(<a class="type" href="../kernel/qbindingstorage.h.html#QBindingStatus" title='QBindingStatus' data-ref="QBindingStatus">QBindingStatus</a> *<dfn class="local col7 decl" id="17status" title='status' data-type='QBindingStatus *' data-ref="17status">status</dfn>) <b>noexcept</b></td></tr>
+<tr><th id="150">150</th><td>    {</td></tr>
+<tr><th id="151">151</th><td>        <b>return</b> <a class="typedef" href="../global/qtypes.h.html#quintptr" title='quintptr' data-type='QIntegerForSizeof&lt;void *&gt;::Unsigned' data-ref="quintptr">quintptr</a>(<a class="local col7 ref" href="#17status" title='status' data-ref="17status">status</a>);</td></tr>
+<tr><th id="152">152</th><td>    }</td></tr>
+<tr><th id="153">153</th><td></td></tr>
+<tr><th id="154">154</th><td>    <em>static</em> <a class="typedef" href="../global/qtypes.h.html#quintptr" title='quintptr' data-type='QIntegerForSizeof&lt;void *&gt;::Unsigned' data-ref="quintptr">quintptr</a> <dfn class="decl def fn" id="_ZN9QtPrivate19BindingStatusOrList10encodeListEPSt6vectorIP7QObjectSaIS3_EE" title='QtPrivate::BindingStatusOrList::encodeList' data-ref="_ZN9QtPrivate19BindingStatusOrList10encodeListEPSt6vectorIP7QObjectSaIS3_EE">encodeList</dfn>(<a class="typedef" href="#QtPrivate::BindingStatusOrList::List" title='QtPrivate::BindingStatusOrList::List' data-type='std::vector&lt;QObject *&gt;' data-ref="QtPrivate::BindingStatusOrList::List">List</a> *<dfn class="local col8 decl" id="18list" title='list' data-type='QtPrivate::BindingStatusOrList::List *' data-ref="18list">list</dfn>) <b>noexcept</b></td></tr>
+<tr><th id="155">155</th><td>    {</td></tr>
+<tr><th id="156">156</th><td>        <b>return</b> <a class="typedef" href="../global/qtypes.h.html#quintptr" title='quintptr' data-type='QIntegerForSizeof&lt;void *&gt;::Unsigned' data-ref="quintptr">quintptr</a>(<a class="local col8 ref" href="#18list" title='list' data-ref="18list">list</a>) | <var>1</var>;</td></tr>
+<tr><th id="157">157</th><td>    }</td></tr>
+<tr><th id="158">158</th><td></td></tr>
+<tr><th id="159">159</th><td>    <span class="namespace">std::</span><a class="type" href="../../../../include/c++/9/bits/atomic_base.h.html#std::atomic" title='std::atomic' data-ref="std::atomic">atomic</a>&lt;<a class="typedef" href="../global/qtypes.h.html#quintptr" title='quintptr' data-type='QIntegerForSizeof&lt;void *&gt;::Unsigned' data-ref="quintptr">quintptr</a>&gt; <dfn class="decl field" id="QtPrivate::BindingStatusOrList::data" title='QtPrivate::BindingStatusOrList::data' data-ref="QtPrivate::BindingStatusOrList::data">data</dfn>;</td></tr>
+<tr><th id="160">160</th><td>};</td></tr>
+<tr><th id="161">161</th><td></td></tr>
+<tr><th id="162">162</th><td>} <i>// namespace QtPrivate</i></td></tr>
+<tr><th id="163">163</th><td></td></tr>
+<tr><th id="164">164</th><td><u>#<span data-ppcond="164">if</span> <a class="macro" href="../global/qtconfigmacros.h.html#67" title="(1/1 == 1)" data-ref="_M/QT_CONFIG">QT_CONFIG</a>(thread)</u></td></tr>
+<tr><th id="165">165</th><td></td></tr>
+<tr><th id="166">166</th><td><b>class</b> <a class="macro" href="../../../build/include/QtCore/qtcoreexports.h.html#11" title="__attribute__((visibility(&quot;default&quot;)))" data-ref="_M/Q_CORE_EXPORT">Q_CORE_EXPORT</a> <dfn class="type def" id="QDaemonThread" title='QDaemonThread' data-ref="QDaemonThread">QDaemonThread</dfn> : <b>public</b> <a class="type" href="qthread.h.html#QThread" title='QThread' data-ref="QThread">QThread</a></td></tr>
+<tr><th id="167">167</th><td>{</td></tr>
+<tr><th id="168">168</th><td><b>public</b>:</td></tr>
+<tr><th id="169">169</th><td>    <dfn class="decl fn" id="_ZN13QDaemonThreadC1EP7QObject" title='QDaemonThread::QDaemonThread' data-ref="_ZN13QDaemonThreadC1EP7QObject">QDaemonThread</dfn>(<a class="type" href="../kernel/qobject.h.html#QObject" title='QObject' data-ref="QObject">QObject</a> *<dfn class="local col9 decl" id="19parent" title='parent' data-type='QObject *' data-ref="19parent">parent</dfn> = <b>nullptr</b>);</td></tr>
+<tr><th id="170">170</th><td>    <dfn class="virtual decl fn" id="_ZN13QDaemonThreadD1Ev" title='QDaemonThread::~QDaemonThread' data-ref="_ZN13QDaemonThreadD1Ev">~QDaemonThread</dfn>();</td></tr>
+<tr><th id="171">171</th><td>};</td></tr>
+<tr><th id="172">172</th><td></td></tr>
+<tr><th id="173">173</th><td><b>class</b> <dfn class="type def" id="QThreadPrivate" title='QThreadPrivate' data-ref="QThreadPrivate">QThreadPrivate</dfn> : <b>public</b> <a class="type" href="../kernel/qobject_p.h.html#QObjectPrivate" title='QObjectPrivate' data-ref="QObjectPrivate">QObjectPrivate</a></td></tr>
+<tr><th id="174">174</th><td>{</td></tr>
+<tr><th id="175">175</th><td>    <a class="macro" href="../global/qtclasshelpermacros.h.html#102" title="inline QThread* q_func() noexcept { return static_cast&lt;QThread *&gt;(q_ptr); } inline const QThread* q_func() const noexcept { return static_cast&lt;const QThread *&gt;(q_ptr); } friend class QThread; friend const QObject *QtPrivate::getQObject(const QObjectPrivate *d); template &lt;typename ObjPrivate&gt; friend void QtPrivate::assertObjectType(QObjectPrivate *d);" data-ref="_M/Q_DECLARE_PUBLIC">Q_DECLARE_PUBLIC</a>(<a class="type" href="qthread.h.html#QThread" title='QThread' data-ref="QThread">QThread</a>)</td></tr>
+<tr><th id="176">176</th><td></td></tr>
+<tr><th id="177">177</th><td><b>public</b>:</td></tr>
+<tr><th id="178">178</th><td>    <dfn class="decl fn" id="_ZN14QThreadPrivateC1EP11QThreadData" title='QThreadPrivate::QThreadPrivate' data-ref="_ZN14QThreadPrivateC1EP11QThreadData">QThreadPrivate</dfn>(<a class="type" href="#QThreadData" title='QThreadData' data-ref="QThreadData">QThreadData</a> *<dfn class="local col0 decl" id="20d" title='d' data-type='QThreadData *' data-ref="20d">d</dfn> = <b>nullptr</b>);</td></tr>
+<tr><th id="179">179</th><td>    <dfn class="virtual decl fn" id="_ZN14QThreadPrivateD1Ev" title='QThreadPrivate::~QThreadPrivate' data-ref="_ZN14QThreadPrivateD1Ev">~QThreadPrivate</dfn>();</td></tr>
+<tr><th id="180">180</th><td></td></tr>
+<tr><th id="181">181</th><td>    <em>void</em> <dfn class="decl fn" id="_ZN14QThreadPrivate11setPriorityEN7QThread8PriorityE" title='QThreadPrivate::setPriority' data-ref="_ZN14QThreadPrivate11setPriorityEN7QThread8PriorityE">setPriority</dfn>(<a class="type" href="qthread.h.html#QThread" title='QThread' data-ref="QThread">QThread</a>::<a class="type" href="qthread.h.html#QThread::Priority" title='QThread::Priority' data-ref="QThread::Priority">Priority</a> <dfn class="local col1 decl" id="21prio" title='prio' data-type='QThread::Priority' data-ref="21prio">prio</dfn>);</td></tr>
+<tr><th id="182">182</th><td></td></tr>
+<tr><th id="183">183</th><td>    <em>mutable</em> <a class="type" href="qmutex.h.html#QMutex" title='QMutex' data-ref="QMutex">QMutex</a> <dfn class="decl field" id="QThreadPrivate::mutex" title='QThreadPrivate::mutex' data-ref="QThreadPrivate::mutex">mutex</dfn>;</td></tr>
+<tr><th id="184">184</th><td>    <a class="type" href="qatomic.h.html#QAtomicInt" title='QAtomicInt' data-ref="QAtomicInt">QAtomicInt</a> <dfn class="decl field" id="QThreadPrivate::quitLockRef" title='QThreadPrivate::quitLockRef' data-ref="QThreadPrivate::quitLockRef">quitLockRef</dfn>;</td></tr>
+<tr><th id="185">185</th><td></td></tr>
+<tr><th id="186">186</th><td>    <em>bool</em> <dfn class="decl field" id="QThreadPrivate::running" title='QThreadPrivate::running' data-ref="QThreadPrivate::running">running</dfn>;</td></tr>
+<tr><th id="187">187</th><td>    <em>bool</em> <dfn class="decl field" id="QThreadPrivate::finished" title='QThreadPrivate::finished' data-ref="QThreadPrivate::finished">finished</dfn>;</td></tr>
+<tr><th id="188">188</th><td>    <em>bool</em> <dfn class="decl field" id="QThreadPrivate::isInFinish" title='QThreadPrivate::isInFinish' data-ref="QThreadPrivate::isInFinish">isInFinish</dfn>; <i>//when in QThreadPrivate::finish</i></td></tr>
+<tr><th id="189">189</th><td>    <span class="namespace">std::</span><a class="type" href="../../../../include/c++/9/bits/atomic_base.h.html#std::atomic" title='std::atomic' data-ref="std::atomic">atomic</a>&lt;<em>bool</em>&gt; <dfn class="decl field" id="QThreadPrivate::interruptionRequested" title='QThreadPrivate::interruptionRequested' data-ref="QThreadPrivate::interruptionRequested">interruptionRequested</dfn>;</td></tr>
+<tr><th id="190">190</th><td></td></tr>
+<tr><th id="191">191</th><td>    <em>bool</em> <dfn class="decl field" id="QThreadPrivate::exited" title='QThreadPrivate::exited' data-ref="QThreadPrivate::exited">exited</dfn>;</td></tr>
+<tr><th id="192">192</th><td>    <em>int</em> <dfn class="decl field" id="QThreadPrivate::returnCode" title='QThreadPrivate::returnCode' data-ref="QThreadPrivate::returnCode">returnCode</dfn>;</td></tr>
+<tr><th id="193">193</th><td></td></tr>
+<tr><th id="194">194</th><td>    <a class="typedef" href="../../../../include/x86_64-linux-gnu/sys/types.h.html#uint" title='uint' data-type='unsigned int' data-ref="uint">uint</a> <dfn class="decl field" id="QThreadPrivate::stackSize" title='QThreadPrivate::stackSize' data-ref="QThreadPrivate::stackSize">stackSize</dfn>;</td></tr>
+<tr><th id="195">195</th><td>    <span class="namespace">std::</span><a class="type" href="../../../../include/c++/9/type_traits.html#std::underlying_type_t" title='std::underlying_type_t' data-ref="std::underlying_type_t">underlying_type_t</a>&lt;<a class="type" href="qthread.h.html#QThread" title='QThread' data-ref="QThread">QThread</a>::<a class="type" href="qthread.h.html#QThread::Priority" title='QThread::Priority' data-ref="QThread::Priority">Priority</a>&gt; <dfn class="decl field" id="QThreadPrivate::priority" title='QThreadPrivate::priority' data-ref="QThreadPrivate::priority">priority</dfn>;</td></tr>
+<tr><th id="196">196</th><td></td></tr>
+<tr><th id="197">197</th><td><u>#<span data-ppcond="197">ifdef</span> <a class="macro" href="../global/qsystemdetection.h.html#155" data-ref="_M/Q_OS_UNIX">Q_OS_UNIX</a></u></td></tr>
+<tr><th id="198">198</th><td>    <a class="type" href="qwaitcondition.h.html#QWaitCondition" title='QWaitCondition' data-ref="QWaitCondition">QWaitCondition</a> <dfn class="decl field" id="QThreadPrivate::thread_done" title='QThreadPrivate::thread_done' data-ref="QThreadPrivate::thread_done">thread_done</dfn>;</td></tr>
+<tr><th id="199">199</th><td></td></tr>
+<tr><th id="200">200</th><td>    <em>static</em> <em>void</em> *<dfn class="decl fn" id="_ZN14QThreadPrivate5startEPv" title='QThreadPrivate::start' data-ref="_ZN14QThreadPrivate5startEPv">start</dfn>(<em>void</em> *<dfn class="local col2 decl" id="22arg" title='arg' data-type='void *' data-ref="22arg">arg</dfn>);</td></tr>
+<tr><th id="201">201</th><td>    <em>static</em> <em>void</em> <dfn class="decl fn" id="_ZN14QThreadPrivate6finishEPv" title='QThreadPrivate::finish' data-ref="_ZN14QThreadPrivate6finishEPv">finish</dfn>(<em>void</em> *);</td></tr>
+<tr><th id="202">202</th><td></td></tr>
+<tr><th id="203">203</th><td><u>#<span data-ppcond="197">endif</span> // Q_OS_UNIX</u></td></tr>
+<tr><th id="204">204</th><td></td></tr>
+<tr><th id="205">205</th><td><u>#<span data-ppcond="205">ifdef</span> <span class="macro" data-ref="_M/Q_OS_WIN">Q_OS_WIN</span></u></td></tr>
+<tr><th id="206">206</th><td>    <em>static</em> <em>unsigned</em> <em>int</em> <b>__stdcall</b> start(<em>void</em> *) <b>noexcept</b>;</td></tr>
+<tr><th id="207">207</th><td>    <em>static</em> <em>void</em> finish(<em>void</em> *, <em>bool</em> lockAnyway = <b>true</b>) <b>noexcept</b>;</td></tr>
+<tr><th id="208">208</th><td></td></tr>
+<tr><th id="209">209</th><td>    Qt::HANDLE handle;</td></tr>
+<tr><th id="210">210</th><td>    <em>unsigned</em> <em>int</em> id;</td></tr>
+<tr><th id="211">211</th><td>    <em>int</em> waiters;</td></tr>
+<tr><th id="212">212</th><td>    <em>bool</em> terminationEnabled, terminatePending;</td></tr>
+<tr><th id="213">213</th><td><u>#<span data-ppcond="205">endif</span> // Q_OS_WIN</u></td></tr>
+<tr><th id="214">214</th><td><u>#<span data-ppcond="214">ifdef</span> <span class="macro" data-ref="_M/Q_OS_WASM">Q_OS_WASM</span></u></td></tr>
+<tr><th id="215">215</th><td>    <em>static</em> <em>int</em> idealThreadCount;</td></tr>
+<tr><th id="216">216</th><td><u>#<span data-ppcond="214">endif</span></u></td></tr>
+<tr><th id="217">217</th><td>    <a class="type" href="#QThreadData" title='QThreadData' data-ref="QThreadData">QThreadData</a> *<dfn class="decl field" id="QThreadPrivate::data" title='QThreadPrivate::data' data-ref="QThreadPrivate::data">data</dfn>;</td></tr>
+<tr><th id="218">218</th><td></td></tr>
+<tr><th id="219">219</th><td>    <em>static</em> <a class="type" href="../kernel/qcoreapplication.h.html#QAbstractEventDispatcher" title='QAbstractEventDispatcher' data-ref="QAbstractEventDispatcher">QAbstractEventDispatcher</a> *<dfn class="decl fn" id="_ZN14QThreadPrivate21createEventDispatcherEP11QThreadData" title='QThreadPrivate::createEventDispatcher' data-ref="_ZN14QThreadPrivate21createEventDispatcherEP11QThreadData">createEventDispatcher</dfn>(<a class="type" href="#QThreadData" title='QThreadData' data-ref="QThreadData">QThreadData</a> *<dfn class="local col3 decl" id="23data" title='data' data-type='QThreadData *' data-ref="23data">data</dfn>);</td></tr>
+<tr><th id="220">220</th><td></td></tr>
+<tr><th id="221">221</th><td>    <em>void</em> <dfn class="decl def fn" id="_ZN14QThreadPrivate3refEv" title='QThreadPrivate::ref' data-ref="_ZN14QThreadPrivate3refEv">ref</dfn>()</td></tr>
+<tr><th id="222">222</th><td>    {</td></tr>
+<tr><th id="223">223</th><td>        <a class="member field" href="#QThreadPrivate::quitLockRef" title='QThreadPrivate::quitLockRef' data-ref="QThreadPrivate::quitLockRef">quitLockRef</a>.<a class="ref fn" href="qbasicatomic.h.html#_ZN19QBasicAtomicInteger3refEv" title='QBasicAtomicInteger::ref' data-ref="_ZN19QBasicAtomicInteger3refEv">ref</a>();</td></tr>
+<tr><th id="224">224</th><td>    }</td></tr>
+<tr><th id="225">225</th><td></td></tr>
+<tr><th id="226">226</th><td>    <em>void</em> <dfn class="decl def fn" id="_ZN14QThreadPrivate5derefEv" title='QThreadPrivate::deref' data-ref="_ZN14QThreadPrivate5derefEv">deref</dfn>()</td></tr>
+<tr><th id="227">227</th><td>    {</td></tr>
+<tr><th id="228">228</th><td>        <b>if</b> (!<a class="member field" href="#QThreadPrivate::quitLockRef" title='QThreadPrivate::quitLockRef' data-ref="QThreadPrivate::quitLockRef">quitLockRef</a>.<a class="ref fn" href="qbasicatomic.h.html#_ZN19QBasicAtomicInteger5derefEv" title='QBasicAtomicInteger::deref' data-ref="_ZN19QBasicAtomicInteger5derefEv">deref</a>() &amp;&amp; <a class="member field" href="#QThreadPrivate::running" title='QThreadPrivate::running' data-ref="QThreadPrivate::running">running</a>) {</td></tr>
+<tr><th id="229">229</th><td>            <a class="type" href="../kernel/qcoreapplication.h.html#QCoreApplication" title='QCoreApplication' data-ref="QCoreApplication">QCoreApplication</a>::<a class="ref fn" href="../kernel/qcoreapplication.h.html#_ZN16QCoreApplication8instanceEv" title='QCoreApplication::instance' data-ref="_ZN16QCoreApplication8instanceEv">instance</a>()-&gt;<a class="ref fn" href="../kernel/qcoreapplication.h.html#_ZN16QCoreApplication9postEventEP7QObjectP6QEventi" title='QCoreApplication::postEvent' data-ref="_ZN16QCoreApplication9postEventEP7QObjectP6QEventi">postEvent</a>(<span class='inlayHint'>receiver:&nbsp;</span><a class="member field" href="../kernel/qobject.h.html#QObjectData::q_ptr" title='QObjectData::q_ptr' data-ref="QObjectData::q_ptr">q_ptr</a>, <span class='inlayHint'>event:&nbsp;</span><b>new</b> <a class="type" href="../kernel/qcoreevent.h.html#QEvent" title='QEvent' data-ref="QEvent">QEvent</a><a class="ref fn" href="../kernel/qcoreevent.h.html#_ZN6QEventC1ENS_4TypeE" title='QEvent::QEvent' data-ref="_ZN6QEventC1ENS_4TypeE">(</a><a class="type" href="../kernel/qcoreevent.h.html#QEvent" title='QEvent' data-ref="QEvent">QEvent</a>::<a class="enum" href="../kernel/qcoreevent.h.html#QEvent::Quit" title='QEvent::Quit' data-ref="QEvent::Quit">Quit</a>));</td></tr>
+<tr><th id="230">230</th><td>        }</td></tr>
+<tr><th id="231">231</th><td>    }</td></tr>
+<tr><th id="232">232</th><td></td></tr>
+<tr><th id="233">233</th><td>    <a class="type" href="../kernel/qbindingstorage.h.html#QBindingStatus" title='QBindingStatus' data-ref="QBindingStatus">QBindingStatus</a> *<dfn class="decl def fn" id="_ZN14QThreadPrivate13bindingStatusEv" title='QThreadPrivate::bindingStatus' data-ref="_ZN14QThreadPrivate13bindingStatusEv">bindingStatus</dfn>()</td></tr>
+<tr><th id="234">234</th><td>    {</td></tr>
+<tr><th id="235">235</th><td>        <b>return</b> <a class="member field" href="#QThreadPrivate::m_statusOrPendingObjects" title='QThreadPrivate::m_statusOrPendingObjects' data-ref="QThreadPrivate::m_statusOrPendingObjects">m_statusOrPendingObjects</a>.<a class="ref fn" href="#_ZNK9QtPrivate19BindingStatusOrList13bindingStatusEv" title='QtPrivate::BindingStatusOrList::bindingStatus' data-ref="_ZNK9QtPrivate19BindingStatusOrList13bindingStatusEv">bindingStatus</a>();</td></tr>
+<tr><th id="236">236</th><td>    }</td></tr>
+<tr><th id="237">237</th><td></td></tr>
+<tr><th id="238">238</th><td>    <i>/* Returns nullptr if the object has been added, or the binding status</i></td></tr>
+<tr><th id="239">239</th><td><i>       if that one has been set in the meantime</i></td></tr>
+<tr><th id="240">240</th><td><i>    */</i></td></tr>
+<tr><th id="241">241</th><td>    <a class="type" href="../kernel/qbindingstorage.h.html#QBindingStatus" title='QBindingStatus' data-ref="QBindingStatus">QBindingStatus</a> *<dfn class="decl fn" id="_ZN14QThreadPrivate39addObjectWithPendingBindingStatusChangeEP7QObject" title='QThreadPrivate::addObjectWithPendingBindingStatusChange' data-ref="_ZN14QThreadPrivate39addObjectWithPendingBindingStatusChangeEP7QObject">addObjectWithPendingBindingStatusChange</dfn>(<a class="type" href="../kernel/qobject.h.html#QObject" title='QObject' data-ref="QObject">QObject</a> *<dfn class="local col4 decl" id="24obj" title='obj' data-type='QObject *' data-ref="24obj">obj</dfn>);</td></tr>
+<tr><th id="242">242</th><td>    <em>void</em> <dfn class="decl fn" id="_ZN14QThreadPrivate42removeObjectWithPendingBindingStatusChangeEP7QObject" title='QThreadPrivate::removeObjectWithPendingBindingStatusChange' data-ref="_ZN14QThreadPrivate42removeObjectWithPendingBindingStatusChangeEP7QObject">removeObjectWithPendingBindingStatusChange</dfn>(<a class="type" href="../kernel/qobject.h.html#QObject" title='QObject' data-ref="QObject">QObject</a> *<dfn class="local col5 decl" id="25obj" title='obj' data-type='QObject *' data-ref="25obj">obj</dfn>);</td></tr>
+<tr><th id="243">243</th><td></td></tr>
+<tr><th id="244">244</th><td>    <i>// manipulating m_statusOrPendingObjects requires mutex to be locked</i></td></tr>
+<tr><th id="245">245</th><td>    <span class="namespace">QtPrivate::</span><a class="type" href="#QtPrivate::BindingStatusOrList" title='QtPrivate::BindingStatusOrList' data-ref="QtPrivate::BindingStatusOrList">BindingStatusOrList</a> <dfn class="decl field" id="QThreadPrivate::m_statusOrPendingObjects" title='QThreadPrivate::m_statusOrPendingObjects' data-ref="QThreadPrivate::m_statusOrPendingObjects">m_statusOrPendingObjects</dfn> = <a class="ref fn" href="#_ZN9QtPrivate19BindingStatusOrListC1Ev" title='QtPrivate::BindingStatusOrList::BindingStatusOrList' data-ref="_ZN9QtPrivate19BindingStatusOrListC1Ev">{</a>};</td></tr>
+<tr><th id="246">246</th><td><u>#<span data-ppcond="246">ifndef</span> <span class="macro" data-ref="_M/Q_OS_INTEGRITY">Q_OS_INTEGRITY</span></u></td></tr>
+<tr><th id="247">247</th><td><b>private</b>:</td></tr>
+<tr><th id="248">248</th><td>    <i>// Used in QThread(Private)::start to avoid racy access to QObject::objectName,</i></td></tr>
+<tr><th id="249">249</th><td><i>    // unset afterwards. On INTEGRITY we set the thread name before starting it.</i></td></tr>
+<tr><th id="250">250</th><td>    <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> <dfn class="decl field" id="QThreadPrivate::objectName" title='QThreadPrivate::objectName' data-ref="QThreadPrivate::objectName">objectName</dfn>;</td></tr>
+<tr><th id="251">251</th><td><u>#<span data-ppcond="246">endif</span></u></td></tr>
+<tr><th id="252">252</th><td>};</td></tr>
+<tr><th id="253">253</th><td></td></tr>
+<tr><th id="254">254</th><td><u>#<span data-ppcond="164">else</span> // QT_CONFIG(thread)</u></td></tr>
+<tr><th id="255">255</th><td></td></tr>
+<tr><th id="256">256</th><td><b>class</b> QThreadPrivate : <b>public</b> QObjectPrivate</td></tr>
+<tr><th id="257">257</th><td>{</td></tr>
+<tr><th id="258">258</th><td><b>public</b>:</td></tr>
+<tr><th id="259">259</th><td>    QThreadPrivate(QThreadData *d = <b>nullptr</b>);</td></tr>
+<tr><th id="260">260</th><td>    ~QThreadPrivate();</td></tr>
+<tr><th id="261">261</th><td></td></tr>
+<tr><th id="262">262</th><td>    <em>mutable</em> QMutex mutex;</td></tr>
+<tr><th id="263">263</th><td>    QThreadData *data;</td></tr>
+<tr><th id="264">264</th><td>    QBindingStatus* m_bindingStatus;</td></tr>
+<tr><th id="265">265</th><td>    <em>bool</em> running = <b>false</b>;</td></tr>
+<tr><th id="266">266</th><td></td></tr>
+<tr><th id="267">267</th><td>    QBindingStatus* bindingStatus() { <b>return</b> m_bindingStatus; }</td></tr>
+<tr><th id="268">268</th><td>    QBindingStatus *addObjectWithPendingBindingStatusChange(QObject *) { <b>return</b> <b>nullptr</b>; }</td></tr>
+<tr><th id="269">269</th><td>    <em>void</em> removeObjectWithPendingBindingStatusChange(QObject *) {}</td></tr>
+<tr><th id="270">270</th><td></td></tr>
+<tr><th id="271">271</th><td>    <em>static</em> <em>void</em> setCurrentThread(QThread *) { }</td></tr>
+<tr><th id="272">272</th><td>    <em>static</em> QAbstractEventDispatcher *createEventDispatcher(QThreadData *data);</td></tr>
+<tr><th id="273">273</th><td></td></tr>
+<tr><th id="274">274</th><td>    <em>void</em> ref() {}</td></tr>
+<tr><th id="275">275</th><td>    <em>void</em> deref() {}</td></tr>
+<tr><th id="276">276</th><td></td></tr>
+<tr><th id="277">277</th><td>    Q_DECLARE_PUBLIC(QThread)</td></tr>
+<tr><th id="278">278</th><td>};</td></tr>
+<tr><th id="279">279</th><td></td></tr>
+<tr><th id="280">280</th><td><u>#<span data-ppcond="164">endif</span> // QT_CONFIG(thread)</u></td></tr>
+<tr><th id="281">281</th><td></td></tr>
+<tr><th id="282">282</th><td><b>class</b> <dfn class="type def" id="QThreadData" title='QThreadData' data-ref="QThreadData">QThreadData</dfn></td></tr>
+<tr><th id="283">283</th><td>{</td></tr>
+<tr><th id="284">284</th><td><b>public</b>:</td></tr>
+<tr><th id="285">285</th><td>    <dfn class="decl fn" id="_ZN11QThreadDataC1Ei" title='QThreadData::QThreadData' data-ref="_ZN11QThreadDataC1Ei">QThreadData</dfn>(<em>int</em> <dfn class="local col6 decl" id="26initialRefCount" title='initialRefCount' data-type='int' data-ref="26initialRefCount">initialRefCount</dfn> = <var>1</var>);</td></tr>
+<tr><th id="286">286</th><td>    <dfn class="decl fn" id="_ZN11QThreadDataD1Ev" title='QThreadData::~QThreadData' data-ref="_ZN11QThreadDataD1Ev">~QThreadData</dfn>();</td></tr>
+<tr><th id="287">287</th><td></td></tr>
+<tr><th id="288">288</th><td>    <em>static</em> <a class="macro" href="../global/qtconfigmacros.h.html#57" title="" data-ref="_M/Q_AUTOTEST_EXPORT">Q_AUTOTEST_EXPORT</a> <a class="type" href="#QThreadData" title='QThreadData' data-ref="QThreadData">QThreadData</a> *<dfn class="decl fn" id="_ZN11QThreadData7currentEb" title='QThreadData::current' data-ref="_ZN11QThreadData7currentEb">current</dfn>(<em>bool</em> <dfn class="local col7 decl" id="27createIfNecessary" title='createIfNecessary' data-type='bool' data-ref="27createIfNecessary">createIfNecessary</dfn> = <b>true</b>);</td></tr>
+<tr><th id="289">289</th><td>    <em>static</em> <em>void</em> <dfn class="decl fn" id="_ZN11QThreadData22clearCurrentThreadDataEv" title='QThreadData::clearCurrentThreadData' data-ref="_ZN11QThreadData22clearCurrentThreadDataEv">clearCurrentThreadData</dfn>();</td></tr>
+<tr><th id="290">290</th><td>    <em>static</em> <a class="type" href="#QThreadData" title='QThreadData' data-ref="QThreadData">QThreadData</a> *<dfn class="decl def fn" id="_ZN11QThreadData4get2EP7QThread" title='QThreadData::get2' data-ref="_ZN11QThreadData4get2EP7QThread">get2</dfn>(<a class="type" href="qthread.h.html#QThread" title='QThread' data-ref="QThread">QThread</a> *<dfn class="local col8 decl" id="28thread" title='thread' data-type='QThread *' data-ref="28thread">thread</dfn>)</td></tr>
+<tr><th id="291">291</th><td>    { <a class="macro" href="../global/qassert.h.html#43" title="static_cast&lt;void&gt;(false &amp;&amp; (thread != nullptr))" data-ref="_M/Q_ASSERT_X">Q_ASSERT_X</a>(<a class="local col8 ref" href="#28thread" title='thread' data-ref="28thread">thread</a> != <b>nullptr</b>, <q>"QThread"</q>, <q>"internal error"</q>); <b>return</b> <a class="local col8 ref" href="#28thread" title='thread' data-ref="28thread">thread</a>-&gt;<a class="ref fn" href="qthread.h.html#110" title='QThread::d_func' data-ref="_ZN7QThread6d_funcEv">d_func</a>()-&gt;<a class="ref field" href="#QThreadPrivate::data" title='QThreadPrivate::data' data-ref="QThreadPrivate::data">data</a>; }</td></tr>
+<tr><th id="292">292</th><td></td></tr>
+<tr><th id="293">293</th><td></td></tr>
+<tr><th id="294">294</th><td>    <em>void</em> <dfn class="decl fn" id="_ZN11QThreadData3refEv" title='QThreadData::ref' data-ref="_ZN11QThreadData3refEv">ref</dfn>();</td></tr>
+<tr><th id="295">295</th><td>    <em>void</em> <dfn class="decl fn" id="_ZN11QThreadData5derefEv" title='QThreadData::deref' data-ref="_ZN11QThreadData5derefEv">deref</dfn>();</td></tr>
+<tr><th id="296">296</th><td>    <b>inline</b> <em>bool</em> <dfn class="decl def fn" id="_ZNK11QThreadData18hasEventDispatcherEv" title='QThreadData::hasEventDispatcher' data-ref="_ZNK11QThreadData18hasEventDispatcherEv">hasEventDispatcher</dfn>() <em>const</em></td></tr>
+<tr><th id="297">297</th><td>    { <b>return</b> <a class="member field" href="#QThreadData::eventDispatcher" title='QThreadData::eventDispatcher' data-ref="QThreadData::eventDispatcher">eventDispatcher</a>.<a class="ref fn" href="qbasicatomic.h.html#_ZNK19QBasicAtomicPointer11loadRelaxedEv" title='QBasicAtomicPointer::loadRelaxed' data-ref="_ZNK19QBasicAtomicPointer11loadRelaxedEv">loadRelaxed</a>() != <b>nullptr</b>; }</td></tr>
+<tr><th id="298">298</th><td>    <a class="type" href="../kernel/qcoreapplication.h.html#QAbstractEventDispatcher" title='QAbstractEventDispatcher' data-ref="QAbstractEventDispatcher">QAbstractEventDispatcher</a> *<dfn class="decl fn" id="_ZN11QThreadData21createEventDispatcherEv" title='QThreadData::createEventDispatcher' data-ref="_ZN11QThreadData21createEventDispatcherEv">createEventDispatcher</dfn>();</td></tr>
+<tr><th id="299">299</th><td>    <a class="type" href="../kernel/qcoreapplication.h.html#QAbstractEventDispatcher" title='QAbstractEventDispatcher' data-ref="QAbstractEventDispatcher">QAbstractEventDispatcher</a> *<dfn class="decl def fn" id="_ZN11QThreadData21ensureEventDispatcherEv" title='QThreadData::ensureEventDispatcher' data-ref="_ZN11QThreadData21ensureEventDispatcherEv">ensureEventDispatcher</dfn>()</td></tr>
+<tr><th id="300">300</th><td>    {</td></tr>
+<tr><th id="301">301</th><td>        <a class="type" href="../kernel/qcoreapplication.h.html#QAbstractEventDispatcher" title='QAbstractEventDispatcher' data-ref="QAbstractEventDispatcher">QAbstractEventDispatcher</a> *<dfn class="local col9 decl" id="29ed" title='ed' data-type='QAbstractEventDispatcher *' data-ref="29ed">ed</dfn> = <a class="member field" href="#QThreadData::eventDispatcher" title='QThreadData::eventDispatcher' data-ref="QThreadData::eventDispatcher">eventDispatcher</a>.<a class="ref fn" href="qbasicatomic.h.html#_ZNK19QBasicAtomicPointer11loadRelaxedEv" title='QBasicAtomicPointer::loadRelaxed' data-ref="_ZNK19QBasicAtomicPointer11loadRelaxedEv">loadRelaxed</a>();</td></tr>
+<tr><th id="302">302</th><td>        <b>if</b> (<a class="macro" href="../global/qcompilerdetection.h.html#193" title="__builtin_expect(!!(ed), true)" data-ref="_M/Q_LIKELY">Q_LIKELY</a>(<a class="local col9 ref" href="#29ed" title='ed' data-ref="29ed">ed</a>))</td></tr>
+<tr><th id="303">303</th><td>            <b>return</b> <a class="local col9 ref" href="#29ed" title='ed' data-ref="29ed">ed</a>;</td></tr>
+<tr><th id="304">304</th><td>        <b>return</b> <a class="member fn" href="#_ZN11QThreadData21createEventDispatcherEv" title='QThreadData::createEventDispatcher' data-ref="_ZN11QThreadData21createEventDispatcherEv">createEventDispatcher</a>();</td></tr>
+<tr><th id="305">305</th><td>    }</td></tr>
+<tr><th id="306">306</th><td></td></tr>
+<tr><th id="307">307</th><td>    <em>bool</em> <dfn class="decl def fn" id="_ZN11QThreadData13canWaitLockedEv" title='QThreadData::canWaitLocked' data-ref="_ZN11QThreadData13canWaitLockedEv">canWaitLocked</dfn>()</td></tr>
+<tr><th id="308">308</th><td>    {</td></tr>
+<tr><th id="309">309</th><td>        QMutexLocker <dfn class="local col0 decl" id="30locker" title='locker' data-type='QMutexLocker&lt;QMutex&gt;' data-ref="30locker">locker</dfn><a class="ref fn" href="qmutex.h.html#_ZN12QMutexLockerC1EPT_" title='QMutexLocker::QMutexLocker&lt;Mutex&gt;' data-ref="_ZN12QMutexLockerC1EPT_">(</a>&amp;<a class="member field" href="#QThreadData::postEventList" title='QThreadData::postEventList' data-ref="QThreadData::postEventList">postEventList</a>.<a class="ref field" href="#QPostEventList::mutex" title='QPostEventList::mutex' data-ref="QPostEventList::mutex">mutex</a>);</td></tr>
+<tr><th id="310">310</th><td>        <b>return</b> <a class="member field" href="#QThreadData::canWait" title='QThreadData::canWait' data-ref="QThreadData::canWait">canWait</a>;</td></tr>
+<tr><th id="311">311</th><td>    }</td></tr>
+<tr><th id="312">312</th><td></td></tr>
+<tr><th id="313">313</th><td><b>private</b>:</td></tr>
+<tr><th id="314">314</th><td>    <a class="type" href="qatomic.h.html#QAtomicInt" title='QAtomicInt' data-ref="QAtomicInt">QAtomicInt</a> <dfn class="decl field" id="QThreadData::_ref" title='QThreadData::_ref' data-ref="QThreadData::_ref">_ref</dfn>;</td></tr>
+<tr><th id="315">315</th><td></td></tr>
+<tr><th id="316">316</th><td><b>public</b>:</td></tr>
+<tr><th id="317">317</th><td>    <em>int</em> <dfn class="decl field" id="QThreadData::loopLevel" title='QThreadData::loopLevel' data-ref="QThreadData::loopLevel">loopLevel</dfn>;</td></tr>
+<tr><th id="318">318</th><td>    <em>int</em> <dfn class="decl field" id="QThreadData::scopeLevel" title='QThreadData::scopeLevel' data-ref="QThreadData::scopeLevel">scopeLevel</dfn>;</td></tr>
+<tr><th id="319">319</th><td></td></tr>
+<tr><th id="320">320</th><td>    <a class="type" href="../tools/qcontainerfwd.h.html#QStack" title='QStack' data-ref="QStack">QStack</a>&lt;<a class="type" href="../kernel/qeventloop.h.html#QEventLoop" title='QEventLoop' data-ref="QEventLoop">QEventLoop</a> *&gt; <dfn class="decl field" id="QThreadData::eventLoops" title='QThreadData::eventLoops' data-ref="QThreadData::eventLoops">eventLoops</dfn>;</td></tr>
+<tr><th id="321">321</th><td>    <a class="type" href="#QPostEventList" title='QPostEventList' data-ref="QPostEventList">QPostEventList</a> <dfn class="decl field" id="QThreadData::postEventList" title='QThreadData::postEventList' data-ref="QThreadData::postEventList">postEventList</dfn>;</td></tr>
+<tr><th id="322">322</th><td>    <a class="type" href="qatomic.h.html#QAtomicPointer" title='QAtomicPointer' data-ref="QAtomicPointer">QAtomicPointer</a>&lt;<a class="type" href="qthread.h.html#QThread" title='QThread' data-ref="QThread">QThread</a>&gt; <dfn class="decl field" id="QThreadData::thread" title='QThreadData::thread' data-ref="QThreadData::thread">thread</dfn>;</td></tr>
+<tr><th id="323">323</th><td>    <a class="type" href="qatomic.h.html#QAtomicPointer" title='QAtomicPointer' data-ref="QAtomicPointer">QAtomicPointer</a>&lt;<em>void</em>&gt; <dfn class="decl field" id="QThreadData::threadId" title='QThreadData::threadId' data-ref="QThreadData::threadId">threadId</dfn>;</td></tr>
+<tr><th id="324">324</th><td>    <a class="type" href="qatomic.h.html#QAtomicPointer" title='QAtomicPointer' data-ref="QAtomicPointer">QAtomicPointer</a>&lt;<a class="type" href="../kernel/qcoreapplication.h.html#QAbstractEventDispatcher" title='QAbstractEventDispatcher' data-ref="QAbstractEventDispatcher">QAbstractEventDispatcher</a>&gt; <dfn class="decl field" id="QThreadData::eventDispatcher" title='QThreadData::eventDispatcher' data-ref="QThreadData::eventDispatcher">eventDispatcher</dfn>;</td></tr>
+<tr><th id="325">325</th><td>    <a class="type" href="../tools/qcontainerfwd.h.html#QList" title='QList' data-ref="QList">QList</a>&lt;<em>void</em> *&gt; <dfn class="decl field" id="QThreadData::tls" title='QThreadData::tls' data-ref="QThreadData::tls">tls</dfn>;</td></tr>
+<tr><th id="326">326</th><td></td></tr>
+<tr><th id="327">327</th><td>    <em>bool</em> <dfn class="decl field" id="QThreadData::quitNow" title='QThreadData::quitNow' data-ref="QThreadData::quitNow">quitNow</dfn>;</td></tr>
+<tr><th id="328">328</th><td>    <em>bool</em> <dfn class="decl field" id="QThreadData::canWait" title='QThreadData::canWait' data-ref="QThreadData::canWait">canWait</dfn>;</td></tr>
+<tr><th id="329">329</th><td>    <em>bool</em> <dfn class="decl field" id="QThreadData::isAdopted" title='QThreadData::isAdopted' data-ref="QThreadData::isAdopted">isAdopted</dfn>;</td></tr>
+<tr><th id="330">330</th><td>    <em>bool</em> <dfn class="decl field" id="QThreadData::requiresCoreApplication" title='QThreadData::requiresCoreApplication' data-ref="QThreadData::requiresCoreApplication">requiresCoreApplication</dfn>;</td></tr>
+<tr><th id="331">331</th><td>};</td></tr>
+<tr><th id="332">332</th><td></td></tr>
+<tr><th id="333">333</th><td><b>class</b> <dfn class="type def" id="QScopedScopeLevelCounter" title='QScopedScopeLevelCounter' data-ref="QScopedScopeLevelCounter">QScopedScopeLevelCounter</dfn></td></tr>
+<tr><th id="334">334</th><td>{</td></tr>
+<tr><th id="335">335</th><td>    <a class="type" href="#QThreadData" title='QThreadData' data-ref="QThreadData">QThreadData</a> *<dfn class="decl field" id="QScopedScopeLevelCounter::threadData" title='QScopedScopeLevelCounter::threadData' data-ref="QScopedScopeLevelCounter::threadData">threadData</dfn>;</td></tr>
+<tr><th id="336">336</th><td><b>public</b>:</td></tr>
+<tr><th id="337">337</th><td>    <b>inline</b> <dfn class="decl def fn" id="_ZN24QScopedScopeLevelCounterC1EP11QThreadData" title='QScopedScopeLevelCounter::QScopedScopeLevelCounter' data-ref="_ZN24QScopedScopeLevelCounterC1EP11QThreadData">QScopedScopeLevelCounter</dfn>(<a class="type" href="#QThreadData" title='QThreadData' data-ref="QThreadData">QThreadData</a> *<dfn class="local col1 decl" id="31threadData" title='threadData' data-type='QThreadData *' data-ref="31threadData">threadData</dfn>)</td></tr>
+<tr><th id="338">338</th><td>        : <a class="member field" href="#QScopedScopeLevelCounter::threadData" title='QScopedScopeLevelCounter::threadData' data-ref="QScopedScopeLevelCounter::threadData">threadData</a>(<a class="local col1 ref" href="#31threadData" title='threadData' data-ref="31threadData">threadData</a>)</td></tr>
+<tr><th id="339">339</th><td>    { ++<a class="local col1 ref" href="#31threadData" title='threadData' data-ref="31threadData">threadData</a>-&gt;<a class="ref field" href="#QThreadData::scopeLevel" title='QThreadData::scopeLevel' data-ref="QThreadData::scopeLevel">scopeLevel</a>; }</td></tr>
+<tr><th id="340">340</th><td>    <b>inline</b> <dfn class="decl def fn" id="_ZN24QScopedScopeLevelCounterD1Ev" title='QScopedScopeLevelCounter::~QScopedScopeLevelCounter' data-ref="_ZN24QScopedScopeLevelCounterD1Ev">~QScopedScopeLevelCounter</dfn>()</td></tr>
+<tr><th id="341">341</th><td>    { --<a class="member field" href="#QScopedScopeLevelCounter::threadData" title='QScopedScopeLevelCounter::threadData' data-ref="QScopedScopeLevelCounter::threadData">threadData</a>-&gt;<a class="ref field" href="#QThreadData::scopeLevel" title='QThreadData::scopeLevel' data-ref="QThreadData::scopeLevel">scopeLevel</a>; }</td></tr>
+<tr><th id="342">342</th><td>};</td></tr>
+<tr><th id="343">343</th><td></td></tr>
+<tr><th id="344">344</th><td><i>// thread wrapper for the main() thread</i></td></tr>
+<tr><th id="345">345</th><td><b>class</b> <dfn class="type def" id="QAdoptedThread" title='QAdoptedThread' data-ref="QAdoptedThread">QAdoptedThread</dfn> : <b>public</b> <a class="type" href="qthread.h.html#QThread" title='QThread' data-ref="QThread">QThread</a></td></tr>
+<tr><th id="346">346</th><td>{</td></tr>
+<tr><th id="347">347</th><td>    <a class="macro" href="../global/qtclasshelpermacros.h.html#88" title="inline QThreadPrivate* d_func() noexcept { return reinterpret_cast&lt;QThreadPrivate *&gt;(qGetPtrHelper(d_ptr)); } inline const QThreadPrivate* d_func() const noexcept { return reinterpret_cast&lt;const QThreadPrivate *&gt;(qGetPtrHelper(d_ptr)); } friend class QThreadPrivate;" data-ref="_M/Q_DECLARE_PRIVATE">Q_DECLARE_PRIVATE</a>(QThread)</td></tr>
+<tr><th id="348">348</th><td></td></tr>
+<tr><th id="349">349</th><td><b>public</b>:</td></tr>
+<tr><th id="350">350</th><td>    <dfn class="decl fn" id="_ZN14QAdoptedThreadC1EP11QThreadData" title='QAdoptedThread::QAdoptedThread' data-ref="_ZN14QAdoptedThreadC1EP11QThreadData">QAdoptedThread</dfn>(<a class="type" href="#QThreadData" title='QThreadData' data-ref="QThreadData">QThreadData</a> *<dfn class="local col2 decl" id="32data" title='data' data-type='QThreadData *' data-ref="32data">data</dfn> = <b>nullptr</b>);</td></tr>
+<tr><th id="351">351</th><td>    <dfn class="virtual decl fn" id="_ZN14QAdoptedThreadD1Ev" title='QAdoptedThread::~QAdoptedThread' data-ref="_ZN14QAdoptedThreadD1Ev">~QAdoptedThread</dfn>();</td></tr>
+<tr><th id="352">352</th><td>    <em>void</em> <dfn class="decl fn" id="_ZN14QAdoptedThread4initEv" title='QAdoptedThread::init' data-ref="_ZN14QAdoptedThread4initEv">init</dfn>();</td></tr>
+<tr><th id="353">353</th><td></td></tr>
+<tr><th id="354">354</th><td><b>private</b>:</td></tr>
+<tr><th id="355">355</th><td><u>#<span data-ppcond="355">if</span> <a class="macro" href="../global/qtconfigmacros.h.html#67" title="(1/1 == 1)" data-ref="_M/QT_CONFIG">QT_CONFIG</a>(thread)</u></td></tr>
+<tr><th id="356">356</th><td>    <em>void</em> <dfn class="virtual decl fn" id="_ZN14QAdoptedThread3runEv" title='QAdoptedThread::run' data-ref="_ZN14QAdoptedThread3runEv">run</dfn>() override;</td></tr>
+<tr><th id="357">357</th><td><u>#<span data-ppcond="355">endif</span></u></td></tr>
+<tr><th id="358">358</th><td>};</td></tr>
+<tr><th id="359">359</th><td></td></tr>
+<tr><th id="360">360</th><td><a class="macro" href="../global/qtconfigmacros.h.html#104" title="" data-ref="_M/QT_END_NAMESPACE">QT_END_NAMESPACE</a></td></tr>
+<tr><th id="361">361</th><td></td></tr>
+<tr><th id="362">362</th><td><u>#<span data-ppcond="5">endif</span> // QTHREAD_P_H</u></td></tr>
+<tr><th id="363">363</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../io/qprocess_unix.cpp.html'>qtbase-6.5.0/src/corelib/io/qprocess_unix.cpp</a><br/>Generated on <em>2024-Jun-13</em> from project qtbase-6.5.0 revision <em>6.5.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

@@ -1,0 +1,29 @@
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.h' l='113' u='m' c='_ZN17QNetworkInterface4swapERS_'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.h' l='113' u='a' c='_ZN17QNetworkInterface4swapERS_'/>
+<dec f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.h' l='135' type='QSharedDataPointer&lt;QNetworkInterfacePrivate&gt;'/>
+<offset>0</offset>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='602' u='w' c='_ZN17QNetworkInterfaceC1Ev'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='618' u='w' c='_ZN17QNetworkInterfaceC1ERKS_'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='618' u='r' c='_ZN17QNetworkInterfaceC1ERKS_'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='628' u='w' c='_ZN17QNetworkInterfaceaSERKS_'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='628' u='r' c='_ZN17QNetworkInterfaceaSERKS_'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='660' u='m' c='_ZNK17QNetworkInterface5indexEv'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='660' u='m' c='_ZNK17QNetworkInterface5indexEv'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='683' u='m' c='_ZNK17QNetworkInterface23maximumTransmissionUnitEv'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='683' u='m' c='_ZNK17QNetworkInterface23maximumTransmissionUnitEv'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='694' u='m' c='_ZNK17QNetworkInterface4nameEv'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='694' u='m' c='_ZNK17QNetworkInterface4nameEv'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='713' u='m' c='_ZNK17QNetworkInterface17humanReadableNameEv'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='713' u='m' c='_ZNK17QNetworkInterface17humanReadableNameEv'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='713' u='m' c='_ZNK17QNetworkInterface17humanReadableNameEv'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='721' u='m' c='_ZNK17QNetworkInterface5flagsEv'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='721' u='m' c='_ZNK17QNetworkInterface5flagsEv'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='734' u='m' c='_ZNK17QNetworkInterface4typeEv'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='734' u='m' c='_ZNK17QNetworkInterface4typeEv'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='750' u='m' c='_ZNK17QNetworkInterface15hardwareAddressEv'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='750' u='m' c='_ZNK17QNetworkInterface15hardwareAddressEv'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='763' u='m' c='_ZNK17QNetworkInterface14addressEntriesEv'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='763' u='m' c='_ZNK17QNetworkInterface14addressEntriesEv'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='802' u='w' c='_ZN17QNetworkInterface17interfaceFromNameERK7QString'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='819' u='w' c='_ZN17QNetworkInterface18interfaceFromIndexEi'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='853' u='w' c='_ZN17QNetworkInterface13allInterfacesEv'/>

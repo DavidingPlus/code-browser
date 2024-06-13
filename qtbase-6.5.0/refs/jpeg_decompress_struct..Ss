@@ -1,0 +1,30 @@
+<dec f='qtbase-6.5.0/src/3rdparty/libjpeg/src/jpeglib.h' l='677' type='int'/>
+<offset>4256</offset>
+<use f='qtbase-6.5.0/src/3rdparty/libjpeg/src/jdarith.c' l='212' u='r' c='process_restart'/>
+<use f='qtbase-6.5.0/src/3rdparty/libjpeg/src/jdarith.c' l='218' u='r' c='process_restart'/>
+<use f='qtbase-6.5.0/src/3rdparty/libjpeg/src/jdarith.c' l='353' u='r' c='decode_mcu_AC_first'/>
+<use f='qtbase-6.5.0/src/3rdparty/libjpeg/src/jdarith.c' l='465' u='r' c='decode_mcu_AC_refine'/>
+<use f='qtbase-6.5.0/src/3rdparty/libjpeg/src/jdarith.c' l='640' u='r' c='start_pass'/>
+<use f='qtbase-6.5.0/src/3rdparty/libjpeg/src/jdarith.c' l='645' u='r' c='start_pass'/>
+<use f='qtbase-6.5.0/src/3rdparty/libjpeg/src/jdarith.c' l='659' u='r' c='start_pass'/>
+<use f='qtbase-6.5.0/src/3rdparty/libjpeg/src/jdarith.c' l='670' u='r' c='start_pass'/>
+<use f='qtbase-6.5.0/src/3rdparty/libjpeg/src/jdarith.c' l='672' u='r' c='start_pass'/>
+<use f='qtbase-6.5.0/src/3rdparty/libjpeg/src/jdarith.c' l='672' u='r' c='start_pass'/>
+<use f='qtbase-6.5.0/src/3rdparty/libjpeg/src/jdarith.c' l='678' u='r' c='start_pass'/>
+<use f='qtbase-6.5.0/src/3rdparty/libjpeg/src/jdarith.c' l='687' u='r' c='start_pass'/>
+<use f='qtbase-6.5.0/src/3rdparty/libjpeg/src/jdarith.c' l='692' u='r' c='start_pass'/>
+<use f='qtbase-6.5.0/src/3rdparty/libjpeg/src/jdarith.c' l='701' u='r' c='start_pass'/>
+<use f='qtbase-6.5.0/src/3rdparty/libjpeg/src/jdarith.c' l='711' u='r' c='start_pass'/>
+<use f='qtbase-6.5.0/src/3rdparty/libjpeg/src/jdarith.c' l='723' u='r' c='start_pass'/>
+<use f='qtbase-6.5.0/src/3rdparty/libjpeg/src/jdcoefct.c' l='463' u='r' c='decompress_smooth_data'/>
+<use f='qtbase-6.5.0/src/3rdparty/libjpeg/src/jdhuff.c' l='88' u='r' c='start_pass_huff_decoder'/>
+<use f='qtbase-6.5.0/src/3rdparty/libjpeg/src/jdmarker.c' l='363' u='w' c='get_sos'/>
+<use f='qtbase-6.5.0/src/3rdparty/libjpeg/src/jdmarker.c' l='370' u='r' c='get_sos'/>
+<use f='qtbase-6.5.0/src/3rdparty/libjpeg/src/jdphuff.c' l='89' u='r' c='start_pass_phuff_decoder'/>
+<use f='qtbase-6.5.0/src/3rdparty/libjpeg/src/jdphuff.c' l='98' u='r' c='start_pass_phuff_decoder'/>
+<use f='qtbase-6.5.0/src/3rdparty/libjpeg/src/jdphuff.c' l='119' u='r' c='start_pass_phuff_decoder'/>
+<use f='qtbase-6.5.0/src/3rdparty/libjpeg/src/jdphuff.c' l='130' u='r' c='start_pass_phuff_decoder'/>
+<use f='qtbase-6.5.0/src/3rdparty/libjpeg/src/jdphuff.c' l='130' u='r' c='start_pass_phuff_decoder'/>
+<use f='qtbase-6.5.0/src/3rdparty/libjpeg/src/jdphuff.c' l='136' u='r' c='start_pass_phuff_decoder'/>
+<use f='qtbase-6.5.0/src/3rdparty/libjpeg/src/jdphuff.c' l='401' u='r' c='decode_mcu_AC_first'/>
+<use f='qtbase-6.5.0/src/3rdparty/libjpeg/src/jdphuff.c' l='543' u='r' c='decode_mcu_AC_refine'/>

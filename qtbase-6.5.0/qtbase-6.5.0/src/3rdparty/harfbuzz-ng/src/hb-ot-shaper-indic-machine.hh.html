@@ -1,0 +1,646 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>hb-ot-shaper-indic-machine.hh source code [qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/hb-ot-shaper-indic-machine.hh] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="indic_syllable_type_t "/>
+<link rel="stylesheet" href="../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/hb-ot-shaper-indic-machine.hh'; var root_path = '../../../../..'; var data_path = '../../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../..'>qtbase-6.5.0</a>/<a href='../../..'>src</a>/<a href='../..'>3rdparty</a>/<a href='..'>harfbuzz-ng</a>/<a href='./'>src</a>/<a href='hb-ot-shaper-indic-machine.hh.html'>hb-ot-shaper-indic-machine.hh</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td></td></tr>
+<tr><th id="2">2</th><td><u>#line 1 "hb-ot-shaper-indic-machine.rl"</u></td></tr>
+<tr><th id="3">3</th><td><i>/*</i></td></tr>
+<tr><th id="4">4</th><td><i> * Copyright © 2011,2012  Google, Inc.</i></td></tr>
+<tr><th id="5">5</th><td><i> *</i></td></tr>
+<tr><th id="6">6</th><td><i> *  This is part of HarfBuzz, a text shaping library.</i></td></tr>
+<tr><th id="7">7</th><td><i> *</i></td></tr>
+<tr><th id="8">8</th><td><i> * Permission is hereby granted, without written agreement and without</i></td></tr>
+<tr><th id="9">9</th><td><i> * license or royalty fees, to use, copy, modify, and distribute this</i></td></tr>
+<tr><th id="10">10</th><td><i> * software and its documentation for any purpose, provided that the</i></td></tr>
+<tr><th id="11">11</th><td><i> * above copyright notice and the following two paragraphs appear in</i></td></tr>
+<tr><th id="12">12</th><td><i> * all copies of this software.</i></td></tr>
+<tr><th id="13">13</th><td><i> *</i></td></tr>
+<tr><th id="14">14</th><td><i> * IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR</i></td></tr>
+<tr><th id="15">15</th><td><i> * DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES</i></td></tr>
+<tr><th id="16">16</th><td><i> * ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN</i></td></tr>
+<tr><th id="17">17</th><td><i> * IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH</i></td></tr>
+<tr><th id="18">18</th><td><i> * DAMAGE.</i></td></tr>
+<tr><th id="19">19</th><td><i> *</i></td></tr>
+<tr><th id="20">20</th><td><i> * THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,</i></td></tr>
+<tr><th id="21">21</th><td><i> * BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND</i></td></tr>
+<tr><th id="22">22</th><td><i> * FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS</i></td></tr>
+<tr><th id="23">23</th><td><i> * ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO</i></td></tr>
+<tr><th id="24">24</th><td><i> * PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.</i></td></tr>
+<tr><th id="25">25</th><td><i> *</i></td></tr>
+<tr><th id="26">26</th><td><i> * Google Author(s): Behdad Esfahbod</i></td></tr>
+<tr><th id="27">27</th><td><i> */</i></td></tr>
+<tr><th id="28">28</th><td></td></tr>
+<tr><th id="29">29</th><td><u>#<span data-ppcond="29">ifndef</span> <span class="macro" data-ref="_M/HB_OT_SHAPER_INDIC_MACHINE_HH">HB_OT_SHAPER_INDIC_MACHINE_HH</span></u></td></tr>
+<tr><th id="30">30</th><td><u>#define <dfn class="macro" id="_M/HB_OT_SHAPER_INDIC_MACHINE_HH" data-ref="_M/HB_OT_SHAPER_INDIC_MACHINE_HH">HB_OT_SHAPER_INDIC_MACHINE_HH</dfn></u></td></tr>
+<tr><th id="31">31</th><td></td></tr>
+<tr><th id="32">32</th><td><u>#include <a href="hb.hh.html">"hb.hh"</a></u></td></tr>
+<tr><th id="33">33</th><td></td></tr>
+<tr><th id="34">34</th><td><u>#include <a href="hb-ot-layout.hh.html">"hb-ot-layout.hh"</a></u></td></tr>
+<tr><th id="35">35</th><td><u>#include <a href="hb-ot-shaper-indic.hh.html">"hb-ot-shaper-indic.hh"</a></u></td></tr>
+<tr><th id="36">36</th><td></td></tr>
+<tr><th id="37">37</th><td><i>/* buffer var allocations */</i></td></tr>
+<tr><th id="38">38</th><td><u>#define <dfn class="macro" id="_M/indic_category" data-ref="_M/indic_category">indic_category</dfn>() ot_shaper_var_u8_category() /* indic_category_t */</u></td></tr>
+<tr><th id="39">39</th><td><u>#define <dfn class="macro" id="_M/indic_position" data-ref="_M/indic_position">indic_position</dfn>() ot_shaper_var_u8_auxiliary() /* indic_position_t */</u></td></tr>
+<tr><th id="40">40</th><td></td></tr>
+<tr><th id="41">41</th><td><b>using</b> <dfn class="typedef" id="indic_category_t" title='indic_category_t' data-type='unsigned int' data-ref="indic_category_t">indic_category_t</dfn> = <em>unsigned</em>;</td></tr>
+<tr><th id="42">42</th><td><b>using</b> <dfn class="typedef" id="indic_position_t" title='indic_position_t' data-type='ot_position_t' data-ref="indic_position_t">indic_position_t</dfn> = <a class="type" href="hb-ot-shaper-indic.hh.html#ot_position_t" title='ot_position_t' data-ref="ot_position_t">ot_position_t</a>;</td></tr>
+<tr><th id="43">43</th><td></td></tr>
+<tr><th id="44">44</th><td><u>#define <dfn class="macro" id="_M/I_Cat" data-ref="_M/I_Cat">I_Cat</dfn>(Cat) indic_syllable_machine_ex_##Cat</u></td></tr>
+<tr><th id="45">45</th><td></td></tr>
+<tr><th id="46">46</th><td><b>enum</b> <dfn class="type def" id="indic_syllable_type_t" title='indic_syllable_type_t' data-ref="indic_syllable_type_t">indic_syllable_type_t</dfn> {</td></tr>
+<tr><th id="47">47</th><td>  <dfn class="enum" id="indic_consonant_syllable" title='indic_consonant_syllable' data-ref="indic_consonant_syllable">indic_consonant_syllable</dfn>,</td></tr>
+<tr><th id="48">48</th><td>  <dfn class="enum" id="indic_vowel_syllable" title='indic_vowel_syllable' data-ref="indic_vowel_syllable">indic_vowel_syllable</dfn>,</td></tr>
+<tr><th id="49">49</th><td>  <dfn class="enum" id="indic_standalone_cluster" title='indic_standalone_cluster' data-ref="indic_standalone_cluster">indic_standalone_cluster</dfn>,</td></tr>
+<tr><th id="50">50</th><td>  <dfn class="enum" id="indic_symbol_cluster" title='indic_symbol_cluster' data-ref="indic_symbol_cluster">indic_symbol_cluster</dfn>,</td></tr>
+<tr><th id="51">51</th><td>  <dfn class="enum" id="indic_broken_cluster" title='indic_broken_cluster' data-ref="indic_broken_cluster">indic_broken_cluster</dfn>,</td></tr>
+<tr><th id="52">52</th><td>  <dfn class="enum" id="indic_non_indic_cluster" title='indic_non_indic_cluster' data-ref="indic_non_indic_cluster">indic_non_indic_cluster</dfn>,</td></tr>
+<tr><th id="53">53</th><td>};</td></tr>
+<tr><th id="54">54</th><td></td></tr>
+<tr><th id="55">55</th><td></td></tr>
+<tr><th id="56">56</th><td><u>#line 54 "hb-ot-shaper-indic-machine.hh"</u></td></tr>
+<tr><th id="57">57</th><td><u>#define <dfn class="macro" id="_M/indic_syllable_machine_ex_A" data-ref="_M/indic_syllable_machine_ex_A">indic_syllable_machine_ex_A</dfn> 9u</u></td></tr>
+<tr><th id="58">58</th><td><u>#define <dfn class="macro" id="_M/indic_syllable_machine_ex_C" data-ref="_M/indic_syllable_machine_ex_C">indic_syllable_machine_ex_C</dfn> 1u</u></td></tr>
+<tr><th id="59">59</th><td><u>#define <dfn class="macro" id="_M/indic_syllable_machine_ex_CM" data-ref="_M/indic_syllable_machine_ex_CM">indic_syllable_machine_ex_CM</dfn> 16u</u></td></tr>
+<tr><th id="60">60</th><td><u>#define <dfn class="macro" id="_M/indic_syllable_machine_ex_CS" data-ref="_M/indic_syllable_machine_ex_CS">indic_syllable_machine_ex_CS</dfn> 18u</u></td></tr>
+<tr><th id="61">61</th><td><u>#define <dfn class="macro" id="_M/indic_syllable_machine_ex_DOTTEDCIRCLE" data-ref="_M/indic_syllable_machine_ex_DOTTEDCIRCLE">indic_syllable_machine_ex_DOTTEDCIRCLE</dfn> 11u</u></td></tr>
+<tr><th id="62">62</th><td><u>#define <dfn class="macro" id="_M/indic_syllable_machine_ex_H" data-ref="_M/indic_syllable_machine_ex_H">indic_syllable_machine_ex_H</dfn> 4u</u></td></tr>
+<tr><th id="63">63</th><td><u>#define <dfn class="macro" id="_M/indic_syllable_machine_ex_M" data-ref="_M/indic_syllable_machine_ex_M">indic_syllable_machine_ex_M</dfn> 7u</u></td></tr>
+<tr><th id="64">64</th><td><u>#define <dfn class="macro" id="_M/indic_syllable_machine_ex_MPst" data-ref="_M/indic_syllable_machine_ex_MPst">indic_syllable_machine_ex_MPst</dfn> 13u</u></td></tr>
+<tr><th id="65">65</th><td><u>#define <dfn class="macro" id="_M/indic_syllable_machine_ex_N" data-ref="_M/indic_syllable_machine_ex_N">indic_syllable_machine_ex_N</dfn> 3u</u></td></tr>
+<tr><th id="66">66</th><td><u>#define <dfn class="macro" id="_M/indic_syllable_machine_ex_PLACEHOLDER" data-ref="_M/indic_syllable_machine_ex_PLACEHOLDER">indic_syllable_machine_ex_PLACEHOLDER</dfn> 10u</u></td></tr>
+<tr><th id="67">67</th><td><u>#define <dfn class="macro" id="_M/indic_syllable_machine_ex_RS" data-ref="_M/indic_syllable_machine_ex_RS">indic_syllable_machine_ex_RS</dfn> 12u</u></td></tr>
+<tr><th id="68">68</th><td><u>#define <dfn class="macro" id="_M/indic_syllable_machine_ex_Ra" data-ref="_M/indic_syllable_machine_ex_Ra">indic_syllable_machine_ex_Ra</dfn> 15u</u></td></tr>
+<tr><th id="69">69</th><td><u>#define <dfn class="macro" id="_M/indic_syllable_machine_ex_Repha" data-ref="_M/indic_syllable_machine_ex_Repha">indic_syllable_machine_ex_Repha</dfn> 14u</u></td></tr>
+<tr><th id="70">70</th><td><u>#define <dfn class="macro" id="_M/indic_syllable_machine_ex_SM" data-ref="_M/indic_syllable_machine_ex_SM">indic_syllable_machine_ex_SM</dfn> 8u</u></td></tr>
+<tr><th id="71">71</th><td><u>#define <dfn class="macro" id="_M/indic_syllable_machine_ex_Symbol" data-ref="_M/indic_syllable_machine_ex_Symbol">indic_syllable_machine_ex_Symbol</dfn> 17u</u></td></tr>
+<tr><th id="72">72</th><td><u>#define <dfn class="macro" id="_M/indic_syllable_machine_ex_V" data-ref="_M/indic_syllable_machine_ex_V">indic_syllable_machine_ex_V</dfn> 2u</u></td></tr>
+<tr><th id="73">73</th><td><u>#define <dfn class="macro" id="_M/indic_syllable_machine_ex_VD" data-ref="_M/indic_syllable_machine_ex_VD">indic_syllable_machine_ex_VD</dfn> 9u</u></td></tr>
+<tr><th id="74">74</th><td><u>#define <dfn class="macro" id="_M/indic_syllable_machine_ex_X" data-ref="_M/indic_syllable_machine_ex_X">indic_syllable_machine_ex_X</dfn> 0u</u></td></tr>
+<tr><th id="75">75</th><td><u>#define <dfn class="macro" id="_M/indic_syllable_machine_ex_ZWJ" data-ref="_M/indic_syllable_machine_ex_ZWJ">indic_syllable_machine_ex_ZWJ</dfn> 6u</u></td></tr>
+<tr><th id="76">76</th><td><u>#define <dfn class="macro" id="_M/indic_syllable_machine_ex_ZWNJ" data-ref="_M/indic_syllable_machine_ex_ZWNJ">indic_syllable_machine_ex_ZWNJ</dfn> 5u</u></td></tr>
+<tr><th id="77">77</th><td></td></tr>
+<tr><th id="78">78</th><td></td></tr>
+<tr><th id="79">79</th><td><u>#line 75 "hb-ot-shaper-indic-machine.hh"</u></td></tr>
+<tr><th id="80">80</th><td><em>static</em> <em>const</em> <em>unsigned</em> <em>char</em> <dfn class="decl def" id="_indic_syllable_machine_trans_keys" title='_indic_syllable_machine_trans_keys' data-ref="_indic_syllable_machine_trans_keys">_indic_syllable_machine_trans_keys</dfn>[] = {</td></tr>
+<tr><th id="81">81</th><td>	<var>8u</var>, <var>8u</var>, <var>4u</var>, <var>13u</var>, <var>5u</var>, <var>13u</var>, <var>5u</var>, <var>13u</var>, <var>13u</var>, <var>13u</var>, <var>4u</var>, <var>13u</var>, <var>4u</var>, <var>13u</var>, <var>4u</var>, <var>13u</var>, </td></tr>
+<tr><th id="82">82</th><td>	<var>8u</var>, <var>8u</var>, <var>5u</var>, <var>13u</var>, <var>5u</var>, <var>13u</var>, <var>13u</var>, <var>13u</var>, <var>4u</var>, <var>13u</var>, <var>4u</var>, <var>13u</var>, <var>4u</var>, <var>13u</var>, <var>4u</var>, <var>13u</var>, </td></tr>
+<tr><th id="83">83</th><td>	<var>8u</var>, <var>8u</var>, <var>5u</var>, <var>13u</var>, <var>5u</var>, <var>13u</var>, <var>13u</var>, <var>13u</var>, <var>4u</var>, <var>13u</var>, <var>4u</var>, <var>13u</var>, <var>4u</var>, <var>13u</var>, <var>8u</var>, <var>8u</var>, </td></tr>
+<tr><th id="84">84</th><td>	<var>5u</var>, <var>13u</var>, <var>5u</var>, <var>13u</var>, <var>13u</var>, <var>13u</var>, <var>4u</var>, <var>13u</var>, <var>4u</var>, <var>13u</var>, <var>5u</var>, <var>13u</var>, <var>8u</var>, <var>8u</var>, <var>1u</var>, <var>18u</var>, </td></tr>
+<tr><th id="85">85</th><td>	<var>3u</var>, <var>16u</var>, <var>3u</var>, <var>16u</var>, <var>4u</var>, <var>16u</var>, <var>1u</var>, <var>15u</var>, <var>5u</var>, <var>9u</var>, <var>5u</var>, <var>9u</var>, <var>9u</var>, <var>9u</var>, <var>5u</var>, <var>9u</var>, </td></tr>
+<tr><th id="86">86</th><td>	<var>1u</var>, <var>15u</var>, <var>1u</var>, <var>15u</var>, <var>1u</var>, <var>15u</var>, <var>3u</var>, <var>13u</var>, <var>4u</var>, <var>13u</var>, <var>5u</var>, <var>13u</var>, <var>5u</var>, <var>13u</var>, <var>4u</var>, <var>13u</var>, </td></tr>
+<tr><th id="87">87</th><td>	<var>5u</var>, <var>9u</var>, <var>3u</var>, <var>9u</var>, <var>5u</var>, <var>9u</var>, <var>3u</var>, <var>16u</var>, <var>3u</var>, <var>16u</var>, <var>3u</var>, <var>16u</var>, <var>3u</var>, <var>16u</var>, <var>4u</var>, <var>16u</var>, </td></tr>
+<tr><th id="88">88</th><td>	<var>1u</var>, <var>15u</var>, <var>3u</var>, <var>16u</var>, <var>3u</var>, <var>16u</var>, <var>4u</var>, <var>16u</var>, <var>1u</var>, <var>15u</var>, <var>5u</var>, <var>9u</var>, <var>9u</var>, <var>9u</var>, <var>5u</var>, <var>9u</var>, </td></tr>
+<tr><th id="89">89</th><td>	<var>1u</var>, <var>15u</var>, <var>1u</var>, <var>15u</var>, <var>3u</var>, <var>13u</var>, <var>4u</var>, <var>13u</var>, <var>5u</var>, <var>13u</var>, <var>5u</var>, <var>13u</var>, <var>4u</var>, <var>13u</var>, <var>5u</var>, <var>9u</var>, </td></tr>
+<tr><th id="90">90</th><td>	<var>5u</var>, <var>9u</var>, <var>3u</var>, <var>9u</var>, <var>5u</var>, <var>9u</var>, <var>3u</var>, <var>16u</var>, <var>3u</var>, <var>16u</var>, <var>4u</var>, <var>13u</var>, <var>3u</var>, <var>16u</var>, <var>3u</var>, <var>16u</var>, </td></tr>
+<tr><th id="91">91</th><td>	<var>4u</var>, <var>16u</var>, <var>1u</var>, <var>15u</var>, <var>3u</var>, <var>16u</var>, <var>1u</var>, <var>15u</var>, <var>5u</var>, <var>9u</var>, <var>9u</var>, <var>9u</var>, <var>5u</var>, <var>9u</var>, <var>1u</var>, <var>15u</var>, </td></tr>
+<tr><th id="92">92</th><td>	<var>1u</var>, <var>15u</var>, <var>3u</var>, <var>13u</var>, <var>4u</var>, <var>13u</var>, <var>5u</var>, <var>13u</var>, <var>5u</var>, <var>13u</var>, <var>3u</var>, <var>16u</var>, <var>4u</var>, <var>13u</var>, <var>5u</var>, <var>9u</var>, </td></tr>
+<tr><th id="93">93</th><td>	<var>5u</var>, <var>9u</var>, <var>3u</var>, <var>9u</var>, <var>5u</var>, <var>9u</var>, <var>3u</var>, <var>16u</var>, <var>4u</var>, <var>13u</var>, <var>4u</var>, <var>13u</var>, <var>3u</var>, <var>16u</var>, <var>3u</var>, <var>16u</var>, </td></tr>
+<tr><th id="94">94</th><td>	<var>4u</var>, <var>16u</var>, <var>1u</var>, <var>15u</var>, <var>3u</var>, <var>16u</var>, <var>1u</var>, <var>15u</var>, <var>5u</var>, <var>9u</var>, <var>9u</var>, <var>9u</var>, <var>5u</var>, <var>9u</var>, <var>1u</var>, <var>15u</var>, </td></tr>
+<tr><th id="95">95</th><td>	<var>1u</var>, <var>15u</var>, <var>3u</var>, <var>13u</var>, <var>4u</var>, <var>13u</var>, <var>5u</var>, <var>13u</var>, <var>5u</var>, <var>13u</var>, <var>3u</var>, <var>16u</var>, <var>4u</var>, <var>13u</var>, <var>5u</var>, <var>9u</var>, </td></tr>
+<tr><th id="96">96</th><td>	<var>5u</var>, <var>9u</var>, <var>3u</var>, <var>9u</var>, <var>5u</var>, <var>9u</var>, <var>1u</var>, <var>16u</var>, <var>3u</var>, <var>16u</var>, <var>1u</var>, <var>16u</var>, <var>4u</var>, <var>13u</var>, <var>5u</var>, <var>13u</var>, </td></tr>
+<tr><th id="97">97</th><td>	<var>5u</var>, <var>13u</var>, <var>9u</var>, <var>9u</var>, <var>5u</var>, <var>9u</var>, <var>1u</var>, <var>15u</var>, <var>3u</var>, <var>9u</var>, <var>5u</var>, <var>9u</var>, <var>5u</var>, <var>9u</var>, <var>9u</var>, <var>9u</var>, </td></tr>
+<tr><th id="98">98</th><td>	<var>5u</var>, <var>9u</var>, <var>1u</var>, <var>15u</var>, <var>0</var></td></tr>
+<tr><th id="99">99</th><td>};</td></tr>
+<tr><th id="100">100</th><td></td></tr>
+<tr><th id="101">101</th><td><em>static</em> <em>const</em> <em>char</em> <dfn class="decl def" id="_indic_syllable_machine_key_spans" title='_indic_syllable_machine_key_spans' data-ref="_indic_syllable_machine_key_spans">_indic_syllable_machine_key_spans</dfn>[] = {</td></tr>
+<tr><th id="102">102</th><td>	<var>1</var>, <var>10</var>, <var>9</var>, <var>9</var>, <var>1</var>, <var>10</var>, <var>10</var>, <var>10</var>, </td></tr>
+<tr><th id="103">103</th><td>	<var>1</var>, <var>9</var>, <var>9</var>, <var>1</var>, <var>10</var>, <var>10</var>, <var>10</var>, <var>10</var>, </td></tr>
+<tr><th id="104">104</th><td>	<var>1</var>, <var>9</var>, <var>9</var>, <var>1</var>, <var>10</var>, <var>10</var>, <var>10</var>, <var>1</var>, </td></tr>
+<tr><th id="105">105</th><td>	<var>9</var>, <var>9</var>, <var>1</var>, <var>10</var>, <var>10</var>, <var>9</var>, <var>1</var>, <var>18</var>, </td></tr>
+<tr><th id="106">106</th><td>	<var>14</var>, <var>14</var>, <var>13</var>, <var>15</var>, <var>5</var>, <var>5</var>, <var>1</var>, <var>5</var>, </td></tr>
+<tr><th id="107">107</th><td>	<var>15</var>, <var>15</var>, <var>15</var>, <var>11</var>, <var>10</var>, <var>9</var>, <var>9</var>, <var>10</var>, </td></tr>
+<tr><th id="108">108</th><td>	<var>5</var>, <var>7</var>, <var>5</var>, <var>14</var>, <var>14</var>, <var>14</var>, <var>14</var>, <var>13</var>, </td></tr>
+<tr><th id="109">109</th><td>	<var>15</var>, <var>14</var>, <var>14</var>, <var>13</var>, <var>15</var>, <var>5</var>, <var>1</var>, <var>5</var>, </td></tr>
+<tr><th id="110">110</th><td>	<var>15</var>, <var>15</var>, <var>11</var>, <var>10</var>, <var>9</var>, <var>9</var>, <var>10</var>, <var>5</var>, </td></tr>
+<tr><th id="111">111</th><td>	<var>5</var>, <var>7</var>, <var>5</var>, <var>14</var>, <var>14</var>, <var>10</var>, <var>14</var>, <var>14</var>, </td></tr>
+<tr><th id="112">112</th><td>	<var>13</var>, <var>15</var>, <var>14</var>, <var>15</var>, <var>5</var>, <var>1</var>, <var>5</var>, <var>15</var>, </td></tr>
+<tr><th id="113">113</th><td>	<var>15</var>, <var>11</var>, <var>10</var>, <var>9</var>, <var>9</var>, <var>14</var>, <var>10</var>, <var>5</var>, </td></tr>
+<tr><th id="114">114</th><td>	<var>5</var>, <var>7</var>, <var>5</var>, <var>14</var>, <var>10</var>, <var>10</var>, <var>14</var>, <var>14</var>, </td></tr>
+<tr><th id="115">115</th><td>	<var>13</var>, <var>15</var>, <var>14</var>, <var>15</var>, <var>5</var>, <var>1</var>, <var>5</var>, <var>15</var>, </td></tr>
+<tr><th id="116">116</th><td>	<var>15</var>, <var>11</var>, <var>10</var>, <var>9</var>, <var>9</var>, <var>14</var>, <var>10</var>, <var>5</var>, </td></tr>
+<tr><th id="117">117</th><td>	<var>5</var>, <var>7</var>, <var>5</var>, <var>16</var>, <var>14</var>, <var>16</var>, <var>10</var>, <var>9</var>, </td></tr>
+<tr><th id="118">118</th><td>	<var>9</var>, <var>1</var>, <var>5</var>, <var>15</var>, <var>7</var>, <var>5</var>, <var>5</var>, <var>1</var>, </td></tr>
+<tr><th id="119">119</th><td>	<var>5</var>, <var>15</var></td></tr>
+<tr><th id="120">120</th><td>};</td></tr>
+<tr><th id="121">121</th><td></td></tr>
+<tr><th id="122">122</th><td><em>static</em> <em>const</em> <em>short</em> <dfn class="decl def" id="_indic_syllable_machine_index_offsets" title='_indic_syllable_machine_index_offsets' data-ref="_indic_syllable_machine_index_offsets">_indic_syllable_machine_index_offsets</dfn>[] = {</td></tr>
+<tr><th id="123">123</th><td>	<var>0</var>, <var>2</var>, <var>13</var>, <var>23</var>, <var>33</var>, <var>35</var>, <var>46</var>, <var>57</var>, </td></tr>
+<tr><th id="124">124</th><td>	<var>68</var>, <var>70</var>, <var>80</var>, <var>90</var>, <var>92</var>, <var>103</var>, <var>114</var>, <var>125</var>, </td></tr>
+<tr><th id="125">125</th><td>	<var>136</var>, <var>138</var>, <var>148</var>, <var>158</var>, <var>160</var>, <var>171</var>, <var>182</var>, <var>193</var>, </td></tr>
+<tr><th id="126">126</th><td>	<var>195</var>, <var>205</var>, <var>215</var>, <var>217</var>, <var>228</var>, <var>239</var>, <var>249</var>, <var>251</var>, </td></tr>
+<tr><th id="127">127</th><td>	<var>270</var>, <var>285</var>, <var>300</var>, <var>314</var>, <var>330</var>, <var>336</var>, <var>342</var>, <var>344</var>, </td></tr>
+<tr><th id="128">128</th><td>	<var>350</var>, <var>366</var>, <var>382</var>, <var>398</var>, <var>410</var>, <var>421</var>, <var>431</var>, <var>441</var>, </td></tr>
+<tr><th id="129">129</th><td>	<var>452</var>, <var>458</var>, <var>466</var>, <var>472</var>, <var>487</var>, <var>502</var>, <var>517</var>, <var>532</var>, </td></tr>
+<tr><th id="130">130</th><td>	<var>546</var>, <var>562</var>, <var>577</var>, <var>592</var>, <var>606</var>, <var>622</var>, <var>628</var>, <var>630</var>, </td></tr>
+<tr><th id="131">131</th><td>	<var>636</var>, <var>652</var>, <var>668</var>, <var>680</var>, <var>691</var>, <var>701</var>, <var>711</var>, <var>722</var>, </td></tr>
+<tr><th id="132">132</th><td>	<var>728</var>, <var>734</var>, <var>742</var>, <var>748</var>, <var>763</var>, <var>778</var>, <var>789</var>, <var>804</var>, </td></tr>
+<tr><th id="133">133</th><td>	<var>819</var>, <var>833</var>, <var>849</var>, <var>864</var>, <var>880</var>, <var>886</var>, <var>888</var>, <var>894</var>, </td></tr>
+<tr><th id="134">134</th><td>	<var>910</var>, <var>926</var>, <var>938</var>, <var>949</var>, <var>959</var>, <var>969</var>, <var>984</var>, <var>995</var>, </td></tr>
+<tr><th id="135">135</th><td>	<var>1001</var>, <var>1007</var>, <var>1015</var>, <var>1021</var>, <var>1036</var>, <var>1047</var>, <var>1058</var>, <var>1073</var>, </td></tr>
+<tr><th id="136">136</th><td>	<var>1088</var>, <var>1102</var>, <var>1118</var>, <var>1133</var>, <var>1149</var>, <var>1155</var>, <var>1157</var>, <var>1163</var>, </td></tr>
+<tr><th id="137">137</th><td>	<var>1179</var>, <var>1195</var>, <var>1207</var>, <var>1218</var>, <var>1228</var>, <var>1238</var>, <var>1253</var>, <var>1264</var>, </td></tr>
+<tr><th id="138">138</th><td>	<var>1270</var>, <var>1276</var>, <var>1284</var>, <var>1290</var>, <var>1307</var>, <var>1322</var>, <var>1339</var>, <var>1350</var>, </td></tr>
+<tr><th id="139">139</th><td>	<var>1360</var>, <var>1370</var>, <var>1372</var>, <var>1378</var>, <var>1394</var>, <var>1402</var>, <var>1408</var>, <var>1414</var>, </td></tr>
+<tr><th id="140">140</th><td>	<var>1416</var>, <var>1422</var></td></tr>
+<tr><th id="141">141</th><td>};</td></tr>
+<tr><th id="142">142</th><td></td></tr>
+<tr><th id="143">143</th><td><em>static</em> <em>const</em> <em>unsigned</em> <em>char</em> <dfn class="decl def" id="_indic_syllable_machine_indicies" title='_indic_syllable_machine_indicies' data-ref="_indic_syllable_machine_indicies">_indic_syllable_machine_indicies</dfn>[] = {</td></tr>
+<tr><th id="144">144</th><td>	<var>1</var>, <var>0</var>, <var>2</var>, <var>3</var>, <var>3</var>, <var>4</var>, <var>5</var>, <var>0</var>, </td></tr>
+<tr><th id="145">145</th><td>	<var>0</var>, <var>0</var>, <var>0</var>, <var>4</var>, <var>0</var>, <var>3</var>, <var>3</var>, <var>4</var>, </td></tr>
+<tr><th id="146">146</th><td>	<var>6</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>4</var>, <var>0</var>, <var>3</var>, </td></tr>
+<tr><th id="147">147</th><td>	<var>3</var>, <var>4</var>, <var>5</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>4</var>, </td></tr>
+<tr><th id="148">148</th><td>	<var>0</var>, <var>4</var>, <var>0</var>, <var>7</var>, <var>3</var>, <var>3</var>, <var>4</var>, <var>5</var>, </td></tr>
+<tr><th id="149">149</th><td>	<var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>4</var>, <var>0</var>, <var>2</var>, <var>3</var>, </td></tr>
+<tr><th id="150">150</th><td>	<var>3</var>, <var>4</var>, <var>5</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>8</var>, <var>4</var>, </td></tr>
+<tr><th id="151">151</th><td>	<var>0</var>, <var>10</var>, <var>11</var>, <var>11</var>, <var>12</var>, <var>13</var>, <var>9</var>, <var>9</var>, </td></tr>
+<tr><th id="152">152</th><td>	<var>9</var>, <var>9</var>, <var>12</var>, <var>9</var>, <var>14</var>, <var>9</var>, <var>11</var>, <var>11</var>, </td></tr>
+<tr><th id="153">153</th><td>	<var>12</var>, <var>15</var>, <var>9</var>, <var>9</var>, <var>9</var>, <var>9</var>, <var>12</var>, <var>9</var>, </td></tr>
+<tr><th id="154">154</th><td>	<var>11</var>, <var>11</var>, <var>12</var>, <var>13</var>, <var>9</var>, <var>9</var>, <var>9</var>, <var>9</var>, </td></tr>
+<tr><th id="155">155</th><td>	<var>12</var>, <var>9</var>, <var>12</var>, <var>9</var>, <var>16</var>, <var>11</var>, <var>11</var>, <var>12</var>, </td></tr>
+<tr><th id="156">156</th><td>	<var>13</var>, <var>9</var>, <var>9</var>, <var>9</var>, <var>9</var>, <var>12</var>, <var>9</var>, <var>10</var>, </td></tr>
+<tr><th id="157">157</th><td>	<var>11</var>, <var>11</var>, <var>12</var>, <var>13</var>, <var>9</var>, <var>9</var>, <var>9</var>, <var>17</var>, </td></tr>
+<tr><th id="158">158</th><td>	<var>12</var>, <var>9</var>, <var>10</var>, <var>11</var>, <var>11</var>, <var>12</var>, <var>13</var>, <var>9</var>, </td></tr>
+<tr><th id="159">159</th><td>	<var>9</var>, <var>9</var>, <var>18</var>, <var>12</var>, <var>9</var>, <var>20</var>, <var>21</var>, <var>21</var>, </td></tr>
+<tr><th id="160">160</th><td>	<var>22</var>, <var>23</var>, <var>19</var>, <var>19</var>, <var>19</var>, <var>24</var>, <var>22</var>, <var>19</var>, </td></tr>
+<tr><th id="161">161</th><td>	<var>25</var>, <var>19</var>, <var>21</var>, <var>21</var>, <var>22</var>, <var>27</var>, <var>26</var>, <var>26</var>, </td></tr>
+<tr><th id="162">162</th><td>	<var>26</var>, <var>26</var>, <var>22</var>, <var>26</var>, <var>21</var>, <var>21</var>, <var>22</var>, <var>23</var>, </td></tr>
+<tr><th id="163">163</th><td>	<var>19</var>, <var>19</var>, <var>19</var>, <var>19</var>, <var>22</var>, <var>19</var>, <var>22</var>, <var>26</var>, </td></tr>
+<tr><th id="164">164</th><td>	<var>20</var>, <var>21</var>, <var>21</var>, <var>22</var>, <var>23</var>, <var>19</var>, <var>19</var>, <var>19</var>, </td></tr>
+<tr><th id="165">165</th><td>	<var>19</var>, <var>22</var>, <var>19</var>, <var>28</var>, <var>21</var>, <var>21</var>, <var>22</var>, <var>23</var>, </td></tr>
+<tr><th id="166">166</th><td>	<var>19</var>, <var>19</var>, <var>19</var>, <var>19</var>, <var>22</var>, <var>19</var>, <var>30</var>, <var>31</var>, </td></tr>
+<tr><th id="167">167</th><td>	<var>31</var>, <var>32</var>, <var>33</var>, <var>29</var>, <var>29</var>, <var>29</var>, <var>34</var>, <var>32</var>, </td></tr>
+<tr><th id="168">168</th><td>	<var>29</var>, <var>35</var>, <var>29</var>, <var>31</var>, <var>31</var>, <var>32</var>, <var>36</var>, <var>29</var>, </td></tr>
+<tr><th id="169">169</th><td>	<var>29</var>, <var>29</var>, <var>29</var>, <var>32</var>, <var>29</var>, <var>31</var>, <var>31</var>, <var>32</var>, </td></tr>
+<tr><th id="170">170</th><td>	<var>33</var>, <var>29</var>, <var>29</var>, <var>29</var>, <var>29</var>, <var>32</var>, <var>29</var>, <var>32</var>, </td></tr>
+<tr><th id="171">171</th><td>	<var>29</var>, <var>30</var>, <var>31</var>, <var>31</var>, <var>32</var>, <var>33</var>, <var>29</var>, <var>29</var>, </td></tr>
+<tr><th id="172">172</th><td>	<var>29</var>, <var>29</var>, <var>32</var>, <var>29</var>, <var>37</var>, <var>31</var>, <var>31</var>, <var>32</var>, </td></tr>
+<tr><th id="173">173</th><td>	<var>33</var>, <var>29</var>, <var>29</var>, <var>29</var>, <var>29</var>, <var>32</var>, <var>29</var>, <var>21</var>, </td></tr>
+<tr><th id="174">174</th><td>	<var>21</var>, <var>22</var>, <var>38</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>22</var>, </td></tr>
+<tr><th id="175">175</th><td>	<var>0</var>, <var>40</var>, <var>39</var>, <var>42</var>, <var>43</var>, <var>44</var>, <var>45</var>, <var>46</var>, </td></tr>
+<tr><th id="176">176</th><td>	<var>47</var>, <var>22</var>, <var>23</var>, <var>48</var>, <var>49</var>, <var>49</var>, <var>24</var>, <var>22</var>, </td></tr>
+<tr><th id="177">177</th><td>	<var>50</var>, <var>51</var>, <var>52</var>, <var>53</var>, <var>54</var>, <var>41</var>, <var>56</var>, <var>57</var>, </td></tr>
+<tr><th id="178">178</th><td>	<var>58</var>, <var>59</var>, <var>4</var>, <var>5</var>, <var>60</var>, <var>55</var>, <var>55</var>, <var>8</var>, </td></tr>
+<tr><th id="179">179</th><td>	<var>4</var>, <var>55</var>, <var>55</var>, <var>61</var>, <var>55</var>, <var>62</var>, <var>57</var>, <var>63</var>, </td></tr>
+<tr><th id="180">180</th><td>	<var>63</var>, <var>4</var>, <var>5</var>, <var>60</var>, <var>55</var>, <var>55</var>, <var>55</var>, <var>4</var>, </td></tr>
+<tr><th id="181">181</th><td>	<var>55</var>, <var>55</var>, <var>61</var>, <var>55</var>, <var>57</var>, <var>63</var>, <var>63</var>, <var>4</var>, </td></tr>
+<tr><th id="182">182</th><td>	<var>5</var>, <var>60</var>, <var>55</var>, <var>55</var>, <var>55</var>, <var>4</var>, <var>55</var>, <var>55</var>, </td></tr>
+<tr><th id="183">183</th><td>	<var>61</var>, <var>55</var>, <var>42</var>, <var>55</var>, <var>55</var>, <var>55</var>, <var>64</var>, <var>65</var>, </td></tr>
+<tr><th id="184">184</th><td>	<var>55</var>, <var>1</var>, <var>60</var>, <var>55</var>, <var>55</var>, <var>55</var>, <var>55</var>, <var>55</var>, </td></tr>
+<tr><th id="185">185</th><td>	<var>42</var>, <var>55</var>, <var>66</var>, <var>66</var>, <var>55</var>, <var>1</var>, <var>60</var>, <var>55</var>, </td></tr>
+<tr><th id="186">186</th><td>	<var>60</var>, <var>55</var>, <var>55</var>, <var>67</var>, <var>60</var>, <var>55</var>, <var>60</var>, <var>55</var>, </td></tr>
+<tr><th id="187">187</th><td>	<var>60</var>, <var>55</var>, <var>55</var>, <var>55</var>, <var>60</var>, <var>55</var>, <var>42</var>, <var>55</var>, </td></tr>
+<tr><th id="188">188</th><td>	<var>68</var>, <var>55</var>, <var>66</var>, <var>66</var>, <var>55</var>, <var>1</var>, <var>60</var>, <var>55</var>, </td></tr>
+<tr><th id="189">189</th><td>	<var>55</var>, <var>55</var>, <var>55</var>, <var>55</var>, <var>42</var>, <var>55</var>, <var>42</var>, <var>55</var>, </td></tr>
+<tr><th id="190">190</th><td>	<var>55</var>, <var>55</var>, <var>66</var>, <var>66</var>, <var>55</var>, <var>1</var>, <var>60</var>, <var>55</var>, </td></tr>
+<tr><th id="191">191</th><td>	<var>55</var>, <var>55</var>, <var>55</var>, <var>55</var>, <var>42</var>, <var>55</var>, <var>42</var>, <var>55</var>, </td></tr>
+<tr><th id="192">192</th><td>	<var>55</var>, <var>55</var>, <var>66</var>, <var>65</var>, <var>55</var>, <var>1</var>, <var>60</var>, <var>55</var>, </td></tr>
+<tr><th id="193">193</th><td>	<var>55</var>, <var>55</var>, <var>55</var>, <var>55</var>, <var>42</var>, <var>55</var>, <var>69</var>, <var>70</var>, </td></tr>
+<tr><th id="194">194</th><td>	<var>71</var>, <var>71</var>, <var>4</var>, <var>5</var>, <var>60</var>, <var>55</var>, <var>55</var>, <var>55</var>, </td></tr>
+<tr><th id="195">195</th><td>	<var>4</var>, <var>55</var>, <var>70</var>, <var>71</var>, <var>71</var>, <var>4</var>, <var>5</var>, <var>60</var>, </td></tr>
+<tr><th id="196">196</th><td>	<var>55</var>, <var>55</var>, <var>55</var>, <var>4</var>, <var>55</var>, <var>71</var>, <var>71</var>, <var>4</var>, </td></tr>
+<tr><th id="197">197</th><td>	<var>5</var>, <var>60</var>, <var>55</var>, <var>55</var>, <var>55</var>, <var>4</var>, <var>55</var>, <var>60</var>, </td></tr>
+<tr><th id="198">198</th><td>	<var>55</var>, <var>55</var>, <var>67</var>, <var>60</var>, <var>55</var>, <var>55</var>, <var>55</var>, <var>4</var>, </td></tr>
+<tr><th id="199">199</th><td>	<var>55</var>, <var>72</var>, <var>73</var>, <var>73</var>, <var>4</var>, <var>5</var>, <var>60</var>, <var>55</var>, </td></tr>
+<tr><th id="200">200</th><td>	<var>55</var>, <var>55</var>, <var>4</var>, <var>55</var>, <var>64</var>, <var>74</var>, <var>55</var>, <var>1</var>, </td></tr>
+<tr><th id="201">201</th><td>	<var>60</var>, <var>55</var>, <var>64</var>, <var>55</var>, <var>66</var>, <var>66</var>, <var>55</var>, <var>1</var>, </td></tr>
+<tr><th id="202">202</th><td>	<var>60</var>, <var>55</var>, <var>66</var>, <var>74</var>, <var>55</var>, <var>1</var>, <var>60</var>, <var>55</var>, </td></tr>
+<tr><th id="203">203</th><td>	<var>56</var>, <var>57</var>, <var>63</var>, <var>63</var>, <var>4</var>, <var>5</var>, <var>60</var>, <var>55</var>, </td></tr>
+<tr><th id="204">204</th><td>	<var>55</var>, <var>55</var>, <var>4</var>, <var>55</var>, <var>55</var>, <var>61</var>, <var>55</var>, <var>56</var>, </td></tr>
+<tr><th id="205">205</th><td>	<var>57</var>, <var>58</var>, <var>63</var>, <var>4</var>, <var>5</var>, <var>60</var>, <var>55</var>, <var>55</var>, </td></tr>
+<tr><th id="206">206</th><td>	<var>8</var>, <var>4</var>, <var>55</var>, <var>55</var>, <var>61</var>, <var>55</var>, <var>76</var>, <var>77</var>, </td></tr>
+<tr><th id="207">207</th><td>	<var>78</var>, <var>79</var>, <var>12</var>, <var>13</var>, <var>80</var>, <var>75</var>, <var>75</var>, <var>18</var>, </td></tr>
+<tr><th id="208">208</th><td>	<var>12</var>, <var>75</var>, <var>75</var>, <var>81</var>, <var>75</var>, <var>82</var>, <var>77</var>, <var>83</var>, </td></tr>
+<tr><th id="209">209</th><td>	<var>79</var>, <var>12</var>, <var>13</var>, <var>80</var>, <var>75</var>, <var>75</var>, <var>75</var>, <var>12</var>, </td></tr>
+<tr><th id="210">210</th><td>	<var>75</var>, <var>75</var>, <var>81</var>, <var>75</var>, <var>77</var>, <var>83</var>, <var>79</var>, <var>12</var>, </td></tr>
+<tr><th id="211">211</th><td>	<var>13</var>, <var>80</var>, <var>75</var>, <var>75</var>, <var>75</var>, <var>12</var>, <var>75</var>, <var>75</var>, </td></tr>
+<tr><th id="212">212</th><td>	<var>81</var>, <var>75</var>, <var>84</var>, <var>75</var>, <var>75</var>, <var>75</var>, <var>85</var>, <var>86</var>, </td></tr>
+<tr><th id="213">213</th><td>	<var>75</var>, <var>14</var>, <var>80</var>, <var>75</var>, <var>75</var>, <var>75</var>, <var>75</var>, <var>75</var>, </td></tr>
+<tr><th id="214">214</th><td>	<var>84</var>, <var>75</var>, <var>87</var>, <var>77</var>, <var>88</var>, <var>89</var>, <var>12</var>, <var>13</var>, </td></tr>
+<tr><th id="215">215</th><td>	<var>80</var>, <var>75</var>, <var>75</var>, <var>17</var>, <var>12</var>, <var>75</var>, <var>75</var>, <var>81</var>, </td></tr>
+<tr><th id="216">216</th><td>	<var>75</var>, <var>90</var>, <var>77</var>, <var>83</var>, <var>83</var>, <var>12</var>, <var>13</var>, <var>80</var>, </td></tr>
+<tr><th id="217">217</th><td>	<var>75</var>, <var>75</var>, <var>75</var>, <var>12</var>, <var>75</var>, <var>75</var>, <var>81</var>, <var>75</var>, </td></tr>
+<tr><th id="218">218</th><td>	<var>77</var>, <var>83</var>, <var>83</var>, <var>12</var>, <var>13</var>, <var>80</var>, <var>75</var>, <var>75</var>, </td></tr>
+<tr><th id="219">219</th><td>	<var>75</var>, <var>12</var>, <var>75</var>, <var>75</var>, <var>81</var>, <var>75</var>, <var>84</var>, <var>75</var>, </td></tr>
+<tr><th id="220">220</th><td>	<var>75</var>, <var>75</var>, <var>91</var>, <var>86</var>, <var>75</var>, <var>14</var>, <var>80</var>, <var>75</var>, </td></tr>
+<tr><th id="221">221</th><td>	<var>75</var>, <var>75</var>, <var>75</var>, <var>75</var>, <var>84</var>, <var>75</var>, <var>80</var>, <var>75</var>, </td></tr>
+<tr><th id="222">222</th><td>	<var>75</var>, <var>92</var>, <var>80</var>, <var>75</var>, <var>80</var>, <var>75</var>, <var>80</var>, <var>75</var>, </td></tr>
+<tr><th id="223">223</th><td>	<var>75</var>, <var>75</var>, <var>80</var>, <var>75</var>, <var>84</var>, <var>75</var>, <var>93</var>, <var>75</var>, </td></tr>
+<tr><th id="224">224</th><td>	<var>91</var>, <var>91</var>, <var>75</var>, <var>14</var>, <var>80</var>, <var>75</var>, <var>75</var>, <var>75</var>, </td></tr>
+<tr><th id="225">225</th><td>	<var>75</var>, <var>75</var>, <var>84</var>, <var>75</var>, <var>84</var>, <var>75</var>, <var>75</var>, <var>75</var>, </td></tr>
+<tr><th id="226">226</th><td>	<var>91</var>, <var>91</var>, <var>75</var>, <var>14</var>, <var>80</var>, <var>75</var>, <var>75</var>, <var>75</var>, </td></tr>
+<tr><th id="227">227</th><td>	<var>75</var>, <var>75</var>, <var>84</var>, <var>75</var>, <var>94</var>, <var>95</var>, <var>96</var>, <var>96</var>, </td></tr>
+<tr><th id="228">228</th><td>	<var>12</var>, <var>13</var>, <var>80</var>, <var>75</var>, <var>75</var>, <var>75</var>, <var>12</var>, <var>75</var>, </td></tr>
+<tr><th id="229">229</th><td>	<var>95</var>, <var>96</var>, <var>96</var>, <var>12</var>, <var>13</var>, <var>80</var>, <var>75</var>, <var>75</var>, </td></tr>
+<tr><th id="230">230</th><td>	<var>75</var>, <var>12</var>, <var>75</var>, <var>96</var>, <var>96</var>, <var>12</var>, <var>13</var>, <var>80</var>, </td></tr>
+<tr><th id="231">231</th><td>	<var>75</var>, <var>75</var>, <var>75</var>, <var>12</var>, <var>75</var>, <var>80</var>, <var>75</var>, <var>75</var>, </td></tr>
+<tr><th id="232">232</th><td>	<var>92</var>, <var>80</var>, <var>75</var>, <var>75</var>, <var>75</var>, <var>12</var>, <var>75</var>, <var>97</var>, </td></tr>
+<tr><th id="233">233</th><td>	<var>98</var>, <var>98</var>, <var>12</var>, <var>13</var>, <var>80</var>, <var>75</var>, <var>75</var>, <var>75</var>, </td></tr>
+<tr><th id="234">234</th><td>	<var>12</var>, <var>75</var>, <var>85</var>, <var>99</var>, <var>75</var>, <var>14</var>, <var>80</var>, <var>75</var>, </td></tr>
+<tr><th id="235">235</th><td>	<var>91</var>, <var>91</var>, <var>75</var>, <var>14</var>, <var>80</var>, <var>75</var>, <var>85</var>, <var>75</var>, </td></tr>
+<tr><th id="236">236</th><td>	<var>91</var>, <var>91</var>, <var>75</var>, <var>14</var>, <var>80</var>, <var>75</var>, <var>91</var>, <var>99</var>, </td></tr>
+<tr><th id="237">237</th><td>	<var>75</var>, <var>14</var>, <var>80</var>, <var>75</var>, <var>87</var>, <var>77</var>, <var>83</var>, <var>83</var>, </td></tr>
+<tr><th id="238">238</th><td>	<var>12</var>, <var>13</var>, <var>80</var>, <var>75</var>, <var>75</var>, <var>75</var>, <var>12</var>, <var>75</var>, </td></tr>
+<tr><th id="239">239</th><td>	<var>75</var>, <var>81</var>, <var>75</var>, <var>87</var>, <var>77</var>, <var>88</var>, <var>83</var>, <var>12</var>, </td></tr>
+<tr><th id="240">240</th><td>	<var>13</var>, <var>80</var>, <var>75</var>, <var>75</var>, <var>17</var>, <var>12</var>, <var>75</var>, <var>75</var>, </td></tr>
+<tr><th id="241">241</th><td>	<var>81</var>, <var>75</var>, <var>10</var>, <var>11</var>, <var>11</var>, <var>12</var>, <var>13</var>, <var>75</var>, </td></tr>
+<tr><th id="242">242</th><td>	<var>75</var>, <var>75</var>, <var>75</var>, <var>12</var>, <var>75</var>, <var>76</var>, <var>77</var>, <var>83</var>, </td></tr>
+<tr><th id="243">243</th><td>	<var>79</var>, <var>12</var>, <var>13</var>, <var>80</var>, <var>75</var>, <var>75</var>, <var>75</var>, <var>12</var>, </td></tr>
+<tr><th id="244">244</th><td>	<var>75</var>, <var>75</var>, <var>81</var>, <var>75</var>, <var>101</var>, <var>45</var>, <var>102</var>, <var>102</var>, </td></tr>
+<tr><th id="245">245</th><td>	<var>22</var>, <var>23</var>, <var>48</var>, <var>100</var>, <var>100</var>, <var>100</var>, <var>22</var>, <var>100</var>, </td></tr>
+<tr><th id="246">246</th><td>	<var>100</var>, <var>52</var>, <var>100</var>, <var>45</var>, <var>102</var>, <var>102</var>, <var>22</var>, <var>23</var>, </td></tr>
+<tr><th id="247">247</th><td>	<var>48</var>, <var>100</var>, <var>100</var>, <var>100</var>, <var>22</var>, <var>100</var>, <var>100</var>, <var>52</var>, </td></tr>
+<tr><th id="248">248</th><td>	<var>100</var>, <var>103</var>, <var>100</var>, <var>100</var>, <var>100</var>, <var>104</var>, <var>105</var>, <var>100</var>, </td></tr>
+<tr><th id="249">249</th><td>	<var>25</var>, <var>48</var>, <var>100</var>, <var>100</var>, <var>100</var>, <var>100</var>, <var>100</var>, <var>103</var>, </td></tr>
+<tr><th id="250">250</th><td>	<var>100</var>, <var>44</var>, <var>45</var>, <var>106</var>, <var>107</var>, <var>22</var>, <var>23</var>, <var>48</var>, </td></tr>
+<tr><th id="251">251</th><td>	<var>100</var>, <var>100</var>, <var>24</var>, <var>22</var>, <var>100</var>, <var>100</var>, <var>52</var>, <var>100</var>, </td></tr>
+<tr><th id="252">252</th><td>	<var>103</var>, <var>100</var>, <var>100</var>, <var>100</var>, <var>108</var>, <var>105</var>, <var>100</var>, <var>25</var>, </td></tr>
+<tr><th id="253">253</th><td>	<var>48</var>, <var>100</var>, <var>100</var>, <var>100</var>, <var>100</var>, <var>100</var>, <var>103</var>, <var>100</var>, </td></tr>
+<tr><th id="254">254</th><td>	<var>48</var>, <var>100</var>, <var>100</var>, <var>109</var>, <var>48</var>, <var>100</var>, <var>48</var>, <var>100</var>, </td></tr>
+<tr><th id="255">255</th><td>	<var>48</var>, <var>100</var>, <var>100</var>, <var>100</var>, <var>48</var>, <var>100</var>, <var>103</var>, <var>100</var>, </td></tr>
+<tr><th id="256">256</th><td>	<var>110</var>, <var>100</var>, <var>108</var>, <var>108</var>, <var>100</var>, <var>25</var>, <var>48</var>, <var>100</var>, </td></tr>
+<tr><th id="257">257</th><td>	<var>100</var>, <var>100</var>, <var>100</var>, <var>100</var>, <var>103</var>, <var>100</var>, <var>103</var>, <var>100</var>, </td></tr>
+<tr><th id="258">258</th><td>	<var>100</var>, <var>100</var>, <var>108</var>, <var>108</var>, <var>100</var>, <var>25</var>, <var>48</var>, <var>100</var>, </td></tr>
+<tr><th id="259">259</th><td>	<var>100</var>, <var>100</var>, <var>100</var>, <var>100</var>, <var>103</var>, <var>100</var>, <var>111</var>, <var>112</var>, </td></tr>
+<tr><th id="260">260</th><td>	<var>113</var>, <var>113</var>, <var>22</var>, <var>23</var>, <var>48</var>, <var>100</var>, <var>100</var>, <var>100</var>, </td></tr>
+<tr><th id="261">261</th><td>	<var>22</var>, <var>100</var>, <var>112</var>, <var>113</var>, <var>113</var>, <var>22</var>, <var>23</var>, <var>48</var>, </td></tr>
+<tr><th id="262">262</th><td>	<var>100</var>, <var>100</var>, <var>100</var>, <var>22</var>, <var>100</var>, <var>113</var>, <var>113</var>, <var>22</var>, </td></tr>
+<tr><th id="263">263</th><td>	<var>23</var>, <var>48</var>, <var>100</var>, <var>100</var>, <var>100</var>, <var>22</var>, <var>100</var>, <var>48</var>, </td></tr>
+<tr><th id="264">264</th><td>	<var>100</var>, <var>100</var>, <var>109</var>, <var>48</var>, <var>100</var>, <var>100</var>, <var>100</var>, <var>22</var>, </td></tr>
+<tr><th id="265">265</th><td>	<var>100</var>, <var>44</var>, <var>45</var>, <var>102</var>, <var>102</var>, <var>22</var>, <var>23</var>, <var>48</var>, </td></tr>
+<tr><th id="266">266</th><td>	<var>100</var>, <var>100</var>, <var>100</var>, <var>22</var>, <var>100</var>, <var>100</var>, <var>52</var>, <var>100</var>, </td></tr>
+<tr><th id="267">267</th><td>	<var>114</var>, <var>115</var>, <var>115</var>, <var>22</var>, <var>23</var>, <var>48</var>, <var>100</var>, <var>100</var>, </td></tr>
+<tr><th id="268">268</th><td>	<var>100</var>, <var>22</var>, <var>100</var>, <var>104</var>, <var>116</var>, <var>100</var>, <var>25</var>, <var>48</var>, </td></tr>
+<tr><th id="269">269</th><td>	<var>100</var>, <var>108</var>, <var>108</var>, <var>100</var>, <var>25</var>, <var>48</var>, <var>100</var>, <var>104</var>, </td></tr>
+<tr><th id="270">270</th><td>	<var>100</var>, <var>108</var>, <var>108</var>, <var>100</var>, <var>25</var>, <var>48</var>, <var>100</var>, <var>108</var>, </td></tr>
+<tr><th id="271">271</th><td>	<var>116</var>, <var>100</var>, <var>25</var>, <var>48</var>, <var>100</var>, <var>44</var>, <var>45</var>, <var>106</var>, </td></tr>
+<tr><th id="272">272</th><td>	<var>102</var>, <var>22</var>, <var>23</var>, <var>48</var>, <var>100</var>, <var>100</var>, <var>24</var>, <var>22</var>, </td></tr>
+<tr><th id="273">273</th><td>	<var>100</var>, <var>100</var>, <var>52</var>, <var>100</var>, <var>20</var>, <var>21</var>, <var>21</var>, <var>22</var>, </td></tr>
+<tr><th id="274">274</th><td>	<var>23</var>, <var>117</var>, <var>117</var>, <var>117</var>, <var>24</var>, <var>22</var>, <var>117</var>, <var>20</var>, </td></tr>
+<tr><th id="275">275</th><td>	<var>21</var>, <var>21</var>, <var>22</var>, <var>23</var>, <var>117</var>, <var>117</var>, <var>117</var>, <var>117</var>, </td></tr>
+<tr><th id="276">276</th><td>	<var>22</var>, <var>117</var>, <var>119</var>, <var>120</var>, <var>121</var>, <var>122</var>, <var>32</var>, <var>33</var>, </td></tr>
+<tr><th id="277">277</th><td>	<var>123</var>, <var>118</var>, <var>118</var>, <var>34</var>, <var>32</var>, <var>118</var>, <var>118</var>, <var>124</var>, </td></tr>
+<tr><th id="278">278</th><td>	<var>118</var>, <var>125</var>, <var>120</var>, <var>122</var>, <var>122</var>, <var>32</var>, <var>33</var>, <var>123</var>, </td></tr>
+<tr><th id="279">279</th><td>	<var>118</var>, <var>118</var>, <var>118</var>, <var>32</var>, <var>118</var>, <var>118</var>, <var>124</var>, <var>118</var>, </td></tr>
+<tr><th id="280">280</th><td>	<var>120</var>, <var>122</var>, <var>122</var>, <var>32</var>, <var>33</var>, <var>123</var>, <var>118</var>, <var>118</var>, </td></tr>
+<tr><th id="281">281</th><td>	<var>118</var>, <var>32</var>, <var>118</var>, <var>118</var>, <var>124</var>, <var>118</var>, <var>126</var>, <var>118</var>, </td></tr>
+<tr><th id="282">282</th><td>	<var>118</var>, <var>118</var>, <var>127</var>, <var>128</var>, <var>118</var>, <var>35</var>, <var>123</var>, <var>118</var>, </td></tr>
+<tr><th id="283">283</th><td>	<var>118</var>, <var>118</var>, <var>118</var>, <var>118</var>, <var>126</var>, <var>118</var>, <var>119</var>, <var>120</var>, </td></tr>
+<tr><th id="284">284</th><td>	<var>121</var>, <var>49</var>, <var>32</var>, <var>33</var>, <var>123</var>, <var>118</var>, <var>118</var>, <var>34</var>, </td></tr>
+<tr><th id="285">285</th><td>	<var>32</var>, <var>118</var>, <var>118</var>, <var>124</var>, <var>118</var>, <var>126</var>, <var>118</var>, <var>118</var>, </td></tr>
+<tr><th id="286">286</th><td>	<var>118</var>, <var>129</var>, <var>128</var>, <var>118</var>, <var>35</var>, <var>123</var>, <var>118</var>, <var>118</var>, </td></tr>
+<tr><th id="287">287</th><td>	<var>118</var>, <var>118</var>, <var>118</var>, <var>126</var>, <var>118</var>, <var>123</var>, <var>118</var>, <var>118</var>, </td></tr>
+<tr><th id="288">288</th><td>	<var>130</var>, <var>123</var>, <var>118</var>, <var>123</var>, <var>118</var>, <var>123</var>, <var>118</var>, <var>118</var>, </td></tr>
+<tr><th id="289">289</th><td>	<var>118</var>, <var>123</var>, <var>118</var>, <var>126</var>, <var>118</var>, <var>131</var>, <var>118</var>, <var>129</var>, </td></tr>
+<tr><th id="290">290</th><td>	<var>129</var>, <var>118</var>, <var>35</var>, <var>123</var>, <var>118</var>, <var>118</var>, <var>118</var>, <var>118</var>, </td></tr>
+<tr><th id="291">291</th><td>	<var>118</var>, <var>126</var>, <var>118</var>, <var>126</var>, <var>118</var>, <var>118</var>, <var>118</var>, <var>129</var>, </td></tr>
+<tr><th id="292">292</th><td>	<var>129</var>, <var>118</var>, <var>35</var>, <var>123</var>, <var>118</var>, <var>118</var>, <var>118</var>, <var>118</var>, </td></tr>
+<tr><th id="293">293</th><td>	<var>118</var>, <var>126</var>, <var>118</var>, <var>132</var>, <var>133</var>, <var>134</var>, <var>134</var>, <var>32</var>, </td></tr>
+<tr><th id="294">294</th><td>	<var>33</var>, <var>123</var>, <var>118</var>, <var>118</var>, <var>118</var>, <var>32</var>, <var>118</var>, <var>133</var>, </td></tr>
+<tr><th id="295">295</th><td>	<var>134</var>, <var>134</var>, <var>32</var>, <var>33</var>, <var>123</var>, <var>118</var>, <var>118</var>, <var>118</var>, </td></tr>
+<tr><th id="296">296</th><td>	<var>32</var>, <var>118</var>, <var>134</var>, <var>134</var>, <var>32</var>, <var>33</var>, <var>123</var>, <var>118</var>, </td></tr>
+<tr><th id="297">297</th><td>	<var>118</var>, <var>118</var>, <var>32</var>, <var>118</var>, <var>123</var>, <var>118</var>, <var>118</var>, <var>130</var>, </td></tr>
+<tr><th id="298">298</th><td>	<var>123</var>, <var>118</var>, <var>118</var>, <var>118</var>, <var>32</var>, <var>118</var>, <var>119</var>, <var>120</var>, </td></tr>
+<tr><th id="299">299</th><td>	<var>122</var>, <var>122</var>, <var>32</var>, <var>33</var>, <var>123</var>, <var>118</var>, <var>118</var>, <var>118</var>, </td></tr>
+<tr><th id="300">300</th><td>	<var>32</var>, <var>118</var>, <var>118</var>, <var>124</var>, <var>118</var>, <var>135</var>, <var>136</var>, <var>136</var>, </td></tr>
+<tr><th id="301">301</th><td>	<var>32</var>, <var>33</var>, <var>123</var>, <var>118</var>, <var>118</var>, <var>118</var>, <var>32</var>, <var>118</var>, </td></tr>
+<tr><th id="302">302</th><td>	<var>127</var>, <var>137</var>, <var>118</var>, <var>35</var>, <var>123</var>, <var>118</var>, <var>129</var>, <var>129</var>, </td></tr>
+<tr><th id="303">303</th><td>	<var>118</var>, <var>35</var>, <var>123</var>, <var>118</var>, <var>127</var>, <var>118</var>, <var>129</var>, <var>129</var>, </td></tr>
+<tr><th id="304">304</th><td>	<var>118</var>, <var>35</var>, <var>123</var>, <var>118</var>, <var>129</var>, <var>137</var>, <var>118</var>, <var>35</var>, </td></tr>
+<tr><th id="305">305</th><td>	<var>123</var>, <var>118</var>, <var>42</var>, <var>43</var>, <var>44</var>, <var>45</var>, <var>106</var>, <var>102</var>, </td></tr>
+<tr><th id="306">306</th><td>	<var>22</var>, <var>23</var>, <var>48</var>, <var>49</var>, <var>49</var>, <var>24</var>, <var>22</var>, <var>100</var>, </td></tr>
+<tr><th id="307">307</th><td>	<var>42</var>, <var>52</var>, <var>100</var>, <var>56</var>, <var>138</var>, <var>58</var>, <var>59</var>, <var>4</var>, </td></tr>
+<tr><th id="308">308</th><td>	<var>5</var>, <var>60</var>, <var>55</var>, <var>55</var>, <var>8</var>, <var>4</var>, <var>55</var>, <var>55</var>, </td></tr>
+<tr><th id="309">309</th><td>	<var>61</var>, <var>55</var>, <var>42</var>, <var>43</var>, <var>44</var>, <var>45</var>, <var>139</var>, <var>140</var>, </td></tr>
+<tr><th id="310">310</th><td>	<var>22</var>, <var>141</var>, <var>142</var>, <var>55</var>, <var>49</var>, <var>24</var>, <var>22</var>, <var>55</var>, </td></tr>
+<tr><th id="311">311</th><td>	<var>42</var>, <var>52</var>, <var>55</var>, <var>20</var>, <var>143</var>, <var>143</var>, <var>22</var>, <var>141</var>, </td></tr>
+<tr><th id="312">312</th><td>	<var>60</var>, <var>55</var>, <var>55</var>, <var>24</var>, <var>22</var>, <var>55</var>, <var>60</var>, <var>55</var>, </td></tr>
+<tr><th id="313">313</th><td>	<var>55</var>, <var>67</var>, <var>60</var>, <var>55</var>, <var>55</var>, <var>55</var>, <var>22</var>, <var>55</var>, </td></tr>
+<tr><th id="314">314</th><td>	<var>142</var>, <var>55</var>, <var>55</var>, <var>144</var>, <var>142</var>, <var>55</var>, <var>55</var>, <var>55</var>, </td></tr>
+<tr><th id="315">315</th><td>	<var>22</var>, <var>55</var>, <var>142</var>, <var>55</var>, <var>142</var>, <var>55</var>, <var>55</var>, <var>55</var>, </td></tr>
+<tr><th id="316">316</th><td>	<var>142</var>, <var>55</var>, <var>42</var>, <var>55</var>, <var>68</var>, <var>20</var>, <var>143</var>, <var>143</var>, </td></tr>
+<tr><th id="317">317</th><td>	<var>22</var>, <var>141</var>, <var>60</var>, <var>55</var>, <var>55</var>, <var>55</var>, <var>22</var>, <var>55</var>, </td></tr>
+<tr><th id="318">318</th><td>	<var>42</var>, <var>55</var>, <var>146</var>, <var>145</var>, <var>147</var>, <var>147</var>, <var>145</var>, <var>40</var>, </td></tr>
+<tr><th id="319">319</th><td>	<var>148</var>, <var>145</var>, <var>147</var>, <var>147</var>, <var>145</var>, <var>40</var>, <var>148</var>, <var>145</var>, </td></tr>
+<tr><th id="320">320</th><td>	<var>148</var>, <var>145</var>, <var>145</var>, <var>149</var>, <var>148</var>, <var>145</var>, <var>148</var>, <var>145</var>, </td></tr>
+<tr><th id="321">321</th><td>	<var>148</var>, <var>145</var>, <var>145</var>, <var>145</var>, <var>148</var>, <var>145</var>, <var>42</var>, <var>117</var>, </td></tr>
+<tr><th id="322">322</th><td>	<var>117</var>, <var>117</var>, <var>117</var>, <var>117</var>, <var>117</var>, <var>117</var>, <var>117</var>, <var>49</var>, </td></tr>
+<tr><th id="323">323</th><td>	<var>117</var>, <var>117</var>, <var>117</var>, <var>117</var>, <var>42</var>, <var>117</var>, <var>0</var></td></tr>
+<tr><th id="324">324</th><td>};</td></tr>
+<tr><th id="325">325</th><td></td></tr>
+<tr><th id="326">326</th><td><em>static</em> <em>const</em> <em>unsigned</em> <em>char</em> <dfn class="decl def" id="_indic_syllable_machine_trans_targs" title='_indic_syllable_machine_trans_targs' data-ref="_indic_syllable_machine_trans_targs">_indic_syllable_machine_trans_targs</dfn>[] = {</td></tr>
+<tr><th id="327">327</th><td>	<var>31</var>, <var>37</var>, <var>42</var>, <var>2</var>, <var>43</var>, <var>46</var>, <var>4</var>, <var>50</var>, </td></tr>
+<tr><th id="328">328</th><td>	<var>51</var>, <var>31</var>, <var>60</var>, <var>9</var>, <var>66</var>, <var>69</var>, <var>61</var>, <var>11</var>, </td></tr>
+<tr><th id="329">329</th><td>	<var>74</var>, <var>75</var>, <var>78</var>, <var>31</var>, <var>83</var>, <var>17</var>, <var>89</var>, <var>92</var>, </td></tr>
+<tr><th id="330">330</th><td>	<var>93</var>, <var>84</var>, <var>31</var>, <var>19</var>, <var>98</var>, <var>31</var>, <var>107</var>, <var>24</var>, </td></tr>
+<tr><th id="331">331</th><td>	<var>113</var>, <var>116</var>, <var>117</var>, <var>108</var>, <var>26</var>, <var>122</var>, <var>127</var>, <var>31</var>, </td></tr>
+<tr><th id="332">332</th><td>	<var>134</var>, <var>31</var>, <var>32</var>, <var>53</var>, <var>79</var>, <var>81</var>, <var>100</var>, <var>101</var>, </td></tr>
+<tr><th id="333">333</th><td>	<var>85</var>, <var>102</var>, <var>123</var>, <var>124</var>, <var>94</var>, <var>132</var>, <var>137</var>, <var>31</var>, </td></tr>
+<tr><th id="334">334</th><td>	<var>33</var>, <var>35</var>, <var>6</var>, <var>52</var>, <var>38</var>, <var>47</var>, <var>34</var>, <var>1</var>, </td></tr>
+<tr><th id="335">335</th><td>	<var>36</var>, <var>40</var>, <var>0</var>, <var>39</var>, <var>41</var>, <var>44</var>, <var>45</var>, <var>3</var>, </td></tr>
+<tr><th id="336">336</th><td>	<var>48</var>, <var>5</var>, <var>49</var>, <var>31</var>, <var>54</var>, <var>56</var>, <var>14</var>, <var>77</var>, </td></tr>
+<tr><th id="337">337</th><td>	<var>62</var>, <var>70</var>, <var>55</var>, <var>7</var>, <var>57</var>, <var>72</var>, <var>64</var>, <var>58</var>, </td></tr>
+<tr><th id="338">338</th><td>	<var>13</var>, <var>76</var>, <var>59</var>, <var>8</var>, <var>63</var>, <var>65</var>, <var>67</var>, <var>68</var>, </td></tr>
+<tr><th id="339">339</th><td>	<var>10</var>, <var>71</var>, <var>12</var>, <var>73</var>, <var>31</var>, <var>80</var>, <var>20</var>, <var>82</var>, </td></tr>
+<tr><th id="340">340</th><td>	<var>96</var>, <var>87</var>, <var>15</var>, <var>99</var>, <var>16</var>, <var>86</var>, <var>88</var>, <var>90</var>, </td></tr>
+<tr><th id="341">341</th><td>	<var>91</var>, <var>18</var>, <var>95</var>, <var>21</var>, <var>97</var>, <var>31</var>, <var>31</var>, <var>103</var>, </td></tr>
+<tr><th id="342">342</th><td>	<var>105</var>, <var>22</var>, <var>27</var>, <var>109</var>, <var>118</var>, <var>104</var>, <var>106</var>, <var>120</var>, </td></tr>
+<tr><th id="343">343</th><td>	<var>111</var>, <var>23</var>, <var>110</var>, <var>112</var>, <var>114</var>, <var>115</var>, <var>25</var>, <var>119</var>, </td></tr>
+<tr><th id="344">344</th><td>	<var>28</var>, <var>121</var>, <var>125</var>, <var>126</var>, <var>131</var>, <var>128</var>, <var>129</var>, <var>29</var>, </td></tr>
+<tr><th id="345">345</th><td>	<var>130</var>, <var>31</var>, <var>133</var>, <var>30</var>, <var>135</var>, <var>136</var></td></tr>
+<tr><th id="346">346</th><td>};</td></tr>
+<tr><th id="347">347</th><td></td></tr>
+<tr><th id="348">348</th><td><em>static</em> <em>const</em> <em>char</em> <dfn class="decl def" id="_indic_syllable_machine_trans_actions" title='_indic_syllable_machine_trans_actions' data-ref="_indic_syllable_machine_trans_actions">_indic_syllable_machine_trans_actions</dfn>[] = {</td></tr>
+<tr><th id="349">349</th><td>	<var>1</var>, <var>0</var>, <var>2</var>, <var>0</var>, <var>2</var>, <var>0</var>, <var>0</var>, <var>2</var>, </td></tr>
+<tr><th id="350">350</th><td>	<var>2</var>, <var>3</var>, <var>2</var>, <var>0</var>, <var>2</var>, <var>0</var>, <var>0</var>, <var>0</var>, </td></tr>
+<tr><th id="351">351</th><td>	<var>2</var>, <var>2</var>, <var>2</var>, <var>4</var>, <var>2</var>, <var>0</var>, <var>5</var>, <var>0</var>, </td></tr>
+<tr><th id="352">352</th><td>	<var>5</var>, <var>0</var>, <var>6</var>, <var>0</var>, <var>2</var>, <var>7</var>, <var>2</var>, <var>0</var>, </td></tr>
+<tr><th id="353">353</th><td>	<var>2</var>, <var>0</var>, <var>2</var>, <var>0</var>, <var>0</var>, <var>2</var>, <var>0</var>, <var>8</var>, </td></tr>
+<tr><th id="354">354</th><td>	<var>0</var>, <var>11</var>, <var>2</var>, <var>2</var>, <var>5</var>, <var>0</var>, <var>12</var>, <var>12</var>, </td></tr>
+<tr><th id="355">355</th><td>	<var>0</var>, <var>2</var>, <var>5</var>, <var>2</var>, <var>5</var>, <var>2</var>, <var>0</var>, <var>13</var>, </td></tr>
+<tr><th id="356">356</th><td>	<var>2</var>, <var>0</var>, <var>0</var>, <var>2</var>, <var>0</var>, <var>2</var>, <var>2</var>, <var>0</var>, </td></tr>
+<tr><th id="357">357</th><td>	<var>2</var>, <var>2</var>, <var>0</var>, <var>0</var>, <var>2</var>, <var>2</var>, <var>2</var>, <var>0</var>, </td></tr>
+<tr><th id="358">358</th><td>	<var>0</var>, <var>0</var>, <var>2</var>, <var>14</var>, <var>2</var>, <var>0</var>, <var>0</var>, <var>2</var>, </td></tr>
+<tr><th id="359">359</th><td>	<var>0</var>, <var>2</var>, <var>2</var>, <var>0</var>, <var>2</var>, <var>2</var>, <var>2</var>, <var>2</var>, </td></tr>
+<tr><th id="360">360</th><td>	<var>0</var>, <var>2</var>, <var>2</var>, <var>0</var>, <var>0</var>, <var>2</var>, <var>2</var>, <var>2</var>, </td></tr>
+<tr><th id="361">361</th><td>	<var>0</var>, <var>0</var>, <var>0</var>, <var>2</var>, <var>15</var>, <var>5</var>, <var>0</var>, <var>5</var>, </td></tr>
+<tr><th id="362">362</th><td>	<var>2</var>, <var>2</var>, <var>0</var>, <var>5</var>, <var>0</var>, <var>0</var>, <var>2</var>, <var>5</var>, </td></tr>
+<tr><th id="363">363</th><td>	<var>5</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>2</var>, <var>16</var>, <var>17</var>, <var>2</var>, </td></tr>
+<tr><th id="364">364</th><td>	<var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>2</var>, <var>2</var>, <var>2</var>, <var>2</var>, </td></tr>
+<tr><th id="365">365</th><td>	<var>2</var>, <var>0</var>, <var>0</var>, <var>2</var>, <var>2</var>, <var>2</var>, <var>0</var>, <var>0</var>, </td></tr>
+<tr><th id="366">366</th><td>	<var>0</var>, <var>2</var>, <var>0</var>, <var>18</var>, <var>18</var>, <var>0</var>, <var>0</var>, <var>0</var>, </td></tr>
+<tr><th id="367">367</th><td>	<var>0</var>, <var>19</var>, <var>2</var>, <var>0</var>, <var>0</var>, <var>0</var></td></tr>
+<tr><th id="368">368</th><td>};</td></tr>
+<tr><th id="369">369</th><td></td></tr>
+<tr><th id="370">370</th><td><em>static</em> <em>const</em> <em>char</em> <dfn class="decl def" id="_indic_syllable_machine_to_state_actions" title='_indic_syllable_machine_to_state_actions' data-ref="_indic_syllable_machine_to_state_actions">_indic_syllable_machine_to_state_actions</dfn>[] = {</td></tr>
+<tr><th id="371">371</th><td>	<var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, </td></tr>
+<tr><th id="372">372</th><td>	<var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, </td></tr>
+<tr><th id="373">373</th><td>	<var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, </td></tr>
+<tr><th id="374">374</th><td>	<var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>9</var>, </td></tr>
+<tr><th id="375">375</th><td>	<var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, </td></tr>
+<tr><th id="376">376</th><td>	<var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, </td></tr>
+<tr><th id="377">377</th><td>	<var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, </td></tr>
+<tr><th id="378">378</th><td>	<var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, </td></tr>
+<tr><th id="379">379</th><td>	<var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, </td></tr>
+<tr><th id="380">380</th><td>	<var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, </td></tr>
+<tr><th id="381">381</th><td>	<var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, </td></tr>
+<tr><th id="382">382</th><td>	<var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, </td></tr>
+<tr><th id="383">383</th><td>	<var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, </td></tr>
+<tr><th id="384">384</th><td>	<var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, </td></tr>
+<tr><th id="385">385</th><td>	<var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, </td></tr>
+<tr><th id="386">386</th><td>	<var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, </td></tr>
+<tr><th id="387">387</th><td>	<var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, </td></tr>
+<tr><th id="388">388</th><td>	<var>0</var>, <var>0</var></td></tr>
+<tr><th id="389">389</th><td>};</td></tr>
+<tr><th id="390">390</th><td></td></tr>
+<tr><th id="391">391</th><td><em>static</em> <em>const</em> <em>char</em> <dfn class="decl def" id="_indic_syllable_machine_from_state_actions" title='_indic_syllable_machine_from_state_actions' data-ref="_indic_syllable_machine_from_state_actions">_indic_syllable_machine_from_state_actions</dfn>[] = {</td></tr>
+<tr><th id="392">392</th><td>	<var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, </td></tr>
+<tr><th id="393">393</th><td>	<var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, </td></tr>
+<tr><th id="394">394</th><td>	<var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, </td></tr>
+<tr><th id="395">395</th><td>	<var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>10</var>, </td></tr>
+<tr><th id="396">396</th><td>	<var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, </td></tr>
+<tr><th id="397">397</th><td>	<var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, </td></tr>
+<tr><th id="398">398</th><td>	<var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, </td></tr>
+<tr><th id="399">399</th><td>	<var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, </td></tr>
+<tr><th id="400">400</th><td>	<var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, </td></tr>
+<tr><th id="401">401</th><td>	<var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, </td></tr>
+<tr><th id="402">402</th><td>	<var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, </td></tr>
+<tr><th id="403">403</th><td>	<var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, </td></tr>
+<tr><th id="404">404</th><td>	<var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, </td></tr>
+<tr><th id="405">405</th><td>	<var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, </td></tr>
+<tr><th id="406">406</th><td>	<var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, </td></tr>
+<tr><th id="407">407</th><td>	<var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, </td></tr>
+<tr><th id="408">408</th><td>	<var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, <var>0</var>, </td></tr>
+<tr><th id="409">409</th><td>	<var>0</var>, <var>0</var></td></tr>
+<tr><th id="410">410</th><td>};</td></tr>
+<tr><th id="411">411</th><td></td></tr>
+<tr><th id="412">412</th><td><em>static</em> <em>const</em> <em>short</em> <dfn class="decl def" id="_indic_syllable_machine_eof_trans" title='_indic_syllable_machine_eof_trans' data-ref="_indic_syllable_machine_eof_trans">_indic_syllable_machine_eof_trans</dfn>[] = {</td></tr>
+<tr><th id="413">413</th><td>	<var>1</var>, <var>1</var>, <var>1</var>, <var>1</var>, <var>1</var>, <var>1</var>, <var>1</var>, <var>10</var>, </td></tr>
+<tr><th id="414">414</th><td>	<var>10</var>, <var>10</var>, <var>10</var>, <var>10</var>, <var>10</var>, <var>10</var>, <var>10</var>, <var>20</var>, </td></tr>
+<tr><th id="415">415</th><td>	<var>20</var>, <var>27</var>, <var>20</var>, <var>27</var>, <var>20</var>, <var>20</var>, <var>30</var>, <var>30</var>, </td></tr>
+<tr><th id="416">416</th><td>	<var>30</var>, <var>30</var>, <var>30</var>, <var>30</var>, <var>30</var>, <var>1</var>, <var>40</var>, <var>0</var>, </td></tr>
+<tr><th id="417">417</th><td>	<var>56</var>, <var>56</var>, <var>56</var>, <var>56</var>, <var>56</var>, <var>56</var>, <var>56</var>, <var>56</var>, </td></tr>
+<tr><th id="418">418</th><td>	<var>56</var>, <var>56</var>, <var>56</var>, <var>56</var>, <var>56</var>, <var>56</var>, <var>56</var>, <var>56</var>, </td></tr>
+<tr><th id="419">419</th><td>	<var>56</var>, <var>56</var>, <var>56</var>, <var>56</var>, <var>56</var>, <var>76</var>, <var>76</var>, <var>76</var>, </td></tr>
+<tr><th id="420">420</th><td>	<var>76</var>, <var>76</var>, <var>76</var>, <var>76</var>, <var>76</var>, <var>76</var>, <var>76</var>, <var>76</var>, </td></tr>
+<tr><th id="421">421</th><td>	<var>76</var>, <var>76</var>, <var>76</var>, <var>76</var>, <var>76</var>, <var>76</var>, <var>76</var>, <var>76</var>, </td></tr>
+<tr><th id="422">422</th><td>	<var>76</var>, <var>76</var>, <var>76</var>, <var>76</var>, <var>76</var>, <var>76</var>, <var>76</var>, <var>101</var>, </td></tr>
+<tr><th id="423">423</th><td>	<var>101</var>, <var>101</var>, <var>101</var>, <var>101</var>, <var>101</var>, <var>101</var>, <var>101</var>, <var>101</var>, </td></tr>
+<tr><th id="424">424</th><td>	<var>101</var>, <var>101</var>, <var>101</var>, <var>101</var>, <var>101</var>, <var>101</var>, <var>101</var>, <var>101</var>, </td></tr>
+<tr><th id="425">425</th><td>	<var>101</var>, <var>101</var>, <var>101</var>, <var>101</var>, <var>118</var>, <var>118</var>, <var>119</var>, <var>119</var>, </td></tr>
+<tr><th id="426">426</th><td>	<var>119</var>, <var>119</var>, <var>119</var>, <var>119</var>, <var>119</var>, <var>119</var>, <var>119</var>, <var>119</var>, </td></tr>
+<tr><th id="427">427</th><td>	<var>119</var>, <var>119</var>, <var>119</var>, <var>119</var>, <var>119</var>, <var>119</var>, <var>119</var>, <var>119</var>, </td></tr>
+<tr><th id="428">428</th><td>	<var>119</var>, <var>119</var>, <var>119</var>, <var>101</var>, <var>56</var>, <var>56</var>, <var>56</var>, <var>56</var>, </td></tr>
+<tr><th id="429">429</th><td>	<var>56</var>, <var>56</var>, <var>56</var>, <var>56</var>, <var>146</var>, <var>146</var>, <var>146</var>, <var>146</var>, </td></tr>
+<tr><th id="430">430</th><td>	<var>146</var>, <var>118</var></td></tr>
+<tr><th id="431">431</th><td>};</td></tr>
+<tr><th id="432">432</th><td></td></tr>
+<tr><th id="433">433</th><td><em>static</em> <em>const</em> <em>int</em> <dfn class="decl def" id="indic_syllable_machine_start" title='indic_syllable_machine_start' data-ref="indic_syllable_machine_start">indic_syllable_machine_start</dfn> = <var>31</var>;</td></tr>
+<tr><th id="434">434</th><td><em>static</em> <em>const</em> <em>int</em> <dfn class="decl def" id="indic_syllable_machine_first_final" title='indic_syllable_machine_first_final' data-ref="indic_syllable_machine_first_final">indic_syllable_machine_first_final</dfn> = <var>31</var>;</td></tr>
+<tr><th id="435">435</th><td><em>static</em> <em>const</em> <em>int</em> <dfn class="decl def" id="indic_syllable_machine_error" title='indic_syllable_machine_error' data-ref="indic_syllable_machine_error">indic_syllable_machine_error</dfn> = -<var>1</var>;</td></tr>
+<tr><th id="436">436</th><td></td></tr>
+<tr><th id="437">437</th><td><em>static</em> <em>const</em> <em>int</em> <dfn class="decl def" id="indic_syllable_machine_en_main" title='indic_syllable_machine_en_main' data-ref="indic_syllable_machine_en_main">indic_syllable_machine_en_main</dfn> = <var>31</var>;</td></tr>
+<tr><th id="438">438</th><td></td></tr>
+<tr><th id="439">439</th><td></td></tr>
+<tr><th id="440">440</th><td><u>#line 58 "hb-ot-shaper-indic-machine.rl"</u></td></tr>
+<tr><th id="441">441</th><td></td></tr>
+<tr><th id="442">442</th><td></td></tr>
+<tr><th id="443">443</th><td></td></tr>
+<tr><th id="444">444</th><td><u>#line 118 "hb-ot-shaper-indic-machine.rl"</u></td></tr>
+<tr><th id="445">445</th><td></td></tr>
+<tr><th id="446">446</th><td></td></tr>
+<tr><th id="447">447</th><td><u>#define <dfn class="macro" id="_M/found_syllable" data-ref="_M/found_syllable">found_syllable</dfn>(syllable_type) \</u></td></tr>
+<tr><th id="448">448</th><td><u>  HB_STMT_START { \</u></td></tr>
+<tr><th id="449">449</th><td><u>    if (0) <a class="ref fn" href="../../../../../include/stdio.h.html#fprintf" title='fprintf' data-ref="fprintf">fprintf</a> (stderr, "syllable %u..%u %s\n", <a class="local col5 ref" href="#15ts" title='ts' data-ref="15ts">ts</a>, <a class="local col6 ref" href="#16te" title='te' data-ref="16te">te</a>, #syllable_type); \</u></td></tr>
+<tr><th id="450">450</th><td><u>    for (unsigned int <dfn class="local col9 decl" id="29i" title='i' data-type='unsigned int' data-ref="29i"><dfn class="local col0 decl" id="30i" title='i' data-type='unsigned int' data-ref="30i"><dfn class="local col1 decl" id="31i" title='i' data-type='unsigned int' data-ref="31i"><dfn class="local col2 decl" id="32i" title='i' data-type='unsigned int' data-ref="32i"><dfn class="local col3 decl" id="33i" title='i' data-type='unsigned int' data-ref="33i"><dfn class="local col4 decl" id="34i" title='i' data-type='unsigned int' data-ref="34i"><dfn class="local col5 decl" id="35i" title='i' data-type='unsigned int' data-ref="35i"><dfn class="local col6 decl" id="36i" title='i' data-type='unsigned int' data-ref="36i"><dfn class="local col7 decl" id="37i" title='i' data-type='unsigned int' data-ref="37i"><dfn class="local col8 decl" id="38i" title='i' data-type='unsigned int' data-ref="38i"><dfn class="local col9 decl" id="39i" title='i' data-type='unsigned int' data-ref="39i"><dfn class="local col0 decl" id="40i" title='i' data-type='unsigned int' data-ref="40i"><dfn class="local col1 decl" id="41i" title='i' data-type='unsigned int' data-ref="41i"><dfn class="local col2 decl" id="42i" title='i' data-type='unsigned int' data-ref="42i"><dfn class="local col3 decl" id="43i" title='i' data-type='unsigned int' data-ref="43i">i</dfn></dfn></dfn></dfn></dfn></dfn></dfn></dfn></dfn></dfn></dfn></dfn></dfn></dfn></dfn> = <a class="local col5 ref" href="#15ts" title='ts' data-ref="15ts">ts</a>; <a class="local col9 ref" href="#517" title='i' data-ref="29i"><a class="local col0 ref" href="#521" title='i' data-ref="30i"><a class="local col1 ref" href="#525" title='i' data-ref="31i"><a class="local col2 ref" href="#529" title='i' data-ref="32i"><a class="local col3 ref" href="#533" title='i' data-ref="33i"><a class="local col4 ref" href="#537" title='i' data-ref="34i"><a class="local col5 ref" href="#541" title='i' data-ref="35i"><a class="local col6 ref" href="#545" title='i' data-ref="36i"><a class="local col7 ref" href="#549" title='i' data-ref="37i"><a class="local col8 ref" href="#553" title='i' data-ref="38i"><a class="local col9 ref" href="#557" title='i' data-ref="39i"><a class="local col0 ref" href="#561" title='i' data-ref="40i"><a class="local col1 ref" href="#567" title='i' data-ref="41i"><a class="local col2 ref" href="#570" title='i' data-ref="42i"><a class="local col3 ref" href="#573" title='i' data-ref="43i">i</a></a></a></a></a></a></a></a></a></a></a></a></a></a></a> &lt; <a class="local col6 ref" href="#16te" title='te' data-ref="16te">te</a>; <a class="local col9 ref" href="#517" title='i' data-ref="29i"><a class="local col0 ref" href="#521" title='i' data-ref="30i"><a class="local col1 ref" href="#525" title='i' data-ref="31i"><a class="local col2 ref" href="#529" title='i' data-ref="32i"><a class="local col3 ref" href="#533" title='i' data-ref="33i"><a class="local col4 ref" href="#537" title='i' data-ref="34i"><a class="local col5 ref" href="#541" title='i' data-ref="35i"><a class="local col6 ref" href="#545" title='i' data-ref="36i"><a class="local col7 ref" href="#549" title='i' data-ref="37i"><a class="local col8 ref" href="#553" title='i' data-ref="38i"><a class="local col9 ref" href="#557" title='i' data-ref="39i"><a class="local col0 ref" href="#561" title='i' data-ref="40i"><a class="local col1 ref" href="#567" title='i' data-ref="41i"><a class="local col2 ref" href="#570" title='i' data-ref="42i"><a class="local col3 ref" href="#573" title='i' data-ref="43i">i</a></a></a></a></a></a></a></a></a></a></a></a></a></a></a>++) \</u></td></tr>
+<tr><th id="451">451</th><td><u>      <a class="local col9 ref" href="#19info" title='info' data-ref="19info">info</a>[<a class="local col9 ref" href="#517" title='i' data-ref="29i"><a class="local col0 ref" href="#521" title='i' data-ref="30i"><a class="local col1 ref" href="#525" title='i' data-ref="31i"><a class="local col2 ref" href="#529" title='i' data-ref="32i"><a class="local col3 ref" href="#533" title='i' data-ref="33i"><a class="local col4 ref" href="#537" title='i' data-ref="34i"><a class="local col5 ref" href="#541" title='i' data-ref="35i"><a class="local col6 ref" href="#545" title='i' data-ref="36i"><a class="local col7 ref" href="#549" title='i' data-ref="37i"><a class="local col8 ref" href="#553" title='i' data-ref="38i"><a class="local col9 ref" href="#557" title='i' data-ref="39i"><a class="local col0 ref" href="#561" title='i' data-ref="40i"><a class="local col1 ref" href="#567" title='i' data-ref="41i"><a class="local col2 ref" href="#570" title='i' data-ref="42i"><a class="local col3 ref" href="#573" title='i' data-ref="43i">i</a></a></a></a></a></a></a></a></a></a></a></a></a></a></a>].syllable() = (<a class="local col0 ref" href="#20syllable_serial" title='syllable_serial' data-ref="20syllable_serial">syllable_serial</a> &lt;&lt; 4) | syllable_type; \</u></td></tr>
+<tr><th id="452">452</th><td><u>    <a class="local col0 ref" href="#20syllable_serial" title='syllable_serial' data-ref="20syllable_serial">syllable_serial</a>++; \</u></td></tr>
+<tr><th id="453">453</th><td><u>    if (<a class="local col0 ref" href="#20syllable_serial" title='syllable_serial' data-ref="20syllable_serial">syllable_serial</a> == 16) <a class="local col0 ref" href="#20syllable_serial" title='syllable_serial' data-ref="20syllable_serial">syllable_serial</a> = 1; \</u></td></tr>
+<tr><th id="454">454</th><td><u>  } HB_STMT_END</u></td></tr>
+<tr><th id="455">455</th><td></td></tr>
+<tr><th id="456">456</th><td><b>inline</b> <em>void</em></td></tr>
+<tr><th id="457">457</th><td><dfn class="decl def fn" id="_Z20find_syllables_indicP11hb_buffer_t" title='find_syllables_indic' data-ref="_Z20find_syllables_indicP11hb_buffer_t">find_syllables_indic</dfn> (<a class="typedef" href="hb-buffer.h.html#hb_buffer_t" title='hb_buffer_t' data-type='struct hb_buffer_t' data-ref="hb_buffer_t">hb_buffer_t</a> *<dfn class="local col1 decl" id="11buffer" title='buffer' data-type='hb_buffer_t *' data-ref="11buffer">buffer</dfn>)</td></tr>
+<tr><th id="458">458</th><td>{</td></tr>
+<tr><th id="459">459</th><td>  <em>unsigned</em> <em>int</em> <dfn class="local col2 decl" id="12p" title='p' data-type='unsigned int' data-ref="12p">p</dfn>, <dfn class="local col3 decl" id="13pe" title='pe' data-type='unsigned int' data-ref="13pe">pe</dfn>, <dfn class="local col4 decl" id="14eof" title='eof' data-type='unsigned int' data-ref="14eof">eof</dfn>, <dfn class="local col5 decl" id="15ts" title='ts' data-type='unsigned int' data-ref="15ts">ts</dfn>, <dfn class="local col6 decl" id="16te" title='te' data-type='unsigned int' data-ref="16te">te</dfn>, <dfn class="local col7 decl" id="17act" title='act' data-type='unsigned int' data-ref="17act">act</dfn>;</td></tr>
+<tr><th id="460">460</th><td>  <em>int</em> <dfn class="local col8 decl" id="18cs" title='cs' data-type='int' data-ref="18cs">cs</dfn>;</td></tr>
+<tr><th id="461">461</th><td>  <a class="typedef" href="hb-buffer.h.html#hb_glyph_info_t" title='hb_glyph_info_t' data-type='struct hb_glyph_info_t' data-ref="hb_glyph_info_t">hb_glyph_info_t</a> *<dfn class="local col9 decl" id="19info" title='info' data-type='hb_glyph_info_t *' data-ref="19info">info</dfn> = <a class="local col1 ref" href="#11buffer" title='buffer' data-ref="11buffer">buffer</a>-&gt;<a class="ref field" href="hb-buffer.hh.html#hb_buffer_t::info" title='hb_buffer_t::info' data-ref="hb_buffer_t::info">info</a>;</td></tr>
+<tr><th id="462">462</th><td>  </td></tr>
+<tr><th id="463">463</th><td><u>#line 453 "hb-ot-shaper-indic-machine.hh"</u></td></tr>
+<tr><th id="464">464</th><td>	{</td></tr>
+<tr><th id="465">465</th><td>	<a class="local col8 ref" href="#18cs" title='cs' data-ref="18cs">cs</a> = <a class="ref" href="#indic_syllable_machine_start" title='indic_syllable_machine_start' data-ref="indic_syllable_machine_start">indic_syllable_machine_start</a>;</td></tr>
+<tr><th id="466">466</th><td>	<a class="local col5 ref" href="#15ts" title='ts' data-ref="15ts">ts</a> = <var>0</var>;</td></tr>
+<tr><th id="467">467</th><td>	<a class="local col6 ref" href="#16te" title='te' data-ref="16te">te</a> = <var>0</var>;</td></tr>
+<tr><th id="468">468</th><td>	<a class="local col7 ref" href="#17act" title='act' data-ref="17act">act</a> = <var>0</var>;</td></tr>
+<tr><th id="469">469</th><td>	}</td></tr>
+<tr><th id="470">470</th><td></td></tr>
+<tr><th id="471">471</th><td><u>#line 138 "hb-ot-shaper-indic-machine.rl"</u></td></tr>
+<tr><th id="472">472</th><td></td></tr>
+<tr><th id="473">473</th><td></td></tr>
+<tr><th id="474">474</th><td>  <a class="local col2 ref" href="#12p" title='p' data-ref="12p">p</a> = <var>0</var>;</td></tr>
+<tr><th id="475">475</th><td>  <a class="local col3 ref" href="#13pe" title='pe' data-ref="13pe">pe</a> = <a class="local col4 ref" href="#14eof" title='eof' data-ref="14eof">eof</a> = <a class="local col1 ref" href="#11buffer" title='buffer' data-ref="11buffer">buffer</a>-&gt;<a class="ref field" href="hb-buffer.hh.html#hb_buffer_t::len" title='hb_buffer_t::len' data-ref="hb_buffer_t::len">len</a>;</td></tr>
+<tr><th id="476">476</th><td></td></tr>
+<tr><th id="477">477</th><td>  <em>unsigned</em> <em>int</em> <dfn class="local col0 decl" id="20syllable_serial" title='syllable_serial' data-type='unsigned int' data-ref="20syllable_serial">syllable_serial</dfn> = <var>1</var>;</td></tr>
+<tr><th id="478">478</th><td>  </td></tr>
+<tr><th id="479">479</th><td><u>#line 465 "hb-ot-shaper-indic-machine.hh"</u></td></tr>
+<tr><th id="480">480</th><td>	{</td></tr>
+<tr><th id="481">481</th><td>	<em>int</em> <dfn class="local col1 decl" id="21_slen" title='_slen' data-type='int' data-ref="21_slen">_slen</dfn>;</td></tr>
+<tr><th id="482">482</th><td>	<em>int</em> <dfn class="local col2 decl" id="22_trans" title='_trans' data-type='int' data-ref="22_trans">_trans</dfn>;</td></tr>
+<tr><th id="483">483</th><td>	<em>const</em> <em>unsigned</em> <em>char</em> *<dfn class="local col3 decl" id="23_keys" title='_keys' data-type='const unsigned char *' data-ref="23_keys">_keys</dfn>;</td></tr>
+<tr><th id="484">484</th><td>	<em>const</em> <em>unsigned</em> <em>char</em> *<dfn class="local col4 decl" id="24_inds" title='_inds' data-type='const unsigned char *' data-ref="24_inds">_inds</dfn>;</td></tr>
+<tr><th id="485">485</th><td>	<b>if</b> ( <a class="local col2 ref" href="#12p" title='p' data-ref="12p">p</a> == <a class="local col3 ref" href="#13pe" title='pe' data-ref="13pe">pe</a> )</td></tr>
+<tr><th id="486">486</th><td>		<b>goto</b> <a class="lbl" href="#25_test_eof" data-ref="25_test_eof">_test_eof</a>;</td></tr>
+<tr><th id="487">487</th><td><dfn class="lbl" id="26_resume" data-ref="26_resume">_resume</dfn>:</td></tr>
+<tr><th id="488">488</th><td>	<b>switch</b> ( <a class="ref" href="#_indic_syllable_machine_from_state_actions" title='_indic_syllable_machine_from_state_actions' data-ref="_indic_syllable_machine_from_state_actions">_indic_syllable_machine_from_state_actions</a>[<a class="local col8 ref" href="#18cs" title='cs' data-ref="18cs">cs</a>] ) {</td></tr>
+<tr><th id="489">489</th><td>	<b>case</b> <var>10</var>:</td></tr>
+<tr><th id="490">490</th><td><u>#line 1 "NONE"</u></td></tr>
+<tr><th id="491">491</th><td>	{<a class="local col5 ref" href="#15ts" title='ts' data-ref="15ts">ts</a> = <a class="local col2 ref" href="#12p" title='p' data-ref="12p">p</a>;}</td></tr>
+<tr><th id="492">492</th><td>	<b>break</b>;</td></tr>
+<tr><th id="493">493</th><td><u>#line 477 "hb-ot-shaper-indic-machine.hh"</u></td></tr>
+<tr><th id="494">494</th><td>	}</td></tr>
+<tr><th id="495">495</th><td></td></tr>
+<tr><th id="496">496</th><td>	<a class="local col3 ref" href="#23_keys" title='_keys' data-ref="23_keys">_keys</a> = <a class="ref" href="#_indic_syllable_machine_trans_keys" title='_indic_syllable_machine_trans_keys' data-ref="_indic_syllable_machine_trans_keys">_indic_syllable_machine_trans_keys</a> + (<a class="local col8 ref" href="#18cs" title='cs' data-ref="18cs">cs</a>&lt;&lt;<var>1</var>);</td></tr>
+<tr><th id="497">497</th><td>	<a class="local col4 ref" href="#24_inds" title='_inds' data-ref="24_inds">_inds</a> = <a class="ref" href="#_indic_syllable_machine_indicies" title='_indic_syllable_machine_indicies' data-ref="_indic_syllable_machine_indicies">_indic_syllable_machine_indicies</a> + <a class="ref" href="#_indic_syllable_machine_index_offsets" title='_indic_syllable_machine_index_offsets' data-ref="_indic_syllable_machine_index_offsets">_indic_syllable_machine_index_offsets</a>[<a class="local col8 ref" href="#18cs" title='cs' data-ref="18cs">cs</a>];</td></tr>
+<tr><th id="498">498</th><td></td></tr>
+<tr><th id="499">499</th><td>	<a class="local col1 ref" href="#21_slen" title='_slen' data-ref="21_slen">_slen</a> = <a class="ref" href="#_indic_syllable_machine_key_spans" title='_indic_syllable_machine_key_spans' data-ref="_indic_syllable_machine_key_spans">_indic_syllable_machine_key_spans</a>[<a class="local col8 ref" href="#18cs" title='cs' data-ref="18cs">cs</a>];</td></tr>
+<tr><th id="500">500</th><td>	<a class="local col2 ref" href="#22_trans" title='_trans' data-ref="22_trans">_trans</a> = <a class="local col4 ref" href="#24_inds" title='_inds' data-ref="24_inds">_inds</a>[ <a class="local col1 ref" href="#21_slen" title='_slen' data-ref="21_slen">_slen</a> &gt; <var>0</var> &amp;&amp; <a class="local col3 ref" href="#23_keys" title='_keys' data-ref="23_keys">_keys</a>[<var>0</var>] &lt;=( <a class="local col9 ref" href="#19info" title='info' data-ref="19info">info</a>[<a class="local col2 ref" href="#12p" title='p' data-ref="12p">p</a>].<a class="macro" href="#38" title="var2.u8[2]" data-ref="_M/indic_category">indic_category</a>()) &amp;&amp;</td></tr>
+<tr><th id="501">501</th><td>		( <a class="local col9 ref" href="#19info" title='info' data-ref="19info">info</a>[<a class="local col2 ref" href="#12p" title='p' data-ref="12p">p</a>].<a class="macro" href="#38" title="var2.u8[2]" data-ref="_M/indic_category">indic_category</a>()) &lt;= <a class="local col3 ref" href="#23_keys" title='_keys' data-ref="23_keys">_keys</a>[<var>1</var>] ?</td></tr>
+<tr><th id="502">502</th><td>		( <a class="local col9 ref" href="#19info" title='info' data-ref="19info">info</a>[<a class="local col2 ref" href="#12p" title='p' data-ref="12p">p</a>].<a class="macro" href="#38" title="var2.u8[2]" data-ref="_M/indic_category">indic_category</a>()) - <a class="local col3 ref" href="#23_keys" title='_keys' data-ref="23_keys">_keys</a>[<var>0</var>] : <a class="local col1 ref" href="#21_slen" title='_slen' data-ref="21_slen">_slen</a> ];</td></tr>
+<tr><th id="503">503</th><td></td></tr>
+<tr><th id="504">504</th><td><dfn class="lbl" id="27_eof_trans" data-ref="27_eof_trans">_eof_trans</dfn>:</td></tr>
+<tr><th id="505">505</th><td>	<a class="local col8 ref" href="#18cs" title='cs' data-ref="18cs">cs</a> = <a class="ref" href="#_indic_syllable_machine_trans_targs" title='_indic_syllable_machine_trans_targs' data-ref="_indic_syllable_machine_trans_targs">_indic_syllable_machine_trans_targs</a>[<a class="local col2 ref" href="#22_trans" title='_trans' data-ref="22_trans">_trans</a>];</td></tr>
+<tr><th id="506">506</th><td></td></tr>
+<tr><th id="507">507</th><td>	<b>if</b> ( <a class="ref" href="#_indic_syllable_machine_trans_actions" title='_indic_syllable_machine_trans_actions' data-ref="_indic_syllable_machine_trans_actions">_indic_syllable_machine_trans_actions</a>[<a class="local col2 ref" href="#22_trans" title='_trans' data-ref="22_trans">_trans</a>] == <var>0</var> )</td></tr>
+<tr><th id="508">508</th><td>		<b>goto</b> <a class="lbl" href="#28_again" data-ref="28_again">_again</a>;</td></tr>
+<tr><th id="509">509</th><td></td></tr>
+<tr><th id="510">510</th><td>	<b>switch</b> ( <a class="ref" href="#_indic_syllable_machine_trans_actions" title='_indic_syllable_machine_trans_actions' data-ref="_indic_syllable_machine_trans_actions">_indic_syllable_machine_trans_actions</a>[<a class="local col2 ref" href="#22_trans" title='_trans' data-ref="22_trans">_trans</a>] ) {</td></tr>
+<tr><th id="511">511</th><td>	<b>case</b> <var>2</var>:</td></tr>
+<tr><th id="512">512</th><td><u>#line 1 "NONE"</u></td></tr>
+<tr><th id="513">513</th><td>	{<a class="local col6 ref" href="#16te" title='te' data-ref="16te">te</a> = <a class="local col2 ref" href="#12p" title='p' data-ref="12p">p</a>+<var>1</var>;}</td></tr>
+<tr><th id="514">514</th><td>	<b>break</b>;</td></tr>
+<tr><th id="515">515</th><td>	<b>case</b> <var>11</var>:</td></tr>
+<tr><th id="516">516</th><td><u>#line 114 "hb-ot-shaper-indic-machine.rl"</u></td></tr>
+<tr><th id="517">517</th><td>	{<a class="local col6 ref" href="#16te" title='te' data-ref="16te">te</a> = <a class="local col2 ref" href="#12p" title='p' data-ref="12p">p</a>+<var>1</var>;{ <a class="macro" href="#447" title="do { if (0) fprintf (stderr, &quot;syllable %u..%u %s\n&quot;, ts, te, &quot;indic_non_indic_cluster&quot;); for (unsigned int i = ts; i &lt; te; i++) info[i].var1.u8[3] = (syllable_serial &lt;&lt; 4) | indic_non_indic_cluster; syllable_serial++; if (syllable_serial == 16) syllable_serial = 1; } while (0)" data-ref="_M/found_syllable">found_syllable</a> (<a class="enum" href="#indic_non_indic_cluster" title='indic_non_indic_cluster' data-ref="indic_non_indic_cluster">indic_non_indic_cluster</a>); }}</td></tr>
+<tr><th id="518">518</th><td>	<b>break</b>;</td></tr>
+<tr><th id="519">519</th><td>	<b>case</b> <var>13</var>:</td></tr>
+<tr><th id="520">520</th><td><u>#line 109 "hb-ot-shaper-indic-machine.rl"</u></td></tr>
+<tr><th id="521">521</th><td>	{<a class="local col6 ref" href="#16te" title='te' data-ref="16te">te</a> = <a class="local col2 ref" href="#12p" title='p' data-ref="12p">p</a>;<a class="local col2 ref" href="#12p" title='p' data-ref="12p">p</a>--;{ <a class="macro" href="#447" title="do { if (0) fprintf (stderr, &quot;syllable %u..%u %s\n&quot;, ts, te, &quot;indic_consonant_syllable&quot;); for (unsigned int i = ts; i &lt; te; i++) info[i].var1.u8[3] = (syllable_serial &lt;&lt; 4) | indic_consonant_syllable; syllable_serial++; if (syllable_serial == 16) syllable_serial = 1; } while (0)" data-ref="_M/found_syllable">found_syllable</a> (<a class="enum" href="#indic_consonant_syllable" title='indic_consonant_syllable' data-ref="indic_consonant_syllable">indic_consonant_syllable</a>); }}</td></tr>
+<tr><th id="522">522</th><td>	<b>break</b>;</td></tr>
+<tr><th id="523">523</th><td>	<b>case</b> <var>14</var>:</td></tr>
+<tr><th id="524">524</th><td><u>#line 110 "hb-ot-shaper-indic-machine.rl"</u></td></tr>
+<tr><th id="525">525</th><td>	{<a class="local col6 ref" href="#16te" title='te' data-ref="16te">te</a> = <a class="local col2 ref" href="#12p" title='p' data-ref="12p">p</a>;<a class="local col2 ref" href="#12p" title='p' data-ref="12p">p</a>--;{ <a class="macro" href="#447" title="do { if (0) fprintf (stderr, &quot;syllable %u..%u %s\n&quot;, ts, te, &quot;indic_vowel_syllable&quot;); for (unsigned int i = ts; i &lt; te; i++) info[i].var1.u8[3] = (syllable_serial &lt;&lt; 4) | indic_vowel_syllable; syllable_serial++; if (syllable_serial == 16) syllable_serial = 1; } while (0)" data-ref="_M/found_syllable">found_syllable</a> (<a class="enum" href="#indic_vowel_syllable" title='indic_vowel_syllable' data-ref="indic_vowel_syllable">indic_vowel_syllable</a>); }}</td></tr>
+<tr><th id="526">526</th><td>	<b>break</b>;</td></tr>
+<tr><th id="527">527</th><td>	<b>case</b> <var>17</var>:</td></tr>
+<tr><th id="528">528</th><td><u>#line 111 "hb-ot-shaper-indic-machine.rl"</u></td></tr>
+<tr><th id="529">529</th><td>	{<a class="local col6 ref" href="#16te" title='te' data-ref="16te">te</a> = <a class="local col2 ref" href="#12p" title='p' data-ref="12p">p</a>;<a class="local col2 ref" href="#12p" title='p' data-ref="12p">p</a>--;{ <a class="macro" href="#447" title="do { if (0) fprintf (stderr, &quot;syllable %u..%u %s\n&quot;, ts, te, &quot;indic_standalone_cluster&quot;); for (unsigned int i = ts; i &lt; te; i++) info[i].var1.u8[3] = (syllable_serial &lt;&lt; 4) | indic_standalone_cluster; syllable_serial++; if (syllable_serial == 16) syllable_serial = 1; } while (0)" data-ref="_M/found_syllable">found_syllable</a> (<a class="enum" href="#indic_standalone_cluster" title='indic_standalone_cluster' data-ref="indic_standalone_cluster">indic_standalone_cluster</a>); }}</td></tr>
+<tr><th id="530">530</th><td>	<b>break</b>;</td></tr>
+<tr><th id="531">531</th><td>	<b>case</b> <var>19</var>:</td></tr>
+<tr><th id="532">532</th><td><u>#line 112 "hb-ot-shaper-indic-machine.rl"</u></td></tr>
+<tr><th id="533">533</th><td>	{<a class="local col6 ref" href="#16te" title='te' data-ref="16te">te</a> = <a class="local col2 ref" href="#12p" title='p' data-ref="12p">p</a>;<a class="local col2 ref" href="#12p" title='p' data-ref="12p">p</a>--;{ <a class="macro" href="#447" title="do { if (0) fprintf (stderr, &quot;syllable %u..%u %s\n&quot;, ts, te, &quot;indic_symbol_cluster&quot;); for (unsigned int i = ts; i &lt; te; i++) info[i].var1.u8[3] = (syllable_serial &lt;&lt; 4) | indic_symbol_cluster; syllable_serial++; if (syllable_serial == 16) syllable_serial = 1; } while (0)" data-ref="_M/found_syllable">found_syllable</a> (<a class="enum" href="#indic_symbol_cluster" title='indic_symbol_cluster' data-ref="indic_symbol_cluster">indic_symbol_cluster</a>); }}</td></tr>
+<tr><th id="534">534</th><td>	<b>break</b>;</td></tr>
+<tr><th id="535">535</th><td>	<b>case</b> <var>15</var>:</td></tr>
+<tr><th id="536">536</th><td><u>#line 113 "hb-ot-shaper-indic-machine.rl"</u></td></tr>
+<tr><th id="537">537</th><td>	{<a class="local col6 ref" href="#16te" title='te' data-ref="16te">te</a> = <a class="local col2 ref" href="#12p" title='p' data-ref="12p">p</a>;<a class="local col2 ref" href="#12p" title='p' data-ref="12p">p</a>--;{ <a class="macro" href="#447" title="do { if (0) fprintf (stderr, &quot;syllable %u..%u %s\n&quot;, ts, te, &quot;indic_broken_cluster&quot;); for (unsigned int i = ts; i &lt; te; i++) info[i].var1.u8[3] = (syllable_serial &lt;&lt; 4) | indic_broken_cluster; syllable_serial++; if (syllable_serial == 16) syllable_serial = 1; } while (0)" data-ref="_M/found_syllable">found_syllable</a> (<a class="enum" href="#indic_broken_cluster" title='indic_broken_cluster' data-ref="indic_broken_cluster">indic_broken_cluster</a>); <a class="local col1 ref" href="#11buffer" title='buffer' data-ref="11buffer">buffer</a>-&gt;<a class="ref field" href="hb-buffer.hh.html#hb_buffer_t::scratch_flags" title='hb_buffer_t::scratch_flags' data-ref="hb_buffer_t::scratch_flags">scratch_flags</a> <a class="ref fn" href="hb-buffer.hh.html#62" title='operator|=' data-ref="_ZoRR25hb_buffer_scratch_flags_tS_">|=</a> <a class="enum" href="hb-buffer.hh.html#HB_BUFFER_SCRATCH_FLAG_HAS_BROKEN_SYLLABLE" title='HB_BUFFER_SCRATCH_FLAG_HAS_BROKEN_SYLLABLE' data-ref="HB_BUFFER_SCRATCH_FLAG_HAS_BROKEN_SYLLABLE">HB_BUFFER_SCRATCH_FLAG_HAS_BROKEN_SYLLABLE</a>; }}</td></tr>
+<tr><th id="538">538</th><td>	<b>break</b>;</td></tr>
+<tr><th id="539">539</th><td>	<b>case</b> <var>16</var>:</td></tr>
+<tr><th id="540">540</th><td><u>#line 114 "hb-ot-shaper-indic-machine.rl"</u></td></tr>
+<tr><th id="541">541</th><td>	{<a class="local col6 ref" href="#16te" title='te' data-ref="16te">te</a> = <a class="local col2 ref" href="#12p" title='p' data-ref="12p">p</a>;<a class="local col2 ref" href="#12p" title='p' data-ref="12p">p</a>--;{ <a class="macro" href="#447" title="do { if (0) fprintf (stderr, &quot;syllable %u..%u %s\n&quot;, ts, te, &quot;indic_non_indic_cluster&quot;); for (unsigned int i = ts; i &lt; te; i++) info[i].var1.u8[3] = (syllable_serial &lt;&lt; 4) | indic_non_indic_cluster; syllable_serial++; if (syllable_serial == 16) syllable_serial = 1; } while (0)" data-ref="_M/found_syllable">found_syllable</a> (<a class="enum" href="#indic_non_indic_cluster" title='indic_non_indic_cluster' data-ref="indic_non_indic_cluster">indic_non_indic_cluster</a>); }}</td></tr>
+<tr><th id="542">542</th><td>	<b>break</b>;</td></tr>
+<tr><th id="543">543</th><td>	<b>case</b> <var>1</var>:</td></tr>
+<tr><th id="544">544</th><td><u>#line 109 "hb-ot-shaper-indic-machine.rl"</u></td></tr>
+<tr><th id="545">545</th><td>	{{<a class="local col2 ref" href="#12p" title='p' data-ref="12p">p</a> = ((<a class="local col6 ref" href="#16te" title='te' data-ref="16te">te</a>))-<var>1</var>;}{ <a class="macro" href="#447" title="do { if (0) fprintf (stderr, &quot;syllable %u..%u %s\n&quot;, ts, te, &quot;indic_consonant_syllable&quot;); for (unsigned int i = ts; i &lt; te; i++) info[i].var1.u8[3] = (syllable_serial &lt;&lt; 4) | indic_consonant_syllable; syllable_serial++; if (syllable_serial == 16) syllable_serial = 1; } while (0)" data-ref="_M/found_syllable">found_syllable</a> (<a class="enum" href="#indic_consonant_syllable" title='indic_consonant_syllable' data-ref="indic_consonant_syllable">indic_consonant_syllable</a>); }}</td></tr>
+<tr><th id="546">546</th><td>	<b>break</b>;</td></tr>
+<tr><th id="547">547</th><td>	<b>case</b> <var>3</var>:</td></tr>
+<tr><th id="548">548</th><td><u>#line 110 "hb-ot-shaper-indic-machine.rl"</u></td></tr>
+<tr><th id="549">549</th><td>	{{<a class="local col2 ref" href="#12p" title='p' data-ref="12p">p</a> = ((<a class="local col6 ref" href="#16te" title='te' data-ref="16te">te</a>))-<var>1</var>;}{ <a class="macro" href="#447" title="do { if (0) fprintf (stderr, &quot;syllable %u..%u %s\n&quot;, ts, te, &quot;indic_vowel_syllable&quot;); for (unsigned int i = ts; i &lt; te; i++) info[i].var1.u8[3] = (syllable_serial &lt;&lt; 4) | indic_vowel_syllable; syllable_serial++; if (syllable_serial == 16) syllable_serial = 1; } while (0)" data-ref="_M/found_syllable">found_syllable</a> (<a class="enum" href="#indic_vowel_syllable" title='indic_vowel_syllable' data-ref="indic_vowel_syllable">indic_vowel_syllable</a>); }}</td></tr>
+<tr><th id="550">550</th><td>	<b>break</b>;</td></tr>
+<tr><th id="551">551</th><td>	<b>case</b> <var>7</var>:</td></tr>
+<tr><th id="552">552</th><td><u>#line 111 "hb-ot-shaper-indic-machine.rl"</u></td></tr>
+<tr><th id="553">553</th><td>	{{<a class="local col2 ref" href="#12p" title='p' data-ref="12p">p</a> = ((<a class="local col6 ref" href="#16te" title='te' data-ref="16te">te</a>))-<var>1</var>;}{ <a class="macro" href="#447" title="do { if (0) fprintf (stderr, &quot;syllable %u..%u %s\n&quot;, ts, te, &quot;indic_standalone_cluster&quot;); for (unsigned int i = ts; i &lt; te; i++) info[i].var1.u8[3] = (syllable_serial &lt;&lt; 4) | indic_standalone_cluster; syllable_serial++; if (syllable_serial == 16) syllable_serial = 1; } while (0)" data-ref="_M/found_syllable">found_syllable</a> (<a class="enum" href="#indic_standalone_cluster" title='indic_standalone_cluster' data-ref="indic_standalone_cluster">indic_standalone_cluster</a>); }}</td></tr>
+<tr><th id="554">554</th><td>	<b>break</b>;</td></tr>
+<tr><th id="555">555</th><td>	<b>case</b> <var>8</var>:</td></tr>
+<tr><th id="556">556</th><td><u>#line 112 "hb-ot-shaper-indic-machine.rl"</u></td></tr>
+<tr><th id="557">557</th><td>	{{<a class="local col2 ref" href="#12p" title='p' data-ref="12p">p</a> = ((<a class="local col6 ref" href="#16te" title='te' data-ref="16te">te</a>))-<var>1</var>;}{ <a class="macro" href="#447" title="do { if (0) fprintf (stderr, &quot;syllable %u..%u %s\n&quot;, ts, te, &quot;indic_symbol_cluster&quot;); for (unsigned int i = ts; i &lt; te; i++) info[i].var1.u8[3] = (syllable_serial &lt;&lt; 4) | indic_symbol_cluster; syllable_serial++; if (syllable_serial == 16) syllable_serial = 1; } while (0)" data-ref="_M/found_syllable">found_syllable</a> (<a class="enum" href="#indic_symbol_cluster" title='indic_symbol_cluster' data-ref="indic_symbol_cluster">indic_symbol_cluster</a>); }}</td></tr>
+<tr><th id="558">558</th><td>	<b>break</b>;</td></tr>
+<tr><th id="559">559</th><td>	<b>case</b> <var>4</var>:</td></tr>
+<tr><th id="560">560</th><td><u>#line 113 "hb-ot-shaper-indic-machine.rl"</u></td></tr>
+<tr><th id="561">561</th><td>	{{<a class="local col2 ref" href="#12p" title='p' data-ref="12p">p</a> = ((<a class="local col6 ref" href="#16te" title='te' data-ref="16te">te</a>))-<var>1</var>;}{ <a class="macro" href="#447" title="do { if (0) fprintf (stderr, &quot;syllable %u..%u %s\n&quot;, ts, te, &quot;indic_broken_cluster&quot;); for (unsigned int i = ts; i &lt; te; i++) info[i].var1.u8[3] = (syllable_serial &lt;&lt; 4) | indic_broken_cluster; syllable_serial++; if (syllable_serial == 16) syllable_serial = 1; } while (0)" data-ref="_M/found_syllable">found_syllable</a> (<a class="enum" href="#indic_broken_cluster" title='indic_broken_cluster' data-ref="indic_broken_cluster">indic_broken_cluster</a>); <a class="local col1 ref" href="#11buffer" title='buffer' data-ref="11buffer">buffer</a>-&gt;<a class="ref field" href="hb-buffer.hh.html#hb_buffer_t::scratch_flags" title='hb_buffer_t::scratch_flags' data-ref="hb_buffer_t::scratch_flags">scratch_flags</a> <a class="ref fn" href="hb-buffer.hh.html#62" title='operator|=' data-ref="_ZoRR25hb_buffer_scratch_flags_tS_">|=</a> <a class="enum" href="hb-buffer.hh.html#HB_BUFFER_SCRATCH_FLAG_HAS_BROKEN_SYLLABLE" title='HB_BUFFER_SCRATCH_FLAG_HAS_BROKEN_SYLLABLE' data-ref="HB_BUFFER_SCRATCH_FLAG_HAS_BROKEN_SYLLABLE">HB_BUFFER_SCRATCH_FLAG_HAS_BROKEN_SYLLABLE</a>; }}</td></tr>
+<tr><th id="562">562</th><td>	<b>break</b>;</td></tr>
+<tr><th id="563">563</th><td>	<b>case</b> <var>6</var>:</td></tr>
+<tr><th id="564">564</th><td><u>#line 1 "NONE"</u></td></tr>
+<tr><th id="565">565</th><td>	{	<b>switch</b>( <a class="local col7 ref" href="#17act" title='act' data-ref="17act">act</a> ) {</td></tr>
+<tr><th id="566">566</th><td>	<b>case</b> <var>1</var>:</td></tr>
+<tr><th id="567">567</th><td>	{{<a class="local col2 ref" href="#12p" title='p' data-ref="12p">p</a> = ((<a class="local col6 ref" href="#16te" title='te' data-ref="16te">te</a>))-<var>1</var>;} <a class="macro" href="#447" title="do { if (0) fprintf (stderr, &quot;syllable %u..%u %s\n&quot;, ts, te, &quot;indic_consonant_syllable&quot;); for (unsigned int i = ts; i &lt; te; i++) info[i].var1.u8[3] = (syllable_serial &lt;&lt; 4) | indic_consonant_syllable; syllable_serial++; if (syllable_serial == 16) syllable_serial = 1; } while (0)" data-ref="_M/found_syllable">found_syllable</a> (<a class="enum" href="#indic_consonant_syllable" title='indic_consonant_syllable' data-ref="indic_consonant_syllable">indic_consonant_syllable</a>); }</td></tr>
+<tr><th id="568">568</th><td>	<b>break</b>;</td></tr>
+<tr><th id="569">569</th><td>	<b>case</b> <var>5</var>:</td></tr>
+<tr><th id="570">570</th><td>	{{<a class="local col2 ref" href="#12p" title='p' data-ref="12p">p</a> = ((<a class="local col6 ref" href="#16te" title='te' data-ref="16te">te</a>))-<var>1</var>;} <a class="macro" href="#447" title="do { if (0) fprintf (stderr, &quot;syllable %u..%u %s\n&quot;, ts, te, &quot;indic_broken_cluster&quot;); for (unsigned int i = ts; i &lt; te; i++) info[i].var1.u8[3] = (syllable_serial &lt;&lt; 4) | indic_broken_cluster; syllable_serial++; if (syllable_serial == 16) syllable_serial = 1; } while (0)" data-ref="_M/found_syllable">found_syllable</a> (<a class="enum" href="#indic_broken_cluster" title='indic_broken_cluster' data-ref="indic_broken_cluster">indic_broken_cluster</a>); <a class="local col1 ref" href="#11buffer" title='buffer' data-ref="11buffer">buffer</a>-&gt;<a class="ref field" href="hb-buffer.hh.html#hb_buffer_t::scratch_flags" title='hb_buffer_t::scratch_flags' data-ref="hb_buffer_t::scratch_flags">scratch_flags</a> <a class="ref fn" href="hb-buffer.hh.html#62" title='operator|=' data-ref="_ZoRR25hb_buffer_scratch_flags_tS_">|=</a> <a class="enum" href="hb-buffer.hh.html#HB_BUFFER_SCRATCH_FLAG_HAS_BROKEN_SYLLABLE" title='HB_BUFFER_SCRATCH_FLAG_HAS_BROKEN_SYLLABLE' data-ref="HB_BUFFER_SCRATCH_FLAG_HAS_BROKEN_SYLLABLE">HB_BUFFER_SCRATCH_FLAG_HAS_BROKEN_SYLLABLE</a>; }</td></tr>
+<tr><th id="571">571</th><td>	<b>break</b>;</td></tr>
+<tr><th id="572">572</th><td>	<b>case</b> <var>6</var>:</td></tr>
+<tr><th id="573">573</th><td>	{{<a class="local col2 ref" href="#12p" title='p' data-ref="12p">p</a> = ((<a class="local col6 ref" href="#16te" title='te' data-ref="16te">te</a>))-<var>1</var>;} <a class="macro" href="#447" title="do { if (0) fprintf (stderr, &quot;syllable %u..%u %s\n&quot;, ts, te, &quot;indic_non_indic_cluster&quot;); for (unsigned int i = ts; i &lt; te; i++) info[i].var1.u8[3] = (syllable_serial &lt;&lt; 4) | indic_non_indic_cluster; syllable_serial++; if (syllable_serial == 16) syllable_serial = 1; } while (0)" data-ref="_M/found_syllable">found_syllable</a> (<a class="enum" href="#indic_non_indic_cluster" title='indic_non_indic_cluster' data-ref="indic_non_indic_cluster">indic_non_indic_cluster</a>); }</td></tr>
+<tr><th id="574">574</th><td>	<b>break</b>;</td></tr>
+<tr><th id="575">575</th><td>	}</td></tr>
+<tr><th id="576">576</th><td>	}</td></tr>
+<tr><th id="577">577</th><td>	<b>break</b>;</td></tr>
+<tr><th id="578">578</th><td>	<b>case</b> <var>18</var>:</td></tr>
+<tr><th id="579">579</th><td><u>#line 1 "NONE"</u></td></tr>
+<tr><th id="580">580</th><td>	{<a class="local col6 ref" href="#16te" title='te' data-ref="16te">te</a> = <a class="local col2 ref" href="#12p" title='p' data-ref="12p">p</a>+<var>1</var>;}</td></tr>
+<tr><th id="581">581</th><td><u>#line 109 "hb-ot-shaper-indic-machine.rl"</u></td></tr>
+<tr><th id="582">582</th><td>	{<a class="local col7 ref" href="#17act" title='act' data-ref="17act">act</a> = <var>1</var>;}</td></tr>
+<tr><th id="583">583</th><td>	<b>break</b>;</td></tr>
+<tr><th id="584">584</th><td>	<b>case</b> <var>5</var>:</td></tr>
+<tr><th id="585">585</th><td><u>#line 1 "NONE"</u></td></tr>
+<tr><th id="586">586</th><td>	{<a class="local col6 ref" href="#16te" title='te' data-ref="16te">te</a> = <a class="local col2 ref" href="#12p" title='p' data-ref="12p">p</a>+<var>1</var>;}</td></tr>
+<tr><th id="587">587</th><td><u>#line 113 "hb-ot-shaper-indic-machine.rl"</u></td></tr>
+<tr><th id="588">588</th><td>	{<a class="local col7 ref" href="#17act" title='act' data-ref="17act">act</a> = <var>5</var>;}</td></tr>
+<tr><th id="589">589</th><td>	<b>break</b>;</td></tr>
+<tr><th id="590">590</th><td>	<b>case</b> <var>12</var>:</td></tr>
+<tr><th id="591">591</th><td><u>#line 1 "NONE"</u></td></tr>
+<tr><th id="592">592</th><td>	{<a class="local col6 ref" href="#16te" title='te' data-ref="16te">te</a> = <a class="local col2 ref" href="#12p" title='p' data-ref="12p">p</a>+<var>1</var>;}</td></tr>
+<tr><th id="593">593</th><td><u>#line 114 "hb-ot-shaper-indic-machine.rl"</u></td></tr>
+<tr><th id="594">594</th><td>	{<a class="local col7 ref" href="#17act" title='act' data-ref="17act">act</a> = <var>6</var>;}</td></tr>
+<tr><th id="595">595</th><td>	<b>break</b>;</td></tr>
+<tr><th id="596">596</th><td><u>#line 559 "hb-ot-shaper-indic-machine.hh"</u></td></tr>
+<tr><th id="597">597</th><td>	}</td></tr>
+<tr><th id="598">598</th><td></td></tr>
+<tr><th id="599">599</th><td><dfn class="lbl" id="28_again" data-ref="28_again">_again</dfn>:</td></tr>
+<tr><th id="600">600</th><td>	<b>switch</b> ( <a class="ref" href="#_indic_syllable_machine_to_state_actions" title='_indic_syllable_machine_to_state_actions' data-ref="_indic_syllable_machine_to_state_actions">_indic_syllable_machine_to_state_actions</a>[<a class="local col8 ref" href="#18cs" title='cs' data-ref="18cs">cs</a>] ) {</td></tr>
+<tr><th id="601">601</th><td>	<b>case</b> <var>9</var>:</td></tr>
+<tr><th id="602">602</th><td><u>#line 1 "NONE"</u></td></tr>
+<tr><th id="603">603</th><td>	{<a class="local col5 ref" href="#15ts" title='ts' data-ref="15ts">ts</a> = <var>0</var>;}</td></tr>
+<tr><th id="604">604</th><td>	<b>break</b>;</td></tr>
+<tr><th id="605">605</th><td><u>#line 566 "hb-ot-shaper-indic-machine.hh"</u></td></tr>
+<tr><th id="606">606</th><td>	}</td></tr>
+<tr><th id="607">607</th><td></td></tr>
+<tr><th id="608">608</th><td>	<b>if</b> ( ++<a class="local col2 ref" href="#12p" title='p' data-ref="12p">p</a> != <a class="local col3 ref" href="#13pe" title='pe' data-ref="13pe">pe</a> )</td></tr>
+<tr><th id="609">609</th><td>		<b>goto</b> <a class="lbl" href="#26_resume" data-ref="26_resume">_resume</a>;</td></tr>
+<tr><th id="610">610</th><td>	<dfn class="lbl" id="25_test_eof" data-ref="25_test_eof">_test_eof</dfn>: {}</td></tr>
+<tr><th id="611">611</th><td>	<b>if</b> ( <a class="local col2 ref" href="#12p" title='p' data-ref="12p">p</a> == <a class="local col4 ref" href="#14eof" title='eof' data-ref="14eof">eof</a> )</td></tr>
+<tr><th id="612">612</th><td>	{</td></tr>
+<tr><th id="613">613</th><td>	<b>if</b> ( <a class="ref" href="#_indic_syllable_machine_eof_trans" title='_indic_syllable_machine_eof_trans' data-ref="_indic_syllable_machine_eof_trans">_indic_syllable_machine_eof_trans</a>[<a class="local col8 ref" href="#18cs" title='cs' data-ref="18cs">cs</a>] &gt; <var>0</var> ) {</td></tr>
+<tr><th id="614">614</th><td>		<a class="local col2 ref" href="#22_trans" title='_trans' data-ref="22_trans">_trans</a> = <a class="ref" href="#_indic_syllable_machine_eof_trans" title='_indic_syllable_machine_eof_trans' data-ref="_indic_syllable_machine_eof_trans">_indic_syllable_machine_eof_trans</a>[<a class="local col8 ref" href="#18cs" title='cs' data-ref="18cs">cs</a>] - <var>1</var>;</td></tr>
+<tr><th id="615">615</th><td>		<b>goto</b> <a class="lbl" href="#27_eof_trans" data-ref="27_eof_trans">_eof_trans</a>;</td></tr>
+<tr><th id="616">616</th><td>	}</td></tr>
+<tr><th id="617">617</th><td>	}</td></tr>
+<tr><th id="618">618</th><td></td></tr>
+<tr><th id="619">619</th><td>	}</td></tr>
+<tr><th id="620">620</th><td></td></tr>
+<tr><th id="621">621</th><td><u>#line 146 "hb-ot-shaper-indic-machine.rl"</u></td></tr>
+<tr><th id="622">622</th><td></td></tr>
+<tr><th id="623">623</th><td>}</td></tr>
+<tr><th id="624">624</th><td></td></tr>
+<tr><th id="625">625</th><td><u>#undef <a class="macro" href="#447" data-ref="_M/found_syllable">found_syllable</a></u></td></tr>
+<tr><th id="626">626</th><td></td></tr>
+<tr><th id="627">627</th><td><u>#<span data-ppcond="29">endif</span> /* HB_OT_SHAPER_INDIC_MACHINE_HH */</u></td></tr>
+<tr><th id="628">628</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='hb-ot-shaper-indic-table.cc.html'>qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/hb-ot-shaper-indic-table.cc</a><br/>Generated on <em>2024-Jun-13</em> from project qtbase-6.5.0 revision <em>6.5.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

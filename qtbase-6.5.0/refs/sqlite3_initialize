@@ -1,0 +1,201 @@
+<dec f='qtbase-6.5.0/src/3rdparty/sqlite/sqlite3.c' l='1946' type='int sqlite3_initialize()'/>
+<use f='qtbase-6.5.0/src/3rdparty/sqlite/sqlite3.c' l='25216' u='c' c='sqlite3_vfs_find'/>
+<use f='qtbase-6.5.0/src/3rdparty/sqlite/sqlite3.c' l='25259' u='c' c='sqlite3_vfs_register'/>
+<use f='qtbase-6.5.0/src/3rdparty/sqlite/sqlite3.c' l='25287' u='c' c='sqlite3_vfs_unregister'/>
+<use f='qtbase-6.5.0/src/3rdparty/sqlite/sqlite3.c' l='27836' u='c' c='sqlite3_mutex_alloc'/>
+<use f='qtbase-6.5.0/src/3rdparty/sqlite/sqlite3.c' l='29126' u='c' c='sqlite3_soft_heap_limit64'/>
+<use f='qtbase-6.5.0/src/3rdparty/sqlite/sqlite3.c' l='29166' u='c' c='sqlite3_hard_heap_limit64'/>
+<use f='qtbase-6.5.0/src/3rdparty/sqlite/sqlite3.c' l='29346' u='c' c='sqlite3_malloc'/>
+<use f='qtbase-6.5.0/src/3rdparty/sqlite/sqlite3.c' l='29352' u='c' c='sqlite3_malloc64'/>
+<use f='qtbase-6.5.0/src/3rdparty/sqlite/sqlite3.c' l='29592' u='c' c='sqlite3_realloc'/>
+<use f='qtbase-6.5.0/src/3rdparty/sqlite/sqlite3.c' l='29599' u='c' c='sqlite3_realloc64'/>
+<use f='qtbase-6.5.0/src/3rdparty/sqlite/sqlite3.c' l='31197' u='c' c='sqlite3_vmprintf'/>
+<use f='qtbase-6.5.0/src/3rdparty/sqlite/sqlite3.c' l='31213' u='c' c='sqlite3_mprintf'/>
+<use f='qtbase-6.5.0/src/3rdparty/sqlite/sqlite3.c' l='32717' u='c' c='sqlite3_randomness'/>
+<use f='qtbase-6.5.0/src/3rdparty/sqlite/sqlite3.c' l='133509' u='c' c='sqlite3_auto_extension'/>
+<use f='qtbase-6.5.0/src/3rdparty/sqlite/sqlite3.c' l='133578' u='c' c='sqlite3_reset_auto_extension'/>
+<def f='qtbase-6.5.0/src/3rdparty/sqlite/sqlite3.c' l='174155' ll='174320' type='int sqlite3_initialize()'/>
+<use f='qtbase-6.5.0/src/3rdparty/sqlite/sqlite3.c' l='177153' u='c' c='openDatabase'/>
+<use f='qtbase-6.5.0/src/3rdparty/sqlite/sqlite3.c' l='177522' u='c' c='sqlite3_open16'/>
+<doc f='qtbase-6.5.0/src/3rdparty/sqlite/sqlite3.c' l='1871'>/*
+** CAPI3REF: Initialize The SQLite Library
+**
+** ^The sqlite3_initialize() routine initializes the
+** SQLite library.  ^The sqlite3_shutdown() routine
+** deallocates any resources that were allocated by sqlite3_initialize().
+** These routines are designed to aid in process initialization and
+** shutdown on embedded systems.  Workstation applications using
+** SQLite normally do not need to invoke either of these routines.
+**
+** A call to sqlite3_initialize() is an &quot;effective&quot; call if it is
+** the first time sqlite3_initialize() is invoked during the lifetime of
+** the process, or if it is the first time sqlite3_initialize() is invoked
+** following a call to sqlite3_shutdown().  ^(Only an effective call
+** of sqlite3_initialize() does any initialization.  All other calls
+** are harmless no-ops.)^
+**
+** A call to sqlite3_shutdown() is an &quot;effective&quot; call if it is the first
+** call to sqlite3_shutdown() since the last sqlite3_initialize().  ^(Only
+** an effective call to sqlite3_shutdown() does any deinitialization.
+** All other valid calls to sqlite3_shutdown() are harmless no-ops.)^
+**
+** The sqlite3_initialize() interface is threadsafe, but sqlite3_shutdown()
+** is not.  The sqlite3_shutdown() interface must only be called from a
+** single thread.  All open [database connections] must be closed and all
+** other SQLite resources must be deallocated prior to invoking
+** sqlite3_shutdown().
+**
+** Among other things, ^sqlite3_initialize() will invoke
+** sqlite3_os_init().  Similarly, ^sqlite3_shutdown()
+** will invoke sqlite3_os_end().
+**
+** ^The sqlite3_initialize() routine returns [SQLITE_OK] on success.
+** ^If for some reason, sqlite3_initialize() is unable to initialize
+** the library (perhaps it is unable to allocate a needed resource such
+** as a mutex) it returns an [error code] other than [SQLITE_OK].
+**
+** ^The sqlite3_initialize() routine is called internally by many other
+** SQLite interfaces so that an application usually does not need to
+** invoke sqlite3_initialize() directly.  For example, [sqlite3_open()]
+** calls sqlite3_initialize() so the SQLite library will be automatically
+** initialized when [sqlite3_open()] is called if it has not be initialized
+** already.  ^However, if SQLite is compiled with the [SQLITE_OMIT_AUTOINIT]
+** compile-time option, then the automatic calls to sqlite3_initialize()
+** are omitted and the application must call sqlite3_initialize() directly
+** prior to using any other SQLite interface.  For maximum portability,
+** it is recommended that applications always invoke sqlite3_initialize()
+** directly prior to using any other SQLite interface.  Future releases
+** of SQLite may require this.  In other words, the behavior exhibited
+** when SQLite is compiled with [SQLITE_OMIT_AUTOINIT] might become the
+** default behavior in some future release of SQLite.
+**
+** The sqlite3_os_init() routine does operating-system specific
+** initialization of the SQLite library.  The sqlite3_os_end()
+** routine undoes the effect of sqlite3_os_init().  Typical tasks
+** performed by these routines include allocation or deallocation
+** of static resources, initialization of global variables,
+** setting up a default [sqlite3_vfs] module, or setting up
+** a default configuration using [sqlite3_config()].
+**
+** The application should never invoke either sqlite3_os_init()
+** or sqlite3_os_end() directly.  The application should only invoke
+** sqlite3_initialize() and sqlite3_shutdown().  The sqlite3_os_init()
+** interface is called automatically by sqlite3_initialize() and
+** sqlite3_os_end() is called by sqlite3_shutdown().  Appropriate
+** implementations for sqlite3_os_init() and sqlite3_os_end()
+** are built into SQLite when it is compiled for Unix, Windows, or OS/2.
+** When [custom builds | built for other platforms]
+** (using the [SQLITE_OS_OTHER=1] compile-time
+** option) the application must supply a suitable implementation for
+** sqlite3_os_init() and sqlite3_os_end().  An application-supplied
+** implementation of sqlite3_os_init() or sqlite3_os_end()
+** must return [SQLITE_OK] on success and some other [error code] upon
+** failure.
+*/</doc>
+<doc f='qtbase-6.5.0/src/3rdparty/sqlite/sqlite3.c' l='174124'>/*
+** Initialize SQLite.
+**
+** This routine must be called to initialize the memory allocation,
+** VFS, and mutex subsystems prior to doing any serious work with
+** SQLite.  But as long as you do not compile with SQLITE_OMIT_AUTOINIT
+** this routine will be called automatically by key routines such as
+** sqlite3_open().
+**
+** This routine is a no-op except on its very first call for the process,
+** or for the first call after a call to sqlite3_shutdown.
+**
+** The first thread to call this routine runs the initialization to
+** completion.  If subsequent threads call this routine before the first
+** thread has finished the initialization process, then the subsequent
+** threads must block until the first thread finishes with the initialization.
+**
+** The first thread might call this routine recursively.  Recursive
+** calls to this routine should not block, of course.  Otherwise the
+** initialization process would never complete.
+**
+** Let X be the first thread to enter this routine.  Let Y be some other
+** thread.  Then while the initial invocation of this routine by X is
+** incomplete, it is required that:
+**
+**    *  Calls to this routine from Y must block until the outer-most
+**       call by X completes.
+**
+**    *  Recursive calls to this routine from thread X return immediately
+**       without blocking.
+*/</doc>
+<dec f='qtbase-6.5.0/src/3rdparty/sqlite/sqlite3.h' l='1640' type='int sqlite3_initialize()'/>
+<doc f='qtbase-6.5.0/src/3rdparty/sqlite/sqlite3.h' l='1565'>/*
+** CAPI3REF: Initialize The SQLite Library
+**
+** ^The sqlite3_initialize() routine initializes the
+** SQLite library.  ^The sqlite3_shutdown() routine
+** deallocates any resources that were allocated by sqlite3_initialize().
+** These routines are designed to aid in process initialization and
+** shutdown on embedded systems.  Workstation applications using
+** SQLite normally do not need to invoke either of these routines.
+**
+** A call to sqlite3_initialize() is an &quot;effective&quot; call if it is
+** the first time sqlite3_initialize() is invoked during the lifetime of
+** the process, or if it is the first time sqlite3_initialize() is invoked
+** following a call to sqlite3_shutdown().  ^(Only an effective call
+** of sqlite3_initialize() does any initialization.  All other calls
+** are harmless no-ops.)^
+**
+** A call to sqlite3_shutdown() is an &quot;effective&quot; call if it is the first
+** call to sqlite3_shutdown() since the last sqlite3_initialize().  ^(Only
+** an effective call to sqlite3_shutdown() does any deinitialization.
+** All other valid calls to sqlite3_shutdown() are harmless no-ops.)^
+**
+** The sqlite3_initialize() interface is threadsafe, but sqlite3_shutdown()
+** is not.  The sqlite3_shutdown() interface must only be called from a
+** single thread.  All open [database connections] must be closed and all
+** other SQLite resources must be deallocated prior to invoking
+** sqlite3_shutdown().
+**
+** Among other things, ^sqlite3_initialize() will invoke
+** sqlite3_os_init().  Similarly, ^sqlite3_shutdown()
+** will invoke sqlite3_os_end().
+**
+** ^The sqlite3_initialize() routine returns [SQLITE_OK] on success.
+** ^If for some reason, sqlite3_initialize() is unable to initialize
+** the library (perhaps it is unable to allocate a needed resource such
+** as a mutex) it returns an [error code] other than [SQLITE_OK].
+**
+** ^The sqlite3_initialize() routine is called internally by many other
+** SQLite interfaces so that an application usually does not need to
+** invoke sqlite3_initialize() directly.  For example, [sqlite3_open()]
+** calls sqlite3_initialize() so the SQLite library will be automatically
+** initialized when [sqlite3_open()] is called if it has not be initialized
+** already.  ^However, if SQLite is compiled with the [SQLITE_OMIT_AUTOINIT]
+** compile-time option, then the automatic calls to sqlite3_initialize()
+** are omitted and the application must call sqlite3_initialize() directly
+** prior to using any other SQLite interface.  For maximum portability,
+** it is recommended that applications always invoke sqlite3_initialize()
+** directly prior to using any other SQLite interface.  Future releases
+** of SQLite may require this.  In other words, the behavior exhibited
+** when SQLite is compiled with [SQLITE_OMIT_AUTOINIT] might become the
+** default behavior in some future release of SQLite.
+**
+** The sqlite3_os_init() routine does operating-system specific
+** initialization of the SQLite library.  The sqlite3_os_end()
+** routine undoes the effect of sqlite3_os_init().  Typical tasks
+** performed by these routines include allocation or deallocation
+** of static resources, initialization of global variables,
+** setting up a default [sqlite3_vfs] module, or setting up
+** a default configuration using [sqlite3_config()].
+**
+** The application should never invoke either sqlite3_os_init()
+** or sqlite3_os_end() directly.  The application should only invoke
+** sqlite3_initialize() and sqlite3_shutdown().  The sqlite3_os_init()
+** interface is called automatically by sqlite3_initialize() and
+** sqlite3_os_end() is called by sqlite3_shutdown().  Appropriate
+** implementations for sqlite3_os_init() and sqlite3_os_end()
+** are built into SQLite when it is compiled for Unix, Windows, or OS/2.
+** When [custom builds | built for other platforms]
+** (using the [SQLITE_OS_OTHER=1] compile-time
+** option) the application must supply a suitable implementation for
+** sqlite3_os_init() and sqlite3_os_end().  An application-supplied
+** implementation of sqlite3_os_init() or sqlite3_os_end()
+** must return [SQLITE_OK] on success and some other [error code] upon
+** failure.
+*/</doc>

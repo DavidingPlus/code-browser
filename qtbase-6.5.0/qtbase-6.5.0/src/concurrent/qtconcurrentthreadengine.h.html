@@ -1,0 +1,243 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>qtconcurrentthreadengine.h source code [qtbase-6.5.0/src/concurrent/qtconcurrentthreadengine.h] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="QtConcurrent::ThreadEngine,QtConcurrent::ThreadEngineBarrier,QtConcurrent::ThreadEngineBase,QtConcurrent::ThreadEngineStarter,QtConcurrent::ThreadEngineStarterBase,QtConcurrent::ThreadFunctionResult "/>
+<link rel="stylesheet" href="../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'qtbase-6.5.0/src/concurrent/qtconcurrentthreadengine.h'; var root_path = '../../..'; var data_path = '../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../..'>qtbase-6.5.0</a>/<a href='..'>src</a>/<a href='./'>concurrent</a>/<a href='qtconcurrentthreadengine.h.html'>qtconcurrentthreadengine.h</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>// Copyright (C) 2016 The Qt Company Ltd.</i></td></tr>
+<tr><th id="2">2</th><td><i>// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only</i></td></tr>
+<tr><th id="3">3</th><td></td></tr>
+<tr><th id="4">4</th><td><u>#<span data-ppcond="4">ifndef</span> <span class="macro" data-ref="_M/QTCONCURRENT_THREADENGINE_H">QTCONCURRENT_THREADENGINE_H</span></u></td></tr>
+<tr><th id="5">5</th><td><u>#define <dfn class="macro" id="_M/QTCONCURRENT_THREADENGINE_H" data-ref="_M/QTCONCURRENT_THREADENGINE_H">QTCONCURRENT_THREADENGINE_H</dfn></u></td></tr>
+<tr><th id="6">6</th><td></td></tr>
+<tr><th id="7">7</th><td><u>#include <a href="../../build/include/QtConcurrent/qtconcurrent_global.h.html">&lt;QtConcurrent/qtconcurrent_global.h&gt;</a></u></td></tr>
+<tr><th id="8">8</th><td></td></tr>
+<tr><th id="9">9</th><td><u>#<span data-ppcond="9">if</span> !defined(<span class="macro" data-ref="_M/QT_NO_CONCURRENT">QT_NO_CONCURRENT</span>) ||defined(<span class="macro" data-ref="_M/Q_QDOC">Q_QDOC</span>)</u></td></tr>
+<tr><th id="10">10</th><td></td></tr>
+<tr><th id="11">11</th><td><u>#include <a href="../../build/include/QtCore/qthreadpool.h.html">&lt;QtCore/qthreadpool.h&gt;</a></u></td></tr>
+<tr><th id="12">12</th><td><u>#include <a href="../../build/include/QtCore/qfuture.h.html">&lt;QtCore/qfuture.h&gt;</a></u></td></tr>
+<tr><th id="13">13</th><td><u>#include <a href="../../build/include/QtCore/qdebug.h.html">&lt;QtCore/qdebug.h&gt;</a></u></td></tr>
+<tr><th id="14">14</th><td><u>#include <a href="../../build/include/QtCore/qexception.h.html">&lt;QtCore/qexception.h&gt;</a></u></td></tr>
+<tr><th id="15">15</th><td><u>#include <a href="../../build/include/QtCore/qwaitcondition.h.html">&lt;QtCore/qwaitcondition.h&gt;</a></u></td></tr>
+<tr><th id="16">16</th><td><u>#include <a href="../../build/include/QtCore/qatomic.h.html">&lt;QtCore/qatomic.h&gt;</a></u></td></tr>
+<tr><th id="17">17</th><td><u>#include <a href="../../build/include/QtCore/qsemaphore.h.html">&lt;QtCore/qsemaphore.h&gt;</a></u></td></tr>
+<tr><th id="18">18</th><td></td></tr>
+<tr><th id="19">19</th><td><a class="macro" href="../corelib/global/qtconfigmacros.h.html#103" title="" data-ref="_M/QT_BEGIN_NAMESPACE">QT_BEGIN_NAMESPACE</a></td></tr>
+<tr><th id="20">20</th><td></td></tr>
+<tr><th id="21">21</th><td></td></tr>
+<tr><th id="22">22</th><td><b>namespace</b> <span class="namespace">QtConcurrent</span> {</td></tr>
+<tr><th id="23">23</th><td></td></tr>
+<tr><th id="24">24</th><td><i>// The ThreadEngineBarrier counts worker threads, and allows one</i></td></tr>
+<tr><th id="25">25</th><td><i>// thread to wait for all others to finish. Tested for its use in</i></td></tr>
+<tr><th id="26">26</th><td><i>// QtConcurrent, requires more testing for use as a general class.</i></td></tr>
+<tr><th id="27">27</th><td><b>class</b> <dfn class="type def" id="QtConcurrent::ThreadEngineBarrier" title='QtConcurrent::ThreadEngineBarrier' data-ref="QtConcurrent::ThreadEngineBarrier">ThreadEngineBarrier</dfn></td></tr>
+<tr><th id="28">28</th><td>{</td></tr>
+<tr><th id="29">29</th><td><b>private</b>:</td></tr>
+<tr><th id="30">30</th><td>    <i>// The thread count is maintained as an integer in the count atomic</i></td></tr>
+<tr><th id="31">31</th><td><i>    // variable. The count can be either positive or negative - a negative</i></td></tr>
+<tr><th id="32">32</th><td><i>    // count signals that a thread is waiting on the barrier.</i></td></tr>
+<tr><th id="33">33</th><td></td></tr>
+<tr><th id="34">34</th><td>    <a class="type" href="../corelib/thread/qatomic.h.html#QAtomicInt" title='QAtomicInt' data-ref="QAtomicInt">QAtomicInt</a> <dfn class="decl field" id="QtConcurrent::ThreadEngineBarrier::count" title='QtConcurrent::ThreadEngineBarrier::count' data-ref="QtConcurrent::ThreadEngineBarrier::count">count</dfn>;</td></tr>
+<tr><th id="35">35</th><td>    <a class="type" href="../corelib/thread/qsemaphore.h.html#QSemaphore" title='QSemaphore' data-ref="QSemaphore">QSemaphore</a> <dfn class="decl field" id="QtConcurrent::ThreadEngineBarrier::semaphore" title='QtConcurrent::ThreadEngineBarrier::semaphore' data-ref="QtConcurrent::ThreadEngineBarrier::semaphore">semaphore</dfn>;</td></tr>
+<tr><th id="36">36</th><td><b>public</b>:</td></tr>
+<tr><th id="37">37</th><td>    <dfn class="decl fn" id="_ZN12QtConcurrent19ThreadEngineBarrierC1Ev" title='QtConcurrent::ThreadEngineBarrier::ThreadEngineBarrier' data-ref="_ZN12QtConcurrent19ThreadEngineBarrierC1Ev">ThreadEngineBarrier</dfn>();</td></tr>
+<tr><th id="38">38</th><td>    <em>void</em> <dfn class="decl fn" id="_ZN12QtConcurrent19ThreadEngineBarrier7acquireEv" title='QtConcurrent::ThreadEngineBarrier::acquire' data-ref="_ZN12QtConcurrent19ThreadEngineBarrier7acquireEv">acquire</dfn>();</td></tr>
+<tr><th id="39">39</th><td>    <em>int</em> <dfn class="decl fn" id="_ZN12QtConcurrent19ThreadEngineBarrier7releaseEv" title='QtConcurrent::ThreadEngineBarrier::release' data-ref="_ZN12QtConcurrent19ThreadEngineBarrier7releaseEv">release</dfn>();</td></tr>
+<tr><th id="40">40</th><td>    <em>void</em> <dfn class="decl fn" id="_ZN12QtConcurrent19ThreadEngineBarrier4waitEv" title='QtConcurrent::ThreadEngineBarrier::wait' data-ref="_ZN12QtConcurrent19ThreadEngineBarrier4waitEv">wait</dfn>();</td></tr>
+<tr><th id="41">41</th><td>    <em>int</em> <dfn class="decl fn" id="_ZN12QtConcurrent19ThreadEngineBarrier12currentCountEv" title='QtConcurrent::ThreadEngineBarrier::currentCount' data-ref="_ZN12QtConcurrent19ThreadEngineBarrier12currentCountEv">currentCount</dfn>();</td></tr>
+<tr><th id="42">42</th><td>    <em>bool</em> <dfn class="decl fn" id="_ZN12QtConcurrent19ThreadEngineBarrier17releaseUnlessLastEv" title='QtConcurrent::ThreadEngineBarrier::releaseUnlessLast' data-ref="_ZN12QtConcurrent19ThreadEngineBarrier17releaseUnlessLastEv">releaseUnlessLast</dfn>();</td></tr>
+<tr><th id="43">43</th><td>};</td></tr>
+<tr><th id="44">44</th><td></td></tr>
+<tr><th id="45">45</th><td><b>enum</b> <dfn class="type def" id="QtConcurrent::ThreadFunctionResult" title='QtConcurrent::ThreadFunctionResult' data-ref="QtConcurrent::ThreadFunctionResult">ThreadFunctionResult</dfn> { <dfn class="enum" id="QtConcurrent::ThrottleThread" title='QtConcurrent::ThrottleThread' data-ref="QtConcurrent::ThrottleThread">ThrottleThread</dfn>, <dfn class="enum" id="QtConcurrent::ThreadFinished" title='QtConcurrent::ThreadFinished' data-ref="QtConcurrent::ThreadFinished">ThreadFinished</dfn> };</td></tr>
+<tr><th id="46">46</th><td></td></tr>
+<tr><th id="47">47</th><td><i>// The ThreadEngine controls the threads used in the computation.</i></td></tr>
+<tr><th id="48">48</th><td><i>// Can be run in three modes: single threaded, multi-threaded blocking</i></td></tr>
+<tr><th id="49">49</th><td><i>// and multi-threaded asynchronous.</i></td></tr>
+<tr><th id="50">50</th><td><i>// The code for the single threaded mode is</i></td></tr>
+<tr><th id="51">51</th><td><b>class</b> <a class="macro" href="../../build/include/QtConcurrent/qtconcurrentexports.h.html#11" title="__attribute__((visibility(&quot;default&quot;)))" data-ref="_M/Q_CONCURRENT_EXPORT">Q_CONCURRENT_EXPORT</a> <dfn class="type def" id="QtConcurrent::ThreadEngineBase" title='QtConcurrent::ThreadEngineBase' data-ref="QtConcurrent::ThreadEngineBase">ThreadEngineBase</dfn>: <b>public</b> <a class="type" href="../corelib/thread/qrunnable.h.html#QRunnable" title='QRunnable' data-ref="QRunnable">QRunnable</a></td></tr>
+<tr><th id="52">52</th><td>{</td></tr>
+<tr><th id="53">53</th><td><b>public</b>:</td></tr>
+<tr><th id="54">54</th><td>    <i>// Public API:</i></td></tr>
+<tr><th id="55">55</th><td>    <dfn class="decl fn" id="_ZN12QtConcurrent16ThreadEngineBaseC1EP11QThreadPool" title='QtConcurrent::ThreadEngineBase::ThreadEngineBase' data-ref="_ZN12QtConcurrent16ThreadEngineBaseC1EP11QThreadPool">ThreadEngineBase</dfn>(<a class="type" href="../corelib/thread/qthreadpool.h.html#QThreadPool" title='QThreadPool' data-ref="QThreadPool">QThreadPool</a> *<dfn class="local col4 decl" id="4pool" title='pool' data-type='QThreadPool *' data-ref="4pool">pool</dfn>);</td></tr>
+<tr><th id="56">56</th><td>    <b>virtual</b> <dfn class="virtual decl fn" id="_ZN12QtConcurrent16ThreadEngineBaseD1Ev" title='QtConcurrent::ThreadEngineBase::~ThreadEngineBase' data-ref="_ZN12QtConcurrent16ThreadEngineBaseD1Ev">~ThreadEngineBase</dfn>();</td></tr>
+<tr><th id="57">57</th><td>    <em>void</em> <dfn class="decl fn" id="_ZN12QtConcurrent16ThreadEngineBase19startSingleThreadedEv" title='QtConcurrent::ThreadEngineBase::startSingleThreaded' data-ref="_ZN12QtConcurrent16ThreadEngineBase19startSingleThreadedEv">startSingleThreaded</dfn>();</td></tr>
+<tr><th id="58">58</th><td>    <em>void</em> <dfn class="decl fn" id="_ZN12QtConcurrent16ThreadEngineBase11startThreadEv" title='QtConcurrent::ThreadEngineBase::startThread' data-ref="_ZN12QtConcurrent16ThreadEngineBase11startThreadEv">startThread</dfn>();</td></tr>
+<tr><th id="59">59</th><td>    <em>bool</em> <dfn class="decl fn" id="_ZN12QtConcurrent16ThreadEngineBase10isCanceledEv" title='QtConcurrent::ThreadEngineBase::isCanceled' data-ref="_ZN12QtConcurrent16ThreadEngineBase10isCanceledEv">isCanceled</dfn>();</td></tr>
+<tr><th id="60">60</th><td>    <em>void</em> <dfn class="decl fn" id="_ZN12QtConcurrent16ThreadEngineBase13waitForResumeEv" title='QtConcurrent::ThreadEngineBase::waitForResume' data-ref="_ZN12QtConcurrent16ThreadEngineBase13waitForResumeEv">waitForResume</dfn>();</td></tr>
+<tr><th id="61">61</th><td>    <em>bool</em> <dfn class="decl fn" id="_ZN12QtConcurrent16ThreadEngineBase26isProgressReportingEnabledEv" title='QtConcurrent::ThreadEngineBase::isProgressReportingEnabled' data-ref="_ZN12QtConcurrent16ThreadEngineBase26isProgressReportingEnabledEv">isProgressReportingEnabled</dfn>();</td></tr>
+<tr><th id="62">62</th><td>    <em>void</em> <dfn class="decl fn" id="_ZN12QtConcurrent16ThreadEngineBase16setProgressValueEi" title='QtConcurrent::ThreadEngineBase::setProgressValue' data-ref="_ZN12QtConcurrent16ThreadEngineBase16setProgressValueEi">setProgressValue</dfn>(<em>int</em> <dfn class="local col5 decl" id="5progress" title='progress' data-type='int' data-ref="5progress">progress</dfn>);</td></tr>
+<tr><th id="63">63</th><td>    <em>void</em> <dfn class="decl fn" id="_ZN12QtConcurrent16ThreadEngineBase16setProgressRangeEii" title='QtConcurrent::ThreadEngineBase::setProgressRange' data-ref="_ZN12QtConcurrent16ThreadEngineBase16setProgressRangeEii">setProgressRange</dfn>(<em>int</em> <dfn class="local col6 decl" id="6minimum" title='minimum' data-type='int' data-ref="6minimum">minimum</dfn>, <em>int</em> <dfn class="local col7 decl" id="7maximum" title='maximum' data-type='int' data-ref="7maximum">maximum</dfn>);</td></tr>
+<tr><th id="64">64</th><td>    <em>void</em> <dfn class="decl fn" id="_ZN12QtConcurrent16ThreadEngineBase23acquireBarrierSemaphoreEv" title='QtConcurrent::ThreadEngineBase::acquireBarrierSemaphore' data-ref="_ZN12QtConcurrent16ThreadEngineBase23acquireBarrierSemaphoreEv">acquireBarrierSemaphore</dfn>();</td></tr>
+<tr><th id="65">65</th><td>    <em>void</em> <dfn class="decl fn" id="_ZNK12QtConcurrent16ThreadEngineBase22reportIfSuspensionDoneEv" title='QtConcurrent::ThreadEngineBase::reportIfSuspensionDone' data-ref="_ZNK12QtConcurrent16ThreadEngineBase22reportIfSuspensionDoneEv">reportIfSuspensionDone</dfn>() <em>const</em>;</td></tr>
+<tr><th id="66">66</th><td></td></tr>
+<tr><th id="67">67</th><td><b>protected</b>: <i>// The user overrides these:</i></td></tr>
+<tr><th id="68">68</th><td>    <b>virtual</b> <em>void</em> <dfn class="virtual decl def fn" id="_ZN12QtConcurrent16ThreadEngineBase5startEv" title='QtConcurrent::ThreadEngineBase::start' data-ref="_ZN12QtConcurrent16ThreadEngineBase5startEv">start</dfn>() {}</td></tr>
+<tr><th id="69">69</th><td>    <b>virtual</b> <em>void</em> <dfn class="virtual decl def fn" id="_ZN12QtConcurrent16ThreadEngineBase6finishEv" title='QtConcurrent::ThreadEngineBase::finish' data-ref="_ZN12QtConcurrent16ThreadEngineBase6finishEv">finish</dfn>() {}</td></tr>
+<tr><th id="70">70</th><td>    <b>virtual</b> <a class="type" href="#QtConcurrent::ThreadFunctionResult" title='QtConcurrent::ThreadFunctionResult' data-ref="QtConcurrent::ThreadFunctionResult">ThreadFunctionResult</a> <dfn class="virtual decl def fn" id="_ZN12QtConcurrent16ThreadEngineBase14threadFunctionEv" title='QtConcurrent::ThreadEngineBase::threadFunction' data-ref="_ZN12QtConcurrent16ThreadEngineBase14threadFunctionEv">threadFunction</dfn>() { <b>return</b> <a class="enum" href="#QtConcurrent::ThreadFinished" title='QtConcurrent::ThreadFinished' data-ref="QtConcurrent::ThreadFinished">ThreadFinished</a>; }</td></tr>
+<tr><th id="71">71</th><td>    <b>virtual</b> <em>bool</em> <dfn class="virtual decl def fn" id="_ZN12QtConcurrent16ThreadEngineBase17shouldStartThreadEv" title='QtConcurrent::ThreadEngineBase::shouldStartThread' data-ref="_ZN12QtConcurrent16ThreadEngineBase17shouldStartThreadEv">shouldStartThread</dfn>() { <b>return</b> !<a class="virtual member fn" href="#_ZN12QtConcurrent16ThreadEngineBase20shouldThrottleThreadEv" title='QtConcurrent::ThreadEngineBase::shouldThrottleThread' data-ref="_ZN12QtConcurrent16ThreadEngineBase20shouldThrottleThreadEv">shouldThrottleThread</a>(); }</td></tr>
+<tr><th id="72">72</th><td>    <b>virtual</b> <em>bool</em> <dfn class="virtual decl def fn" id="_ZN12QtConcurrent16ThreadEngineBase20shouldThrottleThreadEv" title='QtConcurrent::ThreadEngineBase::shouldThrottleThread' data-ref="_ZN12QtConcurrent16ThreadEngineBase20shouldThrottleThreadEv">shouldThrottleThread</dfn>()</td></tr>
+<tr><th id="73">73</th><td>    {</td></tr>
+<tr><th id="74">74</th><td>        <b>return</b> <a class="member field" href="#QtConcurrent::ThreadEngineBase::futureInterface" title='QtConcurrent::ThreadEngineBase::futureInterface' data-ref="QtConcurrent::ThreadEngineBase::futureInterface">futureInterface</a> ? (<a class="member field" href="#QtConcurrent::ThreadEngineBase::futureInterface" title='QtConcurrent::ThreadEngineBase::futureInterface' data-ref="QtConcurrent::ThreadEngineBase::futureInterface">futureInterface</a>-&gt;<a class="ref fn" href="../corelib/thread/qfutureinterface.h.html#_ZNK20QFutureInterfaceBase12isSuspendingEv" title='QFutureInterfaceBase::isSuspending' data-ref="_ZNK20QFutureInterfaceBase12isSuspendingEv">isSuspending</a>() || <a class="member field" href="#QtConcurrent::ThreadEngineBase::futureInterface" title='QtConcurrent::ThreadEngineBase::futureInterface' data-ref="QtConcurrent::ThreadEngineBase::futureInterface">futureInterface</a>-&gt;<a class="ref fn" href="../corelib/thread/qfutureinterface.h.html#_ZNK20QFutureInterfaceBase11isSuspendedEv" title='QFutureInterfaceBase::isSuspended' data-ref="_ZNK20QFutureInterfaceBase11isSuspendedEv">isSuspended</a>())</td></tr>
+<tr><th id="75">75</th><td>                               : <b>false</b>;</td></tr>
+<tr><th id="76">76</th><td>    }</td></tr>
+<tr><th id="77">77</th><td></td></tr>
+<tr><th id="78">78</th><td><b>private</b>:</td></tr>
+<tr><th id="79">79</th><td>    <em>bool</em> <dfn class="decl fn" id="_ZN12QtConcurrent16ThreadEngineBase19startThreadInternalEv" title='QtConcurrent::ThreadEngineBase::startThreadInternal' data-ref="_ZN12QtConcurrent16ThreadEngineBase19startThreadInternalEv">startThreadInternal</dfn>();</td></tr>
+<tr><th id="80">80</th><td>    <em>void</em> <dfn class="decl fn" id="_ZN12QtConcurrent16ThreadEngineBase12startThreadsEv" title='QtConcurrent::ThreadEngineBase::startThreads' data-ref="_ZN12QtConcurrent16ThreadEngineBase12startThreadsEv">startThreads</dfn>();</td></tr>
+<tr><th id="81">81</th><td>    <em>void</em> <dfn class="decl fn" id="_ZN12QtConcurrent16ThreadEngineBase10threadExitEv" title='QtConcurrent::ThreadEngineBase::threadExit' data-ref="_ZN12QtConcurrent16ThreadEngineBase10threadExitEv">threadExit</dfn>();</td></tr>
+<tr><th id="82">82</th><td>    <em>bool</em> <dfn class="decl fn" id="_ZN12QtConcurrent16ThreadEngineBase18threadThrottleExitEv" title='QtConcurrent::ThreadEngineBase::threadThrottleExit' data-ref="_ZN12QtConcurrent16ThreadEngineBase18threadThrottleExitEv">threadThrottleExit</dfn>();</td></tr>
+<tr><th id="83">83</th><td>    <em>void</em> <dfn class="virtual decl fn" id="_ZN12QtConcurrent16ThreadEngineBase3runEv" title='QtConcurrent::ThreadEngineBase::run' data-ref="_ZN12QtConcurrent16ThreadEngineBase3runEv">run</dfn>() override;</td></tr>
+<tr><th id="84">84</th><td>    <b>virtual</b> <em>void</em> <dfn class="virtual decl fn" id="_ZN12QtConcurrent16ThreadEngineBase18asynchronousFinishEv" title='QtConcurrent::ThreadEngineBase::asynchronousFinish' data-ref="_ZN12QtConcurrent16ThreadEngineBase18asynchronousFinishEv">asynchronousFinish</dfn>() = <var>0</var>;</td></tr>
+<tr><th id="85">85</th><td><u>#<span data-ppcond="85">ifndef</span> <span class="macro" data-ref="_M/QT_NO_EXCEPTIONS">QT_NO_EXCEPTIONS</span></u></td></tr>
+<tr><th id="86">86</th><td>    <em>void</em> <dfn class="decl fn" id="_ZN12QtConcurrent16ThreadEngineBase15handleExceptionERK10QException" title='QtConcurrent::ThreadEngineBase::handleException' data-ref="_ZN12QtConcurrent16ThreadEngineBase15handleExceptionERK10QException">handleException</dfn>(<em>const</em> <a class="type" href="../corelib/thread/qexception.h.html#QException" title='QException' data-ref="QException">QException</a> &amp;<dfn class="local col8 decl" id="8exception" title='exception' data-type='const QException &amp;' data-ref="8exception">exception</dfn>);</td></tr>
+<tr><th id="87">87</th><td><u>#<span data-ppcond="85">endif</span></u></td></tr>
+<tr><th id="88">88</th><td><b>protected</b>:</td></tr>
+<tr><th id="89">89</th><td>    <a class="type" href="../corelib/thread/qfutureinterface.h.html#QFutureInterfaceBase" title='QFutureInterfaceBase' data-ref="QFutureInterfaceBase">QFutureInterfaceBase</a> *<dfn class="decl field" id="QtConcurrent::ThreadEngineBase::futureInterface" title='QtConcurrent::ThreadEngineBase::futureInterface' data-ref="QtConcurrent::ThreadEngineBase::futureInterface">futureInterface</dfn>;</td></tr>
+<tr><th id="90">90</th><td>    <a class="type" href="../corelib/thread/qthreadpool.h.html#QThreadPool" title='QThreadPool' data-ref="QThreadPool">QThreadPool</a> *<dfn class="decl field" id="QtConcurrent::ThreadEngineBase::threadPool" title='QtConcurrent::ThreadEngineBase::threadPool' data-ref="QtConcurrent::ThreadEngineBase::threadPool">threadPool</dfn>;</td></tr>
+<tr><th id="91">91</th><td>    <a class="type" href="#QtConcurrent::ThreadEngineBarrier" title='QtConcurrent::ThreadEngineBarrier' data-ref="QtConcurrent::ThreadEngineBarrier">ThreadEngineBarrier</a> <dfn class="decl field" id="QtConcurrent::ThreadEngineBase::barrier" title='QtConcurrent::ThreadEngineBase::barrier' data-ref="QtConcurrent::ThreadEngineBase::barrier">barrier</dfn>;</td></tr>
+<tr><th id="92">92</th><td>    <span class="namespace">QtPrivate::</span><a class="type" href="../corelib/thread/qexception.h.html#QtPrivate::ExceptionStore" title='QtPrivate::ExceptionStore' data-ref="QtPrivate::ExceptionStore">ExceptionStore</a> <dfn class="decl field" id="QtConcurrent::ThreadEngineBase::exceptionStore" title='QtConcurrent::ThreadEngineBase::exceptionStore' data-ref="QtConcurrent::ThreadEngineBase::exceptionStore">exceptionStore</dfn>;</td></tr>
+<tr><th id="93">93</th><td>    <a class="type" href="../corelib/thread/qmutex.h.html#QBasicMutex" title='QBasicMutex' data-ref="QBasicMutex">QBasicMutex</a> <dfn class="decl field" id="QtConcurrent::ThreadEngineBase::mutex" title='QtConcurrent::ThreadEngineBase::mutex' data-ref="QtConcurrent::ThreadEngineBase::mutex">mutex</dfn>;</td></tr>
+<tr><th id="94">94</th><td>};</td></tr>
+<tr><th id="95">95</th><td></td></tr>
+<tr><th id="96">96</th><td></td></tr>
+<tr><th id="97">97</th><td><b>template</b> &lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="98">98</th><td><b>class</b> <dfn class="type def" id="QtConcurrent::ThreadEngine" title='QtConcurrent::ThreadEngine' data-ref="QtConcurrent::ThreadEngine">ThreadEngine</dfn> : <b>public</b> <a class="type" href="#QtConcurrent::ThreadEngineBase" title='QtConcurrent::ThreadEngineBase' data-ref="QtConcurrent::ThreadEngineBase">ThreadEngineBase</a></td></tr>
+<tr><th id="99">99</th><td>{</td></tr>
+<tr><th id="100">100</th><td><b>public</b>:</td></tr>
+<tr><th id="101">101</th><td>    <b>typedef</b> T <dfn class="typedef" id="QtConcurrent::ThreadEngine::ResultType" title='QtConcurrent::ThreadEngine::ResultType' data-type='T' data-ref="QtConcurrent::ThreadEngine::ResultType">ResultType</dfn>;</td></tr>
+<tr><th id="102">102</th><td></td></tr>
+<tr><th id="103">103</th><td>    <dfn class="decl def fn" id="_ZN12QtConcurrent12ThreadEngineC1EP11QThreadPool" title='QtConcurrent::ThreadEngine::ThreadEngine&lt;T&gt;' data-ref="_ZN12QtConcurrent12ThreadEngineC1EP11QThreadPool">ThreadEngine</dfn>(<a class="type" href="../corelib/thread/qthreadpool.h.html#QThreadPool" title='QThreadPool' data-ref="QThreadPool">QThreadPool</a> *<dfn class="local col9 decl" id="9pool" title='pool' data-type='QThreadPool *' data-ref="9pool">pool</dfn>) : <a class="type" href="#QtConcurrent::ThreadEngineBase" title='QtConcurrent::ThreadEngineBase' data-ref="QtConcurrent::ThreadEngineBase">ThreadEngineBase</a>(<a class="local col9 ref" href="#9pool" title='pool' data-ref="9pool">pool</a>) {}</td></tr>
+<tr><th id="104">104</th><td></td></tr>
+<tr><th id="105">105</th><td>    <b>virtual</b> T *<dfn class="virtual decl def fn" id="_ZN12QtConcurrent12ThreadEngine6resultEv" title='QtConcurrent::ThreadEngine::result' data-ref="_ZN12QtConcurrent12ThreadEngine6resultEv">result</dfn>() { <b>return</b> <b>nullptr</b>; }</td></tr>
+<tr><th id="106">106</th><td></td></tr>
+<tr><th id="107">107</th><td>    <a class="type" href="../corelib/thread/qfutureinterface.h.html#QFutureInterface" title='QFutureInterface' data-ref="QFutureInterface">QFutureInterface</a>&lt;T&gt; *<dfn class="decl def fn" id="_ZN12QtConcurrent12ThreadEngine20futureInterfaceTypedEv" title='QtConcurrent::ThreadEngine::futureInterfaceTyped' data-ref="_ZN12QtConcurrent12ThreadEngine20futureInterfaceTypedEv">futureInterfaceTyped</dfn>()</td></tr>
+<tr><th id="108">108</th><td>    {</td></tr>
+<tr><th id="109">109</th><td>        <b>return</b> <b>static_cast</b>&lt;<a class="type" href="../corelib/thread/qfutureinterface.h.html#QFutureInterface" title='QFutureInterface' data-ref="QFutureInterface">QFutureInterface</a>&lt;T&gt; *&gt;(<a class="member field" href="#QtConcurrent::ThreadEngineBase::futureInterface" title='QtConcurrent::ThreadEngineBase::futureInterface' data-ref="QtConcurrent::ThreadEngineBase::futureInterface">futureInterface</a>);</td></tr>
+<tr><th id="110">110</th><td>    }</td></tr>
+<tr><th id="111">111</th><td></td></tr>
+<tr><th id="112">112</th><td>    <i>// Runs the user algorithm using a single thread.</i></td></tr>
+<tr><th id="113">113</th><td>    T *<dfn class="decl def fn" id="_ZN12QtConcurrent12ThreadEngine19startSingleThreadedEv" title='QtConcurrent::ThreadEngine::startSingleThreaded' data-ref="_ZN12QtConcurrent12ThreadEngine19startSingleThreadedEv">startSingleThreaded</dfn>()</td></tr>
+<tr><th id="114">114</th><td>    {</td></tr>
+<tr><th id="115">115</th><td>        <a class="type" href="#QtConcurrent::ThreadEngineBase" title='QtConcurrent::ThreadEngineBase' data-ref="QtConcurrent::ThreadEngineBase">ThreadEngineBase</a>::<a class="member fn" href="#_ZN12QtConcurrent16ThreadEngineBase19startSingleThreadedEv" title='QtConcurrent::ThreadEngineBase::startSingleThreaded' data-ref="_ZN12QtConcurrent16ThreadEngineBase19startSingleThreadedEv">startSingleThreaded</a>();</td></tr>
+<tr><th id="116">116</th><td>        <b>return</b> <a class="virtual member fn" href="#_ZN12QtConcurrent12ThreadEngine6resultEv" title='QtConcurrent::ThreadEngine::result' data-ref="_ZN12QtConcurrent12ThreadEngine6resultEv">result</a>();</td></tr>
+<tr><th id="117">117</th><td>    }</td></tr>
+<tr><th id="118">118</th><td></td></tr>
+<tr><th id="119">119</th><td>    <i>// Runs the user algorithm using multiple threads.</i></td></tr>
+<tr><th id="120">120</th><td><i>    // Does not block, returns a future.</i></td></tr>
+<tr><th id="121">121</th><td>    <a class="type" href="../corelib/thread/qfutureinterface.h.html#QFuture" title='QFuture' data-ref="QFuture">QFuture</a>&lt;T&gt; <dfn class="decl def fn" id="_ZN12QtConcurrent12ThreadEngine19startAsynchronouslyEv" title='QtConcurrent::ThreadEngine::startAsynchronously' data-ref="_ZN12QtConcurrent12ThreadEngine19startAsynchronouslyEv">startAsynchronously</dfn>()</td></tr>
+<tr><th id="122">122</th><td>    {</td></tr>
+<tr><th id="123">123</th><td>        <a class="member field" href="#QtConcurrent::ThreadEngineBase::futureInterface" title='QtConcurrent::ThreadEngineBase::futureInterface' data-ref="QtConcurrent::ThreadEngineBase::futureInterface">futureInterface</a> = <b>new</b> <a class="type" href="../corelib/thread/qfutureinterface.h.html#QFutureInterface" title='QFutureInterface' data-ref="QFutureInterface">QFutureInterface</a>&lt;T&gt;();</td></tr>
+<tr><th id="124">124</th><td></td></tr>
+<tr><th id="125">125</th><td>        <i>// reportStart() must be called before starting threads, otherwise the</i></td></tr>
+<tr><th id="126">126</th><td><i>        // user algorithm might finish while reportStart() is running, which</i></td></tr>
+<tr><th id="127">127</th><td><i>        // is very bad.</i></td></tr>
+<tr><th id="128">128</th><td>        <a class="member field" href="#QtConcurrent::ThreadEngineBase::futureInterface" title='QtConcurrent::ThreadEngineBase::futureInterface' data-ref="QtConcurrent::ThreadEngineBase::futureInterface">futureInterface</a>-&gt;<a class="ref fn" href="../corelib/thread/qfutureinterface.h.html#_ZN20QFutureInterfaceBase13reportStartedEv" title='QFutureInterfaceBase::reportStarted' data-ref="_ZN20QFutureInterfaceBase13reportStartedEv">reportStarted</a>();</td></tr>
+<tr><th id="129">129</th><td>        <a class="type" href="../corelib/thread/qfutureinterface.h.html#QFuture" title='QFuture' data-ref="QFuture">QFuture</a>&lt;T&gt; <dfn class="local col0 decl" id="10future" title='future' data-type='QFuture&lt;T&gt;' data-ref="10future">future</dfn> = <a class="type" href="../corelib/thread/qfutureinterface.h.html#QFuture" title='QFuture' data-ref="QFuture">QFuture</a>&lt;T&gt;(<a class="member fn" href="#_ZN12QtConcurrent12ThreadEngine20futureInterfaceTypedEv" title='QtConcurrent::ThreadEngine::futureInterfaceTyped' data-ref="_ZN12QtConcurrent12ThreadEngine20futureInterfaceTypedEv">futureInterfaceTyped</a>());</td></tr>
+<tr><th id="130">130</th><td>        <a class="virtual member fn" href="#_ZN12QtConcurrent16ThreadEngineBase5startEv" title='QtConcurrent::ThreadEngineBase::start' data-ref="_ZN12QtConcurrent16ThreadEngineBase5startEv">start</a>();</td></tr>
+<tr><th id="131">131</th><td></td></tr>
+<tr><th id="132">132</th><td>        <a class="member fn" href="#_ZN12QtConcurrent16ThreadEngineBase23acquireBarrierSemaphoreEv" title='QtConcurrent::ThreadEngineBase::acquireBarrierSemaphore' data-ref="_ZN12QtConcurrent16ThreadEngineBase23acquireBarrierSemaphoreEv">acquireBarrierSemaphore</a>();</td></tr>
+<tr><th id="133">133</th><td>        <a class="member field" href="#QtConcurrent::ThreadEngineBase::threadPool" title='QtConcurrent::ThreadEngineBase::threadPool' data-ref="QtConcurrent::ThreadEngineBase::threadPool">threadPool</a>-&gt;start(<b>this</b>);</td></tr>
+<tr><th id="134">134</th><td>        <b>return</b> <a class="local col0 ref" href="#10future" title='future' data-ref="10future">future</a>;</td></tr>
+<tr><th id="135">135</th><td>    }</td></tr>
+<tr><th id="136">136</th><td></td></tr>
+<tr><th id="137">137</th><td>    <em>void</em> <dfn class="virtual decl def fn" id="_ZN12QtConcurrent12ThreadEngine18asynchronousFinishEv" title='QtConcurrent::ThreadEngine::asynchronousFinish' data-ref="_ZN12QtConcurrent12ThreadEngine18asynchronousFinishEv">asynchronousFinish</dfn>() override</td></tr>
+<tr><th id="138">138</th><td>    {</td></tr>
+<tr><th id="139">139</th><td>        <a class="virtual member fn" href="#_ZN12QtConcurrent16ThreadEngineBase6finishEv" title='QtConcurrent::ThreadEngineBase::finish' data-ref="_ZN12QtConcurrent16ThreadEngineBase6finishEv">finish</a>();</td></tr>
+<tr><th id="140">140</th><td>        <a class="member fn" href="#_ZN12QtConcurrent12ThreadEngine20futureInterfaceTypedEv" title='QtConcurrent::ThreadEngine::futureInterfaceTyped' data-ref="_ZN12QtConcurrent12ThreadEngine20futureInterfaceTypedEv">futureInterfaceTyped</a>()-&gt;reportFinished(<a class="virtual member fn" href="#_ZN12QtConcurrent12ThreadEngine6resultEv" title='QtConcurrent::ThreadEngine::result' data-ref="_ZN12QtConcurrent12ThreadEngine6resultEv">result</a>());</td></tr>
+<tr><th id="141">141</th><td>        <b>delete</b> <a class="member fn" href="#_ZN12QtConcurrent12ThreadEngine20futureInterfaceTypedEv" title='QtConcurrent::ThreadEngine::futureInterfaceTyped' data-ref="_ZN12QtConcurrent12ThreadEngine20futureInterfaceTypedEv">futureInterfaceTyped</a>();</td></tr>
+<tr><th id="142">142</th><td>        <b>delete</b> <b>this</b>;</td></tr>
+<tr><th id="143">143</th><td>    }</td></tr>
+<tr><th id="144">144</th><td></td></tr>
+<tr><th id="145">145</th><td></td></tr>
+<tr><th id="146">146</th><td>    <em>void</em> <dfn class="decl def fn" id="_ZN12QtConcurrent12ThreadEngine12reportResultEPKT_i" title='QtConcurrent::ThreadEngine::reportResult' data-ref="_ZN12QtConcurrent12ThreadEngine12reportResultEPKT_i">reportResult</dfn>(<em>const</em> T *<dfn class="local col1 decl" id="11_result" title='_result' data-type='const T *' data-ref="11_result">_result</dfn>, <em>int</em> <dfn class="local col2 decl" id="12index" title='index' data-type='int' data-ref="12index">index</dfn> = -<var>1</var>)</td></tr>
+<tr><th id="147">147</th><td>    {</td></tr>
+<tr><th id="148">148</th><td>        <b>if</b> (<a class="member field" href="#QtConcurrent::ThreadEngineBase::futureInterface" title='QtConcurrent::ThreadEngineBase::futureInterface' data-ref="QtConcurrent::ThreadEngineBase::futureInterface">futureInterface</a>)</td></tr>
+<tr><th id="149">149</th><td>            <a class="member fn" href="#_ZN12QtConcurrent12ThreadEngine20futureInterfaceTypedEv" title='QtConcurrent::ThreadEngine::futureInterfaceTyped' data-ref="_ZN12QtConcurrent12ThreadEngine20futureInterfaceTypedEv">futureInterfaceTyped</a>()-&gt;reportResult(<a class="local col1 ref" href="#11_result" title='_result' data-ref="11_result">_result</a>, <a class="local col2 ref" href="#12index" title='index' data-ref="12index">index</a>);</td></tr>
+<tr><th id="150">150</th><td>    }</td></tr>
+<tr><th id="151">151</th><td></td></tr>
+<tr><th id="152">152</th><td>    <em>void</em> <dfn class="decl def fn" id="_ZN12QtConcurrent12ThreadEngine13reportResultsERK5QListIT_Eii" title='QtConcurrent::ThreadEngine::reportResults' data-ref="_ZN12QtConcurrent12ThreadEngine13reportResultsERK5QListIT_Eii">reportResults</dfn>(<em>const</em> <a class="type" href="../corelib/tools/qcontainerfwd.h.html#QList" title='QList' data-ref="QList">QList</a>&lt;T&gt; &amp;<dfn class="local col3 decl" id="13_result" title='_result' data-type='const QList&lt;T&gt; &amp;' data-ref="13_result">_result</dfn>, <em>int</em> <dfn class="local col4 decl" id="14index" title='index' data-type='int' data-ref="14index">index</dfn> = -<var>1</var>, <em>int</em> <dfn class="local col5 decl" id="15count" title='count' data-type='int' data-ref="15count">count</dfn> = -<var>1</var>)</td></tr>
+<tr><th id="153">153</th><td>    {</td></tr>
+<tr><th id="154">154</th><td>        <b>if</b> (<a class="member field" href="#QtConcurrent::ThreadEngineBase::futureInterface" title='QtConcurrent::ThreadEngineBase::futureInterface' data-ref="QtConcurrent::ThreadEngineBase::futureInterface">futureInterface</a>)</td></tr>
+<tr><th id="155">155</th><td>            <a class="member fn" href="#_ZN12QtConcurrent12ThreadEngine20futureInterfaceTypedEv" title='QtConcurrent::ThreadEngine::futureInterfaceTyped' data-ref="_ZN12QtConcurrent12ThreadEngine20futureInterfaceTypedEv">futureInterfaceTyped</a>()-&gt;reportResults(<a class="local col3 ref" href="#13_result" title='_result' data-ref="13_result">_result</a>, <a class="local col4 ref" href="#14index" title='index' data-ref="14index">index</a>, <a class="local col5 ref" href="#15count" title='count' data-ref="15count">count</a>);</td></tr>
+<tr><th id="156">156</th><td>    }</td></tr>
+<tr><th id="157">157</th><td>};</td></tr>
+<tr><th id="158">158</th><td></td></tr>
+<tr><th id="159">159</th><td><i>// The ThreadEngineStarter class ecapsulates the return type</i></td></tr>
+<tr><th id="160">160</th><td><i>// from the thread engine.</i></td></tr>
+<tr><th id="161">161</th><td><i>// Depending on how the it is used, it will run</i></td></tr>
+<tr><th id="162">162</th><td><i>// the engine in either blocking mode or asynchronous mode.</i></td></tr>
+<tr><th id="163">163</th><td><b>template</b> &lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="164">164</th><td><b>class</b> <dfn class="type def" id="QtConcurrent::ThreadEngineStarterBase" title='QtConcurrent::ThreadEngineStarterBase' data-ref="QtConcurrent::ThreadEngineStarterBase">ThreadEngineStarterBase</dfn></td></tr>
+<tr><th id="165">165</th><td>{</td></tr>
+<tr><th id="166">166</th><td><b>public</b>:</td></tr>
+<tr><th id="167">167</th><td>    <dfn class="decl def fn" id="_ZN12QtConcurrent23ThreadEngineStarterBaseC1EPNS_12ThreadEngineIT_EE" title='QtConcurrent::ThreadEngineStarterBase::ThreadEngineStarterBase&lt;T&gt;' data-ref="_ZN12QtConcurrent23ThreadEngineStarterBaseC1EPNS_12ThreadEngineIT_EE">ThreadEngineStarterBase</dfn>(<a class="type" href="#QtConcurrent::ThreadEngine" title='QtConcurrent::ThreadEngine' data-ref="QtConcurrent::ThreadEngine">ThreadEngine</a>&lt;T&gt; *<dfn class="local col6 decl" id="16_threadEngine" title='_threadEngine' data-type='ThreadEngine&lt;T&gt; *' data-ref="16_threadEngine">_threadEngine</dfn>)</td></tr>
+<tr><th id="168">168</th><td>    : <a class="member field" href="#QtConcurrent::ThreadEngineStarterBase::threadEngine" title='QtConcurrent::ThreadEngineStarterBase::threadEngine' data-ref="QtConcurrent::ThreadEngineStarterBase::threadEngine">threadEngine</a>(<a class="local col6 ref" href="#16_threadEngine" title='_threadEngine' data-ref="16_threadEngine">_threadEngine</a>) { }</td></tr>
+<tr><th id="169">169</th><td></td></tr>
+<tr><th id="170">170</th><td>    <b>inline</b> <dfn class="decl def fn" id="_ZN12QtConcurrent23ThreadEngineStarterBaseC1ERKNS_23ThreadEngineStarterBaseIT_EE" title='QtConcurrent::ThreadEngineStarterBase::ThreadEngineStarterBase&lt;T&gt;' data-ref="_ZN12QtConcurrent23ThreadEngineStarterBaseC1ERKNS_23ThreadEngineStarterBaseIT_EE">ThreadEngineStarterBase</dfn>(<em>const</em> ThreadEngineStarterBase &amp;<dfn class="local col7 decl" id="17other" title='other' data-type='const ThreadEngineStarterBase&lt;T&gt; &amp;' data-ref="17other">other</dfn>)</td></tr>
+<tr><th id="171">171</th><td>    : <a class="member field" href="#QtConcurrent::ThreadEngineStarterBase::threadEngine" title='QtConcurrent::ThreadEngineStarterBase::threadEngine' data-ref="QtConcurrent::ThreadEngineStarterBase::threadEngine">threadEngine</a>(<a class="local col7 ref" href="#17other" title='other' data-ref="17other">other</a>.threadEngine) { }</td></tr>
+<tr><th id="172">172</th><td></td></tr>
+<tr><th id="173">173</th><td>    <a class="type" href="../corelib/thread/qfutureinterface.h.html#QFuture" title='QFuture' data-ref="QFuture">QFuture</a>&lt;T&gt; <dfn class="decl def fn" id="_ZN12QtConcurrent23ThreadEngineStarterBase19startAsynchronouslyEv" title='QtConcurrent::ThreadEngineStarterBase::startAsynchronously' data-ref="_ZN12QtConcurrent23ThreadEngineStarterBase19startAsynchronouslyEv">startAsynchronously</dfn>()</td></tr>
+<tr><th id="174">174</th><td>    {</td></tr>
+<tr><th id="175">175</th><td>        <b>return</b> <a class="member field" href="#QtConcurrent::ThreadEngineStarterBase::threadEngine" title='QtConcurrent::ThreadEngineStarterBase::threadEngine' data-ref="QtConcurrent::ThreadEngineStarterBase::threadEngine">threadEngine</a>-&gt;startAsynchronously();</td></tr>
+<tr><th id="176">176</th><td>    }</td></tr>
+<tr><th id="177">177</th><td></td></tr>
+<tr><th id="178">178</th><td>    <dfn class="decl def fn" id="_ZN12QtConcurrent23ThreadEngineStarterBasecv7QFutureIT_EEv" title='QtConcurrent::ThreadEngineStarterBase::operator QFuture&lt;type-parameter-0-0&gt;' data-ref="_ZN12QtConcurrent23ThreadEngineStarterBasecv7QFutureIT_EEv"><b>operator</b> <a class="type" href="../corelib/thread/qfutureinterface.h.html#QFuture" title='QFuture' data-ref="QFuture">QFuture</a>&lt;T&gt;</dfn>()</td></tr>
+<tr><th id="179">179</th><td>    {</td></tr>
+<tr><th id="180">180</th><td>        <b>return</b> <a class="member fn" href="#_ZN12QtConcurrent23ThreadEngineStarterBase19startAsynchronouslyEv" title='QtConcurrent::ThreadEngineStarterBase::startAsynchronously' data-ref="_ZN12QtConcurrent23ThreadEngineStarterBase19startAsynchronouslyEv">startAsynchronously</a>();</td></tr>
+<tr><th id="181">181</th><td>    }</td></tr>
+<tr><th id="182">182</th><td></td></tr>
+<tr><th id="183">183</th><td><b>protected</b>:</td></tr>
+<tr><th id="184">184</th><td>    <a class="type" href="#QtConcurrent::ThreadEngine" title='QtConcurrent::ThreadEngine' data-ref="QtConcurrent::ThreadEngine">ThreadEngine</a>&lt;T&gt; *<dfn class="decl field" id="QtConcurrent::ThreadEngineStarterBase::threadEngine" title='QtConcurrent::ThreadEngineStarterBase::threadEngine' data-ref="QtConcurrent::ThreadEngineStarterBase::threadEngine">threadEngine</dfn>;</td></tr>
+<tr><th id="185">185</th><td>};</td></tr>
+<tr><th id="186">186</th><td></td></tr>
+<tr><th id="187">187</th><td></td></tr>
+<tr><th id="188">188</th><td><i>// We need to factor out the code that dereferences the T pointer,</i></td></tr>
+<tr><th id="189">189</th><td><i>// with a specialization where T is void. (code that dereferences a void *</i></td></tr>
+<tr><th id="190">190</th><td><i>// won't compile)</i></td></tr>
+<tr><th id="191">191</th><td><b>template</b> &lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="192">192</th><td><b>class</b> <dfn class="type def" id="QtConcurrent::ThreadEngineStarter" title='QtConcurrent::ThreadEngineStarter' data-ref="QtConcurrent::ThreadEngineStarter">ThreadEngineStarter</dfn> : <b>public</b> <a class="type" href="#QtConcurrent::ThreadEngineStarterBase" title='QtConcurrent::ThreadEngineStarterBase' data-ref="QtConcurrent::ThreadEngineStarterBase">ThreadEngineStarterBase</a>&lt;T&gt;</td></tr>
+<tr><th id="193">193</th><td>{</td></tr>
+<tr><th id="194">194</th><td>    <b>typedef</b> <a class="type" href="#QtConcurrent::ThreadEngineStarterBase" title='QtConcurrent::ThreadEngineStarterBase' data-ref="QtConcurrent::ThreadEngineStarterBase">ThreadEngineStarterBase</a>&lt;T&gt; <dfn class="typedef" id="QtConcurrent::ThreadEngineStarter::Base" title='QtConcurrent::ThreadEngineStarter::Base' data-type='ThreadEngineStarterBase&lt;T&gt;' data-ref="QtConcurrent::ThreadEngineStarter::Base">Base</dfn>;</td></tr>
+<tr><th id="195">195</th><td>    <b>typedef</b> <a class="type" href="#QtConcurrent::ThreadEngine" title='QtConcurrent::ThreadEngine' data-ref="QtConcurrent::ThreadEngine">ThreadEngine</a>&lt;T&gt; <dfn class="typedef" id="QtConcurrent::ThreadEngineStarter::TypedThreadEngine" title='QtConcurrent::ThreadEngineStarter::TypedThreadEngine' data-type='ThreadEngine&lt;T&gt;' data-ref="QtConcurrent::ThreadEngineStarter::TypedThreadEngine">TypedThreadEngine</dfn>;</td></tr>
+<tr><th id="196">196</th><td><b>public</b>:</td></tr>
+<tr><th id="197">197</th><td>    <dfn class="decl def fn" id="_ZN12QtConcurrent19ThreadEngineStarterC1EPNS_12ThreadEngineIT_EE" title='QtConcurrent::ThreadEngineStarter::ThreadEngineStarter&lt;T&gt;' data-ref="_ZN12QtConcurrent19ThreadEngineStarterC1EPNS_12ThreadEngineIT_EE">ThreadEngineStarter</dfn>(<a class="typedef" href="#QtConcurrent::ThreadEngineStarter::TypedThreadEngine" title='QtConcurrent::ThreadEngineStarter::TypedThreadEngine' data-type='ThreadEngine&lt;T&gt;' data-ref="QtConcurrent::ThreadEngineStarter::TypedThreadEngine">TypedThreadEngine</a> *<dfn class="local col8 decl" id="18eng" title='eng' data-type='QtConcurrent::ThreadEngineStarter::TypedThreadEngine *' data-ref="18eng">eng</dfn>)</td></tr>
+<tr><th id="198">198</th><td>        : <a class="typedef" href="#QtConcurrent::ThreadEngineStarter::Base" title='QtConcurrent::ThreadEngineStarter::Base' data-type='ThreadEngineStarterBase&lt;T&gt;' data-ref="QtConcurrent::ThreadEngineStarter::Base">Base</a>(<a class="local col8 ref" href="#18eng" title='eng' data-ref="18eng">eng</a>) { }</td></tr>
+<tr><th id="199">199</th><td>};</td></tr>
+<tr><th id="200">200</th><td></td></tr>
+<tr><th id="201">201</th><td><i>// Full template specialization where T is void.</i></td></tr>
+<tr><th id="202">202</th><td><b>template</b> &lt;&gt;</td></tr>
+<tr><th id="203">203</th><td><b>class</b> <dfn class="type def" id="QtConcurrent::ThreadEngineStarter" title='QtConcurrent::ThreadEngineStarter' data-ref="QtConcurrent::ThreadEngineStarter"><a class="type" href="#QtConcurrent::ThreadEngineStarter" title='QtConcurrent::ThreadEngineStarter' data-ref="QtConcurrent::ThreadEngineStarter">ThreadEngineStarter</a></dfn>&lt;<em>void</em>&gt; : <b>public</b> ThreadEngineStarterBase&lt;<em>void</em>&gt;</td></tr>
+<tr><th id="204">204</th><td>{</td></tr>
+<tr><th id="205">205</th><td><b>public</b>:</td></tr>
+<tr><th id="206">206</th><td>    <dfn class="decl def fn" id="_ZN12QtConcurrent19ThreadEngineStarterIvEC1EPNS_12ThreadEngineIvEE" title='QtConcurrent::ThreadEngineStarter&lt;void&gt;::ThreadEngineStarter' data-ref="_ZN12QtConcurrent19ThreadEngineStarterIvEC1EPNS_12ThreadEngineIvEE">ThreadEngineStarter</dfn>(<a class="type" href="#QtConcurrent::ThreadEngine" title='QtConcurrent::ThreadEngine' data-ref="QtConcurrent::ThreadEngine">ThreadEngine</a>&lt;<em>void</em>&gt; *<dfn class="local col9 decl" id="19_threadEngine" title='_threadEngine' data-type='ThreadEngine&lt;void&gt; *' data-ref="19_threadEngine">_threadEngine</dfn>)</td></tr>
+<tr><th id="207">207</th><td>        : <a class="type" href="#QtConcurrent::ThreadEngineStarterBase" title='QtConcurrent::ThreadEngineStarterBase' data-ref="QtConcurrent::ThreadEngineStarterBase">ThreadEngineStarterBase</a>&lt;<em>void</em>&gt;<a class="ref fn" href="#_ZN12QtConcurrent23ThreadEngineStarterBaseC1EPNS_12ThreadEngineIT_EE" title='QtConcurrent::ThreadEngineStarterBase::ThreadEngineStarterBase&lt;T&gt;' data-ref="_ZN12QtConcurrent23ThreadEngineStarterBaseC1EPNS_12ThreadEngineIT_EE">(</a><a class="local col9 ref" href="#19_threadEngine" title='_threadEngine' data-ref="19_threadEngine">_threadEngine</a>) {}</td></tr>
+<tr><th id="208">208</th><td>};</td></tr>
+<tr><th id="209">209</th><td></td></tr>
+<tr><th id="210">210</th><td><i class="doc">//! [qtconcurrentthreadengine-1]</i></td></tr>
+<tr><th id="211">211</th><td><b>template</b> &lt;<b>typename</b> ThreadEngine&gt;</td></tr>
+<tr><th id="212">212</th><td><b>inline</b> <a class="type" href="#QtConcurrent::ThreadEngineStarter" title='QtConcurrent::ThreadEngineStarter' data-ref="QtConcurrent::ThreadEngineStarter">ThreadEngineStarter</a>&lt;<b>typename</b> ThreadEngine::ResultType&gt; <dfn class="decl def fn" id="_ZN12QtConcurrent17startThreadEngineEPT_" title='QtConcurrent::startThreadEngine' data-ref="_ZN12QtConcurrent17startThreadEngineEPT_">startThreadEngine</dfn>(ThreadEngine *<dfn class="local col0 decl" id="20threadEngine" title='threadEngine' data-type='ThreadEngine *' data-ref="20threadEngine">threadEngine</dfn>)</td></tr>
+<tr><th id="213">213</th><td>{</td></tr>
+<tr><th id="214">214</th><td>    <b>return</b> <a class="type" href="#QtConcurrent::ThreadEngineStarter" title='QtConcurrent::ThreadEngineStarter' data-ref="QtConcurrent::ThreadEngineStarter">ThreadEngineStarter</a>&lt;<b>typename</b> ThreadEngine::ResultType&gt;(<a class="local col0 ref" href="#20threadEngine" title='threadEngine' data-ref="20threadEngine">threadEngine</a>);</td></tr>
+<tr><th id="215">215</th><td>}</td></tr>
+<tr><th id="216">216</th><td></td></tr>
+<tr><th id="217">217</th><td>} <i>// namespace QtConcurrent</i></td></tr>
+<tr><th id="218">218</th><td></td></tr>
+<tr><th id="219">219</th><td></td></tr>
+<tr><th id="220">220</th><td><a class="macro" href="../corelib/global/qtconfigmacros.h.html#104" title="" data-ref="_M/QT_END_NAMESPACE">QT_END_NAMESPACE</a></td></tr>
+<tr><th id="221">221</th><td></td></tr>
+<tr><th id="222">222</th><td><u>#<span data-ppcond="9">endif</span> // QT_NO_CONCURRENT</u></td></tr>
+<tr><th id="223">223</th><td></td></tr>
+<tr><th id="224">224</th><td><u>#<span data-ppcond="4">endif</span></u></td></tr>
+<tr><th id="225">225</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='qtconcurrentiteratekernel.cpp.html'>qtbase-6.5.0/src/concurrent/qtconcurrentiteratekernel.cpp</a><br/>Generated on <em>2024-Jun-13</em> from project qtbase-6.5.0 revision <em>6.5.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

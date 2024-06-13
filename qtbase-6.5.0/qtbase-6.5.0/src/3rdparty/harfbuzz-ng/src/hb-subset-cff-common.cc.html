@@ -1,0 +1,238 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>hb-subset-cff-common.cc source code [qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/hb-subset-cff-common.cc] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/hb-subset-cff-common.cc'; var root_path = '../../../../..'; var data_path = '../../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../..'>qtbase-6.5.0</a>/<a href='../../..'>src</a>/<a href='../..'>3rdparty</a>/<a href='..'>harfbuzz-ng</a>/<a href='./'>src</a>/<a href='hb-subset-cff-common.cc.html'>hb-subset-cff-common.cc</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*</i></td></tr>
+<tr><th id="2">2</th><td><i> * Copyright © 2018 Adobe Inc.</i></td></tr>
+<tr><th id="3">3</th><td><i> *</i></td></tr>
+<tr><th id="4">4</th><td><i> *  This is part of HarfBuzz, a text shaping library.</i></td></tr>
+<tr><th id="5">5</th><td><i> *</i></td></tr>
+<tr><th id="6">6</th><td><i> * Permission is hereby granted, without written agreement and without</i></td></tr>
+<tr><th id="7">7</th><td><i> * license or royalty fees, to use, copy, modify, and distribute this</i></td></tr>
+<tr><th id="8">8</th><td><i> * software and its documentation for any purpose, provided that the</i></td></tr>
+<tr><th id="9">9</th><td><i> * above copyright notice and the following two paragraphs appear in</i></td></tr>
+<tr><th id="10">10</th><td><i> * all copies of this software.</i></td></tr>
+<tr><th id="11">11</th><td><i> *</i></td></tr>
+<tr><th id="12">12</th><td><i> * IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR</i></td></tr>
+<tr><th id="13">13</th><td><i> * DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES</i></td></tr>
+<tr><th id="14">14</th><td><i> * ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN</i></td></tr>
+<tr><th id="15">15</th><td><i> * IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH</i></td></tr>
+<tr><th id="16">16</th><td><i> * DAMAGE.</i></td></tr>
+<tr><th id="17">17</th><td><i> *</i></td></tr>
+<tr><th id="18">18</th><td><i> * THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,</i></td></tr>
+<tr><th id="19">19</th><td><i> * BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND</i></td></tr>
+<tr><th id="20">20</th><td><i> * FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS</i></td></tr>
+<tr><th id="21">21</th><td><i> * ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO</i></td></tr>
+<tr><th id="22">22</th><td><i> * PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.</i></td></tr>
+<tr><th id="23">23</th><td><i> *</i></td></tr>
+<tr><th id="24">24</th><td><i> * Adobe Author(s): Michiharu Ariza</i></td></tr>
+<tr><th id="25">25</th><td><i> */</i></td></tr>
+<tr><th id="26">26</th><td></td></tr>
+<tr><th id="27">27</th><td><u>#include <a href="hb.hh.html">"hb.hh"</a></u></td></tr>
+<tr><th id="28">28</th><td></td></tr>
+<tr><th id="29">29</th><td><u>#<span data-ppcond="29">ifndef</span> <span class="macro" data-ref="_M/HB_NO_SUBSET_CFF">HB_NO_SUBSET_CFF</span></u></td></tr>
+<tr><th id="30">30</th><td></td></tr>
+<tr><th id="31">31</th><td><u>#include <a href="hb-ot-cff-common.hh.html">"hb-ot-cff-common.hh"</a></u></td></tr>
+<tr><th id="32">32</th><td><u>#include <a href="hb-ot-cff2-table.hh.html">"hb-ot-cff2-table.hh"</a></u></td></tr>
+<tr><th id="33">33</th><td><u>#include <a href="hb-subset-cff-common.hh.html">"hb-subset-cff-common.hh"</a></u></td></tr>
+<tr><th id="34">34</th><td></td></tr>
+<tr><th id="35">35</th><td><i>/* Disable FDSelect format 0 for compatibility with fonttools which doesn't seem choose it.</i></td></tr>
+<tr><th id="36">36</th><td><i> * Rarely any/much smaller than format 3 anyway. */</i></td></tr>
+<tr><th id="37">37</th><td><u>#define <dfn class="macro" id="_M/CFF_SERIALIZE_FDSELECT_0" data-ref="_M/CFF_SERIALIZE_FDSELECT_0">CFF_SERIALIZE_FDSELECT_0</dfn>  0</u></td></tr>
+<tr><th id="38">38</th><td></td></tr>
+<tr><th id="39">39</th><td><b>using</b> <b>namespace</b> <span class="namespace">CFF</span>;</td></tr>
+<tr><th id="40">40</th><td></td></tr>
+<tr><th id="41">41</th><td></td></tr>
+<tr><th id="42">42</th><td><i>/* Determine an optimal FDSelect format according to a provided plan.</i></td></tr>
+<tr><th id="43">43</th><td><i> *</i></td></tr>
+<tr><th id="44">44</th><td><i> * Return value: FDSelect format, size, and ranges for the most compact subset FDSelect</i></td></tr>
+<tr><th id="45">45</th><td><i> * along with a font index remapping table</i></td></tr>
+<tr><th id="46">46</th><td><i> */</i></td></tr>
+<tr><th id="47">47</th><td></td></tr>
+<tr><th id="48">48</th><td><em>bool</em></td></tr>
+<tr><th id="49">49</th><td><dfn class="decl def fn" id="_Z27hb_plan_subset_cff_fdselectPK16hb_subset_plan_tjRKN3CFF8FDSelectERjS6_S6_R11hb_vector_tINS2_11code_pair_tELb0EER14hb_inc_bimap_t" title='hb_plan_subset_cff_fdselect' data-ref="_Z27hb_plan_subset_cff_fdselectPK16hb_subset_plan_tjRKN3CFF8FDSelectERjS6_S6_R11hb_vector_tINS2_11code_pair_tELb0EER14hb_inc_bimap_t">hb_plan_subset_cff_fdselect</dfn> (<em>const</em> <a class="typedef" href="hb-subset.h.html#hb_subset_plan_t" title='hb_subset_plan_t' data-type='struct hb_subset_plan_t' data-ref="hb_subset_plan_t">hb_subset_plan_t</a> *<dfn class="local col3 decl" id="173plan" title='plan' data-type='const hb_subset_plan_t *' data-ref="173plan">plan</dfn>,</td></tr>
+<tr><th id="50">50</th><td>			     <em>unsigned</em> <em>int</em> <dfn class="local col4 decl" id="174fdCount" title='fdCount' data-type='unsigned int' data-ref="174fdCount">fdCount</dfn>,</td></tr>
+<tr><th id="51">51</th><td>			     <em>const</em> <a class="type" href="hb-ot-cff-common.hh.html#CFF::FDSelect" title='CFF::FDSelect' data-ref="CFF::FDSelect">FDSelect</a> &amp;<dfn class="local col5 decl" id="175src" title='src' data-type='const CFF::FDSelect &amp;' data-ref="175src">src</dfn>, <i>/* IN */</i></td></tr>
+<tr><th id="52">52</th><td>			     <em>unsigned</em> <em>int</em> &amp;<dfn class="local col6 decl" id="176subset_fd_count" title='subset_fd_count' data-type='unsigned int &amp;' data-ref="176subset_fd_count">subset_fd_count</dfn> <i>/* OUT */</i>,</td></tr>
+<tr><th id="53">53</th><td>			     <em>unsigned</em> <em>int</em> &amp;<dfn class="local col7 decl" id="177subset_fdselect_size" title='subset_fdselect_size' data-type='unsigned int &amp;' data-ref="177subset_fdselect_size">subset_fdselect_size</dfn> <i>/* OUT */</i>,</td></tr>
+<tr><th id="54">54</th><td>			     <em>unsigned</em> <em>int</em> &amp;<dfn class="local col8 decl" id="178subset_fdselect_format" title='subset_fdselect_format' data-type='unsigned int &amp;' data-ref="178subset_fdselect_format">subset_fdselect_format</dfn> <i>/* OUT */</i>,</td></tr>
+<tr><th id="55">55</th><td>			     <a class="type" href="hb-vector.hh.html#hb_vector_t" title='hb_vector_t' data-ref="hb_vector_t">hb_vector_t</a>&lt;<a class="type" href="hb-ot-cff-common.hh.html#CFF::code_pair_t" title='CFF::code_pair_t' data-ref="CFF::code_pair_t">code_pair_t</a>&gt; &amp;<dfn class="local col9 decl" id="179fdselect_ranges" title='fdselect_ranges' data-type='hb_vector_t&lt;CFF::code_pair_t&gt; &amp;' data-ref="179fdselect_ranges">fdselect_ranges</dfn> <i>/* OUT */</i>,</td></tr>
+<tr><th id="56">56</th><td>			     <a class="type" href="hb-bimap.hh.html#hb_inc_bimap_t" title='hb_inc_bimap_t' data-ref="hb_inc_bimap_t">hb_inc_bimap_t</a> &amp;<dfn class="local col0 decl" id="180fdmap" title='fdmap' data-type='hb_inc_bimap_t &amp;' data-ref="180fdmap">fdmap</dfn> <i>/* OUT */</i>)</td></tr>
+<tr><th id="57">57</th><td>{</td></tr>
+<tr><th id="58">58</th><td>  <a class="local col6 ref" href="#176subset_fd_count" title='subset_fd_count' data-ref="176subset_fd_count">subset_fd_count</a> = <var>0</var>;</td></tr>
+<tr><th id="59">59</th><td>  <a class="local col7 ref" href="#177subset_fdselect_size" title='subset_fdselect_size' data-ref="177subset_fdselect_size">subset_fdselect_size</a> = <var>0</var>;</td></tr>
+<tr><th id="60">60</th><td>  <a class="local col8 ref" href="#178subset_fdselect_format" title='subset_fdselect_format' data-ref="178subset_fdselect_format">subset_fdselect_format</a> = <var>0</var>;</td></tr>
+<tr><th id="61">61</th><td>  <em>unsigned</em> <em>int</em> <dfn class="local col1 decl" id="181num_ranges" title='num_ranges' data-type='unsigned int' data-ref="181num_ranges">num_ranges</dfn> = <var>0</var>;</td></tr>
+<tr><th id="62">62</th><td></td></tr>
+<tr><th id="63">63</th><td>  <em>unsigned</em> <em>int</em> <dfn class="local col2 decl" id="182subset_num_glyphs" title='subset_num_glyphs' data-type='unsigned int' data-ref="182subset_num_glyphs">subset_num_glyphs</dfn> = <a class="local col3 ref" href="#173plan" title='plan' data-ref="173plan">plan</a>-&gt;<a class="ref fn" href="hb-subset-plan.hh.html#_ZNK16hb_subset_plan_t17num_output_glyphsEv" title='hb_subset_plan_t::num_output_glyphs' data-ref="_ZNK16hb_subset_plan_t17num_output_glyphsEv">num_output_glyphs</a> ();</td></tr>
+<tr><th id="64">64</th><td>  <b>if</b> (<a class="local col2 ref" href="#182subset_num_glyphs" title='subset_num_glyphs' data-ref="182subset_num_glyphs">subset_num_glyphs</a> == <var>0</var>)</td></tr>
+<tr><th id="65">65</th><td>    <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="66">66</th><td></td></tr>
+<tr><th id="67">67</th><td>  {</td></tr>
+<tr><th id="68">68</th><td>    <i>/* use hb_set to determine the subset of font dicts */</i></td></tr>
+<tr><th id="69">69</th><td>    <a class="typedef" href="hb-set.h.html#hb_set_t" title='hb_set_t' data-type='struct hb_set_t' data-ref="hb_set_t">hb_set_t</a> <a class="ref fn fake" href="hb-set.hh.html#_ZN8hb_set_tC1Ev" title='hb_set_t::hb_set_t' data-ref="_ZN8hb_set_tC1Ev"></a><dfn class="local col3 decl" id="183set" title='set' data-type='hb_set_t' data-ref="183set">set</dfn>;</td></tr>
+<tr><th id="70">70</th><td>    <a class="typedef" href="hb-common.h.html#hb_codepoint_t" title='hb_codepoint_t' data-type='uint32_t' data-ref="hb_codepoint_t">hb_codepoint_t</a> <dfn class="local col4 decl" id="184prev_fd" title='prev_fd' data-type='hb_codepoint_t' data-ref="184prev_fd">prev_fd</dfn> = <a class="macro" href="hb-ot-cff-common.hh.html#39" title="0xFFFFFFFF" data-ref="_M/CFF_UNDEF_CODE">CFF_UNDEF_CODE</a>;</td></tr>
+<tr><th id="71">71</th><td>    <b>for</b> (<a class="typedef" href="hb-common.h.html#hb_codepoint_t" title='hb_codepoint_t' data-type='uint32_t' data-ref="hb_codepoint_t">hb_codepoint_t</a> <dfn class="local col5 decl" id="185i" title='i' data-type='hb_codepoint_t' data-ref="185i">i</dfn> = <var>0</var>; <a class="local col5 ref" href="#185i" title='i' data-ref="185i">i</a> &lt; <a class="local col2 ref" href="#182subset_num_glyphs" title='subset_num_glyphs' data-ref="182subset_num_glyphs">subset_num_glyphs</a>; <a class="local col5 ref" href="#185i" title='i' data-ref="185i">i</a>++)</td></tr>
+<tr><th id="72">72</th><td>    {</td></tr>
+<tr><th id="73">73</th><td>      <a class="typedef" href="hb-common.h.html#hb_codepoint_t" title='hb_codepoint_t' data-type='uint32_t' data-ref="hb_codepoint_t">hb_codepoint_t</a> <dfn class="local col6 decl" id="186glyph" title='glyph' data-type='hb_codepoint_t' data-ref="186glyph">glyph</dfn>;</td></tr>
+<tr><th id="74">74</th><td>      <a class="typedef" href="hb-common.h.html#hb_codepoint_t" title='hb_codepoint_t' data-type='uint32_t' data-ref="hb_codepoint_t">hb_codepoint_t</a> <dfn class="local col7 decl" id="187fd" title='fd' data-type='hb_codepoint_t' data-ref="187fd">fd</dfn>;</td></tr>
+<tr><th id="75">75</th><td>      <b>if</b> (!<a class="local col3 ref" href="#173plan" title='plan' data-ref="173plan">plan</a>-&gt;<a class="ref fn" href="hb-subset-plan.hh.html#_ZNK16hb_subset_plan_t19old_gid_for_new_gidEjPj" title='hb_subset_plan_t::old_gid_for_new_gid' data-ref="_ZNK16hb_subset_plan_t19old_gid_for_new_gidEjPj">old_gid_for_new_gid</a> (<span class='inlayHint'>new_gid:&nbsp;</span><a class="local col5 ref" href="#185i" title='i' data-ref="185i">i</a>, <span class='inlayHint'>old_gid:&nbsp;</span>&amp;<a class="local col6 ref" href="#186glyph" title='glyph' data-ref="186glyph">glyph</a>))</td></tr>
+<tr><th id="76">76</th><td>      {</td></tr>
+<tr><th id="77">77</th><td>	<i>/* fonttools retains FDSelect &amp; font dicts for missing glyphs. do the same */</i></td></tr>
+<tr><th id="78">78</th><td>	<a class="local col6 ref" href="#186glyph" title='glyph' data-ref="186glyph">glyph</a> = <a class="local col5 ref" href="#185i" title='i' data-ref="185i">i</a>;</td></tr>
+<tr><th id="79">79</th><td>      }</td></tr>
+<tr><th id="80">80</th><td>      <a class="local col7 ref" href="#187fd" title='fd' data-ref="187fd">fd</a> = <a class="local col5 ref" href="#175src" title='src' data-ref="175src">src</a>.<a class="ref fn" href="hb-ot-cff-common.hh.html#_ZNK3CFF8FDSelect6get_fdEj" title='CFF::FDSelect::get_fd' data-ref="_ZNK3CFF8FDSelect6get_fdEj">get_fd</a> (<a class="local col6 ref" href="#186glyph" title='glyph' data-ref="186glyph">glyph</a>);</td></tr>
+<tr><th id="81">81</th><td>      <a class="local col3 ref" href="#183set" title='set' data-ref="183set">set</a>.<a class="ref fn" href="hb-set.hh.html#_ZN14hb_sparseset_t3addEj" title='hb_sparseset_t::add' data-ref="_ZN14hb_sparseset_t3addEj">add</a> (<span class='inlayHint'>g:&nbsp;</span><a class="local col7 ref" href="#187fd" title='fd' data-ref="187fd">fd</a>);</td></tr>
+<tr><th id="82">82</th><td></td></tr>
+<tr><th id="83">83</th><td>      <b>if</b> (<a class="local col7 ref" href="#187fd" title='fd' data-ref="187fd">fd</a> != <a class="local col4 ref" href="#184prev_fd" title='prev_fd' data-ref="184prev_fd">prev_fd</a>)</td></tr>
+<tr><th id="84">84</th><td>      {</td></tr>
+<tr><th id="85">85</th><td>	<a class="local col1 ref" href="#181num_ranges" title='num_ranges' data-ref="181num_ranges">num_ranges</a>++;</td></tr>
+<tr><th id="86">86</th><td>	<a class="local col4 ref" href="#184prev_fd" title='prev_fd' data-ref="184prev_fd">prev_fd</a> = <a class="local col7 ref" href="#187fd" title='fd' data-ref="187fd">fd</a>;</td></tr>
+<tr><th id="87">87</th><td>	<a class="type" href="hb-ot-cff-common.hh.html#CFF::code_pair_t" title='CFF::code_pair_t' data-ref="CFF::code_pair_t">code_pair_t</a> <dfn class="local col8 decl" id="188pair" title='pair' data-type='CFF::code_pair_t' data-ref="188pair">pair</dfn> = { <span class='inlayHint'>.code:&nbsp;</span><a class="local col7 ref" href="#187fd" title='fd' data-ref="187fd">fd</a>, <span class='inlayHint'>.glyph:&nbsp;</span><a class="local col5 ref" href="#185i" title='i' data-ref="185i">i</a> };</td></tr>
+<tr><th id="88">88</th><td>	<a class="local col9 ref" href="#179fdselect_ranges" title='fdselect_ranges' data-ref="179fdselect_ranges">fdselect_ranges</a>.<a class="ref fn" href="hb-vector.hh.html#_ZN11hb_vector_t4pushEOTL0__" title='hb_vector_t::push' data-ref="_ZN11hb_vector_t4pushEOTL0__">push</a> (<span class='inlayHint'>v&amp;:&nbsp;</span><span class='refarg'><a class="local col8 ref" href="#188pair" title='pair' data-ref="188pair">pair</a></span>);</td></tr>
+<tr><th id="89">89</th><td>      }</td></tr>
+<tr><th id="90">90</th><td>    }</td></tr>
+<tr><th id="91">91</th><td></td></tr>
+<tr><th id="92">92</th><td>    <a class="local col6 ref" href="#176subset_fd_count" title='subset_fd_count' data-ref="176subset_fd_count">subset_fd_count</a> = <a class="local col3 ref" href="#183set" title='set' data-ref="183set">set</a>.<a class="ref fn" href="hb-set.hh.html#_ZNK14hb_sparseset_t14get_populationEv" title='hb_sparseset_t::get_population' data-ref="_ZNK14hb_sparseset_t14get_populationEv">get_population</a> ();</td></tr>
+<tr><th id="93">93</th><td>    <b>if</b> (<a class="local col6 ref" href="#176subset_fd_count" title='subset_fd_count' data-ref="176subset_fd_count">subset_fd_count</a> == <a class="local col4 ref" href="#174fdCount" title='fdCount' data-ref="174fdCount">fdCount</a>)</td></tr>
+<tr><th id="94">94</th><td>    {</td></tr>
+<tr><th id="95">95</th><td>      <i>/* all font dicts belong to the subset. no need to subset FDSelect &amp; FDArray */</i></td></tr>
+<tr><th id="96">96</th><td>      <a class="local col0 ref" href="#180fdmap" title='fdmap' data-ref="180fdmap">fdmap</a>.<a class="ref fn" href="hb-bimap.hh.html#_ZN14hb_inc_bimap_t8identityEj" title='hb_inc_bimap_t::identity' data-ref="_ZN14hb_inc_bimap_t8identityEj">identity</a> (<span class='inlayHint'>size:&nbsp;</span><a class="local col4 ref" href="#174fdCount" title='fdCount' data-ref="174fdCount">fdCount</a>);</td></tr>
+<tr><th id="97">97</th><td>    }</td></tr>
+<tr><th id="98">98</th><td>    <b>else</b></td></tr>
+<tr><th id="99">99</th><td>    {</td></tr>
+<tr><th id="100">100</th><td>      <i>/* create a fdmap */</i></td></tr>
+<tr><th id="101">101</th><td>      <a class="local col0 ref" href="#180fdmap" title='fdmap' data-ref="180fdmap">fdmap</a>.<a class="ref fn" href="hb-bimap.hh.html#_ZN10hb_bimap_t5resetEv" title='hb_bimap_t::reset' data-ref="_ZN10hb_bimap_t5resetEv">reset</a> ();</td></tr>
+<tr><th id="102">102</th><td></td></tr>
+<tr><th id="103">103</th><td>      <a class="typedef" href="hb-common.h.html#hb_codepoint_t" title='hb_codepoint_t' data-type='uint32_t' data-ref="hb_codepoint_t">hb_codepoint_t</a> <dfn class="local col9 decl" id="189fd" title='fd' data-type='hb_codepoint_t' data-ref="189fd">fd</dfn> = <a class="macro" href="hb-ot-cff-common.hh.html#39" title="0xFFFFFFFF" data-ref="_M/CFF_UNDEF_CODE">CFF_UNDEF_CODE</a>;</td></tr>
+<tr><th id="104">104</th><td>      <b>while</b> (<a class="local col3 ref" href="#183set" title='set' data-ref="183set">set</a>.<a class="ref fn" href="hb-set.hh.html#_ZNK14hb_sparseset_t4nextEPj" title='hb_sparseset_t::next' data-ref="_ZNK14hb_sparseset_t4nextEPj">next</a> (<span class='inlayHint'>codepoint:&nbsp;</span>&amp;<a class="local col9 ref" href="#189fd" title='fd' data-ref="189fd">fd</a>))</td></tr>
+<tr><th id="105">105</th><td>	<a class="local col0 ref" href="#180fdmap" title='fdmap' data-ref="180fdmap">fdmap</a>.<a class="ref fn" href="hb-bimap.hh.html#_ZN14hb_inc_bimap_t3addEj" title='hb_inc_bimap_t::add' data-ref="_ZN14hb_inc_bimap_t3addEj">add</a> (<span class='inlayHint'>lhs:&nbsp;</span><a class="local col9 ref" href="#189fd" title='fd' data-ref="189fd">fd</a>);</td></tr>
+<tr><th id="106">106</th><td>      <b>if</b> (<a class="macro" href="hb.hh.html#251" title="(__builtin_expect (!!(fdmap.get_population () != subset_fd_count), 0))" data-ref="_M/unlikely">unlikely</a> (<a class="local col0 ref" href="#180fdmap" title='fdmap' data-ref="180fdmap">fdmap</a>.<a class="ref fn" href="hb-bimap.hh.html#_ZNK10hb_bimap_t14get_populationEv" title='hb_bimap_t::get_population' data-ref="_ZNK10hb_bimap_t14get_populationEv">get_population</a> () != <a class="local col6 ref" href="#176subset_fd_count" title='subset_fd_count' data-ref="176subset_fd_count">subset_fd_count</a>))</td></tr>
+<tr><th id="107">107</th><td>	<b>return</b> <b>false</b>;</td></tr>
+<tr><th id="108">108</th><td>    }</td></tr>
+<tr><th id="109">109</th><td></td></tr>
+<tr><th id="110">110</th><td>    <i>/* update each font dict index stored as "code" in fdselect_ranges */</i></td></tr>
+<tr><th id="111">111</th><td>    <b>for</b> (<em>unsigned</em> <em>int</em> <dfn class="local col0 decl" id="190i" title='i' data-type='unsigned int' data-ref="190i">i</dfn> = <var>0</var>; <a class="local col0 ref" href="#190i" title='i' data-ref="190i">i</a> &lt; <a class="local col9 ref" href="#179fdselect_ranges" title='fdselect_ranges' data-ref="179fdselect_ranges">fdselect_ranges</a>.<a class="ref field" href="hb-vector.hh.html#hb_vector_t::length" title='hb_vector_t&lt;CFF::code_pair_t, false&gt;::length' data-ref="hb_vector_t::length">length</a>; <a class="local col0 ref" href="#190i" title='i' data-ref="190i">i</a>++)</td></tr>
+<tr><th id="112">112</th><td>      <a class="local col9 ref" href="#179fdselect_ranges" title='fdselect_ranges' data-ref="179fdselect_ranges">fdselect_ranges</a><a class="ref fn" href="hb-vector.hh.html#_ZN11hb_vector_tixEi" title='hb_vector_t::operator[]' data-ref="_ZN11hb_vector_tixEi">[<a class="local col0 ref" href="#190i" title='i' data-ref="190i">i</a>]</a>.<a class="ref field" href="hb-ot-cff-common.hh.html#CFF::code_pair_t::code" title='CFF::code_pair_t::code' data-ref="CFF::code_pair_t::code">code</a> = <a class="local col0 ref" href="#180fdmap" title='fdmap' data-ref="180fdmap">fdmap</a><a class="ref fn" href="hb-bimap.hh.html#_ZNK10hb_bimap_tixEj" title='hb_bimap_t::operator[]' data-ref="_ZNK10hb_bimap_tixEj">[<a class="local col9 ref" href="#179fdselect_ranges" title='fdselect_ranges' data-ref="179fdselect_ranges">fdselect_ranges</a><a class="ref fn" href="hb-vector.hh.html#_ZN11hb_vector_tixEi" title='hb_vector_t::operator[]' data-ref="_ZN11hb_vector_tixEi">[<a class="local col0 ref" href="#190i" title='i' data-ref="190i">i</a>]</a>.<a class="ref field" href="hb-ot-cff-common.hh.html#CFF::code_pair_t::code" title='CFF::code_pair_t::code' data-ref="CFF::code_pair_t::code">code</a>]</a>;</td></tr>
+<tr><th id="113">113</th><td>  }</td></tr>
+<tr><th id="114">114</th><td></td></tr>
+<tr><th id="115">115</th><td>  <i>/* determine which FDSelect format is most compact */</i></td></tr>
+<tr><th id="116">116</th><td>  <b>if</b> (<a class="local col6 ref" href="#176subset_fd_count" title='subset_fd_count' data-ref="176subset_fd_count">subset_fd_count</a> &gt; <var>0xFF</var>)</td></tr>
+<tr><th id="117">117</th><td>  {</td></tr>
+<tr><th id="118">118</th><td>    <b>if</b> (<a class="macro" href="hb.hh.html#251" title="(__builtin_expect (!!(src.format != 4), 0))" data-ref="_M/unlikely">unlikely</a> (<a class="ref fn fake" href="hb-open-type.hh.html#_ZNK2OT7IntTypecvNSt11conditionalIXsr3std9is_signedIT_EE5valueEijE4typeEEv" title='OT::IntType::operator typename conditional&lt;std::is_signed&lt;Type&gt;::value, int, unsigned int&gt;::type' data-ref="_ZNK2OT7IntTypecvNSt11conditionalIXsr3std9is_signedIT_EE5valueEijE4typeEEv"></a><a class="local col5 ref" href="#175src" title='src' data-ref="175src">src</a>.<a class="ref field" href="hb-ot-cff-common.hh.html#CFF::FDSelect::format" title='CFF::FDSelect::format' data-ref="CFF::FDSelect::format">format</a> != <var>4</var>))</td></tr>
+<tr><th id="119">119</th><td>      <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="120">120</th><td>    <a class="local col8 ref" href="#178subset_fdselect_format" title='subset_fdselect_format' data-ref="178subset_fdselect_format">subset_fdselect_format</a> = <var>4</var>;</td></tr>
+<tr><th id="121">121</th><td>    <a class="local col7 ref" href="#177subset_fdselect_size" title='subset_fdselect_size' data-ref="177subset_fdselect_size">subset_fdselect_size</a> = <a class="type" href="hb-ot-cff-common.hh.html#CFF::FDSelect" title='CFF::FDSelect' data-ref="CFF::FDSelect">FDSelect</a>::<a class="ref" href="hb-ot-cff-common.hh.html#504" title='CFF::FDSelect::min_size' data-ref="CFF::FDSelect::min_size">min_size</a> + <a class="typedef" href="hb-ot-cff2-table.hh.html#CFF::FDSelect4" title='CFF::FDSelect4' data-type='FDSelect3_4&lt;OT::HBUINT32, OT::HBUINT16&gt;' data-ref="CFF::FDSelect4">FDSelect4</a>::<a class="ref" href="hb-ot-cff-common.hh.html#444" title='CFF::FDSelect3_4::min_size' data-ref="CFF::FDSelect3_4::min_size">min_size</a> + <a class="typedef" href="hb-ot-cff2-table.hh.html#CFF::FDSelect4_Range" title='CFF::FDSelect4_Range' data-type='FDSelect3_4_Range&lt;OT::HBUINT32, OT::HBUINT16&gt;' data-ref="CFF::FDSelect4_Range">FDSelect4_Range</a>::<a class="ref" href="hb-ot-cff-common.hh.html#394" title='CFF::FDSelect3_4_Range::static_size' data-ref="CFF::FDSelect3_4_Range::static_size">static_size</a> * <a class="local col1 ref" href="#181num_ranges" title='num_ranges' data-ref="181num_ranges">num_ranges</a> + <a class="typedef" href="hb-open-type.hh.html#OT::HBUINT32" title='OT::HBUINT32' data-type='IntType&lt;uint32_t&gt;' data-ref="OT::HBUINT32">HBUINT32</a>::<a class="ref" href="hb-open-type.hh.html#113" title='OT::IntType::static_size' data-ref="OT::IntType::static_size">static_size</a>;</td></tr>
+<tr><th id="122">122</th><td>  }</td></tr>
+<tr><th id="123">123</th><td>  <b>else</b></td></tr>
+<tr><th id="124">124</th><td>  {</td></tr>
+<tr><th id="125">125</th><td><u>#<span data-ppcond="125">if</span> <a class="macro" href="#37" title="0" data-ref="_M/CFF_SERIALIZE_FDSELECT_0">CFF_SERIALIZE_FDSELECT_0</a></u></td></tr>
+<tr><th id="126">126</th><td>    <em>unsigned</em> <em>int</em> format0_size = FDSelect::min_size + FDSelect0::min_size + HBUINT8::static_size * subset_num_glyphs;</td></tr>
+<tr><th id="127">127</th><td><u>#<span data-ppcond="125">endif</span></u></td></tr>
+<tr><th id="128">128</th><td>    <em>unsigned</em> <em>int</em> <dfn class="local col1 decl" id="191format3_size" title='format3_size' data-type='unsigned int' data-ref="191format3_size">format3_size</dfn> = <a class="type" href="hb-ot-cff-common.hh.html#CFF::FDSelect" title='CFF::FDSelect' data-ref="CFF::FDSelect">FDSelect</a>::<a class="ref" href="hb-ot-cff-common.hh.html#504" title='CFF::FDSelect::min_size' data-ref="CFF::FDSelect::min_size">min_size</a> + <a class="typedef" href="hb-ot-cff-common.hh.html#CFF::FDSelect3" title='CFF::FDSelect3' data-type='FDSelect3_4&lt;OT::HBUINT16, OT::HBUINT8&gt;' data-ref="CFF::FDSelect3">FDSelect3</a>::<a class="ref" href="hb-ot-cff-common.hh.html#444" title='CFF::FDSelect3_4::min_size' data-ref="CFF::FDSelect3_4::min_size">min_size</a> + <a class="typedef" href="hb-ot-cff-common.hh.html#CFF::FDSelect3_Range" title='CFF::FDSelect3_Range' data-type='FDSelect3_4_Range&lt;OT::HBUINT16, OT::HBUINT8&gt;' data-ref="CFF::FDSelect3_Range">FDSelect3_Range</a>::<a class="ref" href="hb-ot-cff-common.hh.html#394" title='CFF::FDSelect3_4_Range::static_size' data-ref="CFF::FDSelect3_4_Range::static_size">static_size</a> * <a class="local col1 ref" href="#181num_ranges" title='num_ranges' data-ref="181num_ranges">num_ranges</a> + <a class="typedef" href="hb-open-type.hh.html#OT::HBUINT16" title='OT::HBUINT16' data-type='IntType&lt;uint16_t&gt;' data-ref="OT::HBUINT16">HBUINT16</a>::<a class="ref" href="hb-open-type.hh.html#113" title='OT::IntType::static_size' data-ref="OT::IntType::static_size">static_size</a>;</td></tr>
+<tr><th id="129">129</th><td></td></tr>
+<tr><th id="130">130</th><td><u>#<span data-ppcond="130">if</span> <a class="macro" href="#37" title="0" data-ref="_M/CFF_SERIALIZE_FDSELECT_0">CFF_SERIALIZE_FDSELECT_0</a></u></td></tr>
+<tr><th id="131">131</th><td>    <b>if</b> (format0_size &lt;= format3_size)</td></tr>
+<tr><th id="132">132</th><td>    {</td></tr>
+<tr><th id="133">133</th><td>      <i>// subset_fdselect_format = 0;</i></td></tr>
+<tr><th id="134">134</th><td>      subset_fdselect_size = format0_size;</td></tr>
+<tr><th id="135">135</th><td>    }</td></tr>
+<tr><th id="136">136</th><td>    <b>else</b></td></tr>
+<tr><th id="137">137</th><td><u>#<span data-ppcond="130">endif</span></u></td></tr>
+<tr><th id="138">138</th><td>    {</td></tr>
+<tr><th id="139">139</th><td>      <a class="local col8 ref" href="#178subset_fdselect_format" title='subset_fdselect_format' data-ref="178subset_fdselect_format">subset_fdselect_format</a> = <var>3</var>;</td></tr>
+<tr><th id="140">140</th><td>      <a class="local col7 ref" href="#177subset_fdselect_size" title='subset_fdselect_size' data-ref="177subset_fdselect_size">subset_fdselect_size</a> = <a class="local col1 ref" href="#191format3_size" title='format3_size' data-ref="191format3_size">format3_size</a>;</td></tr>
+<tr><th id="141">141</th><td>    }</td></tr>
+<tr><th id="142">142</th><td>  }</td></tr>
+<tr><th id="143">143</th><td></td></tr>
+<tr><th id="144">144</th><td>  <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="145">145</th><td>}</td></tr>
+<tr><th id="146">146</th><td></td></tr>
+<tr><th id="147">147</th><td><b>template</b> &lt;<b>typename</b> FDSELECT3_4&gt;</td></tr>
+<tr><th id="148">148</th><td><em>static</em> <b>inline</b> <em>bool</em></td></tr>
+<tr><th id="149">149</th><td><dfn class="tu decl def fn" id="_ZL22serialize_fdselect_3_4P22hb_serialize_context_tjRKN3CFF8FDSelectEjRK11hb_vector_tINS1_11code_pair_tELb0EE" title='serialize_fdselect_3_4' data-type='bool serialize_fdselect_3_4(hb_serialize_context_t * c, const unsigned int num_glyphs, const CFF::FDSelect &amp; src, unsigned int size, const hb_vector_t&lt;CFF::code_pair_t&gt; &amp; fdselect_ranges)' data-ref="_ZL22serialize_fdselect_3_4P22hb_serialize_context_tjRKN3CFF8FDSelectEjRK11hb_vector_tINS1_11code_pair_tELb0EE">serialize_fdselect_3_4</dfn> (<a class="type" href="hb-serialize.hh.html#hb_serialize_context_t" title='hb_serialize_context_t' data-ref="hb_serialize_context_t">hb_serialize_context_t</a> *<dfn class="local col2 decl" id="192c" title='c' data-type='hb_serialize_context_t *' data-ref="192c">c</dfn>,</td></tr>
+<tr><th id="150">150</th><td>			<em>const</em> <em>unsigned</em> <em>int</em> <dfn class="local col3 decl" id="193num_glyphs" title='num_glyphs' data-type='const unsigned int' data-ref="193num_glyphs">num_glyphs</dfn>,</td></tr>
+<tr><th id="151">151</th><td>			<em>const</em> <a class="type" href="hb-ot-cff-common.hh.html#CFF::FDSelect" title='CFF::FDSelect' data-ref="CFF::FDSelect">FDSelect</a> &amp;<dfn class="local col4 decl" id="194src" title='src' data-type='const CFF::FDSelect &amp;' data-ref="194src">src</dfn>,</td></tr>
+<tr><th id="152">152</th><td>			<em>unsigned</em> <em>int</em> <dfn class="local col5 decl" id="195size" title='size' data-type='unsigned int' data-ref="195size">size</dfn>,</td></tr>
+<tr><th id="153">153</th><td>			<em>const</em> <a class="type" href="hb-vector.hh.html#hb_vector_t" title='hb_vector_t' data-ref="hb_vector_t">hb_vector_t</a>&lt;<a class="type" href="hb-ot-cff-common.hh.html#CFF::code_pair_t" title='CFF::code_pair_t' data-ref="CFF::code_pair_t">code_pair_t</a>&gt; &amp;<dfn class="local col6 decl" id="196fdselect_ranges" title='fdselect_ranges' data-type='const hb_vector_t&lt;CFF::code_pair_t&gt; &amp;' data-ref="196fdselect_ranges">fdselect_ranges</dfn>)</td></tr>
+<tr><th id="154">154</th><td>{</td></tr>
+<tr><th id="155">155</th><td>  <a class="macro" href="hb-debug.hh.html#426" title="hb_no_trace_t&lt;bool&gt; trace" data-ref="_M/TRACE_SERIALIZE">TRACE_SERIALIZE</a> (<b>this</b>);</td></tr>
+<tr><th id="156">156</th><td>  FDSELECT3_4 *<dfn class="local col7 decl" id="197p" title='p' data-type='FDSELECT3_4 *' data-ref="197p">p</dfn> = <a class="local col2 ref" href="#192c" title='c' data-ref="192c">c</a>-&gt;allocate_size&lt;FDSELECT3_4&gt; (<a class="local col5 ref" href="#195size" title='size' data-ref="195size">size</a>);</td></tr>
+<tr><th id="157">157</th><td>  <b>if</b> (<a class="macro" href="hb.hh.html#251" title="(__builtin_expect (!!(!p), 0))" data-ref="_M/unlikely">unlikely</a> (!<a class="local col7 ref" href="#197p" title='p' data-ref="197p">p</a>)) <a class="macro" href="hb-debug.hh.html#349" title="return trace.ret (false, __PRETTY_FUNCTION__, 157)" data-ref="_M/return_trace">return_trace</a> (<b>false</b>);</td></tr>
+<tr><th id="158">158</th><td>  <a class="local col7 ref" href="#197p" title='p' data-ref="197p">p</a>-&gt;nRanges () = <a class="local col6 ref" href="#196fdselect_ranges" title='fdselect_ranges' data-ref="196fdselect_ranges">fdselect_ranges</a>.<a class="ref field" href="hb-vector.hh.html#hb_vector_t::length" title='hb_vector_t&lt;CFF::code_pair_t, false&gt;::length' data-ref="hb_vector_t::length">length</a>;</td></tr>
+<tr><th id="159">159</th><td>  <b>for</b> (<em>unsigned</em> <em>int</em> <dfn class="local col8 decl" id="198i" title='i' data-type='unsigned int' data-ref="198i">i</dfn> = <var>0</var>; <a class="local col8 ref" href="#198i" title='i' data-ref="198i">i</a> &lt; <a class="local col6 ref" href="#196fdselect_ranges" title='fdselect_ranges' data-ref="196fdselect_ranges">fdselect_ranges</a>.<a class="ref field" href="hb-vector.hh.html#hb_vector_t::length" title='hb_vector_t&lt;CFF::code_pair_t, false&gt;::length' data-ref="hb_vector_t::length">length</a>; <a class="local col8 ref" href="#198i" title='i' data-ref="198i">i</a>++)</td></tr>
+<tr><th id="160">160</th><td>  {</td></tr>
+<tr><th id="161">161</th><td>    <a class="local col7 ref" href="#197p" title='p' data-ref="197p">p</a>-&gt;ranges[<a class="local col8 ref" href="#198i" title='i' data-ref="198i">i</a>].first = <a class="local col6 ref" href="#196fdselect_ranges" title='fdselect_ranges' data-ref="196fdselect_ranges">fdselect_ranges</a><a class="ref fn" href="hb-vector.hh.html#_ZNK11hb_vector_tixEi" title='hb_vector_t::operator[]' data-ref="_ZNK11hb_vector_tixEi">[<a class="local col8 ref" href="#198i" title='i' data-ref="198i">i</a>]</a>.<a class="ref field" href="hb-ot-cff-common.hh.html#CFF::code_pair_t::glyph" title='CFF::code_pair_t::glyph' data-ref="CFF::code_pair_t::glyph">glyph</a>;</td></tr>
+<tr><th id="162">162</th><td>    <a class="local col7 ref" href="#197p" title='p' data-ref="197p">p</a>-&gt;ranges[<a class="local col8 ref" href="#198i" title='i' data-ref="198i">i</a>].fd = <a class="local col6 ref" href="#196fdselect_ranges" title='fdselect_ranges' data-ref="196fdselect_ranges">fdselect_ranges</a><a class="ref fn" href="hb-vector.hh.html#_ZNK11hb_vector_tixEi" title='hb_vector_t::operator[]' data-ref="_ZNK11hb_vector_tixEi">[<a class="local col8 ref" href="#198i" title='i' data-ref="198i">i</a>]</a>.<a class="ref field" href="hb-ot-cff-common.hh.html#CFF::code_pair_t::code" title='CFF::code_pair_t::code' data-ref="CFF::code_pair_t::code">code</a>;</td></tr>
+<tr><th id="163">163</th><td>  }</td></tr>
+<tr><th id="164">164</th><td>  <a class="local col7 ref" href="#197p" title='p' data-ref="197p">p</a>-&gt;sentinel () = <a class="local col3 ref" href="#193num_glyphs" title='num_glyphs' data-ref="193num_glyphs">num_glyphs</a>;</td></tr>
+<tr><th id="165">165</th><td>  <a class="macro" href="hb-debug.hh.html#349" title="return trace.ret (true, __PRETTY_FUNCTION__, 165)" data-ref="_M/return_trace">return_trace</a> (<b>true</b>);</td></tr>
+<tr><th id="166">166</th><td>}</td></tr>
+<tr><th id="167">167</th><td></td></tr>
+<tr><th id="168">168</th><td><i>/* Serialize a subset FDSelect format planned above. */</i></td></tr>
+<tr><th id="169">169</th><td><em>bool</em></td></tr>
+<tr><th id="170">170</th><td><dfn class="decl def fn" id="_Z25hb_serialize_cff_fdselectP22hb_serialize_context_tjRKN3CFF8FDSelectEjjjRK11hb_vector_tINS1_11code_pair_tELb0EE" title='hb_serialize_cff_fdselect' data-ref="_Z25hb_serialize_cff_fdselectP22hb_serialize_context_tjRKN3CFF8FDSelectEjjjRK11hb_vector_tINS1_11code_pair_tELb0EE">hb_serialize_cff_fdselect</dfn> (<a class="type" href="hb-serialize.hh.html#hb_serialize_context_t" title='hb_serialize_context_t' data-ref="hb_serialize_context_t">hb_serialize_context_t</a> *<dfn class="local col9 decl" id="199c" title='c' data-type='hb_serialize_context_t *' data-ref="199c">c</dfn>,</td></tr>
+<tr><th id="171">171</th><td>			   <em>const</em> <em>unsigned</em> <em>int</em> <dfn class="local col0 decl" id="200num_glyphs" title='num_glyphs' data-type='const unsigned int' data-ref="200num_glyphs">num_glyphs</dfn>,</td></tr>
+<tr><th id="172">172</th><td>			   <em>const</em> <a class="type" href="hb-ot-cff-common.hh.html#CFF::FDSelect" title='CFF::FDSelect' data-ref="CFF::FDSelect">FDSelect</a> &amp;<dfn class="local col1 decl" id="201src" title='src' data-type='const CFF::FDSelect &amp;' data-ref="201src">src</dfn>,</td></tr>
+<tr><th id="173">173</th><td>			   <em>unsigned</em> <em>int</em> <dfn class="local col2 decl" id="202fd_count" title='fd_count' data-type='unsigned int' data-ref="202fd_count">fd_count</dfn>,</td></tr>
+<tr><th id="174">174</th><td>			   <em>unsigned</em> <em>int</em> <dfn class="local col3 decl" id="203fdselect_format" title='fdselect_format' data-type='unsigned int' data-ref="203fdselect_format">fdselect_format</dfn>,</td></tr>
+<tr><th id="175">175</th><td>			   <em>unsigned</em> <em>int</em> <dfn class="local col4 decl" id="204size" title='size' data-type='unsigned int' data-ref="204size">size</dfn>,</td></tr>
+<tr><th id="176">176</th><td>			   <em>const</em> <a class="type" href="hb-vector.hh.html#hb_vector_t" title='hb_vector_t' data-ref="hb_vector_t">hb_vector_t</a>&lt;<a class="type" href="hb-ot-cff-common.hh.html#CFF::code_pair_t" title='CFF::code_pair_t' data-ref="CFF::code_pair_t">code_pair_t</a>&gt; &amp;<dfn class="local col5 decl" id="205fdselect_ranges" title='fdselect_ranges' data-type='const hb_vector_t&lt;CFF::code_pair_t&gt; &amp;' data-ref="205fdselect_ranges">fdselect_ranges</dfn>)</td></tr>
+<tr><th id="177">177</th><td>{</td></tr>
+<tr><th id="178">178</th><td>  <a class="macro" href="hb-debug.hh.html#426" title="hb_no_trace_t&lt;bool&gt; trace" data-ref="_M/TRACE_SERIALIZE">TRACE_SERIALIZE</a> (<b>this</b>);</td></tr>
+<tr><th id="179">179</th><td>  <a class="type" href="hb-ot-cff-common.hh.html#CFF::FDSelect" title='CFF::FDSelect' data-ref="CFF::FDSelect">FDSelect</a> *<dfn class="local col6 decl" id="206p" title='p' data-type='CFF::FDSelect *' data-ref="206p">p</dfn> = <a class="local col9 ref" href="#199c" title='c' data-ref="199c">c</a>-&gt;<a class="ref fn" href="hb-serialize.hh.html#_ZN22hb_serialize_context_t12allocate_minEv" title='hb_serialize_context_t::allocate_min' data-ref="_ZN22hb_serialize_context_t12allocate_minEv">allocate_min</a>&lt;<a class="type" href="hb-ot-cff-common.hh.html#CFF::FDSelect" title='CFF::FDSelect' data-ref="CFF::FDSelect">FDSelect</a>&gt; ();</td></tr>
+<tr><th id="180">180</th><td>  <b>if</b> (<a class="macro" href="hb.hh.html#251" title="(__builtin_expect (!!(!p), 0))" data-ref="_M/unlikely">unlikely</a> (!<a class="local col6 ref" href="#206p" title='p' data-ref="206p">p</a>)) <a class="macro" href="hb-debug.hh.html#349" title="return trace.ret (false, __PRETTY_FUNCTION__, 180)" data-ref="_M/return_trace">return_trace</a> (<b>false</b>);</td></tr>
+<tr><th id="181">181</th><td>  <a class="local col6 ref" href="#206p" title='p' data-ref="206p">p</a>-&gt;<a class="ref field" href="hb-ot-cff-common.hh.html#CFF::FDSelect::format" title='CFF::FDSelect::format' data-ref="CFF::FDSelect::format">format</a> <a class="ref fn" href="hb-open-type.hh.html#_ZN2OT7IntTypeaSET_" title='OT::IntType::operator=' data-ref="_ZN2OT7IntTypeaSET_">=</a> <a class="local col3 ref" href="#203fdselect_format" title='fdselect_format' data-ref="203fdselect_format">fdselect_format</a>;</td></tr>
+<tr><th id="182">182</th><td>  <a class="local col4 ref" href="#204size" title='size' data-ref="204size">size</a> -= <a class="type" href="hb-ot-cff-common.hh.html#CFF::FDSelect" title='CFF::FDSelect' data-ref="CFF::FDSelect">FDSelect</a>::<a class="ref" href="hb-ot-cff-common.hh.html#504" title='CFF::FDSelect::min_size' data-ref="CFF::FDSelect::min_size">min_size</a>;</td></tr>
+<tr><th id="183">183</th><td></td></tr>
+<tr><th id="184">184</th><td>  <b>switch</b> (<a class="local col3 ref" href="#203fdselect_format" title='fdselect_format' data-ref="203fdselect_format">fdselect_format</a>)</td></tr>
+<tr><th id="185">185</th><td>  {</td></tr>
+<tr><th id="186">186</th><td><u>#<span data-ppcond="186">if</span> <a class="macro" href="#37" title="0" data-ref="_M/CFF_SERIALIZE_FDSELECT_0">CFF_SERIALIZE_FDSELECT_0</a></u></td></tr>
+<tr><th id="187">187</th><td>  <b>case</b> <var>0</var>:</td></tr>
+<tr><th id="188">188</th><td>  {</td></tr>
+<tr><th id="189">189</th><td>    FDSelect0 *p = c-&gt;allocate_size&lt;FDSelect0&gt; (size);</td></tr>
+<tr><th id="190">190</th><td>    <b>if</b> (unlikely (!p)) return_trace (<b>false</b>);</td></tr>
+<tr><th id="191">191</th><td>    <em>unsigned</em> <em>int</em> range_index = <var>0</var>;</td></tr>
+<tr><th id="192">192</th><td>    <em>unsigned</em> <em>int</em> fd = fdselect_ranges[range_index++].code;</td></tr>
+<tr><th id="193">193</th><td>    <b>for</b> (<em>unsigned</em> <em>int</em> i = <var>0</var>; i &lt; num_glyphs; i++)</td></tr>
+<tr><th id="194">194</th><td>    {</td></tr>
+<tr><th id="195">195</th><td>      <b>if</b> ((range_index &lt; fdselect_ranges.len) &amp;&amp;</td></tr>
+<tr><th id="196">196</th><td>	  (i &gt;= fdselect_ranges[range_index].glyph))</td></tr>
+<tr><th id="197">197</th><td>      {</td></tr>
+<tr><th id="198">198</th><td>	fd = fdselect_ranges[range_index++].code;</td></tr>
+<tr><th id="199">199</th><td>      }</td></tr>
+<tr><th id="200">200</th><td>      p-&gt;fds[i] = fd;</td></tr>
+<tr><th id="201">201</th><td>    }</td></tr>
+<tr><th id="202">202</th><td>    return_trace (<b>true</b>);</td></tr>
+<tr><th id="203">203</th><td>  }</td></tr>
+<tr><th id="204">204</th><td><u>#<span data-ppcond="186">endif</span> /* CFF_SERIALIZE_FDSELECT_0 */</u></td></tr>
+<tr><th id="205">205</th><td></td></tr>
+<tr><th id="206">206</th><td>  <b>case</b> <var>3</var>:</td></tr>
+<tr><th id="207">207</th><td>    <b>return</b> <a class="tu ref fn" href="#_ZL22serialize_fdselect_3_4P22hb_serialize_context_tjRKN3CFF8FDSelectEjRK11hb_vector_tINS1_11code_pair_tELb0EE" title='serialize_fdselect_3_4' data-use='c' data-ref="_ZL22serialize_fdselect_3_4P22hb_serialize_context_tjRKN3CFF8FDSelectEjRK11hb_vector_tINS1_11code_pair_tELb0EE">serialize_fdselect_3_4</a>&lt;<a class="typedef" href="hb-ot-cff-common.hh.html#CFF::FDSelect3" title='CFF::FDSelect3' data-type='FDSelect3_4&lt;OT::HBUINT16, OT::HBUINT8&gt;' data-ref="CFF::FDSelect3">FDSelect3</a>&gt; (<a class="local col9 ref" href="#199c" title='c' data-ref="199c">c</a>, <a class="local col0 ref" href="#200num_glyphs" title='num_glyphs' data-ref="200num_glyphs">num_glyphs</a>, <a class="local col1 ref" href="#201src" title='src' data-ref="201src">src</a>,</td></tr>
+<tr><th id="208">208</th><td>					      <a class="local col4 ref" href="#204size" title='size' data-ref="204size">size</a>, <a class="local col5 ref" href="#205fdselect_ranges" title='fdselect_ranges' data-ref="205fdselect_ranges">fdselect_ranges</a>);</td></tr>
+<tr><th id="209">209</th><td></td></tr>
+<tr><th id="210">210</th><td>  <b>case</b> <var>4</var>:</td></tr>
+<tr><th id="211">211</th><td>    <b>return</b> <a class="tu ref fn" href="#_ZL22serialize_fdselect_3_4P22hb_serialize_context_tjRKN3CFF8FDSelectEjRK11hb_vector_tINS1_11code_pair_tELb0EE" title='serialize_fdselect_3_4' data-use='c' data-ref="_ZL22serialize_fdselect_3_4P22hb_serialize_context_tjRKN3CFF8FDSelectEjRK11hb_vector_tINS1_11code_pair_tELb0EE">serialize_fdselect_3_4</a>&lt;<a class="typedef" href="hb-ot-cff2-table.hh.html#CFF::FDSelect4" title='CFF::FDSelect4' data-type='FDSelect3_4&lt;OT::HBUINT32, OT::HBUINT16&gt;' data-ref="CFF::FDSelect4">FDSelect4</a>&gt; (<a class="local col9 ref" href="#199c" title='c' data-ref="199c">c</a>, <a class="local col0 ref" href="#200num_glyphs" title='num_glyphs' data-ref="200num_glyphs">num_glyphs</a>, <a class="local col1 ref" href="#201src" title='src' data-ref="201src">src</a>,</td></tr>
+<tr><th id="212">212</th><td>					      <a class="local col4 ref" href="#204size" title='size' data-ref="204size">size</a>, <a class="local col5 ref" href="#205fdselect_ranges" title='fdselect_ranges' data-ref="205fdselect_ranges">fdselect_ranges</a>);</td></tr>
+<tr><th id="213">213</th><td></td></tr>
+<tr><th id="214">214</th><td>  <b>default</b>:</td></tr>
+<tr><th id="215">215</th><td>    <a class="macro" href="hb-debug.hh.html#349" title="return trace.ret (false, __PRETTY_FUNCTION__, 215)" data-ref="_M/return_trace">return_trace</a> (<b>false</b>);</td></tr>
+<tr><th id="216">216</th><td>  }</td></tr>
+<tr><th id="217">217</th><td>}</td></tr>
+<tr><th id="218">218</th><td></td></tr>
+<tr><th id="219">219</th><td></td></tr>
+<tr><th id="220">220</th><td><u>#<span data-ppcond="29">endif</span></u></td></tr>
+<tr><th id="221">221</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2024-Jun-13</em> from project qtbase-6.5.0 revision <em>6.5.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

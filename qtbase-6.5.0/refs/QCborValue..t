@@ -1,0 +1,32 @@
+<use f='qtbase-6.5.0/src/corelib/serialization/qcborvalue.h' l='101' u='w' c='_ZN10QCborValueC1ENS_4TypeE'/>
+<use f='qtbase-6.5.0/src/corelib/serialization/qcborvalue.h' l='102' u='w' c='_ZN10QCborValueC1EDn'/>
+<use f='qtbase-6.5.0/src/corelib/serialization/qcborvalue.h' l='103' u='w' c='_ZN10QCborValueC1Eb'/>
+<use f='qtbase-6.5.0/src/corelib/serialization/qcborvalue.h' l='108' u='w' c='_ZN10QCborValueC1Ex'/>
+<use f='qtbase-6.5.0/src/corelib/serialization/qcborvalue.h' l='109' u='w' c='_ZN10QCborValueC1Ed'/>
+<use f='qtbase-6.5.0/src/corelib/serialization/qcborvalue.h' l='110' u='w' c='_ZN10QCborValueC1E15QCborSimpleType'/>
+<use f='qtbase-6.5.0/src/corelib/serialization/qcborvalue.h' l='144' u='w' c='_ZN10QCborValueC1EOS_'/>
+<use f='qtbase-6.5.0/src/corelib/serialization/qcborvalue.h' l='144' u='a' c='_ZN10QCborValueC1EOS_'/>
+<use f='qtbase-6.5.0/src/corelib/serialization/qcborvalue.h' l='154' u='a' c='_ZN10QCborValue4swapERS_'/>
+<use f='qtbase-6.5.0/src/corelib/serialization/qcborvalue.h' l='154' u='a' c='_ZN10QCborValue4swapERS_'/>
+<use f='qtbase-6.5.0/src/corelib/serialization/qcborvalue.h' l='157' u='r' c='_ZNK10QCborValue4typeEv'/>
+<dec f='qtbase-6.5.0/src/corelib/serialization/qcborvalue.h' l='269' type='QCborValue::Type'/>
+<use f='qtbase-6.5.0/src/corelib/serialization/qcborarray.h' l='252' u='w' c='_ZN10QCborValueC1EO10QCborArray'/>
+<use f='qtbase-6.5.0/src/corelib/serialization/qcbormap.h' l='318' u='w' c='_ZN10QCborValueC1EO8QCborMap'/>
+<offset>128</offset>
+<use f='qtbase-6.5.0/src/corelib/serialization/qcborvalue_p.h' l='324' u='r' c='_ZN21QCborContainerPrivate16elementFromValueERK10QCborValue'/>
+<use f='qtbase-6.5.0/src/corelib/serialization/qcborvalue.cpp' l='1716' u='w' c='_ZN10QCborValueC1ERK10QByteArray'/>
+<use f='qtbase-6.5.0/src/corelib/serialization/qcborvalue.cpp' l='1718' u='r' c='_ZN10QCborValueC1ERK10QByteArray'/>
+<use f='qtbase-6.5.0/src/corelib/serialization/qcborvalue.cpp' l='1737' u='w' c='_ZN10QCborValueC1E11QStringView'/>
+<use f='qtbase-6.5.0/src/corelib/serialization/qcborvalue.cpp' l='1752' u='w' c='_ZN10QCborValueC1E17QLatin1StringView'/>
+<use f='qtbase-6.5.0/src/corelib/serialization/qcborvalue.cpp' l='1768' u='w' c='_ZN10QCborValueC1ERK10QCborArray'/>
+<use f='qtbase-6.5.0/src/corelib/serialization/qcborvalue.cpp' l='1784' u='w' c='_ZN10QCborValueC1ERK8QCborMap'/>
+<use f='qtbase-6.5.0/src/corelib/serialization/qcborvalue.cpp' l='1801' u='w' c='_ZN10QCborValueC1E8QCborTagRKS_'/>
+<use f='qtbase-6.5.0/src/corelib/serialization/qcborvalue.cpp' l='1806' u='w' c='_ZN10QCborValueC1E8QCborTagRKS_'/>
+<use f='qtbase-6.5.0/src/corelib/serialization/qcborvalue.cpp' l='1813' u='w' c='_ZN10QCborValueC1ERKS_'/>
+<use f='qtbase-6.5.0/src/corelib/serialization/qcborvalue.cpp' l='1813' u='r' c='_ZN10QCborValueC1ERKS_'/>
+<use f='qtbase-6.5.0/src/corelib/serialization/qcborvalue.cpp' l='1836' u='w' c='_ZN10QCborValueC1ERK9QDateTime'/>
+<use f='qtbase-6.5.0/src/corelib/serialization/qcborvalue.cpp' l='1910' u='w' c='_ZN10QCborValueaSERKS_'/>
+<use f='qtbase-6.5.0/src/corelib/serialization/qcborvalue.cpp' l='1910' u='r' c='_ZN10QCborValueaSERKS_'/>
+<use f='qtbase-6.5.0/src/corelib/serialization/qcborvalue.cpp' l='2283' u='w' c='_ZN21QCborContainerPrivate15findOrAddMapKeyER10QCborValueT_'/>
+<use f='qtbase-6.5.0/src/corelib/serialization/qcborvalue.cpp' l='2368' u='r' c='_ZN10QCborValueixEx'/>
+<use f='qtbase-6.5.0/src/corelib/serialization/qjsoncbor.cpp' l='616' u='r' c='_ZN10QCborValue13fromJsonValueERK10QJsonValue'/>

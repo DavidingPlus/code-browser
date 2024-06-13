@@ -1,0 +1,43 @@
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.h' l='36' u='m' c='_ZN20QNetworkAddressEntry4swapERS_'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.h' l='36' u='a' c='_ZN20QNetworkAddressEntry4swapERS_'/>
+<dec f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.h' l='66' type='std::unique_ptr&lt;QNetworkAddressEntryPrivate&gt;'/>
+<offset>0</offset>
+<doc f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.h' l='65'>// ### Qt 7: make implicitly shared</doc>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='168' u='w' c='_ZN20QNetworkAddressEntryC1Ev'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='177' u='w' c='_ZN20QNetworkAddressEntryC1ERKS_'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='177' u='m' c='_ZN20QNetworkAddressEntryC1ERKS_'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='186' u='m' c='_ZN20QNetworkAddressEntryaSERKS_'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='186' u='m' c='_ZN20QNetworkAddressEntryaSERKS_'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='211' u='r' c='_ZNK20QNetworkAddressEntryeqERKS_'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='211' u='r' c='_ZNK20QNetworkAddressEntryeqERKS_'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='212' u='m' c='_ZNK20QNetworkAddressEntryeqERKS_'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='212' u='m' c='_ZNK20QNetworkAddressEntryeqERKS_'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='213' u='m' c='_ZNK20QNetworkAddressEntryeqERKS_'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='213' u='m' c='_ZNK20QNetworkAddressEntryeqERKS_'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='214' u='m' c='_ZNK20QNetworkAddressEntryeqERKS_'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='214' u='m' c='_ZNK20QNetworkAddressEntryeqERKS_'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='215' u='m' c='_ZNK20QNetworkAddressEntryeqERKS_'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='215' u='m' c='_ZNK20QNetworkAddressEntryeqERKS_'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='236' u='m' c='_ZNK20QNetworkAddressEntry14dnsEligibilityEv'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='248' u='m' c='_ZN20QNetworkAddressEntry17setDnsEligibilityENS_20DnsEligibilityStatusE'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='264' u='m' c='_ZNK20QNetworkAddressEntry2ipEv'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='273' u='m' c='_ZN20QNetworkAddressEntry5setIpERK12QHostAddress'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='291' u='m' c='_ZNK20QNetworkAddressEntry7netmaskEv'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='291' u='m' c='_ZNK20QNetworkAddressEntry7netmaskEv'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='304' u='m' c='_ZN20QNetworkAddressEntry10setNetmaskERK12QHostAddress'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='308' u='m' c='_ZN20QNetworkAddressEntry10setNetmaskERK12QHostAddress'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='326' u='m' c='_ZNK20QNetworkAddressEntry12prefixLengthEv'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='343' u='m' c='_ZN20QNetworkAddressEntry15setPrefixLengthEi'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='343' u='m' c='_ZN20QNetworkAddressEntry15setPrefixLengthEi'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='361' u='m' c='_ZNK20QNetworkAddressEntry9broadcastEv'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='370' u='m' c='_ZN20QNetworkAddressEntry12setBroadcastERK12QHostAddress'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='384' u='m' c='_ZNK20QNetworkAddressEntry15isLifetimeKnownEv'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='403' u='m' c='_ZNK20QNetworkAddressEntry17preferredLifetimeEv'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='423' u='m' c='_ZNK20QNetworkAddressEntry16validityLifetimeEv'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='438' u='m' c='_ZN20QNetworkAddressEntry18setAddressLifetimeE14QDeadlineTimerS0_'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='439' u='m' c='_ZN20QNetworkAddressEntry18setAddressLifetimeE14QDeadlineTimerS0_'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='440' u='m' c='_ZN20QNetworkAddressEntry18setAddressLifetimeE14QDeadlineTimerS0_'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='453' u='m' c='_ZN20QNetworkAddressEntry20clearAddressLifetimeEv'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='454' u='m' c='_ZN20QNetworkAddressEntry20clearAddressLifetimeEv'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='455' u='m' c='_ZN20QNetworkAddressEntry20clearAddressLifetimeEv'/>
+<use f='qtbase-6.5.0/src/network/kernel/qnetworkinterface.cpp' l='476' u='m' c='_ZNK20QNetworkAddressEntry11isPermanentEv'/>

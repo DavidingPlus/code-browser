@@ -1,0 +1,21 @@
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/hb-ot-cff1-table.hh' l='1040' u='m' c='_ZN2OT4cff119accelerator_templ_t4initEP9hb_face_t'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/hb-ot-cff1-table.hh' l='1043' u='m' c='_ZN2OT4cff119accelerator_templ_t4initEP9hb_face_t'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/hb-ot-cff1-table.hh' l='1044' u='m' c='_ZN2OT4cff119accelerator_templ_t4initEP9hb_face_t'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/hb-ot-cff1-table.hh' l='1052' u='a' c='_ZN2OT4cff119accelerator_templ_t4initEP9hb_face_t'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/hb-ot-cff1-table.hh' l='1056' u='a' c='_ZN2OT4cff119accelerator_templ_t4initEP9hb_face_t'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/hb-ot-cff1-table.hh' l='1061' u='a' c='_ZN2OT4cff119accelerator_templ_t4initEP9hb_face_t'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/hb-ot-cff1-table.hh' l='1072' u='a' c='_ZN2OT4cff119accelerator_templ_t4initEP9hb_face_t'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/hb-ot-cff1-table.hh' l='1080' u='a' c='_ZN2OT4cff119accelerator_templ_t4initEP9hb_face_t'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/hb-ot-cff1-table.hh' l='1081' u='a' c='_ZN2OT4cff119accelerator_templ_t4initEP9hb_face_t'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/hb-ot-cff1-table.hh' l='1102' u='a' c='_ZN2OT4cff119accelerator_templ_t4initEP9hb_face_t'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/hb-ot-cff1-table.hh' l='1107' u='a' c='_ZN2OT4cff119accelerator_templ_t4initEP9hb_face_t'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/hb-ot-cff1-table.hh' l='1111' u='a' c='_ZN2OT4cff119accelerator_templ_t4initEP9hb_face_t'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/hb-ot-cff1-table.hh' l='1116' u='a' c='_ZN2OT4cff119accelerator_templ_t4initEP9hb_face_t'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/hb-ot-cff1-table.hh' l='1120' u='m' c='_ZN2OT4cff119accelerator_templ_t4initEP9hb_face_t'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/hb-ot-cff1-table.hh' l='1134' u='a' c='_ZN2OT4cff119accelerator_templ_t4initEP9hb_face_t'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/hb-ot-cff1-table.hh' l='1145' u='a' c='_ZN2OT4cff119accelerator_templ_t4initEP9hb_face_t'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/hb-ot-cff1-table.hh' l='1153' u='a' c='_ZN2OT4cff119accelerator_templ_t4initEP9hb_face_t'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/hb-ot-cff1-table.hh' l='1163' u='a' c='_ZN2OT4cff119accelerator_templ_t4initEP9hb_face_t'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/hb-ot-cff1-table.hh' l='1171' u='a' c='_ZN2OT4cff119accelerator_templ_t4initEP9hb_face_t'/>
+<use f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/hb-ot-cff1-table.hh' l='1178' u='m' c='_ZN2OT4cff119accelerator_templ_t4finiEv'/>
+<dec f='qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/hb-ot-cff1-table.hh' l='1294' type='hb_sanitize_context_t'/>

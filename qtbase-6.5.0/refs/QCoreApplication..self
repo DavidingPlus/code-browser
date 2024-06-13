@@ -1,0 +1,17 @@
+<use f='qtbase-6.5.0/src/corelib/kernel/qcoreapplication.h' l='90' u='r' c='_ZN16QCoreApplication8instanceEv'/>
+<dec f='qtbase-6.5.0/src/corelib/kernel/qcoreapplication.h' l='243' type='QCoreApplication *'/>
+<use f='qtbase-6.5.0/src/corelib/kernel/qcoreapplication.cpp' l='190' u='r' c='_ZN23QCoreApplicationPrivate13checkInstanceEPKc'/>
+<def f='qtbase-6.5.0/src/corelib/kernel/qcoreapplication.cpp' l='346' type='QCoreApplication *'/>
+<use f='qtbase-6.5.0/src/corelib/kernel/qcoreapplication.cpp' l='828' u='r' c='_ZN23QCoreApplicationPrivate4initEv'/>
+<use f='qtbase-6.5.0/src/corelib/kernel/qcoreapplication.cpp' l='829' u='w' c='_ZN23QCoreApplicationPrivate4initEv'/>
+<use f='qtbase-6.5.0/src/corelib/kernel/qcoreapplication.cpp' l='930' u='w' c='_ZN16QCoreApplicationD1Ev'/>
+<use f='qtbase-6.5.0/src/corelib/kernel/qcoreapplication.cpp' l='2381' u='r' c='_ZN16QCoreApplication18applicationDirPathEv'/>
+<use f='qtbase-6.5.0/src/corelib/kernel/qcoreapplication.cpp' l='2386' u='r' c='_ZN16QCoreApplication18applicationDirPathEv'/>
+<use f='qtbase-6.5.0/src/corelib/kernel/qcoreapplication.cpp' l='2433' u='r' c='_ZN16QCoreApplication19applicationFilePathEv'/>
+<use f='qtbase-6.5.0/src/corelib/kernel/qcoreapplication.cpp' l='2438' u='r' c='_ZN16QCoreApplication19applicationFilePathEv'/>
+<use f='qtbase-6.5.0/src/corelib/kernel/qcoreapplication.cpp' l='2536' u='r' c='_ZN16QCoreApplication9argumentsEv'/>
+<use f='qtbase-6.5.0/src/corelib/kernel/qcoreapplication.cpp' l='2541' u='r' c='_ZN16QCoreApplication9argumentsEv'/>
+<use f='qtbase-6.5.0/src/corelib/kernel/qcoreapplication.cpp' l='2683' u='r' c='_ZN16QCoreApplication18setApplicationNameERK7QString'/>
+<use f='qtbase-6.5.0/src/corelib/kernel/qcoreapplication.cpp' l='2684' u='r' c='_ZN16QCoreApplication18setApplicationNameERK7QString'/>
+<use f='qtbase-6.5.0/src/corelib/kernel/qcoreapplication.cpp' l='2736' u='r' c='_ZN16QCoreApplication21setApplicationVersionERK7QString'/>
+<use f='qtbase-6.5.0/src/corelib/kernel/qcoreapplication.cpp' l='2737' u='r' c='_ZN16QCoreApplication21setApplicationVersionERK7QString'/>

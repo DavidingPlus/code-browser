@@ -1,0 +1,90 @@
+<def f='qtbase-6.5.0/src/testlib/qbenchmarkperfevents.cpp' l='215' ll='220'/>
+<use f='qtbase-6.5.0/src/testlib/qbenchmarkperfevents.cpp' l='310'/>
+<use f='qtbase-6.5.0/src/testlib/qbenchmarkperfevents.cpp' l='400' c='_ZL14metricForEvent9PerfEvent'/>
+<use f='qtbase-6.5.0/src/testlib/qbenchmarkperfevents.cpp' l='420' c='_ZN28QBenchmarkPerfEventsMeasurer10setCounterEPKc'/>
+<use f='qtbase-6.5.0/src/testlib/qbenchmarkperfevents.cpp' l='453' c='_ZN28QBenchmarkPerfEventsMeasurer12listCountersEv'/>
+<size>24</size>
+<doc f='qtbase-6.5.0/src/testlib/qbenchmarkperfevents.cpp' l='130'>/* Event list structure
+   The following table provides the list of supported events
+
+   Event type   Event counter           Unit            Name and aliases
+   HARDWARE     CPU_CYCLES              CPUCycles       cycles  cpu-cycles
+   HARDWARE     REF_CPU_CYCLES          RefCPUCycles    ref-cycles
+   HARDWARE     INSTRUCTIONS            Instructions    instructions
+   HARDWARE     CACHE_REFERENCES        CacheReferences cache-references
+   HARDWARE     CACHE_MISSES            CacheMisses     cache-misses
+   HARDWARE     BRANCH_INSTRUCTIONS     BranchInstructions branch-instructions branches
+   HARDWARE     BRANCH_MISSES           BranchMisses    branch-misses
+   HARDWARE     BUS_CYCLES              BusCycles       bus-cycles
+   HARDWARE     STALLED_CYCLES_FRONTEND StalledCycles   stalled-cycles-frontend idle-cycles-frontend
+   HARDWARE     STALLED_CYCLES_BACKEND  StalledCycles   stalled-cycles-backend idle-cycles-backend
+   SOFTWARE     CPU_CLOCK               WalltimeNanoseconds cpu-clock
+   SOFTWARE     TASK_CLOCK              WalltimeNanoseconds task-clock
+   SOFTWARE     PAGE_FAULTS             PageFaults      page-faults faults
+   SOFTWARE     PAGE_FAULTS_MAJ         MajorPageFaults major-faults
+   SOFTWARE     PAGE_FAULTS_MIN         MinorPageFaults minor-faults
+   SOFTWARE     CONTEXT_SWITCHES        ContextSwitches context-switches cs
+   SOFTWARE     CPU_MIGRATIONS          CPUMigrations   cpu-migrations migrations
+   SOFTWARE     ALIGNMENT_FAULTS        AlignmentFaults alignment-faults
+   SOFTWARE     EMULATION_FAULTS        EmulationFaults emulation-faults
+   HW_CACHE     L1D_READ                CacheReads      l1d-cache-reads l1d-cache-loads l1d-reads l1d-loads
+   HW_CACHE     L1D_WRITE               CacheWrites     l1d-cache-writes l1d-cache-stores l1d-writes l1d-stores
+   HW_CACHE     L1D_PREFETCH            CachePrefetches l1d-cache-prefetches l1d-prefetches
+   HW_CACHE     L1I_READ                CacheReads      l1i-cache-reads l1i-cache-loads l1i-reads l1i-loads
+   HW_CACHE     L1I_PREFETCH            CachePrefetches l1i-cache-prefetches l1i-prefetches
+   HW_CACHE     LLC_READ                CacheReads      llc-cache-reads llc-cache-loads llc-loads llc-reads
+   HW_CACHE     LLC_WRITE               CacheWrites     llc-cache-writes llc-cache-stores llc-writes llc-stores
+   HW_CACHE     LLC_PREFETCH            CachePrefetches llc-cache-prefetches llc-prefetches
+   HW_CACHE     L1D_READ_MISS           CacheReads      l1d-cache-read-misses l1d-cache-load-misses l1d-read-misses l1d-load-misses
+   HW_CACHE     L1D_WRITE_MISS          CacheWrites     l1d-cache-write-misses l1d-cache-store-misses l1d-write-misses l1d-store-misses
+   HW_CACHE     L1D_PREFETCH_MISS       CachePrefetches l1d-cache-prefetch-misses l1d-prefetch-misses
+   HW_CACHE     L1I_READ_MISS           CacheReads      l1i-cache-read-misses l1i-cache-load-misses l1i-read-misses l1i-load-misses
+   HW_CACHE     L1I_PREFETCH_MISS       CachePrefetches l1i-cache-prefetch-misses l1i-prefetch-misses
+   HW_CACHE     LLC_READ_MISS           CacheReads      llc-cache-read-misses llc-cache-load-misses llc-read-misses llc-load-misses
+   HW_CACHE     LLC_WRITE_MISS          CacheWrites     llc-cache-write-misses llc-cache-store-misses llc-write-misses llc-store-misses
+   HW_CACHE     LLC_PREFETCH_MISS       CachePrefetches llc-cache-prefetch-misses llc-prefetch-misses
+   HW_CACHE     BRANCH_READ             BranchInstructions branch-reads branch-loads branch-predicts
+   HW_CACHE     BRANCH_READ_MISS        BranchMisses    branch-mispredicts branch-read-misses branch-load-misses
+
+   Use the following Perl script to re-generate the list
+=== cut perl ===
+#!/usr/bin/env perl
+# Load all entries into %map
+while (&lt;STDIN&gt;) {
+    m/^\s*(.*)\s*$/;
+    @_ = split /\s+/, $1;
+    $type = shift @_;
+    $id = ($type eq &quot;HARDWARE&quot; ? &quot;PERF_COUNT_HW_&quot; :
+       $type eq &quot;SOFTWARE&quot; ? &quot;PERF_COUNT_SW_&quot; :
+       $type eq &quot;HW_CACHE&quot; ? &quot;CACHE_&quot; : &quot;&quot;) . shift @_;
+    $unit = shift @_;
+
+    for $string (@_) {
+    die &quot;$string was already seen!&quot; if defined($map{$string});
+    $map{$string} = [-1, $type, $id, $unit];
+    push @strings, $string;
+    }
+}
+
+# sort the map and print the string list
+@strings = sort @strings;
+print &quot;static const char eventlist_strings[] = \n&quot;;
+$counter = 0;
+for $entry (@strings) {
+    print &quot;    \&quot;$entry\\0\&quot;\n&quot;;
+    $map{$entry}[0] = $counter;
+    $counter += 1 + length $entry;
+}
+
+# print the table
+print &quot;    \&quot;\\0\&quot;;\n\nstatic const Events eventlist[] = {\n&quot;;
+for $entry (sort @strings) {
+    printf &quot;    { %3d, PERF_TYPE_%s, %s, QTest::%s },\n&quot;,
+        $map{$entry}[0],
+    $map{$entry}[1],
+        $map{$entry}[2],
+        $map{$entry}[3];
+}
+print &quot;};\n&quot;;
+=== cut perl ===
+*/</doc>

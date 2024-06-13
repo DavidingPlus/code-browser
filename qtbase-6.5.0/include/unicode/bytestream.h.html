@@ -1,0 +1,294 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>bytestream.h source code [include/unicode/bytestream.h] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="icu_66::ByteSink,icu_66::CheckedArrayByteSink,icu_66::StringByteSink "/>
+<link rel="stylesheet" href="../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'include/unicode/bytestream.h'; var root_path = '../..'; var data_path = '../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='..'>include</a>/<a href='./'>unicode</a>/<a href='bytestream.h.html'>bytestream.h</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>// © 2016 and later: Unicode, Inc. and others.</i></td></tr>
+<tr><th id="2">2</th><td><i>// License &amp; terms of use: <a href="http://www.unicode.org/copyright.html">http://www.unicode.org/copyright.html</a></i></td></tr>
+<tr><th id="3">3</th><td><i>// Copyright (C) 2009-2012, International Business Machines</i></td></tr>
+<tr><th id="4">4</th><td><i>// Corporation and others. All Rights Reserved.</i></td></tr>
+<tr><th id="5">5</th><td><i>//</i></td></tr>
+<tr><th id="6">6</th><td><i>// Copyright 2007 Google Inc. All Rights Reserved.</i></td></tr>
+<tr><th id="7">7</th><td><i>// Author: sanjay@google.com (Sanjay Ghemawat)</i></td></tr>
+<tr><th id="8">8</th><td><i>//</i></td></tr>
+<tr><th id="9">9</th><td><i>// Abstract interface that consumes a sequence of bytes (ByteSink).</i></td></tr>
+<tr><th id="10">10</th><td><i>//</i></td></tr>
+<tr><th id="11">11</th><td><i>// Used so that we can write a single piece of code that can operate</i></td></tr>
+<tr><th id="12">12</th><td><i>// on a variety of output string types.</i></td></tr>
+<tr><th id="13">13</th><td><i>//</i></td></tr>
+<tr><th id="14">14</th><td><i>// Various implementations of this interface are provided:</i></td></tr>
+<tr><th id="15">15</th><td><i>//   ByteSink:</i></td></tr>
+<tr><th id="16">16</th><td><i>//      CheckedArrayByteSink    Write to a flat array, with bounds checking</i></td></tr>
+<tr><th id="17">17</th><td><i>//      StringByteSink          Write to an STL string</i></td></tr>
+<tr><th id="18">18</th><td><i></i></td></tr>
+<tr><th id="19">19</th><td><i>// This code is a contribution of Google code, and the style used here is</i></td></tr>
+<tr><th id="20">20</th><td><i>// a compromise between the original Google code and the ICU coding guidelines.</i></td></tr>
+<tr><th id="21">21</th><td><i>// For example, data types are ICU-ified (size_t,int-&gt;int32_t),</i></td></tr>
+<tr><th id="22">22</th><td><i>// and API comments doxygen-ified, but function names and behavior are</i></td></tr>
+<tr><th id="23">23</th><td><i>// as in the original, if possible.</i></td></tr>
+<tr><th id="24">24</th><td><i>// Assertion-style error handling, not available in ICU, was changed to</i></td></tr>
+<tr><th id="25">25</th><td><i>// parameter "pinning" similar to UnicodeString.</i></td></tr>
+<tr><th id="26">26</th><td><i>//</i></td></tr>
+<tr><th id="27">27</th><td><i>// In addition, this is only a partial port of the original Google code,</i></td></tr>
+<tr><th id="28">28</th><td><i>// limited to what was needed so far. The (nearly) complete original code</i></td></tr>
+<tr><th id="29">29</th><td><i>// is in the ICU svn repository at icuhtml/trunk/design/strings/contrib</i></td></tr>
+<tr><th id="30">30</th><td><i>// (see ICU ticket 6765, r25517).</i></td></tr>
+<tr><th id="31">31</th><td></td></tr>
+<tr><th id="32">32</th><td><u>#<span data-ppcond="32">ifndef</span> <span class="macro" data-ref="_M/__BYTESTREAM_H__">__BYTESTREAM_H__</span></u></td></tr>
+<tr><th id="33">33</th><td><u>#define <dfn class="macro" id="_M/__BYTESTREAM_H__" data-ref="_M/__BYTESTREAM_H__">__BYTESTREAM_H__</dfn></u></td></tr>
+<tr><th id="34">34</th><td></td></tr>
+<tr><th id="35">35</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="36">36</th><td><i class="doc"> * <span class="command">\file</span></i></td></tr>
+<tr><th id="37">37</th><td><i class="doc"> * <span class="command">\brief</span> C++ API: Interface for writing bytes, and implementation classes.</i></td></tr>
+<tr><th id="38">38</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="39">39</th><td></td></tr>
+<tr><th id="40">40</th><td><u>#include <a href="utypes.h.html">"unicode/utypes.h"</a></u></td></tr>
+<tr><th id="41">41</th><td></td></tr>
+<tr><th id="42">42</th><td><u>#<span data-ppcond="42">if</span> <a class="macro" href="utypes.h.html#64" title="1" data-ref="_M/U_SHOW_CPLUSPLUS_API">U_SHOW_CPLUSPLUS_API</a></u></td></tr>
+<tr><th id="43">43</th><td></td></tr>
+<tr><th id="44">44</th><td><u>#include <a href="uobject.h.html">"unicode/uobject.h"</a></u></td></tr>
+<tr><th id="45">45</th><td><u>#include <a href="std_string.h.html">"unicode/std_string.h"</a></u></td></tr>
+<tr><th id="46">46</th><td></td></tr>
+<tr><th id="47">47</th><td><a class="macro" href="uversion.h.html#110" title="namespace icu_66 {" data-ref="_M/U_NAMESPACE_BEGIN">U_NAMESPACE_BEGIN</a></td></tr>
+<tr><th id="48">48</th><td></td></tr>
+<tr><th id="49">49</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="50">50</th><td><i class="doc"> * A ByteSink can be filled with bytes.</i></td></tr>
+<tr><th id="51">51</th><td><i class="doc"> *<span class="command"> @stable</span> ICU 4.2</i></td></tr>
+<tr><th id="52">52</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="53">53</th><td><b>class</b> <a class="macro" href="utypes.h.html#364" title="" data-ref="_M/U_COMMON_API">U_COMMON_API</a> <dfn class="type def" id="icu_66::ByteSink" title='icu_66::ByteSink' data-ref="icu_66::ByteSink">ByteSink</dfn> : <b>public</b> <a class="type" href="uobject.h.html#icu_66::UMemory" title='icu_66::UMemory' data-ref="icu_66::UMemory">UMemory</a> {</td></tr>
+<tr><th id="54">54</th><td><b>public</b>:</td></tr>
+<tr><th id="55">55</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="56">56</th><td><i class="doc">   * Default constructor.</i></td></tr>
+<tr><th id="57">57</th><td><i class="doc">   *<span class="command"> @stable</span> ICU 4.2</i></td></tr>
+<tr><th id="58">58</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="59">59</th><td>  <dfn class="decl def fn" id="_ZN6icu_668ByteSinkC1Ev" title='icu_66::ByteSink::ByteSink' data-ref="_ZN6icu_668ByteSinkC1Ev">ByteSink</dfn>() { }</td></tr>
+<tr><th id="60">60</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="61">61</th><td><i class="doc">   * Virtual destructor.</i></td></tr>
+<tr><th id="62">62</th><td><i class="doc">   *<span class="command"> @stable</span> ICU 4.2</i></td></tr>
+<tr><th id="63">63</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="64">64</th><td>  <b>virtual</b> <dfn class="virtual decl fn" id="_ZN6icu_668ByteSinkD1Ev" title='icu_66::ByteSink::~ByteSink' data-ref="_ZN6icu_668ByteSinkD1Ev">~ByteSink</dfn>();</td></tr>
+<tr><th id="65">65</th><td></td></tr>
+<tr><th id="66">66</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="67">67</th><td><i class="doc">   * Append "bytes[0,n-1]" to this.</i></td></tr>
+<tr><th id="68">68</th><td><i class="doc">   * <span class="command">@param</span> <span class="arg">bytes</span> the pointer to the bytes</i></td></tr>
+<tr><th id="69">69</th><td><i class="doc">   * <span class="command">@param</span> <span class="arg">n</span> the number of bytes; must be non-negative</i></td></tr>
+<tr><th id="70">70</th><td><i class="doc">   *<span class="command"> @stable</span> ICU 4.2</i></td></tr>
+<tr><th id="71">71</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="72">72</th><td>  <b>virtual</b> <em>void</em> <dfn class="virtual decl fn" id="_ZN6icu_668ByteSink6AppendEPKci" title='icu_66::ByteSink::Append' data-ref="_ZN6icu_668ByteSink6AppendEPKci">Append</dfn>(<em>const</em> <em>char</em>* <dfn class="local col2 decl" id="392bytes" title='bytes' data-type='const char *' data-ref="392bytes">bytes</dfn>, <a class="typedef" href="../x86_64-linux-gnu/bits/stdint-intn.h.html#int32_t" title='int32_t' data-type='__int32_t' data-ref="int32_t">int32_t</a> <dfn class="local col3 decl" id="393n" title='n' data-type='int32_t' data-ref="393n">n</dfn>) = <var>0</var>;</td></tr>
+<tr><th id="73">73</th><td></td></tr>
+<tr><th id="74">74</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="75">75</th><td><i class="doc">   * Returns a writable buffer for appending and writes the buffer's capacity to</i></td></tr>
+<tr><th id="76">76</th><td><i class="doc">   * *result_capacity. Guarantees *result_capacity&gt;=min_capacity.</i></td></tr>
+<tr><th id="77">77</th><td><i class="doc">   * May return a pointer to the caller-owned scratch buffer which must have</i></td></tr>
+<tr><th id="78">78</th><td><i class="doc">   * scratch_capacity&gt;=min_capacity.</i></td></tr>
+<tr><th id="79">79</th><td><i class="doc">   * The returned buffer is only valid until the next operation</i></td></tr>
+<tr><th id="80">80</th><td><i class="doc">   * on this ByteSink.</i></td></tr>
+<tr><th id="81">81</th><td><i class="doc">   *</i></td></tr>
+<tr><th id="82">82</th><td><i class="doc">   * After writing at most *result_capacity bytes, call Append() with the</i></td></tr>
+<tr><th id="83">83</th><td><i class="doc">   * pointer returned from this function and the number of bytes written.</i></td></tr>
+<tr><th id="84">84</th><td><i class="doc">   * Many Append() implementations will avoid copying bytes if this function</i></td></tr>
+<tr><th id="85">85</th><td><i class="doc">   * returned an internal buffer.</i></td></tr>
+<tr><th id="86">86</th><td><i class="doc">   *</i></td></tr>
+<tr><th id="87">87</th><td><i class="doc">   * Partial usage example:</i></td></tr>
+<tr><th id="88">88</th><td><i class="doc">   *  int32_t capacity;</i></td></tr>
+<tr><th id="89">89</th><td><i class="doc">   *  char* buffer = sink-&gt;GetAppendBuffer(..., &amp;capacity);</i></td></tr>
+<tr><th id="90">90</th><td><i class="doc">   *  ... Write n bytes into buffer, with n &lt;= capacity.</i></td></tr>
+<tr><th id="91">91</th><td><i class="doc">   *  sink-&gt;Append(buffer, n);</i></td></tr>
+<tr><th id="92">92</th><td><i class="doc">   * In many implementations, that call to Append will avoid copying bytes.</i></td></tr>
+<tr><th id="93">93</th><td><i class="doc">   *</i></td></tr>
+<tr><th id="94">94</th><td><i class="doc">   * If the ByteSink allocates or reallocates an internal buffer, it should use</i></td></tr>
+<tr><th id="95">95</th><td><i class="doc">   * the desired_capacity_hint if appropriate.</i></td></tr>
+<tr><th id="96">96</th><td><i class="doc">   * If a caller cannot provide a reasonable guess at the desired capacity,</i></td></tr>
+<tr><th id="97">97</th><td><i class="doc">   * it should pass desired_capacity_hint=0.</i></td></tr>
+<tr><th id="98">98</th><td><i class="doc">   *</i></td></tr>
+<tr><th id="99">99</th><td><i class="doc">   * If a non-scratch buffer is returned, the caller may only pass</i></td></tr>
+<tr><th id="100">100</th><td><i class="doc">   * a prefix to it to Append().</i></td></tr>
+<tr><th id="101">101</th><td><i class="doc">   * That is, it is not correct to pass an interior pointer to Append().</i></td></tr>
+<tr><th id="102">102</th><td><i class="doc">   *</i></td></tr>
+<tr><th id="103">103</th><td><i class="doc">   * The default implementation always returns the scratch buffer.</i></td></tr>
+<tr><th id="104">104</th><td><i class="doc">   *</i></td></tr>
+<tr><th id="105">105</th><td><i class="doc">   * <span class="command">@param</span> <span class="arg">min_capacity</span> required minimum capacity of the returned buffer;</i></td></tr>
+<tr><th id="106">106</th><td><i class="doc">   *                     must be non-negative</i></td></tr>
+<tr><th id="107">107</th><td><i class="doc">   * <span class="command">@param</span> <span class="arg">desired_capacity_hint</span> desired capacity of the returned buffer;</i></td></tr>
+<tr><th id="108">108</th><td><i class="doc">   *                              must be non-negative</i></td></tr>
+<tr><th id="109">109</th><td><i class="doc">   * <span class="command">@param</span> <span class="arg">scratch</span> default caller-owned buffer</i></td></tr>
+<tr><th id="110">110</th><td><i class="doc">   * <span class="command">@param</span> <span class="arg">scratch_capacity</span> capacity of the scratch buffer</i></td></tr>
+<tr><th id="111">111</th><td><i class="doc">   * <span class="command">@param</span> <span class="arg">result_capacity</span> pointer to an integer which will be set to the</i></td></tr>
+<tr><th id="112">112</th><td><i class="doc">   *                        capacity of the returned buffer</i></td></tr>
+<tr><th id="113">113</th><td><i class="doc">   * <span class="command">@return</span> a buffer with *result_capacity&gt;=min_capacity</i></td></tr>
+<tr><th id="114">114</th><td><i class="doc">   *<span class="command"> @stable</span> ICU 4.2</i></td></tr>
+<tr><th id="115">115</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="116">116</th><td>  <b>virtual</b> <em>char</em>* <dfn class="virtual decl fn" id="_ZN6icu_668ByteSink15GetAppendBufferEiiPciPi" title='icu_66::ByteSink::GetAppendBuffer' data-ref="_ZN6icu_668ByteSink15GetAppendBufferEiiPciPi">GetAppendBuffer</dfn>(<a class="typedef" href="../x86_64-linux-gnu/bits/stdint-intn.h.html#int32_t" title='int32_t' data-type='__int32_t' data-ref="int32_t">int32_t</a> <dfn class="local col4 decl" id="394min_capacity" title='min_capacity' data-type='int32_t' data-ref="394min_capacity">min_capacity</dfn>,</td></tr>
+<tr><th id="117">117</th><td>                                <a class="typedef" href="../x86_64-linux-gnu/bits/stdint-intn.h.html#int32_t" title='int32_t' data-type='__int32_t' data-ref="int32_t">int32_t</a> <dfn class="local col5 decl" id="395desired_capacity_hint" title='desired_capacity_hint' data-type='int32_t' data-ref="395desired_capacity_hint">desired_capacity_hint</dfn>,</td></tr>
+<tr><th id="118">118</th><td>                                <em>char</em>* <dfn class="local col6 decl" id="396scratch" title='scratch' data-type='char *' data-ref="396scratch">scratch</dfn>, <a class="typedef" href="../x86_64-linux-gnu/bits/stdint-intn.h.html#int32_t" title='int32_t' data-type='__int32_t' data-ref="int32_t">int32_t</a> <dfn class="local col7 decl" id="397scratch_capacity" title='scratch_capacity' data-type='int32_t' data-ref="397scratch_capacity">scratch_capacity</dfn>,</td></tr>
+<tr><th id="119">119</th><td>                                <a class="typedef" href="../x86_64-linux-gnu/bits/stdint-intn.h.html#int32_t" title='int32_t' data-type='__int32_t' data-ref="int32_t">int32_t</a>* <dfn class="local col8 decl" id="398result_capacity" title='result_capacity' data-type='int32_t *' data-ref="398result_capacity">result_capacity</dfn>);</td></tr>
+<tr><th id="120">120</th><td></td></tr>
+<tr><th id="121">121</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="122">122</th><td><i class="doc">   * Flush internal buffers.</i></td></tr>
+<tr><th id="123">123</th><td><i class="doc">   * Some byte sinks use internal buffers or provide buffering</i></td></tr>
+<tr><th id="124">124</th><td><i class="doc">   * and require calling Flush() at the end of the stream.</i></td></tr>
+<tr><th id="125">125</th><td><i class="doc">   * The ByteSink should be ready for further Append() calls after Flush().</i></td></tr>
+<tr><th id="126">126</th><td><i class="doc">   * The default implementation of Flush() does nothing.</i></td></tr>
+<tr><th id="127">127</th><td><i class="doc">   *<span class="command"> @stable</span> ICU 4.2</i></td></tr>
+<tr><th id="128">128</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="129">129</th><td>  <b>virtual</b> <em>void</em> <dfn class="virtual decl fn" id="_ZN6icu_668ByteSink5FlushEv" title='icu_66::ByteSink::Flush' data-ref="_ZN6icu_668ByteSink5FlushEv">Flush</dfn>();</td></tr>
+<tr><th id="130">130</th><td></td></tr>
+<tr><th id="131">131</th><td><b>private</b>:</td></tr>
+<tr><th id="132">132</th><td>  <dfn class="decl def fn" id="_ZN6icu_668ByteSinkC1ERKS0_" title='icu_66::ByteSink::ByteSink' data-ref="_ZN6icu_668ByteSinkC1ERKS0_">ByteSink</dfn>(<em>const</em> <a class="type" href="#icu_66::ByteSink" title='icu_66::ByteSink' data-ref="icu_66::ByteSink">ByteSink</a> &amp;) = <b>delete</b>;</td></tr>
+<tr><th id="133">133</th><td>  <a class="type" href="#icu_66::ByteSink" title='icu_66::ByteSink' data-ref="icu_66::ByteSink">ByteSink</a> &amp;<dfn class="decl def fn" id="_ZN6icu_668ByteSinkaSERKS0_" title='icu_66::ByteSink::operator=' data-ref="_ZN6icu_668ByteSinkaSERKS0_"><b>operator</b>=</dfn>(<em>const</em> <a class="type" href="#icu_66::ByteSink" title='icu_66::ByteSink' data-ref="icu_66::ByteSink">ByteSink</a> &amp;) = <b>delete</b>;</td></tr>
+<tr><th id="134">134</th><td>};</td></tr>
+<tr><th id="135">135</th><td></td></tr>
+<tr><th id="136">136</th><td><i>// -------------------------------------------------------------</i></td></tr>
+<tr><th id="137">137</th><td><i>// Some standard implementations</i></td></tr>
+<tr><th id="138">138</th><td></td></tr>
+<tr><th id="139">139</th><td><i class="doc">/** </i></td></tr>
+<tr><th id="140">140</th><td><i class="doc"> * Implementation of ByteSink that writes to a flat byte array,</i></td></tr>
+<tr><th id="141">141</th><td><i class="doc"> * with bounds-checking:</i></td></tr>
+<tr><th id="142">142</th><td><i class="doc"> * This sink will not write more than capacity bytes to outbuf.</i></td></tr>
+<tr><th id="143">143</th><td><i class="doc"> * If more than capacity bytes are Append()ed, then excess bytes are ignored,</i></td></tr>
+<tr><th id="144">144</th><td><i class="doc"> * and Overflowed() will return true.</i></td></tr>
+<tr><th id="145">145</th><td><i class="doc"> * Overflow does not cause a runtime error.</i></td></tr>
+<tr><th id="146">146</th><td><i class="doc"> *<span class="command"> @stable</span> ICU 4.2</i></td></tr>
+<tr><th id="147">147</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="148">148</th><td><b>class</b> <a class="macro" href="utypes.h.html#364" title="" data-ref="_M/U_COMMON_API">U_COMMON_API</a> <dfn class="type def" id="icu_66::CheckedArrayByteSink" title='icu_66::CheckedArrayByteSink' data-ref="icu_66::CheckedArrayByteSink">CheckedArrayByteSink</dfn> : <b>public</b> <a class="type" href="#icu_66::ByteSink" title='icu_66::ByteSink' data-ref="icu_66::ByteSink">ByteSink</a> {</td></tr>
+<tr><th id="149">149</th><td><b>public</b>:</td></tr>
+<tr><th id="150">150</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="151">151</th><td><i class="doc">   * Constructs a ByteSink that will write to outbuf[0..capacity-1].</i></td></tr>
+<tr><th id="152">152</th><td><i class="doc">   * <span class="command">@param</span> <span class="arg">outbuf</span> buffer to write to</i></td></tr>
+<tr><th id="153">153</th><td><i class="doc">   * <span class="command">@param</span> <span class="arg">capacity</span> size of the buffer</i></td></tr>
+<tr><th id="154">154</th><td><i class="doc">   *<span class="command"> @stable</span> ICU 4.2</i></td></tr>
+<tr><th id="155">155</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="156">156</th><td>  <dfn class="decl fn" id="_ZN6icu_6620CheckedArrayByteSinkC1EPci" title='icu_66::CheckedArrayByteSink::CheckedArrayByteSink' data-ref="_ZN6icu_6620CheckedArrayByteSinkC1EPci">CheckedArrayByteSink</dfn>(<em>char</em>* <dfn class="local col9 decl" id="399outbuf" title='outbuf' data-type='char *' data-ref="399outbuf">outbuf</dfn>, <a class="typedef" href="../x86_64-linux-gnu/bits/stdint-intn.h.html#int32_t" title='int32_t' data-type='__int32_t' data-ref="int32_t">int32_t</a> <dfn class="local col0 decl" id="400capacity" title='capacity' data-type='int32_t' data-ref="400capacity">capacity</dfn>);</td></tr>
+<tr><th id="157">157</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="158">158</th><td><i class="doc">   * Destructor.</i></td></tr>
+<tr><th id="159">159</th><td><i class="doc">   *<span class="command"> @stable</span> ICU 4.2</i></td></tr>
+<tr><th id="160">160</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="161">161</th><td>  <b>virtual</b> <dfn class="virtual decl fn" id="_ZN6icu_6620CheckedArrayByteSinkD1Ev" title='icu_66::CheckedArrayByteSink::~CheckedArrayByteSink' data-ref="_ZN6icu_6620CheckedArrayByteSinkD1Ev">~CheckedArrayByteSink</dfn>();</td></tr>
+<tr><th id="162">162</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="163">163</th><td><i class="doc">   * Returns the sink to its original state, without modifying the buffer.</i></td></tr>
+<tr><th id="164">164</th><td><i class="doc">   * Useful for reusing both the buffer and the sink for multiple streams.</i></td></tr>
+<tr><th id="165">165</th><td><i class="doc">   * Resets the state to NumberOfBytesWritten()=NumberOfBytesAppended()=0</i></td></tr>
+<tr><th id="166">166</th><td><i class="doc">   * and Overflowed()=FALSE.</i></td></tr>
+<tr><th id="167">167</th><td><i class="doc">   * <span class="command">@return</span> *this</i></td></tr>
+<tr><th id="168">168</th><td><i class="doc">   *<span class="command"> @stable</span> ICU 4.6</i></td></tr>
+<tr><th id="169">169</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="170">170</th><td>  <b>virtual</b> <a class="type" href="#icu_66::CheckedArrayByteSink" title='icu_66::CheckedArrayByteSink' data-ref="icu_66::CheckedArrayByteSink">CheckedArrayByteSink</a>&amp; <dfn class="virtual decl fn" id="_ZN6icu_6620CheckedArrayByteSink5ResetEv" title='icu_66::CheckedArrayByteSink::Reset' data-ref="_ZN6icu_6620CheckedArrayByteSink5ResetEv">Reset</dfn>();</td></tr>
+<tr><th id="171">171</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="172">172</th><td><i class="doc">   * Append "bytes[0,n-1]" to this.</i></td></tr>
+<tr><th id="173">173</th><td><i class="doc">   * <span class="command">@param</span> <span class="arg">bytes</span> the pointer to the bytes</i></td></tr>
+<tr><th id="174">174</th><td><i class="doc">   * <span class="command">@param</span> <span class="arg">n</span> the number of bytes; must be non-negative</i></td></tr>
+<tr><th id="175">175</th><td><i class="doc">   *<span class="command"> @stable</span> ICU 4.2</i></td></tr>
+<tr><th id="176">176</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="177">177</th><td>  <b>virtual</b> <em>void</em> <dfn class="virtual decl fn" id="_ZN6icu_6620CheckedArrayByteSink6AppendEPKci" title='icu_66::CheckedArrayByteSink::Append' data-ref="_ZN6icu_6620CheckedArrayByteSink6AppendEPKci">Append</dfn>(<em>const</em> <em>char</em>* <dfn class="local col1 decl" id="401bytes" title='bytes' data-type='const char *' data-ref="401bytes">bytes</dfn>, <a class="typedef" href="../x86_64-linux-gnu/bits/stdint-intn.h.html#int32_t" title='int32_t' data-type='__int32_t' data-ref="int32_t">int32_t</a> <dfn class="local col2 decl" id="402n" title='n' data-type='int32_t' data-ref="402n">n</dfn>);</td></tr>
+<tr><th id="178">178</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="179">179</th><td><i class="doc">   * Returns a writable buffer for appending and writes the buffer's capacity to</i></td></tr>
+<tr><th id="180">180</th><td><i class="doc">   * *result_capacity. For details see the base class documentation.</i></td></tr>
+<tr><th id="181">181</th><td><i class="doc">   * <span class="command">@param</span> <span class="arg">min_capacity</span> required minimum capacity of the returned buffer;</i></td></tr>
+<tr><th id="182">182</th><td><i class="doc">   *                     must be non-negative</i></td></tr>
+<tr><th id="183">183</th><td><i class="doc">   * <span class="command">@param</span> <span class="arg">desired_capacity_hint</span> desired capacity of the returned buffer;</i></td></tr>
+<tr><th id="184">184</th><td><i class="doc">   *                              must be non-negative</i></td></tr>
+<tr><th id="185">185</th><td><i class="doc">   * <span class="command">@param</span> <span class="arg">scratch</span> default caller-owned buffer</i></td></tr>
+<tr><th id="186">186</th><td><i class="doc">   * <span class="command">@param</span> <span class="arg">scratch_capacity</span> capacity of the scratch buffer</i></td></tr>
+<tr><th id="187">187</th><td><i class="doc">   * <span class="command">@param</span> <span class="arg">result_capacity</span> pointer to an integer which will be set to the</i></td></tr>
+<tr><th id="188">188</th><td><i class="doc">   *                        capacity of the returned buffer</i></td></tr>
+<tr><th id="189">189</th><td><i class="doc">   * <span class="command">@return</span> a buffer with *result_capacity&gt;=min_capacity</i></td></tr>
+<tr><th id="190">190</th><td><i class="doc">   *<span class="command"> @stable</span> ICU 4.2</i></td></tr>
+<tr><th id="191">191</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="192">192</th><td>  <b>virtual</b> <em>char</em>* <dfn class="virtual decl fn" id="_ZN6icu_6620CheckedArrayByteSink15GetAppendBufferEiiPciPi" title='icu_66::CheckedArrayByteSink::GetAppendBuffer' data-ref="_ZN6icu_6620CheckedArrayByteSink15GetAppendBufferEiiPciPi">GetAppendBuffer</dfn>(<a class="typedef" href="../x86_64-linux-gnu/bits/stdint-intn.h.html#int32_t" title='int32_t' data-type='__int32_t' data-ref="int32_t">int32_t</a> <dfn class="local col3 decl" id="403min_capacity" title='min_capacity' data-type='int32_t' data-ref="403min_capacity">min_capacity</dfn>,</td></tr>
+<tr><th id="193">193</th><td>                                <a class="typedef" href="../x86_64-linux-gnu/bits/stdint-intn.h.html#int32_t" title='int32_t' data-type='__int32_t' data-ref="int32_t">int32_t</a> <dfn class="local col4 decl" id="404desired_capacity_hint" title='desired_capacity_hint' data-type='int32_t' data-ref="404desired_capacity_hint">desired_capacity_hint</dfn>,</td></tr>
+<tr><th id="194">194</th><td>                                <em>char</em>* <dfn class="local col5 decl" id="405scratch" title='scratch' data-type='char *' data-ref="405scratch">scratch</dfn>, <a class="typedef" href="../x86_64-linux-gnu/bits/stdint-intn.h.html#int32_t" title='int32_t' data-type='__int32_t' data-ref="int32_t">int32_t</a> <dfn class="local col6 decl" id="406scratch_capacity" title='scratch_capacity' data-type='int32_t' data-ref="406scratch_capacity">scratch_capacity</dfn>,</td></tr>
+<tr><th id="195">195</th><td>                                <a class="typedef" href="../x86_64-linux-gnu/bits/stdint-intn.h.html#int32_t" title='int32_t' data-type='__int32_t' data-ref="int32_t">int32_t</a>* <dfn class="local col7 decl" id="407result_capacity" title='result_capacity' data-type='int32_t *' data-ref="407result_capacity">result_capacity</dfn>);</td></tr>
+<tr><th id="196">196</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="197">197</th><td><i class="doc">   * Returns the number of bytes actually written to the sink.</i></td></tr>
+<tr><th id="198">198</th><td><i class="doc">   * <span class="command">@return</span> number of bytes written to the buffer</i></td></tr>
+<tr><th id="199">199</th><td><i class="doc">   *<span class="command"> @stable</span> ICU 4.2</i></td></tr>
+<tr><th id="200">200</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="201">201</th><td>  <a class="typedef" href="../x86_64-linux-gnu/bits/stdint-intn.h.html#int32_t" title='int32_t' data-type='__int32_t' data-ref="int32_t">int32_t</a> <dfn class="decl def fn" id="_ZNK6icu_6620CheckedArrayByteSink20NumberOfBytesWrittenEv" title='icu_66::CheckedArrayByteSink::NumberOfBytesWritten' data-ref="_ZNK6icu_6620CheckedArrayByteSink20NumberOfBytesWrittenEv">NumberOfBytesWritten</dfn>() <em>const</em> { <b>return</b> <a class="member field" href="#icu_66::CheckedArrayByteSink::size_" title='icu_66::CheckedArrayByteSink::size_' data-ref="icu_66::CheckedArrayByteSink::size_">size_</a>; }</td></tr>
+<tr><th id="202">202</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="203">203</th><td><i class="doc">   * Returns true if any bytes were discarded, i.e., if there was an</i></td></tr>
+<tr><th id="204">204</th><td><i class="doc">   * attempt to write more than 'capacity' bytes.</i></td></tr>
+<tr><th id="205">205</th><td><i class="doc">   * <span class="command">@return</span> TRUE if more than 'capacity' bytes were Append()ed</i></td></tr>
+<tr><th id="206">206</th><td><i class="doc">   *<span class="command"> @stable</span> ICU 4.2</i></td></tr>
+<tr><th id="207">207</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="208">208</th><td>  <a class="typedef" href="umachine.h.html#UBool" title='UBool' data-type='int8_t' data-ref="UBool">UBool</a> <dfn class="decl def fn" id="_ZNK6icu_6620CheckedArrayByteSink10OverflowedEv" title='icu_66::CheckedArrayByteSink::Overflowed' data-ref="_ZNK6icu_6620CheckedArrayByteSink10OverflowedEv">Overflowed</dfn>() <em>const</em> { <b>return</b> <a class="member field" href="#icu_66::CheckedArrayByteSink::overflowed_" title='icu_66::CheckedArrayByteSink::overflowed_' data-ref="icu_66::CheckedArrayByteSink::overflowed_">overflowed_</a>; }</td></tr>
+<tr><th id="209">209</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="210">210</th><td><i class="doc">   * Returns the number of bytes appended to the sink.</i></td></tr>
+<tr><th id="211">211</th><td><i class="doc">   * If Overflowed() then NumberOfBytesAppended()&gt;NumberOfBytesWritten()</i></td></tr>
+<tr><th id="212">212</th><td><i class="doc">   * else they return the same number.</i></td></tr>
+<tr><th id="213">213</th><td><i class="doc">   * <span class="command">@return</span> number of bytes written to the buffer</i></td></tr>
+<tr><th id="214">214</th><td><i class="doc">   *<span class="command"> @stable</span> ICU 4.6</i></td></tr>
+<tr><th id="215">215</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="216">216</th><td>  <a class="typedef" href="../x86_64-linux-gnu/bits/stdint-intn.h.html#int32_t" title='int32_t' data-type='__int32_t' data-ref="int32_t">int32_t</a> <dfn class="decl def fn" id="_ZNK6icu_6620CheckedArrayByteSink21NumberOfBytesAppendedEv" title='icu_66::CheckedArrayByteSink::NumberOfBytesAppended' data-ref="_ZNK6icu_6620CheckedArrayByteSink21NumberOfBytesAppendedEv">NumberOfBytesAppended</dfn>() <em>const</em> { <b>return</b> <a class="member field" href="#icu_66::CheckedArrayByteSink::appended_" title='icu_66::CheckedArrayByteSink::appended_' data-ref="icu_66::CheckedArrayByteSink::appended_">appended_</a>; }</td></tr>
+<tr><th id="217">217</th><td><b>private</b>:</td></tr>
+<tr><th id="218">218</th><td>  <em>char</em>* <dfn class="decl field" id="icu_66::CheckedArrayByteSink::outbuf_" title='icu_66::CheckedArrayByteSink::outbuf_' data-ref="icu_66::CheckedArrayByteSink::outbuf_">outbuf_</dfn>;</td></tr>
+<tr><th id="219">219</th><td>  <em>const</em> <a class="typedef" href="../x86_64-linux-gnu/bits/stdint-intn.h.html#int32_t" title='int32_t' data-type='__int32_t' data-ref="int32_t">int32_t</a> <dfn class="decl field" id="icu_66::CheckedArrayByteSink::capacity_" title='icu_66::CheckedArrayByteSink::capacity_' data-ref="icu_66::CheckedArrayByteSink::capacity_">capacity_</dfn>;</td></tr>
+<tr><th id="220">220</th><td>  <a class="typedef" href="../x86_64-linux-gnu/bits/stdint-intn.h.html#int32_t" title='int32_t' data-type='__int32_t' data-ref="int32_t">int32_t</a> <dfn class="decl field" id="icu_66::CheckedArrayByteSink::size_" title='icu_66::CheckedArrayByteSink::size_' data-ref="icu_66::CheckedArrayByteSink::size_">size_</dfn>;</td></tr>
+<tr><th id="221">221</th><td>  <a class="typedef" href="../x86_64-linux-gnu/bits/stdint-intn.h.html#int32_t" title='int32_t' data-type='__int32_t' data-ref="int32_t">int32_t</a> <dfn class="decl field" id="icu_66::CheckedArrayByteSink::appended_" title='icu_66::CheckedArrayByteSink::appended_' data-ref="icu_66::CheckedArrayByteSink::appended_">appended_</dfn>;</td></tr>
+<tr><th id="222">222</th><td>  <a class="typedef" href="umachine.h.html#UBool" title='UBool' data-type='int8_t' data-ref="UBool">UBool</a> <dfn class="decl field" id="icu_66::CheckedArrayByteSink::overflowed_" title='icu_66::CheckedArrayByteSink::overflowed_' data-ref="icu_66::CheckedArrayByteSink::overflowed_">overflowed_</dfn>;</td></tr>
+<tr><th id="223">223</th><td></td></tr>
+<tr><th id="224">224</th><td>  <dfn class="decl def fn" id="_ZN6icu_6620CheckedArrayByteSinkC1Ev" title='icu_66::CheckedArrayByteSink::CheckedArrayByteSink' data-ref="_ZN6icu_6620CheckedArrayByteSinkC1Ev">CheckedArrayByteSink</dfn>() = <b>delete</b>;</td></tr>
+<tr><th id="225">225</th><td>  <dfn class="decl def fn" id="_ZN6icu_6620CheckedArrayByteSinkC1ERKS0_" title='icu_66::CheckedArrayByteSink::CheckedArrayByteSink' data-ref="_ZN6icu_6620CheckedArrayByteSinkC1ERKS0_">CheckedArrayByteSink</dfn>(<em>const</em> <a class="type" href="#icu_66::CheckedArrayByteSink" title='icu_66::CheckedArrayByteSink' data-ref="icu_66::CheckedArrayByteSink">CheckedArrayByteSink</a> &amp;) = <b>delete</b>;</td></tr>
+<tr><th id="226">226</th><td>  <a class="type" href="#icu_66::CheckedArrayByteSink" title='icu_66::CheckedArrayByteSink' data-ref="icu_66::CheckedArrayByteSink">CheckedArrayByteSink</a> &amp;<dfn class="decl def fn" id="_ZN6icu_6620CheckedArrayByteSinkaSERKS0_" title='icu_66::CheckedArrayByteSink::operator=' data-ref="_ZN6icu_6620CheckedArrayByteSinkaSERKS0_"><b>operator</b>=</dfn>(<em>const</em> <a class="type" href="#icu_66::CheckedArrayByteSink" title='icu_66::CheckedArrayByteSink' data-ref="icu_66::CheckedArrayByteSink">CheckedArrayByteSink</a> &amp;) = <b>delete</b>;</td></tr>
+<tr><th id="227">227</th><td>};</td></tr>
+<tr><th id="228">228</th><td></td></tr>
+<tr><th id="229">229</th><td><i class="doc">/** </i></td></tr>
+<tr><th id="230">230</th><td><i class="doc"> * Implementation of ByteSink that writes to a "string".</i></td></tr>
+<tr><th id="231">231</th><td><i class="doc"> * The StringClass is usually instantiated with a std::string.</i></td></tr>
+<tr><th id="232">232</th><td><i class="doc"> *<span class="command"> @stable</span> ICU 4.2</i></td></tr>
+<tr><th id="233">233</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="234">234</th><td><b>template</b>&lt;<b>typename</b> StringClass&gt;</td></tr>
+<tr><th id="235">235</th><td><b>class</b> <dfn class="type def" id="icu_66::StringByteSink" title='icu_66::StringByteSink' data-ref="icu_66::StringByteSink">StringByteSink</dfn> : <b>public</b> <a class="type" href="#icu_66::ByteSink" title='icu_66::ByteSink' data-ref="icu_66::ByteSink">ByteSink</a> {</td></tr>
+<tr><th id="236">236</th><td> <b>public</b>:</td></tr>
+<tr><th id="237">237</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="238">238</th><td><i class="doc">   * Constructs a ByteSink that will append bytes to the dest string.</i></td></tr>
+<tr><th id="239">239</th><td><i class="doc">   * <span class="command">@param</span> <span class="arg">dest</span> pointer to string object to append to</i></td></tr>
+<tr><th id="240">240</th><td><i class="doc">   *<span class="command"> @stable</span> ICU 4.2</i></td></tr>
+<tr><th id="241">241</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="242">242</th><td>  <dfn class="decl def fn" id="_ZN6icu_6614StringByteSinkC1EPT_" title='icu_66::StringByteSink::StringByteSink&lt;StringClass&gt;' data-ref="_ZN6icu_6614StringByteSinkC1EPT_">StringByteSink</dfn>(StringClass* <dfn class="local col8 decl" id="408dest" title='dest' data-type='StringClass *' data-ref="408dest">dest</dfn>) : <a class="member field" href="#icu_66::StringByteSink::dest_" title='icu_66::StringByteSink::dest_' data-ref="icu_66::StringByteSink::dest_">dest_</a>(<a class="local col8 ref" href="#408dest" title='dest' data-ref="408dest">dest</a>) { }</td></tr>
+<tr><th id="243">243</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="244">244</th><td><i class="doc">   * Constructs a ByteSink that reserves append capacity and will append bytes to the dest string.</i></td></tr>
+<tr><th id="245">245</th><td><i class="doc">   * </i></td></tr>
+<tr><th id="246">246</th><td><i class="doc">   * <span class="command">@param</span> <span class="arg">dest</span> pointer to string object to append to</i></td></tr>
+<tr><th id="247">247</th><td><i class="doc">   * <span class="command">@param</span> <span class="arg">initialAppendCapacity</span> capacity beyond dest-&gt;length() to be reserve()d</i></td></tr>
+<tr><th id="248">248</th><td><i class="doc">   *<span class="command"> @stable</span> ICU 60</i></td></tr>
+<tr><th id="249">249</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="250">250</th><td>  <dfn class="decl def fn" id="_ZN6icu_6614StringByteSinkC1EPT_i" title='icu_66::StringByteSink::StringByteSink&lt;StringClass&gt;' data-ref="_ZN6icu_6614StringByteSinkC1EPT_i">StringByteSink</dfn>(StringClass* <dfn class="local col9 decl" id="409dest" title='dest' data-type='StringClass *' data-ref="409dest">dest</dfn>, <a class="typedef" href="../x86_64-linux-gnu/bits/stdint-intn.h.html#int32_t" title='int32_t' data-type='__int32_t' data-ref="int32_t">int32_t</a> <dfn class="local col0 decl" id="410initialAppendCapacity" title='initialAppendCapacity' data-type='int32_t' data-ref="410initialAppendCapacity">initialAppendCapacity</dfn>) : <a class="member field" href="#icu_66::StringByteSink::dest_" title='icu_66::StringByteSink::dest_' data-ref="icu_66::StringByteSink::dest_">dest_</a>(<a class="local col9 ref" href="#409dest" title='dest' data-ref="409dest">dest</a>) {</td></tr>
+<tr><th id="251">251</th><td>    <b>if</b> (<a class="local col0 ref" href="#410initialAppendCapacity" title='initialAppendCapacity' data-ref="410initialAppendCapacity">initialAppendCapacity</a> &gt; <var>0</var> &amp;&amp;</td></tr>
+<tr><th id="252">252</th><td>        (<a class="typedef" href="../x86_64-linux-gnu/bits/stdint-uintn.h.html#uint32_t" title='uint32_t' data-type='__uint32_t' data-ref="uint32_t">uint32_t</a>)<a class="local col0 ref" href="#410initialAppendCapacity" title='initialAppendCapacity' data-ref="410initialAppendCapacity">initialAppendCapacity</a> &gt; (<a class="local col9 ref" href="#409dest" title='dest' data-ref="409dest">dest</a>-&gt;capacity() - <a class="local col9 ref" href="#409dest" title='dest' data-ref="409dest">dest</a>-&gt;length())) {</td></tr>
+<tr><th id="253">253</th><td>      <a class="local col9 ref" href="#409dest" title='dest' data-ref="409dest">dest</a>-&gt;reserve(<a class="local col9 ref" href="#409dest" title='dest' data-ref="409dest">dest</a>-&gt;length() + <a class="local col0 ref" href="#410initialAppendCapacity" title='initialAppendCapacity' data-ref="410initialAppendCapacity">initialAppendCapacity</a>);</td></tr>
+<tr><th id="254">254</th><td>    }</td></tr>
+<tr><th id="255">255</th><td>  }</td></tr>
+<tr><th id="256">256</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="257">257</th><td><i class="doc">   * Append "bytes[0,n-1]" to this.</i></td></tr>
+<tr><th id="258">258</th><td><i class="doc">   * <span class="command">@param</span> <span class="arg">data</span> the pointer to the bytes</i></td></tr>
+<tr><th id="259">259</th><td><i class="doc">   * <span class="command">@param</span> <span class="arg">n</span> the number of bytes; must be non-negative</i></td></tr>
+<tr><th id="260">260</th><td><i class="doc">   *<span class="command"> @stable</span> ICU 4.2</i></td></tr>
+<tr><th id="261">261</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="262">262</th><td>  <b>virtual</b> <em>void</em> <dfn class="virtual decl def fn" id="_ZN6icu_6614StringByteSink6AppendEPKci" title='icu_66::StringByteSink::Append' data-ref="_ZN6icu_6614StringByteSink6AppendEPKci">Append</dfn>(<em>const</em> <em>char</em>* <dfn class="local col1 decl" id="411data" title='data' data-type='const char *' data-ref="411data">data</dfn>, <a class="typedef" href="../x86_64-linux-gnu/bits/stdint-intn.h.html#int32_t" title='int32_t' data-type='__int32_t' data-ref="int32_t">int32_t</a> <dfn class="local col2 decl" id="412n" title='n' data-type='int32_t' data-ref="412n">n</dfn>) { <a class="member field" href="#icu_66::StringByteSink::dest_" title='icu_66::StringByteSink::dest_' data-ref="icu_66::StringByteSink::dest_">dest_</a>-&gt;append(<a class="local col1 ref" href="#411data" title='data' data-ref="411data">data</a>, <a class="local col2 ref" href="#412n" title='n' data-ref="412n">n</a>); }</td></tr>
+<tr><th id="263">263</th><td> <b>private</b>:</td></tr>
+<tr><th id="264">264</th><td>  StringClass* <dfn class="decl field" id="icu_66::StringByteSink::dest_" title='icu_66::StringByteSink::dest_' data-ref="icu_66::StringByteSink::dest_">dest_</dfn>;</td></tr>
+<tr><th id="265">265</th><td></td></tr>
+<tr><th id="266">266</th><td>  <dfn class="decl def fn" id="_ZN6icu_6614StringByteSinkC1Ev" title='icu_66::StringByteSink::StringByteSink&lt;StringClass&gt;' data-ref="_ZN6icu_6614StringByteSinkC1Ev">StringByteSink</dfn>() = <b>delete</b>;</td></tr>
+<tr><th id="267">267</th><td>  <dfn class="decl def fn" id="_ZN6icu_6614StringByteSinkC1ERKNS_14StringByteSinkIT_EE" title='icu_66::StringByteSink::StringByteSink&lt;StringClass&gt;' data-ref="_ZN6icu_6614StringByteSinkC1ERKNS_14StringByteSinkIT_EE">StringByteSink</dfn>(<em>const</em> StringByteSink &amp;) = <b>delete</b>;</td></tr>
+<tr><th id="268">268</th><td>  StringByteSink &amp;<dfn class="decl def fn" id="_ZN6icu_6614StringByteSinkaSERKNS_14StringByteSinkIT_EE" title='icu_66::StringByteSink::operator=' data-ref="_ZN6icu_6614StringByteSinkaSERKNS_14StringByteSinkIT_EE"><b>operator</b>=</dfn>(<em>const</em> StringByteSink &amp;) = <b>delete</b>;</td></tr>
+<tr><th id="269">269</th><td>};</td></tr>
+<tr><th id="270">270</th><td></td></tr>
+<tr><th id="271">271</th><td><a class="macro" href="uversion.h.html#111" title="}" data-ref="_M/U_NAMESPACE_END">U_NAMESPACE_END</a></td></tr>
+<tr><th id="272">272</th><td></td></tr>
+<tr><th id="273">273</th><td><u>#<span data-ppcond="42">endif</span> /* U_SHOW_CPLUSPLUS_API */</u></td></tr>
+<tr><th id="274">274</th><td></td></tr>
+<tr><th id="275">275</th><td><u>#<span data-ppcond="32">endif</span>  // __BYTESTREAM_H__</u></td></tr>
+<tr><th id="276">276</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../../qtbase-6.5.0/src/corelib/text/qcollator_icu.cpp.html'>qtbase-6.5.0/src/corelib/text/qcollator_icu.cpp</a><br/>Generated on <em>2024-Jun-13</em> from project include<br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

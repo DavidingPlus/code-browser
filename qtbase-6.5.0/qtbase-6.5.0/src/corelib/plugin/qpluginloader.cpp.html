@@ -1,0 +1,475 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>qpluginloader.cpp source code [qtbase-6.5.0/src/corelib/plugin/qpluginloader.cpp] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'qtbase-6.5.0/src/corelib/plugin/qpluginloader.cpp'; var root_path = '../../../..'; var data_path = '../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>qtbase-6.5.0</a>/<a href='../..'>src</a>/<a href='..'>corelib</a>/<a href='./'>plugin</a>/<a href='qpluginloader.cpp.html'>qpluginloader.cpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>// Copyright (C) 2016 The Qt Company Ltd.</i></td></tr>
+<tr><th id="2">2</th><td><i>// Copyright (C) 2018 Intel Corporation.</i></td></tr>
+<tr><th id="3">3</th><td><i>// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only</i></td></tr>
+<tr><th id="4">4</th><td></td></tr>
+<tr><th id="5">5</th><td><u>#include <a href="qpluginloader.h.html">"qpluginloader.h"</a></u></td></tr>
+<tr><th id="6">6</th><td></td></tr>
+<tr><th id="7">7</th><td><u>#include <a href="../../../build/include/QtCore/qcoreapplication.h.html">"qcoreapplication.h"</a></u></td></tr>
+<tr><th id="8">8</th><td><u>#include <a href="../../../build/include/QtCore/qdebug.h.html">"qdebug.h"</a></u></td></tr>
+<tr><th id="9">9</th><td><u>#include <a href="../../../build/include/QtCore/qdir.h.html">"qdir.h"</a></u></td></tr>
+<tr><th id="10">10</th><td><u>#include <a href="qfactoryloader_p.h.html">"qfactoryloader_p.h"</a></u></td></tr>
+<tr><th id="11">11</th><td><u>#include <a href="../../../build/include/QtCore/qfileinfo.h.html">"qfileinfo.h"</a></u></td></tr>
+<tr><th id="12">12</th><td><u>#include <a href="../../../build/include/QtCore/qjsondocument.h.html">"qjsondocument.h"</a></u></td></tr>
+<tr><th id="13">13</th><td></td></tr>
+<tr><th id="14">14</th><td><u>#<span data-ppcond="14">if</span> <a class="macro" href="../global/qtconfigmacros.h.html#67" title="(1/1 == 1)" data-ref="_M/QT_CONFIG">QT_CONFIG</a>(library)</u></td></tr>
+<tr><th id="15">15</th><td><u>#  include <a href="qlibrary_p.h.html">"qlibrary_p.h"</a></u></td></tr>
+<tr><th id="16">16</th><td><u>#<span data-ppcond="14">endif</span></u></td></tr>
+<tr><th id="17">17</th><td></td></tr>
+<tr><th id="18">18</th><td><a class="macro" href="../global/qtconfigmacros.h.html#103" title="" data-ref="_M/QT_BEGIN_NAMESPACE">QT_BEGIN_NAMESPACE</a></td></tr>
+<tr><th id="19">19</th><td></td></tr>
+<tr><th id="20">20</th><td><b>using</b> <b>namespace</b> <span class="namespace">Qt::StringLiterals</span>;</td></tr>
+<tr><th id="21">21</th><td></td></tr>
+<tr><th id="22">22</th><td><u>#<span data-ppcond="22">if</span> <a class="macro" href="../global/qtconfigmacros.h.html#67" title="(1/1 == 1)" data-ref="_M/QT_CONFIG">QT_CONFIG</a>(library)</u></td></tr>
+<tr><th id="23">23</th><td></td></tr>
+<tr><th id="24">24</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="25">25</th><td><i class="doc">    <span class="command">\class</span> <span class="verb" data-ref="QPluginLoader">QPluginLoader</span></i></td></tr>
+<tr><th id="26">26</th><td><i class="doc">   <span class="command"> \inmodule</span> QtCore</i></td></tr>
+<tr><th id="27">27</th><td><i class="doc">   <span class="command"> \reentrant</span></i></td></tr>
+<tr><th id="28">28</th><td><i class="doc">    <span class="command">\brief</span> The QPluginLoader class loads a plugin at run-time.</i></td></tr>
+<tr><th id="29">29</th><td><i class="doc"></i></td></tr>
+<tr><th id="30">30</th><td><i class="doc"></i></td></tr>
+<tr><th id="31">31</th><td><i class="doc">    <span class="command">\ingroup</span> <span class="verb">plugins</span></i></td></tr>
+<tr><th id="32">32</th><td><i class="doc"></i></td></tr>
+<tr><th id="33">33</th><td><i class="doc">    QPluginLoader provides access to a<span class="command"> \l</span>{How to Create Qt</i></td></tr>
+<tr><th id="34">34</th><td><i class="doc">    Plugins}{Qt plugin}. A Qt plugin is stored in a shared library (a</i></td></tr>
+<tr><th id="35">35</th><td><i class="doc">    DLL) and offers these benefits over shared libraries accessed</i></td></tr>
+<tr><th id="36">36</th><td><i class="doc">    using QLibrary:</i></td></tr>
+<tr><th id="37">37</th><td><i class="doc"></i></td></tr>
+<tr><th id="38">38</th><td><i class="doc">   <span class="command"> \list</span></i></td></tr>
+<tr><th id="39">39</th><td><i class="doc">    <span class="command">\li</span> QPluginLoader checks that a plugin is linked against the same</i></td></tr>
+<tr><th id="40">40</th><td><i class="doc">       version of Qt as the application.</i></td></tr>
+<tr><th id="41">41</th><td><i class="doc">    <span class="command">\li</span> QPluginLoader provides direct access to a root component object</i></td></tr>
+<tr><th id="42">42</th><td><i class="doc">       (instance()), instead of forcing you to resolve a C function manually.</i></td></tr>
+<tr><th id="43">43</th><td><i class="doc">   <span class="command"> \endlist</span></i></td></tr>
+<tr><th id="44">44</th><td><i class="doc"></i></td></tr>
+<tr><th id="45">45</th><td><i class="doc">    An instance of a QPluginLoader object operates on a single shared</i></td></tr>
+<tr><th id="46">46</th><td><i class="doc">    library file, which we call a plugin. It provides access to the</i></td></tr>
+<tr><th id="47">47</th><td><i class="doc">    functionality in the plugin in a platform-independent way. To</i></td></tr>
+<tr><th id="48">48</th><td><i class="doc">    specify which plugin to load, either pass a file name in</i></td></tr>
+<tr><th id="49">49</th><td><i class="doc">    the constructor or set it with setFileName().</i></td></tr>
+<tr><th id="50">50</th><td><i class="doc"></i></td></tr>
+<tr><th id="51">51</th><td><i class="doc">    The most important functions are load() to dynamically load the</i></td></tr>
+<tr><th id="52">52</th><td><i class="doc">    plugin file, isLoaded() to check whether loading was successful,</i></td></tr>
+<tr><th id="53">53</th><td><i class="doc">    and instance() to access the root component in the plugin. The</i></td></tr>
+<tr><th id="54">54</th><td><i class="doc">    instance() function implicitly tries to load the plugin if it has</i></td></tr>
+<tr><th id="55">55</th><td><i class="doc">    not been loaded yet. Multiple instances of QPluginLoader can be</i></td></tr>
+<tr><th id="56">56</th><td><i class="doc">    used to access the same physical plugin.</i></td></tr>
+<tr><th id="57">57</th><td><i class="doc"></i></td></tr>
+<tr><th id="58">58</th><td><i class="doc">    Once loaded, plugins remain in memory until all instances of</i></td></tr>
+<tr><th id="59">59</th><td><i class="doc">    QPluginLoader has been unloaded, or until the application</i></td></tr>
+<tr><th id="60">60</th><td><i class="doc">    terminates. You can attempt to unload a plugin using unload(),</i></td></tr>
+<tr><th id="61">61</th><td><i class="doc">    but if other instances of QPluginLoader are using the same</i></td></tr>
+<tr><th id="62">62</th><td><i class="doc">    library, the call will fail, and unloading will only happen when</i></td></tr>
+<tr><th id="63">63</th><td><i class="doc">    every instance has called unload(). Right before the unloading</i></td></tr>
+<tr><th id="64">64</th><td><i class="doc">    happens, the root component will also be deleted.</i></td></tr>
+<tr><th id="65">65</th><td><i class="doc"></i></td></tr>
+<tr><th id="66">66</th><td><i class="doc">    See<span class="command"> \l</span>{How to Create Qt Plugins} for more information about</i></td></tr>
+<tr><th id="67">67</th><td><i class="doc">    how to make your application extensible through plugins.</i></td></tr>
+<tr><th id="68">68</th><td><i class="doc"></i></td></tr>
+<tr><th id="69">69</th><td><i class="doc">    Note that the QPluginLoader cannot be used if your application is</i></td></tr>
+<tr><th id="70">70</th><td><i class="doc">    statically linked against Qt. In this case, you will also have to</i></td></tr>
+<tr><th id="71">71</th><td><i class="doc">    link to plugins statically. You can use QLibrary if you need to</i></td></tr>
+<tr><th id="72">72</th><td><i class="doc">    load dynamic libraries in a statically linked application.</i></td></tr>
+<tr><th id="73">73</th><td><i class="doc"></i></td></tr>
+<tr><th id="74">74</th><td><i class="doc">    <span class="command">\sa</span> QLibrary, {Plug &amp; Paint Example}</i></td></tr>
+<tr><th id="75">75</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="76">76</th><td></td></tr>
+<tr><th id="77">77</th><td><em>static</em> <b>constexpr</b> <a class="type" href="qlibrary.h.html#QLibrary" title='QLibrary' data-ref="QLibrary">QLibrary</a>::<a class="typedef" href="qlibrary.h.html#29" title='QLibrary::LoadHints' data-type='QFlags&lt;QLibrary::LoadHint&gt;' data-ref="QLibrary::LoadHints">LoadHints</a> <dfn class="tu decl def" id="defaultLoadHints" title='defaultLoadHints' data-type='const QLibrary::LoadHints' data-ref="defaultLoadHints">defaultLoadHints</dfn> = <a class="ref fn fake" href="../global/qflags.h.html#_ZN6QFlagsC1ET_" title='QFlags::QFlags&lt;T&gt;' data-ref="_ZN6QFlagsC1ET_"></a><a class="type" href="qlibrary.h.html#QLibrary" title='QLibrary' data-ref="QLibrary">QLibrary</a>::<a class="enum" href="qlibrary.h.html#QLibrary::PreventUnloadHint" title='QLibrary::PreventUnloadHint' data-ref="QLibrary::PreventUnloadHint">PreventUnloadHint</a>;</td></tr>
+<tr><th id="78">78</th><td></td></tr>
+<tr><th id="79">79</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="80">80</th><td><i class="doc">    Constructs a plugin loader with the given<span class="command"> \a</span> <span class="arg">parent.</span></i></td></tr>
+<tr><th id="81">81</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="82">82</th><td><a class="type" href="qpluginloader.h.html#QPluginLoader" title='QPluginLoader' data-ref="QPluginLoader">QPluginLoader</a>::<dfn class="decl def fn" id="_ZN13QPluginLoaderC1EP7QObject" title='QPluginLoader::QPluginLoader' data-ref="_ZN13QPluginLoaderC1EP7QObject">QPluginLoader</dfn>(<a class="type" href="../kernel/qobject.h.html#QObject" title='QObject' data-ref="QObject">QObject</a> *<dfn class="local col1 decl" id="1parent" title='parent' data-type='QObject *' data-ref="1parent">parent</dfn>)</td></tr>
+<tr><th id="83">83</th><td>    : <a class="type" href="../kernel/qobject.h.html#QObject" title='QObject' data-ref="QObject">QObject</a><a class="ref fn" href="../kernel/qobject.h.html#_ZN7QObjectC1EPS_" title='QObject::QObject' data-ref="_ZN7QObjectC1EPS_">(</a><a class="local col1 ref" href="#1parent" title='parent' data-ref="1parent">parent</a>), <a class="member field" href="qpluginloader.h.html#QPluginLoader::d" title='QPluginLoader::d' data-ref="QPluginLoader::d">d</a>(<b>nullptr</b>), <a class="member field" href="qpluginloader.h.html#QPluginLoader::did_load" title='QPluginLoader::did_load' data-ref="QPluginLoader::did_load">did_load</a>(<b>false</b>)</td></tr>
+<tr><th id="84">84</th><td>{</td></tr>
+<tr><th id="85">85</th><td>}</td></tr>
+<tr><th id="86">86</th><td></td></tr>
+<tr><th id="87">87</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="88">88</th><td><i class="doc">    Constructs a plugin loader with the given<span class="command"> \a</span> <span class="arg">parent</span> that will</i></td></tr>
+<tr><th id="89">89</th><td><i class="doc">    load the plugin specified by<span class="command"> \a</span> <span class="arg">fileName.</span></i></td></tr>
+<tr><th id="90">90</th><td><i class="doc"></i></td></tr>
+<tr><th id="91">91</th><td><i class="doc">    To be loadable, the file's suffix must be a valid suffix for a</i></td></tr>
+<tr><th id="92">92</th><td><i class="doc">    loadable library in accordance with the platform, e.g.<span class="command"> \c</span> <span class="arg">.so</span> on</i></td></tr>
+<tr><th id="93">93</th><td><i class="doc">    Unix, -<span class="command"> \c</span> <span class="arg">.dylib</span> on<span class="command"> \macos</span> and iOS, and<span class="command"> \c</span> <span class="arg">.dll</span> on Windows. The suffix</i></td></tr>
+<tr><th id="94">94</th><td><i class="doc">    can be verified with QLibrary::isLibrary().</i></td></tr>
+<tr><th id="95">95</th><td><i class="doc"></i></td></tr>
+<tr><th id="96">96</th><td><i class="doc">    <span class="command">\sa</span> setFileName()</i></td></tr>
+<tr><th id="97">97</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="98">98</th><td><a class="type" href="qpluginloader.h.html#QPluginLoader" title='QPluginLoader' data-ref="QPluginLoader">QPluginLoader</a>::<dfn class="decl def fn" id="_ZN13QPluginLoaderC1ERK7QStringP7QObject" title='QPluginLoader::QPluginLoader' data-ref="_ZN13QPluginLoaderC1ERK7QStringP7QObject">QPluginLoader</dfn>(<em>const</em> <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> &amp;<dfn class="local col2 decl" id="2fileName" title='fileName' data-type='const QString &amp;' data-ref="2fileName">fileName</dfn>, <a class="type" href="../kernel/qobject.h.html#QObject" title='QObject' data-ref="QObject">QObject</a> *<dfn class="local col3 decl" id="3parent" title='parent' data-type='QObject *' data-ref="3parent">parent</dfn>)</td></tr>
+<tr><th id="99">99</th><td>    : <a class="type" href="../kernel/qobject.h.html#QObject" title='QObject' data-ref="QObject">QObject</a><a class="ref fn" href="../kernel/qobject.h.html#_ZN7QObjectC1EPS_" title='QObject::QObject' data-ref="_ZN7QObjectC1EPS_">(</a><a class="local col3 ref" href="#3parent" title='parent' data-ref="3parent">parent</a>), <a class="member field" href="qpluginloader.h.html#QPluginLoader::d" title='QPluginLoader::d' data-ref="QPluginLoader::d">d</a>(<b>nullptr</b>), <a class="member field" href="qpluginloader.h.html#QPluginLoader::did_load" title='QPluginLoader::did_load' data-ref="QPluginLoader::did_load">did_load</a>(<b>false</b>)</td></tr>
+<tr><th id="100">100</th><td>{</td></tr>
+<tr><th id="101">101</th><td>    <a class="member fn" href="#_ZN13QPluginLoader11setFileNameERK7QString" title='QPluginLoader::setFileName' data-ref="_ZN13QPluginLoader11setFileNameERK7QString">setFileName</a>(<a class="local col2 ref" href="#2fileName" title='fileName' data-ref="2fileName">fileName</a>);</td></tr>
+<tr><th id="102">102</th><td>    <a class="member fn" href="#_ZN13QPluginLoader12setLoadHintsE6QFlagsIN8QLibrary8LoadHintEE" title='QPluginLoader::setLoadHints' data-ref="_ZN13QPluginLoader12setLoadHintsE6QFlagsIN8QLibrary8LoadHintEE">setLoadHints</a>(<a class="ref fn fake" href="../global/qflags.h.html#52" title='QFlags&lt;QLibrary::LoadHint&gt;::QFlags' data-ref="_ZN6QFlagsIN8QLibrary8LoadHintEEC1ERKS2_"></a><a class="tu ref" href="#defaultLoadHints" title='defaultLoadHints' data-use='r' data-ref="defaultLoadHints">defaultLoadHints</a>);</td></tr>
+<tr><th id="103">103</th><td>}</td></tr>
+<tr><th id="104">104</th><td></td></tr>
+<tr><th id="105">105</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="106">106</th><td><i class="doc">    Destroys the QPluginLoader object.</i></td></tr>
+<tr><th id="107">107</th><td><i class="doc"></i></td></tr>
+<tr><th id="108">108</th><td><i class="doc">    Unless unload() was called explicitly, the plugin stays in memory</i></td></tr>
+<tr><th id="109">109</th><td><i class="doc">    until the application terminates.</i></td></tr>
+<tr><th id="110">110</th><td><i class="doc"></i></td></tr>
+<tr><th id="111">111</th><td><i class="doc">    <span class="command">\sa</span> isLoaded(), unload()</i></td></tr>
+<tr><th id="112">112</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="113">113</th><td><a class="type" href="qpluginloader.h.html#QPluginLoader" title='QPluginLoader' data-ref="QPluginLoader">QPluginLoader</a>::<dfn class="virtual decl def fn" id="_ZN13QPluginLoaderD1Ev" title='QPluginLoader::~QPluginLoader' data-ref="_ZN13QPluginLoaderD1Ev">~QPluginLoader</dfn>()</td></tr>
+<tr><th id="114">114</th><td>{</td></tr>
+<tr><th id="115">115</th><td>    <b>if</b> (<a class="member field" href="qpluginloader.h.html#QPluginLoader::d" title='QPluginLoader::d' data-ref="QPluginLoader::d">d</a>)</td></tr>
+<tr><th id="116">116</th><td>        <a class="member field" href="qpluginloader.h.html#QPluginLoader::d" title='QPluginLoader::d' data-ref="QPluginLoader::d">d</a>-&gt;<a class="ref fn" href="qlibrary_p.h.html#_ZN15QLibraryPrivate7releaseEv" title='QLibraryPrivate::release' data-ref="_ZN15QLibraryPrivate7releaseEv">release</a>();</td></tr>
+<tr><th id="117">117</th><td>}</td></tr>
+<tr><th id="118">118</th><td></td></tr>
+<tr><th id="119">119</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="120">120</th><td><i class="doc">    Returns the root component object of the plugin. The plugin is</i></td></tr>
+<tr><th id="121">121</th><td><i class="doc">    loaded if necessary. The function returns<span class="command"> \nullptr</span> if the plugin could</i></td></tr>
+<tr><th id="122">122</th><td><i class="doc">    not be loaded or if the root component object could not be</i></td></tr>
+<tr><th id="123">123</th><td><i class="doc">    instantiated.</i></td></tr>
+<tr><th id="124">124</th><td><i class="doc"></i></td></tr>
+<tr><th id="125">125</th><td><i class="doc">    If the root component object was destroyed, calling this function</i></td></tr>
+<tr><th id="126">126</th><td><i class="doc">    creates a new instance.</i></td></tr>
+<tr><th id="127">127</th><td><i class="doc"></i></td></tr>
+<tr><th id="128">128</th><td><i class="doc">    The root component, returned by this function, is not deleted when</i></td></tr>
+<tr><th id="129">129</th><td><i class="doc">    the QPluginLoader is destroyed. If you want to ensure that the root</i></td></tr>
+<tr><th id="130">130</th><td><i class="doc">    component is deleted, you should call unload() as soon you don't</i></td></tr>
+<tr><th id="131">131</th><td><i class="doc">    need to access the core component anymore.  When the library is</i></td></tr>
+<tr><th id="132">132</th><td><i class="doc">    finally unloaded, the root component will automatically be deleted.</i></td></tr>
+<tr><th id="133">133</th><td><i class="doc"></i></td></tr>
+<tr><th id="134">134</th><td><i class="doc">    The component object is a QObject. Use qobject_cast() to access</i></td></tr>
+<tr><th id="135">135</th><td><i class="doc">    interfaces you are interested in.</i></td></tr>
+<tr><th id="136">136</th><td><i class="doc"></i></td></tr>
+<tr><th id="137">137</th><td><i class="doc">    <span class="command">\sa</span> load()</i></td></tr>
+<tr><th id="138">138</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="139">139</th><td><a class="type" href="../kernel/qobject.h.html#QObject" title='QObject' data-ref="QObject">QObject</a> *<a class="type" href="qpluginloader.h.html#QPluginLoader" title='QPluginLoader' data-ref="QPluginLoader">QPluginLoader</a>::<dfn class="decl def fn" id="_ZN13QPluginLoader8instanceEv" title='QPluginLoader::instance' data-ref="_ZN13QPluginLoader8instanceEv">instance</dfn>()</td></tr>
+<tr><th id="140">140</th><td>{</td></tr>
+<tr><th id="141">141</th><td>    <b>if</b> (!<a class="member fn" href="#_ZNK13QPluginLoader8isLoadedEv" title='QPluginLoader::isLoaded' data-ref="_ZNK13QPluginLoader8isLoadedEv">isLoaded</a>() &amp;&amp; !<a class="member fn" href="#_ZN13QPluginLoader4loadEv" title='QPluginLoader::load' data-ref="_ZN13QPluginLoader4loadEv">load</a>())</td></tr>
+<tr><th id="142">142</th><td>        <b>return</b> <b>nullptr</b>;</td></tr>
+<tr><th id="143">143</th><td>    <b>return</b> <a class="member field" href="qpluginloader.h.html#QPluginLoader::d" title='QPluginLoader::d' data-ref="QPluginLoader::d">d</a>-&gt;<a class="ref fn" href="qlibrary_p.h.html#_ZN15QLibraryPrivate14pluginInstanceEv" title='QLibraryPrivate::pluginInstance' data-ref="_ZN15QLibraryPrivate14pluginInstanceEv">pluginInstance</a>();</td></tr>
+<tr><th id="144">144</th><td>}</td></tr>
+<tr><th id="145">145</th><td></td></tr>
+<tr><th id="146">146</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="147">147</th><td><i class="doc">    Returns the meta data for this plugin. The meta data is data specified</i></td></tr>
+<tr><th id="148">148</th><td><i class="doc">    in a json format using the Q_PLUGIN_METADATA() macro when compiling</i></td></tr>
+<tr><th id="149">149</th><td><i class="doc">    the plugin.</i></td></tr>
+<tr><th id="150">150</th><td><i class="doc"></i></td></tr>
+<tr><th id="151">151</th><td><i class="doc">    The meta data can be queried in a fast and inexpensive way without</i></td></tr>
+<tr><th id="152">152</th><td><i class="doc">    actually loading the plugin. This makes it possible to e.g. store</i></td></tr>
+<tr><th id="153">153</th><td><i class="doc">    capabilities of the plugin in there, and make the decision whether to</i></td></tr>
+<tr><th id="154">154</th><td><i class="doc">    load the plugin dependent on this meta data.</i></td></tr>
+<tr><th id="155">155</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="156">156</th><td><a class="type" href="../serialization/qjsonobject.h.html#QJsonObject" title='QJsonObject' data-ref="QJsonObject">QJsonObject</a> <a class="type" href="qpluginloader.h.html#QPluginLoader" title='QPluginLoader' data-ref="QPluginLoader">QPluginLoader</a>::<dfn class="decl def fn" id="_ZNK13QPluginLoader8metaDataEv" title='QPluginLoader::metaData' data-ref="_ZNK13QPluginLoader8metaDataEv">metaData</dfn>() <em>const</em></td></tr>
+<tr><th id="157">157</th><td>{</td></tr>
+<tr><th id="158">158</th><td>    <b>if</b> (!<a class="member field" href="qpluginloader.h.html#QPluginLoader::d" title='QPluginLoader::d' data-ref="QPluginLoader::d">d</a>)</td></tr>
+<tr><th id="159">159</th><td>        <b>return</b> <a class="type" href="../serialization/qjsonobject.h.html#QJsonObject" title='QJsonObject' data-ref="QJsonObject">QJsonObject</a><a class="ref fn" href="../serialization/qjsonobject.h.html#_ZN11QJsonObjectC1Ev" title='QJsonObject::QJsonObject' data-ref="_ZN11QJsonObjectC1Ev">(</a>);</td></tr>
+<tr><th id="160">160</th><td>    <b>return</b> <a class="member field" href="qpluginloader.h.html#QPluginLoader::d" title='QPluginLoader::d' data-ref="QPluginLoader::d">d</a>-&gt;<a class="ref field" href="qlibrary_p.h.html#QLibraryPrivate::metaData" title='QLibraryPrivate::metaData' data-ref="QLibraryPrivate::metaData">metaData</a>.<a class="ref fn" href="qfactoryloader_p.h.html#_ZNK21QPluginParsedMetaData6toJsonEv" title='QPluginParsedMetaData::toJson' data-ref="_ZNK21QPluginParsedMetaData6toJsonEv">toJson</a>();</td></tr>
+<tr><th id="161">161</th><td>}</td></tr>
+<tr><th id="162">162</th><td></td></tr>
+<tr><th id="163">163</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="164">164</th><td><i class="doc">    Loads the plugin and returns<span class="command"> \c</span> <span class="arg">true</span> if the plugin was loaded</i></td></tr>
+<tr><th id="165">165</th><td><i class="doc">    successfully; otherwise returns<span class="command"> \c</span> <span class="arg">false.</span> Since instance() always</i></td></tr>
+<tr><th id="166">166</th><td><i class="doc">    calls this function before resolving any symbols it is not</i></td></tr>
+<tr><th id="167">167</th><td><i class="doc">    necessary to call it explicitly. In some situations you might want</i></td></tr>
+<tr><th id="168">168</th><td><i class="doc">    the plugin loaded in advance, in which case you would use this</i></td></tr>
+<tr><th id="169">169</th><td><i class="doc">    function.</i></td></tr>
+<tr><th id="170">170</th><td><i class="doc"></i></td></tr>
+<tr><th id="171">171</th><td><i class="doc">    <span class="command">\sa</span> unload()</i></td></tr>
+<tr><th id="172">172</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="173">173</th><td><em>bool</em> <a class="type" href="qpluginloader.h.html#QPluginLoader" title='QPluginLoader' data-ref="QPluginLoader">QPluginLoader</a>::<dfn class="decl def fn" id="_ZN13QPluginLoader4loadEv" title='QPluginLoader::load' data-ref="_ZN13QPluginLoader4loadEv">load</dfn>()</td></tr>
+<tr><th id="174">174</th><td>{</td></tr>
+<tr><th id="175">175</th><td>    <b>if</b> (!<a class="member field" href="qpluginloader.h.html#QPluginLoader::d" title='QPluginLoader::d' data-ref="QPluginLoader::d">d</a> || <a class="member field" href="qpluginloader.h.html#QPluginLoader::d" title='QPluginLoader::d' data-ref="QPluginLoader::d">d</a>-&gt;<a class="ref field" href="qlibrary_p.h.html#QLibraryPrivate::fileName" title='QLibraryPrivate::fileName' data-ref="QLibraryPrivate::fileName">fileName</a>.<a class="ref fn" href="../text/qstring.h.html#_ZNK7QString7isEmptyEv" title='QString::isEmpty' data-ref="_ZNK7QString7isEmptyEv">isEmpty</a>())</td></tr>
+<tr><th id="176">176</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="177">177</th><td>    <b>if</b> (<a class="member field" href="qpluginloader.h.html#QPluginLoader::did_load" title='QPluginLoader::did_load' data-ref="QPluginLoader::did_load">did_load</a>)</td></tr>
+<tr><th id="178">178</th><td>        <b>return</b> <a class="ref fn fake" href="../thread/qbasicatomic.h.html#_ZNK19QBasicAtomicPointercvPT_Ev" title='QBasicAtomicPointer::operator type-parameter-0-0 *' data-ref="_ZNK19QBasicAtomicPointercvPT_Ev"></a><a class="member field" href="qpluginloader.h.html#QPluginLoader::d" title='QPluginLoader::d' data-ref="QPluginLoader::d">d</a>-&gt;<a class="ref field" href="qlibrary_p.h.html#QLibraryPrivate::pHnd" title='QLibraryPrivate::pHnd' data-ref="QLibraryPrivate::pHnd">pHnd</a> &amp;&amp; <a class="member field" href="qpluginloader.h.html#QPluginLoader::d" title='QPluginLoader::d' data-ref="QPluginLoader::d">d</a>-&gt;<a class="ref field" href="qlibrary_p.h.html#QLibraryPrivate::instanceFactory" title='QLibraryPrivate::instanceFactory' data-ref="QLibraryPrivate::instanceFactory">instanceFactory</a>.<a class="ref fn" href="../thread/qbasicatomic.h.html#_ZNK19QBasicAtomicPointer11loadAcquireEv" title='QBasicAtomicPointer::loadAcquire' data-ref="_ZNK19QBasicAtomicPointer11loadAcquireEv">loadAcquire</a>();</td></tr>
+<tr><th id="179">179</th><td>    <b>if</b> (!<a class="member field" href="qpluginloader.h.html#QPluginLoader::d" title='QPluginLoader::d' data-ref="QPluginLoader::d">d</a>-&gt;<a class="ref fn" href="qlibrary_p.h.html#_ZN15QLibraryPrivate8isPluginEv" title='QLibraryPrivate::isPlugin' data-ref="_ZN15QLibraryPrivate8isPluginEv">isPlugin</a>())</td></tr>
+<tr><th id="180">180</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="181">181</th><td>    <a class="member field" href="qpluginloader.h.html#QPluginLoader::did_load" title='QPluginLoader::did_load' data-ref="QPluginLoader::did_load">did_load</a> = <b>true</b>;</td></tr>
+<tr><th id="182">182</th><td>    <b>return</b> <a class="member field" href="qpluginloader.h.html#QPluginLoader::d" title='QPluginLoader::d' data-ref="QPluginLoader::d">d</a>-&gt;<a class="ref fn" href="qlibrary_p.h.html#_ZN15QLibraryPrivate10loadPluginEv" title='QLibraryPrivate::loadPlugin' data-ref="_ZN15QLibraryPrivate10loadPluginEv">loadPlugin</a>();</td></tr>
+<tr><th id="183">183</th><td>}</td></tr>
+<tr><th id="184">184</th><td></td></tr>
+<tr><th id="185">185</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="186">186</th><td><i class="doc">    Unloads the plugin and returns<span class="command"> \c</span> <span class="arg">true</span> if the plugin could be</i></td></tr>
+<tr><th id="187">187</th><td><i class="doc">    unloaded; otherwise returns<span class="command"> \c</span> <span class="arg">false.</span></i></td></tr>
+<tr><th id="188">188</th><td><i class="doc"></i></td></tr>
+<tr><th id="189">189</th><td><i class="doc">    This happens automatically on application termination, so you</i></td></tr>
+<tr><th id="190">190</th><td><i class="doc">    shouldn't normally need to call this function.</i></td></tr>
+<tr><th id="191">191</th><td><i class="doc"></i></td></tr>
+<tr><th id="192">192</th><td><i class="doc">    If other instances of QPluginLoader are using the same plugin, the</i></td></tr>
+<tr><th id="193">193</th><td><i class="doc">    call will fail, and unloading will only happen when every instance</i></td></tr>
+<tr><th id="194">194</th><td><i class="doc">    has called unload().</i></td></tr>
+<tr><th id="195">195</th><td><i class="doc"></i></td></tr>
+<tr><th id="196">196</th><td><i class="doc">    Don't try to delete the root component. Instead rely on</i></td></tr>
+<tr><th id="197">197</th><td><i class="doc">    that unload() will automatically delete it when needed.</i></td></tr>
+<tr><th id="198">198</th><td><i class="doc"></i></td></tr>
+<tr><th id="199">199</th><td><i class="doc">    <span class="command">\sa</span> instance(), load()</i></td></tr>
+<tr><th id="200">200</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="201">201</th><td><em>bool</em> <a class="type" href="qpluginloader.h.html#QPluginLoader" title='QPluginLoader' data-ref="QPluginLoader">QPluginLoader</a>::<dfn class="decl def fn" id="_ZN13QPluginLoader6unloadEv" title='QPluginLoader::unload' data-ref="_ZN13QPluginLoader6unloadEv">unload</dfn>()</td></tr>
+<tr><th id="202">202</th><td>{</td></tr>
+<tr><th id="203">203</th><td>    <b>if</b> (<a class="member field" href="qpluginloader.h.html#QPluginLoader::did_load" title='QPluginLoader::did_load' data-ref="QPluginLoader::did_load">did_load</a>) {</td></tr>
+<tr><th id="204">204</th><td>        <a class="member field" href="qpluginloader.h.html#QPluginLoader::did_load" title='QPluginLoader::did_load' data-ref="QPluginLoader::did_load">did_load</a> = <b>false</b>;</td></tr>
+<tr><th id="205">205</th><td>        <b>return</b> <a class="member field" href="qpluginloader.h.html#QPluginLoader::d" title='QPluginLoader::d' data-ref="QPluginLoader::d">d</a>-&gt;<a class="ref fn" href="qlibrary_p.h.html#_ZN15QLibraryPrivate6unloadENS_10UnloadFlagE" title='QLibraryPrivate::unload' data-ref="_ZN15QLibraryPrivate6unloadENS_10UnloadFlagE">unload</a>();</td></tr>
+<tr><th id="206">206</th><td>    }</td></tr>
+<tr><th id="207">207</th><td>    <b>if</b> (<a class="member field" href="qpluginloader.h.html#QPluginLoader::d" title='QPluginLoader::d' data-ref="QPluginLoader::d">d</a>) <i>// Ouch</i></td></tr>
+<tr><th id="208">208</th><td>        <a class="member field" href="qpluginloader.h.html#QPluginLoader::d" title='QPluginLoader::d' data-ref="QPluginLoader::d">d</a>-&gt;<a class="ref field" href="qlibrary_p.h.html#QLibraryPrivate::errorString" title='QLibraryPrivate::errorString' data-ref="QLibraryPrivate::errorString">errorString</a> <a class="ref fn" href="../text/qstring.h.html#470" title='QString::operator=' data-ref="_ZN7QStringaSEOS_">=</a> <a class="member fn" href="qpluginloader.h.html#22" title='QPluginLoader::tr' data-ref="_ZN13QPluginLoader2trEPKcS1_i">tr</a>(<span class='inlayHint'>s:&nbsp;</span><q>"The plugin was not loaded."</q>);</td></tr>
+<tr><th id="209">209</th><td>    <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="210">210</th><td>}</td></tr>
+<tr><th id="211">211</th><td></td></tr>
+<tr><th id="212">212</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="213">213</th><td><i class="doc">    Returns<span class="command"> \c</span> <span class="arg">true</span> if the plugin is loaded; otherwise returns<span class="command"> \c</span> <span class="arg">false.</span></i></td></tr>
+<tr><th id="214">214</th><td><i class="doc"></i></td></tr>
+<tr><th id="215">215</th><td><i class="doc">    <span class="command">\sa</span> load()</i></td></tr>
+<tr><th id="216">216</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="217">217</th><td><em>bool</em> <a class="type" href="qpluginloader.h.html#QPluginLoader" title='QPluginLoader' data-ref="QPluginLoader">QPluginLoader</a>::<dfn class="decl def fn" id="_ZNK13QPluginLoader8isLoadedEv" title='QPluginLoader::isLoaded' data-ref="_ZNK13QPluginLoader8isLoadedEv">isLoaded</dfn>() <em>const</em></td></tr>
+<tr><th id="218">218</th><td>{</td></tr>
+<tr><th id="219">219</th><td>    <b>return</b> <a class="member field" href="qpluginloader.h.html#QPluginLoader::d" title='QPluginLoader::d' data-ref="QPluginLoader::d">d</a> &amp;&amp; <a class="ref fn fake" href="../thread/qbasicatomic.h.html#_ZNK19QBasicAtomicPointercvPT_Ev" title='QBasicAtomicPointer::operator type-parameter-0-0 *' data-ref="_ZNK19QBasicAtomicPointercvPT_Ev"></a><a class="member field" href="qpluginloader.h.html#QPluginLoader::d" title='QPluginLoader::d' data-ref="QPluginLoader::d">d</a>-&gt;<a class="ref field" href="qlibrary_p.h.html#QLibraryPrivate::pHnd" title='QLibraryPrivate::pHnd' data-ref="QLibraryPrivate::pHnd">pHnd</a> &amp;&amp; <a class="member field" href="qpluginloader.h.html#QPluginLoader::d" title='QPluginLoader::d' data-ref="QPluginLoader::d">d</a>-&gt;<a class="ref field" href="qlibrary_p.h.html#QLibraryPrivate::instanceFactory" title='QLibraryPrivate::instanceFactory' data-ref="QLibraryPrivate::instanceFactory">instanceFactory</a>.<a class="ref fn" href="../thread/qbasicatomic.h.html#_ZNK19QBasicAtomicPointer11loadRelaxedEv" title='QBasicAtomicPointer::loadRelaxed' data-ref="_ZNK19QBasicAtomicPointer11loadRelaxedEv">loadRelaxed</a>();</td></tr>
+<tr><th id="220">220</th><td>}</td></tr>
+<tr><th id="221">221</th><td></td></tr>
+<tr><th id="222">222</th><td><u>#<span data-ppcond="222">if</span> defined(<a class="macro" href="../global/qtconfigmacros.h.html#43" data-ref="_M/QT_SHARED">QT_SHARED</a>)</u></td></tr>
+<tr><th id="223">223</th><td><em>static</em> <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> <dfn class="tu decl def fn" id="_ZL12locatePluginRK7QString" title='locatePlugin' data-type='QString locatePlugin(const QString &amp; fileName)' data-ref="_ZL12locatePluginRK7QString">locatePlugin</dfn>(<em>const</em> <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a>&amp; <dfn class="local col4 decl" id="4fileName" title='fileName' data-type='const QString &amp;' data-ref="4fileName">fileName</dfn>)</td></tr>
+<tr><th id="224">224</th><td>{</td></tr>
+<tr><th id="225">225</th><td>    <em>const</em> <em>bool</em> <dfn class="local col5 decl" id="5isAbsolute" title='isAbsolute' data-type='const bool' data-ref="5isAbsolute">isAbsolute</dfn> = <a class="type" href="../io/qdir.h.html#QDir" title='QDir' data-ref="QDir">QDir</a>::<a class="ref fn" href="../io/qdir.h.html#_ZN4QDir14isAbsolutePathERK7QString" title='QDir::isAbsolutePath' data-ref="_ZN4QDir14isAbsolutePathERK7QString">isAbsolutePath</a>(<span class='inlayHint'>path:&nbsp;</span><a class="local col4 ref" href="#4fileName" title='fileName' data-ref="4fileName">fileName</a>);</td></tr>
+<tr><th id="226">226</th><td>    <b>if</b> (<a class="local col5 ref" href="#5isAbsolute" title='isAbsolute' data-ref="5isAbsolute">isAbsolute</a>) {</td></tr>
+<tr><th id="227">227</th><td>        <a class="type" href="../io/qfileinfo.h.html#QFileInfo" title='QFileInfo' data-ref="QFileInfo">QFileInfo</a> <dfn class="local col6 decl" id="6fi" title='fi' data-type='QFileInfo' data-ref="6fi">fi</dfn><a class="ref fn" href="../io/qfileinfo.h.html#_ZN9QFileInfoC1ERK7QString" title='QFileInfo::QFileInfo' data-ref="_ZN9QFileInfoC1ERK7QString">(</a><a class="local col4 ref" href="#4fileName" title='fileName' data-ref="4fileName">fileName</a>);</td></tr>
+<tr><th id="228">228</th><td>        <b>if</b> (<a class="local col6 ref" href="#6fi" title='fi' data-ref="6fi">fi</a>.<a class="ref fn" href="../io/qfileinfo.h.html#_ZNK9QFileInfo6isFileEv" title='QFileInfo::isFile' data-ref="_ZNK9QFileInfo6isFileEv">isFile</a>()) {</td></tr>
+<tr><th id="229">229</th><td>            <b>return</b> <a class="local col6 ref" href="#6fi" title='fi' data-ref="6fi">fi</a>.<a class="ref fn" href="../io/qfileinfo.h.html#_ZNK9QFileInfo17canonicalFilePathEv" title='QFileInfo::canonicalFilePath' data-ref="_ZNK9QFileInfo17canonicalFilePathEv">canonicalFilePath</a>();</td></tr>
+<tr><th id="230">230</th><td>        }</td></tr>
+<tr><th id="231">231</th><td>    }</td></tr>
+<tr><th id="232">232</th><td>    <a class="typedef" href="../tools/qcontainerfwd.h.html#QStringList" title='QStringList' data-type='QList&lt;QString&gt;' data-ref="QStringList">QStringList</a> <dfn class="local col7 decl" id="7prefixes" title='prefixes' data-type='QStringList' data-ref="7prefixes">prefixes</dfn> = <a class="type" href="qlibrary_p.h.html#QLibraryPrivate" title='QLibraryPrivate' data-ref="QLibraryPrivate">QLibraryPrivate</a>::<a class="ref fn" href="qlibrary_p.h.html#_ZN15QLibraryPrivate12prefixes_sysEv" title='QLibraryPrivate::prefixes_sys' data-ref="_ZN15QLibraryPrivate12prefixes_sysEv">prefixes_sys</a>();</td></tr>
+<tr><th id="233">233</th><td>    <a class="local col7 ref" href="#7prefixes" title='prefixes' data-ref="7prefixes">prefixes</a>.<a class="ref fn" href="../tools/qlist.h.html#_ZN5QList7prependENSt11conditionalIXsr11DataPointerE23pass_parameter_by_valueENS_17DisableRValueRefsEOT_E4typeE" title='QList::prepend' data-ref="_ZN5QList7prependENSt11conditionalIXsr11DataPointerE23pass_parameter_by_valueENS_17DisableRValueRefsEOT_E4typeE">prepend</a>(<span class='inlayHint'>t:&nbsp;</span><a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a><a class="ref fn" href="../text/qstring.h.html#_ZN7QStringC1Ev" title='QString::QString' data-ref="_ZN7QStringC1Ev">(</a>));</td></tr>
+<tr><th id="234">234</th><td>    <a class="typedef" href="../tools/qcontainerfwd.h.html#QStringList" title='QStringList' data-type='QList&lt;QString&gt;' data-ref="QStringList">QStringList</a> <dfn class="local col8 decl" id="8suffixes" title='suffixes' data-type='QStringList' data-ref="8suffixes">suffixes</dfn> = <a class="type" href="qlibrary_p.h.html#QLibraryPrivate" title='QLibraryPrivate' data-ref="QLibraryPrivate">QLibraryPrivate</a>::<a class="ref fn" href="qlibrary_p.h.html#_ZN15QLibraryPrivate12suffixes_sysERK7QString" title='QLibraryPrivate::suffixes_sys' data-ref="_ZN15QLibraryPrivate12suffixes_sysERK7QString">suffixes_sys</a>(<span class='inlayHint'>fullVersion:&nbsp;</span><a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a><a class="ref fn" href="../text/qstring.h.html#_ZN7QStringC1Ev" title='QString::QString' data-ref="_ZN7QStringC1Ev">(</a>));</td></tr>
+<tr><th id="235">235</th><td>    <a class="local col8 ref" href="#8suffixes" title='suffixes' data-ref="8suffixes">suffixes</a>.<a class="ref fn" href="../tools/qlist.h.html#_ZN5QList7prependENSt11conditionalIXsr11DataPointerE23pass_parameter_by_valueENS_17DisableRValueRefsEOT_E4typeE" title='QList::prepend' data-ref="_ZN5QList7prependENSt11conditionalIXsr11DataPointerE23pass_parameter_by_valueENS_17DisableRValueRefsEOT_E4typeE">prepend</a>(<span class='inlayHint'>t:&nbsp;</span><a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a><a class="ref fn" href="../text/qstring.h.html#_ZN7QStringC1Ev" title='QString::QString' data-ref="_ZN7QStringC1Ev">(</a>));</td></tr>
+<tr><th id="236">236</th><td></td></tr>
+<tr><th id="237">237</th><td>    <i>// Split up "subdir/filename"</i></td></tr>
+<tr><th id="238">238</th><td>    <em>const</em> <em>int</em> <dfn class="local col9 decl" id="9slash" title='slash' data-type='const int' data-ref="9slash">slash</dfn> = <a class="local col4 ref" href="#4fileName" title='fileName' data-ref="4fileName">fileName</a>.<a class="ref fn" href="../text/qstring.h.html#_ZNK7QString11lastIndexOfE5QCharN2Qt15CaseSensitivityE" title='QString::lastIndexOf' data-ref="_ZNK7QString11lastIndexOfE5QCharN2Qt15CaseSensitivityE">lastIndexOf</a>(<a class="ref fn fake" href="../text/qchar.h.html#_ZN5QCharC1EDs" title='QChar::QChar' data-ref="_ZN5QCharC1EDs"></a><span class='inlayHint'>c:&nbsp;</span>u<kbd>'/'</kbd>);</td></tr>
+<tr><th id="239">239</th><td>    <em>const</em> <em>auto</em> <dfn class="local col0 decl" id="10baseName" title='baseName' data-type='const QStringView' data-ref="10baseName">baseName</dfn> = <a class="type" href="../text/qstringview.h.html#QStringView" title='QStringView' data-ref="QStringView">QStringView</a><a class="ref fn" href="../text/qstringview.h.html#_ZN11QStringViewC1ERKT_" title='QStringView::QStringView' data-ref="_ZN11QStringViewC1ERKT_">{</a><a class="local col4 ref" href="#4fileName" title='fileName' data-ref="4fileName">fileName</a>}.<a class="ref fn" href="../text/qstringview.h.html#_ZNK11QStringView3midExx" title='QStringView::mid' data-ref="_ZNK11QStringView3midExx">mid</a>(<span class='inlayHint'>pos:&nbsp;</span><a class="local col9 ref" href="#9slash" title='slash' data-ref="9slash">slash</a> + <var>1</var>);</td></tr>
+<tr><th id="240">240</th><td>    <em>const</em> <em>auto</em> <dfn class="local col1 decl" id="11basePath" title='basePath' data-type='const QStringView' data-ref="11basePath">basePath</dfn> = <a class="local col5 ref" href="#5isAbsolute" title='isAbsolute' data-ref="5isAbsolute">isAbsolute</a> ? <a class="type" href="../text/qstringview.h.html#QStringView" title='QStringView' data-ref="QStringView">QStringView</a><a class="ref fn" href="../text/qstringview.h.html#_ZN11QStringViewC1Ev" title='QStringView::QStringView' data-ref="_ZN11QStringViewC1Ev">(</a>) : <a class="type" href="../text/qstringview.h.html#QStringView" title='QStringView' data-ref="QStringView">QStringView</a><a class="ref fn" href="../text/qstringview.h.html#_ZN11QStringViewC1ERKT_" title='QStringView::QStringView' data-ref="_ZN11QStringViewC1ERKT_">{</a><a class="local col4 ref" href="#4fileName" title='fileName' data-ref="4fileName">fileName</a>}.<a class="ref fn" href="../text/qstringview.h.html#_ZNK11QStringView4leftEx" title='QStringView::left' data-ref="_ZNK11QStringView4leftEx">left</a>(<span class='inlayHint'>n:&nbsp;</span><a class="local col9 ref" href="#9slash" title='slash' data-ref="9slash">slash</a> + <var>1</var>); <i>// keep the '/'</i></td></tr>
+<tr><th id="241">241</th><td></td></tr>
+<tr><th id="242">242</th><td>    <a class="typedef" href="../tools/qcontainerfwd.h.html#QStringList" title='QStringList' data-type='QList&lt;QString&gt;' data-ref="QStringList">QStringList</a> <a class="ref fn fake" href="../tools/qlist.h.html#_ZN5QListC1Ev" title='QList::QList&lt;T&gt;' data-ref="_ZN5QListC1Ev"></a><dfn class="local col2 decl" id="12paths" title='paths' data-type='QStringList' data-ref="12paths">paths</dfn>;</td></tr>
+<tr><th id="243">243</th><td>    <b>if</b> (<a class="local col5 ref" href="#5isAbsolute" title='isAbsolute' data-ref="5isAbsolute">isAbsolute</a>) {</td></tr>
+<tr><th id="244">244</th><td>        <a class="local col2 ref" href="#12paths" title='paths' data-ref="12paths">paths</a>.<a class="ref fn" href="../tools/qlist.h.html#_ZN5QList6appendENSt11conditionalIXsr11DataPointerE23pass_parameter_by_valueENS_17DisableRValueRefsEOT_E4typeE" title='QList::append' data-ref="_ZN5QList6appendENSt11conditionalIXsr11DataPointerE23pass_parameter_by_valueENS_17DisableRValueRefsEOT_E4typeE">append</a>(<span class='inlayHint'>t:&nbsp;</span><a class="local col4 ref" href="#4fileName" title='fileName' data-ref="4fileName">fileName</a>.<a class="ref fn" href="../text/qstring.h.html#_ZNK7QString4leftEx" title='QString::left' data-ref="_ZNK7QString4leftEx">left</a>(<span class='inlayHint'>n:&nbsp;</span><a class="local col9 ref" href="#9slash" title='slash' data-ref="9slash">slash</a>)); <i>// don't include the '/'</i></td></tr>
+<tr><th id="245">245</th><td>    } <b>else</b> {</td></tr>
+<tr><th id="246">246</th><td>        <a class="local col2 ref" href="#12paths" title='paths' data-ref="12paths">paths</a> <a class="ref fn" href="../tools/qcontainerfwd.h.html#29" title='QList&lt;QString&gt;::operator=' data-ref="_ZN5QListI7QStringEaSEOS1_">=</a> <a class="type" href="../kernel/qcoreapplication.h.html#QCoreApplication" title='QCoreApplication' data-ref="QCoreApplication">QCoreApplication</a>::<a class="ref fn" href="../kernel/qcoreapplication.h.html#_ZN16QCoreApplication12libraryPathsEv" title='QCoreApplication::libraryPaths' data-ref="_ZN16QCoreApplication12libraryPathsEv">libraryPaths</a>();</td></tr>
+<tr><th id="247">247</th><td>    }</td></tr>
+<tr><th id="248">248</th><td></td></tr>
+<tr><th id="249">249</th><td>    <b>for</b> (<em>const</em> <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> &amp;<dfn class="local col3 decl" id="13path" title='path' data-type='const QString &amp;' data-ref="13path">path</dfn> : <span class="namespace">std::</span><a class="ref fn" href="../../../../include/c++/9/utility.html#_ZSt8as_constRT_" title='std::as_const' data-ref="_ZSt8as_constRT_">as_const</a>(<span class='inlayHint'>t&amp;:&nbsp;</span><span class='refarg'><a class="local col2 ref" href="#12paths" title='paths' data-ref="12paths">paths</a></span>)) {</td></tr>
+<tr><th id="250">250</th><td>        <b>for</b> (<em>const</em> <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> &amp;<dfn class="local col4 decl" id="14prefix" title='prefix' data-type='const QString &amp;' data-ref="14prefix">prefix</dfn> : <span class="namespace">std::</span><a class="ref fn" href="../../../../include/c++/9/utility.html#_ZSt8as_constRT_" title='std::as_const' data-ref="_ZSt8as_constRT_">as_const</a>(<span class='inlayHint'>t&amp;:&nbsp;</span><span class='refarg'><a class="local col7 ref" href="#7prefixes" title='prefixes' data-ref="7prefixes">prefixes</a></span>)) {</td></tr>
+<tr><th id="251">251</th><td>            <b>for</b> (<em>const</em> <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> &amp;<dfn class="local col5 decl" id="15suffix" title='suffix' data-type='const QString &amp;' data-ref="15suffix">suffix</dfn> : <span class="namespace">std::</span><a class="ref fn" href="../../../../include/c++/9/utility.html#_ZSt8as_constRT_" title='std::as_const' data-ref="_ZSt8as_constRT_">as_const</a>(<span class='inlayHint'>t&amp;:&nbsp;</span><span class='refarg'><a class="local col8 ref" href="#8suffixes" title='suffixes' data-ref="8suffixes">suffixes</a></span>)) {</td></tr>
+<tr><th id="252">252</th><td><u>#<span data-ppcond="252">ifdef</span> <span class="macro" data-ref="_M/Q_OS_ANDROID">Q_OS_ANDROID</span></u></td></tr>
+<tr><th id="253">253</th><td>                {</td></tr>
+<tr><th id="254">254</th><td>                    QString pluginPath = basePath + prefix + baseName + suffix;</td></tr>
+<tr><th id="255">255</th><td>                    <em>const</em> QString fn = path + <q>"/lib"_L1</q> + pluginPath.replace(u<kbd>'/'</kbd>, u<kbd>'_'</kbd>);</td></tr>
+<tr><th id="256">256</th><td>                    qCDebug(qt_lcDebugPlugins) &lt;&lt; <q>"Trying..."</q> &lt;&lt; fn;</td></tr>
+<tr><th id="257">257</th><td>                    <b>if</b> (QFileInfo(fn).isFile())</td></tr>
+<tr><th id="258">258</th><td>                        <b>return</b> fn;</td></tr>
+<tr><th id="259">259</th><td>                }</td></tr>
+<tr><th id="260">260</th><td><u>#<span data-ppcond="252">endif</span></u></td></tr>
+<tr><th id="261">261</th><td>                <em>const</em> <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> <dfn class="local col6 decl" id="16fn" title='fn' data-type='const QString' data-ref="16fn">fn</dfn> = <a class="ref fn fake" href="../text/qstringbuilder.h.html#_ZNK14QStringBuildercvN13QConcatenableI14QStringBuilderIT_T0_EE9ConvertToEEv" title='QStringBuilder::operator typename QConcatenable&lt;QStringBuilder&lt;type-parameter-0-0, type-parameter-0-1&gt; &gt;::ConvertTo' data-ref="_ZNK14QStringBuildercvN13QConcatenableI14QStringBuilderIT_T0_EE9ConvertToEEv"></a><a class="local col3 ref" href="#13path" title='path' data-ref="13path">path</a> <a class="ref fn" href="../text/qstringbuilder.h.html#_ZplRKT_RKT0_" title='operator+' data-ref="_ZplRKT_RKT0_">+</a> u<kbd>'/'</kbd> <a class="ref fn" href="../text/qstringbuilder.h.html#_ZplRKT_RKT0_" title='operator+' data-ref="_ZplRKT_RKT0_">+</a> <a class="local col1 ref" href="#11basePath" title='basePath' data-ref="11basePath">basePath</a> <a class="ref fn" href="../text/qstringbuilder.h.html#_ZplRKT_RKT0_" title='operator+' data-ref="_ZplRKT_RKT0_">+</a> <a class="local col4 ref" href="#14prefix" title='prefix' data-ref="14prefix">prefix</a> <a class="ref fn" href="../text/qstringbuilder.h.html#_ZplRKT_RKT0_" title='operator+' data-ref="_ZplRKT_RKT0_">+</a> <a class="local col0 ref" href="#10baseName" title='baseName' data-ref="10baseName">baseName</a> <a class="ref fn" href="../text/qstringbuilder.h.html#_ZplRKT_RKT0_" title='operator+' data-ref="_ZplRKT_RKT0_">+</a> <a class="local col5 ref" href="#15suffix" title='suffix' data-ref="15suffix">suffix</a>;</td></tr>
+<tr><th id="262">262</th><td>                <a class="macro" href="../io/qloggingcategory.h.html#128" title="for (QLoggingCategoryMacroHolder&lt;QtDebugMsg&gt; qt_category(qt_lcDebugPlugins); qt_category; qt_category.control = false) QMessageLogger(nullptr, 0, nullptr, qt_category.name()).debug()" data-ref="_M/qCDebug">qCDebug</a>(<a class="ref fn" href="qlibrary_p.h.html#35" title='qt_lcDebugPlugins' data-ref="_Z17qt_lcDebugPluginsv">qt_lcDebugPlugins</a>) <a class="ref fn" href="../io/qdebug.h.html#_ZN6QDebuglsEPKc" title='QDebug::operator&lt;&lt;' data-ref="_ZN6QDebuglsEPKc">&lt;&lt;</a> <q>"Trying..."</q> <a class="ref fn" href="../io/qdebug.h.html#_ZN6QDebuglsERK7QString" title='QDebug::operator&lt;&lt;' data-ref="_ZN6QDebuglsERK7QString">&lt;&lt;</a> <a class="local col6 ref" href="#16fn" title='fn' data-ref="16fn">fn</a>;</td></tr>
+<tr><th id="263">263</th><td>                <b>if</b> (<a class="type" href="../io/qfileinfo.h.html#QFileInfo" title='QFileInfo' data-ref="QFileInfo">QFileInfo</a><a class="ref fn" href="../io/qfileinfo.h.html#_ZN9QFileInfoC1ERK7QString" title='QFileInfo::QFileInfo' data-ref="_ZN9QFileInfoC1ERK7QString">(</a><a class="local col6 ref" href="#16fn" title='fn' data-ref="16fn">fn</a>).<a class="ref fn" href="../io/qfileinfo.h.html#_ZNK9QFileInfo6isFileEv" title='QFileInfo::isFile' data-ref="_ZNK9QFileInfo6isFileEv">isFile</a>())</td></tr>
+<tr><th id="264">264</th><td>                    <b>return</b> <a class="ref fn fake" href="../text/qstring.h.html#_ZN7QStringC1ERKS_" title='QString::QString' data-ref="_ZN7QStringC1ERKS_"></a><a class="local col6 ref" href="#16fn" title='fn' data-ref="16fn">fn</a>;</td></tr>
+<tr><th id="265">265</th><td>            }</td></tr>
+<tr><th id="266">266</th><td>        }</td></tr>
+<tr><th id="267">267</th><td>    }</td></tr>
+<tr><th id="268">268</th><td>    <a class="macro" href="../io/qloggingcategory.h.html#128" title="for (QLoggingCategoryMacroHolder&lt;QtDebugMsg&gt; qt_category(qt_lcDebugPlugins); qt_category; qt_category.control = false) QMessageLogger(nullptr, 0, nullptr, qt_category.name()).debug()" data-ref="_M/qCDebug">qCDebug</a>(<a class="ref fn" href="qlibrary_p.h.html#35" title='qt_lcDebugPlugins' data-ref="_Z17qt_lcDebugPluginsv">qt_lcDebugPlugins</a>) <a class="ref fn" href="../io/qdebug.h.html#_ZN6QDebuglsERK7QString" title='QDebug::operator&lt;&lt;' data-ref="_ZN6QDebuglsERK7QString">&lt;&lt;</a> <a class="local col4 ref" href="#4fileName" title='fileName' data-ref="4fileName">fileName</a> <a class="ref fn" href="../io/qdebug.h.html#_ZN6QDebuglsEPKc" title='QDebug::operator&lt;&lt;' data-ref="_ZN6QDebuglsEPKc">&lt;&lt;</a> <q>"not found"</q>;</td></tr>
+<tr><th id="269">269</th><td>    <b>return</b> <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a><a class="ref fn" href="../text/qstring.h.html#_ZN7QStringC1Ev" title='QString::QString' data-ref="_ZN7QStringC1Ev">(</a>);</td></tr>
+<tr><th id="270">270</th><td>}</td></tr>
+<tr><th id="271">271</th><td><u>#<span data-ppcond="222">endif</span></u></td></tr>
+<tr><th id="272">272</th><td></td></tr>
+<tr><th id="273">273</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="274">274</th><td><i class="doc">    <span class="command">\property</span> <span class="verb" data-ref="_ZNK13QPluginLoader8fileNameEv">QPluginLoader::fileName</span></i></td></tr>
+<tr><th id="275">275</th><td><i class="doc">    <span class="command">\brief</span> the file name of the plugin</i></td></tr>
+<tr><th id="276">276</th><td><i class="doc"></i></td></tr>
+<tr><th id="277">277</th><td><i class="doc">    We recommend omitting the file's suffix in the file name, since</i></td></tr>
+<tr><th id="278">278</th><td><i class="doc">    QPluginLoader will automatically look for the file with the appropriate</i></td></tr>
+<tr><th id="279">279</th><td><i class="doc">    suffix (see QLibrary::isLibrary()).</i></td></tr>
+<tr><th id="280">280</th><td><i class="doc"></i></td></tr>
+<tr><th id="281">281</th><td><i class="doc">    When loading the plugin, QPluginLoader searches</i></td></tr>
+<tr><th id="282">282</th><td><i class="doc">    in all plugin locations specified by QCoreApplication::libraryPaths(),</i></td></tr>
+<tr><th id="283">283</th><td><i class="doc">    unless the file name has an absolute path. After loading the plugin</i></td></tr>
+<tr><th id="284">284</th><td><i class="doc">    successfully, fileName() returns the fully-qualified file name of</i></td></tr>
+<tr><th id="285">285</th><td><i class="doc">    the plugin, including the full path to the plugin if one was given</i></td></tr>
+<tr><th id="286">286</th><td><i class="doc">    in the constructor or passed to setFileName().</i></td></tr>
+<tr><th id="287">287</th><td><i class="doc"></i></td></tr>
+<tr><th id="288">288</th><td><i class="doc">    If the file name does not exist, it will not be set. This property</i></td></tr>
+<tr><th id="289">289</th><td><i class="doc">    will then contain an empty string.</i></td></tr>
+<tr><th id="290">290</th><td><i class="doc"></i></td></tr>
+<tr><th id="291">291</th><td><i class="doc">    By default, this property contains an empty string.</i></td></tr>
+<tr><th id="292">292</th><td><i class="doc"></i></td></tr>
+<tr><th id="293">293</th><td><i class="doc">    <span class="command">\sa</span> load()</i></td></tr>
+<tr><th id="294">294</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="295">295</th><td><em>void</em> <a class="type" href="qpluginloader.h.html#QPluginLoader" title='QPluginLoader' data-ref="QPluginLoader">QPluginLoader</a>::<dfn class="decl def fn" id="_ZN13QPluginLoader11setFileNameERK7QString" title='QPluginLoader::setFileName' data-ref="_ZN13QPluginLoader11setFileNameERK7QString">setFileName</dfn>(<em>const</em> <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> &amp;<dfn class="local col7 decl" id="17fileName" title='fileName' data-type='const QString &amp;' data-ref="17fileName">fileName</dfn>)</td></tr>
+<tr><th id="296">296</th><td>{</td></tr>
+<tr><th id="297">297</th><td><u>#<span data-ppcond="297">if</span> defined(<a class="macro" href="../global/qtconfigmacros.h.html#43" data-ref="_M/QT_SHARED">QT_SHARED</a>)</u></td></tr>
+<tr><th id="298">298</th><td>    <a class="type" href="qlibrary.h.html#QLibrary" title='QLibrary' data-ref="QLibrary">QLibrary</a>::<a class="typedef" href="qlibrary.h.html#29" title='QLibrary::LoadHints' data-type='QFlags&lt;QLibrary::LoadHint&gt;' data-ref="QLibrary::LoadHints">LoadHints</a> <dfn class="local col8 decl" id="18lh" title='lh' data-type='QLibrary::LoadHints' data-ref="18lh">lh</dfn> = <a class="ref fn fake" href="../global/qflags.h.html#52" title='QFlags&lt;QLibrary::LoadHint&gt;::QFlags' data-ref="_ZN6QFlagsIN8QLibrary8LoadHintEEC1ERKS2_"></a><a class="tu ref" href="#defaultLoadHints" title='defaultLoadHints' data-use='r' data-ref="defaultLoadHints">defaultLoadHints</a>;</td></tr>
+<tr><th id="299">299</th><td>    <b>if</b> (<a class="member field" href="qpluginloader.h.html#QPluginLoader::d" title='QPluginLoader::d' data-ref="QPluginLoader::d">d</a>) {</td></tr>
+<tr><th id="300">300</th><td>        <a class="local col8 ref" href="#18lh" title='lh' data-ref="18lh">lh</a> <a class="ref fn" href="../global/qflags.h.html#52" title='QFlags&lt;QLibrary::LoadHint&gt;::operator=' data-ref="_ZN6QFlagsIN8QLibrary8LoadHintEEaSEOS2_">=</a> <a class="member field" href="qpluginloader.h.html#QPluginLoader::d" title='QPluginLoader::d' data-ref="QPluginLoader::d">d</a>-&gt;<a class="ref fn" href="qlibrary_p.h.html#_ZNK15QLibraryPrivate9loadHintsEv" title='QLibraryPrivate::loadHints' data-ref="_ZNK15QLibraryPrivate9loadHintsEv">loadHints</a>();</td></tr>
+<tr><th id="301">301</th><td>        <a class="member field" href="qpluginloader.h.html#QPluginLoader::d" title='QPluginLoader::d' data-ref="QPluginLoader::d">d</a>-&gt;<a class="ref fn" href="qlibrary_p.h.html#_ZN15QLibraryPrivate7releaseEv" title='QLibraryPrivate::release' data-ref="_ZN15QLibraryPrivate7releaseEv">release</a>();</td></tr>
+<tr><th id="302">302</th><td>        <a class="member field" href="qpluginloader.h.html#QPluginLoader::d" title='QPluginLoader::d' data-ref="QPluginLoader::d">d</a> = <b>nullptr</b>;</td></tr>
+<tr><th id="303">303</th><td>        <a class="member field" href="qpluginloader.h.html#QPluginLoader::did_load" title='QPluginLoader::did_load' data-ref="QPluginLoader::did_load">did_load</a> = <b>false</b>;</td></tr>
+<tr><th id="304">304</th><td>    }</td></tr>
+<tr><th id="305">305</th><td></td></tr>
+<tr><th id="306">306</th><td>    <em>const</em> <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> <dfn class="local col9 decl" id="19fn" title='fn' data-type='const QString' data-ref="19fn">fn</dfn> = <a class="tu ref fn" href="#_ZL12locatePluginRK7QString" title='locatePlugin' data-use='c' data-ref="_ZL12locatePluginRK7QString">locatePlugin</a>(<a class="local col7 ref" href="#17fileName" title='fileName' data-ref="17fileName">fileName</a>);</td></tr>
+<tr><th id="307">307</th><td></td></tr>
+<tr><th id="308">308</th><td>    <a class="member field" href="qpluginloader.h.html#QPluginLoader::d" title='QPluginLoader::d' data-ref="QPluginLoader::d">d</a> = <a class="type" href="qlibrary_p.h.html#QLibraryPrivate" title='QLibraryPrivate' data-ref="QLibraryPrivate">QLibraryPrivate</a>::<a class="ref fn" href="qlibrary_p.h.html#_ZN15QLibraryPrivate12findOrCreateERK7QStringS2_6QFlagsIN8QLibrary8LoadHintEE" title='QLibraryPrivate::findOrCreate' data-ref="_ZN15QLibraryPrivate12findOrCreateERK7QStringS2_6QFlagsIN8QLibrary8LoadHintEE">findOrCreate</a>(<span class='inlayHint'>fileName:&nbsp;</span><a class="local col9 ref" href="#19fn" title='fn' data-ref="19fn">fn</a>, <span class='inlayHint'>version:&nbsp;</span><a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a><a class="ref fn" href="../text/qstring.h.html#_ZN7QStringC1Ev" title='QString::QString' data-ref="_ZN7QStringC1Ev">(</a>), <a class="ref fn fake" href="../global/qflags.h.html#52" title='QFlags&lt;QLibrary::LoadHint&gt;::QFlags' data-ref="_ZN6QFlagsIN8QLibrary8LoadHintEEC1ERKS2_"></a><span class='inlayHint'>loadHints:&nbsp;</span><a class="local col8 ref" href="#18lh" title='lh' data-ref="18lh">lh</a>);</td></tr>
+<tr><th id="309">309</th><td>    <b>if</b> (!<a class="local col9 ref" href="#19fn" title='fn' data-ref="19fn">fn</a>.<a class="ref fn" href="../text/qstring.h.html#_ZNK7QString7isEmptyEv" title='QString::isEmpty' data-ref="_ZNK7QString7isEmptyEv">isEmpty</a>())</td></tr>
+<tr><th id="310">310</th><td>        <a class="member field" href="qpluginloader.h.html#QPluginLoader::d" title='QPluginLoader::d' data-ref="QPluginLoader::d">d</a>-&gt;<a class="ref fn" href="qlibrary_p.h.html#_ZN15QLibraryPrivate17updatePluginStateEv" title='QLibraryPrivate::updatePluginState' data-ref="_ZN15QLibraryPrivate17updatePluginStateEv">updatePluginState</a>();</td></tr>
+<tr><th id="311">311</th><td></td></tr>
+<tr><th id="312">312</th><td><u>#<span data-ppcond="297">else</span></u></td></tr>
+<tr><th id="313">313</th><td>    qCWarning(qt_lcDebugPlugins, <q>"Cannot load '%ls' into a statically linked Qt library."</q>,</td></tr>
+<tr><th id="314">314</th><td>              qUtf16Printable(fileName));</td></tr>
+<tr><th id="315">315</th><td><u>#<span data-ppcond="297">endif</span></u></td></tr>
+<tr><th id="316">316</th><td>}</td></tr>
+<tr><th id="317">317</th><td></td></tr>
+<tr><th id="318">318</th><td><a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> <a class="type" href="qpluginloader.h.html#QPluginLoader" title='QPluginLoader' data-ref="QPluginLoader">QPluginLoader</a>::<dfn class="decl def fn" id="_ZNK13QPluginLoader8fileNameEv" title='QPluginLoader::fileName' data-ref="_ZNK13QPluginLoader8fileNameEv">fileName</dfn>() <em>const</em></td></tr>
+<tr><th id="319">319</th><td>{</td></tr>
+<tr><th id="320">320</th><td>    <b>if</b> (<a class="member field" href="qpluginloader.h.html#QPluginLoader::d" title='QPluginLoader::d' data-ref="QPluginLoader::d">d</a>)</td></tr>
+<tr><th id="321">321</th><td>        <b>return</b> <a class="ref fn fake" href="../text/qstring.h.html#_ZN7QStringC1ERKS_" title='QString::QString' data-ref="_ZN7QStringC1ERKS_"></a><a class="member field" href="qpluginloader.h.html#QPluginLoader::d" title='QPluginLoader::d' data-ref="QPluginLoader::d">d</a>-&gt;<a class="ref field" href="qlibrary_p.h.html#QLibraryPrivate::fileName" title='QLibraryPrivate::fileName' data-ref="QLibraryPrivate::fileName">fileName</a>;</td></tr>
+<tr><th id="322">322</th><td>    <b>return</b> <a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a><a class="ref fn" href="../text/qstring.h.html#_ZN7QStringC1Ev" title='QString::QString' data-ref="_ZN7QStringC1Ev">(</a>);</td></tr>
+<tr><th id="323">323</th><td>}</td></tr>
+<tr><th id="324">324</th><td></td></tr>
+<tr><th id="325">325</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="326">326</th><td><i class="doc">    <span class="command">\since</span> 4.2</i></td></tr>
+<tr><th id="327">327</th><td><i class="doc"></i></td></tr>
+<tr><th id="328">328</th><td><i class="doc">    Returns a text string with the description of the last error that occurred.</i></td></tr>
+<tr><th id="329">329</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="330">330</th><td><a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a> <a class="type" href="qpluginloader.h.html#QPluginLoader" title='QPluginLoader' data-ref="QPluginLoader">QPluginLoader</a>::<dfn class="decl def fn" id="_ZNK13QPluginLoader11errorStringEv" title='QPluginLoader::errorString' data-ref="_ZNK13QPluginLoader11errorStringEv">errorString</dfn>() <em>const</em></td></tr>
+<tr><th id="331">331</th><td>{</td></tr>
+<tr><th id="332">332</th><td>    <b>return</b> (!<a class="member field" href="qpluginloader.h.html#QPluginLoader::d" title='QPluginLoader::d' data-ref="QPluginLoader::d">d</a> || <a class="member field" href="qpluginloader.h.html#QPluginLoader::d" title='QPluginLoader::d' data-ref="QPluginLoader::d">d</a>-&gt;<a class="ref field" href="qlibrary_p.h.html#QLibraryPrivate::errorString" title='QLibraryPrivate::errorString' data-ref="QLibraryPrivate::errorString">errorString</a>.<a class="ref fn" href="../text/qstring.h.html#_ZNK7QString7isEmptyEv" title='QString::isEmpty' data-ref="_ZNK7QString7isEmptyEv">isEmpty</a>()) ? <a class="member fn" href="qpluginloader.h.html#22" title='QPluginLoader::tr' data-ref="_ZN13QPluginLoader2trEPKcS1_i">tr</a>(<span class='inlayHint'>s:&nbsp;</span><q>"Unknown error"</q>) : <a class="ref fn fake" href="../text/qstring.h.html#_ZN7QStringC1ERKS_" title='QString::QString' data-ref="_ZN7QStringC1ERKS_"></a><a class="member field" href="qpluginloader.h.html#QPluginLoader::d" title='QPluginLoader::d' data-ref="QPluginLoader::d">d</a>-&gt;<a class="ref field" href="qlibrary_p.h.html#QLibraryPrivate::errorString" title='QLibraryPrivate::errorString' data-ref="QLibraryPrivate::errorString">errorString</a>;</td></tr>
+<tr><th id="333">333</th><td>}</td></tr>
+<tr><th id="334">334</th><td></td></tr>
+<tr><th id="335">335</th><td><i class="doc">/*! <span class="command">\since</span> 4.4</i></td></tr>
+<tr><th id="336">336</th><td><i class="doc"></i></td></tr>
+<tr><th id="337">337</th><td><i class="doc">    <span class="command">\property</span> <span class="verb" data-ref="_ZNK13QPluginLoader9loadHintsEv">QPluginLoader::loadHints</span></i></td></tr>
+<tr><th id="338">338</th><td><i class="doc">    <span class="command">\brief</span> Give the load() function some hints on how it should behave.</i></td></tr>
+<tr><th id="339">339</th><td><i class="doc"></i></td></tr>
+<tr><th id="340">340</th><td><i class="doc">    You can give hints on how the symbols in the plugin are</i></td></tr>
+<tr><th id="341">341</th><td><i class="doc">    resolved. By default since Qt 5.7, QLibrary::PreventUnloadHint is set.</i></td></tr>
+<tr><th id="342">342</th><td><i class="doc"></i></td></tr>
+<tr><th id="343">343</th><td><i class="doc">    See the documentation of QLibrary::loadHints for a complete</i></td></tr>
+<tr><th id="344">344</th><td><i class="doc">    description of how this property works.</i></td></tr>
+<tr><th id="345">345</th><td><i class="doc"></i></td></tr>
+<tr><th id="346">346</th><td><i class="doc">    <span class="command">\sa</span> QLibrary::loadHints</i></td></tr>
+<tr><th id="347">347</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="348">348</th><td></td></tr>
+<tr><th id="349">349</th><td><em>void</em> <a class="type" href="qpluginloader.h.html#QPluginLoader" title='QPluginLoader' data-ref="QPluginLoader">QPluginLoader</a>::<dfn class="decl def fn" id="_ZN13QPluginLoader12setLoadHintsE6QFlagsIN8QLibrary8LoadHintEE" title='QPluginLoader::setLoadHints' data-ref="_ZN13QPluginLoader12setLoadHintsE6QFlagsIN8QLibrary8LoadHintEE">setLoadHints</dfn>(<a class="type" href="qlibrary.h.html#QLibrary" title='QLibrary' data-ref="QLibrary">QLibrary</a>::<a class="typedef" href="qlibrary.h.html#29" title='QLibrary::LoadHints' data-type='QFlags&lt;QLibrary::LoadHint&gt;' data-ref="QLibrary::LoadHints">LoadHints</a> <dfn class="local col0 decl" id="20loadHints" title='loadHints' data-type='QLibrary::LoadHints' data-ref="20loadHints">loadHints</dfn>)</td></tr>
+<tr><th id="350">350</th><td>{</td></tr>
+<tr><th id="351">351</th><td>    <b>if</b> (!<a class="member field" href="qpluginloader.h.html#QPluginLoader::d" title='QPluginLoader::d' data-ref="QPluginLoader::d">d</a>) {</td></tr>
+<tr><th id="352">352</th><td>        <a class="member field" href="qpluginloader.h.html#QPluginLoader::d" title='QPluginLoader::d' data-ref="QPluginLoader::d">d</a> = <a class="type" href="qlibrary_p.h.html#QLibraryPrivate" title='QLibraryPrivate' data-ref="QLibraryPrivate">QLibraryPrivate</a>::<a class="ref fn" href="qlibrary_p.h.html#_ZN15QLibraryPrivate12findOrCreateERK7QStringS2_6QFlagsIN8QLibrary8LoadHintEE" title='QLibraryPrivate::findOrCreate' data-ref="_ZN15QLibraryPrivate12findOrCreateERK7QStringS2_6QFlagsIN8QLibrary8LoadHintEE">findOrCreate</a>(<span class='inlayHint'>fileName:&nbsp;</span><a class="type" href="../text/qstring.h.html#QString" title='QString' data-ref="QString">QString</a><a class="ref fn" href="../text/qstring.h.html#_ZN7QStringC1Ev" title='QString::QString' data-ref="_ZN7QStringC1Ev">(</a>));   <i>// ugly, but we need a d-ptr</i></td></tr>
+<tr><th id="353">353</th><td>        <a class="member field" href="qpluginloader.h.html#QPluginLoader::d" title='QPluginLoader::d' data-ref="QPluginLoader::d">d</a>-&gt;<a class="ref field" href="qlibrary_p.h.html#QLibraryPrivate::errorString" title='QLibraryPrivate::errorString' data-ref="QLibraryPrivate::errorString">errorString</a>.<a class="ref fn" href="../text/qstring.h.html#_ZN7QString5clearEv" title='QString::clear' data-ref="_ZN7QString5clearEv">clear</a>();</td></tr>
+<tr><th id="354">354</th><td>    }</td></tr>
+<tr><th id="355">355</th><td>    <a class="member field" href="qpluginloader.h.html#QPluginLoader::d" title='QPluginLoader::d' data-ref="QPluginLoader::d">d</a>-&gt;<a class="ref fn" href="qlibrary_p.h.html#_ZN15QLibraryPrivate12setLoadHintsE6QFlagsIN8QLibrary8LoadHintEE" title='QLibraryPrivate::setLoadHints' data-ref="_ZN15QLibraryPrivate12setLoadHintsE6QFlagsIN8QLibrary8LoadHintEE">setLoadHints</a>(<a class="ref fn fake" href="../global/qflags.h.html#52" title='QFlags&lt;QLibrary::LoadHint&gt;::QFlags' data-ref="_ZN6QFlagsIN8QLibrary8LoadHintEEC1ERKS2_"></a><a class="local col0 ref" href="#20loadHints" title='loadHints' data-ref="20loadHints">loadHints</a>);</td></tr>
+<tr><th id="356">356</th><td>}</td></tr>
+<tr><th id="357">357</th><td></td></tr>
+<tr><th id="358">358</th><td><a class="type" href="qlibrary.h.html#QLibrary" title='QLibrary' data-ref="QLibrary">QLibrary</a>::<a class="typedef" href="qlibrary.h.html#29" title='QLibrary::LoadHints' data-type='QFlags&lt;QLibrary::LoadHint&gt;' data-ref="QLibrary::LoadHints">LoadHints</a> <a class="type" href="qpluginloader.h.html#QPluginLoader" title='QPluginLoader' data-ref="QPluginLoader">QPluginLoader</a>::<dfn class="decl def fn" id="_ZNK13QPluginLoader9loadHintsEv" title='QPluginLoader::loadHints' data-ref="_ZNK13QPluginLoader9loadHintsEv">loadHints</dfn>() <em>const</em></td></tr>
+<tr><th id="359">359</th><td>{</td></tr>
+<tr><th id="360">360</th><td>    <i>// Not having a d-pointer means that the user hasn't called</i></td></tr>
+<tr><th id="361">361</th><td><i>    // setLoadHints() / setFileName() yet. In setFileName() we will</i></td></tr>
+<tr><th id="362">362</th><td><i>    // then force defaultLoadHints on loading, so we must return them</i></td></tr>
+<tr><th id="363">363</th><td><i>    // from here as well.</i></td></tr>
+<tr><th id="364">364</th><td></td></tr>
+<tr><th id="365">365</th><td>    <b>return</b> <a class="member field" href="qpluginloader.h.html#QPluginLoader::d" title='QPluginLoader::d' data-ref="QPluginLoader::d">d</a> ? <a class="member field" href="qpluginloader.h.html#QPluginLoader::d" title='QPluginLoader::d' data-ref="QPluginLoader::d">d</a>-&gt;<a class="ref fn" href="qlibrary_p.h.html#_ZNK15QLibraryPrivate9loadHintsEv" title='QLibraryPrivate::loadHints' data-ref="_ZNK15QLibraryPrivate9loadHintsEv">loadHints</a>() : <a class="ref fn fake" href="../global/qflags.h.html#52" title='QFlags&lt;QLibrary::LoadHint&gt;::QFlags' data-ref="_ZN6QFlagsIN8QLibrary8LoadHintEEC1ERKS2_"></a><a class="tu ref" href="#defaultLoadHints" title='defaultLoadHints' data-use='r' data-ref="defaultLoadHints">defaultLoadHints</a>;</td></tr>
+<tr><th id="366">366</th><td>}</td></tr>
+<tr><th id="367">367</th><td></td></tr>
+<tr><th id="368">368</th><td><u>#<span data-ppcond="22">endif</span> // QT_CONFIG(library)</u></td></tr>
+<tr><th id="369">369</th><td></td></tr>
+<tr><th id="370">370</th><td><b>typedef</b> <a class="type" href="../tools/qcontainerfwd.h.html#QList" title='QList' data-ref="QList">QList</a>&lt;<a class="type" href="qplugin.h.html#QStaticPlugin" title='QStaticPlugin' data-ref="QStaticPlugin">QStaticPlugin</a>&gt; <dfn class="typedef" id="StaticPluginList" title='StaticPluginList' data-type='QList&lt;QStaticPlugin&gt;' data-ref="StaticPluginList">StaticPluginList</dfn>;</td></tr>
+<tr><th id="371">371</th><td><a class="macro" href="../global/qglobalstatic.h.html#115" title=" namespace { struct Q_QGS_staticPluginList { typedef StaticPluginList QGS_Type; static void innerFunction(void *pointer) noexcept(noexcept(std::remove_cv_t&lt;QGS_Type&gt; ())) { new (pointer) QGS_Type (); } }; } [[clang::require_constant_initialization]] static QGlobalStatic&lt;QtGlobalStatic::Holder&lt;Q_QGS_staticPluginList&gt;&gt; staticPluginList;" data-ref="_M/Q_GLOBAL_STATIC">Q_GLOBAL_STATIC</a>(<a class="typedef" href="#StaticPluginList" title='StaticPluginList' data-type='QList&lt;QStaticPlugin&gt;' data-ref="StaticPluginList">StaticPluginList</a>, <a class="tu ref fn fake" href="../global/qglobalstatic.h.html#57" title='QGlobalStatic&lt;QtGlobalStatic::Holder&lt;(anonymous namespace)::Q_QGS_staticPluginList&gt;&gt;::QGlobalStatic' data-use='c' data-ref="_ZN13QGlobalStaticIN14QtGlobalStatic6HolderIN12_GLOBAL__N_122Q_QGS_staticPluginListEEEEC1Ev"></a><dfn class="decl def" id="staticPluginList" title='staticPluginList' data-ref="staticPluginList">staticPluginList</dfn>)</td></tr>
+<tr><th id="372">372</th><td></td></tr>
+<tr><th id="373">373</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="374">374</th><td><i class="doc">    <span class="command">\relates</span> <span class="verb">QPluginLoader</span></i></td></tr>
+<tr><th id="375">375</th><td><i class="doc">    <span class="command">\since</span> 5.0</i></td></tr>
+<tr><th id="376">376</th><td><i class="doc"></i></td></tr>
+<tr><th id="377">377</th><td><i class="doc">    Registers the<span class="command"> \a</span> <span class="arg">plugin</span> specified with the plugin loader, and is used</i></td></tr>
+<tr><th id="378">378</th><td><i class="doc">    by Q_IMPORT_PLUGIN().</i></td></tr>
+<tr><th id="379">379</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="380">380</th><td><em>void</em> <a class="macro" href="../../../build/include/QtCore/qtcoreexports.h.html#11" title="__attribute__((visibility(&quot;default&quot;)))" data-ref="_M/Q_CORE_EXPORT">Q_CORE_EXPORT</a> <dfn class="decl def fn" id="_Z29qRegisterStaticPluginFunction13QStaticPlugin" title='qRegisterStaticPluginFunction' data-ref="_Z29qRegisterStaticPluginFunction13QStaticPlugin">qRegisterStaticPluginFunction</dfn>(<a class="type" href="qplugin.h.html#QStaticPlugin" title='QStaticPlugin' data-ref="QStaticPlugin">QStaticPlugin</a> <dfn class="local col1 decl" id="21plugin" title='plugin' data-type='QStaticPlugin' data-ref="21plugin">plugin</dfn>)</td></tr>
+<tr><th id="381">381</th><td>{</td></tr>
+<tr><th id="382">382</th><td>    <a class="ref" href="#371" title='staticPluginList' data-ref="staticPluginList">staticPluginList</a><a class="tu ref fn" href="../global/qglobalstatic.h.html#_ZN13QGlobalStaticclEv" title='QGlobalStatic::operator()' data-use='c' data-ref="_ZN13QGlobalStaticclEv">()</a>-&gt;<a class="ref fn" href="../tools/qlist.h.html#_ZN5QList6appendEN17QArrayDataPointerIT_E14parameter_typeE" title='QList::append' data-ref="_ZN5QList6appendEN17QArrayDataPointerIT_E14parameter_typeE">append</a>(<span class='inlayHint'>t:&nbsp;</span><a class="local col1 ref" href="#21plugin" title='plugin' data-ref="21plugin">plugin</a>);</td></tr>
+<tr><th id="383">383</th><td>}</td></tr>
+<tr><th id="384">384</th><td></td></tr>
+<tr><th id="385">385</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="386">386</th><td><i class="doc">    Returns a list of static plugin instances (root components) held</i></td></tr>
+<tr><th id="387">387</th><td><i class="doc">    by the plugin loader.</i></td></tr>
+<tr><th id="388">388</th><td><i class="doc">    <span class="command">\sa</span> staticPlugins()</i></td></tr>
+<tr><th id="389">389</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="390">390</th><td><a class="typedef" href="../kernel/qobject.h.html#QObjectList" title='QObjectList' data-type='QList&lt;QObject *&gt;' data-ref="QObjectList">QObjectList</a> <a class="type" href="qpluginloader.h.html#QPluginLoader" title='QPluginLoader' data-ref="QPluginLoader">QPluginLoader</a>::<dfn class="decl def fn" id="_ZN13QPluginLoader15staticInstancesEv" title='QPluginLoader::staticInstances' data-ref="_ZN13QPluginLoader15staticInstancesEv">staticInstances</dfn>()</td></tr>
+<tr><th id="391">391</th><td>{</td></tr>
+<tr><th id="392">392</th><td>    <a class="typedef" href="../kernel/qobject.h.html#QObjectList" title='QObjectList' data-type='QList&lt;QObject *&gt;' data-ref="QObjectList">QObjectList</a> <a class="ref fn fake" href="../tools/qlist.h.html#_ZN5QListC1Ev" title='QList::QList&lt;T&gt;' data-ref="_ZN5QListC1Ev"></a><dfn class="local col2 decl" id="22instances" title='instances' data-type='QObjectList' data-ref="22instances">instances</dfn>;</td></tr>
+<tr><th id="393">393</th><td>    <em>const</em> <a class="typedef" href="#StaticPluginList" title='StaticPluginList' data-type='QList&lt;QStaticPlugin&gt;' data-ref="StaticPluginList">StaticPluginList</a> *<dfn class="local col3 decl" id="23plugins" title='plugins' data-type='const StaticPluginList *' data-ref="23plugins">plugins</dfn> = <a class="ref" href="#371" title='staticPluginList' data-ref="staticPluginList">staticPluginList</a><a class="tu ref fn" href="../global/qglobalstatic.h.html#_ZN13QGlobalStaticclEv" title='QGlobalStatic::operator()' data-use='c' data-ref="_ZN13QGlobalStaticclEv">()</a>;</td></tr>
+<tr><th id="394">394</th><td>    <b>if</b> (<a class="local col3 ref" href="#23plugins" title='plugins' data-ref="23plugins">plugins</a>) {</td></tr>
+<tr><th id="395">395</th><td>        <em>const</em> <em>int</em> <dfn class="local col4 decl" id="24numPlugins" title='numPlugins' data-type='const int' data-ref="24numPlugins">numPlugins</dfn> = <a class="local col3 ref" href="#23plugins" title='plugins' data-ref="23plugins">plugins</a>-&gt;<a class="ref fn" href="../tools/qlist.h.html#_ZNK5QList4sizeEv" title='QList::size' data-ref="_ZNK5QList4sizeEv">size</a>();</td></tr>
+<tr><th id="396">396</th><td>        <a class="local col2 ref" href="#22instances" title='instances' data-ref="22instances">instances</a>.<a class="ref fn" href="../tools/qlist.h.html#_ZN5QList7reserveEx" title='QList::reserve' data-ref="_ZN5QList7reserveEx">reserve</a>(<span class='inlayHint'>size:&nbsp;</span><a class="local col4 ref" href="#24numPlugins" title='numPlugins' data-ref="24numPlugins">numPlugins</a>);</td></tr>
+<tr><th id="397">397</th><td>        <b>for</b> (<em>int</em> <dfn class="local col5 decl" id="25i" title='i' data-type='int' data-ref="25i">i</dfn> = <var>0</var>; <a class="local col5 ref" href="#25i" title='i' data-ref="25i">i</a> &lt; <a class="local col4 ref" href="#24numPlugins" title='numPlugins' data-ref="24numPlugins">numPlugins</a>; ++<a class="local col5 ref" href="#25i" title='i' data-ref="25i">i</a>)</td></tr>
+<tr><th id="398">398</th><td>            <a class="local col2 ref" href="#22instances" title='instances' data-ref="22instances">instances</a> <a class="ref fn" href="../tools/qlist.h.html#_ZN5QListpLEN17QArrayDataPointerIT_E14parameter_typeE" title='QList::operator+=' data-ref="_ZN5QListpLEN17QArrayDataPointerIT_E14parameter_typeE">+=</a> <a class="local col3 ref" href="#23plugins" title='plugins' data-ref="23plugins">plugins</a>-&gt;<a class="ref fn" href="../tools/qlist.h.html#_ZNK5QList2atEx" title='QList::at' data-ref="_ZNK5QList2atEx">at</a>(<a class="local col5 ref" href="#25i" title='i' data-ref="25i">i</a>).<a class="ref field" href="qplugin.h.html#QStaticPlugin::instance" title='QStaticPlugin::instance' data-ref="QStaticPlugin::instance">instance</a>();</td></tr>
+<tr><th id="399">399</th><td>    }</td></tr>
+<tr><th id="400">400</th><td>    <b>return</b> <a class="ref fn fake" href="../tools/qlist.h.html#68" title='QList&lt;QObject *&gt;::QList' data-ref="_ZN5QListIP7QObjectEC1EOS2_"></a><a class="local col2 ref" href="#22instances" title='instances' data-ref="22instances">instances</a>;</td></tr>
+<tr><th id="401">401</th><td>}</td></tr>
+<tr><th id="402">402</th><td></td></tr>
+<tr><th id="403">403</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="404">404</th><td><i class="doc">    Returns a list of QStaticPlugins held by the plugin</i></td></tr>
+<tr><th id="405">405</th><td><i class="doc">    loader. The function is similar to<span class="command"> \l</span> staticInstances()</i></td></tr>
+<tr><th id="406">406</th><td><i class="doc">    with the addition that a QStaticPlugin also contains</i></td></tr>
+<tr><th id="407">407</th><td><i class="doc">    meta data information.</i></td></tr>
+<tr><th id="408">408</th><td><i class="doc">    <span class="command">\sa</span> staticInstances()</i></td></tr>
+<tr><th id="409">409</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="410">410</th><td><a class="type" href="../tools/qcontainerfwd.h.html#QList" title='QList' data-ref="QList">QList</a>&lt;<a class="type" href="qplugin.h.html#QStaticPlugin" title='QStaticPlugin' data-ref="QStaticPlugin">QStaticPlugin</a>&gt; <a class="type" href="qpluginloader.h.html#QPluginLoader" title='QPluginLoader' data-ref="QPluginLoader">QPluginLoader</a>::<dfn class="decl def fn" id="_ZN13QPluginLoader13staticPluginsEv" title='QPluginLoader::staticPlugins' data-ref="_ZN13QPluginLoader13staticPluginsEv">staticPlugins</dfn>()</td></tr>
+<tr><th id="411">411</th><td>{</td></tr>
+<tr><th id="412">412</th><td>    <a class="typedef" href="#StaticPluginList" title='StaticPluginList' data-type='QList&lt;QStaticPlugin&gt;' data-ref="StaticPluginList">StaticPluginList</a> *<dfn class="local col6 decl" id="26plugins" title='plugins' data-type='StaticPluginList *' data-ref="26plugins">plugins</dfn> = <a class="ref" href="#371" title='staticPluginList' data-ref="staticPluginList">staticPluginList</a><a class="tu ref fn" href="../global/qglobalstatic.h.html#_ZN13QGlobalStaticclEv" title='QGlobalStatic::operator()' data-use='c' data-ref="_ZN13QGlobalStaticclEv">()</a>;</td></tr>
+<tr><th id="413">413</th><td>    <b>if</b> (<a class="local col6 ref" href="#26plugins" title='plugins' data-ref="26plugins">plugins</a>)</td></tr>
+<tr><th id="414">414</th><td>        <b>return</b> <a class="ref fn fake" href="../tools/qlist.h.html#68" title='QList&lt;QStaticPlugin&gt;::QList' data-ref="_ZN5QListI13QStaticPluginEC1ERKS1_"></a>*<a class="local col6 ref" href="#26plugins" title='plugins' data-ref="26plugins">plugins</a>;</td></tr>
+<tr><th id="415">415</th><td>    <b>return</b> <a class="type" href="../tools/qcontainerfwd.h.html#QList" title='QList' data-ref="QList">QList</a>&lt;<a class="type" href="qplugin.h.html#QStaticPlugin" title='QStaticPlugin' data-ref="QStaticPlugin">QStaticPlugin</a>&gt;<a class="ref fn" href="../tools/qlist.h.html#_ZN5QListC1Ev" title='QList::QList&lt;T&gt;' data-ref="_ZN5QListC1Ev">(</a>);</td></tr>
+<tr><th id="416">416</th><td>}</td></tr>
+<tr><th id="417">417</th><td></td></tr>
+<tr><th id="418">418</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="419">419</th><td><i class="doc">    <span class="command">\class</span> <span class="verb" data-ref="QStaticPlugin">QStaticPlugin</span></i></td></tr>
+<tr><th id="420">420</th><td><i class="doc">   <span class="command"> \inmodule</span> QtCore</i></td></tr>
+<tr><th id="421">421</th><td><i class="doc">    <span class="command">\since</span> 5.2</i></td></tr>
+<tr><th id="422">422</th><td><i class="doc"></i></td></tr>
+<tr><th id="423">423</th><td><i class="doc">    <span class="command">\brief</span> QStaticPlugin is a struct containing a reference to a</i></td></tr>
+<tr><th id="424">424</th><td><i class="doc">    static plugin instance together with its meta data.</i></td></tr>
+<tr><th id="425">425</th><td><i class="doc"></i></td></tr>
+<tr><th id="426">426</th><td><i class="doc">    <span class="command">\sa</span> QPluginLoader, {How to Create Qt Plugins}</i></td></tr>
+<tr><th id="427">427</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="428">428</th><td></td></tr>
+<tr><th id="429">429</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="430">430</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">QStaticPlugin::QStaticPlugin(QtPluginInstanceFunction i, QtPluginMetaDataFunction m)</span></i></td></tr>
+<tr><th id="431">431</th><td><i class="doc">    <span class="command">\internal</span></i></td></tr>
+<tr><th id="432">432</th><td><i class="doc">*/</i><span class="verb"></span></td></tr>
+<tr><th id="433">433</th><td><span class="verb"></span></td></tr>
+<tr><th id="434">434</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="435">435</th><td><i class="doc">   <span class="command"> \variable</span> QStaticPlugin::instance</i></td></tr>
+<tr><th id="436">436</th><td><i class="doc"></i></td></tr>
+<tr><th id="437">437</th><td><i class="doc">    Holds the plugin instance.</i></td></tr>
+<tr><th id="438">438</th><td><i class="doc"></i></td></tr>
+<tr><th id="439">439</th><td><i class="doc">    <span class="command">\sa</span> QPluginLoader::staticInstances()</i></td></tr>
+<tr><th id="440">440</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="441">441</th><td></td></tr>
+<tr><th id="442">442</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="443">443</th><td><i class="doc">    Returns a the meta data for the plugin as a QJsonObject.</i></td></tr>
+<tr><th id="444">444</th><td><i class="doc"></i></td></tr>
+<tr><th id="445">445</th><td><i class="doc">    <span class="command">\sa</span> Q_PLUGIN_METADATA()</i></td></tr>
+<tr><th id="446">446</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="447">447</th><td><a class="type" href="../serialization/qjsonobject.h.html#QJsonObject" title='QJsonObject' data-ref="QJsonObject">QJsonObject</a> <a class="type" href="qplugin.h.html#QStaticPlugin" title='QStaticPlugin' data-ref="QStaticPlugin">QStaticPlugin</a>::<dfn class="decl def fn" id="_ZNK13QStaticPlugin8metaDataEv" title='QStaticPlugin::metaData' data-ref="_ZNK13QStaticPlugin8metaDataEv">metaData</dfn>() <em>const</em></td></tr>
+<tr><th id="448">448</th><td>{</td></tr>
+<tr><th id="449">449</th><td>    <a class="type" href="../text/qbytearrayview.h.html#QByteArrayView" title='QByteArrayView' data-ref="QByteArrayView">QByteArrayView</a> <dfn class="local col7 decl" id="27data" title='data' data-type='QByteArrayView' data-ref="27data">data</dfn><a class="ref fn" href="../text/qbytearrayview.h.html#_ZN14QByteArrayViewC1EPKT_x" title='QByteArrayView::QByteArrayView' data-ref="_ZN14QByteArrayViewC1EPKT_x">(</a><b>static_cast</b>&lt;<em>const</em> <em>char</em> *&gt;(<a class="member field" href="qplugin.h.html#QStaticPlugin::rawMetaData" title='QStaticPlugin::rawMetaData' data-ref="QStaticPlugin::rawMetaData">rawMetaData</a>), <a class="member field" href="qplugin.h.html#QStaticPlugin::rawMetaDataSize" title='QStaticPlugin::rawMetaDataSize' data-ref="QStaticPlugin::rawMetaDataSize">rawMetaDataSize</a>);</td></tr>
+<tr><th id="450">450</th><td>    <a class="type" href="qfactoryloader_p.h.html#QPluginParsedMetaData" title='QPluginParsedMetaData' data-ref="QPluginParsedMetaData">QPluginParsedMetaData</a> <dfn class="local col8 decl" id="28parsed" title='parsed' data-type='QPluginParsedMetaData' data-ref="28parsed">parsed</dfn><a class="ref fn" href="qfactoryloader_p.h.html#_ZN21QPluginParsedMetaDataC1E14QByteArrayView" title='QPluginParsedMetaData::QPluginParsedMetaData' data-ref="_ZN21QPluginParsedMetaDataC1E14QByteArrayView">(</a><a class="ref fn fake" href="../text/qbytearrayview.h.html#74" title='QByteArrayView::QByteArrayView' data-ref="_ZN14QByteArrayViewC1ERKS_"></a><a class="local col7 ref" href="#27data" title='data' data-ref="27data">data</a>);</td></tr>
+<tr><th id="451">451</th><td>    <a class="macro" href="../global/qassert.h.html#28" title="static_cast&lt;void&gt;(false &amp;&amp; (!parsed.isError()))" data-ref="_M/Q_ASSERT">Q_ASSERT</a>(!<a class="local col8 ref" href="#28parsed" title='parsed' data-ref="28parsed">parsed</a>.<a class="ref fn" href="qfactoryloader_p.h.html#_ZNK21QPluginParsedMetaData7isErrorEv" title='QPluginParsedMetaData::isError' data-ref="_ZNK21QPluginParsedMetaData7isErrorEv">isError</a>());</td></tr>
+<tr><th id="452">452</th><td>    <b>return</b> <a class="local col8 ref" href="#28parsed" title='parsed' data-ref="28parsed">parsed</a>.<a class="ref fn" href="qfactoryloader_p.h.html#_ZNK21QPluginParsedMetaData6toJsonEv" title='QPluginParsedMetaData::toJson' data-ref="_ZNK21QPluginParsedMetaData6toJsonEv">toJson</a>();</td></tr>
+<tr><th id="453">453</th><td>}</td></tr>
+<tr><th id="454">454</th><td></td></tr>
+<tr><th id="455">455</th><td><a class="macro" href="../global/qtconfigmacros.h.html#104" title="" data-ref="_M/QT_END_NAMESPACE">QT_END_NAMESPACE</a></td></tr>
+<tr><th id="456">456</th><td></td></tr>
+<tr><th id="457">457</th><td><u>#include <span class='error' title="&apos;moc_qpluginloader.cpp&apos; file not found">"moc_qpluginloader.cpp"</span></u></td></tr>
+<tr><th id="458">458</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2024-Jun-13</em> from project qtbase-6.5.0 revision <em>6.5.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

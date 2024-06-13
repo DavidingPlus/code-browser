@@ -1,0 +1,389 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>jidctfst.c source code [qtbase-6.5.0/src/3rdparty/libjpeg/src/jidctfst.c] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'qtbase-6.5.0/src/3rdparty/libjpeg/src/jidctfst.c'; var root_path = '../../../../..'; var data_path = '../../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../..'>qtbase-6.5.0</a>/<a href='../../..'>src</a>/<a href='../..'>3rdparty</a>/<a href='..'>libjpeg</a>/<a href='./'>src</a>/<a href='jidctfst.c.html'>jidctfst.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*</i></td></tr>
+<tr><th id="2">2</th><td><i> * jidctfst.c</i></td></tr>
+<tr><th id="3">3</th><td><i> *</i></td></tr>
+<tr><th id="4">4</th><td><i> * This file was part of the Independent JPEG Group's software:</i></td></tr>
+<tr><th id="5">5</th><td><i> * Copyright (C) 1994-1998, Thomas G. Lane.</i></td></tr>
+<tr><th id="6">6</th><td><i> * libjpeg-turbo Modifications:</i></td></tr>
+<tr><th id="7">7</th><td><i> * Copyright (C) 2015, D. R. Commander.</i></td></tr>
+<tr><th id="8">8</th><td><i> * For conditions of distribution and use, see the accompanying README.ijg</i></td></tr>
+<tr><th id="9">9</th><td><i> * file.</i></td></tr>
+<tr><th id="10">10</th><td><i> *</i></td></tr>
+<tr><th id="11">11</th><td><i> * This file contains a fast, not so accurate integer implementation of the</i></td></tr>
+<tr><th id="12">12</th><td><i> * inverse DCT (Discrete Cosine Transform).  In the IJG code, this routine</i></td></tr>
+<tr><th id="13">13</th><td><i> * must also perform dequantization of the input coefficients.</i></td></tr>
+<tr><th id="14">14</th><td><i> *</i></td></tr>
+<tr><th id="15">15</th><td><i> * A 2-D IDCT can be done by 1-D IDCT on each column followed by 1-D IDCT</i></td></tr>
+<tr><th id="16">16</th><td><i> * on each row (or vice versa, but it's more convenient to emit a row at</i></td></tr>
+<tr><th id="17">17</th><td><i> * a time).  Direct algorithms are also available, but they are much more</i></td></tr>
+<tr><th id="18">18</th><td><i> * complex and seem not to be any faster when reduced to code.</i></td></tr>
+<tr><th id="19">19</th><td><i> *</i></td></tr>
+<tr><th id="20">20</th><td><i> * This implementation is based on Arai, Agui, and Nakajima's algorithm for</i></td></tr>
+<tr><th id="21">21</th><td><i> * scaled DCT.  Their original paper (Trans. IEICE E-71(11):1095) is in</i></td></tr>
+<tr><th id="22">22</th><td><i> * Japanese, but the algorithm is described in the Pennebaker &amp; Mitchell</i></td></tr>
+<tr><th id="23">23</th><td><i> * JPEG textbook (see REFERENCES section in file README.ijg).  The following</i></td></tr>
+<tr><th id="24">24</th><td><i> * code is based directly on figure 4-8 in P&amp;M.</i></td></tr>
+<tr><th id="25">25</th><td><i> * While an 8-point DCT cannot be done in less than 11 multiplies, it is</i></td></tr>
+<tr><th id="26">26</th><td><i> * possible to arrange the computation so that many of the multiplies are</i></td></tr>
+<tr><th id="27">27</th><td><i> * simple scalings of the final outputs.  These multiplies can then be</i></td></tr>
+<tr><th id="28">28</th><td><i> * folded into the multiplications or divisions by the JPEG quantization</i></td></tr>
+<tr><th id="29">29</th><td><i> * table entries.  The AA&amp;N method leaves only 5 multiplies and 29 adds</i></td></tr>
+<tr><th id="30">30</th><td><i> * to be done in the DCT itself.</i></td></tr>
+<tr><th id="31">31</th><td><i> * The primary disadvantage of this method is that with fixed-point math,</i></td></tr>
+<tr><th id="32">32</th><td><i> * accuracy is lost due to imprecise representation of the scaled</i></td></tr>
+<tr><th id="33">33</th><td><i> * quantization values.  The smaller the quantization table entry, the less</i></td></tr>
+<tr><th id="34">34</th><td><i> * precise the scaled value, so this implementation does worse with high-</i></td></tr>
+<tr><th id="35">35</th><td><i> * quality-setting files than with low-quality ones.</i></td></tr>
+<tr><th id="36">36</th><td><i> */</i></td></tr>
+<tr><th id="37">37</th><td></td></tr>
+<tr><th id="38">38</th><td><u>#define <dfn class="macro" id="_M/JPEG_INTERNALS" data-ref="_M/JPEG_INTERNALS">JPEG_INTERNALS</dfn></u></td></tr>
+<tr><th id="39">39</th><td><u>#include <a href="jinclude.h.html">"jinclude.h"</a></u></td></tr>
+<tr><th id="40">40</th><td><u>#include <a href="jpeglib.h.html">"jpeglib.h"</a></u></td></tr>
+<tr><th id="41">41</th><td><u>#include <a href="jdct.h.html">"jdct.h"</a>               /* Private declarations for DCT subsystem */</u></td></tr>
+<tr><th id="42">42</th><td></td></tr>
+<tr><th id="43">43</th><td><u>#<span data-ppcond="43">ifdef</span> <a class="macro" href="jmorecfg.h.html#238" data-ref="_M/DCT_IFAST_SUPPORTED">DCT_IFAST_SUPPORTED</a></u></td></tr>
+<tr><th id="44">44</th><td></td></tr>
+<tr><th id="45">45</th><td></td></tr>
+<tr><th id="46">46</th><td><i>/*</i></td></tr>
+<tr><th id="47">47</th><td><i> * This module is specialized to the case DCTSIZE = 8.</i></td></tr>
+<tr><th id="48">48</th><td><i> */</i></td></tr>
+<tr><th id="49">49</th><td></td></tr>
+<tr><th id="50">50</th><td><u>#<span data-ppcond="50">if</span> <a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a> != 8</u></td></tr>
+<tr><th id="51">51</th><td>  Sorry, this code only copes with <var>8x8</var> DCTs. <i>/* deliberate syntax err */</i></td></tr>
+<tr><th id="52">52</th><td><u>#<span data-ppcond="50">endif</span></u></td></tr>
+<tr><th id="53">53</th><td></td></tr>
+<tr><th id="54">54</th><td></td></tr>
+<tr><th id="55">55</th><td><i>/* Scaling decisions are generally the same as in the LL&amp;M algorithm;</i></td></tr>
+<tr><th id="56">56</th><td><i> * see jidctint.c for more details.  However, we choose to descale</i></td></tr>
+<tr><th id="57">57</th><td><i> * (right shift) multiplication products as soon as they are formed,</i></td></tr>
+<tr><th id="58">58</th><td><i> * rather than carrying additional fractional bits into subsequent additions.</i></td></tr>
+<tr><th id="59">59</th><td><i> * This compromises accuracy slightly, but it lets us save a few shifts.</i></td></tr>
+<tr><th id="60">60</th><td><i> * More importantly, 16-bit arithmetic is then adequate (for 8-bit samples)</i></td></tr>
+<tr><th id="61">61</th><td><i> * everywhere except in the multiplications proper; this saves a good deal</i></td></tr>
+<tr><th id="62">62</th><td><i> * of work on 16-bit-int machines.</i></td></tr>
+<tr><th id="63">63</th><td><i> *</i></td></tr>
+<tr><th id="64">64</th><td><i> * The dequantized coefficients are not integers because the AA&amp;N scaling</i></td></tr>
+<tr><th id="65">65</th><td><i> * factors have been incorporated.  We represent them scaled up by PASS1_BITS,</i></td></tr>
+<tr><th id="66">66</th><td><i> * so that the first and second IDCT rounds have the same input scaling.</i></td></tr>
+<tr><th id="67">67</th><td><i> * For 8-bit JSAMPLEs, we choose IFAST_SCALE_BITS = PASS1_BITS so as to</i></td></tr>
+<tr><th id="68">68</th><td><i> * avoid a descaling shift; this compromises accuracy rather drastically</i></td></tr>
+<tr><th id="69">69</th><td><i> * for small quantization table entries, but it saves a lot of shifts.</i></td></tr>
+<tr><th id="70">70</th><td><i> * For 12-bit JSAMPLEs, there's no hope of using 16x16 multiplies anyway,</i></td></tr>
+<tr><th id="71">71</th><td><i> * so we use a much larger scaling factor to preserve accuracy.</i></td></tr>
+<tr><th id="72">72</th><td><i> *</i></td></tr>
+<tr><th id="73">73</th><td><i> * A final compromise is to represent the multiplicative constants to only</i></td></tr>
+<tr><th id="74">74</th><td><i> * 8 fractional bits, rather than 13.  This saves some shifting work on some</i></td></tr>
+<tr><th id="75">75</th><td><i> * machines, and may also reduce the cost of multiplication (since there</i></td></tr>
+<tr><th id="76">76</th><td><i> * are fewer one-bits in the constants).</i></td></tr>
+<tr><th id="77">77</th><td><i> */</i></td></tr>
+<tr><th id="78">78</th><td></td></tr>
+<tr><th id="79">79</th><td><u>#<span data-ppcond="79">if</span> <a class="macro" href="jconfig.h.html#15" title="8" data-ref="_M/BITS_IN_JSAMPLE">BITS_IN_JSAMPLE</a> == 8</u></td></tr>
+<tr><th id="80">80</th><td><u>#define <dfn class="macro" id="_M/CONST_BITS" data-ref="_M/CONST_BITS">CONST_BITS</dfn>  8</u></td></tr>
+<tr><th id="81">81</th><td><u>#define <dfn class="macro" id="_M/PASS1_BITS" data-ref="_M/PASS1_BITS">PASS1_BITS</dfn>  2</u></td></tr>
+<tr><th id="82">82</th><td><u>#<span data-ppcond="79">else</span></u></td></tr>
+<tr><th id="83">83</th><td><u>#define CONST_BITS  8</u></td></tr>
+<tr><th id="84">84</th><td><u>#define PASS1_BITS  1           /* lose a little precision to avoid overflow */</u></td></tr>
+<tr><th id="85">85</th><td><u>#<span data-ppcond="79">endif</span></u></td></tr>
+<tr><th id="86">86</th><td></td></tr>
+<tr><th id="87">87</th><td><i>/* Some C compilers fail to reduce "FIX(constant)" at compile time, thus</i></td></tr>
+<tr><th id="88">88</th><td><i> * causing a lot of useless floating-point operations at run time.</i></td></tr>
+<tr><th id="89">89</th><td><i> * To get around this we use the following pre-calculated constants.</i></td></tr>
+<tr><th id="90">90</th><td><i> * If you change CONST_BITS you may want to add appropriate values.</i></td></tr>
+<tr><th id="91">91</th><td><i> * (With a reasonable C compiler, you can just rely on the FIX() macro...)</i></td></tr>
+<tr><th id="92">92</th><td><i> */</i></td></tr>
+<tr><th id="93">93</th><td></td></tr>
+<tr><th id="94">94</th><td><u>#<span data-ppcond="94">if</span> <a class="macro" href="#80" title="8" data-ref="_M/CONST_BITS">CONST_BITS</a> == 8</u></td></tr>
+<tr><th id="95">95</th><td><u>#define <dfn class="macro" id="_M/FIX_1_082392200" data-ref="_M/FIX_1_082392200">FIX_1_082392200</dfn>  ((<a class="typedef" href="jpegint.h.html#JLONG" title='JLONG' data-type='long' data-ref="JLONG">JLONG</a>)277)           /* FIX(1.082392200) */</u></td></tr>
+<tr><th id="96">96</th><td><u>#define <dfn class="macro" id="_M/FIX_1_414213562" data-ref="_M/FIX_1_414213562">FIX_1_414213562</dfn>  ((<a class="typedef" href="jpegint.h.html#JLONG" title='JLONG' data-type='long' data-ref="JLONG">JLONG</a>)362)           /* FIX(1.414213562) */</u></td></tr>
+<tr><th id="97">97</th><td><u>#define <dfn class="macro" id="_M/FIX_1_847759065" data-ref="_M/FIX_1_847759065">FIX_1_847759065</dfn>  ((<a class="typedef" href="jpegint.h.html#JLONG" title='JLONG' data-type='long' data-ref="JLONG">JLONG</a>)473)           /* FIX(1.847759065) */</u></td></tr>
+<tr><th id="98">98</th><td><u>#define <dfn class="macro" id="_M/FIX_2_613125930" data-ref="_M/FIX_2_613125930">FIX_2_613125930</dfn>  ((<a class="typedef" href="jpegint.h.html#JLONG" title='JLONG' data-type='long' data-ref="JLONG">JLONG</a>)669)           /* FIX(2.613125930) */</u></td></tr>
+<tr><th id="99">99</th><td><u>#<span data-ppcond="94">else</span></u></td></tr>
+<tr><th id="100">100</th><td><u>#define FIX_1_082392200  FIX(1.082392200)</u></td></tr>
+<tr><th id="101">101</th><td><u>#define FIX_1_414213562  FIX(1.414213562)</u></td></tr>
+<tr><th id="102">102</th><td><u>#define FIX_1_847759065  FIX(1.847759065)</u></td></tr>
+<tr><th id="103">103</th><td><u>#define FIX_2_613125930  FIX(2.613125930)</u></td></tr>
+<tr><th id="104">104</th><td><u>#<span data-ppcond="94">endif</span></u></td></tr>
+<tr><th id="105">105</th><td></td></tr>
+<tr><th id="106">106</th><td></td></tr>
+<tr><th id="107">107</th><td><i>/* We can gain a little more speed, with a further compromise in accuracy,</i></td></tr>
+<tr><th id="108">108</th><td><i> * by omitting the addition in a descaling shift.  This yields an incorrectly</i></td></tr>
+<tr><th id="109">109</th><td><i> * rounded result half the time...</i></td></tr>
+<tr><th id="110">110</th><td><i> */</i></td></tr>
+<tr><th id="111">111</th><td></td></tr>
+<tr><th id="112">112</th><td><u>#<span data-ppcond="112">ifndef</span> <span class="macro" data-ref="_M/USE_ACCURATE_ROUNDING">USE_ACCURATE_ROUNDING</span></u></td></tr>
+<tr><th id="113">113</th><td><u>#undef <a class="macro" href="jdct.h.html#178" data-ref="_M/DESCALE">DESCALE</a></u></td></tr>
+<tr><th id="114">114</th><td><u>#define <dfn class="macro" id="_M/DESCALE" data-ref="_M/DESCALE">DESCALE</dfn>(x, n)  RIGHT_SHIFT(x, n)</u></td></tr>
+<tr><th id="115">115</th><td><u>#<span data-ppcond="112">endif</span></u></td></tr>
+<tr><th id="116">116</th><td></td></tr>
+<tr><th id="117">117</th><td></td></tr>
+<tr><th id="118">118</th><td><i>/* Multiply a DCTELEM variable by an JLONG constant, and immediately</i></td></tr>
+<tr><th id="119">119</th><td><i> * descale to yield a DCTELEM result.</i></td></tr>
+<tr><th id="120">120</th><td><i> */</i></td></tr>
+<tr><th id="121">121</th><td></td></tr>
+<tr><th id="122">122</th><td><u>#define <dfn class="macro" id="_M/MULTIPLY" data-ref="_M/MULTIPLY">MULTIPLY</dfn>(var, const)  ((<a class="typedef" href="jdct.h.html#DCTELEM" title='DCTELEM' data-type='int' data-ref="DCTELEM">DCTELEM</a>)DESCALE((var) * (const), CONST_BITS))</u></td></tr>
+<tr><th id="123">123</th><td></td></tr>
+<tr><th id="124">124</th><td></td></tr>
+<tr><th id="125">125</th><td><i>/* Dequantize a coefficient by multiplying it by the multiplier-table</i></td></tr>
+<tr><th id="126">126</th><td><i> * entry; produce a DCTELEM result.  For 8-bit data a 16x16-&gt;16</i></td></tr>
+<tr><th id="127">127</th><td><i> * multiplication will do.  For 12-bit data, the multiplier table is</i></td></tr>
+<tr><th id="128">128</th><td><i> * declared JLONG, so a 32-bit multiply will be used.</i></td></tr>
+<tr><th id="129">129</th><td><i> */</i></td></tr>
+<tr><th id="130">130</th><td></td></tr>
+<tr><th id="131">131</th><td><u>#<span data-ppcond="131">if</span> <a class="macro" href="jconfig.h.html#15" title="8" data-ref="_M/BITS_IN_JSAMPLE">BITS_IN_JSAMPLE</a> == 8</u></td></tr>
+<tr><th id="132">132</th><td><u>#define <dfn class="macro" id="_M/DEQUANTIZE" data-ref="_M/DEQUANTIZE">DEQUANTIZE</dfn>(coef, quantval)  (((<a class="typedef" href="jdct.h.html#IFAST_MULT_TYPE" title='IFAST_MULT_TYPE' data-type='int' data-ref="IFAST_MULT_TYPE">IFAST_MULT_TYPE</a>)(coef)) * (quantval))</u></td></tr>
+<tr><th id="133">133</th><td><u>#<span data-ppcond="131">else</span></u></td></tr>
+<tr><th id="134">134</th><td><u>#define DEQUANTIZE(coef, quantval) \</u></td></tr>
+<tr><th id="135">135</th><td><u>  DESCALE((coef) * (quantval), IFAST_SCALE_BITS - PASS1_BITS)</u></td></tr>
+<tr><th id="136">136</th><td><u>#<span data-ppcond="131">endif</span></u></td></tr>
+<tr><th id="137">137</th><td></td></tr>
+<tr><th id="138">138</th><td></td></tr>
+<tr><th id="139">139</th><td><i>/* Like DESCALE, but applies to a DCTELEM and produces an int.</i></td></tr>
+<tr><th id="140">140</th><td><i> * We assume that int right shift is unsigned if JLONG right shift is.</i></td></tr>
+<tr><th id="141">141</th><td><i> */</i></td></tr>
+<tr><th id="142">142</th><td></td></tr>
+<tr><th id="143">143</th><td><u>#<span data-ppcond="143">ifdef</span> <span class="macro" data-ref="_M/RIGHT_SHIFT_IS_UNSIGNED">RIGHT_SHIFT_IS_UNSIGNED</span></u></td></tr>
+<tr><th id="144">144</th><td><u>#define ISHIFT_TEMPS    DCTELEM ishift_temp;</u></td></tr>
+<tr><th id="145">145</th><td><u>#if BITS_IN_JSAMPLE == 8</u></td></tr>
+<tr><th id="146">146</th><td><u>#define DCTELEMBITS  16         /* DCTELEM may be 16 or 32 bits */</u></td></tr>
+<tr><th id="147">147</th><td><u>#else</u></td></tr>
+<tr><th id="148">148</th><td><u>#define DCTELEMBITS  32         /* DCTELEM must be 32 bits */</u></td></tr>
+<tr><th id="149">149</th><td><u>#endif</u></td></tr>
+<tr><th id="150">150</th><td><u>#define IRIGHT_SHIFT(x, shft) \</u></td></tr>
+<tr><th id="151">151</th><td><u>  ((ishift_temp = (x)) &lt; 0 ? \</u></td></tr>
+<tr><th id="152">152</th><td><u>   (ishift_temp &gt;&gt; (shft)) | ((~((DCTELEM)0)) &lt;&lt; (DCTELEMBITS - (shft))) : \</u></td></tr>
+<tr><th id="153">153</th><td><u>   (ishift_temp &gt;&gt; (shft)))</u></td></tr>
+<tr><th id="154">154</th><td><u>#<span data-ppcond="143">else</span></u></td></tr>
+<tr><th id="155">155</th><td><u>#define <dfn class="macro" id="_M/ISHIFT_TEMPS" data-ref="_M/ISHIFT_TEMPS">ISHIFT_TEMPS</dfn></u></td></tr>
+<tr><th id="156">156</th><td><u>#define <dfn class="macro" id="_M/IRIGHT_SHIFT" data-ref="_M/IRIGHT_SHIFT">IRIGHT_SHIFT</dfn>(x, shft)   ((x) &gt;&gt; (shft))</u></td></tr>
+<tr><th id="157">157</th><td><u>#<span data-ppcond="143">endif</span></u></td></tr>
+<tr><th id="158">158</th><td></td></tr>
+<tr><th id="159">159</th><td><u>#<span data-ppcond="159">ifdef</span> <span class="macro" data-ref="_M/USE_ACCURATE_ROUNDING">USE_ACCURATE_ROUNDING</span></u></td></tr>
+<tr><th id="160">160</th><td><u>#define IDESCALE(x, n)  ((int)IRIGHT_SHIFT((x) + (1 &lt;&lt; ((n) - 1)), n))</u></td></tr>
+<tr><th id="161">161</th><td><u>#<span data-ppcond="159">else</span></u></td></tr>
+<tr><th id="162">162</th><td><u>#define <dfn class="macro" id="_M/IDESCALE" data-ref="_M/IDESCALE">IDESCALE</dfn>(x, n)  ((int)IRIGHT_SHIFT(x, n))</u></td></tr>
+<tr><th id="163">163</th><td><u>#<span data-ppcond="159">endif</span></u></td></tr>
+<tr><th id="164">164</th><td></td></tr>
+<tr><th id="165">165</th><td></td></tr>
+<tr><th id="166">166</th><td><i>/*</i></td></tr>
+<tr><th id="167">167</th><td><i> * Perform dequantization and inverse DCT on one block of coefficients.</i></td></tr>
+<tr><th id="168">168</th><td><i> */</i></td></tr>
+<tr><th id="169">169</th><td></td></tr>
+<tr><th id="170">170</th><td><a class="macro" href="jmorecfg.h.html#172" title="void" data-ref="_M/GLOBAL">GLOBAL</a>(<em>void</em>)</td></tr>
+<tr><th id="171">171</th><td><dfn class="decl def fn" id="jpeg_idct_ifast" title='jpeg_idct_ifast' data-ref="jpeg_idct_ifast">jpeg_idct_ifast</dfn>(<a class="typedef" href="jpeglib.h.html#j_decompress_ptr" title='j_decompress_ptr' data-type='struct jpeg_decompress_struct *' data-ref="j_decompress_ptr">j_decompress_ptr</a> <dfn class="local col1 decl" id="1cinfo" title='cinfo' data-type='j_decompress_ptr' data-ref="1cinfo">cinfo</dfn>, <a class="typedef" href="jpeglib.h.html#jpeg_component_info" title='jpeg_component_info' data-type='struct jpeg_component_info' data-ref="jpeg_component_info">jpeg_component_info</a> *<dfn class="local col2 decl" id="2compptr" title='compptr' data-type='jpeg_component_info *' data-ref="2compptr">compptr</dfn>,</td></tr>
+<tr><th id="172">172</th><td>                <a class="typedef" href="jpeglib.h.html#JCOEFPTR" title='JCOEFPTR' data-type='JCOEF *' data-ref="JCOEFPTR">JCOEFPTR</a> <dfn class="local col3 decl" id="3coef_block" title='coef_block' data-type='JCOEFPTR' data-ref="3coef_block">coef_block</dfn>, <a class="typedef" href="jpeglib.h.html#JSAMPARRAY" title='JSAMPARRAY' data-type='JSAMPROW *' data-ref="JSAMPARRAY">JSAMPARRAY</a> <dfn class="local col4 decl" id="4output_buf" title='output_buf' data-type='JSAMPARRAY' data-ref="4output_buf">output_buf</dfn>,</td></tr>
+<tr><th id="173">173</th><td>                <a class="typedef" href="jmorecfg.h.html#JDIMENSION" title='JDIMENSION' data-type='unsigned int' data-ref="JDIMENSION">JDIMENSION</a> <dfn class="local col5 decl" id="5output_col" title='output_col' data-type='JDIMENSION' data-ref="5output_col">output_col</dfn>)</td></tr>
+<tr><th id="174">174</th><td>{</td></tr>
+<tr><th id="175">175</th><td>  <a class="typedef" href="jdct.h.html#DCTELEM" title='DCTELEM' data-type='int' data-ref="DCTELEM">DCTELEM</a> <dfn class="local col6 decl" id="6tmp0" title='tmp0' data-type='DCTELEM' data-ref="6tmp0">tmp0</dfn>, <dfn class="local col7 decl" id="7tmp1" title='tmp1' data-type='DCTELEM' data-ref="7tmp1">tmp1</dfn>, <dfn class="local col8 decl" id="8tmp2" title='tmp2' data-type='DCTELEM' data-ref="8tmp2">tmp2</dfn>, <dfn class="local col9 decl" id="9tmp3" title='tmp3' data-type='DCTELEM' data-ref="9tmp3">tmp3</dfn>, <dfn class="local col0 decl" id="10tmp4" title='tmp4' data-type='DCTELEM' data-ref="10tmp4">tmp4</dfn>, <dfn class="local col1 decl" id="11tmp5" title='tmp5' data-type='DCTELEM' data-ref="11tmp5">tmp5</dfn>, <dfn class="local col2 decl" id="12tmp6" title='tmp6' data-type='DCTELEM' data-ref="12tmp6">tmp6</dfn>, <dfn class="local col3 decl" id="13tmp7" title='tmp7' data-type='DCTELEM' data-ref="13tmp7">tmp7</dfn>;</td></tr>
+<tr><th id="176">176</th><td>  <a class="typedef" href="jdct.h.html#DCTELEM" title='DCTELEM' data-type='int' data-ref="DCTELEM">DCTELEM</a> <dfn class="local col4 decl" id="14tmp10" title='tmp10' data-type='DCTELEM' data-ref="14tmp10">tmp10</dfn>, <dfn class="local col5 decl" id="15tmp11" title='tmp11' data-type='DCTELEM' data-ref="15tmp11">tmp11</dfn>, <dfn class="local col6 decl" id="16tmp12" title='tmp12' data-type='DCTELEM' data-ref="16tmp12">tmp12</dfn>, <dfn class="local col7 decl" id="17tmp13" title='tmp13' data-type='DCTELEM' data-ref="17tmp13">tmp13</dfn>;</td></tr>
+<tr><th id="177">177</th><td>  <a class="typedef" href="jdct.h.html#DCTELEM" title='DCTELEM' data-type='int' data-ref="DCTELEM">DCTELEM</a> <dfn class="local col8 decl" id="18z5" title='z5' data-type='DCTELEM' data-ref="18z5">z5</dfn>, <dfn class="local col9 decl" id="19z10" title='z10' data-type='DCTELEM' data-ref="19z10">z10</dfn>, <dfn class="local col0 decl" id="20z11" title='z11' data-type='DCTELEM' data-ref="20z11">z11</dfn>, <dfn class="local col1 decl" id="21z12" title='z12' data-type='DCTELEM' data-ref="21z12">z12</dfn>, <dfn class="local col2 decl" id="22z13" title='z13' data-type='DCTELEM' data-ref="22z13">z13</dfn>;</td></tr>
+<tr><th id="178">178</th><td>  <a class="typedef" href="jpeglib.h.html#JCOEFPTR" title='JCOEFPTR' data-type='JCOEF *' data-ref="JCOEFPTR">JCOEFPTR</a> <dfn class="local col3 decl" id="23inptr" title='inptr' data-type='JCOEFPTR' data-ref="23inptr">inptr</dfn>;</td></tr>
+<tr><th id="179">179</th><td>  <a class="typedef" href="jdct.h.html#IFAST_MULT_TYPE" title='IFAST_MULT_TYPE' data-type='int' data-ref="IFAST_MULT_TYPE">IFAST_MULT_TYPE</a> *<dfn class="local col4 decl" id="24quantptr" title='quantptr' data-type='IFAST_MULT_TYPE *' data-ref="24quantptr">quantptr</dfn>;</td></tr>
+<tr><th id="180">180</th><td>  <em>int</em> *<dfn class="local col5 decl" id="25wsptr" title='wsptr' data-type='int *' data-ref="25wsptr">wsptr</dfn>;</td></tr>
+<tr><th id="181">181</th><td>  <a class="typedef" href="jpeglib.h.html#JSAMPROW" title='JSAMPROW' data-type='JSAMPLE *' data-ref="JSAMPROW">JSAMPROW</a> <dfn class="local col6 decl" id="26outptr" title='outptr' data-type='JSAMPROW' data-ref="26outptr">outptr</dfn>;</td></tr>
+<tr><th id="182">182</th><td>  <a class="typedef" href="jmorecfg.h.html#JSAMPLE" title='JSAMPLE' data-type='unsigned char' data-ref="JSAMPLE">JSAMPLE</a> *<dfn class="local col7 decl" id="27range_limit" title='range_limit' data-type='JSAMPLE *' data-ref="27range_limit">range_limit</dfn> = <a class="macro" href="jdct.h.html#86" title="((cinfo)-&gt;sample_range_limit + 128)" data-ref="_M/IDCT_range_limit">IDCT_range_limit</a>(<a class="local col1 ref" href="#1cinfo" title='cinfo' data-ref="1cinfo">cinfo</a>);</td></tr>
+<tr><th id="183">183</th><td>  <em>int</em> <dfn class="local col8 decl" id="28ctr" title='ctr' data-type='int' data-ref="28ctr">ctr</dfn>;</td></tr>
+<tr><th id="184">184</th><td>  <em>int</em> <dfn class="local col9 decl" id="29workspace" title='workspace' data-type='int[64]' data-ref="29workspace">workspace</dfn>[<a class="macro" href="jpeglib.h.html#47" title="64" data-ref="_M/DCTSIZE2">DCTSIZE2</a>];      <i>/* buffers data between passes */</i></td></tr>
+<tr><th id="185">185</th><td>  <a class="macro" href="jpegint.h.html#315" title="" data-ref="_M/SHIFT_TEMPS">SHIFT_TEMPS</a>                   <i>/* for DESCALE */</i></td></tr>
+<tr><th id="186">186</th><td>  <a class="macro" href="#155" title="" data-ref="_M/ISHIFT_TEMPS">ISHIFT_TEMPS</a>                  <i>/* for IDESCALE */</i></td></tr>
+<tr><th id="187">187</th><td></td></tr>
+<tr><th id="188">188</th><td>  <i>/* Pass 1: process columns from input, store into work array. */</i></td></tr>
+<tr><th id="189">189</th><td></td></tr>
+<tr><th id="190">190</th><td>  <a class="local col3 ref" href="#23inptr" title='inptr' data-ref="23inptr">inptr</a> = <a class="local col3 ref" href="#3coef_block" title='coef_block' data-ref="3coef_block">coef_block</a>;</td></tr>
+<tr><th id="191">191</th><td>  <a class="local col4 ref" href="#24quantptr" title='quantptr' data-ref="24quantptr">quantptr</a> = (<a class="typedef" href="jdct.h.html#IFAST_MULT_TYPE" title='IFAST_MULT_TYPE' data-type='int' data-ref="IFAST_MULT_TYPE">IFAST_MULT_TYPE</a> *)<a class="local col2 ref" href="#2compptr" title='compptr' data-ref="2compptr">compptr</a>-&gt;<a class="ref field" href="jpeglib.h.html#(anonymous)::dct_table" title='(anonymous struct)::dct_table' data-ref="(anonymous)::dct_table">dct_table</a>;</td></tr>
+<tr><th id="192">192</th><td>  <a class="local col5 ref" href="#25wsptr" title='wsptr' data-ref="25wsptr">wsptr</a> = <a class="local col9 ref" href="#29workspace" title='workspace' data-ref="29workspace">workspace</a>;</td></tr>
+<tr><th id="193">193</th><td>  <b>for</b> (<a class="local col8 ref" href="#28ctr" title='ctr' data-ref="28ctr">ctr</a> = <a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a>; <a class="local col8 ref" href="#28ctr" title='ctr' data-ref="28ctr">ctr</a> &gt; <var>0</var>; <a class="local col8 ref" href="#28ctr" title='ctr' data-ref="28ctr">ctr</a>--) {</td></tr>
+<tr><th id="194">194</th><td>    <i>/* Due to quantization, we will usually find that many of the input</i></td></tr>
+<tr><th id="195">195</th><td><i>     * coefficients are zero, especially the AC terms.  We can exploit this</i></td></tr>
+<tr><th id="196">196</th><td><i>     * by short-circuiting the IDCT calculation for any column in which all</i></td></tr>
+<tr><th id="197">197</th><td><i>     * the AC terms are zero.  In that case each output is equal to the</i></td></tr>
+<tr><th id="198">198</th><td><i>     * DC coefficient (with scale factor as needed).</i></td></tr>
+<tr><th id="199">199</th><td><i>     * With typical images and quantization tables, half or more of the</i></td></tr>
+<tr><th id="200">200</th><td><i>     * column DCT calculations can be simplified this way.</i></td></tr>
+<tr><th id="201">201</th><td><i>     */</i></td></tr>
+<tr><th id="202">202</th><td></td></tr>
+<tr><th id="203">203</th><td>    <b>if</b> (<a class="local col3 ref" href="#23inptr" title='inptr' data-ref="23inptr">inptr</a>[<a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a> * <var>1</var>] == <var>0</var> &amp;&amp; <a class="local col3 ref" href="#23inptr" title='inptr' data-ref="23inptr">inptr</a>[<a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a> * <var>2</var>] == <var>0</var> &amp;&amp;</td></tr>
+<tr><th id="204">204</th><td>        <a class="local col3 ref" href="#23inptr" title='inptr' data-ref="23inptr">inptr</a>[<a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a> * <var>3</var>] == <var>0</var> &amp;&amp; <a class="local col3 ref" href="#23inptr" title='inptr' data-ref="23inptr">inptr</a>[<a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a> * <var>4</var>] == <var>0</var> &amp;&amp;</td></tr>
+<tr><th id="205">205</th><td>        <a class="local col3 ref" href="#23inptr" title='inptr' data-ref="23inptr">inptr</a>[<a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a> * <var>5</var>] == <var>0</var> &amp;&amp; <a class="local col3 ref" href="#23inptr" title='inptr' data-ref="23inptr">inptr</a>[<a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a> * <var>6</var>] == <var>0</var> &amp;&amp;</td></tr>
+<tr><th id="206">206</th><td>        <a class="local col3 ref" href="#23inptr" title='inptr' data-ref="23inptr">inptr</a>[<a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a> * <var>7</var>] == <var>0</var>) {</td></tr>
+<tr><th id="207">207</th><td>      <i>/* AC terms all zero */</i></td></tr>
+<tr><th id="208">208</th><td>      <em>int</em> <dfn class="local col0 decl" id="30dcval" title='dcval' data-type='int' data-ref="30dcval">dcval</dfn> = (<em>int</em>)<a class="macro" href="#132" title="(((IFAST_MULT_TYPE)(inptr[8 * 0])) * (quantptr[8 * 0]))" data-ref="_M/DEQUANTIZE">DEQUANTIZE</a>(<a class="local col3 ref" href="#23inptr" title='inptr' data-ref="23inptr">inptr</a>[<a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a> * <var>0</var>], <a class="local col4 ref" href="#24quantptr" title='quantptr' data-ref="24quantptr">quantptr</a>[<a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a> * <var>0</var>]);</td></tr>
+<tr><th id="209">209</th><td></td></tr>
+<tr><th id="210">210</th><td>      <a class="local col5 ref" href="#25wsptr" title='wsptr' data-ref="25wsptr">wsptr</a>[<a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a> * <var>0</var>] = <a class="local col0 ref" href="#30dcval" title='dcval' data-ref="30dcval">dcval</a>;</td></tr>
+<tr><th id="211">211</th><td>      <a class="local col5 ref" href="#25wsptr" title='wsptr' data-ref="25wsptr">wsptr</a>[<a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a> * <var>1</var>] = <a class="local col0 ref" href="#30dcval" title='dcval' data-ref="30dcval">dcval</a>;</td></tr>
+<tr><th id="212">212</th><td>      <a class="local col5 ref" href="#25wsptr" title='wsptr' data-ref="25wsptr">wsptr</a>[<a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a> * <var>2</var>] = <a class="local col0 ref" href="#30dcval" title='dcval' data-ref="30dcval">dcval</a>;</td></tr>
+<tr><th id="213">213</th><td>      <a class="local col5 ref" href="#25wsptr" title='wsptr' data-ref="25wsptr">wsptr</a>[<a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a> * <var>3</var>] = <a class="local col0 ref" href="#30dcval" title='dcval' data-ref="30dcval">dcval</a>;</td></tr>
+<tr><th id="214">214</th><td>      <a class="local col5 ref" href="#25wsptr" title='wsptr' data-ref="25wsptr">wsptr</a>[<a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a> * <var>4</var>] = <a class="local col0 ref" href="#30dcval" title='dcval' data-ref="30dcval">dcval</a>;</td></tr>
+<tr><th id="215">215</th><td>      <a class="local col5 ref" href="#25wsptr" title='wsptr' data-ref="25wsptr">wsptr</a>[<a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a> * <var>5</var>] = <a class="local col0 ref" href="#30dcval" title='dcval' data-ref="30dcval">dcval</a>;</td></tr>
+<tr><th id="216">216</th><td>      <a class="local col5 ref" href="#25wsptr" title='wsptr' data-ref="25wsptr">wsptr</a>[<a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a> * <var>6</var>] = <a class="local col0 ref" href="#30dcval" title='dcval' data-ref="30dcval">dcval</a>;</td></tr>
+<tr><th id="217">217</th><td>      <a class="local col5 ref" href="#25wsptr" title='wsptr' data-ref="25wsptr">wsptr</a>[<a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a> * <var>7</var>] = <a class="local col0 ref" href="#30dcval" title='dcval' data-ref="30dcval">dcval</a>;</td></tr>
+<tr><th id="218">218</th><td></td></tr>
+<tr><th id="219">219</th><td>      <a class="local col3 ref" href="#23inptr" title='inptr' data-ref="23inptr">inptr</a>++;                  <i>/* advance pointers to next column */</i></td></tr>
+<tr><th id="220">220</th><td>      <a class="local col4 ref" href="#24quantptr" title='quantptr' data-ref="24quantptr">quantptr</a>++;</td></tr>
+<tr><th id="221">221</th><td>      <a class="local col5 ref" href="#25wsptr" title='wsptr' data-ref="25wsptr">wsptr</a>++;</td></tr>
+<tr><th id="222">222</th><td>      <b>continue</b>;</td></tr>
+<tr><th id="223">223</th><td>    }</td></tr>
+<tr><th id="224">224</th><td></td></tr>
+<tr><th id="225">225</th><td>    <i>/* Even part */</i></td></tr>
+<tr><th id="226">226</th><td></td></tr>
+<tr><th id="227">227</th><td>    <a class="local col6 ref" href="#6tmp0" title='tmp0' data-ref="6tmp0">tmp0</a> = <a class="macro" href="#132" title="(((IFAST_MULT_TYPE)(inptr[8 * 0])) * (quantptr[8 * 0]))" data-ref="_M/DEQUANTIZE">DEQUANTIZE</a>(<a class="local col3 ref" href="#23inptr" title='inptr' data-ref="23inptr">inptr</a>[<a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a> * <var>0</var>], <a class="local col4 ref" href="#24quantptr" title='quantptr' data-ref="24quantptr">quantptr</a>[<a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a> * <var>0</var>]);</td></tr>
+<tr><th id="228">228</th><td>    <a class="local col7 ref" href="#7tmp1" title='tmp1' data-ref="7tmp1">tmp1</a> = <a class="macro" href="#132" title="(((IFAST_MULT_TYPE)(inptr[8 * 2])) * (quantptr[8 * 2]))" data-ref="_M/DEQUANTIZE">DEQUANTIZE</a>(<a class="local col3 ref" href="#23inptr" title='inptr' data-ref="23inptr">inptr</a>[<a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a> * <var>2</var>], <a class="local col4 ref" href="#24quantptr" title='quantptr' data-ref="24quantptr">quantptr</a>[<a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a> * <var>2</var>]);</td></tr>
+<tr><th id="229">229</th><td>    <a class="local col8 ref" href="#8tmp2" title='tmp2' data-ref="8tmp2">tmp2</a> = <a class="macro" href="#132" title="(((IFAST_MULT_TYPE)(inptr[8 * 4])) * (quantptr[8 * 4]))" data-ref="_M/DEQUANTIZE">DEQUANTIZE</a>(<a class="local col3 ref" href="#23inptr" title='inptr' data-ref="23inptr">inptr</a>[<a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a> * <var>4</var>], <a class="local col4 ref" href="#24quantptr" title='quantptr' data-ref="24quantptr">quantptr</a>[<a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a> * <var>4</var>]);</td></tr>
+<tr><th id="230">230</th><td>    <a class="local col9 ref" href="#9tmp3" title='tmp3' data-ref="9tmp3">tmp3</a> = <a class="macro" href="#132" title="(((IFAST_MULT_TYPE)(inptr[8 * 6])) * (quantptr[8 * 6]))" data-ref="_M/DEQUANTIZE">DEQUANTIZE</a>(<a class="local col3 ref" href="#23inptr" title='inptr' data-ref="23inptr">inptr</a>[<a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a> * <var>6</var>], <a class="local col4 ref" href="#24quantptr" title='quantptr' data-ref="24quantptr">quantptr</a>[<a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a> * <var>6</var>]);</td></tr>
+<tr><th id="231">231</th><td></td></tr>
+<tr><th id="232">232</th><td>    <a class="local col4 ref" href="#14tmp10" title='tmp10' data-ref="14tmp10">tmp10</a> = <a class="local col6 ref" href="#6tmp0" title='tmp0' data-ref="6tmp0">tmp0</a> + <a class="local col8 ref" href="#8tmp2" title='tmp2' data-ref="8tmp2">tmp2</a>;        <i>/* phase 3 */</i></td></tr>
+<tr><th id="233">233</th><td>    <a class="local col5 ref" href="#15tmp11" title='tmp11' data-ref="15tmp11">tmp11</a> = <a class="local col6 ref" href="#6tmp0" title='tmp0' data-ref="6tmp0">tmp0</a> - <a class="local col8 ref" href="#8tmp2" title='tmp2' data-ref="8tmp2">tmp2</a>;</td></tr>
+<tr><th id="234">234</th><td></td></tr>
+<tr><th id="235">235</th><td>    <a class="local col7 ref" href="#17tmp13" title='tmp13' data-ref="17tmp13">tmp13</a> = <a class="local col7 ref" href="#7tmp1" title='tmp1' data-ref="7tmp1">tmp1</a> + <a class="local col9 ref" href="#9tmp3" title='tmp3' data-ref="9tmp3">tmp3</a>;        <i>/* phases 5-3 */</i></td></tr>
+<tr><th id="236">236</th><td>    <a class="local col6 ref" href="#16tmp12" title='tmp12' data-ref="16tmp12">tmp12</a> = <a class="macro" href="#122" title="((DCTELEM)(((tmp1 - tmp3) * (((JLONG)362))) &gt;&gt; (8)))" data-ref="_M/MULTIPLY">MULTIPLY</a>(<a class="local col7 ref" href="#7tmp1" title='tmp1' data-ref="7tmp1">tmp1</a> - <a class="local col9 ref" href="#9tmp3" title='tmp3' data-ref="9tmp3">tmp3</a>, <a class="macro" href="#96" title="((JLONG)362)" data-ref="_M/FIX_1_414213562">FIX_1_414213562</a>) - <a class="local col7 ref" href="#17tmp13" title='tmp13' data-ref="17tmp13">tmp13</a>; <i>/* 2*c4 */</i></td></tr>
+<tr><th id="237">237</th><td></td></tr>
+<tr><th id="238">238</th><td>    <a class="local col6 ref" href="#6tmp0" title='tmp0' data-ref="6tmp0">tmp0</a> = <a class="local col4 ref" href="#14tmp10" title='tmp10' data-ref="14tmp10">tmp10</a> + <a class="local col7 ref" href="#17tmp13" title='tmp13' data-ref="17tmp13">tmp13</a>;       <i>/* phase 2 */</i></td></tr>
+<tr><th id="239">239</th><td>    <a class="local col9 ref" href="#9tmp3" title='tmp3' data-ref="9tmp3">tmp3</a> = <a class="local col4 ref" href="#14tmp10" title='tmp10' data-ref="14tmp10">tmp10</a> - <a class="local col7 ref" href="#17tmp13" title='tmp13' data-ref="17tmp13">tmp13</a>;</td></tr>
+<tr><th id="240">240</th><td>    <a class="local col7 ref" href="#7tmp1" title='tmp1' data-ref="7tmp1">tmp1</a> = <a class="local col5 ref" href="#15tmp11" title='tmp11' data-ref="15tmp11">tmp11</a> + <a class="local col6 ref" href="#16tmp12" title='tmp12' data-ref="16tmp12">tmp12</a>;</td></tr>
+<tr><th id="241">241</th><td>    <a class="local col8 ref" href="#8tmp2" title='tmp2' data-ref="8tmp2">tmp2</a> = <a class="local col5 ref" href="#15tmp11" title='tmp11' data-ref="15tmp11">tmp11</a> - <a class="local col6 ref" href="#16tmp12" title='tmp12' data-ref="16tmp12">tmp12</a>;</td></tr>
+<tr><th id="242">242</th><td></td></tr>
+<tr><th id="243">243</th><td>    <i>/* Odd part */</i></td></tr>
+<tr><th id="244">244</th><td></td></tr>
+<tr><th id="245">245</th><td>    <a class="local col0 ref" href="#10tmp4" title='tmp4' data-ref="10tmp4">tmp4</a> = <a class="macro" href="#132" title="(((IFAST_MULT_TYPE)(inptr[8 * 1])) * (quantptr[8 * 1]))" data-ref="_M/DEQUANTIZE">DEQUANTIZE</a>(<a class="local col3 ref" href="#23inptr" title='inptr' data-ref="23inptr">inptr</a>[<a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a> * <var>1</var>], <a class="local col4 ref" href="#24quantptr" title='quantptr' data-ref="24quantptr">quantptr</a>[<a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a> * <var>1</var>]);</td></tr>
+<tr><th id="246">246</th><td>    <a class="local col1 ref" href="#11tmp5" title='tmp5' data-ref="11tmp5">tmp5</a> = <a class="macro" href="#132" title="(((IFAST_MULT_TYPE)(inptr[8 * 3])) * (quantptr[8 * 3]))" data-ref="_M/DEQUANTIZE">DEQUANTIZE</a>(<a class="local col3 ref" href="#23inptr" title='inptr' data-ref="23inptr">inptr</a>[<a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a> * <var>3</var>], <a class="local col4 ref" href="#24quantptr" title='quantptr' data-ref="24quantptr">quantptr</a>[<a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a> * <var>3</var>]);</td></tr>
+<tr><th id="247">247</th><td>    <a class="local col2 ref" href="#12tmp6" title='tmp6' data-ref="12tmp6">tmp6</a> = <a class="macro" href="#132" title="(((IFAST_MULT_TYPE)(inptr[8 * 5])) * (quantptr[8 * 5]))" data-ref="_M/DEQUANTIZE">DEQUANTIZE</a>(<a class="local col3 ref" href="#23inptr" title='inptr' data-ref="23inptr">inptr</a>[<a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a> * <var>5</var>], <a class="local col4 ref" href="#24quantptr" title='quantptr' data-ref="24quantptr">quantptr</a>[<a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a> * <var>5</var>]);</td></tr>
+<tr><th id="248">248</th><td>    <a class="local col3 ref" href="#13tmp7" title='tmp7' data-ref="13tmp7">tmp7</a> = <a class="macro" href="#132" title="(((IFAST_MULT_TYPE)(inptr[8 * 7])) * (quantptr[8 * 7]))" data-ref="_M/DEQUANTIZE">DEQUANTIZE</a>(<a class="local col3 ref" href="#23inptr" title='inptr' data-ref="23inptr">inptr</a>[<a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a> * <var>7</var>], <a class="local col4 ref" href="#24quantptr" title='quantptr' data-ref="24quantptr">quantptr</a>[<a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a> * <var>7</var>]);</td></tr>
+<tr><th id="249">249</th><td></td></tr>
+<tr><th id="250">250</th><td>    <a class="local col2 ref" href="#22z13" title='z13' data-ref="22z13">z13</a> = <a class="local col2 ref" href="#12tmp6" title='tmp6' data-ref="12tmp6">tmp6</a> + <a class="local col1 ref" href="#11tmp5" title='tmp5' data-ref="11tmp5">tmp5</a>;          <i>/* phase 6 */</i></td></tr>
+<tr><th id="251">251</th><td>    <a class="local col9 ref" href="#19z10" title='z10' data-ref="19z10">z10</a> = <a class="local col2 ref" href="#12tmp6" title='tmp6' data-ref="12tmp6">tmp6</a> - <a class="local col1 ref" href="#11tmp5" title='tmp5' data-ref="11tmp5">tmp5</a>;</td></tr>
+<tr><th id="252">252</th><td>    <a class="local col0 ref" href="#20z11" title='z11' data-ref="20z11">z11</a> = <a class="local col0 ref" href="#10tmp4" title='tmp4' data-ref="10tmp4">tmp4</a> + <a class="local col3 ref" href="#13tmp7" title='tmp7' data-ref="13tmp7">tmp7</a>;</td></tr>
+<tr><th id="253">253</th><td>    <a class="local col1 ref" href="#21z12" title='z12' data-ref="21z12">z12</a> = <a class="local col0 ref" href="#10tmp4" title='tmp4' data-ref="10tmp4">tmp4</a> - <a class="local col3 ref" href="#13tmp7" title='tmp7' data-ref="13tmp7">tmp7</a>;</td></tr>
+<tr><th id="254">254</th><td></td></tr>
+<tr><th id="255">255</th><td>    <a class="local col3 ref" href="#13tmp7" title='tmp7' data-ref="13tmp7">tmp7</a> = <a class="local col0 ref" href="#20z11" title='z11' data-ref="20z11">z11</a> + <a class="local col2 ref" href="#22z13" title='z13' data-ref="22z13">z13</a>;           <i>/* phase 5 */</i></td></tr>
+<tr><th id="256">256</th><td>    <a class="local col5 ref" href="#15tmp11" title='tmp11' data-ref="15tmp11">tmp11</a> = <a class="macro" href="#122" title="((DCTELEM)(((z11 - z13) * (((JLONG)362))) &gt;&gt; (8)))" data-ref="_M/MULTIPLY">MULTIPLY</a>(<a class="local col0 ref" href="#20z11" title='z11' data-ref="20z11">z11</a> - <a class="local col2 ref" href="#22z13" title='z13' data-ref="22z13">z13</a>, <a class="macro" href="#96" title="((JLONG)362)" data-ref="_M/FIX_1_414213562">FIX_1_414213562</a>); <i>/* 2*c4 */</i></td></tr>
+<tr><th id="257">257</th><td></td></tr>
+<tr><th id="258">258</th><td>    <a class="local col8 ref" href="#18z5" title='z5' data-ref="18z5">z5</a> = <a class="macro" href="#122" title="((DCTELEM)(((z10 + z12) * (((JLONG)473))) &gt;&gt; (8)))" data-ref="_M/MULTIPLY">MULTIPLY</a>(<a class="local col9 ref" href="#19z10" title='z10' data-ref="19z10">z10</a> + <a class="local col1 ref" href="#21z12" title='z12' data-ref="21z12">z12</a>, <a class="macro" href="#97" title="((JLONG)473)" data-ref="_M/FIX_1_847759065">FIX_1_847759065</a>); <i>/* 2*c2 */</i></td></tr>
+<tr><th id="259">259</th><td>    <a class="local col4 ref" href="#14tmp10" title='tmp10' data-ref="14tmp10">tmp10</a> = <a class="macro" href="#122" title="((DCTELEM)(((z12) * (((JLONG)277))) &gt;&gt; (8)))" data-ref="_M/MULTIPLY">MULTIPLY</a>(<a class="local col1 ref" href="#21z12" title='z12' data-ref="21z12">z12</a>, <a class="macro" href="#95" title="((JLONG)277)" data-ref="_M/FIX_1_082392200">FIX_1_082392200</a>) - <a class="local col8 ref" href="#18z5" title='z5' data-ref="18z5">z5</a>; <i>/* 2*(c2-c6) */</i></td></tr>
+<tr><th id="260">260</th><td>    <a class="local col6 ref" href="#16tmp12" title='tmp12' data-ref="16tmp12">tmp12</a> = <a class="macro" href="#122" title="((DCTELEM)(((z10) * (-((JLONG)669))) &gt;&gt; (8)))" data-ref="_M/MULTIPLY">MULTIPLY</a>(<a class="local col9 ref" href="#19z10" title='z10' data-ref="19z10">z10</a>, -<a class="macro" href="#98" title="((JLONG)669)" data-ref="_M/FIX_2_613125930">FIX_2_613125930</a>) + <a class="local col8 ref" href="#18z5" title='z5' data-ref="18z5">z5</a>; <i>/* -2*(c2+c6) */</i></td></tr>
+<tr><th id="261">261</th><td></td></tr>
+<tr><th id="262">262</th><td>    <a class="local col2 ref" href="#12tmp6" title='tmp6' data-ref="12tmp6">tmp6</a> = <a class="local col6 ref" href="#16tmp12" title='tmp12' data-ref="16tmp12">tmp12</a> - <a class="local col3 ref" href="#13tmp7" title='tmp7' data-ref="13tmp7">tmp7</a>;        <i>/* phase 2 */</i></td></tr>
+<tr><th id="263">263</th><td>    <a class="local col1 ref" href="#11tmp5" title='tmp5' data-ref="11tmp5">tmp5</a> = <a class="local col5 ref" href="#15tmp11" title='tmp11' data-ref="15tmp11">tmp11</a> - <a class="local col2 ref" href="#12tmp6" title='tmp6' data-ref="12tmp6">tmp6</a>;</td></tr>
+<tr><th id="264">264</th><td>    <a class="local col0 ref" href="#10tmp4" title='tmp4' data-ref="10tmp4">tmp4</a> = <a class="local col4 ref" href="#14tmp10" title='tmp10' data-ref="14tmp10">tmp10</a> + <a class="local col1 ref" href="#11tmp5" title='tmp5' data-ref="11tmp5">tmp5</a>;</td></tr>
+<tr><th id="265">265</th><td></td></tr>
+<tr><th id="266">266</th><td>    <a class="local col5 ref" href="#25wsptr" title='wsptr' data-ref="25wsptr">wsptr</a>[<a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a> * <var>0</var>] = (<em>int</em>)(<a class="local col6 ref" href="#6tmp0" title='tmp0' data-ref="6tmp0">tmp0</a> + <a class="local col3 ref" href="#13tmp7" title='tmp7' data-ref="13tmp7">tmp7</a>);</td></tr>
+<tr><th id="267">267</th><td>    <a class="local col5 ref" href="#25wsptr" title='wsptr' data-ref="25wsptr">wsptr</a>[<a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a> * <var>7</var>] = (<em>int</em>)(<a class="local col6 ref" href="#6tmp0" title='tmp0' data-ref="6tmp0">tmp0</a> - <a class="local col3 ref" href="#13tmp7" title='tmp7' data-ref="13tmp7">tmp7</a>);</td></tr>
+<tr><th id="268">268</th><td>    <a class="local col5 ref" href="#25wsptr" title='wsptr' data-ref="25wsptr">wsptr</a>[<a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a> * <var>1</var>] = (<em>int</em>)(<a class="local col7 ref" href="#7tmp1" title='tmp1' data-ref="7tmp1">tmp1</a> + <a class="local col2 ref" href="#12tmp6" title='tmp6' data-ref="12tmp6">tmp6</a>);</td></tr>
+<tr><th id="269">269</th><td>    <a class="local col5 ref" href="#25wsptr" title='wsptr' data-ref="25wsptr">wsptr</a>[<a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a> * <var>6</var>] = (<em>int</em>)(<a class="local col7 ref" href="#7tmp1" title='tmp1' data-ref="7tmp1">tmp1</a> - <a class="local col2 ref" href="#12tmp6" title='tmp6' data-ref="12tmp6">tmp6</a>);</td></tr>
+<tr><th id="270">270</th><td>    <a class="local col5 ref" href="#25wsptr" title='wsptr' data-ref="25wsptr">wsptr</a>[<a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a> * <var>2</var>] = (<em>int</em>)(<a class="local col8 ref" href="#8tmp2" title='tmp2' data-ref="8tmp2">tmp2</a> + <a class="local col1 ref" href="#11tmp5" title='tmp5' data-ref="11tmp5">tmp5</a>);</td></tr>
+<tr><th id="271">271</th><td>    <a class="local col5 ref" href="#25wsptr" title='wsptr' data-ref="25wsptr">wsptr</a>[<a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a> * <var>5</var>] = (<em>int</em>)(<a class="local col8 ref" href="#8tmp2" title='tmp2' data-ref="8tmp2">tmp2</a> - <a class="local col1 ref" href="#11tmp5" title='tmp5' data-ref="11tmp5">tmp5</a>);</td></tr>
+<tr><th id="272">272</th><td>    <a class="local col5 ref" href="#25wsptr" title='wsptr' data-ref="25wsptr">wsptr</a>[<a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a> * <var>4</var>] = (<em>int</em>)(<a class="local col9 ref" href="#9tmp3" title='tmp3' data-ref="9tmp3">tmp3</a> + <a class="local col0 ref" href="#10tmp4" title='tmp4' data-ref="10tmp4">tmp4</a>);</td></tr>
+<tr><th id="273">273</th><td>    <a class="local col5 ref" href="#25wsptr" title='wsptr' data-ref="25wsptr">wsptr</a>[<a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a> * <var>3</var>] = (<em>int</em>)(<a class="local col9 ref" href="#9tmp3" title='tmp3' data-ref="9tmp3">tmp3</a> - <a class="local col0 ref" href="#10tmp4" title='tmp4' data-ref="10tmp4">tmp4</a>);</td></tr>
+<tr><th id="274">274</th><td></td></tr>
+<tr><th id="275">275</th><td>    <a class="local col3 ref" href="#23inptr" title='inptr' data-ref="23inptr">inptr</a>++;                    <i>/* advance pointers to next column */</i></td></tr>
+<tr><th id="276">276</th><td>    <a class="local col4 ref" href="#24quantptr" title='quantptr' data-ref="24quantptr">quantptr</a>++;</td></tr>
+<tr><th id="277">277</th><td>    <a class="local col5 ref" href="#25wsptr" title='wsptr' data-ref="25wsptr">wsptr</a>++;</td></tr>
+<tr><th id="278">278</th><td>  }</td></tr>
+<tr><th id="279">279</th><td></td></tr>
+<tr><th id="280">280</th><td>  <i>/* Pass 2: process rows from work array, store into output array. */</i></td></tr>
+<tr><th id="281">281</th><td>  <i>/* Note that we must descale the results by a factor of 8 == 2**3, */</i></td></tr>
+<tr><th id="282">282</th><td>  <i>/* and also undo the PASS1_BITS scaling. */</i></td></tr>
+<tr><th id="283">283</th><td></td></tr>
+<tr><th id="284">284</th><td>  <a class="local col5 ref" href="#25wsptr" title='wsptr' data-ref="25wsptr">wsptr</a> = <a class="local col9 ref" href="#29workspace" title='workspace' data-ref="29workspace">workspace</a>;</td></tr>
+<tr><th id="285">285</th><td>  <b>for</b> (<a class="local col8 ref" href="#28ctr" title='ctr' data-ref="28ctr">ctr</a> = <var>0</var>; <a class="local col8 ref" href="#28ctr" title='ctr' data-ref="28ctr">ctr</a> &lt; <a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a>; <a class="local col8 ref" href="#28ctr" title='ctr' data-ref="28ctr">ctr</a>++) {</td></tr>
+<tr><th id="286">286</th><td>    <a class="local col6 ref" href="#26outptr" title='outptr' data-ref="26outptr">outptr</a> = <a class="local col4 ref" href="#4output_buf" title='output_buf' data-ref="4output_buf">output_buf</a>[<a class="local col8 ref" href="#28ctr" title='ctr' data-ref="28ctr">ctr</a>] + <a class="local col5 ref" href="#5output_col" title='output_col' data-ref="5output_col">output_col</a>;</td></tr>
+<tr><th id="287">287</th><td>    <i>/* Rows of zeroes can be exploited in the same way as we did with columns.</i></td></tr>
+<tr><th id="288">288</th><td><i>     * However, the column calculation has created many nonzero AC terms, so</i></td></tr>
+<tr><th id="289">289</th><td><i>     * the simplification applies less often (typically 5% to 10% of the time).</i></td></tr>
+<tr><th id="290">290</th><td><i>     * On machines with very fast multiplication, it's possible that the</i></td></tr>
+<tr><th id="291">291</th><td><i>     * test takes more time than it's worth.  In that case this section</i></td></tr>
+<tr><th id="292">292</th><td><i>     * may be commented out.</i></td></tr>
+<tr><th id="293">293</th><td><i>     */</i></td></tr>
+<tr><th id="294">294</th><td></td></tr>
+<tr><th id="295">295</th><td><u>#<span data-ppcond="295">ifndef</span> <span class="macro" data-ref="_M/NO_ZERO_ROW_TEST">NO_ZERO_ROW_TEST</span></u></td></tr>
+<tr><th id="296">296</th><td>    <b>if</b> (<a class="local col5 ref" href="#25wsptr" title='wsptr' data-ref="25wsptr">wsptr</a>[<var>1</var>] == <var>0</var> &amp;&amp; <a class="local col5 ref" href="#25wsptr" title='wsptr' data-ref="25wsptr">wsptr</a>[<var>2</var>] == <var>0</var> &amp;&amp; <a class="local col5 ref" href="#25wsptr" title='wsptr' data-ref="25wsptr">wsptr</a>[<var>3</var>] == <var>0</var> &amp;&amp; <a class="local col5 ref" href="#25wsptr" title='wsptr' data-ref="25wsptr">wsptr</a>[<var>4</var>] == <var>0</var> &amp;&amp;</td></tr>
+<tr><th id="297">297</th><td>        <a class="local col5 ref" href="#25wsptr" title='wsptr' data-ref="25wsptr">wsptr</a>[<var>5</var>] == <var>0</var> &amp;&amp; <a class="local col5 ref" href="#25wsptr" title='wsptr' data-ref="25wsptr">wsptr</a>[<var>6</var>] == <var>0</var> &amp;&amp; <a class="local col5 ref" href="#25wsptr" title='wsptr' data-ref="25wsptr">wsptr</a>[<var>7</var>] == <var>0</var>) {</td></tr>
+<tr><th id="298">298</th><td>      <i>/* AC terms all zero */</i></td></tr>
+<tr><th id="299">299</th><td>      <a class="typedef" href="jmorecfg.h.html#JSAMPLE" title='JSAMPLE' data-type='unsigned char' data-ref="JSAMPLE">JSAMPLE</a> <dfn class="local col1 decl" id="31dcval" title='dcval' data-type='JSAMPLE' data-ref="31dcval">dcval</dfn> =</td></tr>
+<tr><th id="300">300</th><td>        <a class="local col7 ref" href="#27range_limit" title='range_limit' data-ref="27range_limit">range_limit</a>[<a class="macro" href="#162" title="((int)((wsptr[0]) &gt;&gt; (2 + 3)))" data-ref="_M/IDESCALE">IDESCALE</a>(<a class="local col5 ref" href="#25wsptr" title='wsptr' data-ref="25wsptr">wsptr</a>[<var>0</var>], <a class="macro" href="#81" title="2" data-ref="_M/PASS1_BITS">PASS1_BITS</a> + <var>3</var>) &amp; <a class="macro" href="jdct.h.html#88" title="(255 * 4 + 3)" data-ref="_M/RANGE_MASK">RANGE_MASK</a>];</td></tr>
+<tr><th id="301">301</th><td></td></tr>
+<tr><th id="302">302</th><td>      <a class="local col6 ref" href="#26outptr" title='outptr' data-ref="26outptr">outptr</a>[<var>0</var>] = <a class="local col1 ref" href="#31dcval" title='dcval' data-ref="31dcval">dcval</a>;</td></tr>
+<tr><th id="303">303</th><td>      <a class="local col6 ref" href="#26outptr" title='outptr' data-ref="26outptr">outptr</a>[<var>1</var>] = <a class="local col1 ref" href="#31dcval" title='dcval' data-ref="31dcval">dcval</a>;</td></tr>
+<tr><th id="304">304</th><td>      <a class="local col6 ref" href="#26outptr" title='outptr' data-ref="26outptr">outptr</a>[<var>2</var>] = <a class="local col1 ref" href="#31dcval" title='dcval' data-ref="31dcval">dcval</a>;</td></tr>
+<tr><th id="305">305</th><td>      <a class="local col6 ref" href="#26outptr" title='outptr' data-ref="26outptr">outptr</a>[<var>3</var>] = <a class="local col1 ref" href="#31dcval" title='dcval' data-ref="31dcval">dcval</a>;</td></tr>
+<tr><th id="306">306</th><td>      <a class="local col6 ref" href="#26outptr" title='outptr' data-ref="26outptr">outptr</a>[<var>4</var>] = <a class="local col1 ref" href="#31dcval" title='dcval' data-ref="31dcval">dcval</a>;</td></tr>
+<tr><th id="307">307</th><td>      <a class="local col6 ref" href="#26outptr" title='outptr' data-ref="26outptr">outptr</a>[<var>5</var>] = <a class="local col1 ref" href="#31dcval" title='dcval' data-ref="31dcval">dcval</a>;</td></tr>
+<tr><th id="308">308</th><td>      <a class="local col6 ref" href="#26outptr" title='outptr' data-ref="26outptr">outptr</a>[<var>6</var>] = <a class="local col1 ref" href="#31dcval" title='dcval' data-ref="31dcval">dcval</a>;</td></tr>
+<tr><th id="309">309</th><td>      <a class="local col6 ref" href="#26outptr" title='outptr' data-ref="26outptr">outptr</a>[<var>7</var>] = <a class="local col1 ref" href="#31dcval" title='dcval' data-ref="31dcval">dcval</a>;</td></tr>
+<tr><th id="310">310</th><td></td></tr>
+<tr><th id="311">311</th><td>      <a class="local col5 ref" href="#25wsptr" title='wsptr' data-ref="25wsptr">wsptr</a> += <a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a>;         <i>/* advance pointer to next row */</i></td></tr>
+<tr><th id="312">312</th><td>      <b>continue</b>;</td></tr>
+<tr><th id="313">313</th><td>    }</td></tr>
+<tr><th id="314">314</th><td><u>#<span data-ppcond="295">endif</span></u></td></tr>
+<tr><th id="315">315</th><td></td></tr>
+<tr><th id="316">316</th><td>    <i>/* Even part */</i></td></tr>
+<tr><th id="317">317</th><td></td></tr>
+<tr><th id="318">318</th><td>    <a class="local col4 ref" href="#14tmp10" title='tmp10' data-ref="14tmp10">tmp10</a> = ((<a class="typedef" href="jdct.h.html#DCTELEM" title='DCTELEM' data-type='int' data-ref="DCTELEM">DCTELEM</a>)<a class="local col5 ref" href="#25wsptr" title='wsptr' data-ref="25wsptr">wsptr</a>[<var>0</var>] + (<a class="typedef" href="jdct.h.html#DCTELEM" title='DCTELEM' data-type='int' data-ref="DCTELEM">DCTELEM</a>)<a class="local col5 ref" href="#25wsptr" title='wsptr' data-ref="25wsptr">wsptr</a>[<var>4</var>]);</td></tr>
+<tr><th id="319">319</th><td>    <a class="local col5 ref" href="#15tmp11" title='tmp11' data-ref="15tmp11">tmp11</a> = ((<a class="typedef" href="jdct.h.html#DCTELEM" title='DCTELEM' data-type='int' data-ref="DCTELEM">DCTELEM</a>)<a class="local col5 ref" href="#25wsptr" title='wsptr' data-ref="25wsptr">wsptr</a>[<var>0</var>] - (<a class="typedef" href="jdct.h.html#DCTELEM" title='DCTELEM' data-type='int' data-ref="DCTELEM">DCTELEM</a>)<a class="local col5 ref" href="#25wsptr" title='wsptr' data-ref="25wsptr">wsptr</a>[<var>4</var>]);</td></tr>
+<tr><th id="320">320</th><td></td></tr>
+<tr><th id="321">321</th><td>    <a class="local col7 ref" href="#17tmp13" title='tmp13' data-ref="17tmp13">tmp13</a> = ((<a class="typedef" href="jdct.h.html#DCTELEM" title='DCTELEM' data-type='int' data-ref="DCTELEM">DCTELEM</a>)<a class="local col5 ref" href="#25wsptr" title='wsptr' data-ref="25wsptr">wsptr</a>[<var>2</var>] + (<a class="typedef" href="jdct.h.html#DCTELEM" title='DCTELEM' data-type='int' data-ref="DCTELEM">DCTELEM</a>)<a class="local col5 ref" href="#25wsptr" title='wsptr' data-ref="25wsptr">wsptr</a>[<var>6</var>]);</td></tr>
+<tr><th id="322">322</th><td>    <a class="local col6 ref" href="#16tmp12" title='tmp12' data-ref="16tmp12">tmp12</a> =</td></tr>
+<tr><th id="323">323</th><td>      <a class="macro" href="#122" title="((DCTELEM)((((DCTELEM)wsptr[2] - (DCTELEM)wsptr[6]) * (((JLONG)362))) &gt;&gt; (8)))" data-ref="_M/MULTIPLY">MULTIPLY</a>((<a class="typedef" href="jdct.h.html#DCTELEM" title='DCTELEM' data-type='int' data-ref="DCTELEM">DCTELEM</a>)<a class="local col5 ref" href="#25wsptr" title='wsptr' data-ref="25wsptr">wsptr</a>[<var>2</var>] - (<a class="typedef" href="jdct.h.html#DCTELEM" title='DCTELEM' data-type='int' data-ref="DCTELEM">DCTELEM</a>)<a class="local col5 ref" href="#25wsptr" title='wsptr' data-ref="25wsptr">wsptr</a>[<var>6</var>], <a class="macro" href="#96" title="((JLONG)362)" data-ref="_M/FIX_1_414213562">FIX_1_414213562</a>) - <a class="local col7 ref" href="#17tmp13" title='tmp13' data-ref="17tmp13">tmp13</a>;</td></tr>
+<tr><th id="324">324</th><td></td></tr>
+<tr><th id="325">325</th><td>    <a class="local col6 ref" href="#6tmp0" title='tmp0' data-ref="6tmp0">tmp0</a> = <a class="local col4 ref" href="#14tmp10" title='tmp10' data-ref="14tmp10">tmp10</a> + <a class="local col7 ref" href="#17tmp13" title='tmp13' data-ref="17tmp13">tmp13</a>;</td></tr>
+<tr><th id="326">326</th><td>    <a class="local col9 ref" href="#9tmp3" title='tmp3' data-ref="9tmp3">tmp3</a> = <a class="local col4 ref" href="#14tmp10" title='tmp10' data-ref="14tmp10">tmp10</a> - <a class="local col7 ref" href="#17tmp13" title='tmp13' data-ref="17tmp13">tmp13</a>;</td></tr>
+<tr><th id="327">327</th><td>    <a class="local col7 ref" href="#7tmp1" title='tmp1' data-ref="7tmp1">tmp1</a> = <a class="local col5 ref" href="#15tmp11" title='tmp11' data-ref="15tmp11">tmp11</a> + <a class="local col6 ref" href="#16tmp12" title='tmp12' data-ref="16tmp12">tmp12</a>;</td></tr>
+<tr><th id="328">328</th><td>    <a class="local col8 ref" href="#8tmp2" title='tmp2' data-ref="8tmp2">tmp2</a> = <a class="local col5 ref" href="#15tmp11" title='tmp11' data-ref="15tmp11">tmp11</a> - <a class="local col6 ref" href="#16tmp12" title='tmp12' data-ref="16tmp12">tmp12</a>;</td></tr>
+<tr><th id="329">329</th><td></td></tr>
+<tr><th id="330">330</th><td>    <i>/* Odd part */</i></td></tr>
+<tr><th id="331">331</th><td></td></tr>
+<tr><th id="332">332</th><td>    <a class="local col2 ref" href="#22z13" title='z13' data-ref="22z13">z13</a> = (<a class="typedef" href="jdct.h.html#DCTELEM" title='DCTELEM' data-type='int' data-ref="DCTELEM">DCTELEM</a>)<a class="local col5 ref" href="#25wsptr" title='wsptr' data-ref="25wsptr">wsptr</a>[<var>5</var>] + (<a class="typedef" href="jdct.h.html#DCTELEM" title='DCTELEM' data-type='int' data-ref="DCTELEM">DCTELEM</a>)<a class="local col5 ref" href="#25wsptr" title='wsptr' data-ref="25wsptr">wsptr</a>[<var>3</var>];</td></tr>
+<tr><th id="333">333</th><td>    <a class="local col9 ref" href="#19z10" title='z10' data-ref="19z10">z10</a> = (<a class="typedef" href="jdct.h.html#DCTELEM" title='DCTELEM' data-type='int' data-ref="DCTELEM">DCTELEM</a>)<a class="local col5 ref" href="#25wsptr" title='wsptr' data-ref="25wsptr">wsptr</a>[<var>5</var>] - (<a class="typedef" href="jdct.h.html#DCTELEM" title='DCTELEM' data-type='int' data-ref="DCTELEM">DCTELEM</a>)<a class="local col5 ref" href="#25wsptr" title='wsptr' data-ref="25wsptr">wsptr</a>[<var>3</var>];</td></tr>
+<tr><th id="334">334</th><td>    <a class="local col0 ref" href="#20z11" title='z11' data-ref="20z11">z11</a> = (<a class="typedef" href="jdct.h.html#DCTELEM" title='DCTELEM' data-type='int' data-ref="DCTELEM">DCTELEM</a>)<a class="local col5 ref" href="#25wsptr" title='wsptr' data-ref="25wsptr">wsptr</a>[<var>1</var>] + (<a class="typedef" href="jdct.h.html#DCTELEM" title='DCTELEM' data-type='int' data-ref="DCTELEM">DCTELEM</a>)<a class="local col5 ref" href="#25wsptr" title='wsptr' data-ref="25wsptr">wsptr</a>[<var>7</var>];</td></tr>
+<tr><th id="335">335</th><td>    <a class="local col1 ref" href="#21z12" title='z12' data-ref="21z12">z12</a> = (<a class="typedef" href="jdct.h.html#DCTELEM" title='DCTELEM' data-type='int' data-ref="DCTELEM">DCTELEM</a>)<a class="local col5 ref" href="#25wsptr" title='wsptr' data-ref="25wsptr">wsptr</a>[<var>1</var>] - (<a class="typedef" href="jdct.h.html#DCTELEM" title='DCTELEM' data-type='int' data-ref="DCTELEM">DCTELEM</a>)<a class="local col5 ref" href="#25wsptr" title='wsptr' data-ref="25wsptr">wsptr</a>[<var>7</var>];</td></tr>
+<tr><th id="336">336</th><td></td></tr>
+<tr><th id="337">337</th><td>    <a class="local col3 ref" href="#13tmp7" title='tmp7' data-ref="13tmp7">tmp7</a> = <a class="local col0 ref" href="#20z11" title='z11' data-ref="20z11">z11</a> + <a class="local col2 ref" href="#22z13" title='z13' data-ref="22z13">z13</a>;           <i>/* phase 5 */</i></td></tr>
+<tr><th id="338">338</th><td>    <a class="local col5 ref" href="#15tmp11" title='tmp11' data-ref="15tmp11">tmp11</a> = <a class="macro" href="#122" title="((DCTELEM)(((z11 - z13) * (((JLONG)362))) &gt;&gt; (8)))" data-ref="_M/MULTIPLY">MULTIPLY</a>(<a class="local col0 ref" href="#20z11" title='z11' data-ref="20z11">z11</a> - <a class="local col2 ref" href="#22z13" title='z13' data-ref="22z13">z13</a>, <a class="macro" href="#96" title="((JLONG)362)" data-ref="_M/FIX_1_414213562">FIX_1_414213562</a>); <i>/* 2*c4 */</i></td></tr>
+<tr><th id="339">339</th><td></td></tr>
+<tr><th id="340">340</th><td>    <a class="local col8 ref" href="#18z5" title='z5' data-ref="18z5">z5</a> = <a class="macro" href="#122" title="((DCTELEM)(((z10 + z12) * (((JLONG)473))) &gt;&gt; (8)))" data-ref="_M/MULTIPLY">MULTIPLY</a>(<a class="local col9 ref" href="#19z10" title='z10' data-ref="19z10">z10</a> + <a class="local col1 ref" href="#21z12" title='z12' data-ref="21z12">z12</a>, <a class="macro" href="#97" title="((JLONG)473)" data-ref="_M/FIX_1_847759065">FIX_1_847759065</a>); <i>/* 2*c2 */</i></td></tr>
+<tr><th id="341">341</th><td>    <a class="local col4 ref" href="#14tmp10" title='tmp10' data-ref="14tmp10">tmp10</a> = <a class="macro" href="#122" title="((DCTELEM)(((z12) * (((JLONG)277))) &gt;&gt; (8)))" data-ref="_M/MULTIPLY">MULTIPLY</a>(<a class="local col1 ref" href="#21z12" title='z12' data-ref="21z12">z12</a>, <a class="macro" href="#95" title="((JLONG)277)" data-ref="_M/FIX_1_082392200">FIX_1_082392200</a>) - <a class="local col8 ref" href="#18z5" title='z5' data-ref="18z5">z5</a>; <i>/* 2*(c2-c6) */</i></td></tr>
+<tr><th id="342">342</th><td>    <a class="local col6 ref" href="#16tmp12" title='tmp12' data-ref="16tmp12">tmp12</a> = <a class="macro" href="#122" title="((DCTELEM)(((z10) * (-((JLONG)669))) &gt;&gt; (8)))" data-ref="_M/MULTIPLY">MULTIPLY</a>(<a class="local col9 ref" href="#19z10" title='z10' data-ref="19z10">z10</a>, -<a class="macro" href="#98" title="((JLONG)669)" data-ref="_M/FIX_2_613125930">FIX_2_613125930</a>) + <a class="local col8 ref" href="#18z5" title='z5' data-ref="18z5">z5</a>; <i>/* -2*(c2+c6) */</i></td></tr>
+<tr><th id="343">343</th><td></td></tr>
+<tr><th id="344">344</th><td>    <a class="local col2 ref" href="#12tmp6" title='tmp6' data-ref="12tmp6">tmp6</a> = <a class="local col6 ref" href="#16tmp12" title='tmp12' data-ref="16tmp12">tmp12</a> - <a class="local col3 ref" href="#13tmp7" title='tmp7' data-ref="13tmp7">tmp7</a>;        <i>/* phase 2 */</i></td></tr>
+<tr><th id="345">345</th><td>    <a class="local col1 ref" href="#11tmp5" title='tmp5' data-ref="11tmp5">tmp5</a> = <a class="local col5 ref" href="#15tmp11" title='tmp11' data-ref="15tmp11">tmp11</a> - <a class="local col2 ref" href="#12tmp6" title='tmp6' data-ref="12tmp6">tmp6</a>;</td></tr>
+<tr><th id="346">346</th><td>    <a class="local col0 ref" href="#10tmp4" title='tmp4' data-ref="10tmp4">tmp4</a> = <a class="local col4 ref" href="#14tmp10" title='tmp10' data-ref="14tmp10">tmp10</a> + <a class="local col1 ref" href="#11tmp5" title='tmp5' data-ref="11tmp5">tmp5</a>;</td></tr>
+<tr><th id="347">347</th><td></td></tr>
+<tr><th id="348">348</th><td>    <i>/* Final output stage: scale down by a factor of 8 and range-limit */</i></td></tr>
+<tr><th id="349">349</th><td></td></tr>
+<tr><th id="350">350</th><td>    <a class="local col6 ref" href="#26outptr" title='outptr' data-ref="26outptr">outptr</a>[<var>0</var>] =</td></tr>
+<tr><th id="351">351</th><td>      <a class="local col7 ref" href="#27range_limit" title='range_limit' data-ref="27range_limit">range_limit</a>[<a class="macro" href="#162" title="((int)((tmp0 + tmp7) &gt;&gt; (2 + 3)))" data-ref="_M/IDESCALE">IDESCALE</a>(<a class="local col6 ref" href="#6tmp0" title='tmp0' data-ref="6tmp0">tmp0</a> + <a class="local col3 ref" href="#13tmp7" title='tmp7' data-ref="13tmp7">tmp7</a>, <a class="macro" href="#81" title="2" data-ref="_M/PASS1_BITS">PASS1_BITS</a> + <var>3</var>) &amp; <a class="macro" href="jdct.h.html#88" title="(255 * 4 + 3)" data-ref="_M/RANGE_MASK">RANGE_MASK</a>];</td></tr>
+<tr><th id="352">352</th><td>    <a class="local col6 ref" href="#26outptr" title='outptr' data-ref="26outptr">outptr</a>[<var>7</var>] =</td></tr>
+<tr><th id="353">353</th><td>      <a class="local col7 ref" href="#27range_limit" title='range_limit' data-ref="27range_limit">range_limit</a>[<a class="macro" href="#162" title="((int)((tmp0 - tmp7) &gt;&gt; (2 + 3)))" data-ref="_M/IDESCALE">IDESCALE</a>(<a class="local col6 ref" href="#6tmp0" title='tmp0' data-ref="6tmp0">tmp0</a> - <a class="local col3 ref" href="#13tmp7" title='tmp7' data-ref="13tmp7">tmp7</a>, <a class="macro" href="#81" title="2" data-ref="_M/PASS1_BITS">PASS1_BITS</a> + <var>3</var>) &amp; <a class="macro" href="jdct.h.html#88" title="(255 * 4 + 3)" data-ref="_M/RANGE_MASK">RANGE_MASK</a>];</td></tr>
+<tr><th id="354">354</th><td>    <a class="local col6 ref" href="#26outptr" title='outptr' data-ref="26outptr">outptr</a>[<var>1</var>] =</td></tr>
+<tr><th id="355">355</th><td>      <a class="local col7 ref" href="#27range_limit" title='range_limit' data-ref="27range_limit">range_limit</a>[<a class="macro" href="#162" title="((int)((tmp1 + tmp6) &gt;&gt; (2 + 3)))" data-ref="_M/IDESCALE">IDESCALE</a>(<a class="local col7 ref" href="#7tmp1" title='tmp1' data-ref="7tmp1">tmp1</a> + <a class="local col2 ref" href="#12tmp6" title='tmp6' data-ref="12tmp6">tmp6</a>, <a class="macro" href="#81" title="2" data-ref="_M/PASS1_BITS">PASS1_BITS</a> + <var>3</var>) &amp; <a class="macro" href="jdct.h.html#88" title="(255 * 4 + 3)" data-ref="_M/RANGE_MASK">RANGE_MASK</a>];</td></tr>
+<tr><th id="356">356</th><td>    <a class="local col6 ref" href="#26outptr" title='outptr' data-ref="26outptr">outptr</a>[<var>6</var>] =</td></tr>
+<tr><th id="357">357</th><td>      <a class="local col7 ref" href="#27range_limit" title='range_limit' data-ref="27range_limit">range_limit</a>[<a class="macro" href="#162" title="((int)((tmp1 - tmp6) &gt;&gt; (2 + 3)))" data-ref="_M/IDESCALE">IDESCALE</a>(<a class="local col7 ref" href="#7tmp1" title='tmp1' data-ref="7tmp1">tmp1</a> - <a class="local col2 ref" href="#12tmp6" title='tmp6' data-ref="12tmp6">tmp6</a>, <a class="macro" href="#81" title="2" data-ref="_M/PASS1_BITS">PASS1_BITS</a> + <var>3</var>) &amp; <a class="macro" href="jdct.h.html#88" title="(255 * 4 + 3)" data-ref="_M/RANGE_MASK">RANGE_MASK</a>];</td></tr>
+<tr><th id="358">358</th><td>    <a class="local col6 ref" href="#26outptr" title='outptr' data-ref="26outptr">outptr</a>[<var>2</var>] =</td></tr>
+<tr><th id="359">359</th><td>      <a class="local col7 ref" href="#27range_limit" title='range_limit' data-ref="27range_limit">range_limit</a>[<a class="macro" href="#162" title="((int)((tmp2 + tmp5) &gt;&gt; (2 + 3)))" data-ref="_M/IDESCALE">IDESCALE</a>(<a class="local col8 ref" href="#8tmp2" title='tmp2' data-ref="8tmp2">tmp2</a> + <a class="local col1 ref" href="#11tmp5" title='tmp5' data-ref="11tmp5">tmp5</a>, <a class="macro" href="#81" title="2" data-ref="_M/PASS1_BITS">PASS1_BITS</a> + <var>3</var>) &amp; <a class="macro" href="jdct.h.html#88" title="(255 * 4 + 3)" data-ref="_M/RANGE_MASK">RANGE_MASK</a>];</td></tr>
+<tr><th id="360">360</th><td>    <a class="local col6 ref" href="#26outptr" title='outptr' data-ref="26outptr">outptr</a>[<var>5</var>] =</td></tr>
+<tr><th id="361">361</th><td>      <a class="local col7 ref" href="#27range_limit" title='range_limit' data-ref="27range_limit">range_limit</a>[<a class="macro" href="#162" title="((int)((tmp2 - tmp5) &gt;&gt; (2 + 3)))" data-ref="_M/IDESCALE">IDESCALE</a>(<a class="local col8 ref" href="#8tmp2" title='tmp2' data-ref="8tmp2">tmp2</a> - <a class="local col1 ref" href="#11tmp5" title='tmp5' data-ref="11tmp5">tmp5</a>, <a class="macro" href="#81" title="2" data-ref="_M/PASS1_BITS">PASS1_BITS</a> + <var>3</var>) &amp; <a class="macro" href="jdct.h.html#88" title="(255 * 4 + 3)" data-ref="_M/RANGE_MASK">RANGE_MASK</a>];</td></tr>
+<tr><th id="362">362</th><td>    <a class="local col6 ref" href="#26outptr" title='outptr' data-ref="26outptr">outptr</a>[<var>4</var>] =</td></tr>
+<tr><th id="363">363</th><td>      <a class="local col7 ref" href="#27range_limit" title='range_limit' data-ref="27range_limit">range_limit</a>[<a class="macro" href="#162" title="((int)((tmp3 + tmp4) &gt;&gt; (2 + 3)))" data-ref="_M/IDESCALE">IDESCALE</a>(<a class="local col9 ref" href="#9tmp3" title='tmp3' data-ref="9tmp3">tmp3</a> + <a class="local col0 ref" href="#10tmp4" title='tmp4' data-ref="10tmp4">tmp4</a>, <a class="macro" href="#81" title="2" data-ref="_M/PASS1_BITS">PASS1_BITS</a> + <var>3</var>) &amp; <a class="macro" href="jdct.h.html#88" title="(255 * 4 + 3)" data-ref="_M/RANGE_MASK">RANGE_MASK</a>];</td></tr>
+<tr><th id="364">364</th><td>    <a class="local col6 ref" href="#26outptr" title='outptr' data-ref="26outptr">outptr</a>[<var>3</var>] =</td></tr>
+<tr><th id="365">365</th><td>      <a class="local col7 ref" href="#27range_limit" title='range_limit' data-ref="27range_limit">range_limit</a>[<a class="macro" href="#162" title="((int)((tmp3 - tmp4) &gt;&gt; (2 + 3)))" data-ref="_M/IDESCALE">IDESCALE</a>(<a class="local col9 ref" href="#9tmp3" title='tmp3' data-ref="9tmp3">tmp3</a> - <a class="local col0 ref" href="#10tmp4" title='tmp4' data-ref="10tmp4">tmp4</a>, <a class="macro" href="#81" title="2" data-ref="_M/PASS1_BITS">PASS1_BITS</a> + <var>3</var>) &amp; <a class="macro" href="jdct.h.html#88" title="(255 * 4 + 3)" data-ref="_M/RANGE_MASK">RANGE_MASK</a>];</td></tr>
+<tr><th id="366">366</th><td></td></tr>
+<tr><th id="367">367</th><td>    <a class="local col5 ref" href="#25wsptr" title='wsptr' data-ref="25wsptr">wsptr</a> += <a class="macro" href="jpeglib.h.html#46" title="8" data-ref="_M/DCTSIZE">DCTSIZE</a>;           <i>/* advance pointer to next row */</i></td></tr>
+<tr><th id="368">368</th><td>  }</td></tr>
+<tr><th id="369">369</th><td>}</td></tr>
+<tr><th id="370">370</th><td></td></tr>
+<tr><th id="371">371</th><td><u>#<span data-ppcond="43">endif</span> /* DCT_IFAST_SUPPORTED */</u></td></tr>
+<tr><th id="372">372</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2024-Jun-13</em> from project qtbase-6.5.0 revision <em>6.5.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

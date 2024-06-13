@@ -1,0 +1,344 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>hb-machinery.hh source code [qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/hb-machinery.hh] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="hb_data_wrapper_t,hb_face_lazy_loader_t,hb_lazy_loader_t,hb_non_void_t,hb_table_lazy_loader_t "/>
+<link rel="stylesheet" href="../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/hb-machinery.hh'; var root_path = '../../../../..'; var data_path = '../../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../..'>qtbase-6.5.0</a>/<a href='../../..'>src</a>/<a href='../..'>3rdparty</a>/<a href='..'>harfbuzz-ng</a>/<a href='./'>src</a>/<a href='hb-machinery.hh.html'>hb-machinery.hh</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*</i></td></tr>
+<tr><th id="2">2</th><td><i> * Copyright © 2007,2008,2009,2010  Red Hat, Inc.</i></td></tr>
+<tr><th id="3">3</th><td><i> * Copyright © 2012,2018  Google, Inc.</i></td></tr>
+<tr><th id="4">4</th><td><i> *</i></td></tr>
+<tr><th id="5">5</th><td><i> *  This is part of HarfBuzz, a text shaping library.</i></td></tr>
+<tr><th id="6">6</th><td><i> *</i></td></tr>
+<tr><th id="7">7</th><td><i> * Permission is hereby granted, without written agreement and without</i></td></tr>
+<tr><th id="8">8</th><td><i> * license or royalty fees, to use, copy, modify, and distribute this</i></td></tr>
+<tr><th id="9">9</th><td><i> * software and its documentation for any purpose, provided that the</i></td></tr>
+<tr><th id="10">10</th><td><i> * above copyright notice and the following two paragraphs appear in</i></td></tr>
+<tr><th id="11">11</th><td><i> * all copies of this software.</i></td></tr>
+<tr><th id="12">12</th><td><i> *</i></td></tr>
+<tr><th id="13">13</th><td><i> * IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR</i></td></tr>
+<tr><th id="14">14</th><td><i> * DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES</i></td></tr>
+<tr><th id="15">15</th><td><i> * ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN</i></td></tr>
+<tr><th id="16">16</th><td><i> * IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH</i></td></tr>
+<tr><th id="17">17</th><td><i> * DAMAGE.</i></td></tr>
+<tr><th id="18">18</th><td><i> *</i></td></tr>
+<tr><th id="19">19</th><td><i> * THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,</i></td></tr>
+<tr><th id="20">20</th><td><i> * BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND</i></td></tr>
+<tr><th id="21">21</th><td><i> * FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS</i></td></tr>
+<tr><th id="22">22</th><td><i> * ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO</i></td></tr>
+<tr><th id="23">23</th><td><i> * PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.</i></td></tr>
+<tr><th id="24">24</th><td><i> *</i></td></tr>
+<tr><th id="25">25</th><td><i> * Red Hat Author(s): Behdad Esfahbod</i></td></tr>
+<tr><th id="26">26</th><td><i> * Google Author(s): Behdad Esfahbod</i></td></tr>
+<tr><th id="27">27</th><td><i> */</i></td></tr>
+<tr><th id="28">28</th><td></td></tr>
+<tr><th id="29">29</th><td><u>#<span data-ppcond="29">ifndef</span> <span class="macro" data-ref="_M/HB_MACHINERY_HH">HB_MACHINERY_HH</span></u></td></tr>
+<tr><th id="30">30</th><td><u>#define <dfn class="macro" id="_M/HB_MACHINERY_HH" data-ref="_M/HB_MACHINERY_HH">HB_MACHINERY_HH</dfn></u></td></tr>
+<tr><th id="31">31</th><td></td></tr>
+<tr><th id="32">32</th><td><u>#include <a href="hb.hh.html">"hb.hh"</a></u></td></tr>
+<tr><th id="33">33</th><td><u>#include <a href="hb-blob.hh.html">"hb-blob.hh"</a></u></td></tr>
+<tr><th id="34">34</th><td></td></tr>
+<tr><th id="35">35</th><td><u>#include <a href="hb-dispatch.hh.html">"hb-dispatch.hh"</a></u></td></tr>
+<tr><th id="36">36</th><td><u>#include <a href="hb-sanitize.hh.html">"hb-sanitize.hh"</a></u></td></tr>
+<tr><th id="37">37</th><td></td></tr>
+<tr><th id="38">38</th><td></td></tr>
+<tr><th id="39">39</th><td><i>/*</i></td></tr>
+<tr><th id="40">40</th><td><i> * Casts</i></td></tr>
+<tr><th id="41">41</th><td><i> */</i></td></tr>
+<tr><th id="42">42</th><td></td></tr>
+<tr><th id="43">43</th><td><i>/* StructAtOffset&lt;T&gt;(P,Ofs) returns the struct T&amp; that is placed at memory</i></td></tr>
+<tr><th id="44">44</th><td><i> * location pointed to by P plus Ofs bytes. */</i></td></tr>
+<tr><th id="45">45</th><td><b>template</b>&lt;<b>typename</b> Type&gt;</td></tr>
+<tr><th id="46">46</th><td><em>static</em> <b>inline</b> <em>const</em> Type&amp; <dfn class="decl def fn" id="_ZL14StructAtOffsetPKvj" title='StructAtOffset' data-ref="_ZL14StructAtOffsetPKvj">StructAtOffset</dfn>(<em>const</em> <em>void</em> *<dfn class="local col1 decl" id="2501P" title='P' data-type='const void *' data-ref="2501P">P</dfn>, <em>unsigned</em> <em>int</em> <dfn class="local col2 decl" id="2502offset" title='offset' data-type='unsigned int' data-ref="2502offset">offset</dfn>)</td></tr>
+<tr><th id="47">47</th><td>{ <b>return</b> * <b>reinterpret_cast</b>&lt;<em>const</em> Type*&gt; ((<em>const</em> <em>char</em> *) <a class="local col1 ref" href="#2501P" title='P' data-ref="2501P">P</a> + <a class="local col2 ref" href="#2502offset" title='offset' data-ref="2502offset">offset</a>); }</td></tr>
+<tr><th id="48">48</th><td><b>template</b>&lt;<b>typename</b> Type&gt;</td></tr>
+<tr><th id="49">49</th><td><em>static</em> <b>inline</b> Type&amp; <dfn class="decl def fn" id="_ZL14StructAtOffsetPvj" title='StructAtOffset' data-ref="_ZL14StructAtOffsetPvj">StructAtOffset</dfn>(<em>void</em> *<dfn class="local col3 decl" id="2503P" title='P' data-type='void *' data-ref="2503P">P</dfn>, <em>unsigned</em> <em>int</em> <dfn class="local col4 decl" id="2504offset" title='offset' data-type='unsigned int' data-ref="2504offset">offset</dfn>)</td></tr>
+<tr><th id="50">50</th><td>{ <b>return</b> * <b>reinterpret_cast</b>&lt;Type*&gt; ((<em>char</em> *) <a class="local col3 ref" href="#2503P" title='P' data-ref="2503P">P</a> + <a class="local col4 ref" href="#2504offset" title='offset' data-ref="2504offset">offset</a>); }</td></tr>
+<tr><th id="51">51</th><td><b>template</b>&lt;<b>typename</b> Type&gt;</td></tr>
+<tr><th id="52">52</th><td><em>static</em> <b>inline</b> <em>const</em> Type&amp; <dfn class="decl def fn" id="_ZL23StructAtOffsetUnalignedPKvj" title='StructAtOffsetUnaligned' data-ref="_ZL23StructAtOffsetUnalignedPKvj">StructAtOffsetUnaligned</dfn>(<em>const</em> <em>void</em> *<dfn class="local col5 decl" id="2505P" title='P' data-type='const void *' data-ref="2505P">P</dfn>, <em>unsigned</em> <em>int</em> <dfn class="local col6 decl" id="2506offset" title='offset' data-type='unsigned int' data-ref="2506offset">offset</dfn>)</td></tr>
+<tr><th id="53">53</th><td>{</td></tr>
+<tr><th id="54">54</th><td><u>#pragma GCC diagnostic push</u></td></tr>
+<tr><th id="55">55</th><td><u>#pragma GCC diagnostic ignored "-Wcast-align"</u></td></tr>
+<tr><th id="56">56</th><td>  <b>return</b> * <b>reinterpret_cast</b>&lt;<em>const</em> Type*&gt; ((<em>const</em> <em>char</em> *) <a class="local col5 ref" href="#2505P" title='P' data-ref="2505P">P</a> + <a class="local col6 ref" href="#2506offset" title='offset' data-ref="2506offset">offset</a>);</td></tr>
+<tr><th id="57">57</th><td><u>#pragma GCC diagnostic pop</u></td></tr>
+<tr><th id="58">58</th><td>}</td></tr>
+<tr><th id="59">59</th><td><b>template</b>&lt;<b>typename</b> Type&gt;</td></tr>
+<tr><th id="60">60</th><td><em>static</em> <b>inline</b> Type&amp; <dfn class="decl def fn" id="_ZL23StructAtOffsetUnalignedPvj" title='StructAtOffsetUnaligned' data-ref="_ZL23StructAtOffsetUnalignedPvj">StructAtOffsetUnaligned</dfn>(<em>void</em> *<dfn class="local col7 decl" id="2507P" title='P' data-type='void *' data-ref="2507P">P</dfn>, <em>unsigned</em> <em>int</em> <dfn class="local col8 decl" id="2508offset" title='offset' data-type='unsigned int' data-ref="2508offset">offset</dfn>)</td></tr>
+<tr><th id="61">61</th><td>{</td></tr>
+<tr><th id="62">62</th><td><u>#pragma GCC diagnostic push</u></td></tr>
+<tr><th id="63">63</th><td><u>#pragma GCC diagnostic ignored "-Wcast-align"</u></td></tr>
+<tr><th id="64">64</th><td>  <b>return</b> * <b>reinterpret_cast</b>&lt;Type*&gt; ((<em>char</em> *) <a class="local col7 ref" href="#2507P" title='P' data-ref="2507P">P</a> + <a class="local col8 ref" href="#2508offset" title='offset' data-ref="2508offset">offset</a>);</td></tr>
+<tr><th id="65">65</th><td><u>#pragma GCC diagnostic pop</u></td></tr>
+<tr><th id="66">66</th><td>}</td></tr>
+<tr><th id="67">67</th><td></td></tr>
+<tr><th id="68">68</th><td><i>/* StructAfter&lt;T&gt;(X) returns the struct T&amp; that is placed after X.</i></td></tr>
+<tr><th id="69">69</th><td><i> * Works with X of variable size also.  X must implement get_size() */</i></td></tr>
+<tr><th id="70">70</th><td><b>template</b>&lt;<b>typename</b> Type, <b>typename</b> TObject&gt;</td></tr>
+<tr><th id="71">71</th><td><em>static</em> <b>inline</b> <em>const</em> Type&amp; <dfn class="decl def fn" id="_ZL11StructAfterRKT0_" title='StructAfter' data-ref="_ZL11StructAfterRKT0_">StructAfter</dfn>(<em>const</em> TObject &amp;<dfn class="local col9 decl" id="2509X" title='X' data-type='const TObject &amp;' data-ref="2509X">X</dfn>)</td></tr>
+<tr><th id="72">72</th><td>{ <b>return</b> StructAtOffset&lt;Type&gt;(&amp;<a class="local col9 ref" href="#2509X" title='X' data-ref="2509X">X</a>, <a class="local col9 ref" href="#2509X" title='X' data-ref="2509X">X</a>.get_size()); }</td></tr>
+<tr><th id="73">73</th><td><b>template</b>&lt;<b>typename</b> Type, <b>typename</b> TObject&gt;</td></tr>
+<tr><th id="74">74</th><td><em>static</em> <b>inline</b> Type&amp; <dfn class="decl def fn" id="_ZL11StructAfterRT0_" title='StructAfter' data-ref="_ZL11StructAfterRT0_">StructAfter</dfn>(TObject &amp;<dfn class="local col0 decl" id="2510X" title='X' data-type='TObject &amp;' data-ref="2510X">X</dfn>)</td></tr>
+<tr><th id="75">75</th><td>{ <b>return</b> StructAtOffset&lt;Type&gt;(&amp;<a class="local col0 ref" href="#2510X" title='X' data-ref="2510X">X</a>, <a class="local col0 ref" href="#2510X" title='X' data-ref="2510X">X</a>.get_size()); }</td></tr>
+<tr><th id="76">76</th><td></td></tr>
+<tr><th id="77">77</th><td></td></tr>
+<tr><th id="78">78</th><td><i>/*</i></td></tr>
+<tr><th id="79">79</th><td><i> * Size checking</i></td></tr>
+<tr><th id="80">80</th><td><i> */</i></td></tr>
+<tr><th id="81">81</th><td></td></tr>
+<tr><th id="82">82</th><td><i>/* Size signifying variable-sized array */</i></td></tr>
+<tr><th id="83">83</th><td><u>#<span data-ppcond="83">ifndef</span> <span class="macro" data-ref="_M/HB_VAR_ARRAY">HB_VAR_ARRAY</span></u></td></tr>
+<tr><th id="84">84</th><td><u>#define <dfn class="macro" id="_M/HB_VAR_ARRAY" data-ref="_M/HB_VAR_ARRAY">HB_VAR_ARRAY</dfn> 1</u></td></tr>
+<tr><th id="85">85</th><td><u>#<span data-ppcond="83">endif</span></u></td></tr>
+<tr><th id="86">86</th><td></td></tr>
+<tr><th id="87">87</th><td><i>/* Check _assertion in a method environment */</i></td></tr>
+<tr><th id="88">88</th><td><u>#define <dfn class="macro" id="_M/_DEFINE_INSTANCE_ASSERTION1" data-ref="_M/_DEFINE_INSTANCE_ASSERTION1">_DEFINE_INSTANCE_ASSERTION1</dfn>(_line, _assertion) \</u></td></tr>
+<tr><th id="89">89</th><td><u>  void _instance_assertion_on_line_##_line () const \</u></td></tr>
+<tr><th id="90">90</th><td><u>  { static_assert ((_assertion), ""); }</u></td></tr>
+<tr><th id="91">91</th><td><u># define <dfn class="macro" id="_M/_DEFINE_INSTANCE_ASSERTION0" data-ref="_M/_DEFINE_INSTANCE_ASSERTION0">_DEFINE_INSTANCE_ASSERTION0</dfn>(_line, _assertion) _DEFINE_INSTANCE_ASSERTION1 (_line, _assertion)</u></td></tr>
+<tr><th id="92">92</th><td><u># define <dfn class="macro" id="_M/DEFINE_INSTANCE_ASSERTION" data-ref="_M/DEFINE_INSTANCE_ASSERTION">DEFINE_INSTANCE_ASSERTION</dfn>(_assertion) _DEFINE_INSTANCE_ASSERTION0 (__LINE__, _assertion)</u></td></tr>
+<tr><th id="93">93</th><td></td></tr>
+<tr><th id="94">94</th><td><i>/* Check that _code compiles in a method environment */</i></td></tr>
+<tr><th id="95">95</th><td><u>#define <dfn class="macro" id="_M/_DEFINE_COMPILES_ASSERTION1" data-ref="_M/_DEFINE_COMPILES_ASSERTION1">_DEFINE_COMPILES_ASSERTION1</dfn>(_line, _code) \</u></td></tr>
+<tr><th id="96">96</th><td><u>  void _compiles_assertion_on_line_##_line () const \</u></td></tr>
+<tr><th id="97">97</th><td><u>  { _code; }</u></td></tr>
+<tr><th id="98">98</th><td><u># define <dfn class="macro" id="_M/_DEFINE_COMPILES_ASSERTION0" data-ref="_M/_DEFINE_COMPILES_ASSERTION0">_DEFINE_COMPILES_ASSERTION0</dfn>(_line, _code) _DEFINE_COMPILES_ASSERTION1 (_line, _code)</u></td></tr>
+<tr><th id="99">99</th><td><u># define <dfn class="macro" id="_M/DEFINE_COMPILES_ASSERTION" data-ref="_M/DEFINE_COMPILES_ASSERTION">DEFINE_COMPILES_ASSERTION</dfn>(_code) _DEFINE_COMPILES_ASSERTION0 (__LINE__, _code)</u></td></tr>
+<tr><th id="100">100</th><td></td></tr>
+<tr><th id="101">101</th><td></td></tr>
+<tr><th id="102">102</th><td><u>#define <dfn class="macro" id="_M/DEFINE_SIZE_STATIC" data-ref="_M/DEFINE_SIZE_STATIC">DEFINE_SIZE_STATIC</dfn>(size) \</u></td></tr>
+<tr><th id="103">103</th><td><u>  DEFINE_INSTANCE_ASSERTION (sizeof (*this) == (size)) \</u></td></tr>
+<tr><th id="104">104</th><td><u>  unsigned int get_size () const { return (size); } \</u></td></tr>
+<tr><th id="105">105</th><td><u>  static constexpr unsigned null_size = (size); \</u></td></tr>
+<tr><th id="106">106</th><td><u>  static constexpr unsigned min_size = (size); \</u></td></tr>
+<tr><th id="107">107</th><td><u>  static constexpr unsigned static_size = (size)</u></td></tr>
+<tr><th id="108">108</th><td></td></tr>
+<tr><th id="109">109</th><td><u>#define <dfn class="macro" id="_M/DEFINE_SIZE_UNION" data-ref="_M/DEFINE_SIZE_UNION">DEFINE_SIZE_UNION</dfn>(size, _member) \</u></td></tr>
+<tr><th id="110">110</th><td><u>  DEFINE_COMPILES_ASSERTION ((void) this-&gt;u._member.static_size) \</u></td></tr>
+<tr><th id="111">111</th><td><u>  DEFINE_INSTANCE_ASSERTION (sizeof(this-&gt;u._member) == (size)) \</u></td></tr>
+<tr><th id="112">112</th><td><u>  static constexpr unsigned null_size = (size); \</u></td></tr>
+<tr><th id="113">113</th><td><u>  static constexpr unsigned min_size = (size)</u></td></tr>
+<tr><th id="114">114</th><td></td></tr>
+<tr><th id="115">115</th><td><u>#define <dfn class="macro" id="_M/DEFINE_SIZE_MIN" data-ref="_M/DEFINE_SIZE_MIN">DEFINE_SIZE_MIN</dfn>(size) \</u></td></tr>
+<tr><th id="116">116</th><td><u>  DEFINE_INSTANCE_ASSERTION (sizeof (*this) &gt;= (size)) \</u></td></tr>
+<tr><th id="117">117</th><td><u>  static constexpr unsigned null_size = (size); \</u></td></tr>
+<tr><th id="118">118</th><td><u>  static constexpr unsigned min_size = (size)</u></td></tr>
+<tr><th id="119">119</th><td></td></tr>
+<tr><th id="120">120</th><td><u>#define <dfn class="macro" id="_M/DEFINE_SIZE_UNBOUNDED" data-ref="_M/DEFINE_SIZE_UNBOUNDED">DEFINE_SIZE_UNBOUNDED</dfn>(size) \</u></td></tr>
+<tr><th id="121">121</th><td><u>  DEFINE_INSTANCE_ASSERTION (sizeof (*this) &gt;= (size)) \</u></td></tr>
+<tr><th id="122">122</th><td><u>  static constexpr unsigned min_size = (size)</u></td></tr>
+<tr><th id="123">123</th><td></td></tr>
+<tr><th id="124">124</th><td><u>#define <dfn class="macro" id="_M/DEFINE_SIZE_ARRAY" data-ref="_M/DEFINE_SIZE_ARRAY">DEFINE_SIZE_ARRAY</dfn>(size, array) \</u></td></tr>
+<tr><th id="125">125</th><td><u>  DEFINE_COMPILES_ASSERTION ((void) (array)[0].static_size) \</u></td></tr>
+<tr><th id="126">126</th><td><u>  DEFINE_INSTANCE_ASSERTION (sizeof (*this) == (size) + (HB_VAR_ARRAY+0) * sizeof ((array)[0])) \</u></td></tr>
+<tr><th id="127">127</th><td><u>  static constexpr unsigned null_size = (size); \</u></td></tr>
+<tr><th id="128">128</th><td><u>  static constexpr unsigned min_size = (size)</u></td></tr>
+<tr><th id="129">129</th><td></td></tr>
+<tr><th id="130">130</th><td><u>#define <dfn class="macro" id="_M/DEFINE_SIZE_ARRAY_SIZED" data-ref="_M/DEFINE_SIZE_ARRAY_SIZED">DEFINE_SIZE_ARRAY_SIZED</dfn>(size, array) \</u></td></tr>
+<tr><th id="131">131</th><td><u>  unsigned int get_size () const { return (size - (array).min_size + (array).get_size ()); } \</u></td></tr>
+<tr><th id="132">132</th><td><u>  DEFINE_SIZE_ARRAY(size, array)</u></td></tr>
+<tr><th id="133">133</th><td></td></tr>
+<tr><th id="134">134</th><td></td></tr>
+<tr><th id="135">135</th><td></td></tr>
+<tr><th id="136">136</th><td><i>/*</i></td></tr>
+<tr><th id="137">137</th><td><i> * Lazy loaders.</i></td></tr>
+<tr><th id="138">138</th><td><i> *</i></td></tr>
+<tr><th id="139">139</th><td><i> * The lazy-loaders are thread-safe pointer-like objects that create their</i></td></tr>
+<tr><th id="140">140</th><td><i> * instead on-demand.  They also support access to a "data" object that is</i></td></tr>
+<tr><th id="141">141</th><td><i> * necessary for creating their instance.  The data object, if specified,</i></td></tr>
+<tr><th id="142">142</th><td><i> * is accessed via pointer math, located at a location before the position</i></td></tr>
+<tr><th id="143">143</th><td><i> * of the loader itself.  This avoids having to store a pointer to data</i></td></tr>
+<tr><th id="144">144</th><td><i> * for every lazy-loader.  Multiple lazy-loaders can access the same data.</i></td></tr>
+<tr><th id="145">145</th><td><i> */</i></td></tr>
+<tr><th id="146">146</th><td></td></tr>
+<tr><th id="147">147</th><td><b>template</b> &lt;<b>typename</b> Data, <em>unsigned</em> <em>int</em> WheresData&gt;</td></tr>
+<tr><th id="148">148</th><td><b>struct</b> <dfn class="type def" id="hb_data_wrapper_t" title='hb_data_wrapper_t' data-ref="hb_data_wrapper_t">hb_data_wrapper_t</dfn></td></tr>
+<tr><th id="149">149</th><td>{</td></tr>
+<tr><th id="150">150</th><td>  <b>static_assert</b> (<a class="tu ref" href="#hb_data_wrapper_t::WheresData" title='hb_data_wrapper_t::WheresData' data-use='r' data-ref="hb_data_wrapper_t::WheresData">WheresData</a> &gt; <var>0</var>, <q>""</q>);</td></tr>
+<tr><th id="151">151</th><td></td></tr>
+<tr><th id="152">152</th><td>  Data * <dfn class="decl def fn" id="_ZNK17hb_data_wrapper_t8get_dataEv" title='hb_data_wrapper_t::get_data' data-ref="_ZNK17hb_data_wrapper_t8get_dataEv">get_data</dfn> () <em>const</em></td></tr>
+<tr><th id="153">153</th><td>  { <b>return</b> *(((Data **) (<em>void</em> *) <b>this</b>) - <a class="tu member" href="#hb_data_wrapper_t::WheresData" title='hb_data_wrapper_t::WheresData' data-use='r' data-ref="hb_data_wrapper_t::WheresData">WheresData</a>); }</td></tr>
+<tr><th id="154">154</th><td></td></tr>
+<tr><th id="155">155</th><td>  <em>bool</em> <dfn class="decl def fn" id="_ZNK17hb_data_wrapper_t8is_inertEv" title='hb_data_wrapper_t::is_inert' data-ref="_ZNK17hb_data_wrapper_t8is_inertEv">is_inert</dfn> () <em>const</em> { <b>return</b> !<a class="member fn" href="#_ZNK17hb_data_wrapper_t8get_dataEv" title='hb_data_wrapper_t::get_data' data-ref="_ZNK17hb_data_wrapper_t8get_dataEv">get_data</a> (); }</td></tr>
+<tr><th id="156">156</th><td></td></tr>
+<tr><th id="157">157</th><td>  <b>template</b> &lt;<b>typename</b> Stored, <b>typename</b> Subclass&gt;</td></tr>
+<tr><th id="158">158</th><td>  Stored * <dfn class="decl def fn" id="_ZNK17hb_data_wrapper_t11call_createEv" title='hb_data_wrapper_t::call_create' data-ref="_ZNK17hb_data_wrapper_t11call_createEv">call_create</dfn> () <em>const</em> { <b>return</b> Subclass::create (<a class="member fn" href="#_ZNK17hb_data_wrapper_t8get_dataEv" title='hb_data_wrapper_t::get_data' data-ref="_ZNK17hb_data_wrapper_t8get_dataEv">get_data</a> ()); }</td></tr>
+<tr><th id="159">159</th><td>};</td></tr>
+<tr><th id="160">160</th><td><b>template</b> &lt;&gt;</td></tr>
+<tr><th id="161">161</th><td><b>struct</b> <dfn class="type def" id="hb_data_wrapper_t" title='hb_data_wrapper_t' data-ref="hb_data_wrapper_t"><a class="type" href="#hb_data_wrapper_t" title='hb_data_wrapper_t' data-ref="hb_data_wrapper_t">hb_data_wrapper_t</a></dfn>&lt;<em>void</em>, <var>0</var>&gt;</td></tr>
+<tr><th id="162">162</th><td>{</td></tr>
+<tr><th id="163">163</th><td>  <em>bool</em> <dfn class="decl def fn" id="_ZNK17hb_data_wrapper_tIvLj0EE8is_inertEv" title='hb_data_wrapper_t&lt;void, 0&gt;::is_inert' data-ref="_ZNK17hb_data_wrapper_tIvLj0EE8is_inertEv">is_inert</dfn> () <em>const</em> { <b>return</b> <b>false</b>; }</td></tr>
+<tr><th id="164">164</th><td></td></tr>
+<tr><th id="165">165</th><td>  <b>template</b> &lt;<b>typename</b> Stored, <b>typename</b> Funcs&gt;</td></tr>
+<tr><th id="166">166</th><td>  Stored * <dfn class="decl def fn" id="_ZNK17hb_data_wrapper_tIvLj0EE11call_createEv" title='hb_data_wrapper_t&lt;void, 0&gt;::call_create' data-ref="_ZNK17hb_data_wrapper_tIvLj0EE11call_createEv">call_create</dfn> () <em>const</em> { <b>return</b> Funcs::create (); }</td></tr>
+<tr><th id="167">167</th><td>};</td></tr>
+<tr><th id="168">168</th><td></td></tr>
+<tr><th id="169">169</th><td><b>template</b> &lt;<b>typename</b> T1, <b>typename</b> T2&gt; <b>struct</b> <dfn class="type def" id="hb_non_void_t" title='hb_non_void_t' data-ref="hb_non_void_t">hb_non_void_t</dfn> { <b>typedef</b> T1 <dfn class="typedef" id="hb_non_void_t::value" title='hb_non_void_t::value' data-type='T1' data-ref="hb_non_void_t::value">value</dfn>; };</td></tr>
+<tr><th id="170">170</th><td><b>template</b> &lt;<b>typename</b> T2&gt; <b>struct</b> <dfn class="type def" id="hb_non_void_t" title='hb_non_void_t' data-ref="hb_non_void_t">hb_non_void_t</dfn>&lt;<em>void</em>, T2&gt; { <b>typedef</b> T2 <dfn class="typedef" id="hb_non_void_t{void,type-parameter-0-0}::value" title='hb_non_void_t&lt;void, type-parameter-0-0&gt;::value' data-type='T2' data-ref="hb_non_void_t{void,type-parameter-0-0}::value">value</dfn>; };</td></tr>
+<tr><th id="171">171</th><td></td></tr>
+<tr><th id="172">172</th><td><b>template</b> &lt;<b>typename</b> Returned,</td></tr>
+<tr><th id="173">173</th><td>	  <b>typename</b> Subclass = <em>void</em>,</td></tr>
+<tr><th id="174">174</th><td>	  <b>typename</b> Data = <em>void</em>,</td></tr>
+<tr><th id="175">175</th><td>	  <em>unsigned</em> <em>int</em> WheresData = <var>0</var>,</td></tr>
+<tr><th id="176">176</th><td>	  <b>typename</b> Stored = Returned&gt;</td></tr>
+<tr><th id="177">177</th><td><b>struct</b> <dfn class="type def" id="hb_lazy_loader_t" title='hb_lazy_loader_t' data-ref="hb_lazy_loader_t">hb_lazy_loader_t</dfn> : <a class="type" href="#hb_data_wrapper_t" title='hb_data_wrapper_t' data-ref="hb_data_wrapper_t">hb_data_wrapper_t</a>&lt;Data, <a class="tu ref" href="#hb_lazy_loader_t::WheresData" title='hb_lazy_loader_t::WheresData' data-ref="hb_lazy_loader_t::WheresData">WheresData</a>&gt;</td></tr>
+<tr><th id="178">178</th><td>{</td></tr>
+<tr><th id="179">179</th><td>  <b>typedef</b> <b>typename</b> <a class="type" href="#hb_non_void_t" title='hb_non_void_t' data-ref="hb_non_void_t">hb_non_void_t</a>&lt;Subclass,</td></tr>
+<tr><th id="180">180</th><td>				 <a class="type" href="#hb_lazy_loader_t" title='hb_lazy_loader_t' data-ref="hb_lazy_loader_t">hb_lazy_loader_t</a>&lt;Returned,Subclass,Data,<a class="tu ref" href="#hb_lazy_loader_t::WheresData" title='hb_lazy_loader_t::WheresData' data-ref="hb_lazy_loader_t::WheresData">WheresData</a>,Stored&gt;</td></tr>
+<tr><th id="181">181</th><td>				&gt;::value <dfn class="typedef" id="hb_lazy_loader_t::Funcs" title='hb_lazy_loader_t::Funcs' data-type='typename hb_non_void_t&lt;Subclass, hb_lazy_loader_t&lt;Returned, Subclass, Data, WheresData, Stored&gt;&gt;::value' data-ref="hb_lazy_loader_t::Funcs">Funcs</dfn>;</td></tr>
+<tr><th id="182">182</th><td></td></tr>
+<tr><th id="183">183</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN16hb_lazy_loader_t5init0Ev" title='hb_lazy_loader_t::init0' data-ref="_ZN16hb_lazy_loader_t5init0Ev">init0</dfn> () {} <i>/* Init, when memory is already set to 0. No-op for us. */</i></td></tr>
+<tr><th id="184">184</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN16hb_lazy_loader_t4initEv" title='hb_lazy_loader_t::init' data-ref="_ZN16hb_lazy_loader_t4initEv">init</dfn> ()  { <a class="member field" href="#hb_lazy_loader_t::instance" title='hb_lazy_loader_t::instance' data-ref="hb_lazy_loader_t::instance">instance</a>.set_relaxed (<b>nullptr</b>); }</td></tr>
+<tr><th id="185">185</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN16hb_lazy_loader_t4finiEv" title='hb_lazy_loader_t::fini' data-ref="_ZN16hb_lazy_loader_t4finiEv">fini</dfn> ()  { <a class="member fn" href="#_ZN16hb_lazy_loader_t10do_destroyEPT3_" title='hb_lazy_loader_t::do_destroy' data-ref="_ZN16hb_lazy_loader_t10do_destroyEPT3_">do_destroy</a> (<span class='inlayHint'>p:&nbsp;</span><a class="member field" href="#hb_lazy_loader_t::instance" title='hb_lazy_loader_t::instance' data-ref="hb_lazy_loader_t::instance">instance</a>.get_acquire ()); <a class="member fn" href="#_ZN16hb_lazy_loader_t4initEv" title='hb_lazy_loader_t::init' data-ref="_ZN16hb_lazy_loader_t4initEv">init</a> (); }</td></tr>
+<tr><th id="186">186</th><td></td></tr>
+<tr><th id="187">187</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN16hb_lazy_loader_t13free_instanceEv" title='hb_lazy_loader_t::free_instance' data-ref="_ZN16hb_lazy_loader_t13free_instanceEv">free_instance</dfn> ()</td></tr>
+<tr><th id="188">188</th><td>  {</td></tr>
+<tr><th id="189">189</th><td>  <dfn class="lbl" id="2511retry" data-ref="2511retry">retry</dfn>:</td></tr>
+<tr><th id="190">190</th><td>    Stored *<dfn class="local col2 decl" id="2512p" title='p' data-type='Stored *' data-ref="2512p">p</dfn> = <a class="member field" href="#hb_lazy_loader_t::instance" title='hb_lazy_loader_t::instance' data-ref="hb_lazy_loader_t::instance">instance</a>.get_acquire ();</td></tr>
+<tr><th id="191">191</th><td>    <b>if</b> (<a class="macro" href="hb.hh.html#251" title="(__builtin_expect (!!(p &amp;&amp; !cmpexch (p, nullptr)), 0))" data-ref="_M/unlikely">unlikely</a> (<a class="local col2 ref" href="#2512p" title='p' data-ref="2512p">p</a> &amp;&amp; !<a class="member fn" href="#_ZNK16hb_lazy_loader_t7cmpexchEPT3_S1_" title='hb_lazy_loader_t::cmpexch' data-ref="_ZNK16hb_lazy_loader_t7cmpexchEPT3_S1_">cmpexch</a> (<a class="local col2 ref" href="#2512p" title='p' data-ref="2512p">p</a>, <b>nullptr</b>)))</td></tr>
+<tr><th id="192">192</th><td>      <b>goto</b> <a class="lbl" href="#2511retry" data-ref="2511retry">retry</a>;</td></tr>
+<tr><th id="193">193</th><td>    <a class="member fn" href="#_ZN16hb_lazy_loader_t10do_destroyEPT3_" title='hb_lazy_loader_t::do_destroy' data-ref="_ZN16hb_lazy_loader_t10do_destroyEPT3_">do_destroy</a> (<a class="local col2 ref" href="#2512p" title='p' data-ref="2512p">p</a>);</td></tr>
+<tr><th id="194">194</th><td>  }</td></tr>
+<tr><th id="195">195</th><td></td></tr>
+<tr><th id="196">196</th><td>  <em>static</em> <em>void</em> <dfn class="decl def fn" id="_ZN16hb_lazy_loader_t10do_destroyEPT3_" title='hb_lazy_loader_t::do_destroy' data-ref="_ZN16hb_lazy_loader_t10do_destroyEPT3_">do_destroy</dfn> (Stored *<dfn class="local col3 decl" id="2513p" title='p' data-type='Stored *' data-ref="2513p">p</dfn>)</td></tr>
+<tr><th id="197">197</th><td>  {</td></tr>
+<tr><th id="198">198</th><td>    <b>if</b> (<a class="local col3 ref" href="#2513p" title='p' data-ref="2513p">p</a> &amp;&amp; <a class="local col3 ref" href="#2513p" title='p' data-ref="2513p">p</a> != <b>const_cast</b>&lt;Stored *&gt; (<a class="typedef" href="#hb_lazy_loader_t::Funcs" title='hb_lazy_loader_t::Funcs' data-type='typename hb_non_void_t&lt;Subclass, hb_lazy_loader_t&lt;Returned, Subclass, Data, WheresData, Stored&gt;&gt;::value' data-ref="hb_lazy_loader_t::Funcs">Funcs</a>::get_null ()))</td></tr>
+<tr><th id="199">199</th><td>      <a class="typedef" href="#hb_lazy_loader_t::Funcs" title='hb_lazy_loader_t::Funcs' data-type='typename hb_non_void_t&lt;Subclass, hb_lazy_loader_t&lt;Returned, Subclass, Data, WheresData, Stored&gt;&gt;::value' data-ref="hb_lazy_loader_t::Funcs">Funcs</a>::destroy (<a class="local col3 ref" href="#2513p" title='p' data-ref="2513p">p</a>);</td></tr>
+<tr><th id="200">200</th><td>  }</td></tr>
+<tr><th id="201">201</th><td></td></tr>
+<tr><th id="202">202</th><td>  <em>const</em> Returned * <dfn class="decl def fn" id="_ZNK16hb_lazy_loader_tptEv" title='hb_lazy_loader_t::operator-&gt;' data-ref="_ZNK16hb_lazy_loader_tptEv"><b>operator</b> -&gt;</dfn> () <em>const</em> { <b>return</b> <a class="member fn" href="#_ZNK16hb_lazy_loader_t3getEv" title='hb_lazy_loader_t::get' data-ref="_ZNK16hb_lazy_loader_t3getEv">get</a> (); }</td></tr>
+<tr><th id="203">203</th><td>  <b>template</b> &lt;<b>typename</b> U = Returned, <a class="macro" href="hb-meta.hh.html#65" title="typename hb_enable_if&lt;(!hb_is_same&lt;U, void&gt;::value)&gt;::type* = nullptr" data-ref="_M/hb_enable_if">hb_enable_if</a> (!<a class="macro" href="hb-meta.hh.html#71" title="hb_is_same&lt;U, void&gt;::value" data-ref="_M/hb_is_same">hb_is_same</a> (U, <em>void</em>))&gt;</td></tr>
+<tr><th id="204">204</th><td>  <em>const</em> U &amp; <dfn class="decl def fn" id="_ZNK16hb_lazy_loader_tdeEv" title='hb_lazy_loader_t::operator*' data-ref="_ZNK16hb_lazy_loader_tdeEv"><b>operator</b> *</dfn> () <em>const</em>  { <b>return</b> *<a class="member fn" href="#_ZNK16hb_lazy_loader_t3getEv" title='hb_lazy_loader_t::get' data-ref="_ZNK16hb_lazy_loader_t3getEv">get</a> (); }</td></tr>
+<tr><th id="205">205</th><td>  <b>explicit</b> <dfn class="decl def fn" id="_ZNK16hb_lazy_loader_tcvbEv" title='hb_lazy_loader_t::operator bool' data-ref="_ZNK16hb_lazy_loader_tcvbEv"><b>operator</b> <em>bool</em></dfn> () <em>const</em></td></tr>
+<tr><th id="206">206</th><td>  { <b>return</b> <a class="member fn" href="#_ZNK16hb_lazy_loader_t10get_storedEv" title='hb_lazy_loader_t::get_stored' data-ref="_ZNK16hb_lazy_loader_t10get_storedEv">get_stored</a> () != <a class="typedef" href="#hb_lazy_loader_t::Funcs" title='hb_lazy_loader_t::Funcs' data-type='typename hb_non_void_t&lt;Subclass, hb_lazy_loader_t&lt;Returned, Subclass, Data, WheresData, Stored&gt;&gt;::value' data-ref="hb_lazy_loader_t::Funcs">Funcs</a>::get_null (); }</td></tr>
+<tr><th id="207">207</th><td>  <b>template</b> &lt;<b>typename</b> C&gt; <dfn class="decl def fn" id="_ZNK16hb_lazy_loader_tcvPKTL0__Ev" title='hb_lazy_loader_t::operator const type-parameter-1-0 *' data-ref="_ZNK16hb_lazy_loader_tcvPKTL0__Ev"><b>operator</b> <em>const</em> C *</dfn> () <em>const</em> { <b>return</b> <a class="member fn" href="#_ZNK16hb_lazy_loader_t3getEv" title='hb_lazy_loader_t::get' data-ref="_ZNK16hb_lazy_loader_t3getEv">get</a> (); }</td></tr>
+<tr><th id="208">208</th><td></td></tr>
+<tr><th id="209">209</th><td>  Stored * <dfn class="decl def fn" id="_ZNK16hb_lazy_loader_t10get_storedEv" title='hb_lazy_loader_t::get_stored' data-ref="_ZNK16hb_lazy_loader_t10get_storedEv">get_stored</dfn> () <em>const</em></td></tr>
+<tr><th id="210">210</th><td>  {</td></tr>
+<tr><th id="211">211</th><td>  <dfn class="lbl" id="2514retry" data-ref="2514retry">retry</dfn>:</td></tr>
+<tr><th id="212">212</th><td>    Stored *<dfn class="local col5 decl" id="2515p" title='p' data-type='Stored *' data-ref="2515p">p</dfn> = <b>this</b>-&gt;instance.get_acquire ();</td></tr>
+<tr><th id="213">213</th><td>    <b>if</b> (<a class="macro" href="hb.hh.html#251" title="(__builtin_expect (!!(!p), 0))" data-ref="_M/unlikely">unlikely</a> (!<a class="local col5 ref" href="#2515p" title='p' data-ref="2515p">p</a>))</td></tr>
+<tr><th id="214">214</th><td>    {</td></tr>
+<tr><th id="215">215</th><td>      <b>if</b> (<a class="macro" href="hb.hh.html#251" title="(__builtin_expect (!!(this-&gt;is_inert ()), 0))" data-ref="_M/unlikely">unlikely</a> (<b>this</b>-&gt;is_inert ()))</td></tr>
+<tr><th id="216">216</th><td>	<b>return</b> <b>const_cast</b>&lt;Stored *&gt; (<a class="typedef" href="#hb_lazy_loader_t::Funcs" title='hb_lazy_loader_t::Funcs' data-type='typename hb_non_void_t&lt;Subclass, hb_lazy_loader_t&lt;Returned, Subclass, Data, WheresData, Stored&gt;&gt;::value' data-ref="hb_lazy_loader_t::Funcs">Funcs</a>::get_null ());</td></tr>
+<tr><th id="217">217</th><td></td></tr>
+<tr><th id="218">218</th><td>      <a class="local col5 ref" href="#2515p" title='p' data-ref="2515p">p</a> = <b>this</b>-&gt;<b>template</b> call_create&lt;Stored, <a class="typedef" href="#hb_lazy_loader_t::Funcs" title='hb_lazy_loader_t::Funcs' data-type='typename hb_non_void_t&lt;Subclass, hb_lazy_loader_t&lt;Returned, Subclass, Data, WheresData, Stored&gt;&gt;::value' data-ref="hb_lazy_loader_t::Funcs">Funcs</a>&gt; ();</td></tr>
+<tr><th id="219">219</th><td>      <b>if</b> (<a class="macro" href="hb.hh.html#251" title="(__builtin_expect (!!(!p), 0))" data-ref="_M/unlikely">unlikely</a> (!<a class="local col5 ref" href="#2515p" title='p' data-ref="2515p">p</a>))</td></tr>
+<tr><th id="220">220</th><td>	<a class="local col5 ref" href="#2515p" title='p' data-ref="2515p">p</a> = <b>const_cast</b>&lt;Stored *&gt; (<a class="typedef" href="#hb_lazy_loader_t::Funcs" title='hb_lazy_loader_t::Funcs' data-type='typename hb_non_void_t&lt;Subclass, hb_lazy_loader_t&lt;Returned, Subclass, Data, WheresData, Stored&gt;&gt;::value' data-ref="hb_lazy_loader_t::Funcs">Funcs</a>::get_null ());</td></tr>
+<tr><th id="221">221</th><td></td></tr>
+<tr><th id="222">222</th><td>      <b>if</b> (<a class="macro" href="hb.hh.html#251" title="(__builtin_expect (!!(!cmpexch (nullptr, p)), 0))" data-ref="_M/unlikely">unlikely</a> (!<a class="member fn" href="#_ZNK16hb_lazy_loader_t7cmpexchEPT3_S1_" title='hb_lazy_loader_t::cmpexch' data-ref="_ZNK16hb_lazy_loader_t7cmpexchEPT3_S1_">cmpexch</a> (<b>nullptr</b>, <a class="local col5 ref" href="#2515p" title='p' data-ref="2515p">p</a>)))</td></tr>
+<tr><th id="223">223</th><td>      {</td></tr>
+<tr><th id="224">224</th><td>	<a class="member fn" href="#_ZN16hb_lazy_loader_t10do_destroyEPT3_" title='hb_lazy_loader_t::do_destroy' data-ref="_ZN16hb_lazy_loader_t10do_destroyEPT3_">do_destroy</a> (<a class="local col5 ref" href="#2515p" title='p' data-ref="2515p">p</a>);</td></tr>
+<tr><th id="225">225</th><td>	<b>goto</b> <a class="lbl" href="#2514retry" data-ref="2514retry">retry</a>;</td></tr>
+<tr><th id="226">226</th><td>      }</td></tr>
+<tr><th id="227">227</th><td>    }</td></tr>
+<tr><th id="228">228</th><td>    <b>return</b> <a class="local col5 ref" href="#2515p" title='p' data-ref="2515p">p</a>;</td></tr>
+<tr><th id="229">229</th><td>  }</td></tr>
+<tr><th id="230">230</th><td>  Stored * <dfn class="decl def fn" id="_ZNK16hb_lazy_loader_t18get_stored_relaxedEv" title='hb_lazy_loader_t::get_stored_relaxed' data-ref="_ZNK16hb_lazy_loader_t18get_stored_relaxedEv">get_stored_relaxed</dfn> () <em>const</em></td></tr>
+<tr><th id="231">231</th><td>  {</td></tr>
+<tr><th id="232">232</th><td>    <b>return</b> <b>this</b>-&gt;instance.get_relaxed ();</td></tr>
+<tr><th id="233">233</th><td>  }</td></tr>
+<tr><th id="234">234</th><td></td></tr>
+<tr><th id="235">235</th><td>  <em>bool</em> <dfn class="decl def fn" id="_ZNK16hb_lazy_loader_t7cmpexchEPT3_S1_" title='hb_lazy_loader_t::cmpexch' data-ref="_ZNK16hb_lazy_loader_t7cmpexchEPT3_S1_">cmpexch</dfn> (Stored *<dfn class="local col6 decl" id="2516current" title='current' data-type='Stored *' data-ref="2516current">current</dfn>, Stored *<dfn class="local col7 decl" id="2517value" title='value' data-type='Stored *' data-ref="2517value">value</dfn>) <em>const</em></td></tr>
+<tr><th id="236">236</th><td>  {</td></tr>
+<tr><th id="237">237</th><td>    <i>/* This function can only be safely called directly if no</i></td></tr>
+<tr><th id="238">238</th><td><i>     * other thread is accessing. */</i></td></tr>
+<tr><th id="239">239</th><td>    <b>return</b> <b>this</b>-&gt;instance.cmpexch (<a class="local col6 ref" href="#2516current" title='current' data-ref="2516current">current</a>, <a class="local col7 ref" href="#2517value" title='value' data-ref="2517value">value</a>);</td></tr>
+<tr><th id="240">240</th><td>  }</td></tr>
+<tr><th id="241">241</th><td></td></tr>
+<tr><th id="242">242</th><td>  <em>const</em> Returned * <dfn class="decl def fn" id="_ZNK16hb_lazy_loader_t3getEv" title='hb_lazy_loader_t::get' data-ref="_ZNK16hb_lazy_loader_t3getEv">get</dfn> () <em>const</em> { <b>return</b> <a class="typedef" href="#hb_lazy_loader_t::Funcs" title='hb_lazy_loader_t::Funcs' data-type='typename hb_non_void_t&lt;Subclass, hb_lazy_loader_t&lt;Returned, Subclass, Data, WheresData, Stored&gt;&gt;::value' data-ref="hb_lazy_loader_t::Funcs">Funcs</a>::convert (<a class="member fn" href="#_ZNK16hb_lazy_loader_t10get_storedEv" title='hb_lazy_loader_t::get_stored' data-ref="_ZNK16hb_lazy_loader_t10get_storedEv">get_stored</a> ()); }</td></tr>
+<tr><th id="243">243</th><td>  <em>const</em> Returned * <dfn class="decl def fn" id="_ZNK16hb_lazy_loader_t11get_relaxedEv" title='hb_lazy_loader_t::get_relaxed' data-ref="_ZNK16hb_lazy_loader_t11get_relaxedEv">get_relaxed</dfn> () <em>const</em> { <b>return</b> <a class="typedef" href="#hb_lazy_loader_t::Funcs" title='hb_lazy_loader_t::Funcs' data-type='typename hb_non_void_t&lt;Subclass, hb_lazy_loader_t&lt;Returned, Subclass, Data, WheresData, Stored&gt;&gt;::value' data-ref="hb_lazy_loader_t::Funcs">Funcs</a>::convert (<a class="member fn" href="#_ZNK16hb_lazy_loader_t18get_stored_relaxedEv" title='hb_lazy_loader_t::get_stored_relaxed' data-ref="_ZNK16hb_lazy_loader_t18get_stored_relaxedEv">get_stored_relaxed</a> ()); }</td></tr>
+<tr><th id="244">244</th><td>  Returned * <dfn class="decl def fn" id="_ZNK16hb_lazy_loader_t11get_unconstEv" title='hb_lazy_loader_t::get_unconst' data-ref="_ZNK16hb_lazy_loader_t11get_unconstEv">get_unconst</dfn> () <em>const</em> { <b>return</b> <b>const_cast</b>&lt;Returned *&gt; (<a class="typedef" href="#hb_lazy_loader_t::Funcs" title='hb_lazy_loader_t::Funcs' data-type='typename hb_non_void_t&lt;Subclass, hb_lazy_loader_t&lt;Returned, Subclass, Data, WheresData, Stored&gt;&gt;::value' data-ref="hb_lazy_loader_t::Funcs">Funcs</a>::convert (<a class="member fn" href="#_ZNK16hb_lazy_loader_t10get_storedEv" title='hb_lazy_loader_t::get_stored' data-ref="_ZNK16hb_lazy_loader_t10get_storedEv">get_stored</a> ())); }</td></tr>
+<tr><th id="245">245</th><td></td></tr>
+<tr><th id="246">246</th><td>  <i>/* To be possibly overloaded by subclasses. */</i></td></tr>
+<tr><th id="247">247</th><td>  <em>static</em> Returned* <dfn class="decl def fn" id="_ZN16hb_lazy_loader_t7convertEPT3_" title='hb_lazy_loader_t::convert' data-ref="_ZN16hb_lazy_loader_t7convertEPT3_">convert</dfn> (Stored *<dfn class="local col8 decl" id="2518p" title='p' data-type='Stored *' data-ref="2518p">p</dfn>) { <b>return</b> <a class="local col8 ref" href="#2518p" title='p' data-ref="2518p">p</a>; }</td></tr>
+<tr><th id="248">248</th><td></td></tr>
+<tr><th id="249">249</th><td>  <i>/* By default null/init/fini the object. */</i></td></tr>
+<tr><th id="250">250</th><td>  <em>static</em> <em>const</em> Stored* <dfn class="decl def fn" id="_ZN16hb_lazy_loader_t8get_nullEv" title='hb_lazy_loader_t::get_null' data-ref="_ZN16hb_lazy_loader_t8get_nullEv">get_null</dfn> () { <b>return</b> &amp;<a class="macro" href="hb-null.hh.html#124" title="NullHelper&lt;Stored&gt;::get_null ()" data-ref="_M/Null">Null</a> (Stored); }</td></tr>
+<tr><th id="251">251</th><td>  <em>static</em> Stored *<dfn class="decl def fn" id="_ZN16hb_lazy_loader_t6createEPT1_" title='hb_lazy_loader_t::create' data-ref="_ZN16hb_lazy_loader_t6createEPT1_">create</dfn> (Data *<dfn class="local col9 decl" id="2519data" title='data' data-type='Data *' data-ref="2519data">data</dfn>)</td></tr>
+<tr><th id="252">252</th><td>  {</td></tr>
+<tr><th id="253">253</th><td>    Stored *<dfn class="local col0 decl" id="2520p" title='p' data-type='Stored *' data-ref="2520p">p</dfn> = (Stored *) <a class="macro" href="hb.hh.html#239" title="calloc" data-ref="_M/hb_calloc">hb_calloc</a> (<span class='inlayHint'>nmemb:&nbsp;</span><var>1</var>, <span class='inlayHint'>size:&nbsp;</span><b>sizeof</b> (Stored));</td></tr>
+<tr><th id="254">254</th><td>    <b>if</b> (<a class="macro" href="hb.hh.html#250" title="(__builtin_expect (!!(p), 1))" data-ref="_M/likely">likely</a> (<a class="local col0 ref" href="#2520p" title='p' data-ref="2520p">p</a>))</td></tr>
+<tr><th id="255">255</th><td>      <a class="local col0 ref" href="#2520p" title='p' data-ref="2520p">p</a> = <b>new</b> (<a class="local col0 ref" href="#2520p" title='p' data-ref="2520p">p</a>) Stored (<a class="local col9 ref" href="#2519data" title='data' data-ref="2519data">data</a>);</td></tr>
+<tr><th id="256">256</th><td>    <b>return</b> <a class="local col0 ref" href="#2520p" title='p' data-ref="2520p">p</a>;</td></tr>
+<tr><th id="257">257</th><td>  }</td></tr>
+<tr><th id="258">258</th><td>  <em>static</em> Stored *<dfn class="decl def fn" id="_ZN16hb_lazy_loader_t6createEv" title='hb_lazy_loader_t::create' data-ref="_ZN16hb_lazy_loader_t6createEv">create</dfn> ()</td></tr>
+<tr><th id="259">259</th><td>  {</td></tr>
+<tr><th id="260">260</th><td>    Stored *<dfn class="local col1 decl" id="2521p" title='p' data-type='Stored *' data-ref="2521p">p</dfn> = (Stored *) <a class="macro" href="hb.hh.html#239" title="calloc" data-ref="_M/hb_calloc">hb_calloc</a> (<span class='inlayHint'>nmemb:&nbsp;</span><var>1</var>, <span class='inlayHint'>size:&nbsp;</span><b>sizeof</b> (Stored));</td></tr>
+<tr><th id="261">261</th><td>    <b>if</b> (<a class="macro" href="hb.hh.html#250" title="(__builtin_expect (!!(p), 1))" data-ref="_M/likely">likely</a> (<a class="local col1 ref" href="#2521p" title='p' data-ref="2521p">p</a>))</td></tr>
+<tr><th id="262">262</th><td>      <a class="local col1 ref" href="#2521p" title='p' data-ref="2521p">p</a> = <b>new</b> (<a class="local col1 ref" href="#2521p" title='p' data-ref="2521p">p</a>) Stored ();</td></tr>
+<tr><th id="263">263</th><td>    <b>return</b> <a class="local col1 ref" href="#2521p" title='p' data-ref="2521p">p</a>;</td></tr>
+<tr><th id="264">264</th><td>  }</td></tr>
+<tr><th id="265">265</th><td>  <em>static</em> <em>void</em> <dfn class="decl def fn" id="_ZN16hb_lazy_loader_t7destroyEPT3_" title='hb_lazy_loader_t::destroy' data-ref="_ZN16hb_lazy_loader_t7destroyEPT3_">destroy</dfn> (Stored *<dfn class="local col2 decl" id="2522p" title='p' data-type='Stored *' data-ref="2522p">p</dfn>)</td></tr>
+<tr><th id="266">266</th><td>  {</td></tr>
+<tr><th id="267">267</th><td>    <a class="local col2 ref" href="#2522p" title='p' data-ref="2522p">p</a>-&gt;~Stored ();</td></tr>
+<tr><th id="268">268</th><td>    <a class="macro" href="hb.hh.html#241" title="free" data-ref="_M/hb_free">hb_free</a> (<a class="local col2 ref" href="#2522p" title='p' data-ref="2522p">p</a>);</td></tr>
+<tr><th id="269">269</th><td>  }</td></tr>
+<tr><th id="270">270</th><td></td></tr>
+<tr><th id="271">271</th><td>  <b>private</b>:</td></tr>
+<tr><th id="272">272</th><td>  <i>/* Must only have one pointer. */</i></td></tr>
+<tr><th id="273">273</th><td>  <a class="type" href="hb-atomic.hh.html#hb_atomic_ptr_t" title='hb_atomic_ptr_t' data-ref="hb_atomic_ptr_t">hb_atomic_ptr_t</a>&lt;Stored *&gt; <dfn class="decl field" id="hb_lazy_loader_t::instance" title='hb_lazy_loader_t::instance' data-ref="hb_lazy_loader_t::instance">instance</dfn>;</td></tr>
+<tr><th id="274">274</th><td>};</td></tr>
+<tr><th id="275">275</th><td></td></tr>
+<tr><th id="276">276</th><td><i>/* Specializations. */</i></td></tr>
+<tr><th id="277">277</th><td></td></tr>
+<tr><th id="278">278</th><td><b>template</b> &lt;<b>typename</b> T, <em>unsigned</em> <em>int</em> WheresFace&gt;</td></tr>
+<tr><th id="279">279</th><td><b>struct</b> <dfn class="type def" id="hb_face_lazy_loader_t" title='hb_face_lazy_loader_t' data-ref="hb_face_lazy_loader_t">hb_face_lazy_loader_t</dfn> : <a class="type" href="#hb_lazy_loader_t" title='hb_lazy_loader_t' data-ref="hb_lazy_loader_t">hb_lazy_loader_t</a>&lt;T,</td></tr>
+<tr><th id="280">280</th><td>						<a class="type" href="#hb_face_lazy_loader_t" title='hb_face_lazy_loader_t' data-ref="hb_face_lazy_loader_t">hb_face_lazy_loader_t</a>&lt;T, <a class="tu ref" href="#hb_face_lazy_loader_t::WheresFace" title='hb_face_lazy_loader_t::WheresFace' data-ref="hb_face_lazy_loader_t::WheresFace">WheresFace</a>&gt;,</td></tr>
+<tr><th id="281">281</th><td>						<a class="typedef" href="hb-face.h.html#hb_face_t" title='hb_face_t' data-type='struct hb_face_t' data-ref="hb_face_t">hb_face_t</a>, <a class="tu ref" href="#hb_face_lazy_loader_t::WheresFace" title='hb_face_lazy_loader_t::WheresFace' data-ref="hb_face_lazy_loader_t::WheresFace">WheresFace</a>&gt; {};</td></tr>
+<tr><th id="282">282</th><td></td></tr>
+<tr><th id="283">283</th><td><b>template</b> &lt;<b>typename</b> T, <em>unsigned</em> <em>int</em> WheresFace, <em>bool</em> core=<b>false</b>&gt;</td></tr>
+<tr><th id="284">284</th><td><b>struct</b> <dfn class="type def" id="hb_table_lazy_loader_t" title='hb_table_lazy_loader_t' data-ref="hb_table_lazy_loader_t">hb_table_lazy_loader_t</dfn> : <a class="type" href="#hb_lazy_loader_t" title='hb_lazy_loader_t' data-ref="hb_lazy_loader_t">hb_lazy_loader_t</a>&lt;T,</td></tr>
+<tr><th id="285">285</th><td>						 <a class="type" href="#hb_table_lazy_loader_t" title='hb_table_lazy_loader_t' data-ref="hb_table_lazy_loader_t">hb_table_lazy_loader_t</a>&lt;T, <a class="tu ref" href="#hb_table_lazy_loader_t::WheresFace" title='hb_table_lazy_loader_t::WheresFace' data-ref="hb_table_lazy_loader_t::WheresFace">WheresFace</a>, <a class="tu ref" href="#hb_table_lazy_loader_t::core" title='hb_table_lazy_loader_t::core' data-ref="hb_table_lazy_loader_t::core">core</a>&gt;,</td></tr>
+<tr><th id="286">286</th><td>						 <a class="typedef" href="hb-face.h.html#hb_face_t" title='hb_face_t' data-type='struct hb_face_t' data-ref="hb_face_t">hb_face_t</a>, <a class="tu ref" href="#hb_table_lazy_loader_t::WheresFace" title='hb_table_lazy_loader_t::WheresFace' data-ref="hb_table_lazy_loader_t::WheresFace">WheresFace</a>,</td></tr>
+<tr><th id="287">287</th><td>						 <a class="typedef" href="hb-blob.h.html#hb_blob_t" title='hb_blob_t' data-type='struct hb_blob_t' data-ref="hb_blob_t">hb_blob_t</a>&gt;</td></tr>
+<tr><th id="288">288</th><td>{</td></tr>
+<tr><th id="289">289</th><td>  <em>static</em> <a class="typedef" href="hb-blob.h.html#hb_blob_t" title='hb_blob_t' data-type='struct hb_blob_t' data-ref="hb_blob_t">hb_blob_t</a> *<dfn class="decl def fn" id="_ZN22hb_table_lazy_loader_t6createEP9hb_face_t" title='hb_table_lazy_loader_t::create' data-ref="_ZN22hb_table_lazy_loader_t6createEP9hb_face_t">create</dfn> (<a class="typedef" href="hb-face.h.html#hb_face_t" title='hb_face_t' data-type='struct hb_face_t' data-ref="hb_face_t">hb_face_t</a> *<dfn class="local col3 decl" id="2523face" title='face' data-type='hb_face_t *' data-ref="2523face">face</dfn>)</td></tr>
+<tr><th id="290">290</th><td>  {</td></tr>
+<tr><th id="291">291</th><td>    <em>auto</em> <dfn class="local col4 decl" id="2524c" title='c' data-type='hb_sanitize_context_t' data-ref="2524c">c</dfn> = <a class="type" href="hb-sanitize.hh.html#hb_sanitize_context_t" title='hb_sanitize_context_t' data-ref="hb_sanitize_context_t">hb_sanitize_context_t</a> <a class="ref fn" href="hb-sanitize.hh.html#_ZN21hb_sanitize_context_tC1Ev" title='hb_sanitize_context_t::hb_sanitize_context_t' data-ref="_ZN21hb_sanitize_context_tC1Ev">(</a>);</td></tr>
+<tr><th id="292">292</th><td>    <b>if</b> (<a class="tu member" href="#hb_table_lazy_loader_t::core" title='hb_table_lazy_loader_t::core' data-use='r' data-ref="hb_table_lazy_loader_t::core">core</a>)</td></tr>
+<tr><th id="293">293</th><td>      <a class="local col4 ref" href="#2524c" title='c' data-ref="2524c">c</a>.<a class="ref fn" href="hb-sanitize.hh.html#_ZN21hb_sanitize_context_t14set_num_glyphsEj" title='hb_sanitize_context_t::set_num_glyphs' data-ref="_ZN21hb_sanitize_context_t14set_num_glyphsEj">set_num_glyphs</a> (<var>0</var>); <i>// So we don't recurse ad infinitum, or doesn't need num_glyphs</i></td></tr>
+<tr><th id="294">294</th><td>    <b>return</b> <a class="local col4 ref" href="#2524c" title='c' data-ref="2524c">c</a>.reference_table&lt;T&gt; (<a class="local col3 ref" href="#2523face" title='face' data-ref="2523face">face</a>);</td></tr>
+<tr><th id="295">295</th><td>  }</td></tr>
+<tr><th id="296">296</th><td>  <em>static</em> <em>void</em> <dfn class="decl def fn" id="_ZN22hb_table_lazy_loader_t7destroyEP9hb_blob_t" title='hb_table_lazy_loader_t::destroy' data-ref="_ZN22hb_table_lazy_loader_t7destroyEP9hb_blob_t">destroy</dfn> (<a class="typedef" href="hb-blob.h.html#hb_blob_t" title='hb_blob_t' data-type='struct hb_blob_t' data-ref="hb_blob_t">hb_blob_t</a> *<dfn class="local col5 decl" id="2525p" title='p' data-type='hb_blob_t *' data-ref="2525p">p</dfn>) { <a class="ref fn" href="hb-blob.h.html#hb_blob_destroy" title='hb_blob_destroy' data-ref="hb_blob_destroy">hb_blob_destroy</a> (<span class='inlayHint'>blob:&nbsp;</span><a class="local col5 ref" href="#2525p" title='p' data-ref="2525p">p</a>); }</td></tr>
+<tr><th id="297">297</th><td></td></tr>
+<tr><th id="298">298</th><td>  <em>static</em> <em>const</em> <a class="typedef" href="hb-blob.h.html#hb_blob_t" title='hb_blob_t' data-type='struct hb_blob_t' data-ref="hb_blob_t">hb_blob_t</a> *<dfn class="decl def fn" id="_ZN22hb_table_lazy_loader_t8get_nullEv" title='hb_table_lazy_loader_t::get_null' data-ref="_ZN22hb_table_lazy_loader_t8get_nullEv">get_null</dfn> ()</td></tr>
+<tr><th id="299">299</th><td>  { <b>return</b> <a class="ref fn" href="hb-blob.h.html#hb_blob_get_empty" title='hb_blob_get_empty' data-ref="hb_blob_get_empty">hb_blob_get_empty</a> (); }</td></tr>
+<tr><th id="300">300</th><td></td></tr>
+<tr><th id="301">301</th><td>  <em>static</em> <em>const</em> T* <dfn class="decl def fn" id="_ZN22hb_table_lazy_loader_t7convertEPK9hb_blob_t" title='hb_table_lazy_loader_t::convert' data-ref="_ZN22hb_table_lazy_loader_t7convertEPK9hb_blob_t">convert</dfn> (<em>const</em> <a class="typedef" href="hb-blob.h.html#hb_blob_t" title='hb_blob_t' data-type='struct hb_blob_t' data-ref="hb_blob_t">hb_blob_t</a> *<dfn class="local col6 decl" id="2526blob" title='blob' data-type='const hb_blob_t *' data-ref="2526blob">blob</dfn>)</td></tr>
+<tr><th id="302">302</th><td>  { <b>return</b> <a class="local col6 ref" href="#2526blob" title='blob' data-ref="2526blob">blob</a>-&gt;as&lt;T&gt; (); }</td></tr>
+<tr><th id="303">303</th><td></td></tr>
+<tr><th id="304">304</th><td>  <a class="typedef" href="hb-blob.h.html#hb_blob_t" title='hb_blob_t' data-type='struct hb_blob_t' data-ref="hb_blob_t">hb_blob_t</a>* <dfn class="decl def fn" id="_ZNK22hb_table_lazy_loader_t8get_blobEv" title='hb_table_lazy_loader_t::get_blob' data-ref="_ZNK22hb_table_lazy_loader_t8get_blobEv">get_blob</dfn> () <em>const</em> { <b>return</b> <b>this</b>-&gt;get_stored (); }</td></tr>
+<tr><th id="305">305</th><td>};</td></tr>
+<tr><th id="306">306</th><td></td></tr>
+<tr><th id="307">307</th><td><u>#define <dfn class="macro" id="_M/HB_DEFINE_TYPE_FUNCS_LAZY_LOADER_T" data-ref="_M/HB_DEFINE_TYPE_FUNCS_LAZY_LOADER_T">HB_DEFINE_TYPE_FUNCS_LAZY_LOADER_T</dfn>(Type) \</u></td></tr>
+<tr><th id="308">308</th><td><u>  template &lt;typename Subclass&gt; \</u></td></tr>
+<tr><th id="309">309</th><td><u>  struct hb_##Type##_funcs_lazy_loader_t : <a class="type" href="#hb_lazy_loader_t" title='hb_lazy_loader_t' data-ref="hb_lazy_loader_t">hb_lazy_loader_t</a>&lt;hb_##Type##_funcs_t, Subclass&gt; \</u></td></tr>
+<tr><th id="310">310</th><td><u>  { \</u></td></tr>
+<tr><th id="311">311</th><td><u>    static void <dfn class="decl def fn" id="_ZN27hb_font_funcs_lazy_loader_t7destroyEP15hb_font_funcs_t" title='hb_font_funcs_lazy_loader_t::destroy' data-ref="_ZN27hb_font_funcs_lazy_loader_t7destroyEP15hb_font_funcs_t"><dfn class="decl def fn" id="_ZN30hb_unicode_funcs_lazy_loader_t7destroyEP18hb_unicode_funcs_t" title='hb_unicode_funcs_lazy_loader_t::destroy' data-ref="_ZN30hb_unicode_funcs_lazy_loader_t7destroyEP18hb_unicode_funcs_t"><dfn class="decl def fn" id="_ZN27hb_draw_funcs_lazy_loader_t7destroyEP15hb_draw_funcs_t" title='hb_draw_funcs_lazy_loader_t::destroy' data-ref="_ZN27hb_draw_funcs_lazy_loader_t7destroyEP15hb_draw_funcs_t"><dfn class="decl def fn" id="_ZN28hb_paint_funcs_lazy_loader_t7destroyEP16hb_paint_funcs_t" title='hb_paint_funcs_lazy_loader_t::destroy' data-ref="_ZN28hb_paint_funcs_lazy_loader_t7destroyEP16hb_paint_funcs_t">destroy</dfn></dfn></dfn></dfn> (hb_##Type##_funcs_t *<dfn class="local col7 decl" id="2527p" title='p' data-type='hb_font_funcs_t *' data-ref="2527p"><dfn class="local col8 decl" id="2528p" title='p' data-type='hb_unicode_funcs_t *' data-ref="2528p"><dfn class="local col9 decl" id="2529p" title='p' data-type='hb_draw_funcs_t *' data-ref="2529p"><dfn class="local col0 decl" id="2530p" title='p' data-type='hb_paint_funcs_t *' data-ref="2530p">p</dfn></dfn></dfn></dfn>) \</u></td></tr>
+<tr><th id="312">312</th><td><u>    { hb_##Type##_funcs_destroy (<a class="local col7 ref" href="#317" title='p' data-ref="2527p"><a class="local col8 ref" href="#318" title='p' data-ref="2528p"><a class="local col9 ref" href="#319" title='p' data-ref="2529p"><a class="local col0 ref" href="#320" title='p' data-ref="2530p">p</a></a></a></a>); } \</u></td></tr>
+<tr><th id="313">313</th><td><u>    static const hb_##Type##_funcs_t *<dfn class="decl def fn" id="_ZN27hb_font_funcs_lazy_loader_t8get_nullEv" title='hb_font_funcs_lazy_loader_t::get_null' data-ref="_ZN27hb_font_funcs_lazy_loader_t8get_nullEv"><dfn class="decl def fn" id="_ZN30hb_unicode_funcs_lazy_loader_t8get_nullEv" title='hb_unicode_funcs_lazy_loader_t::get_null' data-ref="_ZN30hb_unicode_funcs_lazy_loader_t8get_nullEv"><dfn class="decl def fn" id="_ZN27hb_draw_funcs_lazy_loader_t8get_nullEv" title='hb_draw_funcs_lazy_loader_t::get_null' data-ref="_ZN27hb_draw_funcs_lazy_loader_t8get_nullEv"><dfn class="decl def fn" id="_ZN28hb_paint_funcs_lazy_loader_t8get_nullEv" title='hb_paint_funcs_lazy_loader_t::get_null' data-ref="_ZN28hb_paint_funcs_lazy_loader_t8get_nullEv">get_null</dfn></dfn></dfn></dfn> () \</u></td></tr>
+<tr><th id="314">314</th><td><u>    { return hb_##Type##_funcs_get_empty (); } \</u></td></tr>
+<tr><th id="315">315</th><td><u>  }</u></td></tr>
+<tr><th id="316">316</th><td></td></tr>
+<tr><th id="317">317</th><td><a class="macro" href="#307" title="template &lt;typename Subclass&gt; struct hb_font_funcs_lazy_loader_t : hb_lazy_loader_t&lt;hb_font_funcs_t, Subclass&gt; { static void destroy (hb_font_funcs_t *p) { hb_font_funcs_destroy (p); } static const hb_font_funcs_t *get_null () { return hb_font_funcs_get_empty (); } }" data-ref="_M/HB_DEFINE_TYPE_FUNCS_LAZY_LOADER_T">HB_DEFINE_TYPE_FUNCS_LAZY_LOADER_T</a> (font);</td></tr>
+<tr><th id="318">318</th><td><a class="macro" href="#307" title="template &lt;typename Subclass&gt; struct hb_unicode_funcs_lazy_loader_t : hb_lazy_loader_t&lt;hb_unicode_funcs_t, Subclass&gt; { static void destroy (hb_unicode_funcs_t *p) { hb_unicode_funcs_destroy (p); } static const hb_unicode_funcs_t *get_null () { return hb_unicode_funcs_get_empty (); } }" data-ref="_M/HB_DEFINE_TYPE_FUNCS_LAZY_LOADER_T">HB_DEFINE_TYPE_FUNCS_LAZY_LOADER_T</a> (unicode);</td></tr>
+<tr><th id="319">319</th><td><a class="macro" href="#307" title="template &lt;typename Subclass&gt; struct hb_draw_funcs_lazy_loader_t : hb_lazy_loader_t&lt;hb_draw_funcs_t, Subclass&gt; { static void destroy (hb_draw_funcs_t *p) { hb_draw_funcs_destroy (p); } static const hb_draw_funcs_t *get_null () { return hb_draw_funcs_get_empty (); } }" data-ref="_M/HB_DEFINE_TYPE_FUNCS_LAZY_LOADER_T">HB_DEFINE_TYPE_FUNCS_LAZY_LOADER_T</a> (draw);</td></tr>
+<tr><th id="320">320</th><td><a class="macro" href="#307" title="template &lt;typename Subclass&gt; struct hb_paint_funcs_lazy_loader_t : hb_lazy_loader_t&lt;hb_paint_funcs_t, Subclass&gt; { static void destroy (hb_paint_funcs_t *p) { hb_paint_funcs_destroy (p); } static const hb_paint_funcs_t *get_null () { return hb_paint_funcs_get_empty (); } }" data-ref="_M/HB_DEFINE_TYPE_FUNCS_LAZY_LOADER_T">HB_DEFINE_TYPE_FUNCS_LAZY_LOADER_T</a> (paint);</td></tr>
+<tr><th id="321">321</th><td></td></tr>
+<tr><th id="322">322</th><td><u>#undef <a class="macro" href="#307" data-ref="_M/HB_DEFINE_TYPE_FUNCS_LAZY_LOADER_T">HB_DEFINE_TYPE_FUNCS_LAZY_LOADER_T</a></u></td></tr>
+<tr><th id="323">323</th><td></td></tr>
+<tr><th id="324">324</th><td></td></tr>
+<tr><th id="325">325</th><td><u>#<span data-ppcond="29">endif</span> /* HB_MACHINERY_HH */</u></td></tr>
+<tr><th id="326">326</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../hb-dummy.cc.html'>qtbase-6.5.0/src/3rdparty/harfbuzz-ng/hb-dummy.cc</a><br/>Generated on <em>2024-Jun-13</em> from project qtbase-6.5.0 revision <em>6.5.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

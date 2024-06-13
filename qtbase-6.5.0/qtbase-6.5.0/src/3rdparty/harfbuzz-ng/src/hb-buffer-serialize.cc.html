@@ -1,0 +1,890 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>hb-buffer-serialize.cc source code [qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/hb-buffer-serialize.cc] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'qtbase-6.5.0/src/3rdparty/harfbuzz-ng/src/hb-buffer-serialize.cc'; var root_path = '../../../../..'; var data_path = '../../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../..'>qtbase-6.5.0</a>/<a href='../../..'>src</a>/<a href='../..'>3rdparty</a>/<a href='..'>harfbuzz-ng</a>/<a href='./'>src</a>/<a href='hb-buffer-serialize.cc.html'>hb-buffer-serialize.cc</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*</i></td></tr>
+<tr><th id="2">2</th><td><i> * Copyright © 2012,2013  Google, Inc.</i></td></tr>
+<tr><th id="3">3</th><td><i> *</i></td></tr>
+<tr><th id="4">4</th><td><i> *  This is part of HarfBuzz, a text shaping library.</i></td></tr>
+<tr><th id="5">5</th><td><i> *</i></td></tr>
+<tr><th id="6">6</th><td><i> * Permission is hereby granted, without written agreement and without</i></td></tr>
+<tr><th id="7">7</th><td><i> * license or royalty fees, to use, copy, modify, and distribute this</i></td></tr>
+<tr><th id="8">8</th><td><i> * software and its documentation for any purpose, provided that the</i></td></tr>
+<tr><th id="9">9</th><td><i> * above copyright notice and the following two paragraphs appear in</i></td></tr>
+<tr><th id="10">10</th><td><i> * all copies of this software.</i></td></tr>
+<tr><th id="11">11</th><td><i> *</i></td></tr>
+<tr><th id="12">12</th><td><i> * IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR</i></td></tr>
+<tr><th id="13">13</th><td><i> * DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES</i></td></tr>
+<tr><th id="14">14</th><td><i> * ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN</i></td></tr>
+<tr><th id="15">15</th><td><i> * IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH</i></td></tr>
+<tr><th id="16">16</th><td><i> * DAMAGE.</i></td></tr>
+<tr><th id="17">17</th><td><i> *</i></td></tr>
+<tr><th id="18">18</th><td><i> * THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,</i></td></tr>
+<tr><th id="19">19</th><td><i> * BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND</i></td></tr>
+<tr><th id="20">20</th><td><i> * FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS</i></td></tr>
+<tr><th id="21">21</th><td><i> * ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO</i></td></tr>
+<tr><th id="22">22</th><td><i> * PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.</i></td></tr>
+<tr><th id="23">23</th><td><i> *</i></td></tr>
+<tr><th id="24">24</th><td><i> * Google Author(s): Behdad Esfahbod</i></td></tr>
+<tr><th id="25">25</th><td><i> */</i></td></tr>
+<tr><th id="26">26</th><td></td></tr>
+<tr><th id="27">27</th><td><u>#include <a href="hb.hh.html">"hb.hh"</a></u></td></tr>
+<tr><th id="28">28</th><td></td></tr>
+<tr><th id="29">29</th><td><u>#<span data-ppcond="29">ifndef</span> <span class="macro" data-ref="_M/HB_NO_BUFFER_SERIALIZE">HB_NO_BUFFER_SERIALIZE</span></u></td></tr>
+<tr><th id="30">30</th><td></td></tr>
+<tr><th id="31">31</th><td><u>#include <a href="hb-buffer.hh.html">"hb-buffer.hh"</a></u></td></tr>
+<tr><th id="32">32</th><td></td></tr>
+<tr><th id="33">33</th><td></td></tr>
+<tr><th id="34">34</th><td><em>static</em> <em>const</em> <em>char</em> *<dfn class="tu decl def" id="_hb_buffer_serialize_formats" title='_hb_buffer_serialize_formats' data-type='const char *[3]' data-ref="_hb_buffer_serialize_formats">_hb_buffer_serialize_formats</dfn>[] = {</td></tr>
+<tr><th id="35">35</th><td>  <q>"text"</q>,</td></tr>
+<tr><th id="36">36</th><td>  <q>"json"</q>,</td></tr>
+<tr><th id="37">37</th><td>  <b>nullptr</b></td></tr>
+<tr><th id="38">38</th><td>};</td></tr>
+<tr><th id="39">39</th><td></td></tr>
+<tr><th id="40">40</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="41">41</th><td><i class="doc"> * hb_buffer_serialize_list_formats:</i></td></tr>
+<tr><th id="42">42</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="43">43</th><td><i class="doc"> * Returns a list of supported buffer serialization formats.</i></td></tr>
+<tr><th id="44">44</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="45">45</th><td><i class="doc"> * Return value: (transfer none):</i></td></tr>
+<tr><th id="46">46</th><td><i class="doc"> * A string array of buffer serialization formats. Should not be freed.</i></td></tr>
+<tr><th id="47">47</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="48">48</th><td><i class="doc"> * Since: 0.9.7</i></td></tr>
+<tr><th id="49">49</th><td><i class="doc"> **/</i></td></tr>
+<tr><th id="50">50</th><td><em>const</em> <em>char</em> **</td></tr>
+<tr><th id="51">51</th><td><dfn class="decl def fn" id="hb_buffer_serialize_list_formats" title='hb_buffer_serialize_list_formats' data-ref="hb_buffer_serialize_list_formats">hb_buffer_serialize_list_formats</dfn> ()</td></tr>
+<tr><th id="52">52</th><td>{</td></tr>
+<tr><th id="53">53</th><td>  <b>return</b> <a class="tu ref" href="#_hb_buffer_serialize_formats" title='_hb_buffer_serialize_formats' data-use='r' data-ref="_hb_buffer_serialize_formats">_hb_buffer_serialize_formats</a>;</td></tr>
+<tr><th id="54">54</th><td>}</td></tr>
+<tr><th id="55">55</th><td></td></tr>
+<tr><th id="56">56</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="57">57</th><td><i class="doc"> * hb_buffer_serialize_format_from_string:</i></td></tr>
+<tr><th id="58">58</th><td><i class="doc"> *<span class="command"> @str</span>: (array length=len) (element-type uint8_t): a string to parse</i></td></tr>
+<tr><th id="59">59</th><td><i class="doc"> *<span class="command"> @len</span>: length of<span class="command"> @str</span>, or -1 if string is `NULL` terminated</i></td></tr>
+<tr><th id="60">60</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="61">61</th><td><i class="doc"> * Parses a string into an #hb_buffer_serialize_format_t. Does not check if</i></td></tr>
+<tr><th id="62">62</th><td><i class="doc"> *<span class="command"> @str</span> is a valid buffer serialization format, use</i></td></tr>
+<tr><th id="63">63</th><td><i class="doc"> * hb_buffer_serialize_list_formats() to get the list of supported formats.</i></td></tr>
+<tr><th id="64">64</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="65">65</th><td><i class="doc"> * Return value:</i></td></tr>
+<tr><th id="66">66</th><td><i class="doc"> * The parsed #hb_buffer_serialize_format_t.</i></td></tr>
+<tr><th id="67">67</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="68">68</th><td><i class="doc"> * Since: 0.9.7</i></td></tr>
+<tr><th id="69">69</th><td><i class="doc"> **/</i></td></tr>
+<tr><th id="70">70</th><td><a class="typedef" href="hb-buffer.h.html#hb_buffer_serialize_format_t" title='hb_buffer_serialize_format_t' data-type='enum hb_buffer_serialize_format_t' data-ref="hb_buffer_serialize_format_t">hb_buffer_serialize_format_t</a></td></tr>
+<tr><th id="71">71</th><td><dfn class="decl def fn" id="hb_buffer_serialize_format_from_string" title='hb_buffer_serialize_format_from_string' data-ref="hb_buffer_serialize_format_from_string">hb_buffer_serialize_format_from_string</dfn> (<em>const</em> <em>char</em> *<dfn class="local col1 decl" id="1str" title='str' data-type='const char *' data-ref="1str">str</dfn>, <em>int</em> <dfn class="local col2 decl" id="2len" title='len' data-type='int' data-ref="2len">len</dfn>)</td></tr>
+<tr><th id="72">72</th><td>{</td></tr>
+<tr><th id="73">73</th><td>  <i>/* Upper-case it. */</i></td></tr>
+<tr><th id="74">74</th><td>  <b>return</b> (<a class="typedef" href="hb-buffer.h.html#hb_buffer_serialize_format_t" title='hb_buffer_serialize_format_t' data-type='enum hb_buffer_serialize_format_t' data-ref="hb_buffer_serialize_format_t">hb_buffer_serialize_format_t</a>) (<a class="ref fn" href="hb-common.h.html#hb_tag_from_string" title='hb_tag_from_string' data-ref="hb_tag_from_string">hb_tag_from_string</a> (<a class="local col1 ref" href="#1str" title='str' data-ref="1str">str</a>, <a class="local col2 ref" href="#2len" title='len' data-ref="2len">len</a>) &amp; ~<var>0x20202020u</var>);</td></tr>
+<tr><th id="75">75</th><td>}</td></tr>
+<tr><th id="76">76</th><td></td></tr>
+<tr><th id="77">77</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="78">78</th><td><i class="doc"> * hb_buffer_serialize_format_to_string:</i></td></tr>
+<tr><th id="79">79</th><td><i class="doc"> *<span class="command"> @format</span>: an #hb_buffer_serialize_format_t to convert.</i></td></tr>
+<tr><th id="80">80</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="81">81</th><td><i class="doc"> * Converts<span class="command"> @format</span> to the string corresponding it, or `NULL` if it is not a valid</i></td></tr>
+<tr><th id="82">82</th><td><i class="doc"> * #hb_buffer_serialize_format_t.</i></td></tr>
+<tr><th id="83">83</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="84">84</th><td><i class="doc"> * Return value: (transfer none):</i></td></tr>
+<tr><th id="85">85</th><td><i class="doc"> * A `NULL` terminated string corresponding to<span class="command"> @format</span>. Should not be freed.</i></td></tr>
+<tr><th id="86">86</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="87">87</th><td><i class="doc"> * Since: 0.9.7</i></td></tr>
+<tr><th id="88">88</th><td><i class="doc"> **/</i></td></tr>
+<tr><th id="89">89</th><td><em>const</em> <em>char</em> *</td></tr>
+<tr><th id="90">90</th><td><dfn class="decl def fn" id="hb_buffer_serialize_format_to_string" title='hb_buffer_serialize_format_to_string' data-ref="hb_buffer_serialize_format_to_string">hb_buffer_serialize_format_to_string</dfn> (<a class="typedef" href="hb-buffer.h.html#hb_buffer_serialize_format_t" title='hb_buffer_serialize_format_t' data-type='enum hb_buffer_serialize_format_t' data-ref="hb_buffer_serialize_format_t">hb_buffer_serialize_format_t</a> <dfn class="local col3 decl" id="3format" title='format' data-type='hb_buffer_serialize_format_t' data-ref="3format">format</dfn>)</td></tr>
+<tr><th id="91">91</th><td>{</td></tr>
+<tr><th id="92">92</th><td>  <b>switch</b> ((<em>unsigned</em>) <a class="local col3 ref" href="#3format" title='format' data-ref="3format">format</a>)</td></tr>
+<tr><th id="93">93</th><td>  {</td></tr>
+<tr><th id="94">94</th><td>    <b>case</b> <a class="enum" href="hb-buffer.h.html#HB_BUFFER_SERIALIZE_FORMAT_TEXT" title='HB_BUFFER_SERIALIZE_FORMAT_TEXT' data-ref="HB_BUFFER_SERIALIZE_FORMAT_TEXT">HB_BUFFER_SERIALIZE_FORMAT_TEXT</a>: <b>return</b> <a class="tu ref" href="#_hb_buffer_serialize_formats" title='_hb_buffer_serialize_formats' data-use='r' data-ref="_hb_buffer_serialize_formats">_hb_buffer_serialize_formats</a>[<var>0</var>];</td></tr>
+<tr><th id="95">95</th><td>    <b>case</b> <a class="enum" href="hb-buffer.h.html#HB_BUFFER_SERIALIZE_FORMAT_JSON" title='HB_BUFFER_SERIALIZE_FORMAT_JSON' data-ref="HB_BUFFER_SERIALIZE_FORMAT_JSON">HB_BUFFER_SERIALIZE_FORMAT_JSON</a>: <b>return</b> <a class="tu ref" href="#_hb_buffer_serialize_formats" title='_hb_buffer_serialize_formats' data-use='r' data-ref="_hb_buffer_serialize_formats">_hb_buffer_serialize_formats</a>[<var>1</var>];</td></tr>
+<tr><th id="96">96</th><td>    <b>default</b>:</td></tr>
+<tr><th id="97">97</th><td>    <b>case</b> <a class="enum" href="hb-buffer.h.html#HB_BUFFER_SERIALIZE_FORMAT_INVALID" title='HB_BUFFER_SERIALIZE_FORMAT_INVALID' data-ref="HB_BUFFER_SERIALIZE_FORMAT_INVALID">HB_BUFFER_SERIALIZE_FORMAT_INVALID</a>:  <b>return</b> <b>nullptr</b>;</td></tr>
+<tr><th id="98">98</th><td>  }</td></tr>
+<tr><th id="99">99</th><td>}</td></tr>
+<tr><th id="100">100</th><td></td></tr>
+<tr><th id="101">101</th><td><em>static</em> <em>unsigned</em> <em>int</em></td></tr>
+<tr><th id="102">102</th><td><dfn class="tu decl def fn" id="_ZL32_hb_buffer_serialize_glyphs_jsonP11hb_buffer_tjjPcjPjP9hb_font_t27hb_buffer_serialize_flags_t" title='_hb_buffer_serialize_glyphs_json' data-type='unsigned int _hb_buffer_serialize_glyphs_json(hb_buffer_t * buffer, unsigned int start, unsigned int end, char * buf, unsigned int buf_size, unsigned int * buf_consumed, hb_font_t * font, hb_buffer_serialize_flags_t flags)' data-ref="_ZL32_hb_buffer_serialize_glyphs_jsonP11hb_buffer_tjjPcjPjP9hb_font_t27hb_buffer_serialize_flags_t">_hb_buffer_serialize_glyphs_json</dfn> (<a class="typedef" href="hb-buffer.h.html#hb_buffer_t" title='hb_buffer_t' data-type='struct hb_buffer_t' data-ref="hb_buffer_t">hb_buffer_t</a> *<dfn class="local col4 decl" id="4buffer" title='buffer' data-type='hb_buffer_t *' data-ref="4buffer">buffer</dfn>,</td></tr>
+<tr><th id="103">103</th><td>                                  <em>unsigned</em> <em>int</em> <dfn class="local col5 decl" id="5start" title='start' data-type='unsigned int' data-ref="5start">start</dfn>,</td></tr>
+<tr><th id="104">104</th><td>                                  <em>unsigned</em> <em>int</em> <dfn class="local col6 decl" id="6end" title='end' data-type='unsigned int' data-ref="6end">end</dfn>,</td></tr>
+<tr><th id="105">105</th><td>                                  <em>char</em> *<dfn class="local col7 decl" id="7buf" title='buf' data-type='char *' data-ref="7buf">buf</dfn>,</td></tr>
+<tr><th id="106">106</th><td>                                  <em>unsigned</em> <em>int</em> <dfn class="local col8 decl" id="8buf_size" title='buf_size' data-type='unsigned int' data-ref="8buf_size">buf_size</dfn>,</td></tr>
+<tr><th id="107">107</th><td>                                  <em>unsigned</em> <em>int</em> *<dfn class="local col9 decl" id="9buf_consumed" title='buf_consumed' data-type='unsigned int *' data-ref="9buf_consumed">buf_consumed</dfn>,</td></tr>
+<tr><th id="108">108</th><td>                                  <a class="typedef" href="hb-common.h.html#hb_font_t" title='hb_font_t' data-type='struct hb_font_t' data-ref="hb_font_t">hb_font_t</a> *<dfn class="local col0 decl" id="10font" title='font' data-type='hb_font_t *' data-ref="10font">font</dfn>,</td></tr>
+<tr><th id="109">109</th><td>                                  <a class="typedef" href="hb-buffer.h.html#hb_buffer_serialize_flags_t" title='hb_buffer_serialize_flags_t' data-type='enum hb_buffer_serialize_flags_t' data-ref="hb_buffer_serialize_flags_t">hb_buffer_serialize_flags_t</a> <dfn class="local col1 decl" id="11flags" title='flags' data-type='hb_buffer_serialize_flags_t' data-ref="11flags">flags</dfn>)</td></tr>
+<tr><th id="110">110</th><td>{</td></tr>
+<tr><th id="111">111</th><td>  <a class="typedef" href="hb-buffer.h.html#hb_glyph_info_t" title='hb_glyph_info_t' data-type='struct hb_glyph_info_t' data-ref="hb_glyph_info_t">hb_glyph_info_t</a> *<dfn class="local col2 decl" id="12info" title='info' data-type='hb_glyph_info_t *' data-ref="12info">info</dfn> = <a class="ref fn" href="hb-buffer.h.html#hb_buffer_get_glyph_infos" title='hb_buffer_get_glyph_infos' data-ref="hb_buffer_get_glyph_infos">hb_buffer_get_glyph_infos</a> (<a class="local col4 ref" href="#4buffer" title='buffer' data-ref="4buffer">buffer</a>, <span class='inlayHint'>length:&nbsp;</span><b>nullptr</b>);</td></tr>
+<tr><th id="112">112</th><td>  <a class="typedef" href="hb-buffer.h.html#hb_glyph_position_t" title='hb_glyph_position_t' data-type='struct hb_glyph_position_t' data-ref="hb_glyph_position_t">hb_glyph_position_t</a> *<dfn class="local col3 decl" id="13pos" title='pos' data-type='hb_glyph_position_t *' data-ref="13pos">pos</dfn> = (<a class="local col1 ref" href="#11flags" title='flags' data-ref="11flags">flags</a> <a class="ref fn" href="hb-buffer.hh.html#43" title='operator&amp;' data-ref="_Zan27hb_buffer_serialize_flags_tS_">&amp;</a> <a class="enum" href="hb-buffer.h.html#HB_BUFFER_SERIALIZE_FLAG_NO_POSITIONS" title='HB_BUFFER_SERIALIZE_FLAG_NO_POSITIONS' data-ref="HB_BUFFER_SERIALIZE_FLAG_NO_POSITIONS">HB_BUFFER_SERIALIZE_FLAG_NO_POSITIONS</a>) ?</td></tr>
+<tr><th id="113">113</th><td>                             <b>nullptr</b> : <a class="ref fn" href="hb-buffer.h.html#hb_buffer_get_glyph_positions" title='hb_buffer_get_glyph_positions' data-ref="hb_buffer_get_glyph_positions">hb_buffer_get_glyph_positions</a> (<a class="local col4 ref" href="#4buffer" title='buffer' data-ref="4buffer">buffer</a>, <span class='inlayHint'>length:&nbsp;</span><b>nullptr</b>);</td></tr>
+<tr><th id="114">114</th><td></td></tr>
+<tr><th id="115">115</th><td>  *<a class="local col9 ref" href="#9buf_consumed" title='buf_consumed' data-ref="9buf_consumed">buf_consumed</a> = <var>0</var>;</td></tr>
+<tr><th id="116">116</th><td>  <a class="typedef" href="hb-common.h.html#hb_position_t" title='hb_position_t' data-type='int32_t' data-ref="hb_position_t">hb_position_t</a> <dfn class="local col4 decl" id="14x" title='x' data-type='hb_position_t' data-ref="14x">x</dfn> = <var>0</var>, <dfn class="local col5 decl" id="15y" title='y' data-type='hb_position_t' data-ref="15y">y</dfn> = <var>0</var>;</td></tr>
+<tr><th id="117">117</th><td>  <b>for</b> (<em>unsigned</em> <em>int</em> <dfn class="local col6 decl" id="16i" title='i' data-type='unsigned int' data-ref="16i">i</dfn> = <a class="local col5 ref" href="#5start" title='start' data-ref="5start">start</a>; <a class="local col6 ref" href="#16i" title='i' data-ref="16i">i</a> &lt; <a class="local col6 ref" href="#6end" title='end' data-ref="6end">end</a>; <a class="local col6 ref" href="#16i" title='i' data-ref="16i">i</a>++)</td></tr>
+<tr><th id="118">118</th><td>  {</td></tr>
+<tr><th id="119">119</th><td>    <em>char</em> <dfn class="local col7 decl" id="17b" title='b' data-type='char[1024]' data-ref="17b">b</dfn>[<var>1024</var>];</td></tr>
+<tr><th id="120">120</th><td>    <em>char</em> *<dfn class="local col8 decl" id="18p" title='p' data-type='char *' data-ref="18p">p</dfn> = <a class="local col7 ref" href="#17b" title='b' data-ref="17b">b</a>;</td></tr>
+<tr><th id="121">121</th><td></td></tr>
+<tr><th id="122">122</th><td>    <i>/* In the following code, we know b is large enough that no overflow can happen. */</i></td></tr>
+<tr><th id="123">123</th><td></td></tr>
+<tr><th id="124">124</th><td><u>#define <dfn class="macro" id="_M/APPEND" data-ref="_M/APPEND">APPEND</dfn>(s) HB_STMT_START { <a class="ref fn" href="../../../../../include/string.h.html#strcpy" title='strcpy' data-ref="strcpy">strcpy</a> (<a class="local col8 ref" href="#18p" title='p' data-ref="18p"><a class="local col3 ref" href="#33p" title='p' data-ref="33p">p</a></a>, s); <a class="local col8 ref" href="#18p" title='p' data-ref="18p"><a class="local col3 ref" href="#33p" title='p' data-ref="33p">p</a></a> += <a class="ref fn" href="../../../../../include/string.h.html#strlen" title='strlen' data-ref="strlen">strlen</a> (s); } HB_STMT_END</u></td></tr>
+<tr><th id="125">125</th><td></td></tr>
+<tr><th id="126">126</th><td>    <b>if</b> (<a class="local col6 ref" href="#16i" title='i' data-ref="16i">i</a>)</td></tr>
+<tr><th id="127">127</th><td>      *<a class="local col8 ref" href="#18p" title='p' data-ref="18p">p</a>++ = <kbd>','</kbd>;</td></tr>
+<tr><th id="128">128</th><td>    <b>else</b></td></tr>
+<tr><th id="129">129</th><td>      *<a class="local col8 ref" href="#18p" title='p' data-ref="18p">p</a>++ = <kbd>'['</kbd>;</td></tr>
+<tr><th id="130">130</th><td></td></tr>
+<tr><th id="131">131</th><td>    *<a class="local col8 ref" href="#18p" title='p' data-ref="18p">p</a>++ = <kbd>'{'</kbd>;</td></tr>
+<tr><th id="132">132</th><td></td></tr>
+<tr><th id="133">133</th><td>    <a class="macro" href="#124" title="do { strcpy (p, &quot;\&quot;g\&quot;:&quot;); p += strlen (&quot;\&quot;g\&quot;:&quot;); } while (0)" data-ref="_M/APPEND">APPEND</a> (<q>"\"g\":"</q>);</td></tr>
+<tr><th id="134">134</th><td>    <b>if</b> (!(<a class="local col1 ref" href="#11flags" title='flags' data-ref="11flags">flags</a> <a class="ref fn" href="hb-buffer.hh.html#43" title='operator&amp;' data-ref="_Zan27hb_buffer_serialize_flags_tS_">&amp;</a> <a class="enum" href="hb-buffer.h.html#HB_BUFFER_SERIALIZE_FLAG_NO_GLYPH_NAMES" title='HB_BUFFER_SERIALIZE_FLAG_NO_GLYPH_NAMES' data-ref="HB_BUFFER_SERIALIZE_FLAG_NO_GLYPH_NAMES">HB_BUFFER_SERIALIZE_FLAG_NO_GLYPH_NAMES</a>))</td></tr>
+<tr><th id="135">135</th><td>    {</td></tr>
+<tr><th id="136">136</th><td>      <em>char</em> <dfn class="local col9 decl" id="19g" title='g' data-type='char[128]' data-ref="19g">g</dfn>[<var>128</var>];</td></tr>
+<tr><th id="137">137</th><td>      <a class="ref fn" href="hb-font.h.html#hb_font_glyph_to_string" title='hb_font_glyph_to_string' data-ref="hb_font_glyph_to_string">hb_font_glyph_to_string</a> (<a class="local col0 ref" href="#10font" title='font' data-ref="10font">font</a>, <span class='inlayHint'>glyph:&nbsp;</span><a class="local col2 ref" href="#12info" title='info' data-ref="12info">info</a>[<a class="local col6 ref" href="#16i" title='i' data-ref="16i">i</a>].<a class="ref field" href="hb-buffer.h.html#hb_glyph_info_t::codepoint" title='hb_glyph_info_t::codepoint' data-ref="hb_glyph_info_t::codepoint">codepoint</a>, <span class='inlayHint'>s:&nbsp;</span><a class="local col9 ref" href="#19g" title='g' data-ref="19g">g</a>, <span class='inlayHint'>size:&nbsp;</span><b>sizeof</b> (<a class="local col9 ref" href="#19g" title='g' data-ref="19g">g</a>));</td></tr>
+<tr><th id="138">138</th><td>      *<a class="local col8 ref" href="#18p" title='p' data-ref="18p">p</a>++ = <kbd>'"'</kbd>;</td></tr>
+<tr><th id="139">139</th><td>      <b>for</b> (<em>char</em> *<dfn class="local col0 decl" id="20q" title='q' data-type='char *' data-ref="20q">q</dfn> = <a class="local col9 ref" href="#19g" title='g' data-ref="19g">g</a>; *<a class="local col0 ref" href="#20q" title='q' data-ref="20q">q</a>; <a class="local col0 ref" href="#20q" title='q' data-ref="20q">q</a>++)</td></tr>
+<tr><th id="140">140</th><td>      {</td></tr>
+<tr><th id="141">141</th><td>	<b>if</b> (<a class="macro" href="hb.hh.html#251" title="(__builtin_expect (!!(*q == &apos;&quot;&apos; || *q == &apos;\\&apos;), 0))" data-ref="_M/unlikely">unlikely</a> (*<a class="local col0 ref" href="#20q" title='q' data-ref="20q">q</a> == <kbd>'"'</kbd> || *<a class="local col0 ref" href="#20q" title='q' data-ref="20q">q</a> == <kbd>'\\'</kbd>))</td></tr>
+<tr><th id="142">142</th><td>	  *<a class="local col8 ref" href="#18p" title='p' data-ref="18p">p</a>++ = <kbd>'\\'</kbd>;</td></tr>
+<tr><th id="143">143</th><td>	*<a class="local col8 ref" href="#18p" title='p' data-ref="18p">p</a>++ = *<a class="local col0 ref" href="#20q" title='q' data-ref="20q">q</a>;</td></tr>
+<tr><th id="144">144</th><td>      }</td></tr>
+<tr><th id="145">145</th><td>      *<a class="local col8 ref" href="#18p" title='p' data-ref="18p">p</a>++ = <kbd>'"'</kbd>;</td></tr>
+<tr><th id="146">146</th><td>    }</td></tr>
+<tr><th id="147">147</th><td>    <b>else</b></td></tr>
+<tr><th id="148">148</th><td>      <a class="local col8 ref" href="#18p" title='p' data-ref="18p">p</a> += <a class="ref" href="hb-algs.hh.html#583" title='hb_max' data-ref="hb_max">hb_max</a> (<var>0</var>, <a class="ref fn" href="../../../../../include/stdio.h.html#snprintf" title='snprintf' data-ref="snprintf">snprintf</a> (<span class='inlayHint'>s:&nbsp;</span><a class="local col8 ref" href="#18p" title='p' data-ref="18p">p</a>, <span class='inlayHint'>maxlen:&nbsp;</span><a class="ref fn" href="hb-algs.hh.html#_ZL12ARRAY_LENGTHRAT0__KT_" title='ARRAY_LENGTH' data-ref="_ZL12ARRAY_LENGTHRAT0__KT_">ARRAY_LENGTH</a> (<a class="local col7 ref" href="#17b" title='b' data-ref="17b">b</a>) - (<a class="local col8 ref" href="#18p" title='p' data-ref="18p">p</a> - <a class="local col7 ref" href="#17b" title='b' data-ref="17b">b</a>), <span class='inlayHint'>format:&nbsp;</span><q>"%u"</q>, <a class="local col2 ref" href="#12info" title='info' data-ref="12info">info</a>[<a class="local col6 ref" href="#16i" title='i' data-ref="16i">i</a>].<a class="ref field" href="hb-buffer.h.html#hb_glyph_info_t::codepoint" title='hb_glyph_info_t::codepoint' data-ref="hb_glyph_info_t::codepoint">codepoint</a>));</td></tr>
+<tr><th id="149">149</th><td></td></tr>
+<tr><th id="150">150</th><td>    <b>if</b> (!(<a class="local col1 ref" href="#11flags" title='flags' data-ref="11flags">flags</a> <a class="ref fn" href="hb-buffer.hh.html#43" title='operator&amp;' data-ref="_Zan27hb_buffer_serialize_flags_tS_">&amp;</a> <a class="enum" href="hb-buffer.h.html#HB_BUFFER_SERIALIZE_FLAG_NO_CLUSTERS" title='HB_BUFFER_SERIALIZE_FLAG_NO_CLUSTERS' data-ref="HB_BUFFER_SERIALIZE_FLAG_NO_CLUSTERS">HB_BUFFER_SERIALIZE_FLAG_NO_CLUSTERS</a>)) {</td></tr>
+<tr><th id="151">151</th><td>      <a class="local col8 ref" href="#18p" title='p' data-ref="18p">p</a> += <a class="ref" href="hb-algs.hh.html#583" title='hb_max' data-ref="hb_max">hb_max</a> (<var>0</var>, <a class="ref fn" href="../../../../../include/stdio.h.html#snprintf" title='snprintf' data-ref="snprintf">snprintf</a> (<span class='inlayHint'>s:&nbsp;</span><a class="local col8 ref" href="#18p" title='p' data-ref="18p">p</a>, <span class='inlayHint'>maxlen:&nbsp;</span><a class="ref fn" href="hb-algs.hh.html#_ZL12ARRAY_LENGTHRAT0__KT_" title='ARRAY_LENGTH' data-ref="_ZL12ARRAY_LENGTHRAT0__KT_">ARRAY_LENGTH</a> (<a class="local col7 ref" href="#17b" title='b' data-ref="17b">b</a>) - (<a class="local col8 ref" href="#18p" title='p' data-ref="18p">p</a> - <a class="local col7 ref" href="#17b" title='b' data-ref="17b">b</a>), <span class='inlayHint'>format:&nbsp;</span><q>",\"cl\":%u"</q>, <a class="local col2 ref" href="#12info" title='info' data-ref="12info">info</a>[<a class="local col6 ref" href="#16i" title='i' data-ref="16i">i</a>].<a class="ref field" href="hb-buffer.h.html#hb_glyph_info_t::cluster" title='hb_glyph_info_t::cluster' data-ref="hb_glyph_info_t::cluster">cluster</a>));</td></tr>
+<tr><th id="152">152</th><td>    }</td></tr>
+<tr><th id="153">153</th><td></td></tr>
+<tr><th id="154">154</th><td>    <b>if</b> (!(<a class="local col1 ref" href="#11flags" title='flags' data-ref="11flags">flags</a> <a class="ref fn" href="hb-buffer.hh.html#43" title='operator&amp;' data-ref="_Zan27hb_buffer_serialize_flags_tS_">&amp;</a> <a class="enum" href="hb-buffer.h.html#HB_BUFFER_SERIALIZE_FLAG_NO_POSITIONS" title='HB_BUFFER_SERIALIZE_FLAG_NO_POSITIONS' data-ref="HB_BUFFER_SERIALIZE_FLAG_NO_POSITIONS">HB_BUFFER_SERIALIZE_FLAG_NO_POSITIONS</a>))</td></tr>
+<tr><th id="155">155</th><td>    {</td></tr>
+<tr><th id="156">156</th><td>      <a class="local col8 ref" href="#18p" title='p' data-ref="18p">p</a> += <a class="ref" href="hb-algs.hh.html#583" title='hb_max' data-ref="hb_max">hb_max</a> (<var>0</var>, <a class="ref fn" href="../../../../../include/stdio.h.html#snprintf" title='snprintf' data-ref="snprintf">snprintf</a> (<span class='inlayHint'>s:&nbsp;</span><a class="local col8 ref" href="#18p" title='p' data-ref="18p">p</a>, <span class='inlayHint'>maxlen:&nbsp;</span><a class="ref fn" href="hb-algs.hh.html#_ZL12ARRAY_LENGTHRAT0__KT_" title='ARRAY_LENGTH' data-ref="_ZL12ARRAY_LENGTHRAT0__KT_">ARRAY_LENGTH</a> (<a class="local col7 ref" href="#17b" title='b' data-ref="17b">b</a>) - (<a class="local col8 ref" href="#18p" title='p' data-ref="18p">p</a> - <a class="local col7 ref" href="#17b" title='b' data-ref="17b">b</a>), <span class='inlayHint'>format:&nbsp;</span><q>",\"dx\":%d,\"dy\":%d"</q>,</td></tr>
+<tr><th id="157">157</th><td>		   <a class="local col4 ref" href="#14x" title='x' data-ref="14x">x</a>+<a class="local col3 ref" href="#13pos" title='pos' data-ref="13pos">pos</a>[<a class="local col6 ref" href="#16i" title='i' data-ref="16i">i</a>].<a class="ref field" href="hb-buffer.h.html#hb_glyph_position_t::x_offset" title='hb_glyph_position_t::x_offset' data-ref="hb_glyph_position_t::x_offset">x_offset</a>, <a class="local col5 ref" href="#15y" title='y' data-ref="15y">y</a>+<a class="local col3 ref" href="#13pos" title='pos' data-ref="13pos">pos</a>[<a class="local col6 ref" href="#16i" title='i' data-ref="16i">i</a>].<a class="ref field" href="hb-buffer.h.html#hb_glyph_position_t::y_offset" title='hb_glyph_position_t::y_offset' data-ref="hb_glyph_position_t::y_offset">y_offset</a>));</td></tr>
+<tr><th id="158">158</th><td>      <b>if</b> (!(<a class="local col1 ref" href="#11flags" title='flags' data-ref="11flags">flags</a> <a class="ref fn" href="hb-buffer.hh.html#43" title='operator&amp;' data-ref="_Zan27hb_buffer_serialize_flags_tS_">&amp;</a> <a class="enum" href="hb-buffer.h.html#HB_BUFFER_SERIALIZE_FLAG_NO_ADVANCES" title='HB_BUFFER_SERIALIZE_FLAG_NO_ADVANCES' data-ref="HB_BUFFER_SERIALIZE_FLAG_NO_ADVANCES">HB_BUFFER_SERIALIZE_FLAG_NO_ADVANCES</a>))</td></tr>
+<tr><th id="159">159</th><td>        <a class="local col8 ref" href="#18p" title='p' data-ref="18p">p</a> += <a class="ref" href="hb-algs.hh.html#583" title='hb_max' data-ref="hb_max">hb_max</a> (<var>0</var>, <a class="ref fn" href="../../../../../include/stdio.h.html#snprintf" title='snprintf' data-ref="snprintf">snprintf</a> (<span class='inlayHint'>s:&nbsp;</span><a class="local col8 ref" href="#18p" title='p' data-ref="18p">p</a>, <span class='inlayHint'>maxlen:&nbsp;</span><a class="ref fn" href="hb-algs.hh.html#_ZL12ARRAY_LENGTHRAT0__KT_" title='ARRAY_LENGTH' data-ref="_ZL12ARRAY_LENGTHRAT0__KT_">ARRAY_LENGTH</a> (<a class="local col7 ref" href="#17b" title='b' data-ref="17b">b</a>) - (<a class="local col8 ref" href="#18p" title='p' data-ref="18p">p</a> - <a class="local col7 ref" href="#17b" title='b' data-ref="17b">b</a>), <span class='inlayHint'>format:&nbsp;</span><q>",\"ax\":%d,\"ay\":%d"</q>,</td></tr>
+<tr><th id="160">160</th><td>		     <a class="local col3 ref" href="#13pos" title='pos' data-ref="13pos">pos</a>[<a class="local col6 ref" href="#16i" title='i' data-ref="16i">i</a>].<a class="ref field" href="hb-buffer.h.html#hb_glyph_position_t::x_advance" title='hb_glyph_position_t::x_advance' data-ref="hb_glyph_position_t::x_advance">x_advance</a>, <a class="local col3 ref" href="#13pos" title='pos' data-ref="13pos">pos</a>[<a class="local col6 ref" href="#16i" title='i' data-ref="16i">i</a>].<a class="ref field" href="hb-buffer.h.html#hb_glyph_position_t::y_advance" title='hb_glyph_position_t::y_advance' data-ref="hb_glyph_position_t::y_advance">y_advance</a>));</td></tr>
+<tr><th id="161">161</th><td>    }</td></tr>
+<tr><th id="162">162</th><td></td></tr>
+<tr><th id="163">163</th><td>    <b>if</b> (<a class="local col1 ref" href="#11flags" title='flags' data-ref="11flags">flags</a> <a class="ref fn" href="hb-buffer.hh.html#43" title='operator&amp;' data-ref="_Zan27hb_buffer_serialize_flags_tS_">&amp;</a> <a class="enum" href="hb-buffer.h.html#HB_BUFFER_SERIALIZE_FLAG_GLYPH_FLAGS" title='HB_BUFFER_SERIALIZE_FLAG_GLYPH_FLAGS' data-ref="HB_BUFFER_SERIALIZE_FLAG_GLYPH_FLAGS">HB_BUFFER_SERIALIZE_FLAG_GLYPH_FLAGS</a>)</td></tr>
+<tr><th id="164">164</th><td>    {</td></tr>
+<tr><th id="165">165</th><td>      <b>if</b> (<a class="local col2 ref" href="#12info" title='info' data-ref="12info">info</a>[<a class="local col6 ref" href="#16i" title='i' data-ref="16i">i</a>].<a class="ref field" href="hb-buffer.h.html#hb_glyph_info_t::mask" title='hb_glyph_info_t::mask' data-ref="hb_glyph_info_t::mask">mask</a> &amp; <a class="enum" href="hb-buffer.h.html#HB_GLYPH_FLAG_DEFINED" title='HB_GLYPH_FLAG_DEFINED' data-ref="HB_GLYPH_FLAG_DEFINED">HB_GLYPH_FLAG_DEFINED</a>)</td></tr>
+<tr><th id="166">166</th><td>        <a class="local col8 ref" href="#18p" title='p' data-ref="18p">p</a> += <a class="ref" href="hb-algs.hh.html#583" title='hb_max' data-ref="hb_max">hb_max</a> (<var>0</var>, <a class="ref fn" href="../../../../../include/stdio.h.html#snprintf" title='snprintf' data-ref="snprintf">snprintf</a> (<span class='inlayHint'>s:&nbsp;</span><a class="local col8 ref" href="#18p" title='p' data-ref="18p">p</a>, <span class='inlayHint'>maxlen:&nbsp;</span><a class="ref fn" href="hb-algs.hh.html#_ZL12ARRAY_LENGTHRAT0__KT_" title='ARRAY_LENGTH' data-ref="_ZL12ARRAY_LENGTHRAT0__KT_">ARRAY_LENGTH</a> (<a class="local col7 ref" href="#17b" title='b' data-ref="17b">b</a>) - (<a class="local col8 ref" href="#18p" title='p' data-ref="18p">p</a> - <a class="local col7 ref" href="#17b" title='b' data-ref="17b">b</a>), <span class='inlayHint'>format:&nbsp;</span><q>",\"fl\":%u"</q>, <a class="local col2 ref" href="#12info" title='info' data-ref="12info">info</a>[<a class="local col6 ref" href="#16i" title='i' data-ref="16i">i</a>].<a class="ref field" href="hb-buffer.h.html#hb_glyph_info_t::mask" title='hb_glyph_info_t::mask' data-ref="hb_glyph_info_t::mask">mask</a> &amp; <a class="enum" href="hb-buffer.h.html#HB_GLYPH_FLAG_DEFINED" title='HB_GLYPH_FLAG_DEFINED' data-ref="HB_GLYPH_FLAG_DEFINED">HB_GLYPH_FLAG_DEFINED</a>));</td></tr>
+<tr><th id="167">167</th><td>    }</td></tr>
+<tr><th id="168">168</th><td></td></tr>
+<tr><th id="169">169</th><td>    <b>if</b> (<a class="local col1 ref" href="#11flags" title='flags' data-ref="11flags">flags</a> <a class="ref fn" href="hb-buffer.hh.html#43" title='operator&amp;' data-ref="_Zan27hb_buffer_serialize_flags_tS_">&amp;</a> <a class="enum" href="hb-buffer.h.html#HB_BUFFER_SERIALIZE_FLAG_GLYPH_EXTENTS" title='HB_BUFFER_SERIALIZE_FLAG_GLYPH_EXTENTS' data-ref="HB_BUFFER_SERIALIZE_FLAG_GLYPH_EXTENTS">HB_BUFFER_SERIALIZE_FLAG_GLYPH_EXTENTS</a>)</td></tr>
+<tr><th id="170">170</th><td>    {</td></tr>
+<tr><th id="171">171</th><td>      <a class="typedef" href="hb-common.h.html#hb_glyph_extents_t" title='hb_glyph_extents_t' data-type='struct hb_glyph_extents_t' data-ref="hb_glyph_extents_t">hb_glyph_extents_t</a> <a class="ref fn fake" href="hb-common.h.html#911" title='hb_glyph_extents_t::hb_glyph_extents_t' data-ref="_ZN18hb_glyph_extents_tC1Ev"></a><dfn class="local col1 decl" id="21extents" title='extents' data-type='hb_glyph_extents_t' data-ref="21extents">extents</dfn>;</td></tr>
+<tr><th id="172">172</th><td>      <a class="ref fn" href="hb-font.h.html#hb_font_get_glyph_extents" title='hb_font_get_glyph_extents' data-ref="hb_font_get_glyph_extents">hb_font_get_glyph_extents</a>(<a class="local col0 ref" href="#10font" title='font' data-ref="10font">font</a>, <span class='inlayHint'>glyph:&nbsp;</span><a class="local col2 ref" href="#12info" title='info' data-ref="12info">info</a>[<a class="local col6 ref" href="#16i" title='i' data-ref="16i">i</a>].<a class="ref field" href="hb-buffer.h.html#hb_glyph_info_t::codepoint" title='hb_glyph_info_t::codepoint' data-ref="hb_glyph_info_t::codepoint">codepoint</a>, <span class='inlayHint'>extents:&nbsp;</span>&amp;<a class="local col1 ref" href="#21extents" title='extents' data-ref="21extents">extents</a>);</td></tr>
+<tr><th id="173">173</th><td>      <a class="local col8 ref" href="#18p" title='p' data-ref="18p">p</a> += <a class="ref" href="hb-algs.hh.html#583" title='hb_max' data-ref="hb_max">hb_max</a> (<var>0</var>, <a class="ref fn" href="../../../../../include/stdio.h.html#snprintf" title='snprintf' data-ref="snprintf">snprintf</a> (<span class='inlayHint'>s:&nbsp;</span><a class="local col8 ref" href="#18p" title='p' data-ref="18p">p</a>, <span class='inlayHint'>maxlen:&nbsp;</span><a class="ref fn" href="hb-algs.hh.html#_ZL12ARRAY_LENGTHRAT0__KT_" title='ARRAY_LENGTH' data-ref="_ZL12ARRAY_LENGTHRAT0__KT_">ARRAY_LENGTH</a> (<a class="local col7 ref" href="#17b" title='b' data-ref="17b">b</a>) - (<a class="local col8 ref" href="#18p" title='p' data-ref="18p">p</a> - <a class="local col7 ref" href="#17b" title='b' data-ref="17b">b</a>), <span class='inlayHint'>format:&nbsp;</span><q>",\"xb\":%d,\"yb\":%d"</q>,</td></tr>
+<tr><th id="174">174</th><td>                                <a class="local col1 ref" href="#21extents" title='extents' data-ref="21extents">extents</a>.<a class="ref field" href="hb-common.h.html#hb_glyph_extents_t::x_bearing" title='hb_glyph_extents_t::x_bearing' data-ref="hb_glyph_extents_t::x_bearing">x_bearing</a>, <a class="local col1 ref" href="#21extents" title='extents' data-ref="21extents">extents</a>.<a class="ref field" href="hb-common.h.html#hb_glyph_extents_t::y_bearing" title='hb_glyph_extents_t::y_bearing' data-ref="hb_glyph_extents_t::y_bearing">y_bearing</a>));</td></tr>
+<tr><th id="175">175</th><td>      <a class="local col8 ref" href="#18p" title='p' data-ref="18p">p</a> += <a class="ref" href="hb-algs.hh.html#583" title='hb_max' data-ref="hb_max">hb_max</a> (<var>0</var>, <a class="ref fn" href="../../../../../include/stdio.h.html#snprintf" title='snprintf' data-ref="snprintf">snprintf</a> (<span class='inlayHint'>s:&nbsp;</span><a class="local col8 ref" href="#18p" title='p' data-ref="18p">p</a>, <span class='inlayHint'>maxlen:&nbsp;</span><a class="ref fn" href="hb-algs.hh.html#_ZL12ARRAY_LENGTHRAT0__KT_" title='ARRAY_LENGTH' data-ref="_ZL12ARRAY_LENGTHRAT0__KT_">ARRAY_LENGTH</a> (<a class="local col7 ref" href="#17b" title='b' data-ref="17b">b</a>) - (<a class="local col8 ref" href="#18p" title='p' data-ref="18p">p</a> - <a class="local col7 ref" href="#17b" title='b' data-ref="17b">b</a>), <span class='inlayHint'>format:&nbsp;</span><q>",\"w\":%d,\"h\":%d"</q>,</td></tr>
+<tr><th id="176">176</th><td>                                <a class="local col1 ref" href="#21extents" title='extents' data-ref="21extents">extents</a>.<a class="ref field" href="hb-common.h.html#hb_glyph_extents_t::width" title='hb_glyph_extents_t::width' data-ref="hb_glyph_extents_t::width">width</a>, <a class="local col1 ref" href="#21extents" title='extents' data-ref="21extents">extents</a>.<a class="ref field" href="hb-common.h.html#hb_glyph_extents_t::height" title='hb_glyph_extents_t::height' data-ref="hb_glyph_extents_t::height">height</a>));</td></tr>
+<tr><th id="177">177</th><td>    }</td></tr>
+<tr><th id="178">178</th><td></td></tr>
+<tr><th id="179">179</th><td>    *<a class="local col8 ref" href="#18p" title='p' data-ref="18p">p</a>++ = <kbd>'}'</kbd>;</td></tr>
+<tr><th id="180">180</th><td>    <b>if</b> (<a class="local col6 ref" href="#16i" title='i' data-ref="16i">i</a> == <a class="local col6 ref" href="#6end" title='end' data-ref="6end">end</a>-<var>1</var>)</td></tr>
+<tr><th id="181">181</th><td>      *<a class="local col8 ref" href="#18p" title='p' data-ref="18p">p</a>++ = <kbd>']'</kbd>;</td></tr>
+<tr><th id="182">182</th><td></td></tr>
+<tr><th id="183">183</th><td>    <em>unsigned</em> <em>int</em> <dfn class="local col2 decl" id="22l" title='l' data-type='unsigned int' data-ref="22l">l</dfn> = <a class="local col8 ref" href="#18p" title='p' data-ref="18p">p</a> - <a class="local col7 ref" href="#17b" title='b' data-ref="17b">b</a>;</td></tr>
+<tr><th id="184">184</th><td>    <b>if</b> (<a class="local col8 ref" href="#8buf_size" title='buf_size' data-ref="8buf_size">buf_size</a> &gt; <a class="local col2 ref" href="#22l" title='l' data-ref="22l">l</a>)</td></tr>
+<tr><th id="185">185</th><td>    {</td></tr>
+<tr><th id="186">186</th><td>      <a class="ref fn" href="hb-algs.hh.html#_ZL9hb_memcpyPvPKvm" title='hb_memcpy' data-ref="_ZL9hb_memcpyPvPKvm">hb_memcpy</a> (<span class='inlayHint'>dst:&nbsp;</span><a class="local col7 ref" href="#7buf" title='buf' data-ref="7buf">buf</a>, <span class='inlayHint'>src:&nbsp;</span><a class="local col7 ref" href="#17b" title='b' data-ref="17b">b</a>, <span class='inlayHint'>len:&nbsp;</span><a class="local col2 ref" href="#22l" title='l' data-ref="22l">l</a>);</td></tr>
+<tr><th id="187">187</th><td>      <a class="local col7 ref" href="#7buf" title='buf' data-ref="7buf">buf</a> += <a class="local col2 ref" href="#22l" title='l' data-ref="22l">l</a>;</td></tr>
+<tr><th id="188">188</th><td>      <a class="local col8 ref" href="#8buf_size" title='buf_size' data-ref="8buf_size">buf_size</a> -= <a class="local col2 ref" href="#22l" title='l' data-ref="22l">l</a>;</td></tr>
+<tr><th id="189">189</th><td>      *<a class="local col9 ref" href="#9buf_consumed" title='buf_consumed' data-ref="9buf_consumed">buf_consumed</a> += <a class="local col2 ref" href="#22l" title='l' data-ref="22l">l</a>;</td></tr>
+<tr><th id="190">190</th><td>      *<a class="local col7 ref" href="#7buf" title='buf' data-ref="7buf">buf</a> = <kbd>'\0'</kbd>;</td></tr>
+<tr><th id="191">191</th><td>    } <b>else</b></td></tr>
+<tr><th id="192">192</th><td>      <b>return</b> <a class="local col6 ref" href="#16i" title='i' data-ref="16i">i</a> - <a class="local col5 ref" href="#5start" title='start' data-ref="5start">start</a>;</td></tr>
+<tr><th id="193">193</th><td></td></tr>
+<tr><th id="194">194</th><td>    <b>if</b> (<a class="local col3 ref" href="#13pos" title='pos' data-ref="13pos">pos</a> &amp;&amp; (<a class="local col1 ref" href="#11flags" title='flags' data-ref="11flags">flags</a> <a class="ref fn" href="hb-buffer.hh.html#43" title='operator&amp;' data-ref="_Zan27hb_buffer_serialize_flags_tS_">&amp;</a> <a class="enum" href="hb-buffer.h.html#HB_BUFFER_SERIALIZE_FLAG_NO_ADVANCES" title='HB_BUFFER_SERIALIZE_FLAG_NO_ADVANCES' data-ref="HB_BUFFER_SERIALIZE_FLAG_NO_ADVANCES">HB_BUFFER_SERIALIZE_FLAG_NO_ADVANCES</a>))</td></tr>
+<tr><th id="195">195</th><td>    {</td></tr>
+<tr><th id="196">196</th><td>      <a class="local col4 ref" href="#14x" title='x' data-ref="14x">x</a> += <a class="local col3 ref" href="#13pos" title='pos' data-ref="13pos">pos</a>[<a class="local col6 ref" href="#16i" title='i' data-ref="16i">i</a>].<a class="ref field" href="hb-buffer.h.html#hb_glyph_position_t::x_advance" title='hb_glyph_position_t::x_advance' data-ref="hb_glyph_position_t::x_advance">x_advance</a>;</td></tr>
+<tr><th id="197">197</th><td>      <a class="local col5 ref" href="#15y" title='y' data-ref="15y">y</a> += <a class="local col3 ref" href="#13pos" title='pos' data-ref="13pos">pos</a>[<a class="local col6 ref" href="#16i" title='i' data-ref="16i">i</a>].<a class="ref field" href="hb-buffer.h.html#hb_glyph_position_t::y_advance" title='hb_glyph_position_t::y_advance' data-ref="hb_glyph_position_t::y_advance">y_advance</a>;</td></tr>
+<tr><th id="198">198</th><td>    }</td></tr>
+<tr><th id="199">199</th><td>  }</td></tr>
+<tr><th id="200">200</th><td></td></tr>
+<tr><th id="201">201</th><td>  <b>return</b> <a class="local col6 ref" href="#6end" title='end' data-ref="6end">end</a> - <a class="local col5 ref" href="#5start" title='start' data-ref="5start">start</a>;</td></tr>
+<tr><th id="202">202</th><td>}</td></tr>
+<tr><th id="203">203</th><td></td></tr>
+<tr><th id="204">204</th><td><em>static</em> <em>unsigned</em> <em>int</em></td></tr>
+<tr><th id="205">205</th><td><dfn class="tu decl def fn" id="_ZL33_hb_buffer_serialize_unicode_jsonP11hb_buffer_tjjPcjPj27hb_buffer_serialize_flags_t" title='_hb_buffer_serialize_unicode_json' data-type='unsigned int _hb_buffer_serialize_unicode_json(hb_buffer_t * buffer, unsigned int start, unsigned int end, char * buf, unsigned int buf_size, unsigned int * buf_consumed, hb_buffer_serialize_flags_t flags)' data-ref="_ZL33_hb_buffer_serialize_unicode_jsonP11hb_buffer_tjjPcjPj27hb_buffer_serialize_flags_t">_hb_buffer_serialize_unicode_json</dfn> (<a class="typedef" href="hb-buffer.h.html#hb_buffer_t" title='hb_buffer_t' data-type='struct hb_buffer_t' data-ref="hb_buffer_t">hb_buffer_t</a> *<dfn class="local col3 decl" id="23buffer" title='buffer' data-type='hb_buffer_t *' data-ref="23buffer">buffer</dfn>,</td></tr>
+<tr><th id="206">206</th><td>          <em>unsigned</em> <em>int</em> <dfn class="local col4 decl" id="24start" title='start' data-type='unsigned int' data-ref="24start">start</dfn>,</td></tr>
+<tr><th id="207">207</th><td>          <em>unsigned</em> <em>int</em> <dfn class="local col5 decl" id="25end" title='end' data-type='unsigned int' data-ref="25end">end</dfn>,</td></tr>
+<tr><th id="208">208</th><td>          <em>char</em> *<dfn class="local col6 decl" id="26buf" title='buf' data-type='char *' data-ref="26buf">buf</dfn>,</td></tr>
+<tr><th id="209">209</th><td>          <em>unsigned</em> <em>int</em> <dfn class="local col7 decl" id="27buf_size" title='buf_size' data-type='unsigned int' data-ref="27buf_size">buf_size</dfn>,</td></tr>
+<tr><th id="210">210</th><td>          <em>unsigned</em> <em>int</em> *<dfn class="local col8 decl" id="28buf_consumed" title='buf_consumed' data-type='unsigned int *' data-ref="28buf_consumed">buf_consumed</dfn>,</td></tr>
+<tr><th id="211">211</th><td>          <a class="typedef" href="hb-buffer.h.html#hb_buffer_serialize_flags_t" title='hb_buffer_serialize_flags_t' data-type='enum hb_buffer_serialize_flags_t' data-ref="hb_buffer_serialize_flags_t">hb_buffer_serialize_flags_t</a> <dfn class="local col9 decl" id="29flags" title='flags' data-type='hb_buffer_serialize_flags_t' data-ref="29flags">flags</dfn>)</td></tr>
+<tr><th id="212">212</th><td>{</td></tr>
+<tr><th id="213">213</th><td>  <a class="typedef" href="hb-buffer.h.html#hb_glyph_info_t" title='hb_glyph_info_t' data-type='struct hb_glyph_info_t' data-ref="hb_glyph_info_t">hb_glyph_info_t</a> *<dfn class="local col0 decl" id="30info" title='info' data-type='hb_glyph_info_t *' data-ref="30info">info</dfn> = <a class="ref fn" href="hb-buffer.h.html#hb_buffer_get_glyph_infos" title='hb_buffer_get_glyph_infos' data-ref="hb_buffer_get_glyph_infos">hb_buffer_get_glyph_infos</a> (<a class="local col3 ref" href="#23buffer" title='buffer' data-ref="23buffer">buffer</a>, <span class='inlayHint'>length:&nbsp;</span><b>nullptr</b>);</td></tr>
+<tr><th id="214">214</th><td></td></tr>
+<tr><th id="215">215</th><td>  *<a class="local col8 ref" href="#28buf_consumed" title='buf_consumed' data-ref="28buf_consumed">buf_consumed</a> = <var>0</var>;</td></tr>
+<tr><th id="216">216</th><td>  <b>for</b> (<em>unsigned</em> <em>int</em> <dfn class="local col1 decl" id="31i" title='i' data-type='unsigned int' data-ref="31i">i</dfn> = <a class="local col4 ref" href="#24start" title='start' data-ref="24start">start</a>; <a class="local col1 ref" href="#31i" title='i' data-ref="31i">i</a> &lt; <a class="local col5 ref" href="#25end" title='end' data-ref="25end">end</a>; <a class="local col1 ref" href="#31i" title='i' data-ref="31i">i</a>++)</td></tr>
+<tr><th id="217">217</th><td>  {</td></tr>
+<tr><th id="218">218</th><td>    <em>char</em> <dfn class="local col2 decl" id="32b" title='b' data-type='char[1024]' data-ref="32b">b</dfn>[<var>1024</var>];</td></tr>
+<tr><th id="219">219</th><td>    <em>char</em> *<dfn class="local col3 decl" id="33p" title='p' data-type='char *' data-ref="33p">p</dfn> = <a class="local col2 ref" href="#32b" title='b' data-ref="32b">b</a>;</td></tr>
+<tr><th id="220">220</th><td></td></tr>
+<tr><th id="221">221</th><td>    <b>if</b> (<a class="local col1 ref" href="#31i" title='i' data-ref="31i">i</a>)</td></tr>
+<tr><th id="222">222</th><td>      *<a class="local col3 ref" href="#33p" title='p' data-ref="33p">p</a>++ = <kbd>','</kbd>;</td></tr>
+<tr><th id="223">223</th><td>    <b>else</b></td></tr>
+<tr><th id="224">224</th><td>      *<a class="local col3 ref" href="#33p" title='p' data-ref="33p">p</a>++ = <kbd>'['</kbd>;</td></tr>
+<tr><th id="225">225</th><td></td></tr>
+<tr><th id="226">226</th><td>    *<a class="local col3 ref" href="#33p" title='p' data-ref="33p">p</a>++ = <kbd>'{'</kbd>;</td></tr>
+<tr><th id="227">227</th><td></td></tr>
+<tr><th id="228">228</th><td>    <a class="macro" href="#124" title="do { strcpy (p, &quot;\&quot;u\&quot;:&quot;); p += strlen (&quot;\&quot;u\&quot;:&quot;); } while (0)" data-ref="_M/APPEND">APPEND</a> (<q>"\"u\":"</q>);</td></tr>
+<tr><th id="229">229</th><td></td></tr>
+<tr><th id="230">230</th><td>    <a class="local col3 ref" href="#33p" title='p' data-ref="33p">p</a> += <a class="ref" href="hb-algs.hh.html#583" title='hb_max' data-ref="hb_max">hb_max</a> (<var>0</var>, <a class="ref fn" href="../../../../../include/stdio.h.html#snprintf" title='snprintf' data-ref="snprintf">snprintf</a> (<span class='inlayHint'>s:&nbsp;</span><a class="local col3 ref" href="#33p" title='p' data-ref="33p">p</a>, <span class='inlayHint'>maxlen:&nbsp;</span><a class="ref fn" href="hb-algs.hh.html#_ZL12ARRAY_LENGTHRAT0__KT_" title='ARRAY_LENGTH' data-ref="_ZL12ARRAY_LENGTHRAT0__KT_">ARRAY_LENGTH</a> (<a class="local col2 ref" href="#32b" title='b' data-ref="32b">b</a>) - (<a class="local col3 ref" href="#33p" title='p' data-ref="33p">p</a> - <a class="local col2 ref" href="#32b" title='b' data-ref="32b">b</a>), <span class='inlayHint'>format:&nbsp;</span><q>"%u"</q>, <a class="local col0 ref" href="#30info" title='info' data-ref="30info">info</a>[<a class="local col1 ref" href="#31i" title='i' data-ref="31i">i</a>].<a class="ref field" href="hb-buffer.h.html#hb_glyph_info_t::codepoint" title='hb_glyph_info_t::codepoint' data-ref="hb_glyph_info_t::codepoint">codepoint</a>));</td></tr>
+<tr><th id="231">231</th><td></td></tr>
+<tr><th id="232">232</th><td>    <b>if</b> (!(<a class="local col9 ref" href="#29flags" title='flags' data-ref="29flags">flags</a> <a class="ref fn" href="hb-buffer.hh.html#43" title='operator&amp;' data-ref="_Zan27hb_buffer_serialize_flags_tS_">&amp;</a> <a class="enum" href="hb-buffer.h.html#HB_BUFFER_SERIALIZE_FLAG_NO_CLUSTERS" title='HB_BUFFER_SERIALIZE_FLAG_NO_CLUSTERS' data-ref="HB_BUFFER_SERIALIZE_FLAG_NO_CLUSTERS">HB_BUFFER_SERIALIZE_FLAG_NO_CLUSTERS</a>)) {</td></tr>
+<tr><th id="233">233</th><td>      <a class="local col3 ref" href="#33p" title='p' data-ref="33p">p</a> += <a class="ref" href="hb-algs.hh.html#583" title='hb_max' data-ref="hb_max">hb_max</a> (<var>0</var>, <a class="ref fn" href="../../../../../include/stdio.h.html#snprintf" title='snprintf' data-ref="snprintf">snprintf</a> (<span class='inlayHint'>s:&nbsp;</span><a class="local col3 ref" href="#33p" title='p' data-ref="33p">p</a>, <span class='inlayHint'>maxlen:&nbsp;</span><a class="ref fn" href="hb-algs.hh.html#_ZL12ARRAY_LENGTHRAT0__KT_" title='ARRAY_LENGTH' data-ref="_ZL12ARRAY_LENGTHRAT0__KT_">ARRAY_LENGTH</a> (<a class="local col2 ref" href="#32b" title='b' data-ref="32b">b</a>) - (<a class="local col3 ref" href="#33p" title='p' data-ref="33p">p</a> - <a class="local col2 ref" href="#32b" title='b' data-ref="32b">b</a>), <span class='inlayHint'>format:&nbsp;</span><q>",\"cl\":%u"</q>, <a class="local col0 ref" href="#30info" title='info' data-ref="30info">info</a>[<a class="local col1 ref" href="#31i" title='i' data-ref="31i">i</a>].<a class="ref field" href="hb-buffer.h.html#hb_glyph_info_t::cluster" title='hb_glyph_info_t::cluster' data-ref="hb_glyph_info_t::cluster">cluster</a>));</td></tr>
+<tr><th id="234">234</th><td>    }</td></tr>
+<tr><th id="235">235</th><td></td></tr>
+<tr><th id="236">236</th><td>    *<a class="local col3 ref" href="#33p" title='p' data-ref="33p">p</a>++ = <kbd>'}'</kbd>;</td></tr>
+<tr><th id="237">237</th><td></td></tr>
+<tr><th id="238">238</th><td>    <b>if</b> (<a class="local col1 ref" href="#31i" title='i' data-ref="31i">i</a> == <a class="local col5 ref" href="#25end" title='end' data-ref="25end">end</a>-<var>1</var>)</td></tr>
+<tr><th id="239">239</th><td>      *<a class="local col3 ref" href="#33p" title='p' data-ref="33p">p</a>++ = <kbd>']'</kbd>;</td></tr>
+<tr><th id="240">240</th><td></td></tr>
+<tr><th id="241">241</th><td>    <em>unsigned</em> <em>int</em> <dfn class="local col4 decl" id="34l" title='l' data-type='unsigned int' data-ref="34l">l</dfn> = <a class="local col3 ref" href="#33p" title='p' data-ref="33p">p</a> - <a class="local col2 ref" href="#32b" title='b' data-ref="32b">b</a>;</td></tr>
+<tr><th id="242">242</th><td>    <b>if</b> (<a class="local col7 ref" href="#27buf_size" title='buf_size' data-ref="27buf_size">buf_size</a> &gt; <a class="local col4 ref" href="#34l" title='l' data-ref="34l">l</a>)</td></tr>
+<tr><th id="243">243</th><td>    {</td></tr>
+<tr><th id="244">244</th><td>      <a class="ref fn" href="hb-algs.hh.html#_ZL9hb_memcpyPvPKvm" title='hb_memcpy' data-ref="_ZL9hb_memcpyPvPKvm">hb_memcpy</a> (<span class='inlayHint'>dst:&nbsp;</span><a class="local col6 ref" href="#26buf" title='buf' data-ref="26buf">buf</a>, <span class='inlayHint'>src:&nbsp;</span><a class="local col2 ref" href="#32b" title='b' data-ref="32b">b</a>, <span class='inlayHint'>len:&nbsp;</span><a class="local col4 ref" href="#34l" title='l' data-ref="34l">l</a>);</td></tr>
+<tr><th id="245">245</th><td>      <a class="local col6 ref" href="#26buf" title='buf' data-ref="26buf">buf</a> += <a class="local col4 ref" href="#34l" title='l' data-ref="34l">l</a>;</td></tr>
+<tr><th id="246">246</th><td>      <a class="local col7 ref" href="#27buf_size" title='buf_size' data-ref="27buf_size">buf_size</a> -= <a class="local col4 ref" href="#34l" title='l' data-ref="34l">l</a>;</td></tr>
+<tr><th id="247">247</th><td>      *<a class="local col8 ref" href="#28buf_consumed" title='buf_consumed' data-ref="28buf_consumed">buf_consumed</a> += <a class="local col4 ref" href="#34l" title='l' data-ref="34l">l</a>;</td></tr>
+<tr><th id="248">248</th><td>      *<a class="local col6 ref" href="#26buf" title='buf' data-ref="26buf">buf</a> = <kbd>'\0'</kbd>;</td></tr>
+<tr><th id="249">249</th><td>    } <b>else</b></td></tr>
+<tr><th id="250">250</th><td>      <b>return</b> <a class="local col1 ref" href="#31i" title='i' data-ref="31i">i</a> - <a class="local col4 ref" href="#24start" title='start' data-ref="24start">start</a>;</td></tr>
+<tr><th id="251">251</th><td></td></tr>
+<tr><th id="252">252</th><td>  }</td></tr>
+<tr><th id="253">253</th><td></td></tr>
+<tr><th id="254">254</th><td>  <b>return</b> <a class="local col5 ref" href="#25end" title='end' data-ref="25end">end</a> - <a class="local col4 ref" href="#24start" title='start' data-ref="24start">start</a>;</td></tr>
+<tr><th id="255">255</th><td>}</td></tr>
+<tr><th id="256">256</th><td></td></tr>
+<tr><th id="257">257</th><td><em>static</em> <em>unsigned</em> <em>int</em></td></tr>
+<tr><th id="258">258</th><td><dfn class="tu decl def fn" id="_ZL32_hb_buffer_serialize_glyphs_textP11hb_buffer_tjjPcjPjP9hb_font_t27hb_buffer_serialize_flags_t" title='_hb_buffer_serialize_glyphs_text' data-type='unsigned int _hb_buffer_serialize_glyphs_text(hb_buffer_t * buffer, unsigned int start, unsigned int end, char * buf, unsigned int buf_size, unsigned int * buf_consumed, hb_font_t * font, hb_buffer_serialize_flags_t flags)' data-ref="_ZL32_hb_buffer_serialize_glyphs_textP11hb_buffer_tjjPcjPjP9hb_font_t27hb_buffer_serialize_flags_t">_hb_buffer_serialize_glyphs_text</dfn> (<a class="typedef" href="hb-buffer.h.html#hb_buffer_t" title='hb_buffer_t' data-type='struct hb_buffer_t' data-ref="hb_buffer_t">hb_buffer_t</a> *<dfn class="local col5 decl" id="35buffer" title='buffer' data-type='hb_buffer_t *' data-ref="35buffer">buffer</dfn>,</td></tr>
+<tr><th id="259">259</th><td>                                  <em>unsigned</em> <em>int</em> <dfn class="local col6 decl" id="36start" title='start' data-type='unsigned int' data-ref="36start">start</dfn>,</td></tr>
+<tr><th id="260">260</th><td>                                  <em>unsigned</em> <em>int</em> <dfn class="local col7 decl" id="37end" title='end' data-type='unsigned int' data-ref="37end">end</dfn>,</td></tr>
+<tr><th id="261">261</th><td>                                  <em>char</em> *<dfn class="local col8 decl" id="38buf" title='buf' data-type='char *' data-ref="38buf">buf</dfn>,</td></tr>
+<tr><th id="262">262</th><td>                                  <em>unsigned</em> <em>int</em> <dfn class="local col9 decl" id="39buf_size" title='buf_size' data-type='unsigned int' data-ref="39buf_size">buf_size</dfn>,</td></tr>
+<tr><th id="263">263</th><td>                                  <em>unsigned</em> <em>int</em> *<dfn class="local col0 decl" id="40buf_consumed" title='buf_consumed' data-type='unsigned int *' data-ref="40buf_consumed">buf_consumed</dfn>,</td></tr>
+<tr><th id="264">264</th><td>                                  <a class="typedef" href="hb-common.h.html#hb_font_t" title='hb_font_t' data-type='struct hb_font_t' data-ref="hb_font_t">hb_font_t</a> *<dfn class="local col1 decl" id="41font" title='font' data-type='hb_font_t *' data-ref="41font">font</dfn>,</td></tr>
+<tr><th id="265">265</th><td>                                  <a class="typedef" href="hb-buffer.h.html#hb_buffer_serialize_flags_t" title='hb_buffer_serialize_flags_t' data-type='enum hb_buffer_serialize_flags_t' data-ref="hb_buffer_serialize_flags_t">hb_buffer_serialize_flags_t</a> <dfn class="local col2 decl" id="42flags" title='flags' data-type='hb_buffer_serialize_flags_t' data-ref="42flags">flags</dfn>)</td></tr>
+<tr><th id="266">266</th><td>{</td></tr>
+<tr><th id="267">267</th><td>  <a class="typedef" href="hb-buffer.h.html#hb_glyph_info_t" title='hb_glyph_info_t' data-type='struct hb_glyph_info_t' data-ref="hb_glyph_info_t">hb_glyph_info_t</a> *<dfn class="local col3 decl" id="43info" title='info' data-type='hb_glyph_info_t *' data-ref="43info">info</dfn> = <a class="ref fn" href="hb-buffer.h.html#hb_buffer_get_glyph_infos" title='hb_buffer_get_glyph_infos' data-ref="hb_buffer_get_glyph_infos">hb_buffer_get_glyph_infos</a> (<a class="local col5 ref" href="#35buffer" title='buffer' data-ref="35buffer">buffer</a>, <span class='inlayHint'>length:&nbsp;</span><b>nullptr</b>);</td></tr>
+<tr><th id="268">268</th><td>  <a class="typedef" href="hb-buffer.h.html#hb_glyph_position_t" title='hb_glyph_position_t' data-type='struct hb_glyph_position_t' data-ref="hb_glyph_position_t">hb_glyph_position_t</a> *<dfn class="local col4 decl" id="44pos" title='pos' data-type='hb_glyph_position_t *' data-ref="44pos">pos</dfn> = (<a class="local col2 ref" href="#42flags" title='flags' data-ref="42flags">flags</a> <a class="ref fn" href="hb-buffer.hh.html#43" title='operator&amp;' data-ref="_Zan27hb_buffer_serialize_flags_tS_">&amp;</a> <a class="enum" href="hb-buffer.h.html#HB_BUFFER_SERIALIZE_FLAG_NO_POSITIONS" title='HB_BUFFER_SERIALIZE_FLAG_NO_POSITIONS' data-ref="HB_BUFFER_SERIALIZE_FLAG_NO_POSITIONS">HB_BUFFER_SERIALIZE_FLAG_NO_POSITIONS</a>) ?</td></tr>
+<tr><th id="269">269</th><td>           <b>nullptr</b> : <a class="ref fn" href="hb-buffer.h.html#hb_buffer_get_glyph_positions" title='hb_buffer_get_glyph_positions' data-ref="hb_buffer_get_glyph_positions">hb_buffer_get_glyph_positions</a> (<a class="local col5 ref" href="#35buffer" title='buffer' data-ref="35buffer">buffer</a>, <span class='inlayHint'>length:&nbsp;</span><b>nullptr</b>);</td></tr>
+<tr><th id="270">270</th><td></td></tr>
+<tr><th id="271">271</th><td>  *<a class="local col0 ref" href="#40buf_consumed" title='buf_consumed' data-ref="40buf_consumed">buf_consumed</a> = <var>0</var>;</td></tr>
+<tr><th id="272">272</th><td>  <a class="typedef" href="hb-common.h.html#hb_position_t" title='hb_position_t' data-type='int32_t' data-ref="hb_position_t">hb_position_t</a> <dfn class="local col5 decl" id="45x" title='x' data-type='hb_position_t' data-ref="45x">x</dfn> = <var>0</var>, <dfn class="local col6 decl" id="46y" title='y' data-type='hb_position_t' data-ref="46y">y</dfn> = <var>0</var>;</td></tr>
+<tr><th id="273">273</th><td>  <b>for</b> (<em>unsigned</em> <em>int</em> <dfn class="local col7 decl" id="47i" title='i' data-type='unsigned int' data-ref="47i">i</dfn> = <a class="local col6 ref" href="#36start" title='start' data-ref="36start">start</a>; <a class="local col7 ref" href="#47i" title='i' data-ref="47i">i</a> &lt; <a class="local col7 ref" href="#37end" title='end' data-ref="37end">end</a>; <a class="local col7 ref" href="#47i" title='i' data-ref="47i">i</a>++)</td></tr>
+<tr><th id="274">274</th><td>  {</td></tr>
+<tr><th id="275">275</th><td>    <em>char</em> <dfn class="local col8 decl" id="48b" title='b' data-type='char[1024]' data-ref="48b">b</dfn>[<var>1024</var>];</td></tr>
+<tr><th id="276">276</th><td>    <em>char</em> *<dfn class="local col9 decl" id="49p" title='p' data-type='char *' data-ref="49p">p</dfn> = <a class="local col8 ref" href="#48b" title='b' data-ref="48b">b</a>;</td></tr>
+<tr><th id="277">277</th><td></td></tr>
+<tr><th id="278">278</th><td>    <i>/* In the following code, we know b is large enough that no overflow can happen. */</i></td></tr>
+<tr><th id="279">279</th><td></td></tr>
+<tr><th id="280">280</th><td>    <b>if</b> (<a class="local col7 ref" href="#47i" title='i' data-ref="47i">i</a>)</td></tr>
+<tr><th id="281">281</th><td>      *<a class="local col9 ref" href="#49p" title='p' data-ref="49p">p</a>++ = <kbd>'|'</kbd>;</td></tr>
+<tr><th id="282">282</th><td>    <b>else</b></td></tr>
+<tr><th id="283">283</th><td>      *<a class="local col9 ref" href="#49p" title='p' data-ref="49p">p</a>++ = <kbd>'['</kbd>;</td></tr>
+<tr><th id="284">284</th><td></td></tr>
+<tr><th id="285">285</th><td>    <b>if</b> (!(<a class="local col2 ref" href="#42flags" title='flags' data-ref="42flags">flags</a> <a class="ref fn" href="hb-buffer.hh.html#43" title='operator&amp;' data-ref="_Zan27hb_buffer_serialize_flags_tS_">&amp;</a> <a class="enum" href="hb-buffer.h.html#HB_BUFFER_SERIALIZE_FLAG_NO_GLYPH_NAMES" title='HB_BUFFER_SERIALIZE_FLAG_NO_GLYPH_NAMES' data-ref="HB_BUFFER_SERIALIZE_FLAG_NO_GLYPH_NAMES">HB_BUFFER_SERIALIZE_FLAG_NO_GLYPH_NAMES</a>))</td></tr>
+<tr><th id="286">286</th><td>    {</td></tr>
+<tr><th id="287">287</th><td>      <i>/* TODO Escape delimiters we use. */</i></td></tr>
+<tr><th id="288">288</th><td>      <a class="ref fn" href="hb-font.h.html#hb_font_glyph_to_string" title='hb_font_glyph_to_string' data-ref="hb_font_glyph_to_string">hb_font_glyph_to_string</a> (<a class="local col1 ref" href="#41font" title='font' data-ref="41font">font</a>, <span class='inlayHint'>glyph:&nbsp;</span><a class="local col3 ref" href="#43info" title='info' data-ref="43info">info</a>[<a class="local col7 ref" href="#47i" title='i' data-ref="47i">i</a>].<a class="ref field" href="hb-buffer.h.html#hb_glyph_info_t::codepoint" title='hb_glyph_info_t::codepoint' data-ref="hb_glyph_info_t::codepoint">codepoint</a>, <span class='inlayHint'>s:&nbsp;</span><a class="local col9 ref" href="#49p" title='p' data-ref="49p">p</a>, <span class='inlayHint'>size:&nbsp;</span><var>128</var>);</td></tr>
+<tr><th id="289">289</th><td>      <a class="local col9 ref" href="#49p" title='p' data-ref="49p">p</a> += <a class="ref fn" href="../../../../../include/string.h.html#strlen" title='strlen' data-ref="strlen">strlen</a> (<span class='inlayHint'>s:&nbsp;</span><a class="local col9 ref" href="#49p" title='p' data-ref="49p">p</a>);</td></tr>
+<tr><th id="290">290</th><td>    }</td></tr>
+<tr><th id="291">291</th><td>    <b>else</b></td></tr>
+<tr><th id="292">292</th><td>      <a class="local col9 ref" href="#49p" title='p' data-ref="49p">p</a> += <a class="ref" href="hb-algs.hh.html#583" title='hb_max' data-ref="hb_max">hb_max</a> (<var>0</var>, <a class="ref fn" href="../../../../../include/stdio.h.html#snprintf" title='snprintf' data-ref="snprintf">snprintf</a> (<span class='inlayHint'>s:&nbsp;</span><a class="local col9 ref" href="#49p" title='p' data-ref="49p">p</a>, <span class='inlayHint'>maxlen:&nbsp;</span><a class="ref fn" href="hb-algs.hh.html#_ZL12ARRAY_LENGTHRAT0__KT_" title='ARRAY_LENGTH' data-ref="_ZL12ARRAY_LENGTHRAT0__KT_">ARRAY_LENGTH</a> (<a class="local col8 ref" href="#48b" title='b' data-ref="48b">b</a>) - (<a class="local col9 ref" href="#49p" title='p' data-ref="49p">p</a> - <a class="local col8 ref" href="#48b" title='b' data-ref="48b">b</a>), <span class='inlayHint'>format:&nbsp;</span><q>"%u"</q>, <a class="local col3 ref" href="#43info" title='info' data-ref="43info">info</a>[<a class="local col7 ref" href="#47i" title='i' data-ref="47i">i</a>].<a class="ref field" href="hb-buffer.h.html#hb_glyph_info_t::codepoint" title='hb_glyph_info_t::codepoint' data-ref="hb_glyph_info_t::codepoint">codepoint</a>));</td></tr>
+<tr><th id="293">293</th><td></td></tr>
+<tr><th id="294">294</th><td>    <b>if</b> (!(<a class="local col2 ref" href="#42flags" title='flags' data-ref="42flags">flags</a> <a class="ref fn" href="hb-buffer.hh.html#43" title='operator&amp;' data-ref="_Zan27hb_buffer_serialize_flags_tS_">&amp;</a> <a class="enum" href="hb-buffer.h.html#HB_BUFFER_SERIALIZE_FLAG_NO_CLUSTERS" title='HB_BUFFER_SERIALIZE_FLAG_NO_CLUSTERS' data-ref="HB_BUFFER_SERIALIZE_FLAG_NO_CLUSTERS">HB_BUFFER_SERIALIZE_FLAG_NO_CLUSTERS</a>)) {</td></tr>
+<tr><th id="295">295</th><td>      <a class="local col9 ref" href="#49p" title='p' data-ref="49p">p</a> += <a class="ref" href="hb-algs.hh.html#583" title='hb_max' data-ref="hb_max">hb_max</a> (<var>0</var>, <a class="ref fn" href="../../../../../include/stdio.h.html#snprintf" title='snprintf' data-ref="snprintf">snprintf</a> (<span class='inlayHint'>s:&nbsp;</span><a class="local col9 ref" href="#49p" title='p' data-ref="49p">p</a>, <span class='inlayHint'>maxlen:&nbsp;</span><a class="ref fn" href="hb-algs.hh.html#_ZL12ARRAY_LENGTHRAT0__KT_" title='ARRAY_LENGTH' data-ref="_ZL12ARRAY_LENGTHRAT0__KT_">ARRAY_LENGTH</a> (<a class="local col8 ref" href="#48b" title='b' data-ref="48b">b</a>) - (<a class="local col9 ref" href="#49p" title='p' data-ref="49p">p</a> - <a class="local col8 ref" href="#48b" title='b' data-ref="48b">b</a>), <span class='inlayHint'>format:&nbsp;</span><q>"=%u"</q>, <a class="local col3 ref" href="#43info" title='info' data-ref="43info">info</a>[<a class="local col7 ref" href="#47i" title='i' data-ref="47i">i</a>].<a class="ref field" href="hb-buffer.h.html#hb_glyph_info_t::cluster" title='hb_glyph_info_t::cluster' data-ref="hb_glyph_info_t::cluster">cluster</a>));</td></tr>
+<tr><th id="296">296</th><td>    }</td></tr>
+<tr><th id="297">297</th><td></td></tr>
+<tr><th id="298">298</th><td>    <b>if</b> (!(<a class="local col2 ref" href="#42flags" title='flags' data-ref="42flags">flags</a> <a class="ref fn" href="hb-buffer.hh.html#43" title='operator&amp;' data-ref="_Zan27hb_buffer_serialize_flags_tS_">&amp;</a> <a class="enum" href="hb-buffer.h.html#HB_BUFFER_SERIALIZE_FLAG_NO_POSITIONS" title='HB_BUFFER_SERIALIZE_FLAG_NO_POSITIONS' data-ref="HB_BUFFER_SERIALIZE_FLAG_NO_POSITIONS">HB_BUFFER_SERIALIZE_FLAG_NO_POSITIONS</a>))</td></tr>
+<tr><th id="299">299</th><td>    {</td></tr>
+<tr><th id="300">300</th><td>      <b>if</b> (<a class="local col5 ref" href="#45x" title='x' data-ref="45x">x</a>+<a class="local col4 ref" href="#44pos" title='pos' data-ref="44pos">pos</a>[<a class="local col7 ref" href="#47i" title='i' data-ref="47i">i</a>].<a class="ref field" href="hb-buffer.h.html#hb_glyph_position_t::x_offset" title='hb_glyph_position_t::x_offset' data-ref="hb_glyph_position_t::x_offset">x_offset</a> || <a class="local col6 ref" href="#46y" title='y' data-ref="46y">y</a>+<a class="local col4 ref" href="#44pos" title='pos' data-ref="44pos">pos</a>[<a class="local col7 ref" href="#47i" title='i' data-ref="47i">i</a>].<a class="ref field" href="hb-buffer.h.html#hb_glyph_position_t::y_offset" title='hb_glyph_position_t::y_offset' data-ref="hb_glyph_position_t::y_offset">y_offset</a>)</td></tr>
+<tr><th id="301">301</th><td>        <a class="local col9 ref" href="#49p" title='p' data-ref="49p">p</a> += <a class="ref" href="hb-algs.hh.html#583" title='hb_max' data-ref="hb_max">hb_max</a> (<var>0</var>, <a class="ref fn" href="../../../../../include/stdio.h.html#snprintf" title='snprintf' data-ref="snprintf">snprintf</a> (<span class='inlayHint'>s:&nbsp;</span><a class="local col9 ref" href="#49p" title='p' data-ref="49p">p</a>, <span class='inlayHint'>maxlen:&nbsp;</span><a class="ref fn" href="hb-algs.hh.html#_ZL12ARRAY_LENGTHRAT0__KT_" title='ARRAY_LENGTH' data-ref="_ZL12ARRAY_LENGTHRAT0__KT_">ARRAY_LENGTH</a> (<a class="local col8 ref" href="#48b" title='b' data-ref="48b">b</a>) - (<a class="local col9 ref" href="#49p" title='p' data-ref="49p">p</a> - <a class="local col8 ref" href="#48b" title='b' data-ref="48b">b</a>), <span class='inlayHint'>format:&nbsp;</span><q>"@%d,%d"</q>, <a class="local col5 ref" href="#45x" title='x' data-ref="45x">x</a>+<a class="local col4 ref" href="#44pos" title='pos' data-ref="44pos">pos</a>[<a class="local col7 ref" href="#47i" title='i' data-ref="47i">i</a>].<a class="ref field" href="hb-buffer.h.html#hb_glyph_position_t::x_offset" title='hb_glyph_position_t::x_offset' data-ref="hb_glyph_position_t::x_offset">x_offset</a>, <a class="local col6 ref" href="#46y" title='y' data-ref="46y">y</a>+<a class="local col4 ref" href="#44pos" title='pos' data-ref="44pos">pos</a>[<a class="local col7 ref" href="#47i" title='i' data-ref="47i">i</a>].<a class="ref field" href="hb-buffer.h.html#hb_glyph_position_t::y_offset" title='hb_glyph_position_t::y_offset' data-ref="hb_glyph_position_t::y_offset">y_offset</a>));</td></tr>
+<tr><th id="302">302</th><td></td></tr>
+<tr><th id="303">303</th><td>      <b>if</b> (!(<a class="local col2 ref" href="#42flags" title='flags' data-ref="42flags">flags</a> <a class="ref fn" href="hb-buffer.hh.html#43" title='operator&amp;' data-ref="_Zan27hb_buffer_serialize_flags_tS_">&amp;</a> <a class="enum" href="hb-buffer.h.html#HB_BUFFER_SERIALIZE_FLAG_NO_ADVANCES" title='HB_BUFFER_SERIALIZE_FLAG_NO_ADVANCES' data-ref="HB_BUFFER_SERIALIZE_FLAG_NO_ADVANCES">HB_BUFFER_SERIALIZE_FLAG_NO_ADVANCES</a>))</td></tr>
+<tr><th id="304">304</th><td>      {</td></tr>
+<tr><th id="305">305</th><td>        *<a class="local col9 ref" href="#49p" title='p' data-ref="49p">p</a>++ = <kbd>'+'</kbd>;</td></tr>
+<tr><th id="306">306</th><td>        <a class="local col9 ref" href="#49p" title='p' data-ref="49p">p</a> += <a class="ref" href="hb-algs.hh.html#583" title='hb_max' data-ref="hb_max">hb_max</a> (<var>0</var>, <a class="ref fn" href="../../../../../include/stdio.h.html#snprintf" title='snprintf' data-ref="snprintf">snprintf</a> (<span class='inlayHint'>s:&nbsp;</span><a class="local col9 ref" href="#49p" title='p' data-ref="49p">p</a>, <span class='inlayHint'>maxlen:&nbsp;</span><a class="ref fn" href="hb-algs.hh.html#_ZL12ARRAY_LENGTHRAT0__KT_" title='ARRAY_LENGTH' data-ref="_ZL12ARRAY_LENGTHRAT0__KT_">ARRAY_LENGTH</a> (<a class="local col8 ref" href="#48b" title='b' data-ref="48b">b</a>) - (<a class="local col9 ref" href="#49p" title='p' data-ref="49p">p</a> - <a class="local col8 ref" href="#48b" title='b' data-ref="48b">b</a>), <span class='inlayHint'>format:&nbsp;</span><q>"%d"</q>, <a class="local col4 ref" href="#44pos" title='pos' data-ref="44pos">pos</a>[<a class="local col7 ref" href="#47i" title='i' data-ref="47i">i</a>].<a class="ref field" href="hb-buffer.h.html#hb_glyph_position_t::x_advance" title='hb_glyph_position_t::x_advance' data-ref="hb_glyph_position_t::x_advance">x_advance</a>));</td></tr>
+<tr><th id="307">307</th><td>        <b>if</b> (<a class="local col4 ref" href="#44pos" title='pos' data-ref="44pos">pos</a>[<a class="local col7 ref" href="#47i" title='i' data-ref="47i">i</a>].<a class="ref field" href="hb-buffer.h.html#hb_glyph_position_t::y_advance" title='hb_glyph_position_t::y_advance' data-ref="hb_glyph_position_t::y_advance">y_advance</a>)</td></tr>
+<tr><th id="308">308</th><td>          <a class="local col9 ref" href="#49p" title='p' data-ref="49p">p</a> += <a class="ref" href="hb-algs.hh.html#583" title='hb_max' data-ref="hb_max">hb_max</a> (<var>0</var>, <a class="ref fn" href="../../../../../include/stdio.h.html#snprintf" title='snprintf' data-ref="snprintf">snprintf</a> (<span class='inlayHint'>s:&nbsp;</span><a class="local col9 ref" href="#49p" title='p' data-ref="49p">p</a>, <span class='inlayHint'>maxlen:&nbsp;</span><a class="ref fn" href="hb-algs.hh.html#_ZL12ARRAY_LENGTHRAT0__KT_" title='ARRAY_LENGTH' data-ref="_ZL12ARRAY_LENGTHRAT0__KT_">ARRAY_LENGTH</a> (<a class="local col8 ref" href="#48b" title='b' data-ref="48b">b</a>) - (<a class="local col9 ref" href="#49p" title='p' data-ref="49p">p</a> - <a class="local col8 ref" href="#48b" title='b' data-ref="48b">b</a>), <span class='inlayHint'>format:&nbsp;</span><q>",%d"</q>, <a class="local col4 ref" href="#44pos" title='pos' data-ref="44pos">pos</a>[<a class="local col7 ref" href="#47i" title='i' data-ref="47i">i</a>].<a class="ref field" href="hb-buffer.h.html#hb_glyph_position_t::y_advance" title='hb_glyph_position_t::y_advance' data-ref="hb_glyph_position_t::y_advance">y_advance</a>));</td></tr>
+<tr><th id="309">309</th><td>      }</td></tr>
+<tr><th id="310">310</th><td>    }</td></tr>
+<tr><th id="311">311</th><td></td></tr>
+<tr><th id="312">312</th><td>    <b>if</b> (<a class="local col2 ref" href="#42flags" title='flags' data-ref="42flags">flags</a> <a class="ref fn" href="hb-buffer.hh.html#43" title='operator&amp;' data-ref="_Zan27hb_buffer_serialize_flags_tS_">&amp;</a> <a class="enum" href="hb-buffer.h.html#HB_BUFFER_SERIALIZE_FLAG_GLYPH_FLAGS" title='HB_BUFFER_SERIALIZE_FLAG_GLYPH_FLAGS' data-ref="HB_BUFFER_SERIALIZE_FLAG_GLYPH_FLAGS">HB_BUFFER_SERIALIZE_FLAG_GLYPH_FLAGS</a>)</td></tr>
+<tr><th id="313">313</th><td>    {</td></tr>
+<tr><th id="314">314</th><td>      <b>if</b> (<a class="local col3 ref" href="#43info" title='info' data-ref="43info">info</a>[<a class="local col7 ref" href="#47i" title='i' data-ref="47i">i</a>].<a class="ref field" href="hb-buffer.h.html#hb_glyph_info_t::mask" title='hb_glyph_info_t::mask' data-ref="hb_glyph_info_t::mask">mask</a> &amp; <a class="enum" href="hb-buffer.h.html#HB_GLYPH_FLAG_DEFINED" title='HB_GLYPH_FLAG_DEFINED' data-ref="HB_GLYPH_FLAG_DEFINED">HB_GLYPH_FLAG_DEFINED</a>)</td></tr>
+<tr><th id="315">315</th><td>        <a class="local col9 ref" href="#49p" title='p' data-ref="49p">p</a> += <a class="ref" href="hb-algs.hh.html#583" title='hb_max' data-ref="hb_max">hb_max</a> (<var>0</var>, <a class="ref fn" href="../../../../../include/stdio.h.html#snprintf" title='snprintf' data-ref="snprintf">snprintf</a> (<span class='inlayHint'>s:&nbsp;</span><a class="local col9 ref" href="#49p" title='p' data-ref="49p">p</a>, <span class='inlayHint'>maxlen:&nbsp;</span><a class="ref fn" href="hb-algs.hh.html#_ZL12ARRAY_LENGTHRAT0__KT_" title='ARRAY_LENGTH' data-ref="_ZL12ARRAY_LENGTHRAT0__KT_">ARRAY_LENGTH</a> (<a class="local col8 ref" href="#48b" title='b' data-ref="48b">b</a>) - (<a class="local col9 ref" href="#49p" title='p' data-ref="49p">p</a> - <a class="local col8 ref" href="#48b" title='b' data-ref="48b">b</a>), <span class='inlayHint'>format:&nbsp;</span><q>"#%X"</q>, <a class="local col3 ref" href="#43info" title='info' data-ref="43info">info</a>[<a class="local col7 ref" href="#47i" title='i' data-ref="47i">i</a>].<a class="ref field" href="hb-buffer.h.html#hb_glyph_info_t::mask" title='hb_glyph_info_t::mask' data-ref="hb_glyph_info_t::mask">mask</a> &amp;<a class="enum" href="hb-buffer.h.html#HB_GLYPH_FLAG_DEFINED" title='HB_GLYPH_FLAG_DEFINED' data-ref="HB_GLYPH_FLAG_DEFINED">HB_GLYPH_FLAG_DEFINED</a>));</td></tr>
+<tr><th id="316">316</th><td>    }</td></tr>
+<tr><th id="317">317</th><td></td></tr>
+<tr><th id="318">318</th><td>    <b>if</b> (<a class="local col2 ref" href="#42flags" title='flags' data-ref="42flags">flags</a> <a class="ref fn" href="hb-buffer.hh.html#43" title='operator&amp;' data-ref="_Zan27hb_buffer_serialize_flags_tS_">&amp;</a> <a class="enum" href="hb-buffer.h.html#HB_BUFFER_SERIALIZE_FLAG_GLYPH_EXTENTS" title='HB_BUFFER_SERIALIZE_FLAG_GLYPH_EXTENTS' data-ref="HB_BUFFER_SERIALIZE_FLAG_GLYPH_EXTENTS">HB_BUFFER_SERIALIZE_FLAG_GLYPH_EXTENTS</a>)</td></tr>
+<tr><th id="319">319</th><td>    {</td></tr>
+<tr><th id="320">320</th><td>      <a class="typedef" href="hb-common.h.html#hb_glyph_extents_t" title='hb_glyph_extents_t' data-type='struct hb_glyph_extents_t' data-ref="hb_glyph_extents_t">hb_glyph_extents_t</a> <a class="ref fn fake" href="hb-common.h.html#911" title='hb_glyph_extents_t::hb_glyph_extents_t' data-ref="_ZN18hb_glyph_extents_tC1Ev"></a><dfn class="local col0 decl" id="50extents" title='extents' data-type='hb_glyph_extents_t' data-ref="50extents">extents</dfn>;</td></tr>
+<tr><th id="321">321</th><td>      <a class="ref fn" href="hb-font.h.html#hb_font_get_glyph_extents" title='hb_font_get_glyph_extents' data-ref="hb_font_get_glyph_extents">hb_font_get_glyph_extents</a>(<a class="local col1 ref" href="#41font" title='font' data-ref="41font">font</a>, <span class='inlayHint'>glyph:&nbsp;</span><a class="local col3 ref" href="#43info" title='info' data-ref="43info">info</a>[<a class="local col7 ref" href="#47i" title='i' data-ref="47i">i</a>].<a class="ref field" href="hb-buffer.h.html#hb_glyph_info_t::codepoint" title='hb_glyph_info_t::codepoint' data-ref="hb_glyph_info_t::codepoint">codepoint</a>, <span class='inlayHint'>extents:&nbsp;</span>&amp;<a class="local col0 ref" href="#50extents" title='extents' data-ref="50extents">extents</a>);</td></tr>
+<tr><th id="322">322</th><td>      <a class="local col9 ref" href="#49p" title='p' data-ref="49p">p</a> += <a class="ref" href="hb-algs.hh.html#583" title='hb_max' data-ref="hb_max">hb_max</a> (<var>0</var>, <a class="ref fn" href="../../../../../include/stdio.h.html#snprintf" title='snprintf' data-ref="snprintf">snprintf</a> (<span class='inlayHint'>s:&nbsp;</span><a class="local col9 ref" href="#49p" title='p' data-ref="49p">p</a>, <span class='inlayHint'>maxlen:&nbsp;</span><a class="ref fn" href="hb-algs.hh.html#_ZL12ARRAY_LENGTHRAT0__KT_" title='ARRAY_LENGTH' data-ref="_ZL12ARRAY_LENGTHRAT0__KT_">ARRAY_LENGTH</a> (<a class="local col8 ref" href="#48b" title='b' data-ref="48b">b</a>) - (<a class="local col9 ref" href="#49p" title='p' data-ref="49p">p</a> - <a class="local col8 ref" href="#48b" title='b' data-ref="48b">b</a>), <span class='inlayHint'>format:&nbsp;</span><q>"&lt;%d,%d,%d,%d&gt;"</q>, <a class="local col0 ref" href="#50extents" title='extents' data-ref="50extents">extents</a>.<a class="ref field" href="hb-common.h.html#hb_glyph_extents_t::x_bearing" title='hb_glyph_extents_t::x_bearing' data-ref="hb_glyph_extents_t::x_bearing">x_bearing</a>, <a class="local col0 ref" href="#50extents" title='extents' data-ref="50extents">extents</a>.<a class="ref field" href="hb-common.h.html#hb_glyph_extents_t::y_bearing" title='hb_glyph_extents_t::y_bearing' data-ref="hb_glyph_extents_t::y_bearing">y_bearing</a>, <a class="local col0 ref" href="#50extents" title='extents' data-ref="50extents">extents</a>.<a class="ref field" href="hb-common.h.html#hb_glyph_extents_t::width" title='hb_glyph_extents_t::width' data-ref="hb_glyph_extents_t::width">width</a>, <a class="local col0 ref" href="#50extents" title='extents' data-ref="50extents">extents</a>.<a class="ref field" href="hb-common.h.html#hb_glyph_extents_t::height" title='hb_glyph_extents_t::height' data-ref="hb_glyph_extents_t::height">height</a>));</td></tr>
+<tr><th id="323">323</th><td>    }</td></tr>
+<tr><th id="324">324</th><td></td></tr>
+<tr><th id="325">325</th><td>    <b>if</b> (<a class="local col7 ref" href="#47i" title='i' data-ref="47i">i</a> == <a class="local col7 ref" href="#37end" title='end' data-ref="37end">end</a>-<var>1</var>) {</td></tr>
+<tr><th id="326">326</th><td>      *<a class="local col9 ref" href="#49p" title='p' data-ref="49p">p</a>++ = <kbd>']'</kbd>;</td></tr>
+<tr><th id="327">327</th><td>    }</td></tr>
+<tr><th id="328">328</th><td></td></tr>
+<tr><th id="329">329</th><td>    <em>unsigned</em> <em>int</em> <dfn class="local col1 decl" id="51l" title='l' data-type='unsigned int' data-ref="51l">l</dfn> = <a class="local col9 ref" href="#49p" title='p' data-ref="49p">p</a> - <a class="local col8 ref" href="#48b" title='b' data-ref="48b">b</a>;</td></tr>
+<tr><th id="330">330</th><td>    <b>if</b> (<a class="local col9 ref" href="#39buf_size" title='buf_size' data-ref="39buf_size">buf_size</a> &gt; <a class="local col1 ref" href="#51l" title='l' data-ref="51l">l</a>)</td></tr>
+<tr><th id="331">331</th><td>    {</td></tr>
+<tr><th id="332">332</th><td>      <a class="ref fn" href="hb-algs.hh.html#_ZL9hb_memcpyPvPKvm" title='hb_memcpy' data-ref="_ZL9hb_memcpyPvPKvm">hb_memcpy</a> (<span class='inlayHint'>dst:&nbsp;</span><a class="local col8 ref" href="#38buf" title='buf' data-ref="38buf">buf</a>, <span class='inlayHint'>src:&nbsp;</span><a class="local col8 ref" href="#48b" title='b' data-ref="48b">b</a>, <span class='inlayHint'>len:&nbsp;</span><a class="local col1 ref" href="#51l" title='l' data-ref="51l">l</a>);</td></tr>
+<tr><th id="333">333</th><td>      <a class="local col8 ref" href="#38buf" title='buf' data-ref="38buf">buf</a> += <a class="local col1 ref" href="#51l" title='l' data-ref="51l">l</a>;</td></tr>
+<tr><th id="334">334</th><td>      <a class="local col9 ref" href="#39buf_size" title='buf_size' data-ref="39buf_size">buf_size</a> -= <a class="local col1 ref" href="#51l" title='l' data-ref="51l">l</a>;</td></tr>
+<tr><th id="335">335</th><td>      *<a class="local col0 ref" href="#40buf_consumed" title='buf_consumed' data-ref="40buf_consumed">buf_consumed</a> += <a class="local col1 ref" href="#51l" title='l' data-ref="51l">l</a>;</td></tr>
+<tr><th id="336">336</th><td>      *<a class="local col8 ref" href="#38buf" title='buf' data-ref="38buf">buf</a> = <kbd>'\0'</kbd>;</td></tr>
+<tr><th id="337">337</th><td>    } <b>else</b></td></tr>
+<tr><th id="338">338</th><td>      <b>return</b> <a class="local col7 ref" href="#47i" title='i' data-ref="47i">i</a> - <a class="local col6 ref" href="#36start" title='start' data-ref="36start">start</a>;</td></tr>
+<tr><th id="339">339</th><td></td></tr>
+<tr><th id="340">340</th><td>    <b>if</b> (<a class="local col4 ref" href="#44pos" title='pos' data-ref="44pos">pos</a> &amp;&amp; (<a class="local col2 ref" href="#42flags" title='flags' data-ref="42flags">flags</a> <a class="ref fn" href="hb-buffer.hh.html#43" title='operator&amp;' data-ref="_Zan27hb_buffer_serialize_flags_tS_">&amp;</a> <a class="enum" href="hb-buffer.h.html#HB_BUFFER_SERIALIZE_FLAG_NO_ADVANCES" title='HB_BUFFER_SERIALIZE_FLAG_NO_ADVANCES' data-ref="HB_BUFFER_SERIALIZE_FLAG_NO_ADVANCES">HB_BUFFER_SERIALIZE_FLAG_NO_ADVANCES</a>))</td></tr>
+<tr><th id="341">341</th><td>    {</td></tr>
+<tr><th id="342">342</th><td>      <a class="local col5 ref" href="#45x" title='x' data-ref="45x">x</a> += <a class="local col4 ref" href="#44pos" title='pos' data-ref="44pos">pos</a>[<a class="local col7 ref" href="#47i" title='i' data-ref="47i">i</a>].<a class="ref field" href="hb-buffer.h.html#hb_glyph_position_t::x_advance" title='hb_glyph_position_t::x_advance' data-ref="hb_glyph_position_t::x_advance">x_advance</a>;</td></tr>
+<tr><th id="343">343</th><td>      <a class="local col6 ref" href="#46y" title='y' data-ref="46y">y</a> += <a class="local col4 ref" href="#44pos" title='pos' data-ref="44pos">pos</a>[<a class="local col7 ref" href="#47i" title='i' data-ref="47i">i</a>].<a class="ref field" href="hb-buffer.h.html#hb_glyph_position_t::y_advance" title='hb_glyph_position_t::y_advance' data-ref="hb_glyph_position_t::y_advance">y_advance</a>;</td></tr>
+<tr><th id="344">344</th><td>    }</td></tr>
+<tr><th id="345">345</th><td>  }</td></tr>
+<tr><th id="346">346</th><td></td></tr>
+<tr><th id="347">347</th><td>  <b>return</b> <a class="local col7 ref" href="#37end" title='end' data-ref="37end">end</a> - <a class="local col6 ref" href="#36start" title='start' data-ref="36start">start</a>;</td></tr>
+<tr><th id="348">348</th><td>}</td></tr>
+<tr><th id="349">349</th><td></td></tr>
+<tr><th id="350">350</th><td></td></tr>
+<tr><th id="351">351</th><td><em>static</em> <em>unsigned</em> <em>int</em></td></tr>
+<tr><th id="352">352</th><td><dfn class="tu decl def fn" id="_ZL33_hb_buffer_serialize_unicode_textP11hb_buffer_tjjPcjPj27hb_buffer_serialize_flags_t" title='_hb_buffer_serialize_unicode_text' data-type='unsigned int _hb_buffer_serialize_unicode_text(hb_buffer_t * buffer, unsigned int start, unsigned int end, char * buf, unsigned int buf_size, unsigned int * buf_consumed, hb_buffer_serialize_flags_t flags)' data-ref="_ZL33_hb_buffer_serialize_unicode_textP11hb_buffer_tjjPcjPj27hb_buffer_serialize_flags_t">_hb_buffer_serialize_unicode_text</dfn> (<a class="typedef" href="hb-buffer.h.html#hb_buffer_t" title='hb_buffer_t' data-type='struct hb_buffer_t' data-ref="hb_buffer_t">hb_buffer_t</a> *<dfn class="local col2 decl" id="52buffer" title='buffer' data-type='hb_buffer_t *' data-ref="52buffer">buffer</dfn>,</td></tr>
+<tr><th id="353">353</th><td>                                   <em>unsigned</em> <em>int</em> <dfn class="local col3 decl" id="53start" title='start' data-type='unsigned int' data-ref="53start">start</dfn>,</td></tr>
+<tr><th id="354">354</th><td>                                   <em>unsigned</em> <em>int</em> <dfn class="local col4 decl" id="54end" title='end' data-type='unsigned int' data-ref="54end">end</dfn>,</td></tr>
+<tr><th id="355">355</th><td>                                   <em>char</em> *<dfn class="local col5 decl" id="55buf" title='buf' data-type='char *' data-ref="55buf">buf</dfn>,</td></tr>
+<tr><th id="356">356</th><td>                                   <em>unsigned</em> <em>int</em> <dfn class="local col6 decl" id="56buf_size" title='buf_size' data-type='unsigned int' data-ref="56buf_size">buf_size</dfn>,</td></tr>
+<tr><th id="357">357</th><td>                                   <em>unsigned</em> <em>int</em> *<dfn class="local col7 decl" id="57buf_consumed" title='buf_consumed' data-type='unsigned int *' data-ref="57buf_consumed">buf_consumed</dfn>,</td></tr>
+<tr><th id="358">358</th><td>                                   <a class="typedef" href="hb-buffer.h.html#hb_buffer_serialize_flags_t" title='hb_buffer_serialize_flags_t' data-type='enum hb_buffer_serialize_flags_t' data-ref="hb_buffer_serialize_flags_t">hb_buffer_serialize_flags_t</a> <dfn class="local col8 decl" id="58flags" title='flags' data-type='hb_buffer_serialize_flags_t' data-ref="58flags">flags</dfn>)</td></tr>
+<tr><th id="359">359</th><td>{</td></tr>
+<tr><th id="360">360</th><td>  <a class="typedef" href="hb-buffer.h.html#hb_glyph_info_t" title='hb_glyph_info_t' data-type='struct hb_glyph_info_t' data-ref="hb_glyph_info_t">hb_glyph_info_t</a> *<dfn class="local col9 decl" id="59info" title='info' data-type='hb_glyph_info_t *' data-ref="59info">info</dfn> = <a class="ref fn" href="hb-buffer.h.html#hb_buffer_get_glyph_infos" title='hb_buffer_get_glyph_infos' data-ref="hb_buffer_get_glyph_infos">hb_buffer_get_glyph_infos</a> (<a class="local col2 ref" href="#52buffer" title='buffer' data-ref="52buffer">buffer</a>, <span class='inlayHint'>length:&nbsp;</span><b>nullptr</b>);</td></tr>
+<tr><th id="361">361</th><td>  *<a class="local col7 ref" href="#57buf_consumed" title='buf_consumed' data-ref="57buf_consumed">buf_consumed</a> = <var>0</var>;</td></tr>
+<tr><th id="362">362</th><td>  <b>for</b> (<em>unsigned</em> <em>int</em> <dfn class="local col0 decl" id="60i" title='i' data-type='unsigned int' data-ref="60i">i</dfn> = <a class="local col3 ref" href="#53start" title='start' data-ref="53start">start</a>; <a class="local col0 ref" href="#60i" title='i' data-ref="60i">i</a> &lt; <a class="local col4 ref" href="#54end" title='end' data-ref="54end">end</a>; <a class="local col0 ref" href="#60i" title='i' data-ref="60i">i</a>++)</td></tr>
+<tr><th id="363">363</th><td>  {</td></tr>
+<tr><th id="364">364</th><td>    <em>char</em> <dfn class="local col1 decl" id="61b" title='b' data-type='char[1024]' data-ref="61b">b</dfn>[<var>1024</var>];</td></tr>
+<tr><th id="365">365</th><td>    <em>char</em> *<dfn class="local col2 decl" id="62p" title='p' data-type='char *' data-ref="62p">p</dfn> = <a class="local col1 ref" href="#61b" title='b' data-ref="61b">b</a>;</td></tr>
+<tr><th id="366">366</th><td></td></tr>
+<tr><th id="367">367</th><td>    <b>if</b> (<a class="local col0 ref" href="#60i" title='i' data-ref="60i">i</a>)</td></tr>
+<tr><th id="368">368</th><td>      *<a class="local col2 ref" href="#62p" title='p' data-ref="62p">p</a>++ = <kbd>'|'</kbd>;</td></tr>
+<tr><th id="369">369</th><td>    <b>else</b></td></tr>
+<tr><th id="370">370</th><td>      *<a class="local col2 ref" href="#62p" title='p' data-ref="62p">p</a>++ = <kbd>'&lt;'</kbd>;</td></tr>
+<tr><th id="371">371</th><td></td></tr>
+<tr><th id="372">372</th><td>    <a class="local col2 ref" href="#62p" title='p' data-ref="62p">p</a> += <a class="ref" href="hb-algs.hh.html#583" title='hb_max' data-ref="hb_max">hb_max</a> (<var>0</var>, <a class="ref fn" href="../../../../../include/stdio.h.html#snprintf" title='snprintf' data-ref="snprintf">snprintf</a> (<span class='inlayHint'>s:&nbsp;</span><a class="local col2 ref" href="#62p" title='p' data-ref="62p">p</a>, <span class='inlayHint'>maxlen:&nbsp;</span><a class="ref fn" href="hb-algs.hh.html#_ZL12ARRAY_LENGTHRAT0__KT_" title='ARRAY_LENGTH' data-ref="_ZL12ARRAY_LENGTHRAT0__KT_">ARRAY_LENGTH</a> (<a class="local col1 ref" href="#61b" title='b' data-ref="61b">b</a>) - (<a class="local col2 ref" href="#62p" title='p' data-ref="62p">p</a> - <a class="local col1 ref" href="#61b" title='b' data-ref="61b">b</a>), <span class='inlayHint'>format:&nbsp;</span><q>"U+%04X"</q>, <a class="local col9 ref" href="#59info" title='info' data-ref="59info">info</a>[<a class="local col0 ref" href="#60i" title='i' data-ref="60i">i</a>].<a class="ref field" href="hb-buffer.h.html#hb_glyph_info_t::codepoint" title='hb_glyph_info_t::codepoint' data-ref="hb_glyph_info_t::codepoint">codepoint</a>));</td></tr>
+<tr><th id="373">373</th><td></td></tr>
+<tr><th id="374">374</th><td>    <b>if</b> (!(<a class="local col8 ref" href="#58flags" title='flags' data-ref="58flags">flags</a> <a class="ref fn" href="hb-buffer.hh.html#43" title='operator&amp;' data-ref="_Zan27hb_buffer_serialize_flags_tS_">&amp;</a> <a class="enum" href="hb-buffer.h.html#HB_BUFFER_SERIALIZE_FLAG_NO_CLUSTERS" title='HB_BUFFER_SERIALIZE_FLAG_NO_CLUSTERS' data-ref="HB_BUFFER_SERIALIZE_FLAG_NO_CLUSTERS">HB_BUFFER_SERIALIZE_FLAG_NO_CLUSTERS</a>)) {</td></tr>
+<tr><th id="375">375</th><td>      <a class="local col2 ref" href="#62p" title='p' data-ref="62p">p</a> += <a class="ref" href="hb-algs.hh.html#583" title='hb_max' data-ref="hb_max">hb_max</a> (<var>0</var>, <a class="ref fn" href="../../../../../include/stdio.h.html#snprintf" title='snprintf' data-ref="snprintf">snprintf</a> (<span class='inlayHint'>s:&nbsp;</span><a class="local col2 ref" href="#62p" title='p' data-ref="62p">p</a>, <span class='inlayHint'>maxlen:&nbsp;</span><a class="ref fn" href="hb-algs.hh.html#_ZL12ARRAY_LENGTHRAT0__KT_" title='ARRAY_LENGTH' data-ref="_ZL12ARRAY_LENGTHRAT0__KT_">ARRAY_LENGTH</a> (<a class="local col1 ref" href="#61b" title='b' data-ref="61b">b</a>) - (<a class="local col2 ref" href="#62p" title='p' data-ref="62p">p</a> - <a class="local col1 ref" href="#61b" title='b' data-ref="61b">b</a>), <span class='inlayHint'>format:&nbsp;</span><q>"=%u"</q>, <a class="local col9 ref" href="#59info" title='info' data-ref="59info">info</a>[<a class="local col0 ref" href="#60i" title='i' data-ref="60i">i</a>].<a class="ref field" href="hb-buffer.h.html#hb_glyph_info_t::cluster" title='hb_glyph_info_t::cluster' data-ref="hb_glyph_info_t::cluster">cluster</a>));</td></tr>
+<tr><th id="376">376</th><td>    }</td></tr>
+<tr><th id="377">377</th><td></td></tr>
+<tr><th id="378">378</th><td>    <b>if</b> (<a class="local col0 ref" href="#60i" title='i' data-ref="60i">i</a> == <a class="local col4 ref" href="#54end" title='end' data-ref="54end">end</a>-<var>1</var>)</td></tr>
+<tr><th id="379">379</th><td>      *<a class="local col2 ref" href="#62p" title='p' data-ref="62p">p</a>++ = <kbd>'&gt;'</kbd>;</td></tr>
+<tr><th id="380">380</th><td></td></tr>
+<tr><th id="381">381</th><td>    <em>unsigned</em> <em>int</em> <dfn class="local col3 decl" id="63l" title='l' data-type='unsigned int' data-ref="63l">l</dfn> = <a class="local col2 ref" href="#62p" title='p' data-ref="62p">p</a> - <a class="local col1 ref" href="#61b" title='b' data-ref="61b">b</a>;</td></tr>
+<tr><th id="382">382</th><td>    <b>if</b> (<a class="local col6 ref" href="#56buf_size" title='buf_size' data-ref="56buf_size">buf_size</a> &gt; <a class="local col3 ref" href="#63l" title='l' data-ref="63l">l</a>)</td></tr>
+<tr><th id="383">383</th><td>    {</td></tr>
+<tr><th id="384">384</th><td>      <a class="ref fn" href="hb-algs.hh.html#_ZL9hb_memcpyPvPKvm" title='hb_memcpy' data-ref="_ZL9hb_memcpyPvPKvm">hb_memcpy</a> (<span class='inlayHint'>dst:&nbsp;</span><a class="local col5 ref" href="#55buf" title='buf' data-ref="55buf">buf</a>, <span class='inlayHint'>src:&nbsp;</span><a class="local col1 ref" href="#61b" title='b' data-ref="61b">b</a>, <span class='inlayHint'>len:&nbsp;</span><a class="local col3 ref" href="#63l" title='l' data-ref="63l">l</a>);</td></tr>
+<tr><th id="385">385</th><td>      <a class="local col5 ref" href="#55buf" title='buf' data-ref="55buf">buf</a> += <a class="local col3 ref" href="#63l" title='l' data-ref="63l">l</a>;</td></tr>
+<tr><th id="386">386</th><td>      <a class="local col6 ref" href="#56buf_size" title='buf_size' data-ref="56buf_size">buf_size</a> -= <a class="local col3 ref" href="#63l" title='l' data-ref="63l">l</a>;</td></tr>
+<tr><th id="387">387</th><td>      *<a class="local col7 ref" href="#57buf_consumed" title='buf_consumed' data-ref="57buf_consumed">buf_consumed</a> += <a class="local col3 ref" href="#63l" title='l' data-ref="63l">l</a>;</td></tr>
+<tr><th id="388">388</th><td>      *<a class="local col5 ref" href="#55buf" title='buf' data-ref="55buf">buf</a> = <kbd>'\0'</kbd>;</td></tr>
+<tr><th id="389">389</th><td>    } <b>else</b></td></tr>
+<tr><th id="390">390</th><td>      <b>return</b> <a class="local col0 ref" href="#60i" title='i' data-ref="60i">i</a> - <a class="local col3 ref" href="#53start" title='start' data-ref="53start">start</a>;</td></tr>
+<tr><th id="391">391</th><td>  }</td></tr>
+<tr><th id="392">392</th><td>  <b>return</b> <a class="local col4 ref" href="#54end" title='end' data-ref="54end">end</a> - <a class="local col3 ref" href="#53start" title='start' data-ref="53start">start</a>;</td></tr>
+<tr><th id="393">393</th><td>}</td></tr>
+<tr><th id="394">394</th><td></td></tr>
+<tr><th id="395">395</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="396">396</th><td><i class="doc"> * hb_buffer_serialize_glyphs:</i></td></tr>
+<tr><th id="397">397</th><td><i class="doc"> *<span class="command"> @buffer</span>: an #hb_buffer_t buffer.</i></td></tr>
+<tr><th id="398">398</th><td><i class="doc"> *<span class="command"> @start</span>: the first item in<span class="command"> @buffer</span> to serialize.</i></td></tr>
+<tr><th id="399">399</th><td><i class="doc"> *<span class="command"> @end</span>: the last item in<span class="command"> @buffer</span> to serialize.</i></td></tr>
+<tr><th id="400">400</th><td><i class="doc"> * <span class="command">@buf</span>: (out) (array length=buf_size) (element-type uint8_t): output string to</i></td></tr>
+<tr><th id="401">401</th><td><i class="doc"> *       write serialized buffer into.</i></td></tr>
+<tr><th id="402">402</th><td><i class="doc"> * <span class="command">@buf</span>_size: the size of <span class="command">@buf</span>.</i></td></tr>
+<tr><th id="403">403</th><td><i class="doc"> * <span class="command">@buf</span>_consumed: (out) (optional): if not `NULL`, will be set to the number of bytes written into <span class="command">@buf</span>.</i></td></tr>
+<tr><th id="404">404</th><td><i class="doc"> *<span class="command"> @font</span>: (nullable): the #hb_font_t used to shape this buffer, needed to</i></td></tr>
+<tr><th id="405">405</th><td><i class="doc"> *        read glyph names and extents. If `NULL`, an empty font will be used.</i></td></tr>
+<tr><th id="406">406</th><td><i class="doc"> *<span class="command"> @format</span>: the #hb_buffer_serialize_format_t to use for formatting the output.</i></td></tr>
+<tr><th id="407">407</th><td><i class="doc"> *<span class="command"> @flags</span>: the #hb_buffer_serialize_flags_t that control what glyph properties</i></td></tr>
+<tr><th id="408">408</th><td><i class="doc"> *         to serialize.</i></td></tr>
+<tr><th id="409">409</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="410">410</th><td><i class="doc"> * Serializes<span class="command"> @buffer</span> into a textual representation of its glyph content,</i></td></tr>
+<tr><th id="411">411</th><td><i class="doc"> * useful for showing the contents of the buffer, for example during debugging.</i></td></tr>
+<tr><th id="412">412</th><td><i class="doc"> * There are currently two supported serialization formats:</i></td></tr>
+<tr><th id="413">413</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="414">414</th><td><i class="doc"> * ## text</i></td></tr>
+<tr><th id="415">415</th><td><i class="doc"> * A human-readable, plain text format.</i></td></tr>
+<tr><th id="416">416</th><td><i class="doc"> * The serialized glyphs will look something like:</i></td></tr>
+<tr><th id="417">417</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="418">418</th><td><i class="doc"> * ```</i></td></tr>
+<tr><th id="419">419</th><td><i class="doc"> * [uni0651=0@518,0+0|uni0628=0+1897]</i></td></tr>
+<tr><th id="420">420</th><td><i class="doc"> * ```</i></td></tr>
+<tr><th id="421">421</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="422">422</th><td><i class="doc"> * - The serialized glyphs are delimited with `[` and `]`.</i></td></tr>
+<tr><th id="423">423</th><td><i class="doc"> * - Glyphs are separated with `|`</i></td></tr>
+<tr><th id="424">424</th><td><i class="doc"> * - Each glyph starts with glyph name, or glyph index if</i></td></tr>
+<tr><th id="425">425</th><td><i class="doc"> *   #HB_BUFFER_SERIALIZE_FLAG_NO_GLYPH_NAMES flag is set. Then,</i></td></tr>
+<tr><th id="426">426</th><td><i class="doc"> *   - If #HB_BUFFER_SERIALIZE_FLAG_NO_CLUSTERS is not set, `=` then #hb_glyph_info_t.cluster.</i></td></tr>
+<tr><th id="427">427</th><td><i class="doc"> *   - If #HB_BUFFER_SERIALIZE_FLAG_NO_POSITIONS is not set, the #hb_glyph_position_t in the format:</i></td></tr>
+<tr><th id="428">428</th><td><i class="doc"> *     - If both #hb_glyph_position_t.x_offset and #hb_glyph_position_t.y_offset are not 0, <span class="command">`@x</span>_offset,y_offset`. Then,</i></td></tr>
+<tr><th id="429">429</th><td><i class="doc"> *     - `+x_advance`, then `,y_advance` if #hb_glyph_position_t.y_advance is not 0. Then,</i></td></tr>
+<tr><th id="430">430</th><td><i class="doc"> *   - If #HB_BUFFER_SERIALIZE_FLAG_GLYPH_EXTENTS is set, the #hb_glyph_extents_t in the format `&lt;x_bearing,y_bearing,width,height&gt;`</i></td></tr>
+<tr><th id="431">431</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="432">432</th><td><i class="doc"> * ## json</i></td></tr>
+<tr><th id="433">433</th><td><i class="doc"> * A machine-readable, structured format.</i></td></tr>
+<tr><th id="434">434</th><td><i class="doc"> * The serialized glyphs will look something like:</i></td></tr>
+<tr><th id="435">435</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="436">436</th><td><i class="doc"> * ```</i></td></tr>
+<tr><th id="437">437</th><td><i class="doc"> * [{"g":"uni0651","cl":0,"dx":518,"dy":0,"ax":0,"ay":0},</i></td></tr>
+<tr><th id="438">438</th><td><i class="doc"> * {"g":"uni0628","cl":0,"dx":0,"dy":0,"ax":1897,"ay":0}]</i></td></tr>
+<tr><th id="439">439</th><td><i class="doc"> * ```</i></td></tr>
+<tr><th id="440">440</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="441">441</th><td><i class="doc"> * Each glyph is a JSON object, with the following properties:</i></td></tr>
+<tr><th id="442">442</th><td><i class="doc"> * - `g`: the glyph name or glyph index if</i></td></tr>
+<tr><th id="443">443</th><td><i class="doc"> *   #HB_BUFFER_SERIALIZE_FLAG_NO_GLYPH_NAMES flag is set.</i></td></tr>
+<tr><th id="444">444</th><td><i class="doc"> * - `cl`: #hb_glyph_info_t.cluster if</i></td></tr>
+<tr><th id="445">445</th><td><i class="doc"> *   #HB_BUFFER_SERIALIZE_FLAG_NO_CLUSTERS is not set.</i></td></tr>
+<tr><th id="446">446</th><td><i class="doc"> * - `dx`,`dy`,`ax`,`ay`: #hb_glyph_position_t.x_offset, #hb_glyph_position_t.y_offset,</i></td></tr>
+<tr><th id="447">447</th><td><i class="doc"> *    #hb_glyph_position_t.x_advance and #hb_glyph_position_t.y_advance</i></td></tr>
+<tr><th id="448">448</th><td><i class="doc"> *    respectively, if #HB_BUFFER_SERIALIZE_FLAG_NO_POSITIONS is not set.</i></td></tr>
+<tr><th id="449">449</th><td><i class="doc"> * - `xb`,`yb`,`w`,`h`: #hb_glyph_extents_t.x_bearing, #hb_glyph_extents_t.y_bearing,</i></td></tr>
+<tr><th id="450">450</th><td><i class="doc"> *    #hb_glyph_extents_t.width and #hb_glyph_extents_t.height respectively if</i></td></tr>
+<tr><th id="451">451</th><td><i class="doc"> *    #HB_BUFFER_SERIALIZE_FLAG_GLYPH_EXTENTS is set.</i></td></tr>
+<tr><th id="452">452</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="453">453</th><td><i class="doc"> * Return value:</i></td></tr>
+<tr><th id="454">454</th><td><i class="doc"> * The number of serialized items.</i></td></tr>
+<tr><th id="455">455</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="456">456</th><td><i class="doc"> * Since: 0.9.7</i></td></tr>
+<tr><th id="457">457</th><td><i class="doc"> **/</i></td></tr>
+<tr><th id="458">458</th><td><em>unsigned</em> <em>int</em></td></tr>
+<tr><th id="459">459</th><td><dfn class="decl def fn" id="hb_buffer_serialize_glyphs" title='hb_buffer_serialize_glyphs' data-ref="hb_buffer_serialize_glyphs">hb_buffer_serialize_glyphs</dfn> (<a class="typedef" href="hb-buffer.h.html#hb_buffer_t" title='hb_buffer_t' data-type='struct hb_buffer_t' data-ref="hb_buffer_t">hb_buffer_t</a> *<dfn class="local col4 decl" id="64buffer" title='buffer' data-type='hb_buffer_t *' data-ref="64buffer">buffer</dfn>,</td></tr>
+<tr><th id="460">460</th><td>                            <em>unsigned</em> <em>int</em> <dfn class="local col5 decl" id="65start" title='start' data-type='unsigned int' data-ref="65start">start</dfn>,</td></tr>
+<tr><th id="461">461</th><td>                            <em>unsigned</em> <em>int</em> <dfn class="local col6 decl" id="66end" title='end' data-type='unsigned int' data-ref="66end">end</dfn>,</td></tr>
+<tr><th id="462">462</th><td>                            <em>char</em> *<dfn class="local col7 decl" id="67buf" title='buf' data-type='char *' data-ref="67buf">buf</dfn>,</td></tr>
+<tr><th id="463">463</th><td>                            <em>unsigned</em> <em>int</em> <dfn class="local col8 decl" id="68buf_size" title='buf_size' data-type='unsigned int' data-ref="68buf_size">buf_size</dfn>,</td></tr>
+<tr><th id="464">464</th><td>                            <em>unsigned</em> <em>int</em> *<dfn class="local col9 decl" id="69buf_consumed" title='buf_consumed' data-type='unsigned int *' data-ref="69buf_consumed">buf_consumed</dfn>,</td></tr>
+<tr><th id="465">465</th><td>                            <a class="typedef" href="hb-common.h.html#hb_font_t" title='hb_font_t' data-type='struct hb_font_t' data-ref="hb_font_t">hb_font_t</a> *<dfn class="local col0 decl" id="70font" title='font' data-type='hb_font_t *' data-ref="70font">font</dfn>,</td></tr>
+<tr><th id="466">466</th><td>                            <a class="typedef" href="hb-buffer.h.html#hb_buffer_serialize_format_t" title='hb_buffer_serialize_format_t' data-type='enum hb_buffer_serialize_format_t' data-ref="hb_buffer_serialize_format_t">hb_buffer_serialize_format_t</a> <dfn class="local col1 decl" id="71format" title='format' data-type='hb_buffer_serialize_format_t' data-ref="71format">format</dfn>,</td></tr>
+<tr><th id="467">467</th><td>                            <a class="typedef" href="hb-buffer.h.html#hb_buffer_serialize_flags_t" title='hb_buffer_serialize_flags_t' data-type='enum hb_buffer_serialize_flags_t' data-ref="hb_buffer_serialize_flags_t">hb_buffer_serialize_flags_t</a> <dfn class="local col2 decl" id="72flags" title='flags' data-type='hb_buffer_serialize_flags_t' data-ref="72flags">flags</dfn>)</td></tr>
+<tr><th id="468">468</th><td>{</td></tr>
+<tr><th id="469">469</th><td>  <a class="local col6 ref" href="#66end" title='end' data-ref="66end">end</a> = <a class="ref" href="hb-algs.hh.html#590" title='hb_clamp' data-ref="hb_clamp">hb_clamp</a> (<a class="local col6 ref" href="#66end" title='end' data-ref="66end">end</a>, <a class="local col5 ref" href="#65start" title='start' data-ref="65start">start</a>, <a class="local col4 ref" href="#64buffer" title='buffer' data-ref="64buffer">buffer</a>-&gt;<a class="ref field" href="hb-buffer.hh.html#hb_buffer_t::len" title='hb_buffer_t::len' data-ref="hb_buffer_t::len">len</a>);</td></tr>
+<tr><th id="470">470</th><td>  <a class="local col5 ref" href="#65start" title='start' data-ref="65start">start</a> = <a class="ref" href="hb-algs.hh.html#576" title='hb_min' data-ref="hb_min">hb_min</a> (<a class="local col5 ref" href="#65start" title='start' data-ref="65start">start</a>, <a class="local col6 ref" href="#66end" title='end' data-ref="66end">end</a>);</td></tr>
+<tr><th id="471">471</th><td></td></tr>
+<tr><th id="472">472</th><td>  <em>unsigned</em> <em>int</em> <dfn class="local col3 decl" id="73sconsumed" title='sconsumed' data-type='unsigned int' data-ref="73sconsumed">sconsumed</dfn>;</td></tr>
+<tr><th id="473">473</th><td>  <b>if</b> (!<a class="local col9 ref" href="#69buf_consumed" title='buf_consumed' data-ref="69buf_consumed">buf_consumed</a>)</td></tr>
+<tr><th id="474">474</th><td>    <a class="local col9 ref" href="#69buf_consumed" title='buf_consumed' data-ref="69buf_consumed">buf_consumed</a> = &amp;<a class="local col3 ref" href="#73sconsumed" title='sconsumed' data-ref="73sconsumed">sconsumed</a>;</td></tr>
+<tr><th id="475">475</th><td>  *<a class="local col9 ref" href="#69buf_consumed" title='buf_consumed' data-ref="69buf_consumed">buf_consumed</a> = <var>0</var>;</td></tr>
+<tr><th id="476">476</th><td>  <b>if</b> (<a class="local col8 ref" href="#68buf_size" title='buf_size' data-ref="68buf_size">buf_size</a>)</td></tr>
+<tr><th id="477">477</th><td>    *<a class="local col7 ref" href="#67buf" title='buf' data-ref="67buf">buf</a> = <kbd>'\0'</kbd>;</td></tr>
+<tr><th id="478">478</th><td></td></tr>
+<tr><th id="479">479</th><td>  <a class="local col4 ref" href="#64buffer" title='buffer' data-ref="64buffer">buffer</a>-&gt;<a class="ref fn" href="hb-buffer.hh.html#_ZN11hb_buffer_t13assert_glyphsEv" title='hb_buffer_t::assert_glyphs' data-ref="_ZN11hb_buffer_t13assert_glyphsEv">assert_glyphs</a> ();</td></tr>
+<tr><th id="480">480</th><td></td></tr>
+<tr><th id="481">481</th><td>  <b>if</b> (!<a class="local col4 ref" href="#64buffer" title='buffer' data-ref="64buffer">buffer</a>-&gt;<a class="ref field" href="hb-buffer.hh.html#hb_buffer_t::have_positions" title='hb_buffer_t::have_positions' data-ref="hb_buffer_t::have_positions">have_positions</a>)</td></tr>
+<tr><th id="482">482</th><td>    <a class="local col2 ref" href="#72flags" title='flags' data-ref="72flags">flags</a> <a class="ref fn" href="hb-buffer.hh.html#43" title='operator|=' data-ref="_ZoRR27hb_buffer_serialize_flags_tS_">|=</a> <a class="enum" href="hb-buffer.h.html#HB_BUFFER_SERIALIZE_FLAG_NO_POSITIONS" title='HB_BUFFER_SERIALIZE_FLAG_NO_POSITIONS' data-ref="HB_BUFFER_SERIALIZE_FLAG_NO_POSITIONS">HB_BUFFER_SERIALIZE_FLAG_NO_POSITIONS</a>;</td></tr>
+<tr><th id="483">483</th><td></td></tr>
+<tr><th id="484">484</th><td>  <b>if</b> (<a class="macro" href="hb.hh.html#251" title="(__builtin_expect (!!(start == end), 0))" data-ref="_M/unlikely">unlikely</a> (<a class="local col5 ref" href="#65start" title='start' data-ref="65start">start</a> == <a class="local col6 ref" href="#66end" title='end' data-ref="66end">end</a>))</td></tr>
+<tr><th id="485">485</th><td>    <b>return</b> <var>0</var>;</td></tr>
+<tr><th id="486">486</th><td></td></tr>
+<tr><th id="487">487</th><td>  <b>if</b> (!<a class="local col0 ref" href="#70font" title='font' data-ref="70font">font</a>)</td></tr>
+<tr><th id="488">488</th><td>    <a class="local col0 ref" href="#70font" title='font' data-ref="70font">font</a> = <a class="ref fn" href="hb-font.h.html#hb_font_get_empty" title='hb_font_get_empty' data-ref="hb_font_get_empty">hb_font_get_empty</a> ();</td></tr>
+<tr><th id="489">489</th><td></td></tr>
+<tr><th id="490">490</th><td>  <b>switch</b> (<a class="local col1 ref" href="#71format" title='format' data-ref="71format">format</a>)</td></tr>
+<tr><th id="491">491</th><td>  {</td></tr>
+<tr><th id="492">492</th><td>    <b>case</b> <a class="enum" href="hb-buffer.h.html#HB_BUFFER_SERIALIZE_FORMAT_TEXT" title='HB_BUFFER_SERIALIZE_FORMAT_TEXT' data-ref="HB_BUFFER_SERIALIZE_FORMAT_TEXT">HB_BUFFER_SERIALIZE_FORMAT_TEXT</a>:</td></tr>
+<tr><th id="493">493</th><td>      <b>return</b> <a class="tu ref fn" href="#_ZL32_hb_buffer_serialize_glyphs_textP11hb_buffer_tjjPcjPjP9hb_font_t27hb_buffer_serialize_flags_t" title='_hb_buffer_serialize_glyphs_text' data-use='c' data-ref="_ZL32_hb_buffer_serialize_glyphs_textP11hb_buffer_tjjPcjPjP9hb_font_t27hb_buffer_serialize_flags_t">_hb_buffer_serialize_glyphs_text</a> (<a class="local col4 ref" href="#64buffer" title='buffer' data-ref="64buffer">buffer</a>, <a class="local col5 ref" href="#65start" title='start' data-ref="65start">start</a>, <a class="local col6 ref" href="#66end" title='end' data-ref="66end">end</a>,</td></tr>
+<tr><th id="494">494</th><td>                 <a class="local col7 ref" href="#67buf" title='buf' data-ref="67buf">buf</a>, <a class="local col8 ref" href="#68buf_size" title='buf_size' data-ref="68buf_size">buf_size</a>, <a class="local col9 ref" href="#69buf_consumed" title='buf_consumed' data-ref="69buf_consumed">buf_consumed</a>,</td></tr>
+<tr><th id="495">495</th><td>                 <a class="local col0 ref" href="#70font" title='font' data-ref="70font">font</a>, <a class="local col2 ref" href="#72flags" title='flags' data-ref="72flags">flags</a>);</td></tr>
+<tr><th id="496">496</th><td></td></tr>
+<tr><th id="497">497</th><td>    <b>case</b> <a class="enum" href="hb-buffer.h.html#HB_BUFFER_SERIALIZE_FORMAT_JSON" title='HB_BUFFER_SERIALIZE_FORMAT_JSON' data-ref="HB_BUFFER_SERIALIZE_FORMAT_JSON">HB_BUFFER_SERIALIZE_FORMAT_JSON</a>:</td></tr>
+<tr><th id="498">498</th><td>      <b>return</b> <a class="tu ref fn" href="#_ZL32_hb_buffer_serialize_glyphs_jsonP11hb_buffer_tjjPcjPjP9hb_font_t27hb_buffer_serialize_flags_t" title='_hb_buffer_serialize_glyphs_json' data-use='c' data-ref="_ZL32_hb_buffer_serialize_glyphs_jsonP11hb_buffer_tjjPcjPjP9hb_font_t27hb_buffer_serialize_flags_t">_hb_buffer_serialize_glyphs_json</a> (<a class="local col4 ref" href="#64buffer" title='buffer' data-ref="64buffer">buffer</a>, <a class="local col5 ref" href="#65start" title='start' data-ref="65start">start</a>, <a class="local col6 ref" href="#66end" title='end' data-ref="66end">end</a>,</td></tr>
+<tr><th id="499">499</th><td>                 <a class="local col7 ref" href="#67buf" title='buf' data-ref="67buf">buf</a>, <a class="local col8 ref" href="#68buf_size" title='buf_size' data-ref="68buf_size">buf_size</a>, <a class="local col9 ref" href="#69buf_consumed" title='buf_consumed' data-ref="69buf_consumed">buf_consumed</a>,</td></tr>
+<tr><th id="500">500</th><td>                 <a class="local col0 ref" href="#70font" title='font' data-ref="70font">font</a>, <a class="local col2 ref" href="#72flags" title='flags' data-ref="72flags">flags</a>);</td></tr>
+<tr><th id="501">501</th><td></td></tr>
+<tr><th id="502">502</th><td>    <b>default</b>:</td></tr>
+<tr><th id="503">503</th><td>    <b>case</b> <a class="enum" href="hb-buffer.h.html#HB_BUFFER_SERIALIZE_FORMAT_INVALID" title='HB_BUFFER_SERIALIZE_FORMAT_INVALID' data-ref="HB_BUFFER_SERIALIZE_FORMAT_INVALID">HB_BUFFER_SERIALIZE_FORMAT_INVALID</a>:</td></tr>
+<tr><th id="504">504</th><td>      <b>return</b> <var>0</var>;</td></tr>
+<tr><th id="505">505</th><td></td></tr>
+<tr><th id="506">506</th><td>  }</td></tr>
+<tr><th id="507">507</th><td>}</td></tr>
+<tr><th id="508">508</th><td></td></tr>
+<tr><th id="509">509</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="510">510</th><td><i class="doc"> * hb_buffer_serialize_unicode:</i></td></tr>
+<tr><th id="511">511</th><td><i class="doc"> *<span class="command"> @buffer</span>: an #hb_buffer_t buffer.</i></td></tr>
+<tr><th id="512">512</th><td><i class="doc"> *<span class="command"> @start</span>: the first item in<span class="command"> @buffer</span> to serialize.</i></td></tr>
+<tr><th id="513">513</th><td><i class="doc"> *<span class="command"> @end</span>: the last item in<span class="command"> @buffer</span> to serialize.</i></td></tr>
+<tr><th id="514">514</th><td><i class="doc"> * <span class="command">@buf</span>: (out) (array length=buf_size) (element-type uint8_t): output string to</i></td></tr>
+<tr><th id="515">515</th><td><i class="doc"> *       write serialized buffer into.</i></td></tr>
+<tr><th id="516">516</th><td><i class="doc"> * <span class="command">@buf</span>_size: the size of <span class="command">@buf</span>.</i></td></tr>
+<tr><th id="517">517</th><td><i class="doc"> * <span class="command">@buf</span>_consumed: (out) (optional): if not `NULL`, will be set to the number of bytes written into <span class="command">@buf</span>.</i></td></tr>
+<tr><th id="518">518</th><td><i class="doc"> *<span class="command"> @format</span>: the #hb_buffer_serialize_format_t to use for formatting the output.</i></td></tr>
+<tr><th id="519">519</th><td><i class="doc"> *<span class="command"> @flags</span>: the #hb_buffer_serialize_flags_t that control what glyph properties</i></td></tr>
+<tr><th id="520">520</th><td><i class="doc"> *         to serialize.</i></td></tr>
+<tr><th id="521">521</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="522">522</th><td><i class="doc"> * Serializes<span class="command"> @buffer</span> into a textual representation of its content,</i></td></tr>
+<tr><th id="523">523</th><td><i class="doc"> * when the buffer contains Unicode codepoints (i.e., before shaping). This is</i></td></tr>
+<tr><th id="524">524</th><td><i class="doc"> * useful for showing the contents of the buffer, for example during debugging.</i></td></tr>
+<tr><th id="525">525</th><td><i class="doc"> * There are currently two supported serialization formats:</i></td></tr>
+<tr><th id="526">526</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="527">527</th><td><i class="doc"> * ## text</i></td></tr>
+<tr><th id="528">528</th><td><i class="doc"> * A human-readable, plain text format.</i></td></tr>
+<tr><th id="529">529</th><td><i class="doc"> * The serialized codepoints will look something like:</i></td></tr>
+<tr><th id="530">530</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="531">531</th><td><i class="doc"> * ```</i></td></tr>
+<tr><th id="532">532</th><td><i class="doc"> *  &lt;U+0651=0|U+0628=1&gt;</i></td></tr>
+<tr><th id="533">533</th><td><i class="doc"> * ```</i></td></tr>
+<tr><th id="534">534</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="535">535</th><td><i class="doc"> * - Glyphs are separated with `|`</i></td></tr>
+<tr><th id="536">536</th><td><i class="doc"> * - Unicode codepoints are expressed as zero-padded four (or more)</i></td></tr>
+<tr><th id="537">537</th><td><i class="doc"> *   digit hexadecimal numbers preceded by `U+`</i></td></tr>
+<tr><th id="538">538</th><td><i class="doc"> * - If #HB_BUFFER_SERIALIZE_FLAG_NO_CLUSTERS is not set, the cluster</i></td></tr>
+<tr><th id="539">539</th><td><i class="doc"> *   will be indicated with a `=` then #hb_glyph_info_t.cluster.</i></td></tr>
+<tr><th id="540">540</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="541">541</th><td><i class="doc"> * ## json</i></td></tr>
+<tr><th id="542">542</th><td><i class="doc"> * A machine-readable, structured format.</i></td></tr>
+<tr><th id="543">543</th><td><i class="doc"> * The serialized codepoints will be a list of objects with the following</i></td></tr>
+<tr><th id="544">544</th><td><i class="doc"> * properties:</i></td></tr>
+<tr><th id="545">545</th><td><i class="doc"> * - `u`: the Unicode codepoint as a decimal integer</i></td></tr>
+<tr><th id="546">546</th><td><i class="doc"> * - `cl`: #hb_glyph_info_t.cluster if</i></td></tr>
+<tr><th id="547">547</th><td><i class="doc"> *   #HB_BUFFER_SERIALIZE_FLAG_NO_CLUSTERS is not set.</i></td></tr>
+<tr><th id="548">548</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="549">549</th><td><i class="doc"> * For example:</i></td></tr>
+<tr><th id="550">550</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="551">551</th><td><i class="doc"> * ```</i></td></tr>
+<tr><th id="552">552</th><td><i class="doc"> * [{u:1617,cl:0},{u:1576,cl:1}]</i></td></tr>
+<tr><th id="553">553</th><td><i class="doc"> * ```</i></td></tr>
+<tr><th id="554">554</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="555">555</th><td><i class="doc"> * Return value:</i></td></tr>
+<tr><th id="556">556</th><td><i class="doc"> * The number of serialized items.</i></td></tr>
+<tr><th id="557">557</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="558">558</th><td><i class="doc"> * Since: 2.7.3</i></td></tr>
+<tr><th id="559">559</th><td><i class="doc"> **/</i></td></tr>
+<tr><th id="560">560</th><td><em>unsigned</em> <em>int</em></td></tr>
+<tr><th id="561">561</th><td><dfn class="decl def fn" id="hb_buffer_serialize_unicode" title='hb_buffer_serialize_unicode' data-ref="hb_buffer_serialize_unicode">hb_buffer_serialize_unicode</dfn> (<a class="typedef" href="hb-buffer.h.html#hb_buffer_t" title='hb_buffer_t' data-type='struct hb_buffer_t' data-ref="hb_buffer_t">hb_buffer_t</a> *<dfn class="local col4 decl" id="74buffer" title='buffer' data-type='hb_buffer_t *' data-ref="74buffer">buffer</dfn>,</td></tr>
+<tr><th id="562">562</th><td>                             <em>unsigned</em> <em>int</em> <dfn class="local col5 decl" id="75start" title='start' data-type='unsigned int' data-ref="75start">start</dfn>,</td></tr>
+<tr><th id="563">563</th><td>                             <em>unsigned</em> <em>int</em> <dfn class="local col6 decl" id="76end" title='end' data-type='unsigned int' data-ref="76end">end</dfn>,</td></tr>
+<tr><th id="564">564</th><td>                             <em>char</em> *<dfn class="local col7 decl" id="77buf" title='buf' data-type='char *' data-ref="77buf">buf</dfn>,</td></tr>
+<tr><th id="565">565</th><td>                             <em>unsigned</em> <em>int</em> <dfn class="local col8 decl" id="78buf_size" title='buf_size' data-type='unsigned int' data-ref="78buf_size">buf_size</dfn>,</td></tr>
+<tr><th id="566">566</th><td>                             <em>unsigned</em> <em>int</em> *<dfn class="local col9 decl" id="79buf_consumed" title='buf_consumed' data-type='unsigned int *' data-ref="79buf_consumed">buf_consumed</dfn>,</td></tr>
+<tr><th id="567">567</th><td>                             <a class="typedef" href="hb-buffer.h.html#hb_buffer_serialize_format_t" title='hb_buffer_serialize_format_t' data-type='enum hb_buffer_serialize_format_t' data-ref="hb_buffer_serialize_format_t">hb_buffer_serialize_format_t</a> <dfn class="local col0 decl" id="80format" title='format' data-type='hb_buffer_serialize_format_t' data-ref="80format">format</dfn>,</td></tr>
+<tr><th id="568">568</th><td>                             <a class="typedef" href="hb-buffer.h.html#hb_buffer_serialize_flags_t" title='hb_buffer_serialize_flags_t' data-type='enum hb_buffer_serialize_flags_t' data-ref="hb_buffer_serialize_flags_t">hb_buffer_serialize_flags_t</a> <dfn class="local col1 decl" id="81flags" title='flags' data-type='hb_buffer_serialize_flags_t' data-ref="81flags">flags</dfn>)</td></tr>
+<tr><th id="569">569</th><td>{</td></tr>
+<tr><th id="570">570</th><td>  <a class="local col6 ref" href="#76end" title='end' data-ref="76end">end</a> = <a class="ref" href="hb-algs.hh.html#590" title='hb_clamp' data-ref="hb_clamp">hb_clamp</a> (<a class="local col6 ref" href="#76end" title='end' data-ref="76end">end</a>, <a class="local col5 ref" href="#75start" title='start' data-ref="75start">start</a>, <a class="local col4 ref" href="#74buffer" title='buffer' data-ref="74buffer">buffer</a>-&gt;<a class="ref field" href="hb-buffer.hh.html#hb_buffer_t::len" title='hb_buffer_t::len' data-ref="hb_buffer_t::len">len</a>);</td></tr>
+<tr><th id="571">571</th><td>  <a class="local col5 ref" href="#75start" title='start' data-ref="75start">start</a> = <a class="ref" href="hb-algs.hh.html#576" title='hb_min' data-ref="hb_min">hb_min</a> (<a class="local col5 ref" href="#75start" title='start' data-ref="75start">start</a>, <a class="local col6 ref" href="#76end" title='end' data-ref="76end">end</a>);</td></tr>
+<tr><th id="572">572</th><td></td></tr>
+<tr><th id="573">573</th><td>  <em>unsigned</em> <em>int</em> <dfn class="local col2 decl" id="82sconsumed" title='sconsumed' data-type='unsigned int' data-ref="82sconsumed">sconsumed</dfn>;</td></tr>
+<tr><th id="574">574</th><td>  <b>if</b> (!<a class="local col9 ref" href="#79buf_consumed" title='buf_consumed' data-ref="79buf_consumed">buf_consumed</a>)</td></tr>
+<tr><th id="575">575</th><td>    <a class="local col9 ref" href="#79buf_consumed" title='buf_consumed' data-ref="79buf_consumed">buf_consumed</a> = &amp;<a class="local col2 ref" href="#82sconsumed" title='sconsumed' data-ref="82sconsumed">sconsumed</a>;</td></tr>
+<tr><th id="576">576</th><td>  *<a class="local col9 ref" href="#79buf_consumed" title='buf_consumed' data-ref="79buf_consumed">buf_consumed</a> = <var>0</var>;</td></tr>
+<tr><th id="577">577</th><td>  <b>if</b> (<a class="local col8 ref" href="#78buf_size" title='buf_size' data-ref="78buf_size">buf_size</a>)</td></tr>
+<tr><th id="578">578</th><td>    *<a class="local col7 ref" href="#77buf" title='buf' data-ref="77buf">buf</a> = <kbd>'\0'</kbd>;</td></tr>
+<tr><th id="579">579</th><td></td></tr>
+<tr><th id="580">580</th><td>  <a class="local col4 ref" href="#74buffer" title='buffer' data-ref="74buffer">buffer</a>-&gt;<a class="ref fn" href="hb-buffer.hh.html#_ZN11hb_buffer_t14assert_unicodeEv" title='hb_buffer_t::assert_unicode' data-ref="_ZN11hb_buffer_t14assert_unicodeEv">assert_unicode</a> ();</td></tr>
+<tr><th id="581">581</th><td></td></tr>
+<tr><th id="582">582</th><td>  <b>if</b> (<a class="macro" href="hb.hh.html#251" title="(__builtin_expect (!!(start == end), 0))" data-ref="_M/unlikely">unlikely</a> (<a class="local col5 ref" href="#75start" title='start' data-ref="75start">start</a> == <a class="local col6 ref" href="#76end" title='end' data-ref="76end">end</a>))</td></tr>
+<tr><th id="583">583</th><td>    <b>return</b> <var>0</var>;</td></tr>
+<tr><th id="584">584</th><td></td></tr>
+<tr><th id="585">585</th><td>  <b>switch</b> (<a class="local col0 ref" href="#80format" title='format' data-ref="80format">format</a>)</td></tr>
+<tr><th id="586">586</th><td>  {</td></tr>
+<tr><th id="587">587</th><td>    <b>case</b> <a class="enum" href="hb-buffer.h.html#HB_BUFFER_SERIALIZE_FORMAT_TEXT" title='HB_BUFFER_SERIALIZE_FORMAT_TEXT' data-ref="HB_BUFFER_SERIALIZE_FORMAT_TEXT">HB_BUFFER_SERIALIZE_FORMAT_TEXT</a>:</td></tr>
+<tr><th id="588">588</th><td>      <b>return</b> <a class="tu ref fn" href="#_ZL33_hb_buffer_serialize_unicode_textP11hb_buffer_tjjPcjPj27hb_buffer_serialize_flags_t" title='_hb_buffer_serialize_unicode_text' data-use='c' data-ref="_ZL33_hb_buffer_serialize_unicode_textP11hb_buffer_tjjPcjPj27hb_buffer_serialize_flags_t">_hb_buffer_serialize_unicode_text</a> (<a class="local col4 ref" href="#74buffer" title='buffer' data-ref="74buffer">buffer</a>, <a class="local col5 ref" href="#75start" title='start' data-ref="75start">start</a>, <a class="local col6 ref" href="#76end" title='end' data-ref="76end">end</a>,</td></tr>
+<tr><th id="589">589</th><td>                                                <a class="local col7 ref" href="#77buf" title='buf' data-ref="77buf">buf</a>, <a class="local col8 ref" href="#78buf_size" title='buf_size' data-ref="78buf_size">buf_size</a>, <a class="local col9 ref" href="#79buf_consumed" title='buf_consumed' data-ref="79buf_consumed">buf_consumed</a>, <a class="local col1 ref" href="#81flags" title='flags' data-ref="81flags">flags</a>);</td></tr>
+<tr><th id="590">590</th><td></td></tr>
+<tr><th id="591">591</th><td>    <b>case</b> <a class="enum" href="hb-buffer.h.html#HB_BUFFER_SERIALIZE_FORMAT_JSON" title='HB_BUFFER_SERIALIZE_FORMAT_JSON' data-ref="HB_BUFFER_SERIALIZE_FORMAT_JSON">HB_BUFFER_SERIALIZE_FORMAT_JSON</a>:</td></tr>
+<tr><th id="592">592</th><td>      <b>return</b> <a class="tu ref fn" href="#_ZL33_hb_buffer_serialize_unicode_jsonP11hb_buffer_tjjPcjPj27hb_buffer_serialize_flags_t" title='_hb_buffer_serialize_unicode_json' data-use='c' data-ref="_ZL33_hb_buffer_serialize_unicode_jsonP11hb_buffer_tjjPcjPj27hb_buffer_serialize_flags_t">_hb_buffer_serialize_unicode_json</a> (<a class="local col4 ref" href="#74buffer" title='buffer' data-ref="74buffer">buffer</a>, <a class="local col5 ref" href="#75start" title='start' data-ref="75start">start</a>, <a class="local col6 ref" href="#76end" title='end' data-ref="76end">end</a>,</td></tr>
+<tr><th id="593">593</th><td>                                                <a class="local col7 ref" href="#77buf" title='buf' data-ref="77buf">buf</a>, <a class="local col8 ref" href="#78buf_size" title='buf_size' data-ref="78buf_size">buf_size</a>, <a class="local col9 ref" href="#79buf_consumed" title='buf_consumed' data-ref="79buf_consumed">buf_consumed</a>, <a class="local col1 ref" href="#81flags" title='flags' data-ref="81flags">flags</a>);</td></tr>
+<tr><th id="594">594</th><td></td></tr>
+<tr><th id="595">595</th><td>    <b>default</b>:</td></tr>
+<tr><th id="596">596</th><td>    <b>case</b> <a class="enum" href="hb-buffer.h.html#HB_BUFFER_SERIALIZE_FORMAT_INVALID" title='HB_BUFFER_SERIALIZE_FORMAT_INVALID' data-ref="HB_BUFFER_SERIALIZE_FORMAT_INVALID">HB_BUFFER_SERIALIZE_FORMAT_INVALID</a>:</td></tr>
+<tr><th id="597">597</th><td>      <b>return</b> <var>0</var>;</td></tr>
+<tr><th id="598">598</th><td></td></tr>
+<tr><th id="599">599</th><td>  }</td></tr>
+<tr><th id="600">600</th><td>}</td></tr>
+<tr><th id="601">601</th><td></td></tr>
+<tr><th id="602">602</th><td><em>static</em> <em>unsigned</em> <em>int</em></td></tr>
+<tr><th id="603">603</th><td><dfn class="tu decl def fn" id="_ZL28_hb_buffer_serialize_invalidP11hb_buffer_tjjPcjPj28hb_buffer_serialize_format_t27hb_buffer_serialize_flags_t" title='_hb_buffer_serialize_invalid' data-type='unsigned int _hb_buffer_serialize_invalid(hb_buffer_t * buffer, unsigned int start, unsigned int end, char * buf, unsigned int buf_size, unsigned int * buf_consumed, hb_buffer_serialize_format_t format, hb_buffer_serialize_flags_t flags)' data-ref="_ZL28_hb_buffer_serialize_invalidP11hb_buffer_tjjPcjPj28hb_buffer_serialize_format_t27hb_buffer_serialize_flags_t">_hb_buffer_serialize_invalid</dfn> (<a class="typedef" href="hb-buffer.h.html#hb_buffer_t" title='hb_buffer_t' data-type='struct hb_buffer_t' data-ref="hb_buffer_t">hb_buffer_t</a> *<dfn class="local col3 decl" id="83buffer" title='buffer' data-type='hb_buffer_t *' data-ref="83buffer">buffer</dfn>,</td></tr>
+<tr><th id="604">604</th><td>                              <em>unsigned</em> <em>int</em> <dfn class="local col4 decl" id="84start" title='start' data-type='unsigned int' data-ref="84start">start</dfn>,</td></tr>
+<tr><th id="605">605</th><td>                              <em>unsigned</em> <em>int</em> <dfn class="local col5 decl" id="85end" title='end' data-type='unsigned int' data-ref="85end">end</dfn>,</td></tr>
+<tr><th id="606">606</th><td>                              <em>char</em> *<dfn class="local col6 decl" id="86buf" title='buf' data-type='char *' data-ref="86buf">buf</dfn>,</td></tr>
+<tr><th id="607">607</th><td>                              <em>unsigned</em> <em>int</em> <dfn class="local col7 decl" id="87buf_size" title='buf_size' data-type='unsigned int' data-ref="87buf_size">buf_size</dfn>,</td></tr>
+<tr><th id="608">608</th><td>                              <em>unsigned</em> <em>int</em> *<dfn class="local col8 decl" id="88buf_consumed" title='buf_consumed' data-type='unsigned int *' data-ref="88buf_consumed">buf_consumed</dfn>,</td></tr>
+<tr><th id="609">609</th><td>                              <a class="typedef" href="hb-buffer.h.html#hb_buffer_serialize_format_t" title='hb_buffer_serialize_format_t' data-type='enum hb_buffer_serialize_format_t' data-ref="hb_buffer_serialize_format_t">hb_buffer_serialize_format_t</a> <dfn class="local col9 decl" id="89format" title='format' data-type='hb_buffer_serialize_format_t' data-ref="89format">format</dfn>,</td></tr>
+<tr><th id="610">610</th><td>                              <a class="typedef" href="hb-buffer.h.html#hb_buffer_serialize_flags_t" title='hb_buffer_serialize_flags_t' data-type='enum hb_buffer_serialize_flags_t' data-ref="hb_buffer_serialize_flags_t">hb_buffer_serialize_flags_t</a> <dfn class="local col0 decl" id="90flags" title='flags' data-type='hb_buffer_serialize_flags_t' data-ref="90flags">flags</dfn>)</td></tr>
+<tr><th id="611">611</th><td>{</td></tr>
+<tr><th id="612">612</th><td>  <a class="macro" href="../../../../../include/assert.h.html#50" title="(static_cast&lt;void&gt; (0))" data-ref="_M/assert">assert</a> (!buffer-&gt;len);</td></tr>
+<tr><th id="613">613</th><td></td></tr>
+<tr><th id="614">614</th><td>  <em>unsigned</em> <em>int</em> <dfn class="local col1 decl" id="91sconsumed" title='sconsumed' data-type='unsigned int' data-ref="91sconsumed">sconsumed</dfn>;</td></tr>
+<tr><th id="615">615</th><td>  <b>if</b> (!<a class="local col8 ref" href="#88buf_consumed" title='buf_consumed' data-ref="88buf_consumed">buf_consumed</a>)</td></tr>
+<tr><th id="616">616</th><td>    <a class="local col8 ref" href="#88buf_consumed" title='buf_consumed' data-ref="88buf_consumed">buf_consumed</a> = &amp;<a class="local col1 ref" href="#91sconsumed" title='sconsumed' data-ref="91sconsumed">sconsumed</a>;</td></tr>
+<tr><th id="617">617</th><td>  <b>if</b> (<a class="local col7 ref" href="#87buf_size" title='buf_size' data-ref="87buf_size">buf_size</a> &lt; <var>3</var>)</td></tr>
+<tr><th id="618">618</th><td>    <b>return</b> <var>0</var>;</td></tr>
+<tr><th id="619">619</th><td>  <b>if</b> (<a class="local col9 ref" href="#89format" title='format' data-ref="89format">format</a> == <a class="enum" href="hb-buffer.h.html#HB_BUFFER_SERIALIZE_FORMAT_JSON" title='HB_BUFFER_SERIALIZE_FORMAT_JSON' data-ref="HB_BUFFER_SERIALIZE_FORMAT_JSON">HB_BUFFER_SERIALIZE_FORMAT_JSON</a>) {</td></tr>
+<tr><th id="620">620</th><td>    *<a class="local col6 ref" href="#86buf" title='buf' data-ref="86buf">buf</a>++ = <kbd>'['</kbd>;</td></tr>
+<tr><th id="621">621</th><td>    *<a class="local col6 ref" href="#86buf" title='buf' data-ref="86buf">buf</a>++ = <kbd>']'</kbd>;</td></tr>
+<tr><th id="622">622</th><td>    *<a class="local col6 ref" href="#86buf" title='buf' data-ref="86buf">buf</a> = <kbd>'\0'</kbd>;</td></tr>
+<tr><th id="623">623</th><td>  } <b>else</b> <b>if</b> (<a class="local col9 ref" href="#89format" title='format' data-ref="89format">format</a> == <a class="enum" href="hb-buffer.h.html#HB_BUFFER_SERIALIZE_FORMAT_TEXT" title='HB_BUFFER_SERIALIZE_FORMAT_TEXT' data-ref="HB_BUFFER_SERIALIZE_FORMAT_TEXT">HB_BUFFER_SERIALIZE_FORMAT_TEXT</a>) {</td></tr>
+<tr><th id="624">624</th><td>    *<a class="local col6 ref" href="#86buf" title='buf' data-ref="86buf">buf</a>++ = <kbd>'!'</kbd>;</td></tr>
+<tr><th id="625">625</th><td>    *<a class="local col6 ref" href="#86buf" title='buf' data-ref="86buf">buf</a>++ = <kbd>'!'</kbd>;</td></tr>
+<tr><th id="626">626</th><td>    *<a class="local col6 ref" href="#86buf" title='buf' data-ref="86buf">buf</a> = <kbd>'\0'</kbd>;</td></tr>
+<tr><th id="627">627</th><td>  }</td></tr>
+<tr><th id="628">628</th><td>  *<a class="local col8 ref" href="#88buf_consumed" title='buf_consumed' data-ref="88buf_consumed">buf_consumed</a> = <var>2</var>;</td></tr>
+<tr><th id="629">629</th><td>  <b>return</b> <var>0</var>;</td></tr>
+<tr><th id="630">630</th><td>}</td></tr>
+<tr><th id="631">631</th><td></td></tr>
+<tr><th id="632">632</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="633">633</th><td><i class="doc"> * hb_buffer_serialize:</i></td></tr>
+<tr><th id="634">634</th><td><i class="doc"> *<span class="command"> @buffer</span>: an #hb_buffer_t buffer.</i></td></tr>
+<tr><th id="635">635</th><td><i class="doc"> *<span class="command"> @start</span>: the first item in<span class="command"> @buffer</span> to serialize.</i></td></tr>
+<tr><th id="636">636</th><td><i class="doc"> *<span class="command"> @end</span>: the last item in<span class="command"> @buffer</span> to serialize.</i></td></tr>
+<tr><th id="637">637</th><td><i class="doc"> * <span class="command">@buf</span>: (out) (array length=buf_size) (element-type uint8_t): output string to</i></td></tr>
+<tr><th id="638">638</th><td><i class="doc"> *       write serialized buffer into.</i></td></tr>
+<tr><th id="639">639</th><td><i class="doc"> * <span class="command">@buf</span>_size: the size of <span class="command">@buf</span>.</i></td></tr>
+<tr><th id="640">640</th><td><i class="doc"> * <span class="command">@buf</span>_consumed: (out) (optional): if not `NULL`, will be set to the number of bytes written into <span class="command">@buf</span>.</i></td></tr>
+<tr><th id="641">641</th><td><i class="doc"> *<span class="command"> @font</span>: (nullable): the #hb_font_t used to shape this buffer, needed to</i></td></tr>
+<tr><th id="642">642</th><td><i class="doc"> *        read glyph names and extents. If `NULL`, an empty font will be used.</i></td></tr>
+<tr><th id="643">643</th><td><i class="doc"> *<span class="command"> @format</span>: the #hb_buffer_serialize_format_t to use for formatting the output.</i></td></tr>
+<tr><th id="644">644</th><td><i class="doc"> *<span class="command"> @flags</span>: the #hb_buffer_serialize_flags_t that control what glyph properties</i></td></tr>
+<tr><th id="645">645</th><td><i class="doc"> *         to serialize.</i></td></tr>
+<tr><th id="646">646</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="647">647</th><td><i class="doc"> * Serializes<span class="command"> @buffer</span> into a textual representation of its content, whether</i></td></tr>
+<tr><th id="648">648</th><td><i class="doc"> * Unicode codepoints or glyph identifiers and positioning information. This is</i></td></tr>
+<tr><th id="649">649</th><td><i class="doc"> * useful for showing the contents of the buffer, for example during debugging.</i></td></tr>
+<tr><th id="650">650</th><td><i class="doc"> * See the documentation of hb_buffer_serialize_unicode() and</i></td></tr>
+<tr><th id="651">651</th><td><i class="doc"> * hb_buffer_serialize_glyphs() for a description of the output format.</i></td></tr>
+<tr><th id="652">652</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="653">653</th><td><i class="doc"> * Return value:</i></td></tr>
+<tr><th id="654">654</th><td><i class="doc"> * The number of serialized items.</i></td></tr>
+<tr><th id="655">655</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="656">656</th><td><i class="doc"> * Since: 2.7.3</i></td></tr>
+<tr><th id="657">657</th><td><i class="doc"> **/</i></td></tr>
+<tr><th id="658">658</th><td><em>unsigned</em> <em>int</em></td></tr>
+<tr><th id="659">659</th><td><dfn class="decl def fn" id="hb_buffer_serialize" title='hb_buffer_serialize' data-ref="hb_buffer_serialize">hb_buffer_serialize</dfn> (<a class="typedef" href="hb-buffer.h.html#hb_buffer_t" title='hb_buffer_t' data-type='struct hb_buffer_t' data-ref="hb_buffer_t">hb_buffer_t</a> *<dfn class="local col2 decl" id="92buffer" title='buffer' data-type='hb_buffer_t *' data-ref="92buffer">buffer</dfn>,</td></tr>
+<tr><th id="660">660</th><td>                     <em>unsigned</em> <em>int</em> <dfn class="local col3 decl" id="93start" title='start' data-type='unsigned int' data-ref="93start">start</dfn>,</td></tr>
+<tr><th id="661">661</th><td>                     <em>unsigned</em> <em>int</em> <dfn class="local col4 decl" id="94end" title='end' data-type='unsigned int' data-ref="94end">end</dfn>,</td></tr>
+<tr><th id="662">662</th><td>                     <em>char</em> *<dfn class="local col5 decl" id="95buf" title='buf' data-type='char *' data-ref="95buf">buf</dfn>,</td></tr>
+<tr><th id="663">663</th><td>                     <em>unsigned</em> <em>int</em> <dfn class="local col6 decl" id="96buf_size" title='buf_size' data-type='unsigned int' data-ref="96buf_size">buf_size</dfn>,</td></tr>
+<tr><th id="664">664</th><td>                     <em>unsigned</em> <em>int</em> *<dfn class="local col7 decl" id="97buf_consumed" title='buf_consumed' data-type='unsigned int *' data-ref="97buf_consumed">buf_consumed</dfn>,</td></tr>
+<tr><th id="665">665</th><td>                     <a class="typedef" href="hb-common.h.html#hb_font_t" title='hb_font_t' data-type='struct hb_font_t' data-ref="hb_font_t">hb_font_t</a> *<dfn class="local col8 decl" id="98font" title='font' data-type='hb_font_t *' data-ref="98font">font</dfn>,</td></tr>
+<tr><th id="666">666</th><td>                     <a class="typedef" href="hb-buffer.h.html#hb_buffer_serialize_format_t" title='hb_buffer_serialize_format_t' data-type='enum hb_buffer_serialize_format_t' data-ref="hb_buffer_serialize_format_t">hb_buffer_serialize_format_t</a> <dfn class="local col9 decl" id="99format" title='format' data-type='hb_buffer_serialize_format_t' data-ref="99format">format</dfn>,</td></tr>
+<tr><th id="667">667</th><td>                     <a class="typedef" href="hb-buffer.h.html#hb_buffer_serialize_flags_t" title='hb_buffer_serialize_flags_t' data-type='enum hb_buffer_serialize_flags_t' data-ref="hb_buffer_serialize_flags_t">hb_buffer_serialize_flags_t</a> <dfn class="local col0 decl" id="100flags" title='flags' data-type='hb_buffer_serialize_flags_t' data-ref="100flags">flags</dfn>)</td></tr>
+<tr><th id="668">668</th><td>{</td></tr>
+<tr><th id="669">669</th><td>  <b>switch</b> (<a class="local col2 ref" href="#92buffer" title='buffer' data-ref="92buffer">buffer</a>-&gt;<a class="ref field" href="hb-buffer.hh.html#hb_buffer_t::content_type" title='hb_buffer_t::content_type' data-ref="hb_buffer_t::content_type">content_type</a>)</td></tr>
+<tr><th id="670">670</th><td>  {</td></tr>
+<tr><th id="671">671</th><td></td></tr>
+<tr><th id="672">672</th><td>    <b>case</b> <a class="enum" href="hb-buffer.h.html#HB_BUFFER_CONTENT_TYPE_GLYPHS" title='HB_BUFFER_CONTENT_TYPE_GLYPHS' data-ref="HB_BUFFER_CONTENT_TYPE_GLYPHS">HB_BUFFER_CONTENT_TYPE_GLYPHS</a>:</td></tr>
+<tr><th id="673">673</th><td>      <b>return</b> <a class="ref fn" href="#hb_buffer_serialize_glyphs" title='hb_buffer_serialize_glyphs' data-ref="hb_buffer_serialize_glyphs">hb_buffer_serialize_glyphs</a> (<a class="local col2 ref" href="#92buffer" title='buffer' data-ref="92buffer">buffer</a>, <a class="local col3 ref" href="#93start" title='start' data-ref="93start">start</a>, <a class="local col4 ref" href="#94end" title='end' data-ref="94end">end</a>, <a class="local col5 ref" href="#95buf" title='buf' data-ref="95buf">buf</a>, <a class="local col6 ref" href="#96buf_size" title='buf_size' data-ref="96buf_size">buf_size</a>,</td></tr>
+<tr><th id="674">674</th><td>					 <a class="local col7 ref" href="#97buf_consumed" title='buf_consumed' data-ref="97buf_consumed">buf_consumed</a>, <a class="local col8 ref" href="#98font" title='font' data-ref="98font">font</a>, <a class="local col9 ref" href="#99format" title='format' data-ref="99format">format</a>, <a class="local col0 ref" href="#100flags" title='flags' data-ref="100flags">flags</a>);</td></tr>
+<tr><th id="675">675</th><td></td></tr>
+<tr><th id="676">676</th><td>    <b>case</b> <a class="enum" href="hb-buffer.h.html#HB_BUFFER_CONTENT_TYPE_UNICODE" title='HB_BUFFER_CONTENT_TYPE_UNICODE' data-ref="HB_BUFFER_CONTENT_TYPE_UNICODE">HB_BUFFER_CONTENT_TYPE_UNICODE</a>:</td></tr>
+<tr><th id="677">677</th><td>      <b>return</b> <a class="ref fn" href="#hb_buffer_serialize_unicode" title='hb_buffer_serialize_unicode' data-ref="hb_buffer_serialize_unicode">hb_buffer_serialize_unicode</a> (<a class="local col2 ref" href="#92buffer" title='buffer' data-ref="92buffer">buffer</a>, <a class="local col3 ref" href="#93start" title='start' data-ref="93start">start</a>, <a class="local col4 ref" href="#94end" title='end' data-ref="94end">end</a>, <a class="local col5 ref" href="#95buf" title='buf' data-ref="95buf">buf</a>, <a class="local col6 ref" href="#96buf_size" title='buf_size' data-ref="96buf_size">buf_size</a>,</td></tr>
+<tr><th id="678">678</th><td>					  <a class="local col7 ref" href="#97buf_consumed" title='buf_consumed' data-ref="97buf_consumed">buf_consumed</a>, <a class="local col9 ref" href="#99format" title='format' data-ref="99format">format</a>, <a class="local col0 ref" href="#100flags" title='flags' data-ref="100flags">flags</a>);</td></tr>
+<tr><th id="679">679</th><td></td></tr>
+<tr><th id="680">680</th><td>    <b>case</b> <a class="enum" href="hb-buffer.h.html#HB_BUFFER_CONTENT_TYPE_INVALID" title='HB_BUFFER_CONTENT_TYPE_INVALID' data-ref="HB_BUFFER_CONTENT_TYPE_INVALID">HB_BUFFER_CONTENT_TYPE_INVALID</a>:</td></tr>
+<tr><th id="681">681</th><td>    <b>default</b>:</td></tr>
+<tr><th id="682">682</th><td>      <b>return</b> <a class="tu ref fn" href="#_ZL28_hb_buffer_serialize_invalidP11hb_buffer_tjjPcjPj28hb_buffer_serialize_format_t27hb_buffer_serialize_flags_t" title='_hb_buffer_serialize_invalid' data-use='c' data-ref="_ZL28_hb_buffer_serialize_invalidP11hb_buffer_tjjPcjPj28hb_buffer_serialize_format_t27hb_buffer_serialize_flags_t">_hb_buffer_serialize_invalid</a> (<a class="local col2 ref" href="#92buffer" title='buffer' data-ref="92buffer">buffer</a>, <a class="local col3 ref" href="#93start" title='start' data-ref="93start">start</a>, <a class="local col4 ref" href="#94end" title='end' data-ref="94end">end</a>, <a class="local col5 ref" href="#95buf" title='buf' data-ref="95buf">buf</a>, <a class="local col6 ref" href="#96buf_size" title='buf_size' data-ref="96buf_size">buf_size</a>,</td></tr>
+<tr><th id="683">683</th><td>					   <a class="local col7 ref" href="#97buf_consumed" title='buf_consumed' data-ref="97buf_consumed">buf_consumed</a>, <a class="local col9 ref" href="#99format" title='format' data-ref="99format">format</a>, <a class="local col0 ref" href="#100flags" title='flags' data-ref="100flags">flags</a>);</td></tr>
+<tr><th id="684">684</th><td>  }</td></tr>
+<tr><th id="685">685</th><td>}</td></tr>
+<tr><th id="686">686</th><td></td></tr>
+<tr><th id="687">687</th><td><em>static</em> <em>bool</em></td></tr>
+<tr><th id="688">688</th><td><dfn class="tu decl def fn" id="_ZL9parse_intPKcS0_Pi" title='parse_int' data-type='bool parse_int(const char * pp, const char * end, int32_t * pv)' data-ref="_ZL9parse_intPKcS0_Pi">parse_int</dfn> (<em>const</em> <em>char</em> *<dfn class="local col1 decl" id="101pp" title='pp' data-type='const char *' data-ref="101pp">pp</dfn>, <em>const</em> <em>char</em> *<dfn class="local col2 decl" id="102end" title='end' data-type='const char *' data-ref="102end">end</dfn>, <a class="typedef" href="../../../../../include/x86_64-linux-gnu/bits/stdint-intn.h.html#int32_t" title='int32_t' data-type='__int32_t' data-ref="int32_t">int32_t</a> *<dfn class="local col3 decl" id="103pv" title='pv' data-type='int32_t *' data-ref="103pv">pv</dfn>)</td></tr>
+<tr><th id="689">689</th><td>{</td></tr>
+<tr><th id="690">690</th><td>  <em>int</em> <dfn class="local col4 decl" id="104v" title='v' data-type='int' data-ref="104v">v</dfn>;</td></tr>
+<tr><th id="691">691</th><td>  <em>const</em> <em>char</em> *<dfn class="local col5 decl" id="105p" title='p' data-type='const char *' data-ref="105p">p</dfn> = <a class="local col1 ref" href="#101pp" title='pp' data-ref="101pp">pp</a>;</td></tr>
+<tr><th id="692">692</th><td>  <b>if</b> (<a class="macro" href="hb.hh.html#251" title="(__builtin_expect (!!(!hb_parse_int (&amp;p, end, &amp;v, true )), 0))" data-ref="_M/unlikely">unlikely</a> (!<a class="ref fn" href="hb-number.hh.html#_Z12hb_parse_intPPKcS0_Pib" title='hb_parse_int' data-ref="_Z12hb_parse_intPPKcS0_Pib">hb_parse_int</a> (&amp;<a class="local col5 ref" href="#105p" title='p' data-ref="105p">p</a>, <a class="local col2 ref" href="#102end" title='end' data-ref="102end">end</a>, &amp;<a class="local col4 ref" href="#104v" title='v' data-ref="104v">v</a>, <b>true</b><i>/* whole buffer */</i>)))</td></tr>
+<tr><th id="693">693</th><td>    <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="694">694</th><td></td></tr>
+<tr><th id="695">695</th><td>  *<a class="local col3 ref" href="#103pv" title='pv' data-ref="103pv">pv</a> = <a class="local col4 ref" href="#104v" title='v' data-ref="104v">v</a>;</td></tr>
+<tr><th id="696">696</th><td>  <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="697">697</th><td>}</td></tr>
+<tr><th id="698">698</th><td></td></tr>
+<tr><th id="699">699</th><td><em>static</em> <em>bool</em></td></tr>
+<tr><th id="700">700</th><td><dfn class="tu decl def fn" id="_ZL10parse_uintPKcS0_Pj" title='parse_uint' data-type='bool parse_uint(const char * pp, const char * end, uint32_t * pv)' data-ref="_ZL10parse_uintPKcS0_Pj">parse_uint</dfn> (<em>const</em> <em>char</em> *<dfn class="local col6 decl" id="106pp" title='pp' data-type='const char *' data-ref="106pp">pp</dfn>, <em>const</em> <em>char</em> *<dfn class="local col7 decl" id="107end" title='end' data-type='const char *' data-ref="107end">end</dfn>, <a class="typedef" href="../../../../../include/x86_64-linux-gnu/bits/stdint-uintn.h.html#uint32_t" title='uint32_t' data-type='__uint32_t' data-ref="uint32_t">uint32_t</a> *<dfn class="local col8 decl" id="108pv" title='pv' data-type='uint32_t *' data-ref="108pv">pv</dfn>)</td></tr>
+<tr><th id="701">701</th><td>{</td></tr>
+<tr><th id="702">702</th><td>  <em>unsigned</em> <em>int</em> <dfn class="local col9 decl" id="109v" title='v' data-type='unsigned int' data-ref="109v">v</dfn>;</td></tr>
+<tr><th id="703">703</th><td>  <em>const</em> <em>char</em> *<dfn class="local col0 decl" id="110p" title='p' data-type='const char *' data-ref="110p">p</dfn> = <a class="local col6 ref" href="#106pp" title='pp' data-ref="106pp">pp</a>;</td></tr>
+<tr><th id="704">704</th><td>  <b>if</b> (<a class="macro" href="hb.hh.html#251" title="(__builtin_expect (!!(!hb_parse_uint (&amp;p, end, &amp;v, true )), 0))" data-ref="_M/unlikely">unlikely</a> (!<a class="ref fn" href="hb-number.hh.html#_Z13hb_parse_uintPPKcS0_Pjbi" title='hb_parse_uint' data-ref="_Z13hb_parse_uintPPKcS0_Pjbi">hb_parse_uint</a> (&amp;<a class="local col0 ref" href="#110p" title='p' data-ref="110p">p</a>, <a class="local col7 ref" href="#107end" title='end' data-ref="107end">end</a>, &amp;<a class="local col9 ref" href="#109v" title='v' data-ref="109v">v</a>, <b>true</b><i>/* whole buffer */</i>)))</td></tr>
+<tr><th id="705">705</th><td>    <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="706">706</th><td></td></tr>
+<tr><th id="707">707</th><td>  *<a class="local col8 ref" href="#108pv" title='pv' data-ref="108pv">pv</a> = <a class="local col9 ref" href="#109v" title='v' data-ref="109v">v</a>;</td></tr>
+<tr><th id="708">708</th><td>  <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="709">709</th><td>}</td></tr>
+<tr><th id="710">710</th><td></td></tr>
+<tr><th id="711">711</th><td><em>static</em> <em>bool</em></td></tr>
+<tr><th id="712">712</th><td><dfn class="tu decl def fn" id="_ZL9parse_hexPKcS0_Pj" title='parse_hex' data-type='bool parse_hex(const char * pp, const char * end, uint32_t * pv)' data-ref="_ZL9parse_hexPKcS0_Pj">parse_hex</dfn> (<em>const</em> <em>char</em> *<dfn class="local col1 decl" id="111pp" title='pp' data-type='const char *' data-ref="111pp">pp</dfn>, <em>const</em> <em>char</em> *<dfn class="local col2 decl" id="112end" title='end' data-type='const char *' data-ref="112end">end</dfn>, <a class="typedef" href="../../../../../include/x86_64-linux-gnu/bits/stdint-uintn.h.html#uint32_t" title='uint32_t' data-type='__uint32_t' data-ref="uint32_t">uint32_t</a> *<dfn class="local col3 decl" id="113pv" title='pv' data-type='uint32_t *' data-ref="113pv">pv</dfn>)</td></tr>
+<tr><th id="713">713</th><td>{</td></tr>
+<tr><th id="714">714</th><td>  <em>unsigned</em> <em>int</em> <dfn class="local col4 decl" id="114v" title='v' data-type='unsigned int' data-ref="114v">v</dfn>;</td></tr>
+<tr><th id="715">715</th><td>  <em>const</em> <em>char</em> *<dfn class="local col5 decl" id="115p" title='p' data-type='const char *' data-ref="115p">p</dfn> = <a class="local col1 ref" href="#111pp" title='pp' data-ref="111pp">pp</a>;</td></tr>
+<tr><th id="716">716</th><td>  <b>if</b> (<a class="macro" href="hb.hh.html#251" title="(__builtin_expect (!!(!hb_parse_uint (&amp;p, end, &amp;v, true , 16)), 0))" data-ref="_M/unlikely">unlikely</a> (!<a class="ref fn" href="hb-number.hh.html#_Z13hb_parse_uintPPKcS0_Pjbi" title='hb_parse_uint' data-ref="_Z13hb_parse_uintPPKcS0_Pjbi">hb_parse_uint</a> (&amp;<a class="local col5 ref" href="#115p" title='p' data-ref="115p">p</a>, <a class="local col2 ref" href="#112end" title='end' data-ref="112end">end</a>, &amp;<a class="local col4 ref" href="#114v" title='v' data-ref="114v">v</a>, <b>true</b><i>/* whole buffer */</i>, <var>16</var>)))</td></tr>
+<tr><th id="717">717</th><td>    <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="718">718</th><td></td></tr>
+<tr><th id="719">719</th><td>  *<a class="local col3 ref" href="#113pv" title='pv' data-ref="113pv">pv</a> = <a class="local col4 ref" href="#114v" title='v' data-ref="114v">v</a>;</td></tr>
+<tr><th id="720">720</th><td>  <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="721">721</th><td>}</td></tr>
+<tr><th id="722">722</th><td></td></tr>
+<tr><th id="723">723</th><td><u>#include <a href="hb-buffer-deserialize-json.hh.html">"hb-buffer-deserialize-json.hh"</a></u></td></tr>
+<tr><th id="724">724</th><td><u>#include <a href="hb-buffer-deserialize-text-glyphs.hh.html">"hb-buffer-deserialize-text-glyphs.hh"</a></u></td></tr>
+<tr><th id="725">725</th><td><u>#include <a href="hb-buffer-deserialize-text-unicode.hh.html">"hb-buffer-deserialize-text-unicode.hh"</a></u></td></tr>
+<tr><th id="726">726</th><td></td></tr>
+<tr><th id="727">727</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="728">728</th><td><i class="doc"> * hb_buffer_deserialize_glyphs:</i></td></tr>
+<tr><th id="729">729</th><td><i class="doc"> *<span class="command"> @buffer</span>: an #hb_buffer_t buffer.</i></td></tr>
+<tr><th id="730">730</th><td><i class="doc"> * <span class="command">@buf</span>: (array length=buf_len): string to deserialize</i></td></tr>
+<tr><th id="731">731</th><td><i class="doc"> * <span class="command">@buf</span>_len: the size of <span class="command">@buf</span>, or -1 if it is `NULL`-terminated</i></td></tr>
+<tr><th id="732">732</th><td><i class="doc"> *<span class="command"> @end</span>_ptr: (out) (optional): output pointer to the character after last</i></td></tr>
+<tr><th id="733">733</th><td><i class="doc"> *                               consumed one.</i></td></tr>
+<tr><th id="734">734</th><td><i class="doc"> *<span class="command"> @font</span>: (nullable): font for getting glyph IDs</i></td></tr>
+<tr><th id="735">735</th><td><i class="doc"> *<span class="command"> @format</span>: the #hb_buffer_serialize_format_t of the input <span class="command">@buf</span></i></td></tr>
+<tr><th id="736">736</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="737">737</th><td><i class="doc"> * Deserializes glyphs<span class="command"> @buffer</span> from textual representation in the format</i></td></tr>
+<tr><th id="738">738</th><td><i class="doc"> * produced by hb_buffer_serialize_glyphs().</i></td></tr>
+<tr><th id="739">739</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="740">740</th><td><i class="doc"> * Return value: `true` if parse was successful, `false` if an error</i></td></tr>
+<tr><th id="741">741</th><td><i class="doc"> * occurred.</i></td></tr>
+<tr><th id="742">742</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="743">743</th><td><i class="doc"> * Since: 0.9.7</i></td></tr>
+<tr><th id="744">744</th><td><i class="doc"> **/</i></td></tr>
+<tr><th id="745">745</th><td><a class="typedef" href="hb-common.h.html#hb_bool_t" title='hb_bool_t' data-type='int' data-ref="hb_bool_t">hb_bool_t</a></td></tr>
+<tr><th id="746">746</th><td><dfn class="decl def fn" id="hb_buffer_deserialize_glyphs" title='hb_buffer_deserialize_glyphs' data-ref="hb_buffer_deserialize_glyphs">hb_buffer_deserialize_glyphs</dfn> (<a class="typedef" href="hb-buffer.h.html#hb_buffer_t" title='hb_buffer_t' data-type='struct hb_buffer_t' data-ref="hb_buffer_t">hb_buffer_t</a> *<dfn class="local col9 decl" id="179buffer" title='buffer' data-type='hb_buffer_t *' data-ref="179buffer">buffer</dfn>,</td></tr>
+<tr><th id="747">747</th><td>                              <em>const</em> <em>char</em> *<dfn class="local col0 decl" id="180buf" title='buf' data-type='const char *' data-ref="180buf">buf</dfn>,</td></tr>
+<tr><th id="748">748</th><td>                              <em>int</em> <dfn class="local col1 decl" id="181buf_len" title='buf_len' data-type='int' data-ref="181buf_len">buf_len</dfn>, <i>/* -1 means nul-terminated */</i></td></tr>
+<tr><th id="749">749</th><td>                              <em>const</em> <em>char</em> **<dfn class="local col2 decl" id="182end_ptr" title='end_ptr' data-type='const char **' data-ref="182end_ptr">end_ptr</dfn>, <i>/* May be NULL */</i></td></tr>
+<tr><th id="750">750</th><td>                              <a class="typedef" href="hb-common.h.html#hb_font_t" title='hb_font_t' data-type='struct hb_font_t' data-ref="hb_font_t">hb_font_t</a> *<dfn class="local col3 decl" id="183font" title='font' data-type='hb_font_t *' data-ref="183font">font</dfn>, <i>/* May be NULL */</i></td></tr>
+<tr><th id="751">751</th><td>                              <a class="typedef" href="hb-buffer.h.html#hb_buffer_serialize_format_t" title='hb_buffer_serialize_format_t' data-type='enum hb_buffer_serialize_format_t' data-ref="hb_buffer_serialize_format_t">hb_buffer_serialize_format_t</a> <dfn class="local col4 decl" id="184format" title='format' data-type='hb_buffer_serialize_format_t' data-ref="184format">format</dfn>)</td></tr>
+<tr><th id="752">752</th><td>{</td></tr>
+<tr><th id="753">753</th><td>  <em>const</em> <em>char</em> *<dfn class="local col5 decl" id="185end" title='end' data-type='const char *' data-ref="185end">end</dfn>;</td></tr>
+<tr><th id="754">754</th><td>  <b>if</b> (!<a class="local col2 ref" href="#182end_ptr" title='end_ptr' data-ref="182end_ptr">end_ptr</a>)</td></tr>
+<tr><th id="755">755</th><td>    <a class="local col2 ref" href="#182end_ptr" title='end_ptr' data-ref="182end_ptr">end_ptr</a> = &amp;<a class="local col5 ref" href="#185end" title='end' data-ref="185end">end</a>;</td></tr>
+<tr><th id="756">756</th><td>  *<a class="local col2 ref" href="#182end_ptr" title='end_ptr' data-ref="182end_ptr">end_ptr</a> = <a class="local col0 ref" href="#180buf" title='buf' data-ref="180buf">buf</a>;</td></tr>
+<tr><th id="757">757</th><td></td></tr>
+<tr><th id="758">758</th><td>  <a class="local col9 ref" href="#179buffer" title='buffer' data-ref="179buffer">buffer</a>-&gt;<a class="ref fn" href="hb-buffer.hh.html#_ZN11hb_buffer_t13assert_glyphsEv" title='hb_buffer_t::assert_glyphs' data-ref="_ZN11hb_buffer_t13assert_glyphsEv">assert_glyphs</a> ();</td></tr>
+<tr><th id="759">759</th><td></td></tr>
+<tr><th id="760">760</th><td>  <b>if</b> (<a class="macro" href="hb.hh.html#251" title="(__builtin_expect (!!(hb_object_is_immutable (buffer)), 0))" data-ref="_M/unlikely">unlikely</a> (<a class="ref fn" href="hb-object.hh.html#_ZL22hb_object_is_immutablePKT_" title='hb_object_is_immutable' data-ref="_ZL22hb_object_is_immutablePKT_">hb_object_is_immutable</a> (<a class="local col9 ref" href="#179buffer" title='buffer' data-ref="179buffer">buffer</a>)))</td></tr>
+<tr><th id="761">761</th><td>  {</td></tr>
+<tr><th id="762">762</th><td>    <b>if</b> (<a class="local col2 ref" href="#182end_ptr" title='end_ptr' data-ref="182end_ptr">end_ptr</a>)</td></tr>
+<tr><th id="763">763</th><td>      *<a class="local col2 ref" href="#182end_ptr" title='end_ptr' data-ref="182end_ptr">end_ptr</a> = <a class="local col0 ref" href="#180buf" title='buf' data-ref="180buf">buf</a>;</td></tr>
+<tr><th id="764">764</th><td>    <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="765">765</th><td>  }</td></tr>
+<tr><th id="766">766</th><td></td></tr>
+<tr><th id="767">767</th><td>  <b>if</b> (<a class="local col1 ref" href="#181buf_len" title='buf_len' data-ref="181buf_len">buf_len</a> == -<var>1</var>)</td></tr>
+<tr><th id="768">768</th><td>    <a class="local col1 ref" href="#181buf_len" title='buf_len' data-ref="181buf_len">buf_len</a> = <a class="ref fn" href="../../../../../include/string.h.html#strlen" title='strlen' data-ref="strlen">strlen</a> (<span class='inlayHint'>s:&nbsp;</span><a class="local col0 ref" href="#180buf" title='buf' data-ref="180buf">buf</a>);</td></tr>
+<tr><th id="769">769</th><td></td></tr>
+<tr><th id="770">770</th><td>  <b>if</b> (!<a class="local col1 ref" href="#181buf_len" title='buf_len' data-ref="181buf_len">buf_len</a>)</td></tr>
+<tr><th id="771">771</th><td>  {</td></tr>
+<tr><th id="772">772</th><td>    *<a class="local col2 ref" href="#182end_ptr" title='end_ptr' data-ref="182end_ptr">end_ptr</a> = <a class="local col0 ref" href="#180buf" title='buf' data-ref="180buf">buf</a>;</td></tr>
+<tr><th id="773">773</th><td>    <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="774">774</th><td>  }</td></tr>
+<tr><th id="775">775</th><td></td></tr>
+<tr><th id="776">776</th><td>  <a class="ref fn" href="hb-buffer.h.html#hb_buffer_set_content_type" title='hb_buffer_set_content_type' data-ref="hb_buffer_set_content_type">hb_buffer_set_content_type</a> (<a class="local col9 ref" href="#179buffer" title='buffer' data-ref="179buffer">buffer</a>, <span class='inlayHint'>content_type:&nbsp;</span><a class="enum" href="hb-buffer.h.html#HB_BUFFER_CONTENT_TYPE_GLYPHS" title='HB_BUFFER_CONTENT_TYPE_GLYPHS' data-ref="HB_BUFFER_CONTENT_TYPE_GLYPHS">HB_BUFFER_CONTENT_TYPE_GLYPHS</a>);</td></tr>
+<tr><th id="777">777</th><td></td></tr>
+<tr><th id="778">778</th><td>  <b>if</b> (!<a class="local col3 ref" href="#183font" title='font' data-ref="183font">font</a>)</td></tr>
+<tr><th id="779">779</th><td>    <a class="local col3 ref" href="#183font" title='font' data-ref="183font">font</a> = <a class="ref fn" href="hb-font.h.html#hb_font_get_empty" title='hb_font_get_empty' data-ref="hb_font_get_empty">hb_font_get_empty</a> ();</td></tr>
+<tr><th id="780">780</th><td></td></tr>
+<tr><th id="781">781</th><td>  <b>switch</b> (<a class="local col4 ref" href="#184format" title='format' data-ref="184format">format</a>)</td></tr>
+<tr><th id="782">782</th><td>  {</td></tr>
+<tr><th id="783">783</th><td>    <b>case</b> <a class="enum" href="hb-buffer.h.html#HB_BUFFER_SERIALIZE_FORMAT_TEXT" title='HB_BUFFER_SERIALIZE_FORMAT_TEXT' data-ref="HB_BUFFER_SERIALIZE_FORMAT_TEXT">HB_BUFFER_SERIALIZE_FORMAT_TEXT</a>:</td></tr>
+<tr><th id="784">784</th><td>      <b>return</b> <a class="ref fn" href="hb-buffer-deserialize-text-glyphs.hh.html#_ZL34_hb_buffer_deserialize_text_glyphsP11hb_buffer_tPKcjPS2_P9hb_font_t" title='_hb_buffer_deserialize_text_glyphs' data-ref="_ZL34_hb_buffer_deserialize_text_glyphsP11hb_buffer_tPKcjPS2_P9hb_font_t">_hb_buffer_deserialize_text_glyphs</a> (<a class="local col9 ref" href="#179buffer" title='buffer' data-ref="179buffer">buffer</a>,</td></tr>
+<tr><th id="785">785</th><td>						 <a class="local col0 ref" href="#180buf" title='buf' data-ref="180buf">buf</a>, <a class="local col1 ref" href="#181buf_len" title='buf_len' data-ref="181buf_len">buf_len</a>, <a class="local col2 ref" href="#182end_ptr" title='end_ptr' data-ref="182end_ptr">end_ptr</a>,</td></tr>
+<tr><th id="786">786</th><td>						 <a class="local col3 ref" href="#183font" title='font' data-ref="183font">font</a>);</td></tr>
+<tr><th id="787">787</th><td></td></tr>
+<tr><th id="788">788</th><td>    <b>case</b> <a class="enum" href="hb-buffer.h.html#HB_BUFFER_SERIALIZE_FORMAT_JSON" title='HB_BUFFER_SERIALIZE_FORMAT_JSON' data-ref="HB_BUFFER_SERIALIZE_FORMAT_JSON">HB_BUFFER_SERIALIZE_FORMAT_JSON</a>:</td></tr>
+<tr><th id="789">789</th><td>      <b>return</b> <a class="ref fn" href="hb-buffer-deserialize-json.hh.html#_ZL27_hb_buffer_deserialize_jsonP11hb_buffer_tPKcjPS2_P9hb_font_t" title='_hb_buffer_deserialize_json' data-ref="_ZL27_hb_buffer_deserialize_jsonP11hb_buffer_tPKcjPS2_P9hb_font_t">_hb_buffer_deserialize_json</a> (<a class="local col9 ref" href="#179buffer" title='buffer' data-ref="179buffer">buffer</a>,</td></tr>
+<tr><th id="790">790</th><td>                                          <a class="local col0 ref" href="#180buf" title='buf' data-ref="180buf">buf</a>, <a class="local col1 ref" href="#181buf_len" title='buf_len' data-ref="181buf_len">buf_len</a>, <a class="local col2 ref" href="#182end_ptr" title='end_ptr' data-ref="182end_ptr">end_ptr</a>,</td></tr>
+<tr><th id="791">791</th><td>                                          <a class="local col3 ref" href="#183font" title='font' data-ref="183font">font</a>);</td></tr>
+<tr><th id="792">792</th><td></td></tr>
+<tr><th id="793">793</th><td>    <b>default</b>:</td></tr>
+<tr><th id="794">794</th><td>    <b>case</b> <a class="enum" href="hb-buffer.h.html#HB_BUFFER_SERIALIZE_FORMAT_INVALID" title='HB_BUFFER_SERIALIZE_FORMAT_INVALID' data-ref="HB_BUFFER_SERIALIZE_FORMAT_INVALID">HB_BUFFER_SERIALIZE_FORMAT_INVALID</a>:</td></tr>
+<tr><th id="795">795</th><td>      <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="796">796</th><td></td></tr>
+<tr><th id="797">797</th><td>  }</td></tr>
+<tr><th id="798">798</th><td>}</td></tr>
+<tr><th id="799">799</th><td></td></tr>
+<tr><th id="800">800</th><td></td></tr>
+<tr><th id="801">801</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="802">802</th><td><i class="doc"> * hb_buffer_deserialize_unicode:</i></td></tr>
+<tr><th id="803">803</th><td><i class="doc"> *<span class="command"> @buffer</span>: an #hb_buffer_t buffer.</i></td></tr>
+<tr><th id="804">804</th><td><i class="doc"> * <span class="command">@buf</span>: (array length=buf_len): string to deserialize</i></td></tr>
+<tr><th id="805">805</th><td><i class="doc"> * <span class="command">@buf</span>_len: the size of <span class="command">@buf</span>, or -1 if it is `NULL`-terminated</i></td></tr>
+<tr><th id="806">806</th><td><i class="doc"> *<span class="command"> @end</span>_ptr: (out) (optional): output pointer to the character after last</i></td></tr>
+<tr><th id="807">807</th><td><i class="doc"> *                               consumed one.</i></td></tr>
+<tr><th id="808">808</th><td><i class="doc"> *<span class="command"> @format</span>: the #hb_buffer_serialize_format_t of the input <span class="command">@buf</span></i></td></tr>
+<tr><th id="809">809</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="810">810</th><td><i class="doc"> * Deserializes Unicode<span class="command"> @buffer</span> from textual representation in the format</i></td></tr>
+<tr><th id="811">811</th><td><i class="doc"> * produced by hb_buffer_serialize_unicode().</i></td></tr>
+<tr><th id="812">812</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="813">813</th><td><i class="doc"> * Return value: `true` if parse was successful, `false` if an error</i></td></tr>
+<tr><th id="814">814</th><td><i class="doc"> * occurred.</i></td></tr>
+<tr><th id="815">815</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="816">816</th><td><i class="doc"> * Since: 2.7.3</i></td></tr>
+<tr><th id="817">817</th><td><i class="doc"> **/</i></td></tr>
+<tr><th id="818">818</th><td><a class="typedef" href="hb-common.h.html#hb_bool_t" title='hb_bool_t' data-type='int' data-ref="hb_bool_t">hb_bool_t</a></td></tr>
+<tr><th id="819">819</th><td><dfn class="decl def fn" id="hb_buffer_deserialize_unicode" title='hb_buffer_deserialize_unicode' data-ref="hb_buffer_deserialize_unicode">hb_buffer_deserialize_unicode</dfn> (<a class="typedef" href="hb-buffer.h.html#hb_buffer_t" title='hb_buffer_t' data-type='struct hb_buffer_t' data-ref="hb_buffer_t">hb_buffer_t</a> *<dfn class="local col6 decl" id="186buffer" title='buffer' data-type='hb_buffer_t *' data-ref="186buffer">buffer</dfn>,</td></tr>
+<tr><th id="820">820</th><td>                               <em>const</em> <em>char</em> *<dfn class="local col7 decl" id="187buf" title='buf' data-type='const char *' data-ref="187buf">buf</dfn>,</td></tr>
+<tr><th id="821">821</th><td>                               <em>int</em> <dfn class="local col8 decl" id="188buf_len" title='buf_len' data-type='int' data-ref="188buf_len">buf_len</dfn>, <i>/* -1 means nul-terminated */</i></td></tr>
+<tr><th id="822">822</th><td>                               <em>const</em> <em>char</em> **<dfn class="local col9 decl" id="189end_ptr" title='end_ptr' data-type='const char **' data-ref="189end_ptr">end_ptr</dfn>, <i>/* May be NULL */</i></td></tr>
+<tr><th id="823">823</th><td>                               <a class="typedef" href="hb-buffer.h.html#hb_buffer_serialize_format_t" title='hb_buffer_serialize_format_t' data-type='enum hb_buffer_serialize_format_t' data-ref="hb_buffer_serialize_format_t">hb_buffer_serialize_format_t</a> <dfn class="local col0 decl" id="190format" title='format' data-type='hb_buffer_serialize_format_t' data-ref="190format">format</dfn>)</td></tr>
+<tr><th id="824">824</th><td>{</td></tr>
+<tr><th id="825">825</th><td>  <em>const</em> <em>char</em> *<dfn class="local col1 decl" id="191end" title='end' data-type='const char *' data-ref="191end">end</dfn>;</td></tr>
+<tr><th id="826">826</th><td>  <b>if</b> (!<a class="local col9 ref" href="#189end_ptr" title='end_ptr' data-ref="189end_ptr">end_ptr</a>)</td></tr>
+<tr><th id="827">827</th><td>    <a class="local col9 ref" href="#189end_ptr" title='end_ptr' data-ref="189end_ptr">end_ptr</a> = &amp;<a class="local col1 ref" href="#191end" title='end' data-ref="191end">end</a>;</td></tr>
+<tr><th id="828">828</th><td>  *<a class="local col9 ref" href="#189end_ptr" title='end_ptr' data-ref="189end_ptr">end_ptr</a> = <a class="local col7 ref" href="#187buf" title='buf' data-ref="187buf">buf</a>;</td></tr>
+<tr><th id="829">829</th><td></td></tr>
+<tr><th id="830">830</th><td>  <a class="local col6 ref" href="#186buffer" title='buffer' data-ref="186buffer">buffer</a>-&gt;<a class="ref fn" href="hb-buffer.hh.html#_ZN11hb_buffer_t14assert_unicodeEv" title='hb_buffer_t::assert_unicode' data-ref="_ZN11hb_buffer_t14assert_unicodeEv">assert_unicode</a> ();</td></tr>
+<tr><th id="831">831</th><td></td></tr>
+<tr><th id="832">832</th><td>  <b>if</b> (<a class="macro" href="hb.hh.html#251" title="(__builtin_expect (!!(hb_object_is_immutable (buffer)), 0))" data-ref="_M/unlikely">unlikely</a> (<a class="ref fn" href="hb-object.hh.html#_ZL22hb_object_is_immutablePKT_" title='hb_object_is_immutable' data-ref="_ZL22hb_object_is_immutablePKT_">hb_object_is_immutable</a> (<a class="local col6 ref" href="#186buffer" title='buffer' data-ref="186buffer">buffer</a>)))</td></tr>
+<tr><th id="833">833</th><td>  {</td></tr>
+<tr><th id="834">834</th><td>    <b>if</b> (<a class="local col9 ref" href="#189end_ptr" title='end_ptr' data-ref="189end_ptr">end_ptr</a>)</td></tr>
+<tr><th id="835">835</th><td>      *<a class="local col9 ref" href="#189end_ptr" title='end_ptr' data-ref="189end_ptr">end_ptr</a> = <a class="local col7 ref" href="#187buf" title='buf' data-ref="187buf">buf</a>;</td></tr>
+<tr><th id="836">836</th><td>    <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="837">837</th><td>  }</td></tr>
+<tr><th id="838">838</th><td></td></tr>
+<tr><th id="839">839</th><td>  <b>if</b> (<a class="local col8 ref" href="#188buf_len" title='buf_len' data-ref="188buf_len">buf_len</a> == -<var>1</var>)</td></tr>
+<tr><th id="840">840</th><td>    <a class="local col8 ref" href="#188buf_len" title='buf_len' data-ref="188buf_len">buf_len</a> = <a class="ref fn" href="../../../../../include/string.h.html#strlen" title='strlen' data-ref="strlen">strlen</a> (<span class='inlayHint'>s:&nbsp;</span><a class="local col7 ref" href="#187buf" title='buf' data-ref="187buf">buf</a>);</td></tr>
+<tr><th id="841">841</th><td></td></tr>
+<tr><th id="842">842</th><td>  <b>if</b> (!<a class="local col8 ref" href="#188buf_len" title='buf_len' data-ref="188buf_len">buf_len</a>)</td></tr>
+<tr><th id="843">843</th><td>  {</td></tr>
+<tr><th id="844">844</th><td>    *<a class="local col9 ref" href="#189end_ptr" title='end_ptr' data-ref="189end_ptr">end_ptr</a> = <a class="local col7 ref" href="#187buf" title='buf' data-ref="187buf">buf</a>;</td></tr>
+<tr><th id="845">845</th><td>    <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="846">846</th><td>  }</td></tr>
+<tr><th id="847">847</th><td></td></tr>
+<tr><th id="848">848</th><td>  <a class="ref fn" href="hb-buffer.h.html#hb_buffer_set_content_type" title='hb_buffer_set_content_type' data-ref="hb_buffer_set_content_type">hb_buffer_set_content_type</a> (<a class="local col6 ref" href="#186buffer" title='buffer' data-ref="186buffer">buffer</a>, <span class='inlayHint'>content_type:&nbsp;</span><a class="enum" href="hb-buffer.h.html#HB_BUFFER_CONTENT_TYPE_UNICODE" title='HB_BUFFER_CONTENT_TYPE_UNICODE' data-ref="HB_BUFFER_CONTENT_TYPE_UNICODE">HB_BUFFER_CONTENT_TYPE_UNICODE</a>);</td></tr>
+<tr><th id="849">849</th><td></td></tr>
+<tr><th id="850">850</th><td>  <a class="typedef" href="hb-common.h.html#hb_font_t" title='hb_font_t' data-type='struct hb_font_t' data-ref="hb_font_t">hb_font_t</a>* <dfn class="local col2 decl" id="192font" title='font' data-type='hb_font_t *' data-ref="192font">font</dfn> = <a class="ref fn" href="hb-font.h.html#hb_font_get_empty" title='hb_font_get_empty' data-ref="hb_font_get_empty">hb_font_get_empty</a> ();</td></tr>
+<tr><th id="851">851</th><td></td></tr>
+<tr><th id="852">852</th><td>  <b>switch</b> (<a class="local col0 ref" href="#190format" title='format' data-ref="190format">format</a>)</td></tr>
+<tr><th id="853">853</th><td>  {</td></tr>
+<tr><th id="854">854</th><td>    <b>case</b> <a class="enum" href="hb-buffer.h.html#HB_BUFFER_SERIALIZE_FORMAT_TEXT" title='HB_BUFFER_SERIALIZE_FORMAT_TEXT' data-ref="HB_BUFFER_SERIALIZE_FORMAT_TEXT">HB_BUFFER_SERIALIZE_FORMAT_TEXT</a>:</td></tr>
+<tr><th id="855">855</th><td>      <b>return</b> <a class="ref fn" href="hb-buffer-deserialize-text-unicode.hh.html#_ZL35_hb_buffer_deserialize_text_unicodeP11hb_buffer_tPKcjPS2_P9hb_font_t" title='_hb_buffer_deserialize_text_unicode' data-ref="_ZL35_hb_buffer_deserialize_text_unicodeP11hb_buffer_tPKcjPS2_P9hb_font_t">_hb_buffer_deserialize_text_unicode</a> (<a class="local col6 ref" href="#186buffer" title='buffer' data-ref="186buffer">buffer</a>,</td></tr>
+<tr><th id="856">856</th><td>						  <a class="local col7 ref" href="#187buf" title='buf' data-ref="187buf">buf</a>, <a class="local col8 ref" href="#188buf_len" title='buf_len' data-ref="188buf_len">buf_len</a>, <a class="local col9 ref" href="#189end_ptr" title='end_ptr' data-ref="189end_ptr">end_ptr</a>,</td></tr>
+<tr><th id="857">857</th><td>						  <a class="local col2 ref" href="#192font" title='font' data-ref="192font">font</a>);</td></tr>
+<tr><th id="858">858</th><td></td></tr>
+<tr><th id="859">859</th><td>    <b>case</b> <a class="enum" href="hb-buffer.h.html#HB_BUFFER_SERIALIZE_FORMAT_JSON" title='HB_BUFFER_SERIALIZE_FORMAT_JSON' data-ref="HB_BUFFER_SERIALIZE_FORMAT_JSON">HB_BUFFER_SERIALIZE_FORMAT_JSON</a>:</td></tr>
+<tr><th id="860">860</th><td>      <b>return</b> <a class="ref fn" href="hb-buffer-deserialize-json.hh.html#_ZL27_hb_buffer_deserialize_jsonP11hb_buffer_tPKcjPS2_P9hb_font_t" title='_hb_buffer_deserialize_json' data-ref="_ZL27_hb_buffer_deserialize_jsonP11hb_buffer_tPKcjPS2_P9hb_font_t">_hb_buffer_deserialize_json</a> (<a class="local col6 ref" href="#186buffer" title='buffer' data-ref="186buffer">buffer</a>,</td></tr>
+<tr><th id="861">861</th><td>                                          <a class="local col7 ref" href="#187buf" title='buf' data-ref="187buf">buf</a>, <a class="local col8 ref" href="#188buf_len" title='buf_len' data-ref="188buf_len">buf_len</a>, <a class="local col9 ref" href="#189end_ptr" title='end_ptr' data-ref="189end_ptr">end_ptr</a>,</td></tr>
+<tr><th id="862">862</th><td>                                          <a class="local col2 ref" href="#192font" title='font' data-ref="192font">font</a>);</td></tr>
+<tr><th id="863">863</th><td></td></tr>
+<tr><th id="864">864</th><td>    <b>default</b>:</td></tr>
+<tr><th id="865">865</th><td>    <b>case</b> <a class="enum" href="hb-buffer.h.html#HB_BUFFER_SERIALIZE_FORMAT_INVALID" title='HB_BUFFER_SERIALIZE_FORMAT_INVALID' data-ref="HB_BUFFER_SERIALIZE_FORMAT_INVALID">HB_BUFFER_SERIALIZE_FORMAT_INVALID</a>:</td></tr>
+<tr><th id="866">866</th><td>      <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="867">867</th><td></td></tr>
+<tr><th id="868">868</th><td>  }</td></tr>
+<tr><th id="869">869</th><td>}</td></tr>
+<tr><th id="870">870</th><td></td></tr>
+<tr><th id="871">871</th><td></td></tr>
+<tr><th id="872">872</th><td><u>#<span data-ppcond="29">endif</span></u></td></tr>
+<tr><th id="873">873</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2024-Jun-13</em> from project qtbase-6.5.0 revision <em>6.5.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

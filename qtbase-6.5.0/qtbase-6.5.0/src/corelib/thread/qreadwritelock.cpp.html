@@ -1,0 +1,778 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>qreadwritelock.cpp source code [qtbase-6.5.0/src/corelib/thread/qreadwritelock.cpp] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'qtbase-6.5.0/src/corelib/thread/qreadwritelock.cpp'; var root_path = '../../../..'; var data_path = '../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>qtbase-6.5.0</a>/<a href='../..'>src</a>/<a href='..'>corelib</a>/<a href='./'>thread</a>/<a href='qreadwritelock.cpp.html'>qreadwritelock.cpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>// Copyright (C) 2016 The Qt Company Ltd.</i></td></tr>
+<tr><th id="2">2</th><td><i>// Copyright (C) 2016 Intel Corporation.</i></td></tr>
+<tr><th id="3">3</th><td><i>// Copyright (C) 2016 Olivier Goffart &lt;ogoffart@woboq.com&gt;</i></td></tr>
+<tr><th id="4">4</th><td><i>// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only</i></td></tr>
+<tr><th id="5">5</th><td></td></tr>
+<tr><th id="6">6</th><td><u>#include <a href="../../../mkspecs/linux-g++/qplatformdefs.h.html">"qplatformdefs.h"</a></u></td></tr>
+<tr><th id="7">7</th><td><u>#include <a href="qreadwritelock.h.html">"qreadwritelock.h"</a></u></td></tr>
+<tr><th id="8">8</th><td></td></tr>
+<tr><th id="9">9</th><td><u>#include <a href="qmutex.h.html">"qmutex.h"</a></u></td></tr>
+<tr><th id="10">10</th><td><u>#include <a href="qthread.h.html">"qthread.h"</a></u></td></tr>
+<tr><th id="11">11</th><td><u>#include <a href="qwaitcondition.h.html">"qwaitcondition.h"</a></u></td></tr>
+<tr><th id="12">12</th><td><u>#include <a href="qreadwritelock_p.h.html">"qreadwritelock_p.h"</a></u></td></tr>
+<tr><th id="13">13</th><td><u>#include <a href="../../../build/include/QtCore/qelapsedtimer.h.html">"qelapsedtimer.h"</a></u></td></tr>
+<tr><th id="14">14</th><td><u>#include <a href="../../../build/include/QtCore/6.5.0/QtCore/private/qfreelist_p.h.html">"private/qfreelist_p.h"</a></u></td></tr>
+<tr><th id="15">15</th><td><u>#include <a href="../../../build/include/QtCore/6.5.0/QtCore/private/qlocking_p.h.html">"private/qlocking_p.h"</a></u></td></tr>
+<tr><th id="16">16</th><td></td></tr>
+<tr><th id="17">17</th><td><u>#include <a href="../../../../include/c++/9/algorithm.html">&lt;algorithm&gt;</a></u></td></tr>
+<tr><th id="18">18</th><td></td></tr>
+<tr><th id="19">19</th><td><a class="macro" href="../global/qtconfigmacros.h.html#103" title="" data-ref="_M/QT_BEGIN_NAMESPACE">QT_BEGIN_NAMESPACE</a></td></tr>
+<tr><th id="20">20</th><td></td></tr>
+<tr><th id="21">21</th><td><i>/*</i></td></tr>
+<tr><th id="22">22</th><td><i> * Implementation details of QReadWriteLock:</i></td></tr>
+<tr><th id="23">23</th><td><i> *</i></td></tr>
+<tr><th id="24">24</th><td><i> * Depending on the valued of d_ptr, the lock is in the following state:</i></td></tr>
+<tr><th id="25">25</th><td><i> *  - when d_ptr == 0x0: Unlocked (no readers, no writers) and non-recursive.</i></td></tr>
+<tr><th id="26">26</th><td><i> *  - when d_ptr &amp; 0x1: If the least significant bit is set, we are locked for read.</i></td></tr>
+<tr><th id="27">27</th><td><i> *    In that case, d_ptr&gt;&gt;4 represents the number of reading threads minus 1. No writers</i></td></tr>
+<tr><th id="28">28</th><td><i> *    are waiting, and the lock is not recursive.</i></td></tr>
+<tr><th id="29">29</th><td><i> *  - when d_ptr == 0x2: We are locked for write and nobody is waiting. (no contention)</i></td></tr>
+<tr><th id="30">30</th><td><i> *  - In any other case, d_ptr points to an actual QReadWriteLockPrivate.</i></td></tr>
+<tr><th id="31">31</th><td><i> */</i></td></tr>
+<tr><th id="32">32</th><td></td></tr>
+<tr><th id="33">33</th><td><b>namespace</b> {</td></tr>
+<tr><th id="34">34</th><td></td></tr>
+<tr><th id="35">35</th><td><b>using</b> <dfn class="tu typedef" id="(anonymousnamespace)::ms" title='(anonymous namespace)::ms' data-type='std::chrono::milliseconds' data-ref="(anonymousnamespace)::ms">ms</dfn> = <span class="namespace">std::chrono::</span><a class="typedef" href="../../../../include/c++/9/chrono.html#std::chrono::milliseconds" title='std::chrono::milliseconds' data-type='duration&lt;int64_t, std::milli&gt;' data-ref="std::chrono::milliseconds">milliseconds</a>;</td></tr>
+<tr><th id="36">36</th><td></td></tr>
+<tr><th id="37">37</th><td><b>enum</b> {</td></tr>
+<tr><th id="38">38</th><td>    <dfn class="tu enum" id="(anonymousnamespace)::StateMask" title='(anonymous namespace)::StateMask' data-type='3' data-ref="(anonymousnamespace)::StateMask">StateMask</dfn> = <var>0x3</var>,</td></tr>
+<tr><th id="39">39</th><td>    <dfn class="tu enum" id="(anonymousnamespace)::StateLockedForRead" title='(anonymous namespace)::StateLockedForRead' data-type='1' data-ref="(anonymousnamespace)::StateLockedForRead">StateLockedForRead</dfn> = <var>0x1</var>,</td></tr>
+<tr><th id="40">40</th><td>    <dfn class="tu enum" id="(anonymousnamespace)::StateLockedForWrite" title='(anonymous namespace)::StateLockedForWrite' data-type='2' data-ref="(anonymousnamespace)::StateLockedForWrite">StateLockedForWrite</dfn> = <var>0x2</var>,</td></tr>
+<tr><th id="41">41</th><td>};</td></tr>
+<tr><th id="42">42</th><td><em>const</em> <em>auto</em> <dfn class="tu decl def" id="(anonymousnamespace)::dummyLockedForRead" title='(anonymous namespace)::dummyLockedForRead' data-type='QReadWriteLockPrivate *const' data-ref="(anonymousnamespace)::dummyLockedForRead">dummyLockedForRead</dfn> = <b>reinterpret_cast</b>&lt;<a class="type" href="qreadwritelock_p.h.html#QReadWriteLockPrivate" title='QReadWriteLockPrivate' data-ref="QReadWriteLockPrivate">QReadWriteLockPrivate</a> *&gt;(<a class="typedef" href="../global/qtypes.h.html#quintptr" title='quintptr' data-type='QIntegerForSizeof&lt;void *&gt;::Unsigned' data-ref="quintptr">quintptr</a>(<a class="tu enum" href="#(anonymousnamespace)::StateLockedForRead" title='(anonymous namespace)::StateLockedForRead' data-ref="(anonymousnamespace)::StateLockedForRead">StateLockedForRead</a>));</td></tr>
+<tr><th id="43">43</th><td><em>const</em> <em>auto</em> <dfn class="tu decl def" id="(anonymousnamespace)::dummyLockedForWrite" title='(anonymous namespace)::dummyLockedForWrite' data-type='QReadWriteLockPrivate *const' data-ref="(anonymousnamespace)::dummyLockedForWrite">dummyLockedForWrite</dfn> = <b>reinterpret_cast</b>&lt;<a class="type" href="qreadwritelock_p.h.html#QReadWriteLockPrivate" title='QReadWriteLockPrivate' data-ref="QReadWriteLockPrivate">QReadWriteLockPrivate</a> *&gt;(<a class="typedef" href="../global/qtypes.h.html#quintptr" title='quintptr' data-type='QIntegerForSizeof&lt;void *&gt;::Unsigned' data-ref="quintptr">quintptr</a>(<a class="tu enum" href="#(anonymousnamespace)::StateLockedForWrite" title='(anonymous namespace)::StateLockedForWrite' data-ref="(anonymousnamespace)::StateLockedForWrite">StateLockedForWrite</a>));</td></tr>
+<tr><th id="44">44</th><td><b>inline</b> <em>bool</em> <dfn class="tu decl def fn" id="_ZN12_GLOBAL__N_119isUncontendedLockedEPK21QReadWriteLockPrivate" title='(anonymous namespace)::isUncontendedLocked' data-type='bool (anonymous namespace)::isUncontendedLocked(const QReadWriteLockPrivate * d)' data-ref="_ZN12_GLOBAL__N_119isUncontendedLockedEPK21QReadWriteLockPrivate">isUncontendedLocked</dfn>(<em>const</em> <a class="type" href="qreadwritelock_p.h.html#QReadWriteLockPrivate" title='QReadWriteLockPrivate' data-ref="QReadWriteLockPrivate">QReadWriteLockPrivate</a> *<dfn class="local col8 decl" id="8d" title='d' data-type='const QReadWriteLockPrivate *' data-ref="8d">d</dfn>)</td></tr>
+<tr><th id="45">45</th><td>{ <b>return</b> <a class="typedef" href="../global/qtypes.h.html#quintptr" title='quintptr' data-type='QIntegerForSizeof&lt;void *&gt;::Unsigned' data-ref="quintptr">quintptr</a>(<a class="local col8 ref" href="#8d" title='d' data-ref="8d">d</a>) &amp; <a class="tu enum" href="#(anonymousnamespace)::StateMask" title='(anonymous namespace)::StateMask' data-use='r' data-ref="(anonymousnamespace)::StateMask">StateMask</a>; }</td></tr>
+<tr><th id="46">46</th><td>}</td></tr>
+<tr><th id="47">47</th><td></td></tr>
+<tr><th id="48">48</th><td><i class="doc">/*! <span class="command">\class</span> <span class="verb" data-ref="QReadWriteLock">QReadWriteLock</span></i></td></tr>
+<tr><th id="49">49</th><td><i class="doc">   <span class="command"> \inmodule</span> QtCore</i></td></tr>
+<tr><th id="50">50</th><td><i class="doc">    <span class="command">\brief</span> The QReadWriteLock class provides read-write locking.</i></td></tr>
+<tr><th id="51">51</th><td><i class="doc"></i></td></tr>
+<tr><th id="52">52</th><td><i class="doc">   <span class="command"> \threadsafe</span></i></td></tr>
+<tr><th id="53">53</th><td><i class="doc"></i></td></tr>
+<tr><th id="54">54</th><td><i class="doc">    <span class="command">\ingroup</span> <span class="verb">thread</span></i></td></tr>
+<tr><th id="55">55</th><td><i class="doc"></i></td></tr>
+<tr><th id="56">56</th><td><i class="doc">    A read-write lock is a synchronization tool for protecting</i></td></tr>
+<tr><th id="57">57</th><td><i class="doc">    resources that can be accessed for reading and writing. This type</i></td></tr>
+<tr><th id="58">58</th><td><i class="doc">    of lock is useful if you want to allow multiple threads to have</i></td></tr>
+<tr><th id="59">59</th><td><i class="doc">    simultaneous read-only access, but as soon as one thread wants to</i></td></tr>
+<tr><th id="60">60</th><td><i class="doc">    write to the resource, all other threads must be blocked until</i></td></tr>
+<tr><th id="61">61</th><td><i class="doc">    the writing is complete.</i></td></tr>
+<tr><th id="62">62</th><td><i class="doc"></i></td></tr>
+<tr><th id="63">63</th><td><i class="doc">    In many cases, QReadWriteLock is a direct competitor to QMutex.</i></td></tr>
+<tr><th id="64">64</th><td><i class="doc">    QReadWriteLock is a good choice if there are many concurrent</i></td></tr>
+<tr><th id="65">65</th><td><i class="doc">    reads and writing occurs infrequently.</i></td></tr>
+<tr><th id="66">66</th><td><i class="doc"></i></td></tr>
+<tr><th id="67">67</th><td><i class="doc">    Example:</i></td></tr>
+<tr><th id="68">68</th><td><i class="doc"></i></td></tr>
+<tr><th id="69">69</th><td><i class="doc">    <span class="command">\snippet</span> <span class="verb">code/src_corelib_thread_qreadwritelock.cpp 0</span></i></td></tr>
+<tr><th id="70">70</th><td><i class="doc"></i></td></tr>
+<tr><th id="71">71</th><td><i class="doc">    To ensure that writers aren't blocked forever by readers, readers</i></td></tr>
+<tr><th id="72">72</th><td><i class="doc">    attempting to obtain a lock will not succeed if there is a blocked</i></td></tr>
+<tr><th id="73">73</th><td><i class="doc">    writer waiting for access, even if the lock is currently only</i></td></tr>
+<tr><th id="74">74</th><td><i class="doc">    accessed by other readers. Also, if the lock is accessed by a</i></td></tr>
+<tr><th id="75">75</th><td><i class="doc">    writer and another writer comes in, that writer will have</i></td></tr>
+<tr><th id="76">76</th><td><i class="doc">    priority over any readers that might also be waiting.</i></td></tr>
+<tr><th id="77">77</th><td><i class="doc"></i></td></tr>
+<tr><th id="78">78</th><td><i class="doc">    Like QMutex, a QReadWriteLock can be recursively locked by the</i></td></tr>
+<tr><th id="79">79</th><td><i class="doc">    same thread when constructed with<span class="command"> \l</span>{QReadWriteLock::Recursive} as</i></td></tr>
+<tr><th id="80">80</th><td><i class="doc">   <span class="command"> \l</span>{QReadWriteLock::RecursionMode}. In such cases,</i></td></tr>
+<tr><th id="81">81</th><td><i class="doc">    unlock() must be called the same number of times lockForWrite() or</i></td></tr>
+<tr><th id="82">82</th><td><i class="doc">    lockForRead() was called. Note that the lock type cannot be</i></td></tr>
+<tr><th id="83">83</th><td><i class="doc">    changed when trying to lock recursively, i.e. it is not possible</i></td></tr>
+<tr><th id="84">84</th><td><i class="doc">    to lock for reading in a thread that already has locked for</i></td></tr>
+<tr><th id="85">85</th><td><i class="doc">    writing (and vice versa).</i></td></tr>
+<tr><th id="86">86</th><td><i class="doc"></i></td></tr>
+<tr><th id="87">87</th><td><i class="doc">    <span class="command">\sa</span> QReadLocker, QWriteLocker, QMutex, QSemaphore</i></td></tr>
+<tr><th id="88">88</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="89">89</th><td></td></tr>
+<tr><th id="90">90</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="91">91</th><td><i class="doc">    <span class="command">\enum</span> <span class="verb" data-ref="QReadWriteLock::RecursionMode">QReadWriteLock::RecursionMode</span></i></td></tr>
+<tr><th id="92">92</th><td><i class="doc">    <span class="command">\since</span> 4.4</i></td></tr>
+<tr><th id="93">93</th><td><i class="doc"></i></td></tr>
+<tr><th id="94">94</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QReadWriteLock::Recursive">Recursive </span>In this mode, a thread can lock the same</i></td></tr>
+<tr><th id="95">95</th><td><i class="doc">    QReadWriteLock multiple times. The QReadWriteLock won't be unlocked</i></td></tr>
+<tr><th id="96">96</th><td><i class="doc">    until a corresponding number of unlock() calls have been made.</i></td></tr>
+<tr><th id="97">97</th><td><i class="doc"></i></td></tr>
+<tr><th id="98">98</th><td><i class="doc">    <span class="command">\value</span> <span class="arg" data-ref="QReadWriteLock::NonRecursive">NonRecursive </span>In this mode, a thread may only lock a</i></td></tr>
+<tr><th id="99">99</th><td><i class="doc">    QReadWriteLock once.</i></td></tr>
+<tr><th id="100">100</th><td><i class="doc"></i></td></tr>
+<tr><th id="101">101</th><td><i class="doc">    <span class="command">\sa</span> QReadWriteLock()</i></td></tr>
+<tr><th id="102">102</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="103">103</th><td></td></tr>
+<tr><th id="104">104</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="105">105</th><td><i class="doc">    <span class="command">\since</span> 4.4</i></td></tr>
+<tr><th id="106">106</th><td><i class="doc"></i></td></tr>
+<tr><th id="107">107</th><td><i class="doc">    Constructs a QReadWriteLock object in the given<span class="command"> \a</span> <span class="arg">recursionMode.</span></i></td></tr>
+<tr><th id="108">108</th><td><i class="doc"></i></td></tr>
+<tr><th id="109">109</th><td><i class="doc">    The default recursion mode is NonRecursive.</i></td></tr>
+<tr><th id="110">110</th><td><i class="doc"></i></td></tr>
+<tr><th id="111">111</th><td><i class="doc">    <span class="command">\sa</span> lockForRead(), lockForWrite(), RecursionMode</i></td></tr>
+<tr><th id="112">112</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="113">113</th><td><a class="type" href="qreadwritelock.h.html#QReadWriteLock" title='QReadWriteLock' data-ref="QReadWriteLock">QReadWriteLock</a>::<dfn class="decl def fn" id="_ZN14QReadWriteLockC1ENS_13RecursionModeE" title='QReadWriteLock::QReadWriteLock' data-ref="_ZN14QReadWriteLockC1ENS_13RecursionModeE">QReadWriteLock</dfn>(<a class="type" href="qreadwritelock.h.html#QReadWriteLock::RecursionMode" title='QReadWriteLock::RecursionMode' data-ref="QReadWriteLock::RecursionMode">RecursionMode</a> <dfn class="local col9 decl" id="9recursionMode" title='recursionMode' data-type='QReadWriteLock::RecursionMode' data-ref="9recursionMode">recursionMode</dfn>)</td></tr>
+<tr><th id="114">114</th><td>    : <a class="member field" href="qreadwritelock.h.html#QReadWriteLock::d_ptr" title='QReadWriteLock::d_ptr' data-ref="QReadWriteLock::d_ptr">d_ptr</a><a class="ref fn" href="qatomic.h.html#_ZN14QAtomicPointerC1EPT_" title='QAtomicPointer::QAtomicPointer&lt;T&gt;' data-ref="_ZN14QAtomicPointerC1EPT_">(</a><a class="local col9 ref" href="#9recursionMode" title='recursionMode' data-ref="9recursionMode">recursionMode</a> == <a class="enum" href="qreadwritelock.h.html#QReadWriteLock::Recursive" title='QReadWriteLock::Recursive' data-ref="QReadWriteLock::Recursive">Recursive</a> ? <b>new</b> <a class="type" href="qreadwritelock_p.h.html#QReadWriteLockPrivate" title='QReadWriteLockPrivate' data-ref="QReadWriteLockPrivate">QReadWriteLockPrivate</a><a class="ref fn" href="qreadwritelock_p.h.html#_ZN21QReadWriteLockPrivateC1Eb" title='QReadWriteLockPrivate::QReadWriteLockPrivate' data-ref="_ZN21QReadWriteLockPrivateC1Eb">(</a><b>true</b>) : <b>nullptr</b>)</td></tr>
+<tr><th id="115">115</th><td>{</td></tr>
+<tr><th id="116">116</th><td>    <a class="macro" href="../global/qassert.h.html#43" title="static_cast&lt;void&gt;(false &amp;&amp; (!(quintptr(d_ptr.loadRelaxed()) &amp; StateMask)))" data-ref="_M/Q_ASSERT_X">Q_ASSERT_X</a>(!(<a class="typedef" href="../global/qtypes.h.html#quintptr" title='quintptr' data-type='QIntegerForSizeof&lt;void *&gt;::Unsigned' data-ref="quintptr">quintptr</a>(<a class="member field" href="qreadwritelock.h.html#QReadWriteLock::d_ptr" title='QReadWriteLock::d_ptr' data-ref="QReadWriteLock::d_ptr">d_ptr</a>.<a class="ref fn" href="qbasicatomic.h.html#_ZNK19QBasicAtomicPointer11loadRelaxedEv" title='QBasicAtomicPointer::loadRelaxed' data-ref="_ZNK19QBasicAtomicPointer11loadRelaxedEv">loadRelaxed</a>()) &amp; <a class="tu enum" href="#(anonymousnamespace)::StateMask" title='(anonymous namespace)::StateMask' data-use='r' data-ref="(anonymousnamespace)::StateMask">StateMask</a>), <q>"QReadWriteLock::QReadWriteLock"</q>, <q>"bad d_ptr alignment"</q>);</td></tr>
+<tr><th id="117">117</th><td>}</td></tr>
+<tr><th id="118">118</th><td></td></tr>
+<tr><th id="119">119</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="120">120</th><td><i class="doc">    Destroys the QReadWriteLock object.</i></td></tr>
+<tr><th id="121">121</th><td><i class="doc"></i></td></tr>
+<tr><th id="122">122</th><td><i class="doc">    <span class="command">\warning</span> Destroying a read-write lock that is in use may result</i></td></tr>
+<tr><th id="123">123</th><td><i class="doc">    in undefined behavior.</i></td></tr>
+<tr><th id="124">124</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="125">125</th><td><a class="type" href="qreadwritelock.h.html#QReadWriteLock" title='QReadWriteLock' data-ref="QReadWriteLock">QReadWriteLock</a>::<dfn class="decl def fn" id="_ZN14QReadWriteLockD1Ev" title='QReadWriteLock::~QReadWriteLock' data-ref="_ZN14QReadWriteLockD1Ev">~QReadWriteLock</dfn>()</td></tr>
+<tr><th id="126">126</th><td>{</td></tr>
+<tr><th id="127">127</th><td>    <em>auto</em> <dfn class="local col0 decl" id="10d" title='d' data-type='QBasicAtomicPointer&lt;QReadWriteLockPrivate&gt;::Type' data-ref="10d">d</dfn> = <a class="member field" href="qreadwritelock.h.html#QReadWriteLock::d_ptr" title='QReadWriteLock::d_ptr' data-ref="QReadWriteLock::d_ptr">d_ptr</a>.<a class="ref fn" href="qbasicatomic.h.html#_ZNK19QBasicAtomicPointer11loadAcquireEv" title='QBasicAtomicPointer::loadAcquire' data-ref="_ZNK19QBasicAtomicPointer11loadAcquireEv">loadAcquire</a>();</td></tr>
+<tr><th id="128">128</th><td>    <b>if</b> (<a class="tu ref fn" href="#_ZN12_GLOBAL__N_119isUncontendedLockedEPK21QReadWriteLockPrivate" title='(anonymous namespace)::isUncontendedLocked' data-use='c' data-ref="_ZN12_GLOBAL__N_119isUncontendedLockedEPK21QReadWriteLockPrivate">isUncontendedLocked</a>(<a class="local col0 ref" href="#10d" title='d' data-ref="10d">d</a>)) {</td></tr>
+<tr><th id="129">129</th><td>        <a class="macro" href="../global/qlogging.h.html#158" title="QMessageLogger(nullptr, 0, nullptr).warning" data-ref="_M/qWarning">qWarning</a>(<span class='inlayHint'>msg:&nbsp;</span><q>"QReadWriteLock: destroying locked QReadWriteLock"</q>);</td></tr>
+<tr><th id="130">130</th><td>        <b>return</b>;</td></tr>
+<tr><th id="131">131</th><td>    }</td></tr>
+<tr><th id="132">132</th><td>    <b>delete</b> <a class="local col0 ref" href="#10d" title='d' data-ref="10d">d</a>;</td></tr>
+<tr><th id="133">133</th><td>}</td></tr>
+<tr><th id="134">134</th><td></td></tr>
+<tr><th id="135">135</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="136">136</th><td><i class="doc">    Locks the lock for reading. This function will block the current</i></td></tr>
+<tr><th id="137">137</th><td><i class="doc">    thread if another thread has locked for writing.</i></td></tr>
+<tr><th id="138">138</th><td><i class="doc"></i></td></tr>
+<tr><th id="139">139</th><td><i class="doc">    It is not possible to lock for read if the thread already has</i></td></tr>
+<tr><th id="140">140</th><td><i class="doc">    locked for write.</i></td></tr>
+<tr><th id="141">141</th><td><i class="doc"></i></td></tr>
+<tr><th id="142">142</th><td><i class="doc">    <span class="command">\sa</span> unlock(), lockForWrite(), tryLockForRead()</i></td></tr>
+<tr><th id="143">143</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="144">144</th><td><em>void</em> <a class="type" href="qreadwritelock.h.html#QReadWriteLock" title='QReadWriteLock' data-ref="QReadWriteLock">QReadWriteLock</a>::<dfn class="decl def fn" id="_ZN14QReadWriteLock11lockForReadEv" title='QReadWriteLock::lockForRead' data-ref="_ZN14QReadWriteLock11lockForReadEv">lockForRead</dfn>()</td></tr>
+<tr><th id="145">145</th><td>{</td></tr>
+<tr><th id="146">146</th><td>    <b>if</b> (<a class="member field" href="qreadwritelock.h.html#QReadWriteLock::d_ptr" title='QReadWriteLock::d_ptr' data-ref="QReadWriteLock::d_ptr">d_ptr</a>.<a class="ref fn" href="qbasicatomic.h.html#_ZN19QBasicAtomicPointer17testAndSetAcquireEPT_S1_" title='QBasicAtomicPointer::testAndSetAcquire' data-ref="_ZN19QBasicAtomicPointer17testAndSetAcquireEPT_S1_">testAndSetAcquire</a>(<span class='inlayHint'>expectedValue:&nbsp;</span><b>nullptr</b>, <span class='inlayHint'>newValue:&nbsp;</span><a class="tu ref" href="#(anonymousnamespace)::dummyLockedForRead" title='(anonymous namespace)::dummyLockedForRead' data-use='r' data-ref="(anonymousnamespace)::dummyLockedForRead">dummyLockedForRead</a>))</td></tr>
+<tr><th id="147">147</th><td>        <b>return</b>;</td></tr>
+<tr><th id="148">148</th><td>    <a class="member fn" href="#_ZN14QReadWriteLock14tryLockForReadEi" title='QReadWriteLock::tryLockForRead' data-ref="_ZN14QReadWriteLock14tryLockForReadEi">tryLockForRead</a>(<span class='inlayHint'>timeout:&nbsp;</span>-<var>1</var>);</td></tr>
+<tr><th id="149">149</th><td>}</td></tr>
+<tr><th id="150">150</th><td></td></tr>
+<tr><th id="151">151</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="152">152</th><td><i class="doc">    Attempts to lock for reading. If the lock was obtained, this</i></td></tr>
+<tr><th id="153">153</th><td><i class="doc">    function returns<span class="command"> \c</span> <span class="arg">true,</span> otherwise it returns<span class="command"> \c</span> <span class="arg">false</span> instead of</i></td></tr>
+<tr><th id="154">154</th><td><i class="doc">    waiting for the lock to become available, i.e. it does not block.</i></td></tr>
+<tr><th id="155">155</th><td><i class="doc"></i></td></tr>
+<tr><th id="156">156</th><td><i class="doc">    The lock attempt will fail if another thread has locked for</i></td></tr>
+<tr><th id="157">157</th><td><i class="doc">    writing.</i></td></tr>
+<tr><th id="158">158</th><td><i class="doc"></i></td></tr>
+<tr><th id="159">159</th><td><i class="doc">    If the lock was obtained, the lock must be unlocked with unlock()</i></td></tr>
+<tr><th id="160">160</th><td><i class="doc">    before another thread can successfully lock it for writing.</i></td></tr>
+<tr><th id="161">161</th><td><i class="doc"></i></td></tr>
+<tr><th id="162">162</th><td><i class="doc">    It is not possible to lock for read if the thread already has</i></td></tr>
+<tr><th id="163">163</th><td><i class="doc">    locked for write.</i></td></tr>
+<tr><th id="164">164</th><td><i class="doc"></i></td></tr>
+<tr><th id="165">165</th><td><i class="doc">    <span class="command">\sa</span> unlock(), lockForRead()</i></td></tr>
+<tr><th id="166">166</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="167">167</th><td><em>bool</em> <a class="type" href="qreadwritelock.h.html#QReadWriteLock" title='QReadWriteLock' data-ref="QReadWriteLock">QReadWriteLock</a>::<dfn class="decl def fn" id="_ZN14QReadWriteLock14tryLockForReadEv" title='QReadWriteLock::tryLockForRead' data-ref="_ZN14QReadWriteLock14tryLockForReadEv">tryLockForRead</dfn>()</td></tr>
+<tr><th id="168">168</th><td>{</td></tr>
+<tr><th id="169">169</th><td>    <b>return</b> <a class="member fn" href="#_ZN14QReadWriteLock14tryLockForReadEi" title='QReadWriteLock::tryLockForRead' data-ref="_ZN14QReadWriteLock14tryLockForReadEi">tryLockForRead</a>(<span class='inlayHint'>timeout:&nbsp;</span><var>0</var>);</td></tr>
+<tr><th id="170">170</th><td>}</td></tr>
+<tr><th id="171">171</th><td></td></tr>
+<tr><th id="172">172</th><td><i class="doc">/*! <span class="command">\overload</span></i></td></tr>
+<tr><th id="173">173</th><td><i class="doc"></i></td></tr>
+<tr><th id="174">174</th><td><i class="doc">    Attempts to lock for reading. This function returns<span class="command"> \c</span> <span class="arg">true</span> if the</i></td></tr>
+<tr><th id="175">175</th><td><i class="doc">    lock was obtained; otherwise it returns<span class="command"> \c</span> <span class="arg">false.</span> If another thread</i></td></tr>
+<tr><th id="176">176</th><td><i class="doc">    has locked for writing, this function will wait for at most<span class="command"> \a</span></i></td></tr>
+<tr><th id="177">177</th><td><i class="doc">    <span class="arg">timeout</span> milliseconds for the lock to become available.</i></td></tr>
+<tr><th id="178">178</th><td><i class="doc"></i></td></tr>
+<tr><th id="179">179</th><td><i class="doc">    Note: Passing a negative number as the<span class="command"> \a</span> <span class="arg">timeout</span> is equivalent to</i></td></tr>
+<tr><th id="180">180</th><td><i class="doc">    calling lockForRead(), i.e. this function will wait forever until</i></td></tr>
+<tr><th id="181">181</th><td><i class="doc">    lock can be locked for reading when<span class="command"> \a</span> <span class="arg">timeout</span> is negative.</i></td></tr>
+<tr><th id="182">182</th><td><i class="doc"></i></td></tr>
+<tr><th id="183">183</th><td><i class="doc">    If the lock was obtained, the lock must be unlocked with unlock()</i></td></tr>
+<tr><th id="184">184</th><td><i class="doc">    before another thread can successfully lock it for writing.</i></td></tr>
+<tr><th id="185">185</th><td><i class="doc"></i></td></tr>
+<tr><th id="186">186</th><td><i class="doc">    It is not possible to lock for read if the thread already has</i></td></tr>
+<tr><th id="187">187</th><td><i class="doc">    locked for write.</i></td></tr>
+<tr><th id="188">188</th><td><i class="doc"></i></td></tr>
+<tr><th id="189">189</th><td><i class="doc">    <span class="command">\sa</span> unlock(), lockForRead()</i></td></tr>
+<tr><th id="190">190</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="191">191</th><td><em>bool</em> <a class="type" href="qreadwritelock.h.html#QReadWriteLock" title='QReadWriteLock' data-ref="QReadWriteLock">QReadWriteLock</a>::<dfn class="decl def fn" id="_ZN14QReadWriteLock14tryLockForReadEi" title='QReadWriteLock::tryLockForRead' data-ref="_ZN14QReadWriteLock14tryLockForReadEi">tryLockForRead</dfn>(<em>int</em> <dfn class="local col1 decl" id="11timeout" title='timeout' data-type='int' data-ref="11timeout">timeout</dfn>)</td></tr>
+<tr><th id="192">192</th><td>{</td></tr>
+<tr><th id="193">193</th><td>    <i>// Fast case: non contended:</i></td></tr>
+<tr><th id="194">194</th><td>    <a class="type" href="qreadwritelock_p.h.html#QReadWriteLockPrivate" title='QReadWriteLockPrivate' data-ref="QReadWriteLockPrivate">QReadWriteLockPrivate</a> *<dfn class="local col2 decl" id="12d" title='d' data-type='QReadWriteLockPrivate *' data-ref="12d">d</dfn>;</td></tr>
+<tr><th id="195">195</th><td>    <b>if</b> (<a class="member field" href="qreadwritelock.h.html#QReadWriteLock::d_ptr" title='QReadWriteLock::d_ptr' data-ref="QReadWriteLock::d_ptr">d_ptr</a>.<a class="ref fn" href="qbasicatomic.h.html#_ZN19QBasicAtomicPointer17testAndSetAcquireEPT_S1_RS1_" title='QBasicAtomicPointer::testAndSetAcquire' data-ref="_ZN19QBasicAtomicPointer17testAndSetAcquireEPT_S1_RS1_">testAndSetAcquire</a>(<span class='inlayHint'>expectedValue:&nbsp;</span><b>nullptr</b>, <span class='inlayHint'>newValue:&nbsp;</span><a class="tu ref" href="#(anonymousnamespace)::dummyLockedForRead" title='(anonymous namespace)::dummyLockedForRead' data-use='r' data-ref="(anonymousnamespace)::dummyLockedForRead">dummyLockedForRead</a>, <span class='inlayHint'>currentValue&amp;:&nbsp;</span><span class='refarg'><a class="local col2 ref" href="#12d" title='d' data-ref="12d">d</a></span>))</td></tr>
+<tr><th id="196">196</th><td>        <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="197">197</th><td></td></tr>
+<tr><th id="198">198</th><td>    <b>while</b> (<b>true</b>) {</td></tr>
+<tr><th id="199">199</th><td>        <b>if</b> (<a class="local col2 ref" href="#12d" title='d' data-ref="12d">d</a> == <b>nullptr</b>) {</td></tr>
+<tr><th id="200">200</th><td>            <b>if</b> (!<a class="member field" href="qreadwritelock.h.html#QReadWriteLock::d_ptr" title='QReadWriteLock::d_ptr' data-ref="QReadWriteLock::d_ptr">d_ptr</a>.<a class="ref fn" href="qbasicatomic.h.html#_ZN19QBasicAtomicPointer17testAndSetAcquireEPT_S1_RS1_" title='QBasicAtomicPointer::testAndSetAcquire' data-ref="_ZN19QBasicAtomicPointer17testAndSetAcquireEPT_S1_RS1_">testAndSetAcquire</a>(<span class='inlayHint'>expectedValue:&nbsp;</span><b>nullptr</b>, <span class='inlayHint'>newValue:&nbsp;</span><a class="tu ref" href="#(anonymousnamespace)::dummyLockedForRead" title='(anonymous namespace)::dummyLockedForRead' data-use='r' data-ref="(anonymousnamespace)::dummyLockedForRead">dummyLockedForRead</a>, <span class='inlayHint'>currentValue&amp;:&nbsp;</span><span class='refarg'><a class="local col2 ref" href="#12d" title='d' data-ref="12d">d</a></span>))</td></tr>
+<tr><th id="201">201</th><td>                <b>continue</b>;</td></tr>
+<tr><th id="202">202</th><td>            <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="203">203</th><td>        }</td></tr>
+<tr><th id="204">204</th><td></td></tr>
+<tr><th id="205">205</th><td>        <b>if</b> ((<a class="typedef" href="../global/qtypes.h.html#quintptr" title='quintptr' data-type='QIntegerForSizeof&lt;void *&gt;::Unsigned' data-ref="quintptr">quintptr</a>(<a class="local col2 ref" href="#12d" title='d' data-ref="12d">d</a>) &amp; <a class="tu enum" href="#(anonymousnamespace)::StateMask" title='(anonymous namespace)::StateMask' data-use='r' data-ref="(anonymousnamespace)::StateMask">StateMask</a>) == <a class="tu enum" href="#(anonymousnamespace)::StateLockedForRead" title='(anonymous namespace)::StateLockedForRead' data-use='r' data-ref="(anonymousnamespace)::StateLockedForRead">StateLockedForRead</a>) {</td></tr>
+<tr><th id="206">206</th><td>            <i>// locked for read, increase the counter</i></td></tr>
+<tr><th id="207">207</th><td>            <em>const</em> <em>auto</em> <dfn class="local col3 decl" id="13val" title='val' data-type='QReadWriteLockPrivate *const' data-ref="13val">val</dfn> = <b>reinterpret_cast</b>&lt;<a class="type" href="qreadwritelock_p.h.html#QReadWriteLockPrivate" title='QReadWriteLockPrivate' data-ref="QReadWriteLockPrivate">QReadWriteLockPrivate</a> *&gt;(<a class="typedef" href="../global/qtypes.h.html#quintptr" title='quintptr' data-type='QIntegerForSizeof&lt;void *&gt;::Unsigned' data-ref="quintptr">quintptr</a>(<a class="local col2 ref" href="#12d" title='d' data-ref="12d">d</a>) + (<var>1U</var>&lt;&lt;<var>4</var>));</td></tr>
+<tr><th id="208">208</th><td>            <a class="macro" href="../global/qassert.h.html#43" title="static_cast&lt;void&gt;(false &amp;&amp; (quintptr(val) &gt; (1U&lt;&lt;4)))" data-ref="_M/Q_ASSERT_X">Q_ASSERT_X</a>(<a class="typedef" href="../global/qtypes.h.html#quintptr" title='quintptr' data-type='QIntegerForSizeof&lt;void *&gt;::Unsigned' data-ref="quintptr">quintptr</a>(<a class="local col3 ref" href="#13val" title='val' data-ref="13val">val</a>) &gt; (<var>1U</var>&lt;&lt;<var>4</var>), <q>"QReadWriteLock::tryLockForRead()"</q>,</td></tr>
+<tr><th id="209">209</th><td>                       <q>"Overflow in lock counter"</q>);</td></tr>
+<tr><th id="210">210</th><td>            <b>if</b> (!<a class="member field" href="qreadwritelock.h.html#QReadWriteLock::d_ptr" title='QReadWriteLock::d_ptr' data-ref="QReadWriteLock::d_ptr">d_ptr</a>.<a class="ref fn" href="qbasicatomic.h.html#_ZN19QBasicAtomicPointer17testAndSetAcquireEPT_S1_RS1_" title='QBasicAtomicPointer::testAndSetAcquire' data-ref="_ZN19QBasicAtomicPointer17testAndSetAcquireEPT_S1_RS1_">testAndSetAcquire</a>(<span class='inlayHint'>expectedValue:&nbsp;</span><a class="local col2 ref" href="#12d" title='d' data-ref="12d">d</a>, <span class='inlayHint'>newValue:&nbsp;</span><a class="local col3 ref" href="#13val" title='val' data-ref="13val">val</a>, <span class='inlayHint'>currentValue&amp;:&nbsp;</span><span class='refarg'><a class="local col2 ref" href="#12d" title='d' data-ref="12d">d</a></span>))</td></tr>
+<tr><th id="211">211</th><td>                <b>continue</b>;</td></tr>
+<tr><th id="212">212</th><td>            <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="213">213</th><td>        }</td></tr>
+<tr><th id="214">214</th><td></td></tr>
+<tr><th id="215">215</th><td>        <b>if</b> (<a class="local col2 ref" href="#12d" title='d' data-ref="12d">d</a> == <a class="tu ref" href="#(anonymousnamespace)::dummyLockedForWrite" title='(anonymous namespace)::dummyLockedForWrite' data-use='r' data-ref="(anonymousnamespace)::dummyLockedForWrite">dummyLockedForWrite</a>) {</td></tr>
+<tr><th id="216">216</th><td>            <b>if</b> (!<a class="local col1 ref" href="#11timeout" title='timeout' data-ref="11timeout">timeout</a>)</td></tr>
+<tr><th id="217">217</th><td>                <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="218">218</th><td></td></tr>
+<tr><th id="219">219</th><td>            <i>// locked for write, assign a d_ptr and wait.</i></td></tr>
+<tr><th id="220">220</th><td>            <em>auto</em> <dfn class="local col4 decl" id="14val" title='val' data-type='QReadWriteLockPrivate *' data-ref="14val">val</dfn> = <a class="type" href="qreadwritelock_p.h.html#QReadWriteLockPrivate" title='QReadWriteLockPrivate' data-ref="QReadWriteLockPrivate">QReadWriteLockPrivate</a>::<a class="ref fn" href="#_ZN21QReadWriteLockPrivate8allocateEv" title='QReadWriteLockPrivate::allocate' data-ref="_ZN21QReadWriteLockPrivate8allocateEv">allocate</a>();</td></tr>
+<tr><th id="221">221</th><td>            <a class="local col4 ref" href="#14val" title='val' data-ref="14val">val</a>-&gt;<a class="ref field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::writerCount" title='QReadWriteLockPrivate::writerCount' data-ref="QReadWriteLockPrivate::writerCount">writerCount</a> = <var>1</var>;</td></tr>
+<tr><th id="222">222</th><td>            <b>if</b> (!<a class="member field" href="qreadwritelock.h.html#QReadWriteLock::d_ptr" title='QReadWriteLock::d_ptr' data-ref="QReadWriteLock::d_ptr">d_ptr</a>.<a class="ref fn" href="qbasicatomic.h.html#_ZN19QBasicAtomicPointer17testAndSetOrderedEPT_S1_RS1_" title='QBasicAtomicPointer::testAndSetOrdered' data-ref="_ZN19QBasicAtomicPointer17testAndSetOrderedEPT_S1_RS1_">testAndSetOrdered</a>(<span class='inlayHint'>expectedValue:&nbsp;</span><a class="local col2 ref" href="#12d" title='d' data-ref="12d">d</a>, <span class='inlayHint'>newValue:&nbsp;</span><a class="local col4 ref" href="#14val" title='val' data-ref="14val">val</a>, <span class='inlayHint'>currentValue&amp;:&nbsp;</span><span class='refarg'><a class="local col2 ref" href="#12d" title='d' data-ref="12d">d</a></span>)) {</td></tr>
+<tr><th id="223">223</th><td>                <a class="local col4 ref" href="#14val" title='val' data-ref="14val">val</a>-&gt;<a class="ref field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::writerCount" title='QReadWriteLockPrivate::writerCount' data-ref="QReadWriteLockPrivate::writerCount">writerCount</a> = <var>0</var>;</td></tr>
+<tr><th id="224">224</th><td>                <a class="local col4 ref" href="#14val" title='val' data-ref="14val">val</a>-&gt;<a class="ref fn" href="#_ZN21QReadWriteLockPrivate7releaseEv" title='QReadWriteLockPrivate::release' data-ref="_ZN21QReadWriteLockPrivate7releaseEv">release</a>();</td></tr>
+<tr><th id="225">225</th><td>                <b>continue</b>;</td></tr>
+<tr><th id="226">226</th><td>            }</td></tr>
+<tr><th id="227">227</th><td>            <a class="local col2 ref" href="#12d" title='d' data-ref="12d">d</a> = <a class="local col4 ref" href="#14val" title='val' data-ref="14val">val</a>;</td></tr>
+<tr><th id="228">228</th><td>        }</td></tr>
+<tr><th id="229">229</th><td>        <a class="macro" href="../global/qassert.h.html#28" title="static_cast&lt;void&gt;(false &amp;&amp; (!isUncontendedLocked(d)))" data-ref="_M/Q_ASSERT">Q_ASSERT</a>(!<a class="tu ref fn" href="#_ZN12_GLOBAL__N_119isUncontendedLockedEPK21QReadWriteLockPrivate" title='(anonymous namespace)::isUncontendedLocked' data-use='c' data-ref="_ZN12_GLOBAL__N_119isUncontendedLockedEPK21QReadWriteLockPrivate">isUncontendedLocked</a>(<a class="local col2 ref" href="#12d" title='d' data-ref="12d">d</a>));</td></tr>
+<tr><th id="230">230</th><td>        <i>// d is an actual pointer;</i></td></tr>
+<tr><th id="231">231</th><td></td></tr>
+<tr><th id="232">232</th><td>        <b>if</b> (<a class="local col2 ref" href="#12d" title='d' data-ref="12d">d</a>-&gt;<a class="ref field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::recursive" title='QReadWriteLockPrivate::recursive' data-ref="QReadWriteLockPrivate::recursive">recursive</a>)</td></tr>
+<tr><th id="233">233</th><td>            <b>return</b> <a class="local col2 ref" href="#12d" title='d' data-ref="12d">d</a>-&gt;<a class="ref fn" href="#_ZN21QReadWriteLockPrivate20recursiveLockForReadEi" title='QReadWriteLockPrivate::recursiveLockForRead' data-ref="_ZN21QReadWriteLockPrivate20recursiveLockForReadEi">recursiveLockForRead</a>(<a class="local col1 ref" href="#11timeout" title='timeout' data-ref="11timeout">timeout</a>);</td></tr>
+<tr><th id="234">234</th><td></td></tr>
+<tr><th id="235">235</th><td>        <em>auto</em> <dfn class="local col5 decl" id="15lock" title='lock' data-type='std::unique_lock&lt;std::mutex&gt;' data-ref="15lock">lock</dfn> = <a class="ref fn" href="qlocking_p.h.html#_ZN12_GLOBAL__N_114qt_unique_lockERT_" title='(anonymous namespace)::qt_unique_lock' data-ref="_ZN12_GLOBAL__N_114qt_unique_lockERT_">qt_unique_lock</a>(<span class='inlayHint'>mutex&amp;:&nbsp;</span><span class='refarg'><a class="local col2 ref" href="#12d" title='d' data-ref="12d">d</a>-&gt;<a class="ref field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::mutex" title='QReadWriteLockPrivate::mutex' data-ref="QReadWriteLockPrivate::mutex">mutex</a></span>);</td></tr>
+<tr><th id="236">236</th><td>        <b>if</b> (<a class="local col2 ref" href="#12d" title='d' data-ref="12d">d</a> != <a class="member field" href="qreadwritelock.h.html#QReadWriteLock::d_ptr" title='QReadWriteLock::d_ptr' data-ref="QReadWriteLock::d_ptr">d_ptr</a>.<a class="ref fn" href="qbasicatomic.h.html#_ZNK19QBasicAtomicPointer11loadRelaxedEv" title='QBasicAtomicPointer::loadRelaxed' data-ref="_ZNK19QBasicAtomicPointer11loadRelaxedEv">loadRelaxed</a>()) {</td></tr>
+<tr><th id="237">237</th><td>            <i>// d_ptr has changed: this QReadWriteLock was unlocked before we had</i></td></tr>
+<tr><th id="238">238</th><td><i>            // time to lock d-&gt;mutex.</i></td></tr>
+<tr><th id="239">239</th><td><i>            // We are holding a lock to a mutex within a QReadWriteLockPrivate</i></td></tr>
+<tr><th id="240">240</th><td><i>            // that is already released (or even is already re-used). That's ok</i></td></tr>
+<tr><th id="241">241</th><td><i>            // because the QFreeList never frees them.</i></td></tr>
+<tr><th id="242">242</th><td><i>            // Just unlock d-&gt;mutex (at the end of the scope) and retry.</i></td></tr>
+<tr><th id="243">243</th><td>            <a class="local col2 ref" href="#12d" title='d' data-ref="12d">d</a> = <a class="member field" href="qreadwritelock.h.html#QReadWriteLock::d_ptr" title='QReadWriteLock::d_ptr' data-ref="QReadWriteLock::d_ptr">d_ptr</a>.<a class="ref fn" href="qbasicatomic.h.html#_ZNK19QBasicAtomicPointer11loadAcquireEv" title='QBasicAtomicPointer::loadAcquire' data-ref="_ZNK19QBasicAtomicPointer11loadAcquireEv">loadAcquire</a>();</td></tr>
+<tr><th id="244">244</th><td>            <b>continue</b>;</td></tr>
+<tr><th id="245">245</th><td>        }</td></tr>
+<tr><th id="246">246</th><td>        <b>return</b> <a class="local col2 ref" href="#12d" title='d' data-ref="12d">d</a>-&gt;<a class="ref fn" href="#_ZN21QReadWriteLockPrivate11lockForReadERSt11unique_lockISt5mutexEi" title='QReadWriteLockPrivate::lockForRead' data-ref="_ZN21QReadWriteLockPrivate11lockForReadERSt11unique_lockISt5mutexEi">lockForRead</a>(<span class='refarg'><a class="local col5 ref" href="#15lock" title='lock' data-ref="15lock">lock</a></span>, <a class="local col1 ref" href="#11timeout" title='timeout' data-ref="11timeout">timeout</a>);</td></tr>
+<tr><th id="247">247</th><td>    }</td></tr>
+<tr><th id="248">248</th><td>}</td></tr>
+<tr><th id="249">249</th><td></td></tr>
+<tr><th id="250">250</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="251">251</th><td><i class="doc">    Locks the lock for writing. This function will block the current</i></td></tr>
+<tr><th id="252">252</th><td><i class="doc">    thread if another thread (including the current) has locked for</i></td></tr>
+<tr><th id="253">253</th><td><i class="doc">    reading or writing (unless the lock has been created using the</i></td></tr>
+<tr><th id="254">254</th><td><i class="doc">   <span class="command"> \l</span>{QReadWriteLock::Recursive} mode).</i></td></tr>
+<tr><th id="255">255</th><td><i class="doc"></i></td></tr>
+<tr><th id="256">256</th><td><i class="doc">    It is not possible to lock for write if the thread already has</i></td></tr>
+<tr><th id="257">257</th><td><i class="doc">    locked for read.</i></td></tr>
+<tr><th id="258">258</th><td><i class="doc"></i></td></tr>
+<tr><th id="259">259</th><td><i class="doc">    <span class="command">\sa</span> unlock(), lockForRead(), tryLockForWrite()</i></td></tr>
+<tr><th id="260">260</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="261">261</th><td><em>void</em> <a class="type" href="qreadwritelock.h.html#QReadWriteLock" title='QReadWriteLock' data-ref="QReadWriteLock">QReadWriteLock</a>::<dfn class="decl def fn" id="_ZN14QReadWriteLock12lockForWriteEv" title='QReadWriteLock::lockForWrite' data-ref="_ZN14QReadWriteLock12lockForWriteEv">lockForWrite</dfn>()</td></tr>
+<tr><th id="262">262</th><td>{</td></tr>
+<tr><th id="263">263</th><td>    <a class="member fn" href="#_ZN14QReadWriteLock15tryLockForWriteEi" title='QReadWriteLock::tryLockForWrite' data-ref="_ZN14QReadWriteLock15tryLockForWriteEi">tryLockForWrite</a>(<span class='inlayHint'>timeout:&nbsp;</span>-<var>1</var>);</td></tr>
+<tr><th id="264">264</th><td>}</td></tr>
+<tr><th id="265">265</th><td></td></tr>
+<tr><th id="266">266</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="267">267</th><td><i class="doc">    Attempts to lock for writing. If the lock was obtained, this</i></td></tr>
+<tr><th id="268">268</th><td><i class="doc">    function returns<span class="command"> \c</span> <span class="arg">true;</span> otherwise, it returns<span class="command"> \c</span> <span class="arg">false</span> immediately.</i></td></tr>
+<tr><th id="269">269</th><td><i class="doc"></i></td></tr>
+<tr><th id="270">270</th><td><i class="doc">    The lock attempt will fail if another thread has locked for</i></td></tr>
+<tr><th id="271">271</th><td><i class="doc">    reading or writing.</i></td></tr>
+<tr><th id="272">272</th><td><i class="doc"></i></td></tr>
+<tr><th id="273">273</th><td><i class="doc">    If the lock was obtained, the lock must be unlocked with unlock()</i></td></tr>
+<tr><th id="274">274</th><td><i class="doc">    before another thread can successfully lock it.</i></td></tr>
+<tr><th id="275">275</th><td><i class="doc"></i></td></tr>
+<tr><th id="276">276</th><td><i class="doc">    It is not possible to lock for write if the thread already has</i></td></tr>
+<tr><th id="277">277</th><td><i class="doc">    locked for read.</i></td></tr>
+<tr><th id="278">278</th><td><i class="doc"></i></td></tr>
+<tr><th id="279">279</th><td><i class="doc">    <span class="command">\sa</span> unlock(), lockForWrite()</i></td></tr>
+<tr><th id="280">280</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="281">281</th><td><em>bool</em> <a class="type" href="qreadwritelock.h.html#QReadWriteLock" title='QReadWriteLock' data-ref="QReadWriteLock">QReadWriteLock</a>::<dfn class="decl def fn" id="_ZN14QReadWriteLock15tryLockForWriteEv" title='QReadWriteLock::tryLockForWrite' data-ref="_ZN14QReadWriteLock15tryLockForWriteEv">tryLockForWrite</dfn>()</td></tr>
+<tr><th id="282">282</th><td>{</td></tr>
+<tr><th id="283">283</th><td>    <b>return</b> <a class="member fn" href="#_ZN14QReadWriteLock15tryLockForWriteEi" title='QReadWriteLock::tryLockForWrite' data-ref="_ZN14QReadWriteLock15tryLockForWriteEi">tryLockForWrite</a>(<span class='inlayHint'>timeout:&nbsp;</span><var>0</var>);</td></tr>
+<tr><th id="284">284</th><td>}</td></tr>
+<tr><th id="285">285</th><td></td></tr>
+<tr><th id="286">286</th><td><i class="doc">/*! <span class="command">\overload</span></i></td></tr>
+<tr><th id="287">287</th><td><i class="doc"></i></td></tr>
+<tr><th id="288">288</th><td><i class="doc">    Attempts to lock for writing. This function returns<span class="command"> \c</span> <span class="arg">true</span> if the</i></td></tr>
+<tr><th id="289">289</th><td><i class="doc">    lock was obtained; otherwise it returns<span class="command"> \c</span> <span class="arg">false.</span> If another thread</i></td></tr>
+<tr><th id="290">290</th><td><i class="doc">    has locked for reading or writing, this function will wait for at</i></td></tr>
+<tr><th id="291">291</th><td><i class="doc">    most<span class="command"> \a</span> <span class="arg">timeout</span> milliseconds for the lock to become available.</i></td></tr>
+<tr><th id="292">292</th><td><i class="doc"></i></td></tr>
+<tr><th id="293">293</th><td><i class="doc">    Note: Passing a negative number as the<span class="command"> \a</span> <span class="arg">timeout</span> is equivalent to</i></td></tr>
+<tr><th id="294">294</th><td><i class="doc">    calling lockForWrite(), i.e. this function will wait forever until</i></td></tr>
+<tr><th id="295">295</th><td><i class="doc">    lock can be locked for writing when<span class="command"> \a</span> <span class="arg">timeout</span> is negative.</i></td></tr>
+<tr><th id="296">296</th><td><i class="doc"></i></td></tr>
+<tr><th id="297">297</th><td><i class="doc">    If the lock was obtained, the lock must be unlocked with unlock()</i></td></tr>
+<tr><th id="298">298</th><td><i class="doc">    before another thread can successfully lock it.</i></td></tr>
+<tr><th id="299">299</th><td><i class="doc"></i></td></tr>
+<tr><th id="300">300</th><td><i class="doc">    It is not possible to lock for write if the thread already has</i></td></tr>
+<tr><th id="301">301</th><td><i class="doc">    locked for read.</i></td></tr>
+<tr><th id="302">302</th><td><i class="doc"></i></td></tr>
+<tr><th id="303">303</th><td><i class="doc">    <span class="command">\sa</span> unlock(), lockForWrite()</i></td></tr>
+<tr><th id="304">304</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="305">305</th><td><em>bool</em> <a class="type" href="qreadwritelock.h.html#QReadWriteLock" title='QReadWriteLock' data-ref="QReadWriteLock">QReadWriteLock</a>::<dfn class="decl def fn" id="_ZN14QReadWriteLock15tryLockForWriteEi" title='QReadWriteLock::tryLockForWrite' data-ref="_ZN14QReadWriteLock15tryLockForWriteEi">tryLockForWrite</dfn>(<em>int</em> <dfn class="local col6 decl" id="16timeout" title='timeout' data-type='int' data-ref="16timeout">timeout</dfn>)</td></tr>
+<tr><th id="306">306</th><td>{</td></tr>
+<tr><th id="307">307</th><td>    <i>// Fast case: non contended:</i></td></tr>
+<tr><th id="308">308</th><td>    <a class="type" href="qreadwritelock_p.h.html#QReadWriteLockPrivate" title='QReadWriteLockPrivate' data-ref="QReadWriteLockPrivate">QReadWriteLockPrivate</a> *<dfn class="local col7 decl" id="17d" title='d' data-type='QReadWriteLockPrivate *' data-ref="17d">d</dfn>;</td></tr>
+<tr><th id="309">309</th><td>    <b>if</b> (<a class="member field" href="qreadwritelock.h.html#QReadWriteLock::d_ptr" title='QReadWriteLock::d_ptr' data-ref="QReadWriteLock::d_ptr">d_ptr</a>.<a class="ref fn" href="qbasicatomic.h.html#_ZN19QBasicAtomicPointer17testAndSetAcquireEPT_S1_RS1_" title='QBasicAtomicPointer::testAndSetAcquire' data-ref="_ZN19QBasicAtomicPointer17testAndSetAcquireEPT_S1_RS1_">testAndSetAcquire</a>(<span class='inlayHint'>expectedValue:&nbsp;</span><b>nullptr</b>, <span class='inlayHint'>newValue:&nbsp;</span><a class="tu ref" href="#(anonymousnamespace)::dummyLockedForWrite" title='(anonymous namespace)::dummyLockedForWrite' data-use='r' data-ref="(anonymousnamespace)::dummyLockedForWrite">dummyLockedForWrite</a>, <span class='inlayHint'>currentValue&amp;:&nbsp;</span><span class='refarg'><a class="local col7 ref" href="#17d" title='d' data-ref="17d">d</a></span>))</td></tr>
+<tr><th id="310">310</th><td>        <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="311">311</th><td></td></tr>
+<tr><th id="312">312</th><td>    <b>while</b> (<b>true</b>) {</td></tr>
+<tr><th id="313">313</th><td>        <b>if</b> (<a class="local col7 ref" href="#17d" title='d' data-ref="17d">d</a> == <b>nullptr</b>) {</td></tr>
+<tr><th id="314">314</th><td>            <b>if</b> (!<a class="member field" href="qreadwritelock.h.html#QReadWriteLock::d_ptr" title='QReadWriteLock::d_ptr' data-ref="QReadWriteLock::d_ptr">d_ptr</a>.<a class="ref fn" href="qbasicatomic.h.html#_ZN19QBasicAtomicPointer17testAndSetAcquireEPT_S1_RS1_" title='QBasicAtomicPointer::testAndSetAcquire' data-ref="_ZN19QBasicAtomicPointer17testAndSetAcquireEPT_S1_RS1_">testAndSetAcquire</a>(<span class='inlayHint'>expectedValue:&nbsp;</span><a class="local col7 ref" href="#17d" title='d' data-ref="17d">d</a>, <span class='inlayHint'>newValue:&nbsp;</span><a class="tu ref" href="#(anonymousnamespace)::dummyLockedForWrite" title='(anonymous namespace)::dummyLockedForWrite' data-use='r' data-ref="(anonymousnamespace)::dummyLockedForWrite">dummyLockedForWrite</a>, <span class='inlayHint'>currentValue&amp;:&nbsp;</span><span class='refarg'><a class="local col7 ref" href="#17d" title='d' data-ref="17d">d</a></span>))</td></tr>
+<tr><th id="315">315</th><td>                <b>continue</b>;</td></tr>
+<tr><th id="316">316</th><td>            <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="317">317</th><td>        }</td></tr>
+<tr><th id="318">318</th><td></td></tr>
+<tr><th id="319">319</th><td>        <b>if</b> (<a class="tu ref fn" href="#_ZN12_GLOBAL__N_119isUncontendedLockedEPK21QReadWriteLockPrivate" title='(anonymous namespace)::isUncontendedLocked' data-use='c' data-ref="_ZN12_GLOBAL__N_119isUncontendedLockedEPK21QReadWriteLockPrivate">isUncontendedLocked</a>(<a class="local col7 ref" href="#17d" title='d' data-ref="17d">d</a>)) {</td></tr>
+<tr><th id="320">320</th><td>            <b>if</b> (!<a class="local col6 ref" href="#16timeout" title='timeout' data-ref="16timeout">timeout</a>)</td></tr>
+<tr><th id="321">321</th><td>                <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="322">322</th><td></td></tr>
+<tr><th id="323">323</th><td>            <i>// locked for either read or write, assign a d_ptr and wait.</i></td></tr>
+<tr><th id="324">324</th><td>            <em>auto</em> <dfn class="local col8 decl" id="18val" title='val' data-type='QReadWriteLockPrivate *' data-ref="18val">val</dfn> = <a class="type" href="qreadwritelock_p.h.html#QReadWriteLockPrivate" title='QReadWriteLockPrivate' data-ref="QReadWriteLockPrivate">QReadWriteLockPrivate</a>::<a class="ref fn" href="#_ZN21QReadWriteLockPrivate8allocateEv" title='QReadWriteLockPrivate::allocate' data-ref="_ZN21QReadWriteLockPrivate8allocateEv">allocate</a>();</td></tr>
+<tr><th id="325">325</th><td>            <b>if</b> (<a class="local col7 ref" href="#17d" title='d' data-ref="17d">d</a> == <a class="tu ref" href="#(anonymousnamespace)::dummyLockedForWrite" title='(anonymous namespace)::dummyLockedForWrite' data-use='r' data-ref="(anonymousnamespace)::dummyLockedForWrite">dummyLockedForWrite</a>)</td></tr>
+<tr><th id="326">326</th><td>                <a class="local col8 ref" href="#18val" title='val' data-ref="18val">val</a>-&gt;<a class="ref field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::writerCount" title='QReadWriteLockPrivate::writerCount' data-ref="QReadWriteLockPrivate::writerCount">writerCount</a> = <var>1</var>;</td></tr>
+<tr><th id="327">327</th><td>            <b>else</b></td></tr>
+<tr><th id="328">328</th><td>                <a class="local col8 ref" href="#18val" title='val' data-ref="18val">val</a>-&gt;<a class="ref field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::readerCount" title='QReadWriteLockPrivate::readerCount' data-ref="QReadWriteLockPrivate::readerCount">readerCount</a> = (<a class="typedef" href="../global/qtypes.h.html#quintptr" title='quintptr' data-type='QIntegerForSizeof&lt;void *&gt;::Unsigned' data-ref="quintptr">quintptr</a>(<a class="local col7 ref" href="#17d" title='d' data-ref="17d">d</a>) &gt;&gt; <var>4</var>) + <var>1</var>;</td></tr>
+<tr><th id="329">329</th><td>            <b>if</b> (!<a class="member field" href="qreadwritelock.h.html#QReadWriteLock::d_ptr" title='QReadWriteLock::d_ptr' data-ref="QReadWriteLock::d_ptr">d_ptr</a>.<a class="ref fn" href="qbasicatomic.h.html#_ZN19QBasicAtomicPointer17testAndSetOrderedEPT_S1_RS1_" title='QBasicAtomicPointer::testAndSetOrdered' data-ref="_ZN19QBasicAtomicPointer17testAndSetOrderedEPT_S1_RS1_">testAndSetOrdered</a>(<span class='inlayHint'>expectedValue:&nbsp;</span><a class="local col7 ref" href="#17d" title='d' data-ref="17d">d</a>, <span class='inlayHint'>newValue:&nbsp;</span><a class="local col8 ref" href="#18val" title='val' data-ref="18val">val</a>, <span class='inlayHint'>currentValue&amp;:&nbsp;</span><span class='refarg'><a class="local col7 ref" href="#17d" title='d' data-ref="17d">d</a></span>)) {</td></tr>
+<tr><th id="330">330</th><td>                <a class="local col8 ref" href="#18val" title='val' data-ref="18val">val</a>-&gt;<a class="ref field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::writerCount" title='QReadWriteLockPrivate::writerCount' data-ref="QReadWriteLockPrivate::writerCount">writerCount</a> = <a class="local col8 ref" href="#18val" title='val' data-ref="18val">val</a>-&gt;<a class="ref field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::readerCount" title='QReadWriteLockPrivate::readerCount' data-ref="QReadWriteLockPrivate::readerCount">readerCount</a> = <var>0</var>;</td></tr>
+<tr><th id="331">331</th><td>                <a class="local col8 ref" href="#18val" title='val' data-ref="18val">val</a>-&gt;<a class="ref fn" href="#_ZN21QReadWriteLockPrivate7releaseEv" title='QReadWriteLockPrivate::release' data-ref="_ZN21QReadWriteLockPrivate7releaseEv">release</a>();</td></tr>
+<tr><th id="332">332</th><td>                <b>continue</b>;</td></tr>
+<tr><th id="333">333</th><td>            }</td></tr>
+<tr><th id="334">334</th><td>            <a class="local col7 ref" href="#17d" title='d' data-ref="17d">d</a> = <a class="local col8 ref" href="#18val" title='val' data-ref="18val">val</a>;</td></tr>
+<tr><th id="335">335</th><td>        }</td></tr>
+<tr><th id="336">336</th><td>        <a class="macro" href="../global/qassert.h.html#28" title="static_cast&lt;void&gt;(false &amp;&amp; (!isUncontendedLocked(d)))" data-ref="_M/Q_ASSERT">Q_ASSERT</a>(!<a class="tu ref fn" href="#_ZN12_GLOBAL__N_119isUncontendedLockedEPK21QReadWriteLockPrivate" title='(anonymous namespace)::isUncontendedLocked' data-use='c' data-ref="_ZN12_GLOBAL__N_119isUncontendedLockedEPK21QReadWriteLockPrivate">isUncontendedLocked</a>(<a class="local col7 ref" href="#17d" title='d' data-ref="17d">d</a>));</td></tr>
+<tr><th id="337">337</th><td>        <i>// d is an actual pointer;</i></td></tr>
+<tr><th id="338">338</th><td></td></tr>
+<tr><th id="339">339</th><td>        <b>if</b> (<a class="local col7 ref" href="#17d" title='d' data-ref="17d">d</a>-&gt;<a class="ref field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::recursive" title='QReadWriteLockPrivate::recursive' data-ref="QReadWriteLockPrivate::recursive">recursive</a>)</td></tr>
+<tr><th id="340">340</th><td>            <b>return</b> <a class="local col7 ref" href="#17d" title='d' data-ref="17d">d</a>-&gt;<a class="ref fn" href="#_ZN21QReadWriteLockPrivate21recursiveLockForWriteEi" title='QReadWriteLockPrivate::recursiveLockForWrite' data-ref="_ZN21QReadWriteLockPrivate21recursiveLockForWriteEi">recursiveLockForWrite</a>(<a class="local col6 ref" href="#16timeout" title='timeout' data-ref="16timeout">timeout</a>);</td></tr>
+<tr><th id="341">341</th><td></td></tr>
+<tr><th id="342">342</th><td>        <em>auto</em> <dfn class="local col9 decl" id="19lock" title='lock' data-type='std::unique_lock&lt;std::mutex&gt;' data-ref="19lock">lock</dfn> = <a class="ref fn" href="qlocking_p.h.html#_ZN12_GLOBAL__N_114qt_unique_lockERT_" title='(anonymous namespace)::qt_unique_lock' data-ref="_ZN12_GLOBAL__N_114qt_unique_lockERT_">qt_unique_lock</a>(<span class='inlayHint'>mutex&amp;:&nbsp;</span><span class='refarg'><a class="local col7 ref" href="#17d" title='d' data-ref="17d">d</a>-&gt;<a class="ref field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::mutex" title='QReadWriteLockPrivate::mutex' data-ref="QReadWriteLockPrivate::mutex">mutex</a></span>);</td></tr>
+<tr><th id="343">343</th><td>        <b>if</b> (<a class="local col7 ref" href="#17d" title='d' data-ref="17d">d</a> != <a class="member field" href="qreadwritelock.h.html#QReadWriteLock::d_ptr" title='QReadWriteLock::d_ptr' data-ref="QReadWriteLock::d_ptr">d_ptr</a>.<a class="ref fn" href="qbasicatomic.h.html#_ZNK19QBasicAtomicPointer11loadRelaxedEv" title='QBasicAtomicPointer::loadRelaxed' data-ref="_ZNK19QBasicAtomicPointer11loadRelaxedEv">loadRelaxed</a>()) {</td></tr>
+<tr><th id="344">344</th><td>            <i>// The mutex was unlocked before we had time to lock the mutex.</i></td></tr>
+<tr><th id="345">345</th><td><i>            // We are holding to a mutex within a QReadWriteLockPrivate that is already released</i></td></tr>
+<tr><th id="346">346</th><td><i>            // (or even is already re-used) but that's ok because the QFreeList never frees them.</i></td></tr>
+<tr><th id="347">347</th><td>            <a class="local col7 ref" href="#17d" title='d' data-ref="17d">d</a> = <a class="member field" href="qreadwritelock.h.html#QReadWriteLock::d_ptr" title='QReadWriteLock::d_ptr' data-ref="QReadWriteLock::d_ptr">d_ptr</a>.<a class="ref fn" href="qbasicatomic.h.html#_ZNK19QBasicAtomicPointer11loadAcquireEv" title='QBasicAtomicPointer::loadAcquire' data-ref="_ZNK19QBasicAtomicPointer11loadAcquireEv">loadAcquire</a>();</td></tr>
+<tr><th id="348">348</th><td>            <b>continue</b>;</td></tr>
+<tr><th id="349">349</th><td>        }</td></tr>
+<tr><th id="350">350</th><td>        <b>return</b> <a class="local col7 ref" href="#17d" title='d' data-ref="17d">d</a>-&gt;<a class="ref fn" href="#_ZN21QReadWriteLockPrivate12lockForWriteERSt11unique_lockISt5mutexEi" title='QReadWriteLockPrivate::lockForWrite' data-ref="_ZN21QReadWriteLockPrivate12lockForWriteERSt11unique_lockISt5mutexEi">lockForWrite</a>(<span class='refarg'><a class="local col9 ref" href="#19lock" title='lock' data-ref="19lock">lock</a></span>, <a class="local col6 ref" href="#16timeout" title='timeout' data-ref="16timeout">timeout</a>);</td></tr>
+<tr><th id="351">351</th><td>    }</td></tr>
+<tr><th id="352">352</th><td>}</td></tr>
+<tr><th id="353">353</th><td></td></tr>
+<tr><th id="354">354</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="355">355</th><td><i class="doc">    Unlocks the lock.</i></td></tr>
+<tr><th id="356">356</th><td><i class="doc"></i></td></tr>
+<tr><th id="357">357</th><td><i class="doc">    Attempting to unlock a lock that is not locked is an error, and will result</i></td></tr>
+<tr><th id="358">358</th><td><i class="doc">    in program termination.</i></td></tr>
+<tr><th id="359">359</th><td><i class="doc"></i></td></tr>
+<tr><th id="360">360</th><td><i class="doc">    <span class="command">\sa</span> lockForRead(), lockForWrite(), tryLockForRead(), tryLockForWrite()</i></td></tr>
+<tr><th id="361">361</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="362">362</th><td><em>void</em> <a class="type" href="qreadwritelock.h.html#QReadWriteLock" title='QReadWriteLock' data-ref="QReadWriteLock">QReadWriteLock</a>::<dfn class="decl def fn" id="_ZN14QReadWriteLock6unlockEv" title='QReadWriteLock::unlock' data-ref="_ZN14QReadWriteLock6unlockEv">unlock</dfn>()</td></tr>
+<tr><th id="363">363</th><td>{</td></tr>
+<tr><th id="364">364</th><td>    <a class="type" href="qreadwritelock_p.h.html#QReadWriteLockPrivate" title='QReadWriteLockPrivate' data-ref="QReadWriteLockPrivate">QReadWriteLockPrivate</a> *<dfn class="local col0 decl" id="20d" title='d' data-type='QReadWriteLockPrivate *' data-ref="20d">d</dfn> = <a class="member field" href="qreadwritelock.h.html#QReadWriteLock::d_ptr" title='QReadWriteLock::d_ptr' data-ref="QReadWriteLock::d_ptr">d_ptr</a>.<a class="ref fn" href="qbasicatomic.h.html#_ZNK19QBasicAtomicPointer11loadAcquireEv" title='QBasicAtomicPointer::loadAcquire' data-ref="_ZNK19QBasicAtomicPointer11loadAcquireEv">loadAcquire</a>();</td></tr>
+<tr><th id="365">365</th><td>    <b>while</b> (<b>true</b>) {</td></tr>
+<tr><th id="366">366</th><td>        <a class="macro" href="../global/qassert.h.html#43" title="static_cast&lt;void&gt;(false &amp;&amp; (d))" data-ref="_M/Q_ASSERT_X">Q_ASSERT_X</a>(<a class="local col0 ref" href="#20d" title='d' data-ref="20d">d</a>, <q>"QReadWriteLock::unlock()"</q>, <q>"Cannot unlock an unlocked lock"</q>);</td></tr>
+<tr><th id="367">367</th><td></td></tr>
+<tr><th id="368">368</th><td>        <i>// Fast case: no contention: (no waiters, no other readers)</i></td></tr>
+<tr><th id="369">369</th><td>        <b>if</b> (<a class="typedef" href="../global/qtypes.h.html#quintptr" title='quintptr' data-type='QIntegerForSizeof&lt;void *&gt;::Unsigned' data-ref="quintptr">quintptr</a>(<a class="local col0 ref" href="#20d" title='d' data-ref="20d">d</a>) &lt;= <var>2</var>) { <i>// 1 or 2 (StateLockedForRead or StateLockedForWrite)</i></td></tr>
+<tr><th id="370">370</th><td>            <b>if</b> (!<a class="member field" href="qreadwritelock.h.html#QReadWriteLock::d_ptr" title='QReadWriteLock::d_ptr' data-ref="QReadWriteLock::d_ptr">d_ptr</a>.<a class="ref fn" href="qbasicatomic.h.html#_ZN19QBasicAtomicPointer17testAndSetOrderedEPT_S1_RS1_" title='QBasicAtomicPointer::testAndSetOrdered' data-ref="_ZN19QBasicAtomicPointer17testAndSetOrderedEPT_S1_RS1_">testAndSetOrdered</a>(<span class='inlayHint'>expectedValue:&nbsp;</span><a class="local col0 ref" href="#20d" title='d' data-ref="20d">d</a>, <span class='inlayHint'>newValue:&nbsp;</span><b>nullptr</b>, <span class='inlayHint'>currentValue&amp;:&nbsp;</span><span class='refarg'><a class="local col0 ref" href="#20d" title='d' data-ref="20d">d</a></span>))</td></tr>
+<tr><th id="371">371</th><td>                <b>continue</b>;</td></tr>
+<tr><th id="372">372</th><td>            <b>return</b>;</td></tr>
+<tr><th id="373">373</th><td>        }</td></tr>
+<tr><th id="374">374</th><td></td></tr>
+<tr><th id="375">375</th><td>        <b>if</b> ((<a class="typedef" href="../global/qtypes.h.html#quintptr" title='quintptr' data-type='QIntegerForSizeof&lt;void *&gt;::Unsigned' data-ref="quintptr">quintptr</a>(<a class="local col0 ref" href="#20d" title='d' data-ref="20d">d</a>) &amp; <a class="tu enum" href="#(anonymousnamespace)::StateMask" title='(anonymous namespace)::StateMask' data-use='r' data-ref="(anonymousnamespace)::StateMask">StateMask</a>) == <a class="tu enum" href="#(anonymousnamespace)::StateLockedForRead" title='(anonymous namespace)::StateLockedForRead' data-use='r' data-ref="(anonymousnamespace)::StateLockedForRead">StateLockedForRead</a>) {</td></tr>
+<tr><th id="376">376</th><td>            <a class="macro" href="../global/qassert.h.html#28" title="static_cast&lt;void&gt;(false &amp;&amp; (quintptr(d) &gt; (1U&lt;&lt;4)))" data-ref="_M/Q_ASSERT">Q_ASSERT</a>(<a class="typedef" href="../global/qtypes.h.html#quintptr" title='quintptr' data-type='QIntegerForSizeof&lt;void *&gt;::Unsigned' data-ref="quintptr">quintptr</a>(<a class="local col0 ref" href="#20d" title='d' data-ref="20d">d</a>) &gt; (<var>1U</var>&lt;&lt;<var>4</var>)); <i>//otherwise that would be the fast case</i></td></tr>
+<tr><th id="377">377</th><td>            <i>// Just decrease the reader's count.</i></td></tr>
+<tr><th id="378">378</th><td>            <em>auto</em> <dfn class="local col1 decl" id="21val" title='val' data-type='QReadWriteLockPrivate *' data-ref="21val">val</dfn> = <b>reinterpret_cast</b>&lt;<a class="type" href="qreadwritelock_p.h.html#QReadWriteLockPrivate" title='QReadWriteLockPrivate' data-ref="QReadWriteLockPrivate">QReadWriteLockPrivate</a> *&gt;(<a class="typedef" href="../global/qtypes.h.html#quintptr" title='quintptr' data-type='QIntegerForSizeof&lt;void *&gt;::Unsigned' data-ref="quintptr">quintptr</a>(<a class="local col0 ref" href="#20d" title='d' data-ref="20d">d</a>) - (<var>1U</var>&lt;&lt;<var>4</var>));</td></tr>
+<tr><th id="379">379</th><td>            <b>if</b> (!<a class="member field" href="qreadwritelock.h.html#QReadWriteLock::d_ptr" title='QReadWriteLock::d_ptr' data-ref="QReadWriteLock::d_ptr">d_ptr</a>.<a class="ref fn" href="qbasicatomic.h.html#_ZN19QBasicAtomicPointer17testAndSetOrderedEPT_S1_RS1_" title='QBasicAtomicPointer::testAndSetOrdered' data-ref="_ZN19QBasicAtomicPointer17testAndSetOrderedEPT_S1_RS1_">testAndSetOrdered</a>(<span class='inlayHint'>expectedValue:&nbsp;</span><a class="local col0 ref" href="#20d" title='d' data-ref="20d">d</a>, <span class='inlayHint'>newValue:&nbsp;</span><a class="local col1 ref" href="#21val" title='val' data-ref="21val">val</a>, <span class='inlayHint'>currentValue&amp;:&nbsp;</span><span class='refarg'><a class="local col0 ref" href="#20d" title='d' data-ref="20d">d</a></span>))</td></tr>
+<tr><th id="380">380</th><td>                <b>continue</b>;</td></tr>
+<tr><th id="381">381</th><td>            <b>return</b>;</td></tr>
+<tr><th id="382">382</th><td>        }</td></tr>
+<tr><th id="383">383</th><td></td></tr>
+<tr><th id="384">384</th><td>        <a class="macro" href="../global/qassert.h.html#28" title="static_cast&lt;void&gt;(false &amp;&amp; (!isUncontendedLocked(d)))" data-ref="_M/Q_ASSERT">Q_ASSERT</a>(!<a class="tu ref fn" href="#_ZN12_GLOBAL__N_119isUncontendedLockedEPK21QReadWriteLockPrivate" title='(anonymous namespace)::isUncontendedLocked' data-use='c' data-ref="_ZN12_GLOBAL__N_119isUncontendedLockedEPK21QReadWriteLockPrivate">isUncontendedLocked</a>(<a class="local col0 ref" href="#20d" title='d' data-ref="20d">d</a>));</td></tr>
+<tr><th id="385">385</th><td></td></tr>
+<tr><th id="386">386</th><td>        <b>if</b> (<a class="local col0 ref" href="#20d" title='d' data-ref="20d">d</a>-&gt;<a class="ref field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::recursive" title='QReadWriteLockPrivate::recursive' data-ref="QReadWriteLockPrivate::recursive">recursive</a>) {</td></tr>
+<tr><th id="387">387</th><td>            <a class="local col0 ref" href="#20d" title='d' data-ref="20d">d</a>-&gt;<a class="ref fn" href="#_ZN21QReadWriteLockPrivate15recursiveUnlockEv" title='QReadWriteLockPrivate::recursiveUnlock' data-ref="_ZN21QReadWriteLockPrivate15recursiveUnlockEv">recursiveUnlock</a>();</td></tr>
+<tr><th id="388">388</th><td>            <b>return</b>;</td></tr>
+<tr><th id="389">389</th><td>        }</td></tr>
+<tr><th id="390">390</th><td></td></tr>
+<tr><th id="391">391</th><td>        <em>const</em> <em>auto</em> <dfn class="local col2 decl" id="22lock" title='lock' data-type='std::scoped_lock&lt;std::mutex&gt; const' data-ref="22lock">lock</dfn> = <a class="ref fn" href="qlocking_p.h.html#_ZN12_GLOBAL__N_114qt_scoped_lockERT_" title='(anonymous namespace)::qt_scoped_lock' data-ref="_ZN12_GLOBAL__N_114qt_scoped_lockERT_">qt_scoped_lock</a>(<span class='inlayHint'>mutex&amp;:&nbsp;</span><span class='refarg'><a class="local col0 ref" href="#20d" title='d' data-ref="20d">d</a>-&gt;<a class="ref field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::mutex" title='QReadWriteLockPrivate::mutex' data-ref="QReadWriteLockPrivate::mutex">mutex</a></span>);</td></tr>
+<tr><th id="392">392</th><td>        <b>if</b> (<a class="local col0 ref" href="#20d" title='d' data-ref="20d">d</a>-&gt;<a class="ref field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::writerCount" title='QReadWriteLockPrivate::writerCount' data-ref="QReadWriteLockPrivate::writerCount">writerCount</a>) {</td></tr>
+<tr><th id="393">393</th><td>            <a class="macro" href="../global/qassert.h.html#28" title="static_cast&lt;void&gt;(false &amp;&amp; (d-&gt;writerCount == 1))" data-ref="_M/Q_ASSERT">Q_ASSERT</a>(<a class="local col0 ref" href="#20d" title='d' data-ref="20d">d</a>-&gt;<a class="ref field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::writerCount" title='QReadWriteLockPrivate::writerCount' data-ref="QReadWriteLockPrivate::writerCount">writerCount</a> == <var>1</var>);</td></tr>
+<tr><th id="394">394</th><td>            <a class="macro" href="../global/qassert.h.html#28" title="static_cast&lt;void&gt;(false &amp;&amp; (d-&gt;readerCount == 0))" data-ref="_M/Q_ASSERT">Q_ASSERT</a>(<a class="local col0 ref" href="#20d" title='d' data-ref="20d">d</a>-&gt;<a class="ref field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::readerCount" title='QReadWriteLockPrivate::readerCount' data-ref="QReadWriteLockPrivate::readerCount">readerCount</a> == <var>0</var>);</td></tr>
+<tr><th id="395">395</th><td>            <a class="local col0 ref" href="#20d" title='d' data-ref="20d">d</a>-&gt;<a class="ref field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::writerCount" title='QReadWriteLockPrivate::writerCount' data-ref="QReadWriteLockPrivate::writerCount">writerCount</a> = <var>0</var>;</td></tr>
+<tr><th id="396">396</th><td>        } <b>else</b> {</td></tr>
+<tr><th id="397">397</th><td>            <a class="macro" href="../global/qassert.h.html#28" title="static_cast&lt;void&gt;(false &amp;&amp; (d-&gt;readerCount &gt; 0))" data-ref="_M/Q_ASSERT">Q_ASSERT</a>(<a class="local col0 ref" href="#20d" title='d' data-ref="20d">d</a>-&gt;<a class="ref field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::readerCount" title='QReadWriteLockPrivate::readerCount' data-ref="QReadWriteLockPrivate::readerCount">readerCount</a> &gt; <var>0</var>);</td></tr>
+<tr><th id="398">398</th><td>            <a class="local col0 ref" href="#20d" title='d' data-ref="20d">d</a>-&gt;<a class="ref field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::readerCount" title='QReadWriteLockPrivate::readerCount' data-ref="QReadWriteLockPrivate::readerCount">readerCount</a>--;</td></tr>
+<tr><th id="399">399</th><td>            <b>if</b> (<a class="local col0 ref" href="#20d" title='d' data-ref="20d">d</a>-&gt;<a class="ref field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::readerCount" title='QReadWriteLockPrivate::readerCount' data-ref="QReadWriteLockPrivate::readerCount">readerCount</a> &gt; <var>0</var>)</td></tr>
+<tr><th id="400">400</th><td>                <b>return</b>;</td></tr>
+<tr><th id="401">401</th><td>        }</td></tr>
+<tr><th id="402">402</th><td></td></tr>
+<tr><th id="403">403</th><td>        <b>if</b> (<a class="local col0 ref" href="#20d" title='d' data-ref="20d">d</a>-&gt;<a class="ref field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::waitingReaders" title='QReadWriteLockPrivate::waitingReaders' data-ref="QReadWriteLockPrivate::waitingReaders">waitingReaders</a> || <a class="local col0 ref" href="#20d" title='d' data-ref="20d">d</a>-&gt;<a class="ref field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::waitingWriters" title='QReadWriteLockPrivate::waitingWriters' data-ref="QReadWriteLockPrivate::waitingWriters">waitingWriters</a>) {</td></tr>
+<tr><th id="404">404</th><td>            <a class="local col0 ref" href="#20d" title='d' data-ref="20d">d</a>-&gt;<a class="ref fn" href="#_ZN21QReadWriteLockPrivate6unlockEv" title='QReadWriteLockPrivate::unlock' data-ref="_ZN21QReadWriteLockPrivate6unlockEv">unlock</a>();</td></tr>
+<tr><th id="405">405</th><td>        } <b>else</b> {</td></tr>
+<tr><th id="406">406</th><td>            <a class="macro" href="../global/qassert.h.html#28" title="static_cast&lt;void&gt;(false &amp;&amp; (d_ptr.loadRelaxed() == d))" data-ref="_M/Q_ASSERT">Q_ASSERT</a>(<a class="member field" href="qreadwritelock.h.html#QReadWriteLock::d_ptr" title='QReadWriteLock::d_ptr' data-ref="QReadWriteLock::d_ptr">d_ptr</a>.<a class="ref fn" href="qbasicatomic.h.html#_ZNK19QBasicAtomicPointer11loadRelaxedEv" title='QBasicAtomicPointer::loadRelaxed' data-ref="_ZNK19QBasicAtomicPointer11loadRelaxedEv">loadRelaxed</a>() == <a class="local col0 ref" href="#20d" title='d' data-ref="20d">d</a>); <i>// should not change when we still hold the mutex</i></td></tr>
+<tr><th id="407">407</th><td>            <a class="member field" href="qreadwritelock.h.html#QReadWriteLock::d_ptr" title='QReadWriteLock::d_ptr' data-ref="QReadWriteLock::d_ptr">d_ptr</a>.<a class="ref fn" href="qbasicatomic.h.html#_ZN19QBasicAtomicPointer12storeReleaseEPT_" title='QBasicAtomicPointer::storeRelease' data-ref="_ZN19QBasicAtomicPointer12storeReleaseEPT_">storeRelease</a>(<span class='inlayHint'>newValue:&nbsp;</span><b>nullptr</b>);</td></tr>
+<tr><th id="408">408</th><td>            <a class="local col0 ref" href="#20d" title='d' data-ref="20d">d</a>-&gt;<a class="ref fn" href="#_ZN21QReadWriteLockPrivate7releaseEv" title='QReadWriteLockPrivate::release' data-ref="_ZN21QReadWriteLockPrivate7releaseEv">release</a>();</td></tr>
+<tr><th id="409">409</th><td>        }</td></tr>
+<tr><th id="410">410</th><td>        <b>return</b>;</td></tr>
+<tr><th id="411">411</th><td>    }</td></tr>
+<tr><th id="412">412</th><td>}</td></tr>
+<tr><th id="413">413</th><td></td></tr>
+<tr><th id="414">414</th><td><i class="doc">/*! <span class="command">\internal</span><span class="verb">  Helper for QWaitCondition::wait *</span>/</i><span class="verb"></span></td></tr>
+<tr><th id="415">415</th><td><span class="verb"></span><a class="type" href="qreadwritelock.h.html#QReadWriteLock" title='QReadWriteLock' data-ref="QReadWriteLock">QReadWriteLock</a>::<a class="type" href="qreadwritelock.h.html#QReadWriteLock::StateForWaitCondition" title='QReadWriteLock::StateForWaitCondition' data-ref="QReadWriteLock::StateForWaitCondition">StateForWaitCondition</a> <a class="type" href="qreadwritelock.h.html#QReadWriteLock" title='QReadWriteLock' data-ref="QReadWriteLock">QReadWriteLock</a>::<dfn class="decl def fn" id="_ZNK14QReadWriteLock21stateForWaitConditionEv" title='QReadWriteLock::stateForWaitCondition' data-ref="_ZNK14QReadWriteLock21stateForWaitConditionEv">stateForWaitCondition</dfn>() <em>const</em></td></tr>
+<tr><th id="416">416</th><td>{</td></tr>
+<tr><th id="417">417</th><td>    <a class="type" href="qreadwritelock_p.h.html#QReadWriteLockPrivate" title='QReadWriteLockPrivate' data-ref="QReadWriteLockPrivate">QReadWriteLockPrivate</a> *<dfn class="local col3 decl" id="23d" title='d' data-type='QReadWriteLockPrivate *' data-ref="23d">d</dfn> = <a class="member field" href="qreadwritelock.h.html#QReadWriteLock::d_ptr" title='QReadWriteLock::d_ptr' data-ref="QReadWriteLock::d_ptr">d_ptr</a>.<a class="ref fn" href="qbasicatomic.h.html#_ZNK19QBasicAtomicPointer11loadAcquireEv" title='QBasicAtomicPointer::loadAcquire' data-ref="_ZNK19QBasicAtomicPointer11loadAcquireEv">loadAcquire</a>();</td></tr>
+<tr><th id="418">418</th><td>    <b>switch</b> (<a class="typedef" href="../global/qtypes.h.html#quintptr" title='quintptr' data-type='QIntegerForSizeof&lt;void *&gt;::Unsigned' data-ref="quintptr">quintptr</a>(<a class="local col3 ref" href="#23d" title='d' data-ref="23d">d</a>) &amp; <a class="tu enum" href="#(anonymousnamespace)::StateMask" title='(anonymous namespace)::StateMask' data-use='r' data-ref="(anonymousnamespace)::StateMask">StateMask</a>) {</td></tr>
+<tr><th id="419">419</th><td>    <b>case</b> <a class="tu enum" href="#(anonymousnamespace)::StateLockedForRead" title='(anonymous namespace)::StateLockedForRead' data-ref="(anonymousnamespace)::StateLockedForRead">StateLockedForRead</a>: <b>return</b> <a class="enum" href="qreadwritelock.h.html#QReadWriteLock::LockedForRead" title='QReadWriteLock::LockedForRead' data-ref="QReadWriteLock::LockedForRead">LockedForRead</a>;</td></tr>
+<tr><th id="420">420</th><td>    <b>case</b> <a class="tu enum" href="#(anonymousnamespace)::StateLockedForWrite" title='(anonymous namespace)::StateLockedForWrite' data-ref="(anonymousnamespace)::StateLockedForWrite">StateLockedForWrite</a>: <b>return</b> <a class="enum" href="qreadwritelock.h.html#QReadWriteLock::LockedForWrite" title='QReadWriteLock::LockedForWrite' data-ref="QReadWriteLock::LockedForWrite">LockedForWrite</a>;</td></tr>
+<tr><th id="421">421</th><td>    }</td></tr>
+<tr><th id="422">422</th><td></td></tr>
+<tr><th id="423">423</th><td>    <b>if</b> (!<a class="local col3 ref" href="#23d" title='d' data-ref="23d">d</a>)</td></tr>
+<tr><th id="424">424</th><td>        <b>return</b> <a class="enum" href="qreadwritelock.h.html#QReadWriteLock::Unlocked" title='QReadWriteLock::Unlocked' data-ref="QReadWriteLock::Unlocked">Unlocked</a>;</td></tr>
+<tr><th id="425">425</th><td>    <em>const</em> <em>auto</em> <dfn class="local col4 decl" id="24lock" title='lock' data-type='std::scoped_lock&lt;std::mutex&gt; const' data-ref="24lock">lock</dfn> = <a class="ref fn" href="qlocking_p.h.html#_ZN12_GLOBAL__N_114qt_scoped_lockERT_" title='(anonymous namespace)::qt_scoped_lock' data-ref="_ZN12_GLOBAL__N_114qt_scoped_lockERT_">qt_scoped_lock</a>(<span class='inlayHint'>mutex&amp;:&nbsp;</span><span class='refarg'><a class="local col3 ref" href="#23d" title='d' data-ref="23d">d</a>-&gt;<a class="ref field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::mutex" title='QReadWriteLockPrivate::mutex' data-ref="QReadWriteLockPrivate::mutex">mutex</a></span>);</td></tr>
+<tr><th id="426">426</th><td>    <b>if</b> (<a class="local col3 ref" href="#23d" title='d' data-ref="23d">d</a>-&gt;<a class="ref field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::writerCount" title='QReadWriteLockPrivate::writerCount' data-ref="QReadWriteLockPrivate::writerCount">writerCount</a> &gt; <var>1</var>)</td></tr>
+<tr><th id="427">427</th><td>        <b>return</b> <a class="enum" href="qreadwritelock.h.html#QReadWriteLock::RecursivelyLocked" title='QReadWriteLock::RecursivelyLocked' data-ref="QReadWriteLock::RecursivelyLocked">RecursivelyLocked</a>;</td></tr>
+<tr><th id="428">428</th><td>    <b>else</b> <b>if</b> (<a class="local col3 ref" href="#23d" title='d' data-ref="23d">d</a>-&gt;<a class="ref field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::writerCount" title='QReadWriteLockPrivate::writerCount' data-ref="QReadWriteLockPrivate::writerCount">writerCount</a> == <var>1</var>)</td></tr>
+<tr><th id="429">429</th><td>        <b>return</b> <a class="enum" href="qreadwritelock.h.html#QReadWriteLock::LockedForWrite" title='QReadWriteLock::LockedForWrite' data-ref="QReadWriteLock::LockedForWrite">LockedForWrite</a>;</td></tr>
+<tr><th id="430">430</th><td>    <b>return</b> <a class="enum" href="qreadwritelock.h.html#QReadWriteLock::LockedForRead" title='QReadWriteLock::LockedForRead' data-ref="QReadWriteLock::LockedForRead">LockedForRead</a>;</td></tr>
+<tr><th id="431">431</th><td></td></tr>
+<tr><th id="432">432</th><td>}</td></tr>
+<tr><th id="433">433</th><td></td></tr>
+<tr><th id="434">434</th><td><em>bool</em> <a class="type" href="qreadwritelock_p.h.html#QReadWriteLockPrivate" title='QReadWriteLockPrivate' data-ref="QReadWriteLockPrivate">QReadWriteLockPrivate</a>::<dfn class="decl def fn" id="_ZN21QReadWriteLockPrivate11lockForReadERSt11unique_lockISt5mutexEi" title='QReadWriteLockPrivate::lockForRead' data-ref="_ZN21QReadWriteLockPrivate11lockForReadERSt11unique_lockISt5mutexEi">lockForRead</dfn>(<span class="namespace">std::</span><a class="type" href="../../../../include/c++/9/bits/unique_lock.h.html#std::unique_lock" title='std::unique_lock' data-ref="std::unique_lock">unique_lock</a>&lt;<span class="namespace">QtPrivate::</span><a class="typedef" href="qwaitcondition_p.h.html#QtPrivate::mutex" title='QtPrivate::mutex' data-type='std::mutex' data-ref="QtPrivate::mutex">mutex</a>&gt; &amp;<dfn class="local col5 decl" id="25lock" title='lock' data-type='std::unique_lock&lt;QtPrivate::mutex&gt; &amp;' data-ref="25lock">lock</dfn>, <em>int</em> <dfn class="local col6 decl" id="26timeout" title='timeout' data-type='int' data-ref="26timeout">timeout</dfn>)</td></tr>
+<tr><th id="435">435</th><td>{</td></tr>
+<tr><th id="436">436</th><td>    <a class="macro" href="../global/qassert.h.html#28" title="static_cast&lt;void&gt;(false &amp;&amp; (!mutex.try_lock()))" data-ref="_M/Q_ASSERT">Q_ASSERT</a>(!<a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::mutex" title='QReadWriteLockPrivate::mutex' data-ref="QReadWriteLockPrivate::mutex">mutex</a>.<a class="ref fn" href="../../../../include/c++/9/bits/std_mutex.h.html#_ZNSt5mutex8try_lockEv" title='std::mutex::try_lock' data-ref="_ZNSt5mutex8try_lockEv">try_lock</a>()); <i>// mutex must be locked when entering this function</i></td></tr>
+<tr><th id="437">437</th><td></td></tr>
+<tr><th id="438">438</th><td>    <a class="type" href="../kernel/qelapsedtimer.h.html#QElapsedTimer" title='QElapsedTimer' data-ref="QElapsedTimer">QElapsedTimer</a> <a class="ref fn fake" href="../kernel/qelapsedtimer.h.html#_ZN13QElapsedTimerC1Ev" title='QElapsedTimer::QElapsedTimer' data-ref="_ZN13QElapsedTimerC1Ev"></a><dfn class="local col7 decl" id="27t" title='t' data-type='QElapsedTimer' data-ref="27t">t</dfn>;</td></tr>
+<tr><th id="439">439</th><td>    <b>if</b> (<a class="local col6 ref" href="#26timeout" title='timeout' data-ref="26timeout">timeout</a> &gt; <var>0</var>)</td></tr>
+<tr><th id="440">440</th><td>        <a class="local col7 ref" href="#27t" title='t' data-ref="27t">t</a>.<a class="ref fn" href="../kernel/qelapsedtimer.h.html#_ZN13QElapsedTimer5startEv" title='QElapsedTimer::start' data-ref="_ZN13QElapsedTimer5startEv">start</a>();</td></tr>
+<tr><th id="441">441</th><td></td></tr>
+<tr><th id="442">442</th><td>    <b>while</b> (<a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::waitingWriters" title='QReadWriteLockPrivate::waitingWriters' data-ref="QReadWriteLockPrivate::waitingWriters">waitingWriters</a> || <a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::writerCount" title='QReadWriteLockPrivate::writerCount' data-ref="QReadWriteLockPrivate::writerCount">writerCount</a>) {</td></tr>
+<tr><th id="443">443</th><td>        <b>if</b> (<a class="local col6 ref" href="#26timeout" title='timeout' data-ref="26timeout">timeout</a> == <var>0</var>)</td></tr>
+<tr><th id="444">444</th><td>            <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="445">445</th><td>        <b>if</b> (<a class="local col6 ref" href="#26timeout" title='timeout' data-ref="26timeout">timeout</a> &gt; <var>0</var>) {</td></tr>
+<tr><th id="446">446</th><td>            <em>auto</em> <dfn class="local col8 decl" id="28elapsed" title='elapsed' data-type='qint64' data-ref="28elapsed">elapsed</dfn> = <a class="local col7 ref" href="#27t" title='t' data-ref="27t">t</a>.<a class="ref fn" href="../kernel/qelapsedtimer.h.html#_ZNK13QElapsedTimer7elapsedEv" title='QElapsedTimer::elapsed' data-ref="_ZNK13QElapsedTimer7elapsedEv">elapsed</a>();</td></tr>
+<tr><th id="447">447</th><td>            <b>if</b> (<a class="local col8 ref" href="#28elapsed" title='elapsed' data-ref="28elapsed">elapsed</a> &gt; <a class="local col6 ref" href="#26timeout" title='timeout' data-ref="26timeout">timeout</a>)</td></tr>
+<tr><th id="448">448</th><td>                <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="449">449</th><td>            <a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::waitingReaders" title='QReadWriteLockPrivate::waitingReaders' data-ref="QReadWriteLockPrivate::waitingReaders">waitingReaders</a>++;</td></tr>
+<tr><th id="450">450</th><td>            <a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::readerCond" title='QReadWriteLockPrivate::readerCond' data-ref="QReadWriteLockPrivate::readerCond">readerCond</a>.<a class="ref fn" href="../../../../include/c++/9/condition_variable.html#_ZNSt18condition_variable8wait_forERSt11unique_lockISt5mutexERKNSt6chrono8durationIT_T0_EE" title='std::condition_variable::wait_for' data-ref="_ZNSt18condition_variable8wait_forERSt11unique_lockISt5mutexERKNSt6chrono8durationIT_T0_EE">wait_for</a>(<span class='inlayHint'>lock&amp;:&nbsp;</span><span class='refarg'><a class="local col5 ref" href="#25lock" title='lock' data-ref="25lock">lock</a></span>, <span class='inlayHint'>rtime:&nbsp;</span><a class="tu typedef" href="#(anonymousnamespace)::ms" title='(anonymous namespace)::ms' data-type='std::chrono::milliseconds' data-ref="(anonymousnamespace)::ms">ms</a><a class="ref fn" href="../../../../include/c++/9/chrono.html#_ZNSt6chrono8durationC1ERKTL0__" title='std::chrono::duration::duration&lt;_Rep, _Period&gt;' data-ref="_ZNSt6chrono8durationC1ERKTL0__">{</a><a class="local col6 ref" href="#26timeout" title='timeout' data-ref="26timeout">timeout</a> - <a class="local col8 ref" href="#28elapsed" title='elapsed' data-ref="28elapsed">elapsed</a>});</td></tr>
+<tr><th id="451">451</th><td>        } <b>else</b> {</td></tr>
+<tr><th id="452">452</th><td>            <a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::waitingReaders" title='QReadWriteLockPrivate::waitingReaders' data-ref="QReadWriteLockPrivate::waitingReaders">waitingReaders</a>++;</td></tr>
+<tr><th id="453">453</th><td>            <a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::readerCond" title='QReadWriteLockPrivate::readerCond' data-ref="QReadWriteLockPrivate::readerCond">readerCond</a>.<a class="ref fn" href="../../../../include/c++/9/condition_variable.html#_ZNSt18condition_variable4waitERSt11unique_lockISt5mutexE" title='std::condition_variable::wait' data-ref="_ZNSt18condition_variable4waitERSt11unique_lockISt5mutexE">wait</a>(<span class='inlayHint'>lock&amp;:&nbsp;</span><span class='refarg'><a class="local col5 ref" href="#25lock" title='lock' data-ref="25lock">lock</a></span>);</td></tr>
+<tr><th id="454">454</th><td>        }</td></tr>
+<tr><th id="455">455</th><td>        <a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::waitingReaders" title='QReadWriteLockPrivate::waitingReaders' data-ref="QReadWriteLockPrivate::waitingReaders">waitingReaders</a>--;</td></tr>
+<tr><th id="456">456</th><td>    }</td></tr>
+<tr><th id="457">457</th><td>    <a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::readerCount" title='QReadWriteLockPrivate::readerCount' data-ref="QReadWriteLockPrivate::readerCount">readerCount</a>++;</td></tr>
+<tr><th id="458">458</th><td>    <a class="macro" href="../global/qassert.h.html#28" title="static_cast&lt;void&gt;(false &amp;&amp; (writerCount == 0))" data-ref="_M/Q_ASSERT">Q_ASSERT</a>(<a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::writerCount" title='QReadWriteLockPrivate::writerCount' data-ref="QReadWriteLockPrivate::writerCount">writerCount</a> == <var>0</var>);</td></tr>
+<tr><th id="459">459</th><td>    <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="460">460</th><td>}</td></tr>
+<tr><th id="461">461</th><td></td></tr>
+<tr><th id="462">462</th><td><em>bool</em> <a class="type" href="qreadwritelock_p.h.html#QReadWriteLockPrivate" title='QReadWriteLockPrivate' data-ref="QReadWriteLockPrivate">QReadWriteLockPrivate</a>::<dfn class="decl def fn" id="_ZN21QReadWriteLockPrivate12lockForWriteERSt11unique_lockISt5mutexEi" title='QReadWriteLockPrivate::lockForWrite' data-ref="_ZN21QReadWriteLockPrivate12lockForWriteERSt11unique_lockISt5mutexEi">lockForWrite</dfn>(<span class="namespace">std::</span><a class="type" href="../../../../include/c++/9/bits/unique_lock.h.html#std::unique_lock" title='std::unique_lock' data-ref="std::unique_lock">unique_lock</a>&lt;<span class="namespace">QtPrivate::</span><a class="typedef" href="qwaitcondition_p.h.html#QtPrivate::mutex" title='QtPrivate::mutex' data-type='std::mutex' data-ref="QtPrivate::mutex">mutex</a>&gt; &amp;<dfn class="local col9 decl" id="29lock" title='lock' data-type='std::unique_lock&lt;QtPrivate::mutex&gt; &amp;' data-ref="29lock">lock</dfn>, <em>int</em> <dfn class="local col0 decl" id="30timeout" title='timeout' data-type='int' data-ref="30timeout">timeout</dfn>)</td></tr>
+<tr><th id="463">463</th><td>{</td></tr>
+<tr><th id="464">464</th><td>    <a class="macro" href="../global/qassert.h.html#28" title="static_cast&lt;void&gt;(false &amp;&amp; (!mutex.try_lock()))" data-ref="_M/Q_ASSERT">Q_ASSERT</a>(!<a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::mutex" title='QReadWriteLockPrivate::mutex' data-ref="QReadWriteLockPrivate::mutex">mutex</a>.<a class="ref fn" href="../../../../include/c++/9/bits/std_mutex.h.html#_ZNSt5mutex8try_lockEv" title='std::mutex::try_lock' data-ref="_ZNSt5mutex8try_lockEv">try_lock</a>()); <i>// mutex must be locked when entering this function</i></td></tr>
+<tr><th id="465">465</th><td></td></tr>
+<tr><th id="466">466</th><td>    <a class="type" href="../kernel/qelapsedtimer.h.html#QElapsedTimer" title='QElapsedTimer' data-ref="QElapsedTimer">QElapsedTimer</a> <a class="ref fn fake" href="../kernel/qelapsedtimer.h.html#_ZN13QElapsedTimerC1Ev" title='QElapsedTimer::QElapsedTimer' data-ref="_ZN13QElapsedTimerC1Ev"></a><dfn class="local col1 decl" id="31t" title='t' data-type='QElapsedTimer' data-ref="31t">t</dfn>;</td></tr>
+<tr><th id="467">467</th><td>    <b>if</b> (<a class="local col0 ref" href="#30timeout" title='timeout' data-ref="30timeout">timeout</a> &gt; <var>0</var>)</td></tr>
+<tr><th id="468">468</th><td>        <a class="local col1 ref" href="#31t" title='t' data-ref="31t">t</a>.<a class="ref fn" href="../kernel/qelapsedtimer.h.html#_ZN13QElapsedTimer5startEv" title='QElapsedTimer::start' data-ref="_ZN13QElapsedTimer5startEv">start</a>();</td></tr>
+<tr><th id="469">469</th><td></td></tr>
+<tr><th id="470">470</th><td>    <b>while</b> (<a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::readerCount" title='QReadWriteLockPrivate::readerCount' data-ref="QReadWriteLockPrivate::readerCount">readerCount</a> || <a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::writerCount" title='QReadWriteLockPrivate::writerCount' data-ref="QReadWriteLockPrivate::writerCount">writerCount</a>) {</td></tr>
+<tr><th id="471">471</th><td>        <b>if</b> (<a class="local col0 ref" href="#30timeout" title='timeout' data-ref="30timeout">timeout</a> == <var>0</var>)</td></tr>
+<tr><th id="472">472</th><td>            <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="473">473</th><td>        <b>if</b> (<a class="local col0 ref" href="#30timeout" title='timeout' data-ref="30timeout">timeout</a> &gt; <var>0</var>) {</td></tr>
+<tr><th id="474">474</th><td>            <em>auto</em> <dfn class="local col2 decl" id="32elapsed" title='elapsed' data-type='qint64' data-ref="32elapsed">elapsed</dfn> = <a class="local col1 ref" href="#31t" title='t' data-ref="31t">t</a>.<a class="ref fn" href="../kernel/qelapsedtimer.h.html#_ZNK13QElapsedTimer7elapsedEv" title='QElapsedTimer::elapsed' data-ref="_ZNK13QElapsedTimer7elapsedEv">elapsed</a>();</td></tr>
+<tr><th id="475">475</th><td>            <b>if</b> (<a class="local col2 ref" href="#32elapsed" title='elapsed' data-ref="32elapsed">elapsed</a> &gt; <a class="local col0 ref" href="#30timeout" title='timeout' data-ref="30timeout">timeout</a>) {</td></tr>
+<tr><th id="476">476</th><td>                <b>if</b> (<a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::waitingReaders" title='QReadWriteLockPrivate::waitingReaders' data-ref="QReadWriteLockPrivate::waitingReaders">waitingReaders</a> &amp;&amp; !<a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::waitingWriters" title='QReadWriteLockPrivate::waitingWriters' data-ref="QReadWriteLockPrivate::waitingWriters">waitingWriters</a> &amp;&amp; !<a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::writerCount" title='QReadWriteLockPrivate::writerCount' data-ref="QReadWriteLockPrivate::writerCount">writerCount</a>) {</td></tr>
+<tr><th id="477">477</th><td>                    <i>// We timed out and now there is no more writers or waiting writers, but some</i></td></tr>
+<tr><th id="478">478</th><td><i>                    // readers were queued (probably because of us). Wake the waiting readers.</i></td></tr>
+<tr><th id="479">479</th><td>                    <a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::readerCond" title='QReadWriteLockPrivate::readerCond' data-ref="QReadWriteLockPrivate::readerCond">readerCond</a>.<a class="ref fn" href="../../../../include/c++/9/condition_variable.html#_ZNSt18condition_variable10notify_allEv" title='std::condition_variable::notify_all' data-ref="_ZNSt18condition_variable10notify_allEv">notify_all</a>();</td></tr>
+<tr><th id="480">480</th><td>                }</td></tr>
+<tr><th id="481">481</th><td>                <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="482">482</th><td>            }</td></tr>
+<tr><th id="483">483</th><td>            <a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::waitingWriters" title='QReadWriteLockPrivate::waitingWriters' data-ref="QReadWriteLockPrivate::waitingWriters">waitingWriters</a>++;</td></tr>
+<tr><th id="484">484</th><td>            <a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::writerCond" title='QReadWriteLockPrivate::writerCond' data-ref="QReadWriteLockPrivate::writerCond">writerCond</a>.<a class="ref fn" href="../../../../include/c++/9/condition_variable.html#_ZNSt18condition_variable8wait_forERSt11unique_lockISt5mutexERKNSt6chrono8durationIT_T0_EE" title='std::condition_variable::wait_for' data-ref="_ZNSt18condition_variable8wait_forERSt11unique_lockISt5mutexERKNSt6chrono8durationIT_T0_EE">wait_for</a>(<span class='inlayHint'>lock&amp;:&nbsp;</span><span class='refarg'><a class="local col9 ref" href="#29lock" title='lock' data-ref="29lock">lock</a></span>, <span class='inlayHint'>rtime:&nbsp;</span><a class="tu typedef" href="#(anonymousnamespace)::ms" title='(anonymous namespace)::ms' data-type='std::chrono::milliseconds' data-ref="(anonymousnamespace)::ms">ms</a><a class="ref fn" href="../../../../include/c++/9/chrono.html#_ZNSt6chrono8durationC1ERKTL0__" title='std::chrono::duration::duration&lt;_Rep, _Period&gt;' data-ref="_ZNSt6chrono8durationC1ERKTL0__">{</a><a class="local col0 ref" href="#30timeout" title='timeout' data-ref="30timeout">timeout</a> - <a class="local col2 ref" href="#32elapsed" title='elapsed' data-ref="32elapsed">elapsed</a>});</td></tr>
+<tr><th id="485">485</th><td>        } <b>else</b> {</td></tr>
+<tr><th id="486">486</th><td>            <a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::waitingWriters" title='QReadWriteLockPrivate::waitingWriters' data-ref="QReadWriteLockPrivate::waitingWriters">waitingWriters</a>++;</td></tr>
+<tr><th id="487">487</th><td>            <a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::writerCond" title='QReadWriteLockPrivate::writerCond' data-ref="QReadWriteLockPrivate::writerCond">writerCond</a>.<a class="ref fn" href="../../../../include/c++/9/condition_variable.html#_ZNSt18condition_variable4waitERSt11unique_lockISt5mutexE" title='std::condition_variable::wait' data-ref="_ZNSt18condition_variable4waitERSt11unique_lockISt5mutexE">wait</a>(<span class='inlayHint'>lock&amp;:&nbsp;</span><span class='refarg'><a class="local col9 ref" href="#29lock" title='lock' data-ref="29lock">lock</a></span>);</td></tr>
+<tr><th id="488">488</th><td>        }</td></tr>
+<tr><th id="489">489</th><td>        <a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::waitingWriters" title='QReadWriteLockPrivate::waitingWriters' data-ref="QReadWriteLockPrivate::waitingWriters">waitingWriters</a>--;</td></tr>
+<tr><th id="490">490</th><td>    }</td></tr>
+<tr><th id="491">491</th><td></td></tr>
+<tr><th id="492">492</th><td>    <a class="macro" href="../global/qassert.h.html#28" title="static_cast&lt;void&gt;(false &amp;&amp; (writerCount == 0))" data-ref="_M/Q_ASSERT">Q_ASSERT</a>(<a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::writerCount" title='QReadWriteLockPrivate::writerCount' data-ref="QReadWriteLockPrivate::writerCount">writerCount</a> == <var>0</var>);</td></tr>
+<tr><th id="493">493</th><td>    <a class="macro" href="../global/qassert.h.html#28" title="static_cast&lt;void&gt;(false &amp;&amp; (readerCount == 0))" data-ref="_M/Q_ASSERT">Q_ASSERT</a>(<a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::readerCount" title='QReadWriteLockPrivate::readerCount' data-ref="QReadWriteLockPrivate::readerCount">readerCount</a> == <var>0</var>);</td></tr>
+<tr><th id="494">494</th><td>    <a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::writerCount" title='QReadWriteLockPrivate::writerCount' data-ref="QReadWriteLockPrivate::writerCount">writerCount</a> = <var>1</var>;</td></tr>
+<tr><th id="495">495</th><td>    <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="496">496</th><td>}</td></tr>
+<tr><th id="497">497</th><td></td></tr>
+<tr><th id="498">498</th><td><em>void</em> <a class="type" href="qreadwritelock_p.h.html#QReadWriteLockPrivate" title='QReadWriteLockPrivate' data-ref="QReadWriteLockPrivate">QReadWriteLockPrivate</a>::<dfn class="decl def fn" id="_ZN21QReadWriteLockPrivate6unlockEv" title='QReadWriteLockPrivate::unlock' data-ref="_ZN21QReadWriteLockPrivate6unlockEv">unlock</dfn>()</td></tr>
+<tr><th id="499">499</th><td>{</td></tr>
+<tr><th id="500">500</th><td>    <a class="macro" href="../global/qassert.h.html#28" title="static_cast&lt;void&gt;(false &amp;&amp; (!mutex.try_lock()))" data-ref="_M/Q_ASSERT">Q_ASSERT</a>(!<a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::mutex" title='QReadWriteLockPrivate::mutex' data-ref="QReadWriteLockPrivate::mutex">mutex</a>.<a class="ref fn" href="../../../../include/c++/9/bits/std_mutex.h.html#_ZNSt5mutex8try_lockEv" title='std::mutex::try_lock' data-ref="_ZNSt5mutex8try_lockEv">try_lock</a>()); <i>// mutex must be locked when entering this function</i></td></tr>
+<tr><th id="501">501</th><td>    <b>if</b> (<a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::waitingWriters" title='QReadWriteLockPrivate::waitingWriters' data-ref="QReadWriteLockPrivate::waitingWriters">waitingWriters</a>)</td></tr>
+<tr><th id="502">502</th><td>        <a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::writerCond" title='QReadWriteLockPrivate::writerCond' data-ref="QReadWriteLockPrivate::writerCond">writerCond</a>.<a class="ref fn" href="../../../../include/c++/9/condition_variable.html#_ZNSt18condition_variable10notify_oneEv" title='std::condition_variable::notify_one' data-ref="_ZNSt18condition_variable10notify_oneEv">notify_one</a>();</td></tr>
+<tr><th id="503">503</th><td>    <b>else</b> <b>if</b> (<a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::waitingReaders" title='QReadWriteLockPrivate::waitingReaders' data-ref="QReadWriteLockPrivate::waitingReaders">waitingReaders</a>)</td></tr>
+<tr><th id="504">504</th><td>        <a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::readerCond" title='QReadWriteLockPrivate::readerCond' data-ref="QReadWriteLockPrivate::readerCond">readerCond</a>.<a class="ref fn" href="../../../../include/c++/9/condition_variable.html#_ZNSt18condition_variable10notify_allEv" title='std::condition_variable::notify_all' data-ref="_ZNSt18condition_variable10notify_allEv">notify_all</a>();</td></tr>
+<tr><th id="505">505</th><td>}</td></tr>
+<tr><th id="506">506</th><td></td></tr>
+<tr><th id="507">507</th><td><em>static</em> <em>auto</em> <dfn class="tu decl def fn" id="_ZL12handleEqualsPv" title='handleEquals' data-type='(lambda at /home/lzx0626/DavidingPlus/qtbase/src/corelib/thread/qreadwritelock.cpp:509:12) handleEquals(Qt::HANDLE handle)' data-ref="_ZL12handleEqualsPv">handleEquals</dfn>(<span class="namespace">Qt::</span><a class="typedef" href="../global/qnamespace.h.html#Qt::HANDLE" title='Qt::HANDLE' data-type='void *' data-ref="Qt::HANDLE">HANDLE</a> <dfn class="local col3 decl" id="33handle" title='handle' data-type='Qt::HANDLE' data-ref="33handle">handle</dfn>)</td></tr>
+<tr><th id="508">508</th><td>{</td></tr>
+<tr><th id="509">509</th><td>    <b>return</b> [<a class="local col3 ref" href="#33handle" title='handle' data-ref="33handle">handle</a>](<a class="type" href="qreadwritelock_p.h.html#QReadWriteLockPrivate" title='QReadWriteLockPrivate' data-ref="QReadWriteLockPrivate">QReadWriteLockPrivate</a>::<a class="type" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::Reader" title='QReadWriteLockPrivate::Reader' data-ref="QReadWriteLockPrivate::Reader">Reader</a> <dfn class="local col4 decl" id="34reader" title='reader' data-type='QReadWriteLockPrivate::Reader' data-ref="34reader">reader</dfn>) { <b>return</b> <a class="local col4 ref" href="#34reader" title='reader' data-ref="34reader">reader</a>.<a class="ref field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::Reader::handle" title='QReadWriteLockPrivate::Reader::handle' data-ref="QReadWriteLockPrivate::Reader::handle">handle</a> == <a class="local col3 ref" href="#33handle" title='handle' data-ref="33handle">handle</a>; };</td></tr>
+<tr><th id="510">510</th><td>}</td></tr>
+<tr><th id="511">511</th><td></td></tr>
+<tr><th id="512">512</th><td><em>bool</em> <a class="type" href="qreadwritelock_p.h.html#QReadWriteLockPrivate" title='QReadWriteLockPrivate' data-ref="QReadWriteLockPrivate">QReadWriteLockPrivate</a>::<dfn class="decl def fn" id="_ZN21QReadWriteLockPrivate20recursiveLockForReadEi" title='QReadWriteLockPrivate::recursiveLockForRead' data-ref="_ZN21QReadWriteLockPrivate20recursiveLockForReadEi">recursiveLockForRead</dfn>(<em>int</em> <dfn class="local col5 decl" id="35timeout" title='timeout' data-type='int' data-ref="35timeout">timeout</dfn>)</td></tr>
+<tr><th id="513">513</th><td>{</td></tr>
+<tr><th id="514">514</th><td>    <a class="macro" href="../global/qassert.h.html#28" title="static_cast&lt;void&gt;(false &amp;&amp; (recursive))" data-ref="_M/Q_ASSERT">Q_ASSERT</a>(<a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::recursive" title='QReadWriteLockPrivate::recursive' data-ref="QReadWriteLockPrivate::recursive">recursive</a>);</td></tr>
+<tr><th id="515">515</th><td>    <em>auto</em> <dfn class="local col6 decl" id="36lock" title='lock' data-type='std::unique_lock&lt;std::mutex&gt;' data-ref="36lock">lock</dfn> = <a class="ref fn" href="qlocking_p.h.html#_ZN12_GLOBAL__N_114qt_unique_lockERT_" title='(anonymous namespace)::qt_unique_lock' data-ref="_ZN12_GLOBAL__N_114qt_unique_lockERT_">qt_unique_lock</a>(<span class='refarg'><a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::mutex" title='QReadWriteLockPrivate::mutex' data-ref="QReadWriteLockPrivate::mutex">mutex</a></span>);</td></tr>
+<tr><th id="516">516</th><td></td></tr>
+<tr><th id="517">517</th><td>    <span class="namespace">Qt::</span><a class="typedef" href="../global/qnamespace.h.html#Qt::HANDLE" title='Qt::HANDLE' data-type='void *' data-ref="Qt::HANDLE">HANDLE</a> <dfn class="local col7 decl" id="37self" title='self' data-type='Qt::HANDLE' data-ref="37self">self</dfn> = <a class="type" href="qthread.h.html#QThread" title='QThread' data-ref="QThread">QThread</a>::<a class="ref fn" href="qthread.h.html#_ZN7QThread15currentThreadIdEv" title='QThread::currentThreadId' data-ref="_ZN7QThread15currentThreadIdEv">currentThreadId</a>();</td></tr>
+<tr><th id="518">518</th><td></td></tr>
+<tr><th id="519">519</th><td>    <em>auto</em> <dfn class="local col8 decl" id="38it" title='it' data-type='QReadWriteLockPrivate::Reader *' data-ref="38it">it</dfn> = <span class="namespace">std::</span><a class="tu ref fn" href="../../../../include/c++/9/bits/stl_algo.h.html#_ZSt7find_ifT_S_T0_" title='std::find_if' data-use='c' data-ref="_ZSt7find_ifT_S_T0_">find_if</a>(<span class='inlayHint'>first:&nbsp;</span><a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::currentReaders" title='QReadWriteLockPrivate::currentReaders' data-ref="QReadWriteLockPrivate::currentReaders">currentReaders</a>.<a class="ref fn" href="../tools/qvarlengtharray.h.html#_ZN8QVLABase5beginEv" title='QVLABase::begin' data-ref="_ZN8QVLABase5beginEv">begin</a>(), <span class='inlayHint'>last:&nbsp;</span><a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::currentReaders" title='QReadWriteLockPrivate::currentReaders' data-ref="QReadWriteLockPrivate::currentReaders">currentReaders</a>.<a class="ref fn" href="../tools/qvarlengtharray.h.html#_ZN8QVLABase3endEv" title='QVLABase::end' data-ref="_ZN8QVLABase3endEv">end</a>(),</td></tr>
+<tr><th id="520">520</th><td>                           <span class='inlayHint'>pred:&nbsp;</span><a class="tu ref fn" href="#_ZL12handleEqualsPv" title='handleEquals' data-use='c' data-ref="_ZL12handleEqualsPv">handleEquals</a>(<span class='inlayHint'>handle:&nbsp;</span><a class="local col7 ref" href="#37self" title='self' data-ref="37self">self</a>));</td></tr>
+<tr><th id="521">521</th><td>    <b>if</b> (<a class="local col8 ref" href="#38it" title='it' data-ref="38it">it</a> != <a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::currentReaders" title='QReadWriteLockPrivate::currentReaders' data-ref="QReadWriteLockPrivate::currentReaders">currentReaders</a>.<a class="ref fn" href="../tools/qvarlengtharray.h.html#_ZN8QVLABase3endEv" title='QVLABase::end' data-ref="_ZN8QVLABase3endEv">end</a>()) {</td></tr>
+<tr><th id="522">522</th><td>        ++<a class="local col8 ref" href="#38it" title='it' data-ref="38it">it</a>-&gt;<a class="ref field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::Reader::recursionLevel" title='QReadWriteLockPrivate::Reader::recursionLevel' data-ref="QReadWriteLockPrivate::Reader::recursionLevel">recursionLevel</a>;</td></tr>
+<tr><th id="523">523</th><td>        <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="524">524</th><td>    }</td></tr>
+<tr><th id="525">525</th><td></td></tr>
+<tr><th id="526">526</th><td>    <b>if</b> (!<a class="member fn" href="#_ZN21QReadWriteLockPrivate11lockForReadERSt11unique_lockISt5mutexEi" title='QReadWriteLockPrivate::lockForRead' data-ref="_ZN21QReadWriteLockPrivate11lockForReadERSt11unique_lockISt5mutexEi">lockForRead</a>(<span class='refarg'><a class="local col6 ref" href="#36lock" title='lock' data-ref="36lock">lock</a></span>, <a class="local col5 ref" href="#35timeout" title='timeout' data-ref="35timeout">timeout</a>))</td></tr>
+<tr><th id="527">527</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="528">528</th><td></td></tr>
+<tr><th id="529">529</th><td>    <a class="type" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::Reader" title='QReadWriteLockPrivate::Reader' data-ref="QReadWriteLockPrivate::Reader">Reader</a> <dfn class="local col9 decl" id="39r" title='r' data-type='QReadWriteLockPrivate::Reader' data-ref="39r">r</dfn> = {<span class='inlayHint'>.handle:&nbsp;</span><a class="local col7 ref" href="#37self" title='self' data-ref="37self">self</a>, <span class='inlayHint'>.recursionLevel:&nbsp;</span><var>1</var>};</td></tr>
+<tr><th id="530">530</th><td>    <a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::currentReaders" title='QReadWriteLockPrivate::currentReaders' data-ref="QReadWriteLockPrivate::currentReaders">currentReaders</a>.<a class="ref fn" href="../tools/qvarlengtharray.h.html#_ZN15QVarLengthArray6appendEOT_" title='QVarLengthArray::append' data-ref="_ZN15QVarLengthArray6appendEOT_">append</a>(<span class='inlayHint'>t:&nbsp;</span><span class="namespace">std::</span><a class="ref fn" href="../../../../include/c++/9/bits/move.h.html#_ZSt4moveOT_" title='std::move' data-ref="_ZSt4moveOT_">move</a>(<span class='refarg'><a class="local col9 ref" href="#39r" title='r' data-ref="39r">r</a></span>));</td></tr>
+<tr><th id="531">531</th><td>    <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="532">532</th><td>}</td></tr>
+<tr><th id="533">533</th><td></td></tr>
+<tr><th id="534">534</th><td><em>bool</em> <a class="type" href="qreadwritelock_p.h.html#QReadWriteLockPrivate" title='QReadWriteLockPrivate' data-ref="QReadWriteLockPrivate">QReadWriteLockPrivate</a>::<dfn class="decl def fn" id="_ZN21QReadWriteLockPrivate21recursiveLockForWriteEi" title='QReadWriteLockPrivate::recursiveLockForWrite' data-ref="_ZN21QReadWriteLockPrivate21recursiveLockForWriteEi">recursiveLockForWrite</dfn>(<em>int</em> <dfn class="local col0 decl" id="40timeout" title='timeout' data-type='int' data-ref="40timeout">timeout</dfn>)</td></tr>
+<tr><th id="535">535</th><td>{</td></tr>
+<tr><th id="536">536</th><td>    <a class="macro" href="../global/qassert.h.html#28" title="static_cast&lt;void&gt;(false &amp;&amp; (recursive))" data-ref="_M/Q_ASSERT">Q_ASSERT</a>(<a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::recursive" title='QReadWriteLockPrivate::recursive' data-ref="QReadWriteLockPrivate::recursive">recursive</a>);</td></tr>
+<tr><th id="537">537</th><td>    <em>auto</em> <dfn class="local col1 decl" id="41lock" title='lock' data-type='std::unique_lock&lt;std::mutex&gt;' data-ref="41lock">lock</dfn> = <a class="ref fn" href="qlocking_p.h.html#_ZN12_GLOBAL__N_114qt_unique_lockERT_" title='(anonymous namespace)::qt_unique_lock' data-ref="_ZN12_GLOBAL__N_114qt_unique_lockERT_">qt_unique_lock</a>(<span class='refarg'><a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::mutex" title='QReadWriteLockPrivate::mutex' data-ref="QReadWriteLockPrivate::mutex">mutex</a></span>);</td></tr>
+<tr><th id="538">538</th><td></td></tr>
+<tr><th id="539">539</th><td>    <span class="namespace">Qt::</span><a class="typedef" href="../global/qnamespace.h.html#Qt::HANDLE" title='Qt::HANDLE' data-type='void *' data-ref="Qt::HANDLE">HANDLE</a> <dfn class="local col2 decl" id="42self" title='self' data-type='Qt::HANDLE' data-ref="42self">self</dfn> = <a class="type" href="qthread.h.html#QThread" title='QThread' data-ref="QThread">QThread</a>::<a class="ref fn" href="qthread.h.html#_ZN7QThread15currentThreadIdEv" title='QThread::currentThreadId' data-ref="_ZN7QThread15currentThreadIdEv">currentThreadId</a>();</td></tr>
+<tr><th id="540">540</th><td>    <b>if</b> (<a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::currentWriter" title='QReadWriteLockPrivate::currentWriter' data-ref="QReadWriteLockPrivate::currentWriter">currentWriter</a> == <a class="local col2 ref" href="#42self" title='self' data-ref="42self">self</a>) {</td></tr>
+<tr><th id="541">541</th><td>        <a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::writerCount" title='QReadWriteLockPrivate::writerCount' data-ref="QReadWriteLockPrivate::writerCount">writerCount</a>++;</td></tr>
+<tr><th id="542">542</th><td>        <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="543">543</th><td>    }</td></tr>
+<tr><th id="544">544</th><td></td></tr>
+<tr><th id="545">545</th><td>    <b>if</b> (!<a class="member fn" href="#_ZN21QReadWriteLockPrivate12lockForWriteERSt11unique_lockISt5mutexEi" title='QReadWriteLockPrivate::lockForWrite' data-ref="_ZN21QReadWriteLockPrivate12lockForWriteERSt11unique_lockISt5mutexEi">lockForWrite</a>(<span class='refarg'><a class="local col1 ref" href="#41lock" title='lock' data-ref="41lock">lock</a></span>, <a class="local col0 ref" href="#40timeout" title='timeout' data-ref="40timeout">timeout</a>))</td></tr>
+<tr><th id="546">546</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="547">547</th><td></td></tr>
+<tr><th id="548">548</th><td>    <a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::currentWriter" title='QReadWriteLockPrivate::currentWriter' data-ref="QReadWriteLockPrivate::currentWriter">currentWriter</a> = <a class="local col2 ref" href="#42self" title='self' data-ref="42self">self</a>;</td></tr>
+<tr><th id="549">549</th><td>    <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="550">550</th><td>}</td></tr>
+<tr><th id="551">551</th><td></td></tr>
+<tr><th id="552">552</th><td><em>void</em> <a class="type" href="qreadwritelock_p.h.html#QReadWriteLockPrivate" title='QReadWriteLockPrivate' data-ref="QReadWriteLockPrivate">QReadWriteLockPrivate</a>::<dfn class="decl def fn" id="_ZN21QReadWriteLockPrivate15recursiveUnlockEv" title='QReadWriteLockPrivate::recursiveUnlock' data-ref="_ZN21QReadWriteLockPrivate15recursiveUnlockEv">recursiveUnlock</dfn>()</td></tr>
+<tr><th id="553">553</th><td>{</td></tr>
+<tr><th id="554">554</th><td>    <a class="macro" href="../global/qassert.h.html#28" title="static_cast&lt;void&gt;(false &amp;&amp; (recursive))" data-ref="_M/Q_ASSERT">Q_ASSERT</a>(<a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::recursive" title='QReadWriteLockPrivate::recursive' data-ref="QReadWriteLockPrivate::recursive">recursive</a>);</td></tr>
+<tr><th id="555">555</th><td>    <em>auto</em> <dfn class="local col3 decl" id="43lock" title='lock' data-type='std::unique_lock&lt;std::mutex&gt;' data-ref="43lock">lock</dfn> = <a class="ref fn" href="qlocking_p.h.html#_ZN12_GLOBAL__N_114qt_unique_lockERT_" title='(anonymous namespace)::qt_unique_lock' data-ref="_ZN12_GLOBAL__N_114qt_unique_lockERT_">qt_unique_lock</a>(<span class='refarg'><a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::mutex" title='QReadWriteLockPrivate::mutex' data-ref="QReadWriteLockPrivate::mutex">mutex</a></span>);</td></tr>
+<tr><th id="556">556</th><td></td></tr>
+<tr><th id="557">557</th><td>    <span class="namespace">Qt::</span><a class="typedef" href="../global/qnamespace.h.html#Qt::HANDLE" title='Qt::HANDLE' data-type='void *' data-ref="Qt::HANDLE">HANDLE</a> <dfn class="local col4 decl" id="44self" title='self' data-type='Qt::HANDLE' data-ref="44self">self</dfn> = <a class="type" href="qthread.h.html#QThread" title='QThread' data-ref="QThread">QThread</a>::<a class="ref fn" href="qthread.h.html#_ZN7QThread15currentThreadIdEv" title='QThread::currentThreadId' data-ref="_ZN7QThread15currentThreadIdEv">currentThreadId</a>();</td></tr>
+<tr><th id="558">558</th><td>    <b>if</b> (<a class="local col4 ref" href="#44self" title='self' data-ref="44self">self</a> == <a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::currentWriter" title='QReadWriteLockPrivate::currentWriter' data-ref="QReadWriteLockPrivate::currentWriter">currentWriter</a>) {</td></tr>
+<tr><th id="559">559</th><td>        <b>if</b> (--<a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::writerCount" title='QReadWriteLockPrivate::writerCount' data-ref="QReadWriteLockPrivate::writerCount">writerCount</a> &gt; <var>0</var>)</td></tr>
+<tr><th id="560">560</th><td>            <b>return</b>;</td></tr>
+<tr><th id="561">561</th><td>        <a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::currentWriter" title='QReadWriteLockPrivate::currentWriter' data-ref="QReadWriteLockPrivate::currentWriter">currentWriter</a> = <b>nullptr</b>;</td></tr>
+<tr><th id="562">562</th><td>    } <b>else</b> {</td></tr>
+<tr><th id="563">563</th><td>        <em>auto</em> <dfn class="local col5 decl" id="45it" title='it' data-type='QReadWriteLockPrivate::Reader *' data-ref="45it">it</dfn> = <span class="namespace">std::</span><a class="tu ref fn" href="../../../../include/c++/9/bits/stl_algo.h.html#_ZSt7find_ifT_S_T0_" title='std::find_if' data-use='c' data-ref="_ZSt7find_ifT_S_T0_">find_if</a>(<span class='inlayHint'>first:&nbsp;</span><a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::currentReaders" title='QReadWriteLockPrivate::currentReaders' data-ref="QReadWriteLockPrivate::currentReaders">currentReaders</a>.<a class="ref fn" href="../tools/qvarlengtharray.h.html#_ZN8QVLABase5beginEv" title='QVLABase::begin' data-ref="_ZN8QVLABase5beginEv">begin</a>(), <span class='inlayHint'>last:&nbsp;</span><a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::currentReaders" title='QReadWriteLockPrivate::currentReaders' data-ref="QReadWriteLockPrivate::currentReaders">currentReaders</a>.<a class="ref fn" href="../tools/qvarlengtharray.h.html#_ZN8QVLABase3endEv" title='QVLABase::end' data-ref="_ZN8QVLABase3endEv">end</a>(),</td></tr>
+<tr><th id="564">564</th><td>                               <span class='inlayHint'>pred:&nbsp;</span><a class="tu ref fn" href="#_ZL12handleEqualsPv" title='handleEquals' data-use='c' data-ref="_ZL12handleEqualsPv">handleEquals</a>(<span class='inlayHint'>handle:&nbsp;</span><a class="local col4 ref" href="#44self" title='self' data-ref="44self">self</a>));</td></tr>
+<tr><th id="565">565</th><td>        <b>if</b> (<a class="local col5 ref" href="#45it" title='it' data-ref="45it">it</a> == <a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::currentReaders" title='QReadWriteLockPrivate::currentReaders' data-ref="QReadWriteLockPrivate::currentReaders">currentReaders</a>.<a class="ref fn" href="../tools/qvarlengtharray.h.html#_ZN8QVLABase3endEv" title='QVLABase::end' data-ref="_ZN8QVLABase3endEv">end</a>()) {</td></tr>
+<tr><th id="566">566</th><td>            <a class="macro" href="../global/qlogging.h.html#158" title="QMessageLogger(nullptr, 0, nullptr).warning" data-ref="_M/qWarning">qWarning</a>(<span class='inlayHint'>msg:&nbsp;</span><q>"QReadWriteLock::unlock: unlocking from a thread that did not lock"</q>);</td></tr>
+<tr><th id="567">567</th><td>            <b>return</b>;</td></tr>
+<tr><th id="568">568</th><td>        } <b>else</b> {</td></tr>
+<tr><th id="569">569</th><td>            <b>if</b> (--<a class="local col5 ref" href="#45it" title='it' data-ref="45it">it</a>-&gt;<a class="ref field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::Reader::recursionLevel" title='QReadWriteLockPrivate::Reader::recursionLevel' data-ref="QReadWriteLockPrivate::Reader::recursionLevel">recursionLevel</a> &lt;= <var>0</var>) {</td></tr>
+<tr><th id="570">570</th><td>                <a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::currentReaders" title='QReadWriteLockPrivate::currentReaders' data-ref="QReadWriteLockPrivate::currentReaders">currentReaders</a>.<a class="ref fn" href="../tools/qvarlengtharray.h.html#_ZN8QVLABase5eraseEPKT_" title='QVLABase::erase' data-ref="_ZN8QVLABase5eraseEPKT_">erase</a>(<span class='inlayHint'>pos:&nbsp;</span><a class="local col5 ref" href="#45it" title='it' data-ref="45it">it</a>);</td></tr>
+<tr><th id="571">571</th><td>                <a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::readerCount" title='QReadWriteLockPrivate::readerCount' data-ref="QReadWriteLockPrivate::readerCount">readerCount</a>--;</td></tr>
+<tr><th id="572">572</th><td>            }</td></tr>
+<tr><th id="573">573</th><td>            <b>if</b> (<a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::readerCount" title='QReadWriteLockPrivate::readerCount' data-ref="QReadWriteLockPrivate::readerCount">readerCount</a>)</td></tr>
+<tr><th id="574">574</th><td>                <b>return</b>;</td></tr>
+<tr><th id="575">575</th><td>        }</td></tr>
+<tr><th id="576">576</th><td>    }</td></tr>
+<tr><th id="577">577</th><td></td></tr>
+<tr><th id="578">578</th><td>    <a class="member fn" href="#_ZN21QReadWriteLockPrivate6unlockEv" title='QReadWriteLockPrivate::unlock' data-ref="_ZN21QReadWriteLockPrivate6unlockEv">unlock</a>();</td></tr>
+<tr><th id="579">579</th><td>}</td></tr>
+<tr><th id="580">580</th><td></td></tr>
+<tr><th id="581">581</th><td><i>// The freelist management</i></td></tr>
+<tr><th id="582">582</th><td><b>namespace</b> {</td></tr>
+<tr><th id="583">583</th><td><b>struct</b> <dfn class="tu type def" id="(anonymousnamespace)::QReadWriteLockFreeListConstants" title='(anonymous namespace)::QReadWriteLockFreeListConstants' data-ref="(anonymousnamespace)::QReadWriteLockFreeListConstants">QReadWriteLockFreeListConstants</dfn> : <a class="type" href="../tools/qfreelist_p.h.html#QFreeListDefaultConstants" title='QFreeListDefaultConstants' data-ref="QFreeListDefaultConstants">QFreeListDefaultConstants</a></td></tr>
+<tr><th id="584">584</th><td>{</td></tr>
+<tr><th id="585">585</th><td>    <b>enum</b> { <dfn class="tu enum" id="(anonymousnamespace)::QReadWriteLockFreeListConstants::BlockCount" title='(anonymous namespace)::QReadWriteLockFreeListConstants::BlockCount' data-type='4' data-ref="(anonymousnamespace)::QReadWriteLockFreeListConstants::BlockCount">BlockCount</dfn> = <var>4</var>, <dfn class="tu enum" id="(anonymousnamespace)::QReadWriteLockFreeListConstants::MaxIndex" title='(anonymous namespace)::QReadWriteLockFreeListConstants::MaxIndex' data-type='65535' data-ref="(anonymousnamespace)::QReadWriteLockFreeListConstants::MaxIndex">MaxIndex</dfn>=<var>0xffff</var> };</td></tr>
+<tr><th id="586">586</th><td>    <em>static</em> <em>const</em> <em>int</em> <dfn class="tu decl" id="(anonymousnamespace)::QReadWriteLockFreeListConstants::Sizes" title='(anonymous namespace)::QReadWriteLockFreeListConstants::Sizes' data-type='const int[4]' data-ref="(anonymousnamespace)::QReadWriteLockFreeListConstants::Sizes">Sizes</dfn>[<a class="tu enum" href="#(anonymousnamespace)::QReadWriteLockFreeListConstants::BlockCount" title='(anonymous namespace)::QReadWriteLockFreeListConstants::BlockCount' data-ref="(anonymousnamespace)::QReadWriteLockFreeListConstants::BlockCount">BlockCount</a>];</td></tr>
+<tr><th id="587">587</th><td>};</td></tr>
+<tr><th id="588">588</th><td><a class="macro" href="../global/qcompilerdetection.h.html#1306" title="[[clang::require_constant_initialization]]" data-ref="_M/Q_CONSTINIT">Q_CONSTINIT</a> <em>const</em> <em>int</em></td></tr>
+<tr><th id="589">589</th><td>        <a class="tu type" href="#(anonymousnamespace)::QReadWriteLockFreeListConstants" title='(anonymous namespace)::QReadWriteLockFreeListConstants' data-ref="(anonymousnamespace)::QReadWriteLockFreeListConstants">QReadWriteLockFreeListConstants</a>::<dfn class="tu decl def" id="(anonymousnamespace)::QReadWriteLockFreeListConstants::Sizes" title='(anonymous namespace)::QReadWriteLockFreeListConstants::Sizes' data-type='const int[4]' data-ref="(anonymousnamespace)::QReadWriteLockFreeListConstants::Sizes">Sizes</dfn>[<a class="tu type" href="#(anonymousnamespace)::QReadWriteLockFreeListConstants" title='(anonymous namespace)::QReadWriteLockFreeListConstants' data-ref="(anonymousnamespace)::QReadWriteLockFreeListConstants">QReadWriteLockFreeListConstants</a>::<a class="tu enum" href="#(anonymousnamespace)::QReadWriteLockFreeListConstants::BlockCount" title='(anonymous namespace)::QReadWriteLockFreeListConstants::BlockCount' data-ref="(anonymousnamespace)::QReadWriteLockFreeListConstants::BlockCount">BlockCount</a>] = {</td></tr>
+<tr><th id="590">590</th><td>            <var>16</var>, <var>128</var>, <var>1024</var>, <a class="tu type" href="#(anonymousnamespace)::QReadWriteLockFreeListConstants" title='(anonymous namespace)::QReadWriteLockFreeListConstants' data-ref="(anonymousnamespace)::QReadWriteLockFreeListConstants">QReadWriteLockFreeListConstants</a>::<a class="tu enum" href="#(anonymousnamespace)::QReadWriteLockFreeListConstants::MaxIndex" title='(anonymous namespace)::QReadWriteLockFreeListConstants::MaxIndex' data-use='r' data-ref="(anonymousnamespace)::QReadWriteLockFreeListConstants::MaxIndex">MaxIndex</a> - (<var>16</var> + <var>128</var> + <var>1024</var>)</td></tr>
+<tr><th id="591">591</th><td>        };</td></tr>
+<tr><th id="592">592</th><td></td></tr>
+<tr><th id="593">593</th><td><b>typedef</b> <a class="type" href="../tools/qfreelist_p.h.html#QFreeList" title='QFreeList' data-ref="QFreeList">QFreeList</a>&lt;<a class="type" href="qreadwritelock_p.h.html#QReadWriteLockPrivate" title='QReadWriteLockPrivate' data-ref="QReadWriteLockPrivate">QReadWriteLockPrivate</a>, <a class="tu type" href="#(anonymousnamespace)::QReadWriteLockFreeListConstants" title='(anonymous namespace)::QReadWriteLockFreeListConstants' data-ref="(anonymousnamespace)::QReadWriteLockFreeListConstants">QReadWriteLockFreeListConstants</a>&gt; <dfn class="tu typedef" id="(anonymousnamespace)::QReadWriteLockFreeList" title='(anonymous namespace)::QReadWriteLockFreeList' data-type='QFreeList&lt;QReadWriteLockPrivate, (anonymous namespace)::QReadWriteLockFreeListConstants&gt;' data-ref="(anonymousnamespace)::QReadWriteLockFreeList">QReadWriteLockFreeList</dfn>;</td></tr>
+<tr><th id="594">594</th><td><a class="macro" href="../global/qglobalstatic.h.html#115" title=" namespace { struct Q_QGS_qrwl_freelist { typedef QReadWriteLockFreeList QGS_Type; static void innerFunction(void *pointer) noexcept(noexcept(std::remove_cv_t&lt;QGS_Type&gt; ())) { new (pointer) QGS_Type (); } }; } [[clang::require_constant_initialization]] static QGlobalStatic&lt;QtGlobalStatic::Holder&lt;Q_QGS_qrwl_freelist&gt;&gt; qrwl_freelist;" data-ref="_M/Q_GLOBAL_STATIC">Q_GLOBAL_STATIC</a>(<a class="tu typedef" href="#(anonymousnamespace)::QReadWriteLockFreeList" title='(anonymous namespace)::QReadWriteLockFreeList' data-type='QFreeList&lt;QReadWriteLockPrivate, (anonymous namespace)::QReadWriteLockFreeListConstants&gt;' data-ref="(anonymousnamespace)::QReadWriteLockFreeList">QReadWriteLockFreeList</a>, <a class="tu ref fn fake" href="../global/qglobalstatic.h.html#57" title='QGlobalStatic&lt;QtGlobalStatic::Holder&lt;(anonymous namespace)::(anonymous namespace)::Q_QGS_qrwl_freelist&gt;&gt;::QGlobalStatic' data-use='c' data-ref="_ZN13QGlobalStaticIN14QtGlobalStatic6HolderIN12_GLOBAL__N_112_GLOBAL__N_119Q_QGS_qrwl_freelistEEEEC1Ev"></a><dfn class="decl def" id="(anonymousnamespace)::qrwl_freelist" title='(anonymous namespace)::qrwl_freelist' data-ref="(anonymousnamespace)::qrwl_freelist">qrwl_freelist</dfn>);</td></tr>
+<tr><th id="595">595</th><td>}</td></tr>
+<tr><th id="596">596</th><td></td></tr>
+<tr><th id="597">597</th><td><a class="type" href="qreadwritelock_p.h.html#QReadWriteLockPrivate" title='QReadWriteLockPrivate' data-ref="QReadWriteLockPrivate">QReadWriteLockPrivate</a> *<a class="type" href="qreadwritelock_p.h.html#QReadWriteLockPrivate" title='QReadWriteLockPrivate' data-ref="QReadWriteLockPrivate">QReadWriteLockPrivate</a>::<dfn class="decl def fn" id="_ZN21QReadWriteLockPrivate8allocateEv" title='QReadWriteLockPrivate::allocate' data-ref="_ZN21QReadWriteLockPrivate8allocateEv">allocate</dfn>()</td></tr>
+<tr><th id="598">598</th><td>{</td></tr>
+<tr><th id="599">599</th><td>    <em>int</em> <dfn class="local col6 decl" id="46i" title='i' data-type='int' data-ref="46i">i</dfn> = <a class="ref" href="#594" title='(anonymous namespace)::qrwl_freelist' data-ref="(anonymousnamespace)::qrwl_freelist">qrwl_freelist</a><a class="tu ref fn" href="../global/qglobalstatic.h.html#_ZN13QGlobalStaticptEv" title='QGlobalStatic::operator-&gt;' data-use='c' data-ref="_ZN13QGlobalStaticptEv">-&gt;</a><a class="tu ref fn" href="../tools/qfreelist_p.h.html#_ZN9QFreeList4nextEv" title='QFreeList::next' data-use='c' data-ref="_ZN9QFreeList4nextEv">next</a>();</td></tr>
+<tr><th id="600">600</th><td>    <a class="type" href="qreadwritelock_p.h.html#QReadWriteLockPrivate" title='QReadWriteLockPrivate' data-ref="QReadWriteLockPrivate">QReadWriteLockPrivate</a> *<dfn class="local col7 decl" id="47d" title='d' data-type='QReadWriteLockPrivate *' data-ref="47d">d</dfn> = &amp;(<a class="tu ref fn" href="../global/qglobalstatic.h.html#_ZN13QGlobalStaticdeEv" title='QGlobalStatic::operator*' data-use='c' data-ref="_ZN13QGlobalStaticdeEv">*</a><a class="ref" href="#594" title='(anonymous namespace)::qrwl_freelist' data-ref="(anonymousnamespace)::qrwl_freelist">qrwl_freelist</a>)<a class="tu ref fn" href="../tools/qfreelist_p.h.html#_ZN9QFreeListixEi" title='QFreeList::operator[]' data-use='c' data-ref="_ZN9QFreeListixEi">[<a class="local col6 ref" href="#46i" title='i' data-ref="46i">i</a>]</a>;</td></tr>
+<tr><th id="601">601</th><td>    <a class="local col7 ref" href="#47d" title='d' data-ref="47d">d</a>-&gt;<a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::id" title='QReadWriteLockPrivate::id' data-ref="QReadWriteLockPrivate::id">id</a> = <a class="local col6 ref" href="#46i" title='i' data-ref="46i">i</a>;</td></tr>
+<tr><th id="602">602</th><td>    <a class="macro" href="../global/qassert.h.html#28" title="static_cast&lt;void&gt;(false &amp;&amp; (!d-&gt;recursive))" data-ref="_M/Q_ASSERT">Q_ASSERT</a>(!<a class="local col7 ref" href="#47d" title='d' data-ref="47d">d</a>-&gt;<a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::recursive" title='QReadWriteLockPrivate::recursive' data-ref="QReadWriteLockPrivate::recursive">recursive</a>);</td></tr>
+<tr><th id="603">603</th><td>    <a class="macro" href="../global/qassert.h.html#28" title="static_cast&lt;void&gt;(false &amp;&amp; (!d-&gt;waitingReaders &amp;&amp; !d-&gt;waitingWriters &amp;&amp; !d-&gt;readerCount &amp;&amp; !d-&gt;writerCount))" data-ref="_M/Q_ASSERT">Q_ASSERT</a>(!<a class="local col7 ref" href="#47d" title='d' data-ref="47d">d</a>-&gt;<a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::waitingReaders" title='QReadWriteLockPrivate::waitingReaders' data-ref="QReadWriteLockPrivate::waitingReaders">waitingReaders</a> &amp;&amp; !<a class="local col7 ref" href="#47d" title='d' data-ref="47d">d</a>-&gt;<a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::waitingWriters" title='QReadWriteLockPrivate::waitingWriters' data-ref="QReadWriteLockPrivate::waitingWriters">waitingWriters</a> &amp;&amp; !<a class="local col7 ref" href="#47d" title='d' data-ref="47d">d</a>-&gt;<a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::readerCount" title='QReadWriteLockPrivate::readerCount' data-ref="QReadWriteLockPrivate::readerCount">readerCount</a> &amp;&amp; !<a class="local col7 ref" href="#47d" title='d' data-ref="47d">d</a>-&gt;<a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::writerCount" title='QReadWriteLockPrivate::writerCount' data-ref="QReadWriteLockPrivate::writerCount">writerCount</a>);</td></tr>
+<tr><th id="604">604</th><td>    <b>return</b> <a class="local col7 ref" href="#47d" title='d' data-ref="47d">d</a>;</td></tr>
+<tr><th id="605">605</th><td>}</td></tr>
+<tr><th id="606">606</th><td></td></tr>
+<tr><th id="607">607</th><td><em>void</em> <a class="type" href="qreadwritelock_p.h.html#QReadWriteLockPrivate" title='QReadWriteLockPrivate' data-ref="QReadWriteLockPrivate">QReadWriteLockPrivate</a>::<dfn class="decl def fn" id="_ZN21QReadWriteLockPrivate7releaseEv" title='QReadWriteLockPrivate::release' data-ref="_ZN21QReadWriteLockPrivate7releaseEv">release</dfn>()</td></tr>
+<tr><th id="608">608</th><td>{</td></tr>
+<tr><th id="609">609</th><td>    <a class="macro" href="../global/qassert.h.html#28" title="static_cast&lt;void&gt;(false &amp;&amp; (!recursive))" data-ref="_M/Q_ASSERT">Q_ASSERT</a>(!<a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::recursive" title='QReadWriteLockPrivate::recursive' data-ref="QReadWriteLockPrivate::recursive">recursive</a>);</td></tr>
+<tr><th id="610">610</th><td>    <a class="macro" href="../global/qassert.h.html#28" title="static_cast&lt;void&gt;(false &amp;&amp; (!waitingReaders &amp;&amp; !waitingWriters &amp;&amp; !readerCount &amp;&amp; !writerCount))" data-ref="_M/Q_ASSERT">Q_ASSERT</a>(!<a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::waitingReaders" title='QReadWriteLockPrivate::waitingReaders' data-ref="QReadWriteLockPrivate::waitingReaders">waitingReaders</a> &amp;&amp; !<a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::waitingWriters" title='QReadWriteLockPrivate::waitingWriters' data-ref="QReadWriteLockPrivate::waitingWriters">waitingWriters</a> &amp;&amp; !<a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::readerCount" title='QReadWriteLockPrivate::readerCount' data-ref="QReadWriteLockPrivate::readerCount">readerCount</a> &amp;&amp; !<a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::writerCount" title='QReadWriteLockPrivate::writerCount' data-ref="QReadWriteLockPrivate::writerCount">writerCount</a>);</td></tr>
+<tr><th id="611">611</th><td>    <a class="ref" href="#594" title='(anonymous namespace)::qrwl_freelist' data-ref="(anonymousnamespace)::qrwl_freelist">qrwl_freelist</a><a class="tu ref fn" href="../global/qglobalstatic.h.html#_ZN13QGlobalStaticptEv" title='QGlobalStatic::operator-&gt;' data-use='c' data-ref="_ZN13QGlobalStaticptEv">-&gt;</a><a class="tu ref fn" href="../tools/qfreelist_p.h.html#_ZN9QFreeList7releaseEi" title='QFreeList::release' data-use='c' data-ref="_ZN9QFreeList7releaseEi">release</a>(<a class="member field" href="qreadwritelock_p.h.html#QReadWriteLockPrivate::id" title='QReadWriteLockPrivate::id' data-ref="QReadWriteLockPrivate::id">id</a>);</td></tr>
+<tr><th id="612">612</th><td>}</td></tr>
+<tr><th id="613">613</th><td></td></tr>
+<tr><th id="614">614</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="615">615</th><td><i class="doc">    <span class="command">\class</span> <span class="verb" data-ref="QReadLocker">QReadLocker</span></i></td></tr>
+<tr><th id="616">616</th><td><i class="doc">   <span class="command"> \inmodule</span> QtCore</i></td></tr>
+<tr><th id="617">617</th><td><i class="doc">    <span class="command">\brief</span> The QReadLocker class is a convenience class that</i></td></tr>
+<tr><th id="618">618</th><td><i class="doc">    simplifies locking and unlocking read-write locks for read access.</i></td></tr>
+<tr><th id="619">619</th><td><i class="doc"></i></td></tr>
+<tr><th id="620">620</th><td><i class="doc">   <span class="command"> \threadsafe</span></i></td></tr>
+<tr><th id="621">621</th><td><i class="doc"></i></td></tr>
+<tr><th id="622">622</th><td><i class="doc">    <span class="command">\ingroup</span> <span class="verb">thread</span></i></td></tr>
+<tr><th id="623">623</th><td><i class="doc"></i></td></tr>
+<tr><th id="624">624</th><td><i class="doc">    The purpose of QReadLocker (and QWriteLocker) is to simplify</i></td></tr>
+<tr><th id="625">625</th><td><i class="doc">    QReadWriteLock locking and unlocking. Locking and unlocking</i></td></tr>
+<tr><th id="626">626</th><td><i class="doc">    statements or in exception handling code is error-prone and</i></td></tr>
+<tr><th id="627">627</th><td><i class="doc">    difficult to debug. QReadLocker can be used in such situations</i></td></tr>
+<tr><th id="628">628</th><td><i class="doc">    to ensure that the state of the lock is always well-defined.</i></td></tr>
+<tr><th id="629">629</th><td><i class="doc"></i></td></tr>
+<tr><th id="630">630</th><td><i class="doc">    Here's an example that uses QReadLocker to lock and unlock a</i></td></tr>
+<tr><th id="631">631</th><td><i class="doc">    read-write lock for reading:</i></td></tr>
+<tr><th id="632">632</th><td><i class="doc"></i></td></tr>
+<tr><th id="633">633</th><td><i class="doc">    <span class="command">\snippet</span> <span class="verb">code/src_corelib_thread_qreadwritelock.cpp 1</span></i></td></tr>
+<tr><th id="634">634</th><td><i class="doc"></i></td></tr>
+<tr><th id="635">635</th><td><i class="doc">    It is equivalent to the following code:</i></td></tr>
+<tr><th id="636">636</th><td><i class="doc"></i></td></tr>
+<tr><th id="637">637</th><td><i class="doc">    <span class="command">\snippet</span> <span class="verb">code/src_corelib_thread_qreadwritelock.cpp 2</span></i></td></tr>
+<tr><th id="638">638</th><td><i class="doc"></i></td></tr>
+<tr><th id="639">639</th><td><i class="doc">    The QMutexLocker documentation shows examples where the use of a</i></td></tr>
+<tr><th id="640">640</th><td><i class="doc">    locker object greatly simplifies programming.</i></td></tr>
+<tr><th id="641">641</th><td><i class="doc"></i></td></tr>
+<tr><th id="642">642</th><td><i class="doc">    <span class="command">\sa</span> QWriteLocker, QReadWriteLock</i></td></tr>
+<tr><th id="643">643</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="644">644</th><td></td></tr>
+<tr><th id="645">645</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="646">646</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">QReadLocker::QReadLocker(QReadWriteLock *lock)</span></i></td></tr>
+<tr><th id="647">647</th><td><i class="doc"></i></td></tr>
+<tr><th id="648">648</th><td><i class="doc">    Constructs a QReadLocker and locks<span class="command"> \a</span> <span class="arg">lock</span> for reading. The lock</i></td></tr>
+<tr><th id="649">649</th><td><i class="doc">    will be unlocked when the QReadLocker is destroyed. If<span class="command"> \c</span> <span class="arg">lock</span> is</i></td></tr>
+<tr><th id="650">650</th><td><i class="doc">    zero, QReadLocker does nothing.</i></td></tr>
+<tr><th id="651">651</th><td><i class="doc"></i></td></tr>
+<tr><th id="652">652</th><td><i class="doc">    <span class="command">\sa</span> QReadWriteLock::lockForRead()</i></td></tr>
+<tr><th id="653">653</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="654">654</th><td></td></tr>
+<tr><th id="655">655</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="656">656</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">QReadLocker::~QReadLocker()</span></i></td></tr>
+<tr><th id="657">657</th><td><i class="doc"></i></td></tr>
+<tr><th id="658">658</th><td><i class="doc">    Destroys the QReadLocker and unlocks the lock that was passed to</i></td></tr>
+<tr><th id="659">659</th><td><i class="doc">    the constructor.</i></td></tr>
+<tr><th id="660">660</th><td><i class="doc"></i></td></tr>
+<tr><th id="661">661</th><td><i class="doc">    <span class="command">\sa</span> QReadWriteLock::unlock()</i></td></tr>
+<tr><th id="662">662</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="663">663</th><td></td></tr>
+<tr><th id="664">664</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="665">665</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb" data-ref="_ZN11QReadLocker6unlockEv">void QReadLocker::unlock()</span></i></td></tr>
+<tr><th id="666">666</th><td><i class="doc"></i></td></tr>
+<tr><th id="667">667</th><td><i class="doc">    Unlocks the lock associated with this locker.</i></td></tr>
+<tr><th id="668">668</th><td><i class="doc"></i></td></tr>
+<tr><th id="669">669</th><td><i class="doc">    <span class="command">\sa</span> QReadWriteLock::unlock()</i></td></tr>
+<tr><th id="670">670</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="671">671</th><td></td></tr>
+<tr><th id="672">672</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="673">673</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb" data-ref="_ZN11QReadLocker6relockEv">void QReadLocker::relock()</span></i></td></tr>
+<tr><th id="674">674</th><td><i class="doc"></i></td></tr>
+<tr><th id="675">675</th><td><i class="doc">    Relocks an unlocked lock.</i></td></tr>
+<tr><th id="676">676</th><td><i class="doc"></i></td></tr>
+<tr><th id="677">677</th><td><i class="doc">    <span class="command">\sa</span> unlock()</i></td></tr>
+<tr><th id="678">678</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="679">679</th><td></td></tr>
+<tr><th id="680">680</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="681">681</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb" data-ref="_ZNK11QReadLocker13readWriteLockEv">QReadWriteLock *QReadLocker::readWriteLock() const</span></i></td></tr>
+<tr><th id="682">682</th><td><i class="doc"></i></td></tr>
+<tr><th id="683">683</th><td><i class="doc">    Returns a pointer to the read-write lock that was passed</i></td></tr>
+<tr><th id="684">684</th><td><i class="doc">    to the constructor.</i></td></tr>
+<tr><th id="685">685</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="686">686</th><td></td></tr>
+<tr><th id="687">687</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="688">688</th><td><i class="doc">    <span class="command">\class</span> <span class="verb" data-ref="QWriteLocker">QWriteLocker</span></i></td></tr>
+<tr><th id="689">689</th><td><i class="doc">   <span class="command"> \inmodule</span> QtCore</i></td></tr>
+<tr><th id="690">690</th><td><i class="doc">    <span class="command">\brief</span> The QWriteLocker class is a convenience class that</i></td></tr>
+<tr><th id="691">691</th><td><i class="doc">    simplifies locking and unlocking read-write locks for write access.</i></td></tr>
+<tr><th id="692">692</th><td><i class="doc"></i></td></tr>
+<tr><th id="693">693</th><td><i class="doc">   <span class="command"> \threadsafe</span></i></td></tr>
+<tr><th id="694">694</th><td><i class="doc"></i></td></tr>
+<tr><th id="695">695</th><td><i class="doc">    <span class="command">\ingroup</span> <span class="verb">thread</span></i></td></tr>
+<tr><th id="696">696</th><td><i class="doc"></i></td></tr>
+<tr><th id="697">697</th><td><i class="doc">    The purpose of QWriteLocker (and QReadLocker) is to simplify</i></td></tr>
+<tr><th id="698">698</th><td><i class="doc">    QReadWriteLock locking and unlocking. Locking and unlocking</i></td></tr>
+<tr><th id="699">699</th><td><i class="doc">    statements or in exception handling code is error-prone and</i></td></tr>
+<tr><th id="700">700</th><td><i class="doc">    difficult to debug. QWriteLocker can be used in such situations</i></td></tr>
+<tr><th id="701">701</th><td><i class="doc">    to ensure that the state of the lock is always well-defined.</i></td></tr>
+<tr><th id="702">702</th><td><i class="doc"></i></td></tr>
+<tr><th id="703">703</th><td><i class="doc">    Here's an example that uses QWriteLocker to lock and unlock a</i></td></tr>
+<tr><th id="704">704</th><td><i class="doc">    read-write lock for writing:</i></td></tr>
+<tr><th id="705">705</th><td><i class="doc"></i></td></tr>
+<tr><th id="706">706</th><td><i class="doc">    <span class="command">\snippet</span> <span class="verb">code/src_corelib_thread_qreadwritelock.cpp 3</span></i></td></tr>
+<tr><th id="707">707</th><td><i class="doc"></i></td></tr>
+<tr><th id="708">708</th><td><i class="doc">    It is equivalent to the following code:</i></td></tr>
+<tr><th id="709">709</th><td><i class="doc"></i></td></tr>
+<tr><th id="710">710</th><td><i class="doc">    <span class="command">\snippet</span> <span class="verb">code/src_corelib_thread_qreadwritelock.cpp 4</span></i></td></tr>
+<tr><th id="711">711</th><td><i class="doc"></i></td></tr>
+<tr><th id="712">712</th><td><i class="doc">    The QMutexLocker documentation shows examples where the use of a</i></td></tr>
+<tr><th id="713">713</th><td><i class="doc">    locker object greatly simplifies programming.</i></td></tr>
+<tr><th id="714">714</th><td><i class="doc"></i></td></tr>
+<tr><th id="715">715</th><td><i class="doc">    <span class="command">\sa</span> QReadLocker, QReadWriteLock</i></td></tr>
+<tr><th id="716">716</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="717">717</th><td></td></tr>
+<tr><th id="718">718</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="719">719</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">QWriteLocker::QWriteLocker(QReadWriteLock *lock)</span></i></td></tr>
+<tr><th id="720">720</th><td><i class="doc"></i></td></tr>
+<tr><th id="721">721</th><td><i class="doc">    Constructs a QWriteLocker and locks<span class="command"> \a</span> <span class="arg">lock</span> for writing. The lock</i></td></tr>
+<tr><th id="722">722</th><td><i class="doc">    will be unlocked when the QWriteLocker is destroyed. If<span class="command"> \c</span> <span class="arg">lock</span> is</i></td></tr>
+<tr><th id="723">723</th><td><i class="doc">    zero, QWriteLocker does nothing.</i></td></tr>
+<tr><th id="724">724</th><td><i class="doc"></i></td></tr>
+<tr><th id="725">725</th><td><i class="doc">    <span class="command">\sa</span> QReadWriteLock::lockForWrite()</i></td></tr>
+<tr><th id="726">726</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="727">727</th><td></td></tr>
+<tr><th id="728">728</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="729">729</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb">QWriteLocker::~QWriteLocker()</span></i></td></tr>
+<tr><th id="730">730</th><td><i class="doc"></i></td></tr>
+<tr><th id="731">731</th><td><i class="doc">    Destroys the QWriteLocker and unlocks the lock that was passed to</i></td></tr>
+<tr><th id="732">732</th><td><i class="doc">    the constructor.</i></td></tr>
+<tr><th id="733">733</th><td><i class="doc"></i></td></tr>
+<tr><th id="734">734</th><td><i class="doc">    <span class="command">\sa</span> QReadWriteLock::unlock()</i></td></tr>
+<tr><th id="735">735</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="736">736</th><td></td></tr>
+<tr><th id="737">737</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="738">738</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb" data-ref="_ZN12QWriteLocker6unlockEv">void QWriteLocker::unlock()</span></i></td></tr>
+<tr><th id="739">739</th><td><i class="doc"></i></td></tr>
+<tr><th id="740">740</th><td><i class="doc">    Unlocks the lock associated with this locker.</i></td></tr>
+<tr><th id="741">741</th><td><i class="doc"></i></td></tr>
+<tr><th id="742">742</th><td><i class="doc">    <span class="command">\sa</span> QReadWriteLock::unlock()</i></td></tr>
+<tr><th id="743">743</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="744">744</th><td></td></tr>
+<tr><th id="745">745</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="746">746</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb" data-ref="_ZN12QWriteLocker6relockEv">void QWriteLocker::relock()</span></i></td></tr>
+<tr><th id="747">747</th><td><i class="doc"></i></td></tr>
+<tr><th id="748">748</th><td><i class="doc">    Relocks an unlocked lock.</i></td></tr>
+<tr><th id="749">749</th><td><i class="doc"></i></td></tr>
+<tr><th id="750">750</th><td><i class="doc">    <span class="command">\sa</span> unlock()</i></td></tr>
+<tr><th id="751">751</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="752">752</th><td></td></tr>
+<tr><th id="753">753</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="754">754</th><td><i class="doc">    <span class="command">\fn</span> <span class="verb" data-ref="_ZNK12QWriteLocker13readWriteLockEv">QReadWriteLock *QWriteLocker::readWriteLock() const</span></i></td></tr>
+<tr><th id="755">755</th><td><i class="doc"></i></td></tr>
+<tr><th id="756">756</th><td><i class="doc">    Returns a pointer to the read-write lock that was passed</i></td></tr>
+<tr><th id="757">757</th><td><i class="doc">    to the constructor.</i></td></tr>
+<tr><th id="758">758</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="759">759</th><td></td></tr>
+<tr><th id="760">760</th><td><a class="macro" href="../global/qtconfigmacros.h.html#104" title="" data-ref="_M/QT_END_NAMESPACE">QT_END_NAMESPACE</a></td></tr>
+<tr><th id="761">761</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2024-Jun-13</em> from project qtbase-6.5.0 revision <em>6.5.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

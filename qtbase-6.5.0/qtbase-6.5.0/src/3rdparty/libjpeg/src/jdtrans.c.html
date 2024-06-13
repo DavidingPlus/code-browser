@@ -1,0 +1,174 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>jdtrans.c source code [qtbase-6.5.0/src/3rdparty/libjpeg/src/jdtrans.c] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'qtbase-6.5.0/src/3rdparty/libjpeg/src/jdtrans.c'; var root_path = '../../../../..'; var data_path = '../../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../..'>qtbase-6.5.0</a>/<a href='../../..'>src</a>/<a href='../..'>3rdparty</a>/<a href='..'>libjpeg</a>/<a href='./'>src</a>/<a href='jdtrans.c.html'>jdtrans.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*</i></td></tr>
+<tr><th id="2">2</th><td><i> * jdtrans.c</i></td></tr>
+<tr><th id="3">3</th><td><i> *</i></td></tr>
+<tr><th id="4">4</th><td><i> * This file was part of the Independent JPEG Group's software:</i></td></tr>
+<tr><th id="5">5</th><td><i> * Copyright (C) 1995-1997, Thomas G. Lane.</i></td></tr>
+<tr><th id="6">6</th><td><i> * libjpeg-turbo Modifications:</i></td></tr>
+<tr><th id="7">7</th><td><i> * Copyright (C) 2020, D. R. Commander.</i></td></tr>
+<tr><th id="8">8</th><td><i> * For conditions of distribution and use, see the accompanying README.ijg</i></td></tr>
+<tr><th id="9">9</th><td><i> * file.</i></td></tr>
+<tr><th id="10">10</th><td><i> *</i></td></tr>
+<tr><th id="11">11</th><td><i> * This file contains library routines for transcoding decompression,</i></td></tr>
+<tr><th id="12">12</th><td><i> * that is, reading raw DCT coefficient arrays from an input JPEG file.</i></td></tr>
+<tr><th id="13">13</th><td><i> * The routines in jdapimin.c will also be needed by a transcoder.</i></td></tr>
+<tr><th id="14">14</th><td><i> */</i></td></tr>
+<tr><th id="15">15</th><td></td></tr>
+<tr><th id="16">16</th><td><u>#define <dfn class="macro" id="_M/JPEG_INTERNALS" data-ref="_M/JPEG_INTERNALS">JPEG_INTERNALS</dfn></u></td></tr>
+<tr><th id="17">17</th><td><u>#include <a href="jinclude.h.html">"jinclude.h"</a></u></td></tr>
+<tr><th id="18">18</th><td><u>#include <a href="jpeglib.h.html">"jpeglib.h"</a></u></td></tr>
+<tr><th id="19">19</th><td><u>#include <a href="jpegcomp.h.html">"jpegcomp.h"</a></u></td></tr>
+<tr><th id="20">20</th><td></td></tr>
+<tr><th id="21">21</th><td></td></tr>
+<tr><th id="22">22</th><td><i>/* Forward declarations */</i></td></tr>
+<tr><th id="23">23</th><td><a class="macro" href="jmorecfg.h.html#170" title="static void" data-ref="_M/LOCAL">LOCAL</a>(<em>void</em>) <a class="decl fn" href="#transdecode_master_selection" title='transdecode_master_selection' data-ref="transdecode_master_selection">transdecode_master_selection</a>(<a class="typedef" href="jpeglib.h.html#j_decompress_ptr" title='j_decompress_ptr' data-type='struct jpeg_decompress_struct *' data-ref="j_decompress_ptr">j_decompress_ptr</a> <dfn class="local col1 decl" id="1cinfo" title='cinfo' data-type='j_decompress_ptr' data-ref="1cinfo">cinfo</dfn>);</td></tr>
+<tr><th id="24">24</th><td></td></tr>
+<tr><th id="25">25</th><td></td></tr>
+<tr><th id="26">26</th><td><i>/*</i></td></tr>
+<tr><th id="27">27</th><td><i> * Read the coefficient arrays from a JPEG file.</i></td></tr>
+<tr><th id="28">28</th><td><i> * jpeg_read_header must be completed before calling this.</i></td></tr>
+<tr><th id="29">29</th><td><i> *</i></td></tr>
+<tr><th id="30">30</th><td><i> * The entire image is read into a set of virtual coefficient-block arrays,</i></td></tr>
+<tr><th id="31">31</th><td><i> * one per component.  The return value is a pointer to the array of</i></td></tr>
+<tr><th id="32">32</th><td><i> * virtual-array descriptors.  These can be manipulated directly via the</i></td></tr>
+<tr><th id="33">33</th><td><i> * JPEG memory manager, or handed off to jpeg_write_coefficients().</i></td></tr>
+<tr><th id="34">34</th><td><i> * To release the memory occupied by the virtual arrays, call</i></td></tr>
+<tr><th id="35">35</th><td><i> * jpeg_finish_decompress() when done with the data.</i></td></tr>
+<tr><th id="36">36</th><td><i> *</i></td></tr>
+<tr><th id="37">37</th><td><i> * An alternative usage is to simply obtain access to the coefficient arrays</i></td></tr>
+<tr><th id="38">38</th><td><i> * during a buffered-image-mode decompression operation.  This is allowed</i></td></tr>
+<tr><th id="39">39</th><td><i> * after any jpeg_finish_output() call.  The arrays can be accessed until</i></td></tr>
+<tr><th id="40">40</th><td><i> * jpeg_finish_decompress() is called.  (Note that any call to the library</i></td></tr>
+<tr><th id="41">41</th><td><i> * may reposition the arrays, so don't rely on access_virt_barray() results</i></td></tr>
+<tr><th id="42">42</th><td><i> * to stay valid across library calls.)</i></td></tr>
+<tr><th id="43">43</th><td><i> *</i></td></tr>
+<tr><th id="44">44</th><td><i> * Returns NULL if suspended.  This case need be checked only if</i></td></tr>
+<tr><th id="45">45</th><td><i> * a suspending data source is used.</i></td></tr>
+<tr><th id="46">46</th><td><i> */</i></td></tr>
+<tr><th id="47">47</th><td></td></tr>
+<tr><th id="48">48</th><td><a class="macro" href="jmorecfg.h.html#172" title="jvirt_barray_ptr *" data-ref="_M/GLOBAL">GLOBAL</a>(<a class="typedef" href="jpeglib.h.html#jvirt_barray_ptr" title='jvirt_barray_ptr' data-type='struct jvirt_barray_control *' data-ref="jvirt_barray_ptr">jvirt_barray_ptr</a> *)</td></tr>
+<tr><th id="49">49</th><td><dfn class="decl def fn" id="jpeg_read_coefficients" title='jpeg_read_coefficients' data-ref="jpeg_read_coefficients">jpeg_read_coefficients</dfn>(<a class="typedef" href="jpeglib.h.html#j_decompress_ptr" title='j_decompress_ptr' data-type='struct jpeg_decompress_struct *' data-ref="j_decompress_ptr">j_decompress_ptr</a> <dfn class="local col2 decl" id="2cinfo" title='cinfo' data-type='j_decompress_ptr' data-ref="2cinfo">cinfo</dfn>)</td></tr>
+<tr><th id="50">50</th><td>{</td></tr>
+<tr><th id="51">51</th><td>  <b>if</b> (<a class="local col2 ref" href="#2cinfo" title='cinfo' data-ref="2cinfo">cinfo</a>-&gt;<a class="ref field" href="jpeglib.h.html#473" title='jpeg_decompress_struct::global_state' data-ref="jpeg_decompress_struct::global_state">global_state</a> == <a class="macro" href="jpegint.h.html#37" title="202" data-ref="_M/DSTATE_READY">DSTATE_READY</a>) {</td></tr>
+<tr><th id="52">52</th><td>    <i>/* First call: initialize active modules */</i></td></tr>
+<tr><th id="53">53</th><td>    <a class="ref fn" href="#transdecode_master_selection" title='transdecode_master_selection' data-ref="transdecode_master_selection">transdecode_master_selection</a>(<a class="local col2 ref" href="#2cinfo" title='cinfo' data-ref="2cinfo">cinfo</a>);</td></tr>
+<tr><th id="54">54</th><td>    <a class="local col2 ref" href="#2cinfo" title='cinfo' data-ref="2cinfo">cinfo</a>-&gt;<a class="ref field" href="jpeglib.h.html#473" title='jpeg_decompress_struct::global_state' data-ref="jpeg_decompress_struct::global_state">global_state</a> = <a class="macro" href="jpegint.h.html#44" title="209" data-ref="_M/DSTATE_RDCOEFS">DSTATE_RDCOEFS</a>;</td></tr>
+<tr><th id="55">55</th><td>  }</td></tr>
+<tr><th id="56">56</th><td>  <b>if</b> (<a class="local col2 ref" href="#2cinfo" title='cinfo' data-ref="2cinfo">cinfo</a>-&gt;<a class="ref field" href="jpeglib.h.html#473" title='jpeg_decompress_struct::global_state' data-ref="jpeg_decompress_struct::global_state">global_state</a> == <a class="macro" href="jpegint.h.html#44" title="209" data-ref="_M/DSTATE_RDCOEFS">DSTATE_RDCOEFS</a>) {</td></tr>
+<tr><th id="57">57</th><td>    <i>/* Absorb whole file into the coef buffer */</i></td></tr>
+<tr><th id="58">58</th><td>    <b>for</b> (;;) {</td></tr>
+<tr><th id="59">59</th><td>      <em>int</em> <dfn class="local col3 decl" id="3retcode" title='retcode' data-type='int' data-ref="3retcode">retcode</dfn>;</td></tr>
+<tr><th id="60">60</th><td>      <i>/* Call progress monitor hook if present */</i></td></tr>
+<tr><th id="61">61</th><td>      <b>if</b> (<a class="local col2 ref" href="#2cinfo" title='cinfo' data-ref="2cinfo">cinfo</a>-&gt;<a class="ref field" href="jpeglib.h.html#473" title='jpeg_decompress_struct::progress' data-ref="jpeg_decompress_struct::progress">progress</a> != <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>)</td></tr>
+<tr><th id="62">62</th><td>        (*<a class="local col2 ref" href="#2cinfo" title='cinfo' data-ref="2cinfo">cinfo</a>-&gt;<a class="ref field" href="jpeglib.h.html#473" title='jpeg_decompress_struct::progress' data-ref="jpeg_decompress_struct::progress">progress</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_progress_mgr::progress_monitor" title='jpeg_progress_mgr::progress_monitor' data-ref="jpeg_progress_mgr::progress_monitor">progress_monitor</a>) ((<a class="typedef" href="jpeglib.h.html#j_common_ptr" title='j_common_ptr' data-type='struct jpeg_common_struct *' data-ref="j_common_ptr">j_common_ptr</a>)<a class="local col2 ref" href="#2cinfo" title='cinfo' data-ref="2cinfo">cinfo</a>);</td></tr>
+<tr><th id="63">63</th><td>      <i>/* Absorb some more input */</i></td></tr>
+<tr><th id="64">64</th><td>      <a class="local col3 ref" href="#3retcode" title='retcode' data-ref="3retcode">retcode</a> = (*<a class="local col2 ref" href="#2cinfo" title='cinfo' data-ref="2cinfo">cinfo</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_decompress_struct::inputctl" title='jpeg_decompress_struct::inputctl' data-ref="jpeg_decompress_struct::inputctl">inputctl</a>-&gt;<a class="ref field" href="jpegint.h.html#jpeg_input_controller::consume_input" title='jpeg_input_controller::consume_input' data-ref="jpeg_input_controller::consume_input">consume_input</a>) (<a class="local col2 ref" href="#2cinfo" title='cinfo' data-ref="2cinfo">cinfo</a>);</td></tr>
+<tr><th id="65">65</th><td>      <b>if</b> (<a class="local col3 ref" href="#3retcode" title='retcode' data-ref="3retcode">retcode</a> == <a class="macro" href="jpeglib.h.html#987" title="0" data-ref="_M/JPEG_SUSPENDED">JPEG_SUSPENDED</a>)</td></tr>
+<tr><th id="66">66</th><td>        <b>return</b> <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="67">67</th><td>      <b>if</b> (<a class="local col3 ref" href="#3retcode" title='retcode' data-ref="3retcode">retcode</a> == <a class="macro" href="jpeglib.h.html#1021" title="2" data-ref="_M/JPEG_REACHED_EOI">JPEG_REACHED_EOI</a>)</td></tr>
+<tr><th id="68">68</th><td>        <b>break</b>;</td></tr>
+<tr><th id="69">69</th><td>      <i>/* Advance progress counter if appropriate */</i></td></tr>
+<tr><th id="70">70</th><td>      <b>if</b> (<a class="local col2 ref" href="#2cinfo" title='cinfo' data-ref="2cinfo">cinfo</a>-&gt;<a class="ref field" href="jpeglib.h.html#473" title='jpeg_decompress_struct::progress' data-ref="jpeg_decompress_struct::progress">progress</a> != <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span> &amp;&amp;</td></tr>
+<tr><th id="71">71</th><td>          (<a class="local col3 ref" href="#3retcode" title='retcode' data-ref="3retcode">retcode</a> == <a class="macro" href="jpeglib.h.html#1022" title="3" data-ref="_M/JPEG_ROW_COMPLETED">JPEG_ROW_COMPLETED</a> || <a class="local col3 ref" href="#3retcode" title='retcode' data-ref="3retcode">retcode</a> == <a class="macro" href="jpeglib.h.html#1020" title="1" data-ref="_M/JPEG_REACHED_SOS">JPEG_REACHED_SOS</a>)) {</td></tr>
+<tr><th id="72">72</th><td>        <b>if</b> (++<a class="local col2 ref" href="#2cinfo" title='cinfo' data-ref="2cinfo">cinfo</a>-&gt;<a class="ref field" href="jpeglib.h.html#473" title='jpeg_decompress_struct::progress' data-ref="jpeg_decompress_struct::progress">progress</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_progress_mgr::pass_counter" title='jpeg_progress_mgr::pass_counter' data-ref="jpeg_progress_mgr::pass_counter">pass_counter</a> &gt;= <a class="local col2 ref" href="#2cinfo" title='cinfo' data-ref="2cinfo">cinfo</a>-&gt;<a class="ref field" href="jpeglib.h.html#473" title='jpeg_decompress_struct::progress' data-ref="jpeg_decompress_struct::progress">progress</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_progress_mgr::pass_limit" title='jpeg_progress_mgr::pass_limit' data-ref="jpeg_progress_mgr::pass_limit">pass_limit</a>) {</td></tr>
+<tr><th id="73">73</th><td>          <i>/* startup underestimated number of scans; ratchet up one scan */</i></td></tr>
+<tr><th id="74">74</th><td>          <a class="local col2 ref" href="#2cinfo" title='cinfo' data-ref="2cinfo">cinfo</a>-&gt;<a class="ref field" href="jpeglib.h.html#473" title='jpeg_decompress_struct::progress' data-ref="jpeg_decompress_struct::progress">progress</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_progress_mgr::pass_limit" title='jpeg_progress_mgr::pass_limit' data-ref="jpeg_progress_mgr::pass_limit">pass_limit</a> += (<em>long</em>)<a class="local col2 ref" href="#2cinfo" title='cinfo' data-ref="2cinfo">cinfo</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_decompress_struct::total_iMCU_rows" title='jpeg_decompress_struct::total_iMCU_rows' data-ref="jpeg_decompress_struct::total_iMCU_rows">total_iMCU_rows</a>;</td></tr>
+<tr><th id="75">75</th><td>        }</td></tr>
+<tr><th id="76">76</th><td>      }</td></tr>
+<tr><th id="77">77</th><td>    }</td></tr>
+<tr><th id="78">78</th><td>    <i>/* Set state so that jpeg_finish_decompress does the right thing */</i></td></tr>
+<tr><th id="79">79</th><td>    <a class="local col2 ref" href="#2cinfo" title='cinfo' data-ref="2cinfo">cinfo</a>-&gt;<a class="ref field" href="jpeglib.h.html#473" title='jpeg_decompress_struct::global_state' data-ref="jpeg_decompress_struct::global_state">global_state</a> = <a class="macro" href="jpegint.h.html#45" title="210" data-ref="_M/DSTATE_STOPPING">DSTATE_STOPPING</a>;</td></tr>
+<tr><th id="80">80</th><td>  }</td></tr>
+<tr><th id="81">81</th><td>  <i>/* At this point we should be in state DSTATE_STOPPING if being used</i></td></tr>
+<tr><th id="82">82</th><td><i>   * standalone, or in state DSTATE_BUFIMAGE if being invoked to get access</i></td></tr>
+<tr><th id="83">83</th><td><i>   * to the coefficients during a full buffered-image-mode decompression.</i></td></tr>
+<tr><th id="84">84</th><td><i>   */</i></td></tr>
+<tr><th id="85">85</th><td>  <b>if</b> ((<a class="local col2 ref" href="#2cinfo" title='cinfo' data-ref="2cinfo">cinfo</a>-&gt;<a class="ref field" href="jpeglib.h.html#473" title='jpeg_decompress_struct::global_state' data-ref="jpeg_decompress_struct::global_state">global_state</a> == <a class="macro" href="jpegint.h.html#45" title="210" data-ref="_M/DSTATE_STOPPING">DSTATE_STOPPING</a> ||</td></tr>
+<tr><th id="86">86</th><td>       <a class="local col2 ref" href="#2cinfo" title='cinfo' data-ref="2cinfo">cinfo</a>-&gt;<a class="ref field" href="jpeglib.h.html#473" title='jpeg_decompress_struct::global_state' data-ref="jpeg_decompress_struct::global_state">global_state</a> == <a class="macro" href="jpegint.h.html#42" title="207" data-ref="_M/DSTATE_BUFIMAGE">DSTATE_BUFIMAGE</a>) &amp;&amp; <a class="local col2 ref" href="#2cinfo" title='cinfo' data-ref="2cinfo">cinfo</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_decompress_struct::buffered_image" title='jpeg_decompress_struct::buffered_image' data-ref="jpeg_decompress_struct::buffered_image">buffered_image</a>) {</td></tr>
+<tr><th id="87">87</th><td>    <b>return</b> <a class="local col2 ref" href="#2cinfo" title='cinfo' data-ref="2cinfo">cinfo</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_decompress_struct::coef" title='jpeg_decompress_struct::coef' data-ref="jpeg_decompress_struct::coef">coef</a>-&gt;<a class="ref field" href="jpegint.h.html#jpeg_d_coef_controller::coef_arrays" title='jpeg_d_coef_controller::coef_arrays' data-ref="jpeg_d_coef_controller::coef_arrays">coef_arrays</a>;</td></tr>
+<tr><th id="88">88</th><td>  }</td></tr>
+<tr><th id="89">89</th><td>  <i>/* Oops, improper usage */</i></td></tr>
+<tr><th id="90">90</th><td>  <a class="macro" href="jerror.h.html#237" title="((cinfo)-&gt;err-&gt;msg_code = (JERR_BAD_STATE), (cinfo)-&gt;err-&gt;msg_parm.i[0] = (cinfo-&gt;global_state), (*(cinfo)-&gt;err-&gt;error_exit) ((j_common_ptr)(cinfo)))" data-ref="_M/ERREXIT1">ERREXIT1</a>(<a class="local col2 ref" href="#2cinfo" title='cinfo' data-ref="2cinfo">cinfo</a>, <a class="enum" href="jerror.h.html#77" title='JERR_BAD_STATE' data-ref="JERR_BAD_STATE">JERR_BAD_STATE</a>, <a class="local col2 ref" href="#2cinfo" title='cinfo' data-ref="2cinfo">cinfo</a>-&gt;<a class="ref field" href="jpeglib.h.html#473" title='jpeg_decompress_struct::global_state' data-ref="jpeg_decompress_struct::global_state">global_state</a>);</td></tr>
+<tr><th id="91">91</th><td>  <b>return</b> <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>;                  <i>/* keep compiler happy */</i></td></tr>
+<tr><th id="92">92</th><td>}</td></tr>
+<tr><th id="93">93</th><td></td></tr>
+<tr><th id="94">94</th><td></td></tr>
+<tr><th id="95">95</th><td><i>/*</i></td></tr>
+<tr><th id="96">96</th><td><i> * Master selection of decompression modules for transcoding.</i></td></tr>
+<tr><th id="97">97</th><td><i> * This substitutes for jdmaster.c's initialization of the full decompressor.</i></td></tr>
+<tr><th id="98">98</th><td><i> */</i></td></tr>
+<tr><th id="99">99</th><td></td></tr>
+<tr><th id="100">100</th><td><a class="macro" href="jmorecfg.h.html#170" title="static void" data-ref="_M/LOCAL">LOCAL</a>(<em>void</em>)</td></tr>
+<tr><th id="101">101</th><td><dfn class="decl def fn" id="transdecode_master_selection" title='transdecode_master_selection' data-ref="transdecode_master_selection">transdecode_master_selection</dfn>(<a class="typedef" href="jpeglib.h.html#j_decompress_ptr" title='j_decompress_ptr' data-type='struct jpeg_decompress_struct *' data-ref="j_decompress_ptr">j_decompress_ptr</a> <dfn class="local col4 decl" id="4cinfo" title='cinfo' data-type='j_decompress_ptr' data-ref="4cinfo">cinfo</dfn>)</td></tr>
+<tr><th id="102">102</th><td>{</td></tr>
+<tr><th id="103">103</th><td>  <i>/* This is effectively a buffered-image operation. */</i></td></tr>
+<tr><th id="104">104</th><td>  <a class="local col4 ref" href="#4cinfo" title='cinfo' data-ref="4cinfo">cinfo</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_decompress_struct::buffered_image" title='jpeg_decompress_struct::buffered_image' data-ref="jpeg_decompress_struct::buffered_image">buffered_image</a> = <a class="macro" href="jmorecfg.h.html#209" title="1" data-ref="_M/TRUE">TRUE</a>;</td></tr>
+<tr><th id="105">105</th><td></td></tr>
+<tr><th id="106">106</th><td><u>#<span data-ppcond="106">if</span> <a class="macro" href="jconfig.h.html#3" title="80" data-ref="_M/JPEG_LIB_VERSION">JPEG_LIB_VERSION</a> &gt;= 80</u></td></tr>
+<tr><th id="107">107</th><td>  <i>/* Compute output image dimensions and related values. */</i></td></tr>
+<tr><th id="108">108</th><td>  <a class="ref fn" href="jpeglib.h.html#jpeg_core_output_dimensions" title='jpeg_core_output_dimensions' data-ref="jpeg_core_output_dimensions">jpeg_core_output_dimensions</a>(<a class="local col4 ref" href="#4cinfo" title='cinfo' data-ref="4cinfo">cinfo</a>);</td></tr>
+<tr><th id="109">109</th><td><u>#<span data-ppcond="106">endif</span></u></td></tr>
+<tr><th id="110">110</th><td></td></tr>
+<tr><th id="111">111</th><td>  <i>/* Entropy decoding: either Huffman or arithmetic coding. */</i></td></tr>
+<tr><th id="112">112</th><td>  <b>if</b> (<a class="local col4 ref" href="#4cinfo" title='cinfo' data-ref="4cinfo">cinfo</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_decompress_struct::arith_code" title='jpeg_decompress_struct::arith_code' data-ref="jpeg_decompress_struct::arith_code">arith_code</a>) {</td></tr>
+<tr><th id="113">113</th><td><u>#<span data-ppcond="113">ifdef</span> <a class="macro" href="jconfig.h.html#11" data-ref="_M/D_ARITH_CODING_SUPPORTED">D_ARITH_CODING_SUPPORTED</a></u></td></tr>
+<tr><th id="114">114</th><td>    <a class="ref fn" href="jpegint.h.html#jinit_arith_decoder" title='jinit_arith_decoder' data-ref="jinit_arith_decoder">jinit_arith_decoder</a>(<a class="local col4 ref" href="#4cinfo" title='cinfo' data-ref="4cinfo">cinfo</a>);</td></tr>
+<tr><th id="115">115</th><td><u>#<span data-ppcond="113">else</span></u></td></tr>
+<tr><th id="116">116</th><td>    ERREXIT(cinfo, JERR_ARITH_NOTIMPL);</td></tr>
+<tr><th id="117">117</th><td><u>#<span data-ppcond="113">endif</span></u></td></tr>
+<tr><th id="118">118</th><td>  } <b>else</b> {</td></tr>
+<tr><th id="119">119</th><td>    <b>if</b> (<a class="local col4 ref" href="#4cinfo" title='cinfo' data-ref="4cinfo">cinfo</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_decompress_struct::progressive_mode" title='jpeg_decompress_struct::progressive_mode' data-ref="jpeg_decompress_struct::progressive_mode">progressive_mode</a>) {</td></tr>
+<tr><th id="120">120</th><td><u>#<span data-ppcond="120">ifdef</span> <a class="macro" href="jmorecfg.h.html#259" data-ref="_M/D_PROGRESSIVE_SUPPORTED">D_PROGRESSIVE_SUPPORTED</a></u></td></tr>
+<tr><th id="121">121</th><td>      <a class="ref fn" href="jpegint.h.html#jinit_phuff_decoder" title='jinit_phuff_decoder' data-ref="jinit_phuff_decoder">jinit_phuff_decoder</a>(<a class="local col4 ref" href="#4cinfo" title='cinfo' data-ref="4cinfo">cinfo</a>);</td></tr>
+<tr><th id="122">122</th><td><u>#<span data-ppcond="120">else</span></u></td></tr>
+<tr><th id="123">123</th><td>      ERREXIT(cinfo, JERR_NOT_COMPILED);</td></tr>
+<tr><th id="124">124</th><td><u>#<span data-ppcond="120">endif</span></u></td></tr>
+<tr><th id="125">125</th><td>    } <b>else</b></td></tr>
+<tr><th id="126">126</th><td>      <a class="ref fn" href="jpegint.h.html#jinit_huff_decoder" title='jinit_huff_decoder' data-ref="jinit_huff_decoder">jinit_huff_decoder</a>(<a class="local col4 ref" href="#4cinfo" title='cinfo' data-ref="4cinfo">cinfo</a>);</td></tr>
+<tr><th id="127">127</th><td>  }</td></tr>
+<tr><th id="128">128</th><td></td></tr>
+<tr><th id="129">129</th><td>  <i>/* Always get a full-image coefficient buffer. */</i></td></tr>
+<tr><th id="130">130</th><td>  <a class="ref fn" href="jpegint.h.html#jinit_d_coef_controller" title='jinit_d_coef_controller' data-ref="jinit_d_coef_controller">jinit_d_coef_controller</a>(<a class="local col4 ref" href="#4cinfo" title='cinfo' data-ref="4cinfo">cinfo</a>, <a class="macro" href="jmorecfg.h.html#209" title="1" data-ref="_M/TRUE">TRUE</a>);</td></tr>
+<tr><th id="131">131</th><td></td></tr>
+<tr><th id="132">132</th><td>  <i>/* We can now tell the memory manager to allocate virtual arrays. */</i></td></tr>
+<tr><th id="133">133</th><td>  (*<a class="local col4 ref" href="#4cinfo" title='cinfo' data-ref="4cinfo">cinfo</a>-&gt;<a class="ref field" href="jpeglib.h.html#473" title='jpeg_decompress_struct::mem' data-ref="jpeg_decompress_struct::mem">mem</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_memory_mgr::realize_virt_arrays" title='jpeg_memory_mgr::realize_virt_arrays' data-ref="jpeg_memory_mgr::realize_virt_arrays">realize_virt_arrays</a>) ((<a class="typedef" href="jpeglib.h.html#j_common_ptr" title='j_common_ptr' data-type='struct jpeg_common_struct *' data-ref="j_common_ptr">j_common_ptr</a>)<a class="local col4 ref" href="#4cinfo" title='cinfo' data-ref="4cinfo">cinfo</a>);</td></tr>
+<tr><th id="134">134</th><td></td></tr>
+<tr><th id="135">135</th><td>  <i>/* Initialize input side of decompressor to consume first scan. */</i></td></tr>
+<tr><th id="136">136</th><td>  (*<a class="local col4 ref" href="#4cinfo" title='cinfo' data-ref="4cinfo">cinfo</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_decompress_struct::inputctl" title='jpeg_decompress_struct::inputctl' data-ref="jpeg_decompress_struct::inputctl">inputctl</a>-&gt;<a class="ref field" href="jpegint.h.html#jpeg_input_controller::start_input_pass" title='jpeg_input_controller::start_input_pass' data-ref="jpeg_input_controller::start_input_pass">start_input_pass</a>) (<a class="local col4 ref" href="#4cinfo" title='cinfo' data-ref="4cinfo">cinfo</a>);</td></tr>
+<tr><th id="137">137</th><td></td></tr>
+<tr><th id="138">138</th><td>  <i>/* Initialize progress monitoring. */</i></td></tr>
+<tr><th id="139">139</th><td>  <b>if</b> (<a class="local col4 ref" href="#4cinfo" title='cinfo' data-ref="4cinfo">cinfo</a>-&gt;<a class="ref field" href="jpeglib.h.html#473" title='jpeg_decompress_struct::progress' data-ref="jpeg_decompress_struct::progress">progress</a> != <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>) {</td></tr>
+<tr><th id="140">140</th><td>    <em>int</em> <dfn class="local col5 decl" id="5nscans" title='nscans' data-type='int' data-ref="5nscans">nscans</dfn>;</td></tr>
+<tr><th id="141">141</th><td>    <i>/* Estimate number of scans to set pass_limit. */</i></td></tr>
+<tr><th id="142">142</th><td>    <b>if</b> (<a class="local col4 ref" href="#4cinfo" title='cinfo' data-ref="4cinfo">cinfo</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_decompress_struct::progressive_mode" title='jpeg_decompress_struct::progressive_mode' data-ref="jpeg_decompress_struct::progressive_mode">progressive_mode</a>) {</td></tr>
+<tr><th id="143">143</th><td>      <i>/* Arbitrarily estimate 2 interleaved DC scans + 3 AC scans/component. */</i></td></tr>
+<tr><th id="144">144</th><td>      <a class="local col5 ref" href="#5nscans" title='nscans' data-ref="5nscans">nscans</a> = <var>2</var> + <var>3</var> * <a class="local col4 ref" href="#4cinfo" title='cinfo' data-ref="4cinfo">cinfo</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_decompress_struct::num_components" title='jpeg_decompress_struct::num_components' data-ref="jpeg_decompress_struct::num_components">num_components</a>;</td></tr>
+<tr><th id="145">145</th><td>    } <b>else</b> <b>if</b> (<a class="local col4 ref" href="#4cinfo" title='cinfo' data-ref="4cinfo">cinfo</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_decompress_struct::inputctl" title='jpeg_decompress_struct::inputctl' data-ref="jpeg_decompress_struct::inputctl">inputctl</a>-&gt;<a class="ref field" href="jpegint.h.html#jpeg_input_controller::has_multiple_scans" title='jpeg_input_controller::has_multiple_scans' data-ref="jpeg_input_controller::has_multiple_scans">has_multiple_scans</a>) {</td></tr>
+<tr><th id="146">146</th><td>      <i>/* For a nonprogressive multiscan file, estimate 1 scan per component. */</i></td></tr>
+<tr><th id="147">147</th><td>      <a class="local col5 ref" href="#5nscans" title='nscans' data-ref="5nscans">nscans</a> = <a class="local col4 ref" href="#4cinfo" title='cinfo' data-ref="4cinfo">cinfo</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_decompress_struct::num_components" title='jpeg_decompress_struct::num_components' data-ref="jpeg_decompress_struct::num_components">num_components</a>;</td></tr>
+<tr><th id="148">148</th><td>    } <b>else</b> {</td></tr>
+<tr><th id="149">149</th><td>      <a class="local col5 ref" href="#5nscans" title='nscans' data-ref="5nscans">nscans</a> = <var>1</var>;</td></tr>
+<tr><th id="150">150</th><td>    }</td></tr>
+<tr><th id="151">151</th><td>    <a class="local col4 ref" href="#4cinfo" title='cinfo' data-ref="4cinfo">cinfo</a>-&gt;<a class="ref field" href="jpeglib.h.html#473" title='jpeg_decompress_struct::progress' data-ref="jpeg_decompress_struct::progress">progress</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_progress_mgr::pass_counter" title='jpeg_progress_mgr::pass_counter' data-ref="jpeg_progress_mgr::pass_counter">pass_counter</a> = <var>0L</var>;</td></tr>
+<tr><th id="152">152</th><td>    <a class="local col4 ref" href="#4cinfo" title='cinfo' data-ref="4cinfo">cinfo</a>-&gt;<a class="ref field" href="jpeglib.h.html#473" title='jpeg_decompress_struct::progress' data-ref="jpeg_decompress_struct::progress">progress</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_progress_mgr::pass_limit" title='jpeg_progress_mgr::pass_limit' data-ref="jpeg_progress_mgr::pass_limit">pass_limit</a> = (<em>long</em>)<a class="local col4 ref" href="#4cinfo" title='cinfo' data-ref="4cinfo">cinfo</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_decompress_struct::total_iMCU_rows" title='jpeg_decompress_struct::total_iMCU_rows' data-ref="jpeg_decompress_struct::total_iMCU_rows">total_iMCU_rows</a> * <a class="local col5 ref" href="#5nscans" title='nscans' data-ref="5nscans">nscans</a>;</td></tr>
+<tr><th id="153">153</th><td>    <a class="local col4 ref" href="#4cinfo" title='cinfo' data-ref="4cinfo">cinfo</a>-&gt;<a class="ref field" href="jpeglib.h.html#473" title='jpeg_decompress_struct::progress' data-ref="jpeg_decompress_struct::progress">progress</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_progress_mgr::completed_passes" title='jpeg_progress_mgr::completed_passes' data-ref="jpeg_progress_mgr::completed_passes">completed_passes</a> = <var>0</var>;</td></tr>
+<tr><th id="154">154</th><td>    <a class="local col4 ref" href="#4cinfo" title='cinfo' data-ref="4cinfo">cinfo</a>-&gt;<a class="ref field" href="jpeglib.h.html#473" title='jpeg_decompress_struct::progress' data-ref="jpeg_decompress_struct::progress">progress</a>-&gt;<a class="ref field" href="jpeglib.h.html#jpeg_progress_mgr::total_passes" title='jpeg_progress_mgr::total_passes' data-ref="jpeg_progress_mgr::total_passes">total_passes</a> = <var>1</var>;</td></tr>
+<tr><th id="155">155</th><td>  }</td></tr>
+<tr><th id="156">156</th><td>}</td></tr>
+<tr><th id="157">157</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2024-Jun-13</em> from project qtbase-6.5.0 revision <em>6.5.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

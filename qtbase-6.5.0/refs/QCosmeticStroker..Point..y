@@ -1,0 +1,34 @@
+<dec f='qtbase-6.5.0/src/gui/painting/qcosmeticstroker_p.h' l='37' type='int'/>
+<use f='qtbase-6.5.0/src/gui/painting/qcosmeticstroker.cpp' l='282' u='w' c='_ZN16QCosmeticStroker5setupEv'/>
+<use f='qtbase-6.5.0/src/gui/painting/qcosmeticstroker.cpp' l='354' u='w' c='_ZN16QCosmeticStroker8drawLineERK7QPointFS2_'/>
+<use f='qtbase-6.5.0/src/gui/painting/qcosmeticstroker.cpp' l='398' u='w' c='_ZN16QCosmeticStroker18calculateLastPointEdddd'/>
+<use f='qtbase-6.5.0/src/gui/painting/qcosmeticstroker.cpp' l='431' u='w' c='_ZN16QCosmeticStroker18calculateLastPointEdddd'/>
+<use f='qtbase-6.5.0/src/gui/painting/qcosmeticstroker.cpp' l='435' u='w' c='_ZN16QCosmeticStroker18calculateLastPointEdddd'/>
+<use f='qtbase-6.5.0/src/gui/painting/qcosmeticstroker.cpp' l='463' u='w' c='_ZN16QCosmeticStroker18calculateLastPointEdddd'/>
+<use f='qtbase-6.5.0/src/gui/painting/qcosmeticstroker.cpp' l='467' u='w' c='_ZN16QCosmeticStroker18calculateLastPointEdddd'/>
+<use f='qtbase-6.5.0/src/gui/painting/qcosmeticstroker.cpp' l='515' u='w' c='_ZN16QCosmeticStroker8drawPathERK11QVectorPath'/>
+<use f='qtbase-6.5.0/src/gui/painting/qcosmeticstroker.cpp' l='570' u='w' c='_ZN16QCosmeticStroker8drawPathERK11QVectorPath'/>
+<use f='qtbase-6.5.0/src/gui/painting/qcosmeticstroker.cpp' l='754' u='r' c='_ZL8drawLineP16QCosmeticStrokerddddi'/>
+<use f='qtbase-6.5.0/src/gui/painting/qcosmeticstroker.cpp' l='763' u='w' c='_ZL8drawLineP16QCosmeticStrokerddddi'/>
+<use f='qtbase-6.5.0/src/gui/painting/qcosmeticstroker.cpp' l='765' u='w' c='_ZL8drawLineP16QCosmeticStrokerddddi'/>
+<use f='qtbase-6.5.0/src/gui/painting/qcosmeticstroker.cpp' l='772' u='r' c='_ZL8drawLineP16QCosmeticStrokerddddi'/>
+<use f='qtbase-6.5.0/src/gui/painting/qcosmeticstroker.cpp' l='772' u='r' c='_ZL8drawLineP16QCosmeticStrokerddddi'/>
+<use f='qtbase-6.5.0/src/gui/painting/qcosmeticstroker.cpp' l='782' u='r' c='_ZL8drawLineP16QCosmeticStrokerddddi'/>
+<use f='qtbase-6.5.0/src/gui/painting/qcosmeticstroker.cpp' l='782' u='r' c='_ZL8drawLineP16QCosmeticStrokerddddi'/>
+<use f='qtbase-6.5.0/src/gui/painting/qcosmeticstroker.cpp' l='784' u='r' c='_ZL8drawLineP16QCosmeticStrokerddddi'/>
+<use f='qtbase-6.5.0/src/gui/painting/qcosmeticstroker.cpp' l='784' u='r' c='_ZL8drawLineP16QCosmeticStrokerddddi'/>
+<use f='qtbase-6.5.0/src/gui/painting/qcosmeticstroker.cpp' l='794' u='r' c='_ZL8drawLineP16QCosmeticStrokerddddi'/>
+<use f='qtbase-6.5.0/src/gui/painting/qcosmeticstroker.cpp' l='794' u='r' c='_ZL8drawLineP16QCosmeticStrokerddddi'/>
+<use f='qtbase-6.5.0/src/gui/painting/qcosmeticstroker.cpp' l='853' u='w' c='_ZL8drawLineP16QCosmeticStrokerddddi'/>
+<use f='qtbase-6.5.0/src/gui/painting/qcosmeticstroker.cpp' l='855' u='w' c='_ZL8drawLineP16QCosmeticStrokerddddi'/>
+<use f='qtbase-6.5.0/src/gui/painting/qcosmeticstroker.cpp' l='861' u='r' c='_ZL8drawLineP16QCosmeticStrokerddddi'/>
+<use f='qtbase-6.5.0/src/gui/painting/qcosmeticstroker.cpp' l='861' u='r' c='_ZL8drawLineP16QCosmeticStrokerddddi'/>
+<use f='qtbase-6.5.0/src/gui/painting/qcosmeticstroker.cpp' l='871' u='r' c='_ZL8drawLineP16QCosmeticStrokerddddi'/>
+<use f='qtbase-6.5.0/src/gui/painting/qcosmeticstroker.cpp' l='871' u='r' c='_ZL8drawLineP16QCosmeticStrokerddddi'/>
+<use f='qtbase-6.5.0/src/gui/painting/qcosmeticstroker.cpp' l='873' u='r' c='_ZL8drawLineP16QCosmeticStrokerddddi'/>
+<use f='qtbase-6.5.0/src/gui/painting/qcosmeticstroker.cpp' l='873' u='r' c='_ZL8drawLineP16QCosmeticStrokerddddi'/>
+<use f='qtbase-6.5.0/src/gui/painting/qcosmeticstroker.cpp' l='883' u='r' c='_ZL8drawLineP16QCosmeticStrokerddddi'/>
+<use f='qtbase-6.5.0/src/gui/painting/qcosmeticstroker.cpp' l='883' u='r' c='_ZL8drawLineP16QCosmeticStrokerddddi'/>
+<use f='qtbase-6.5.0/src/gui/painting/qcosmeticstroker.cpp' l='886' u='w' c='_ZL8drawLineP16QCosmeticStrokerddddi'/>
+<use f='qtbase-6.5.0/src/gui/painting/qcosmeticstroker.cpp' l='888' u='w' c='_ZL8drawLineP16QCosmeticStrokerddddi'/>
+<offset>32</offset>

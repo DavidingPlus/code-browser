@@ -1,0 +1,31 @@
+<use f='qtbase-6.5.0/src/gui/painting/qpageranges.h' l='32' u='m' c='_ZN11QPageRanges4swapERS_'/>
+<use f='qtbase-6.5.0/src/gui/painting/qpageranges.h' l='32' u='a' c='_ZN11QPageRanges4swapERS_'/>
+<dec f='qtbase-6.5.0/src/gui/painting/qpageranges.h' l='70' type='QExplicitlySharedDataPointer&lt;QPageRangesPrivate&gt;'/>
+<offset>0</offset>
+<use f='qtbase-6.5.0/src/gui/painting/qpageranges.cpp' l='99' u='m' c='_ZN11QPageRanges7addPageEi'/>
+<use f='qtbase-6.5.0/src/gui/painting/qpageranges.cpp' l='100' u='m' c='_ZN11QPageRanges7addPageEi'/>
+<use f='qtbase-6.5.0/src/gui/painting/qpageranges.cpp' l='119' u='m' c='_ZN11QPageRanges8addRangeEii'/>
+<use f='qtbase-6.5.0/src/gui/painting/qpageranges.cpp' l='120' u='m' c='_ZN11QPageRanges8addRangeEii'/>
+<use f='qtbase-6.5.0/src/gui/painting/qpageranges.cpp' l='128' u='m' c='_ZNK11QPageRanges11toRangeListEv'/>
+<use f='qtbase-6.5.0/src/gui/painting/qpageranges.cpp' l='129' u='m' c='_ZNK11QPageRanges11toRangeListEv'/>
+<use f='qtbase-6.5.0/src/gui/painting/qpageranges.cpp' l='138' u='m' c='_ZN11QPageRanges5clearEv'/>
+<use f='qtbase-6.5.0/src/gui/painting/qpageranges.cpp' l='196' u='m' c='_ZN11QPageRanges10fromStringERK7QString'/>
+<use f='qtbase-6.5.0/src/gui/painting/qpageranges.cpp' l='197' u='m' c='_ZN11QPageRanges10fromStringERK7QString'/>
+<use f='qtbase-6.5.0/src/gui/painting/qpageranges.cpp' l='198' u='m' c='_ZN11QPageRanges10fromStringERK7QString'/>
+<use f='qtbase-6.5.0/src/gui/painting/qpageranges.cpp' l='207' u='m' c='_ZNK11QPageRanges8toStringEv'/>
+<use f='qtbase-6.5.0/src/gui/painting/qpageranges.cpp' l='211' u='m' c='_ZNK11QPageRanges8toStringEv'/>
+<use f='qtbase-6.5.0/src/gui/painting/qpageranges.cpp' l='232' u='m' c='_ZNK11QPageRanges8containsEi'/>
+<use f='qtbase-6.5.0/src/gui/painting/qpageranges.cpp' l='235' u='m' c='_ZNK11QPageRanges8containsEi'/>
+<use f='qtbase-6.5.0/src/gui/painting/qpageranges.cpp' l='247' u='m' c='_ZNK11QPageRanges7isEmptyEv'/>
+<use f='qtbase-6.5.0/src/gui/painting/qpageranges.cpp' l='247' u='m' c='_ZNK11QPageRanges7isEmptyEv'/>
+<use f='qtbase-6.5.0/src/gui/painting/qpageranges.cpp' l='258' u='m' c='_ZNK11QPageRanges9firstPageEv'/>
+<use f='qtbase-6.5.0/src/gui/painting/qpageranges.cpp' l='269' u='m' c='_ZNK11QPageRanges8lastPageEv'/>
+<use f='qtbase-6.5.0/src/gui/painting/qpageranges.cpp' l='277' u='r' c='_ZNK11QPageRanges7isEqualERKS_'/>
+<use f='qtbase-6.5.0/src/gui/painting/qpageranges.cpp' l='277' u='r' c='_ZNK11QPageRanges7isEqualERKS_'/>
+<use f='qtbase-6.5.0/src/gui/painting/qpageranges.cpp' l='279' u='m' c='_ZNK11QPageRanges7isEqualERKS_'/>
+<use f='qtbase-6.5.0/src/gui/painting/qpageranges.cpp' l='279' u='m' c='_ZNK11QPageRanges7isEqualERKS_'/>
+<use f='qtbase-6.5.0/src/gui/painting/qpageranges.cpp' l='281' u='m' c='_ZNK11QPageRanges7isEqualERKS_'/>
+<use f='qtbase-6.5.0/src/gui/painting/qpageranges.cpp' l='281' u='m' c='_ZNK11QPageRanges7isEqualERKS_'/>
+<use f='qtbase-6.5.0/src/gui/painting/qpageranges.cpp' l='289' u='m' c='_ZN11QPageRanges6detachEv'/>
+<use f='qtbase-6.5.0/src/gui/painting/qpageranges.cpp' l='290' u='m' c='_ZN11QPageRanges6detachEv'/>
+<use f='qtbase-6.5.0/src/gui/painting/qpageranges.cpp' l='292' u='m' c='_ZN11QPageRanges6detachEv'/>
