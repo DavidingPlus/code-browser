@@ -1,0 +1,470 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>closures.hpp source code [boost-1.85.0/libs/spirit/include/boost/spirit/home/classic/phoenix/closures.hpp] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="phoenix::closure,phoenix::closure_frame,phoenix::closure_member,phoenix::impl::closure_frame_holder "/>
+<link rel="stylesheet" href="../../../../../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'boost-1.85.0/libs/spirit/include/boost/spirit/home/classic/phoenix/closures.hpp'; var root_path = '../../../../../../../../..'; var data_path = '../../../../../../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../../../../../..'>boost-1.85.0</a>/<a href='../../../../../../..'>libs</a>/<a href='../../../../../..'>spirit</a>/<a href='../../../../..'>include</a>/<a href='../../../..'>boost</a>/<a href='../../..'>spirit</a>/<a href='../..'>home</a>/<a href='..'>classic</a>/<a href='./'>phoenix</a>/<a href='closures.hpp.html'>closures.hpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*=============================================================================</i></td></tr>
+<tr><th id="2">2</th><td><i>    Phoenix V1.2.1</i></td></tr>
+<tr><th id="3">3</th><td><i>    Copyright (c) 2001-2002 Joel de Guzman</i></td></tr>
+<tr><th id="4">4</th><td><i>    MT code Copyright (c) 2002-2003 Martin Wille</i></td></tr>
+<tr><th id="5">5</th><td><i></i></td></tr>
+<tr><th id="6">6</th><td><i>  Distributed under the Boost Software License, Version 1.0. (See accompanying</i></td></tr>
+<tr><th id="7">7</th><td><i>  file LICENSE_1_0.txt or copy at <a href="http://www.boost.org/LICENSE_1_0.txt">http://www.boost.org/LICENSE_1_0.txt</a>)</i></td></tr>
+<tr><th id="8">8</th><td><i>==============================================================================*/</i></td></tr>
+<tr><th id="9">9</th><td><u>#<span data-ppcond="9">ifndef</span> <span class="macro" data-ref="_M/BOOST_SPIRIT_CLASSIC_PHOENIX_CLOSURES_HPP">BOOST_SPIRIT_CLASSIC_PHOENIX_CLOSURES_HPP</span></u></td></tr>
+<tr><th id="10">10</th><td><u>#define <dfn class="macro" id="_M/BOOST_SPIRIT_CLASSIC_PHOENIX_CLOSURES_HPP" data-ref="_M/BOOST_SPIRIT_CLASSIC_PHOENIX_CLOSURES_HPP">BOOST_SPIRIT_CLASSIC_PHOENIX_CLOSURES_HPP</dfn></u></td></tr>
+<tr><th id="11">11</th><td></td></tr>
+<tr><th id="12">12</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="13">13</th><td><u>#include <a href="actor.hpp.html">&lt;boost/spirit/home/classic/phoenix/actor.hpp&gt;</a></u></td></tr>
+<tr><th id="14">14</th><td><u>#include <a href="../../../../../../../assert/include/boost/assert.hpp.html">&lt;boost/assert.hpp&gt;</a></u></td></tr>
+<tr><th id="15">15</th><td></td></tr>
+<tr><th id="16">16</th><td><u>#<span data-ppcond="16">ifdef</span> <a class="macro" href="../../../../../../../wave/include/boost/wave/wave_config.hpp.html#240" data-ref="_M/PHOENIX_THREADSAFE">PHOENIX_THREADSAFE</a></u></td></tr>
+<tr><th id="17">17</th><td><u>#include <a href="../../../../../../../thread/include/boost/thread/tss.hpp.html">&lt;boost/thread/tss.hpp&gt;</a></u></td></tr>
+<tr><th id="18">18</th><td><u>#include <a href="../../../../../../../thread/include/boost/thread/once.hpp.html">&lt;boost/thread/once.hpp&gt;</a></u></td></tr>
+<tr><th id="19">19</th><td><u>#<span data-ppcond="16">endif</span></u></td></tr>
+<tr><th id="20">20</th><td></td></tr>
+<tr><th id="21">21</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="22">22</th><td><b>namespace</b> <span class="namespace">phoenix</span> {</td></tr>
+<tr><th id="23">23</th><td></td></tr>
+<tr><th id="24">24</th><td><u>#<span data-ppcond="24">if</span> <a class="macro" href="../../../../../../../config/include/boost/config/workaround.hpp.html#271" title="((1 + 0 == 0) &amp;&amp; (BOOST_MSVC != 0) &amp;&amp; (1 % (( (BOOST_MSVC &gt;= 1400) ) + 1)))" data-ref="_M/BOOST_WORKAROUND">BOOST_WORKAROUND</a>(BOOST_MSVC, &gt;= 1400)</u></td></tr>
+<tr><th id="25">25</th><td><u>#pragma warning(push)</u></td></tr>
+<tr><th id="26">26</th><td><u>#pragma warning(disable:4512) //assignment operator could not be generated</u></td></tr>
+<tr><th id="27">27</th><td><u>#<span data-ppcond="24">endif</span></u></td></tr>
+<tr><th id="28">28</th><td></td></tr>
+<tr><th id="29">29</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="30">30</th><td><i>//</i></td></tr>
+<tr><th id="31">31</th><td><i>//  Adaptable closures</i></td></tr>
+<tr><th id="32">32</th><td><i>//</i></td></tr>
+<tr><th id="33">33</th><td><i>//      The framework will not be complete without some form of closures</i></td></tr>
+<tr><th id="34">34</th><td><i>//      support. Closures encapsulate a stack frame where local</i></td></tr>
+<tr><th id="35">35</th><td><i>//      variables are created upon entering a function and destructed</i></td></tr>
+<tr><th id="36">36</th><td><i>//      upon exiting. Closures provide an environment for local</i></td></tr>
+<tr><th id="37">37</th><td><i>//      variables to reside. Closures can hold heterogeneous types.</i></td></tr>
+<tr><th id="38">38</th><td><i>//</i></td></tr>
+<tr><th id="39">39</th><td><i>//      Phoenix closures are true hardware stack based closures. At the</i></td></tr>
+<tr><th id="40">40</th><td><i>//      very least, closures enable true reentrancy in lambda functions.</i></td></tr>
+<tr><th id="41">41</th><td><i>//      A closure provides access to a function stack frame where local</i></td></tr>
+<tr><th id="42">42</th><td><i>//      variables reside. Modeled after Pascal nested stack frames,</i></td></tr>
+<tr><th id="43">43</th><td><i>//      closures can be nested just like nested functions where code in</i></td></tr>
+<tr><th id="44">44</th><td><i>//      inner closures may access local variables from in-scope outer</i></td></tr>
+<tr><th id="45">45</th><td><i>//      closures (accessing inner scopes from outer scopes is an error</i></td></tr>
+<tr><th id="46">46</th><td><i>//      and will cause a run-time assertion failure).</i></td></tr>
+<tr><th id="47">47</th><td><i>//</i></td></tr>
+<tr><th id="48">48</th><td><i>//      There are three (3) interacting classes:</i></td></tr>
+<tr><th id="49">49</th><td><i>//</i></td></tr>
+<tr><th id="50">50</th><td><i>//      1) closure:</i></td></tr>
+<tr><th id="51">51</th><td><i>//</i></td></tr>
+<tr><th id="52">52</th><td><i>//      At the point of declaration, a closure does not yet create a</i></td></tr>
+<tr><th id="53">53</th><td><i>//      stack frame nor instantiate any variables. A closure declaration</i></td></tr>
+<tr><th id="54">54</th><td><i>//      declares the types and names[note] of the local variables. The</i></td></tr>
+<tr><th id="55">55</th><td><i>//      closure class is meant to be subclassed. It is the</i></td></tr>
+<tr><th id="56">56</th><td><i>//      responsibility of a closure subclass to supply the names for</i></td></tr>
+<tr><th id="57">57</th><td><i>//      each of the local variable in the closure. Example:</i></td></tr>
+<tr><th id="58">58</th><td><i>//</i></td></tr>
+<tr><th id="59">59</th><td><i>//          struct my_closure : closure&lt;int, string, double&gt; {</i></td></tr>
+<tr><th id="60">60</th><td><i>//</i></td></tr>
+<tr><th id="61">61</th><td><i>//              member1 num;        // names the 1st (int) local variable</i></td></tr>
+<tr><th id="62">62</th><td><i>//              member2 message;    // names the 2nd (string) local variable</i></td></tr>
+<tr><th id="63">63</th><td><i>//              member3 real;       // names the 3rd (double) local variable</i></td></tr>
+<tr><th id="64">64</th><td><i>//          };</i></td></tr>
+<tr><th id="65">65</th><td><i>//</i></td></tr>
+<tr><th id="66">66</th><td><i>//          my_closure clos;</i></td></tr>
+<tr><th id="67">67</th><td><i>//</i></td></tr>
+<tr><th id="68">68</th><td><i>//      Now that we have a closure 'clos', its local variables can be</i></td></tr>
+<tr><th id="69">69</th><td><i>//      accessed lazily using the dot notation. Each qualified local</i></td></tr>
+<tr><th id="70">70</th><td><i>//      variable can be used just like any primitive actor (see</i></td></tr>
+<tr><th id="71">71</th><td><i>//      primitives.hpp). Examples:</i></td></tr>
+<tr><th id="72">72</th><td><i>//</i></td></tr>
+<tr><th id="73">73</th><td><i>//          clos.num = 30</i></td></tr>
+<tr><th id="74">74</th><td><i>//          clos.message = arg1</i></td></tr>
+<tr><th id="75">75</th><td><i>//          clos.real = clos.num * 1e6</i></td></tr>
+<tr><th id="76">76</th><td><i>//</i></td></tr>
+<tr><th id="77">77</th><td><i>//      The examples above are lazily evaluated. As usual, these</i></td></tr>
+<tr><th id="78">78</th><td><i>//      expressions return composite actors that will be evaluated</i></td></tr>
+<tr><th id="79">79</th><td><i>//      through a second function call invocation (see operators.hpp).</i></td></tr>
+<tr><th id="80">80</th><td><i>//      Each of the members (clos.xxx) is an actor. As such, applying</i></td></tr>
+<tr><th id="81">81</th><td><i>//      the operator() will reveal its identity:</i></td></tr>
+<tr><th id="82">82</th><td><i>//</i></td></tr>
+<tr><th id="83">83</th><td><i>//          clos.num() // will return the current value of clos.num</i></td></tr>
+<tr><th id="84">84</th><td><i>//</i></td></tr>
+<tr><th id="85">85</th><td><i>//      *** [note] Acknowledgement: Juan Carlos Arevalo-Baeza (JCAB)</i></td></tr>
+<tr><th id="86">86</th><td><i>//      introduced and initilally implemented the closure member names</i></td></tr>
+<tr><th id="87">87</th><td><i>//      that uses the dot notation.</i></td></tr>
+<tr><th id="88">88</th><td><i>//</i></td></tr>
+<tr><th id="89">89</th><td><i>//      2) closure_member</i></td></tr>
+<tr><th id="90">90</th><td><i>//</i></td></tr>
+<tr><th id="91">91</th><td><i>//      The named local variables of closure 'clos' above are actually</i></td></tr>
+<tr><th id="92">92</th><td><i>//      closure members. The closure_member class is an actor and</i></td></tr>
+<tr><th id="93">93</th><td><i>//      conforms to its conceptual interface. member1..memberN are</i></td></tr>
+<tr><th id="94">94</th><td><i>//      predefined typedefs that correspond to each of the listed types</i></td></tr>
+<tr><th id="95">95</th><td><i>//      in the closure template parameters.</i></td></tr>
+<tr><th id="96">96</th><td><i>//</i></td></tr>
+<tr><th id="97">97</th><td><i>//      3) closure_frame</i></td></tr>
+<tr><th id="98">98</th><td><i>//</i></td></tr>
+<tr><th id="99">99</th><td><i>//      When a closure member is finally evaluated, it should refer to</i></td></tr>
+<tr><th id="100">100</th><td><i>//      an actual instance of the variable in the hardware stack.</i></td></tr>
+<tr><th id="101">101</th><td><i>//      Without doing so, the process is not complete and the evaluated</i></td></tr>
+<tr><th id="102">102</th><td><i>//      member will result to an assertion failure. Remember that the</i></td></tr>
+<tr><th id="103">103</th><td><i>//      closure is just a declaration. The local variables that a</i></td></tr>
+<tr><th id="104">104</th><td><i>//      closure refers to must still be instantiated.</i></td></tr>
+<tr><th id="105">105</th><td><i>//</i></td></tr>
+<tr><th id="106">106</th><td><i>//      The closure_frame class does the actual instantiation of the</i></td></tr>
+<tr><th id="107">107</th><td><i>//      local variables and links these variables with the closure and</i></td></tr>
+<tr><th id="108">108</th><td><i>//      all its members. There can be multiple instances of</i></td></tr>
+<tr><th id="109">109</th><td><i>//      closure_frames typically situated in the stack inside a</i></td></tr>
+<tr><th id="110">110</th><td><i>//      function. Each closure_frame instance initiates a stack frame</i></td></tr>
+<tr><th id="111">111</th><td><i>//      with a new set of closure local variables. Example:</i></td></tr>
+<tr><th id="112">112</th><td><i>//</i></td></tr>
+<tr><th id="113">113</th><td><i>//          void foo()</i></td></tr>
+<tr><th id="114">114</th><td><i>//          {</i></td></tr>
+<tr><th id="115">115</th><td><i>//              closure_frame&lt;my_closure&gt; frame(clos);</i></td></tr>
+<tr><th id="116">116</th><td><i>//              /* do something */</i></td></tr>
+<tr><th id="117">117</th><td><i>//          }</i></td></tr>
+<tr><th id="118">118</th><td><i>//</i></td></tr>
+<tr><th id="119">119</th><td><i>//      where 'clos' is an instance of our closure 'my_closure' above.</i></td></tr>
+<tr><th id="120">120</th><td><i>//      Take note that the usage above precludes locally declared</i></td></tr>
+<tr><th id="121">121</th><td><i>//      classes. If my_closure is a locally declared type, we can still</i></td></tr>
+<tr><th id="122">122</th><td><i>//      use its self_type as a parameter to closure_frame:</i></td></tr>
+<tr><th id="123">123</th><td><i>//</i></td></tr>
+<tr><th id="124">124</th><td><i>//          closure_frame&lt;my_closure::self_type&gt; frame(clos);</i></td></tr>
+<tr><th id="125">125</th><td><i>//</i></td></tr>
+<tr><th id="126">126</th><td><i>//      Upon instantiation, the closure_frame links the local variables</i></td></tr>
+<tr><th id="127">127</th><td><i>//      to the closure. The previous link to another closure_frame</i></td></tr>
+<tr><th id="128">128</th><td><i>//      instance created before is saved. Upon destruction, the</i></td></tr>
+<tr><th id="129">129</th><td><i>//      closure_frame unlinks itself from the closure and relinks the</i></td></tr>
+<tr><th id="130">130</th><td><i>//      preceding closure_frame prior to this instance.</i></td></tr>
+<tr><th id="131">131</th><td><i>//</i></td></tr>
+<tr><th id="132">132</th><td><i>//      The local variables in the closure 'clos' above is default</i></td></tr>
+<tr><th id="133">133</th><td><i>//      constructed in the stack inside function 'foo'. Once 'foo' is</i></td></tr>
+<tr><th id="134">134</th><td><i>//      exited, all of these local variables are destructed. In some</i></td></tr>
+<tr><th id="135">135</th><td><i>//      cases, default construction is not desirable and we need to</i></td></tr>
+<tr><th id="136">136</th><td><i>//      initialize the local closure variables with some values. This</i></td></tr>
+<tr><th id="137">137</th><td><i>//      can be done by passing in the initializers in a compatible</i></td></tr>
+<tr><th id="138">138</th><td><i>//      tuple. A compatible tuple is one with the same number of</i></td></tr>
+<tr><th id="139">139</th><td><i>//      elements as the destination and where each element from the</i></td></tr>
+<tr><th id="140">140</th><td><i>//      destination can be constructed from each corresponding element</i></td></tr>
+<tr><th id="141">141</th><td><i>//      in the source. Example:</i></td></tr>
+<tr><th id="142">142</th><td><i>//</i></td></tr>
+<tr><th id="143">143</th><td><i>//          tuple&lt;int, char const*, int&gt; init(123, "Hello", 1000);</i></td></tr>
+<tr><th id="144">144</th><td><i>//          closure_frame&lt;my_closure&gt; frame(clos, init);</i></td></tr>
+<tr><th id="145">145</th><td><i>//</i></td></tr>
+<tr><th id="146">146</th><td><i>//      Here now, our closure_frame's variables are initialized with</i></td></tr>
+<tr><th id="147">147</th><td><i>//      int: 123, char const*: "Hello" and int: 1000.</i></td></tr>
+<tr><th id="148">148</th><td><i>//</i></td></tr>
+<tr><th id="149">149</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="150">150</th><td></td></tr>
+<tr><th id="151">151</th><td><b>namespace</b> <span class="namespace">impl</span></td></tr>
+<tr><th id="152">152</th><td>{</td></tr>
+<tr><th id="153">153</th><td>    <i>///////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="154">154</th><td><i>    // closure_frame_holder is a simple class that encapsulates the</i></td></tr>
+<tr><th id="155">155</th><td><i>    // storage for a frame pointer. It uses thread specific data in</i></td></tr>
+<tr><th id="156">156</th><td><i>    // case when multithreading is enabled, an ordinary pointer otherwise</i></td></tr>
+<tr><th id="157">157</th><td><i>    //</i></td></tr>
+<tr><th id="158">158</th><td><i>    // it has get() and set() member functions. set() has to be used</i></td></tr>
+<tr><th id="159">159</th><td><i>    // _after_ get(). get() contains intialisation code in the multi</i></td></tr>
+<tr><th id="160">160</th><td><i>    // threading case</i></td></tr>
+<tr><th id="161">161</th><td><i>    //</i></td></tr>
+<tr><th id="162">162</th><td><i>    // closure_frame_holder is used by the closure&lt;&gt; class to store</i></td></tr>
+<tr><th id="163">163</th><td><i>    // the pointer to the current frame.</i></td></tr>
+<tr><th id="164">164</th><td><i>    //</i></td></tr>
+<tr><th id="165">165</th><td><u>#<span data-ppcond="165">ifndef</span> <a class="macro" href="../../../../../../../wave/include/boost/wave/wave_config.hpp.html#240" data-ref="_M/PHOENIX_THREADSAFE">PHOENIX_THREADSAFE</a></u></td></tr>
+<tr><th id="166">166</th><td>    <b>template</b> &lt;<b>typename</b> FrameT&gt;</td></tr>
+<tr><th id="167">167</th><td>    <b>struct</b> closure_frame_holder</td></tr>
+<tr><th id="168">168</th><td>    {</td></tr>
+<tr><th id="169">169</th><td>        <b>typedef</b> FrameT frame_t;</td></tr>
+<tr><th id="170">170</th><td>        <b>typedef</b> frame_t *frame_ptr;</td></tr>
+<tr><th id="171">171</th><td></td></tr>
+<tr><th id="172">172</th><td>        closure_frame_holder() : frame(<var>0</var>) {}</td></tr>
+<tr><th id="173">173</th><td></td></tr>
+<tr><th id="174">174</th><td>        frame_ptr &amp;get() { <b>return</b> frame; }</td></tr>
+<tr><th id="175">175</th><td>        <em>void</em> set(frame_t *f) { frame = f; }</td></tr>
+<tr><th id="176">176</th><td></td></tr>
+<tr><th id="177">177</th><td>    <b>private</b>:</td></tr>
+<tr><th id="178">178</th><td>        frame_ptr frame;</td></tr>
+<tr><th id="179">179</th><td></td></tr>
+<tr><th id="180">180</th><td>        <i>// no copies, no assignments</i></td></tr>
+<tr><th id="181">181</th><td>        closure_frame_holder(closure_frame_holder <em>const</em> &amp;);</td></tr>
+<tr><th id="182">182</th><td>        closure_frame_holder &amp;<b>operator</b>=(closure_frame_holder <em>const</em> &amp;);</td></tr>
+<tr><th id="183">183</th><td>    };</td></tr>
+<tr><th id="184">184</th><td><u>#<span data-ppcond="165">else</span></u></td></tr>
+<tr><th id="185">185</th><td>    <b>template</b> &lt;<b>typename</b> FrameT&gt;</td></tr>
+<tr><th id="186">186</th><td>    <b>struct</b> <dfn class="type def" id="phoenix::impl::closure_frame_holder" title='phoenix::impl::closure_frame_holder' data-ref="phoenix::impl::closure_frame_holder">closure_frame_holder</dfn></td></tr>
+<tr><th id="187">187</th><td>    {</td></tr>
+<tr><th id="188">188</th><td>        <b>typedef</b> FrameT   <dfn class="typedef" id="phoenix::impl::closure_frame_holder::frame_t" title='phoenix::impl::closure_frame_holder::frame_t' data-type='FrameT' data-ref="phoenix::impl::closure_frame_holder::frame_t">frame_t</dfn>;</td></tr>
+<tr><th id="189">189</th><td>        <b>typedef</b> <a class="typedef" href="#phoenix::impl::closure_frame_holder::frame_t" title='phoenix::impl::closure_frame_holder::frame_t' data-type='FrameT' data-ref="phoenix::impl::closure_frame_holder::frame_t">frame_t</a> *<dfn class="typedef" id="phoenix::impl::closure_frame_holder::frame_ptr" title='phoenix::impl::closure_frame_holder::frame_ptr' data-type='phoenix::impl::closure_frame_holder::frame_t *' data-ref="phoenix::impl::closure_frame_holder::frame_ptr">frame_ptr</dfn>;</td></tr>
+<tr><th id="190">190</th><td></td></tr>
+<tr><th id="191">191</th><td>        <dfn class="decl def fn" id="_ZN7phoenix4impl20closure_frame_holderC1Ev" title='phoenix::impl::closure_frame_holder::closure_frame_holder&lt;FrameT&gt;' data-ref="_ZN7phoenix4impl20closure_frame_holderC1Ev">closure_frame_holder</dfn>() : <a class="member field" href="#phoenix::impl::closure_frame_holder::tsp_frame" title='phoenix::impl::closure_frame_holder::tsp_frame' data-ref="phoenix::impl::closure_frame_holder::tsp_frame">tsp_frame</a>() {}</td></tr>
+<tr><th id="192">192</th><td></td></tr>
+<tr><th id="193">193</th><td>        <a class="typedef" href="#phoenix::impl::closure_frame_holder::frame_ptr" title='phoenix::impl::closure_frame_holder::frame_ptr' data-type='phoenix::impl::closure_frame_holder::frame_t *' data-ref="phoenix::impl::closure_frame_holder::frame_ptr">frame_ptr</a> &amp;<dfn class="decl def fn" id="_ZN7phoenix4impl20closure_frame_holder3getEv" title='phoenix::impl::closure_frame_holder::get' data-ref="_ZN7phoenix4impl20closure_frame_holder3getEv">get</dfn>()</td></tr>
+<tr><th id="194">194</th><td>        {</td></tr>
+<tr><th id="195">195</th><td>            <b>if</b> (!<a class="member field" href="#phoenix::impl::closure_frame_holder::tsp_frame" title='phoenix::impl::closure_frame_holder::tsp_frame' data-ref="phoenix::impl::closure_frame_holder::tsp_frame">tsp_frame</a>.get())</td></tr>
+<tr><th id="196">196</th><td>                <a class="member field" href="#phoenix::impl::closure_frame_holder::tsp_frame" title='phoenix::impl::closure_frame_holder::tsp_frame' data-ref="phoenix::impl::closure_frame_holder::tsp_frame">tsp_frame</a>.reset(<b>new</b> <a class="typedef" href="#phoenix::impl::closure_frame_holder::frame_ptr" title='phoenix::impl::closure_frame_holder::frame_ptr' data-type='phoenix::impl::closure_frame_holder::frame_t *' data-ref="phoenix::impl::closure_frame_holder::frame_ptr">frame_ptr</a>(<var>0</var>));</td></tr>
+<tr><th id="197">197</th><td>            <b>return</b> *<a class="member field" href="#phoenix::impl::closure_frame_holder::tsp_frame" title='phoenix::impl::closure_frame_holder::tsp_frame' data-ref="phoenix::impl::closure_frame_holder::tsp_frame">tsp_frame</a>;</td></tr>
+<tr><th id="198">198</th><td>        }</td></tr>
+<tr><th id="199">199</th><td>        <em>void</em> <dfn class="decl def fn" id="_ZN7phoenix4impl20closure_frame_holder3setEPT_" title='phoenix::impl::closure_frame_holder::set' data-ref="_ZN7phoenix4impl20closure_frame_holder3setEPT_">set</dfn>(<a class="typedef" href="#phoenix::impl::closure_frame_holder::frame_ptr" title='phoenix::impl::closure_frame_holder::frame_ptr' data-type='phoenix::impl::closure_frame_holder::frame_t *' data-ref="phoenix::impl::closure_frame_holder::frame_ptr">frame_ptr</a> <dfn class="local col1 decl" id="881f" title='f' data-type='phoenix::impl::closure_frame_holder::frame_ptr' data-ref="881f">f</dfn>)</td></tr>
+<tr><th id="200">200</th><td>        {</td></tr>
+<tr><th id="201">201</th><td>            *<a class="member field" href="#phoenix::impl::closure_frame_holder::tsp_frame" title='phoenix::impl::closure_frame_holder::tsp_frame' data-ref="phoenix::impl::closure_frame_holder::tsp_frame">tsp_frame</a> = <a class="local col1 ref" href="#881f" title='f' data-ref="881f">f</a>;</td></tr>
+<tr><th id="202">202</th><td>        }</td></tr>
+<tr><th id="203">203</th><td></td></tr>
+<tr><th id="204">204</th><td>    <b>private</b>:</td></tr>
+<tr><th id="205">205</th><td>        <span class="namespace">boost::</span><a class="type" href="../../../../../../../thread/include/boost/thread/tss.hpp.html#boost::thread_specific_ptr" title='boost::thread_specific_ptr' data-ref="boost::thread_specific_ptr">thread_specific_ptr</a>&lt;<a class="typedef" href="#phoenix::impl::closure_frame_holder::frame_ptr" title='phoenix::impl::closure_frame_holder::frame_ptr' data-type='phoenix::impl::closure_frame_holder::frame_t *' data-ref="phoenix::impl::closure_frame_holder::frame_ptr">frame_ptr</a>&gt; <dfn class="decl field" id="phoenix::impl::closure_frame_holder::tsp_frame" title='phoenix::impl::closure_frame_holder::tsp_frame' data-ref="phoenix::impl::closure_frame_holder::tsp_frame">tsp_frame</dfn>;</td></tr>
+<tr><th id="206">206</th><td></td></tr>
+<tr><th id="207">207</th><td>        <i>// no copies, no assignments</i></td></tr>
+<tr><th id="208">208</th><td>        <dfn class="decl fn" id="_ZN7phoenix4impl20closure_frame_holderC1ERKNS0_20closure_frame_holderIT_EE" title='phoenix::impl::closure_frame_holder::closure_frame_holder&lt;FrameT&gt;' data-ref="_ZN7phoenix4impl20closure_frame_holderC1ERKNS0_20closure_frame_holderIT_EE">closure_frame_holder</dfn>(closure_frame_holder <em>const</em> &amp;);</td></tr>
+<tr><th id="209">209</th><td>        closure_frame_holder &amp;<dfn class="decl fn" id="_ZN7phoenix4impl20closure_frame_holderaSERKNS0_20closure_frame_holderIT_EE" title='phoenix::impl::closure_frame_holder::operator=' data-ref="_ZN7phoenix4impl20closure_frame_holderaSERKNS0_20closure_frame_holderIT_EE"><b>operator</b>=</dfn>(closure_frame_holder <em>const</em> &amp;);</td></tr>
+<tr><th id="210">210</th><td>    };</td></tr>
+<tr><th id="211">211</th><td><u>#<span data-ppcond="165">endif</span></u></td></tr>
+<tr><th id="212">212</th><td>} <i>// namespace phoenix::impl</i></td></tr>
+<tr><th id="213">213</th><td></td></tr>
+<tr><th id="214">214</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="215">215</th><td><i>//</i></td></tr>
+<tr><th id="216">216</th><td><i>//  closure_frame class</i></td></tr>
+<tr><th id="217">217</th><td><i>//</i></td></tr>
+<tr><th id="218">218</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="219">219</th><td><b>template</b> &lt;<b>typename</b> ClosureT&gt;</td></tr>
+<tr><th id="220">220</th><td><b>class</b> <dfn class="type def" id="phoenix::closure_frame" title='phoenix::closure_frame' data-ref="phoenix::closure_frame">closure_frame</dfn> : <b>public</b> ClosureT::tuple_t {</td></tr>
+<tr><th id="221">221</th><td></td></tr>
+<tr><th id="222">222</th><td><b>public</b>:</td></tr>
+<tr><th id="223">223</th><td></td></tr>
+<tr><th id="224">224</th><td>    <dfn class="decl def fn" id="_ZN7phoenix13closure_frameC1ERKT_" title='phoenix::closure_frame::closure_frame&lt;ClosureT&gt;' data-ref="_ZN7phoenix13closure_frameC1ERKT_">closure_frame</dfn>(ClosureT <em>const</em>&amp; <dfn class="local col2 decl" id="882clos" title='clos' data-type='const ClosureT &amp;' data-ref="882clos">clos</dfn>)</td></tr>
+<tr><th id="225">225</th><td>    : ClosureT::tuple_t(), <a class="member field" href="#phoenix::closure_frame::save" title='phoenix::closure_frame::save' data-ref="phoenix::closure_frame::save">save</a>(<a class="local col2 ref" href="#882clos" title='clos' data-ref="882clos">clos</a>.frame.get()), <a class="member field" href="#phoenix::closure_frame::frame" title='phoenix::closure_frame::frame' data-ref="phoenix::closure_frame::frame">frame</a>(<a class="local col2 ref" href="#882clos" title='clos' data-ref="882clos">clos</a>.frame)</td></tr>
+<tr><th id="226">226</th><td>    { <a class="local col2 ref" href="#882clos" title='clos' data-ref="882clos">clos</a>.frame.set(<b>this</b>); }</td></tr>
+<tr><th id="227">227</th><td></td></tr>
+<tr><th id="228">228</th><td>    <b>template</b> &lt;<b>typename</b> TupleT&gt;</td></tr>
+<tr><th id="229">229</th><td>    <dfn class="decl def fn" id="_ZN7phoenix13closure_frameC1ERKT_RKTL0__" title='phoenix::closure_frame::closure_frame&lt;ClosureT&gt;' data-ref="_ZN7phoenix13closure_frameC1ERKT_RKTL0__">closure_frame</dfn>(ClosureT <em>const</em>&amp; <dfn class="local col3 decl" id="883clos" title='clos' data-type='const ClosureT &amp;' data-ref="883clos">clos</dfn>, TupleT <em>const</em>&amp; <dfn class="local col4 decl" id="884init" title='init' data-type='const TupleT &amp;' data-ref="884init">init</dfn>)</td></tr>
+<tr><th id="230">230</th><td>    : ClosureT::tuple_t(<a class="local col4 ref" href="#884init" title='init' data-ref="884init">init</a>), <a class="member field" href="#phoenix::closure_frame::save" title='phoenix::closure_frame::save' data-ref="phoenix::closure_frame::save">save</a>(<a class="local col3 ref" href="#883clos" title='clos' data-ref="883clos">clos</a>.frame.get()), <a class="member field" href="#phoenix::closure_frame::frame" title='phoenix::closure_frame::frame' data-ref="phoenix::closure_frame::frame">frame</a>(<a class="local col3 ref" href="#883clos" title='clos' data-ref="883clos">clos</a>.frame)</td></tr>
+<tr><th id="231">231</th><td>    { <a class="local col3 ref" href="#883clos" title='clos' data-ref="883clos">clos</a>.frame.set(<b>this</b>); }</td></tr>
+<tr><th id="232">232</th><td></td></tr>
+<tr><th id="233">233</th><td>    <dfn class="decl def fn" id="_ZN7phoenix13closure_frameD1Ev" title='phoenix::closure_frame::~closure_frame&lt;ClosureT&gt;' data-ref="_ZN7phoenix13closure_frameD1Ev">~closure_frame</dfn>()</td></tr>
+<tr><th id="234">234</th><td>    { <a class="member field" href="#phoenix::closure_frame::frame" title='phoenix::closure_frame::frame' data-ref="phoenix::closure_frame::frame">frame</a>.set(<a class="member field" href="#phoenix::closure_frame::save" title='phoenix::closure_frame::save' data-ref="phoenix::closure_frame::save">save</a>); }</td></tr>
+<tr><th id="235">235</th><td></td></tr>
+<tr><th id="236">236</th><td><b>private</b>:</td></tr>
+<tr><th id="237">237</th><td></td></tr>
+<tr><th id="238">238</th><td>    <dfn class="decl fn" id="_ZN7phoenix13closure_frameC1ERKNS_13closure_frameIT_EE" title='phoenix::closure_frame::closure_frame&lt;ClosureT&gt;' data-ref="_ZN7phoenix13closure_frameC1ERKNS_13closure_frameIT_EE">closure_frame</dfn>(closure_frame <em>const</em>&amp;);            <i>// no copy</i></td></tr>
+<tr><th id="239">239</th><td>    closure_frame&amp; <dfn class="decl fn" id="_ZN7phoenix13closure_frameaSERKNS_13closure_frameIT_EE" title='phoenix::closure_frame::operator=' data-ref="_ZN7phoenix13closure_frameaSERKNS_13closure_frameIT_EE"><b>operator</b>=</dfn>(closure_frame <em>const</em>&amp;); <i>// no assign</i></td></tr>
+<tr><th id="240">240</th><td></td></tr>
+<tr><th id="241">241</th><td>    closure_frame* <dfn class="decl field" id="phoenix::closure_frame::save" title='phoenix::closure_frame::save' data-ref="phoenix::closure_frame::save">save</dfn>;</td></tr>
+<tr><th id="242">242</th><td>    <span class="namespace">impl::</span><a class="type" href="#phoenix::impl::closure_frame_holder" title='phoenix::impl::closure_frame_holder' data-ref="phoenix::impl::closure_frame_holder">closure_frame_holder</a>&lt;closure_frame&gt;&amp; <dfn class="decl field" id="phoenix::closure_frame::frame" title='phoenix::closure_frame::frame' data-ref="phoenix::closure_frame::frame">frame</dfn>;</td></tr>
+<tr><th id="243">243</th><td>};</td></tr>
+<tr><th id="244">244</th><td></td></tr>
+<tr><th id="245">245</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="246">246</th><td><i>//</i></td></tr>
+<tr><th id="247">247</th><td><i>//  closure_member class</i></td></tr>
+<tr><th id="248">248</th><td><i>//</i></td></tr>
+<tr><th id="249">249</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="250">250</th><td><b>template</b> &lt;<em>int</em> N, <b>typename</b> ClosureT&gt;</td></tr>
+<tr><th id="251">251</th><td><b>class</b> <dfn class="type def" id="phoenix::closure_member" title='phoenix::closure_member' data-ref="phoenix::closure_member">closure_member</dfn> {</td></tr>
+<tr><th id="252">252</th><td></td></tr>
+<tr><th id="253">253</th><td><b>public</b>:</td></tr>
+<tr><th id="254">254</th><td></td></tr>
+<tr><th id="255">255</th><td>    <b>typedef</b> <b>typename</b> ClosureT::tuple_t <dfn class="typedef" id="phoenix::closure_member::tuple_t" title='phoenix::closure_member::tuple_t' data-type='typename ClosureT::tuple_t' data-ref="phoenix::closure_member::tuple_t">tuple_t</dfn>;</td></tr>
+<tr><th id="256">256</th><td></td></tr>
+<tr><th id="257">257</th><td>    <dfn class="decl def fn" id="_ZN7phoenix14closure_memberC1Ev" title='phoenix::closure_member::closure_member&lt;N, ClosureT&gt;' data-ref="_ZN7phoenix14closure_memberC1Ev">closure_member</dfn>()</td></tr>
+<tr><th id="258">258</th><td>    : <a class="member field" href="#phoenix::closure_member::frame" title='phoenix::closure_member::frame' data-ref="phoenix::closure_member::frame">frame</a>(ClosureT::closure_frame_holder_ref()) {}</td></tr>
+<tr><th id="259">259</th><td></td></tr>
+<tr><th id="260">260</th><td>    <b>template</b> &lt;<b>typename</b> TupleT&gt;</td></tr>
+<tr><th id="261">261</th><td>    <b>struct</b> <dfn class="type def" id="phoenix::closure_member::result" title='phoenix::closure_member::result' data-ref="phoenix::closure_member::result">result</dfn> {</td></tr>
+<tr><th id="262">262</th><td></td></tr>
+<tr><th id="263">263</th><td>        <b>typedef</b> <b>typename</b> <a class="type" href="tuples.hpp.html#phoenix::tuple_element" title='phoenix::tuple_element' data-ref="phoenix::tuple_element">tuple_element</a>&lt;</td></tr>
+<tr><th id="264">264</th><td>            <a class="tu member" href="#phoenix::closure_member::N" title='phoenix::closure_member::N' data-ref="phoenix::closure_member::N">N</a>, <b>typename</b> ClosureT::tuple_t</td></tr>
+<tr><th id="265">265</th><td>        &gt;::rtype <dfn class="typedef" id="phoenix::closure_member::result::type" title='phoenix::closure_member::result::type' data-type='typename tuple_element&lt;N, typename ClosureT::tuple_t&gt;::rtype' data-ref="phoenix::closure_member::result::type">type</dfn>;</td></tr>
+<tr><th id="266">266</th><td>    };</td></tr>
+<tr><th id="267">267</th><td></td></tr>
+<tr><th id="268">268</th><td>    <b>template</b> &lt;<b>typename</b> TupleT&gt;</td></tr>
+<tr><th id="269">269</th><td>    <b>typename</b> <a class="type" href="tuples.hpp.html#phoenix::tuple_element" title='phoenix::tuple_element' data-ref="phoenix::tuple_element">tuple_element</a>&lt;<a class="tu member" href="#phoenix::closure_member::N" title='phoenix::closure_member::N' data-ref="phoenix::closure_member::N">N</a>, <b>typename</b> ClosureT::tuple_t&gt;::rtype</td></tr>
+<tr><th id="270">270</th><td>    <dfn class="decl def fn" id="_ZNK7phoenix14closure_member4evalERKTL0__" title='phoenix::closure_member::eval' data-ref="_ZNK7phoenix14closure_member4evalERKTL0__">eval</dfn>(TupleT <em>const</em>&amp; <i>/*args*/</i>) <em>const</em></td></tr>
+<tr><th id="271">271</th><td>    {</td></tr>
+<tr><th id="272">272</th><td>        <b>using</b> <b>namespace</b> <span class="namespace">std</span>;</td></tr>
+<tr><th id="273">273</th><td>        <a class="macro" href="../../../../../../../assert/include/boost/assert.hpp.html#60" title="(static_cast&lt;void&gt; (0))" data-ref="_M/BOOST_ASSERT">BOOST_ASSERT</a>(frame.get() != <var>0</var>);</td></tr>
+<tr><th id="274">274</th><td>        <a class="type" href="tuples.hpp.html#phoenix::tuple_index" title='phoenix::tuple_index' data-ref="phoenix::tuple_index">tuple_index</a>&lt;<a class="tu member" href="#phoenix::closure_member::N" title='phoenix::closure_member::N' data-ref="phoenix::closure_member::N">N</a>&gt; <em>const</em> <dfn class="local col5 decl" id="885idx" title='idx' data-type='const tuple_index&lt;N&gt;' data-ref="885idx">idx</dfn>;</td></tr>
+<tr><th id="275">275</th><td>        <b>return</b> (*<a class="member field" href="#phoenix::closure_member::frame" title='phoenix::closure_member::frame' data-ref="phoenix::closure_member::frame">frame</a>.get())[<a class="local col5 ref" href="#885idx" title='idx' data-ref="885idx">idx</a>];</td></tr>
+<tr><th id="276">276</th><td>    }</td></tr>
+<tr><th id="277">277</th><td></td></tr>
+<tr><th id="278">278</th><td><b>private</b>:</td></tr>
+<tr><th id="279">279</th><td>    <span class="namespace">impl::</span><a class="type" href="#phoenix::impl::closure_frame_holder" title='phoenix::impl::closure_frame_holder' data-ref="phoenix::impl::closure_frame_holder">closure_frame_holder</a>&lt;<b>typename</b> ClosureT::closure_frame_t&gt; &amp;<dfn class="decl field" id="phoenix::closure_member::frame" title='phoenix::closure_member::frame' data-ref="phoenix::closure_member::frame">frame</dfn>;</td></tr>
+<tr><th id="280">280</th><td>};</td></tr>
+<tr><th id="281">281</th><td></td></tr>
+<tr><th id="282">282</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="283">283</th><td><i>//</i></td></tr>
+<tr><th id="284">284</th><td><i>//  closure class</i></td></tr>
+<tr><th id="285">285</th><td><i>//</i></td></tr>
+<tr><th id="286">286</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="287">287</th><td><b>template</b> &lt;</td></tr>
+<tr><th id="288">288</th><td>        <b>typename</b> T0 = <a class="type" href="tuples.hpp.html#phoenix::nil_t" title='phoenix::nil_t' data-ref="phoenix::nil_t">nil_t</a></td></tr>
+<tr><th id="289">289</th><td>    ,   <b>typename</b> T1 = <a class="type" href="tuples.hpp.html#phoenix::nil_t" title='phoenix::nil_t' data-ref="phoenix::nil_t">nil_t</a></td></tr>
+<tr><th id="290">290</th><td>    ,   <b>typename</b> T2 = <a class="type" href="tuples.hpp.html#phoenix::nil_t" title='phoenix::nil_t' data-ref="phoenix::nil_t">nil_t</a></td></tr>
+<tr><th id="291">291</th><td></td></tr>
+<tr><th id="292">292</th><td><u>#<span data-ppcond="292">if</span> <a class="macro" href="../../../../../../../wave/include/boost/wave/wave_config.hpp.html#474" title="6" data-ref="_M/PHOENIX_LIMIT">PHOENIX_LIMIT</a> &gt; 3</u></td></tr>
+<tr><th id="293">293</th><td>    ,   <b>typename</b> T3 = <a class="type" href="tuples.hpp.html#phoenix::nil_t" title='phoenix::nil_t' data-ref="phoenix::nil_t">nil_t</a></td></tr>
+<tr><th id="294">294</th><td>    ,   <b>typename</b> T4 = <a class="type" href="tuples.hpp.html#phoenix::nil_t" title='phoenix::nil_t' data-ref="phoenix::nil_t">nil_t</a></td></tr>
+<tr><th id="295">295</th><td>    ,   <b>typename</b> T5 = <a class="type" href="tuples.hpp.html#phoenix::nil_t" title='phoenix::nil_t' data-ref="phoenix::nil_t">nil_t</a></td></tr>
+<tr><th id="296">296</th><td></td></tr>
+<tr><th id="297">297</th><td><u>#<span data-ppcond="297">if</span> <a class="macro" href="../../../../../../../wave/include/boost/wave/wave_config.hpp.html#474" title="6" data-ref="_M/PHOENIX_LIMIT">PHOENIX_LIMIT</a> &gt; 6</u></td></tr>
+<tr><th id="298">298</th><td>    ,   <b>typename</b> T6 = nil_t</td></tr>
+<tr><th id="299">299</th><td>    ,   <b>typename</b> T7 = nil_t</td></tr>
+<tr><th id="300">300</th><td>    ,   <b>typename</b> T8 = nil_t</td></tr>
+<tr><th id="301">301</th><td></td></tr>
+<tr><th id="302">302</th><td><u>#if PHOENIX_LIMIT &gt; 9</u></td></tr>
+<tr><th id="303">303</th><td>    ,   <b>typename</b> T9 = nil_t</td></tr>
+<tr><th id="304">304</th><td>    ,   <b>typename</b> T10 = nil_t</td></tr>
+<tr><th id="305">305</th><td>    ,   <b>typename</b> T11 = nil_t</td></tr>
+<tr><th id="306">306</th><td></td></tr>
+<tr><th id="307">307</th><td><u>#if PHOENIX_LIMIT &gt; 12</u></td></tr>
+<tr><th id="308">308</th><td>    ,   <b>typename</b> T12 = nil_t</td></tr>
+<tr><th id="309">309</th><td>    ,   <b>typename</b> T13 = nil_t</td></tr>
+<tr><th id="310">310</th><td>    ,   <b>typename</b> T14 = nil_t</td></tr>
+<tr><th id="311">311</th><td></td></tr>
+<tr><th id="312">312</th><td><u>#endif</u></td></tr>
+<tr><th id="313">313</th><td><u>#endif</u></td></tr>
+<tr><th id="314">314</th><td><u>#<span data-ppcond="297">endif</span></u></td></tr>
+<tr><th id="315">315</th><td><u>#<span data-ppcond="292">endif</span></u></td></tr>
+<tr><th id="316">316</th><td>&gt;</td></tr>
+<tr><th id="317">317</th><td><b>class</b> <dfn class="type def" id="phoenix::closure" title='phoenix::closure' data-ref="phoenix::closure">closure</dfn> {</td></tr>
+<tr><th id="318">318</th><td></td></tr>
+<tr><th id="319">319</th><td><b>public</b>:</td></tr>
+<tr><th id="320">320</th><td></td></tr>
+<tr><th id="321">321</th><td>    <b>typedef</b> <a class="type" href="tuples.hpp.html#phoenix::tuple" title='phoenix::tuple' data-ref="phoenix::tuple">tuple</a>&lt;</td></tr>
+<tr><th id="322">322</th><td>            T0, T1, T2</td></tr>
+<tr><th id="323">323</th><td><u>#<span data-ppcond="323">if</span> <a class="macro" href="../../../../../../../wave/include/boost/wave/wave_config.hpp.html#474" title="6" data-ref="_M/PHOENIX_LIMIT">PHOENIX_LIMIT</a> &gt; 3</u></td></tr>
+<tr><th id="324">324</th><td>        ,   T3, T4, T5</td></tr>
+<tr><th id="325">325</th><td><u>#<span data-ppcond="325">if</span> <a class="macro" href="../../../../../../../wave/include/boost/wave/wave_config.hpp.html#474" title="6" data-ref="_M/PHOENIX_LIMIT">PHOENIX_LIMIT</a> &gt; 6</u></td></tr>
+<tr><th id="326">326</th><td>        ,   T6, T7, T8</td></tr>
+<tr><th id="327">327</th><td><u>#if PHOENIX_LIMIT &gt; 9</u></td></tr>
+<tr><th id="328">328</th><td>        ,   T9, T10, T11</td></tr>
+<tr><th id="329">329</th><td><u>#if PHOENIX_LIMIT &gt; 12</u></td></tr>
+<tr><th id="330">330</th><td>        ,   T12, T13, T14</td></tr>
+<tr><th id="331">331</th><td><u>#endif</u></td></tr>
+<tr><th id="332">332</th><td><u>#endif</u></td></tr>
+<tr><th id="333">333</th><td><u>#<span data-ppcond="325">endif</span></u></td></tr>
+<tr><th id="334">334</th><td><u>#<span data-ppcond="323">endif</span></u></td></tr>
+<tr><th id="335">335</th><td>        &gt; <dfn class="typedef" id="phoenix::closure::tuple_t" title='phoenix::closure::tuple_t' data-type='tuple&lt;T0, T1, T2, T3, T4, T5&gt;' data-ref="phoenix::closure::tuple_t">tuple_t</dfn>;</td></tr>
+<tr><th id="336">336</th><td></td></tr>
+<tr><th id="337">337</th><td>    <b>typedef</b> <a class="type" href="#phoenix::closure" title='phoenix::closure' data-ref="phoenix::closure">closure</a>&lt;</td></tr>
+<tr><th id="338">338</th><td>            T0, T1, T2</td></tr>
+<tr><th id="339">339</th><td><u>#<span data-ppcond="339">if</span> <a class="macro" href="../../../../../../../wave/include/boost/wave/wave_config.hpp.html#474" title="6" data-ref="_M/PHOENIX_LIMIT">PHOENIX_LIMIT</a> &gt; 3</u></td></tr>
+<tr><th id="340">340</th><td>        ,   T3, T4, T5</td></tr>
+<tr><th id="341">341</th><td><u>#<span data-ppcond="341">if</span> <a class="macro" href="../../../../../../../wave/include/boost/wave/wave_config.hpp.html#474" title="6" data-ref="_M/PHOENIX_LIMIT">PHOENIX_LIMIT</a> &gt; 6</u></td></tr>
+<tr><th id="342">342</th><td>        ,   T6, T7, T8</td></tr>
+<tr><th id="343">343</th><td><u>#if PHOENIX_LIMIT &gt; 9</u></td></tr>
+<tr><th id="344">344</th><td>        ,   T9, T10, T11</td></tr>
+<tr><th id="345">345</th><td><u>#if PHOENIX_LIMIT &gt; 12</u></td></tr>
+<tr><th id="346">346</th><td>        ,   T12, T13, T14</td></tr>
+<tr><th id="347">347</th><td><u>#endif</u></td></tr>
+<tr><th id="348">348</th><td><u>#endif</u></td></tr>
+<tr><th id="349">349</th><td><u>#<span data-ppcond="341">endif</span></u></td></tr>
+<tr><th id="350">350</th><td><u>#<span data-ppcond="339">endif</span></u></td></tr>
+<tr><th id="351">351</th><td>        &gt; <dfn class="typedef" id="phoenix::closure::self_t" title='phoenix::closure::self_t' data-type='closure&lt;T0, T1, T2, T3, T4, T5&gt;' data-ref="phoenix::closure::self_t">self_t</dfn>;</td></tr>
+<tr><th id="352">352</th><td></td></tr>
+<tr><th id="353">353</th><td>    <b>typedef</b> <a class="type" href="#phoenix::closure_frame" title='phoenix::closure_frame' data-ref="phoenix::closure_frame">closure_frame</a>&lt;<a class="typedef" href="#phoenix::closure::self_t" title='phoenix::closure::self_t' data-type='closure&lt;T0, T1, T2, T3, T4, T5&gt;' data-ref="phoenix::closure::self_t">self_t</a>&gt; <dfn class="typedef" id="phoenix::closure::closure_frame_t" title='phoenix::closure::closure_frame_t' data-type='closure_frame&lt;phoenix::closure::self_t&gt;' data-ref="phoenix::closure::closure_frame_t">closure_frame_t</dfn>;</td></tr>
+<tr><th id="354">354</th><td></td></tr>
+<tr><th id="355">355</th><td>                            <dfn class="decl def fn" id="_ZN7phoenix7closureC1Ev" title='phoenix::closure::closure&lt;T0, T1, T2, T3, T4, T5&gt;' data-ref="_ZN7phoenix7closureC1Ev">closure</dfn>()</td></tr>
+<tr><th id="356">356</th><td>                            : <a class="member field" href="#phoenix::closure::frame" title='phoenix::closure::frame' data-ref="phoenix::closure::frame">frame</a>()       { <a class="member fn" href="#_ZN7phoenix7closure24closure_frame_holder_refEPNS_4impl20closure_frame_holderINS_13closure_frameINS_7closureIT_T0_T1_T2_T3_T4_EEEEEE" title='phoenix::closure::closure_frame_holder_ref' data-ref="_ZN7phoenix7closure24closure_frame_holder_refEPNS_4impl20closure_frame_holderINS_13closure_frameINS_7closureIT_T0_T1_T2_T3_T4_EEEEEE">closure_frame_holder_ref</a>(<span class='inlayHint'>holder_:&nbsp;</span>&amp;<a class="member field" href="#phoenix::closure::frame" title='phoenix::closure::frame' data-ref="phoenix::closure::frame">frame</a>); }</td></tr>
+<tr><th id="357">357</th><td></td></tr>
+<tr><th id="358">358</th><td>    <b>typedef</b> <a class="type" href="actor.hpp.html#phoenix::actor" title='phoenix::actor' data-ref="phoenix::actor">actor</a>&lt;<a class="type" href="#phoenix::closure_member" title='phoenix::closure_member' data-ref="phoenix::closure_member">closure_member</a>&lt;<var>0</var>, <a class="typedef" href="#phoenix::closure::self_t" title='phoenix::closure::self_t' data-type='closure&lt;T0, T1, T2, T3, T4, T5&gt;' data-ref="phoenix::closure::self_t">self_t</a>&gt; &gt; <dfn class="typedef" id="phoenix::closure::member1" title='phoenix::closure::member1' data-type='actor&lt;closure_member&lt;0, phoenix::closure::self_t&gt;&gt;' data-ref="phoenix::closure::member1">member1</dfn>;</td></tr>
+<tr><th id="359">359</th><td>    <b>typedef</b> <a class="type" href="actor.hpp.html#phoenix::actor" title='phoenix::actor' data-ref="phoenix::actor">actor</a>&lt;<a class="type" href="#phoenix::closure_member" title='phoenix::closure_member' data-ref="phoenix::closure_member">closure_member</a>&lt;<var>1</var>, <a class="typedef" href="#phoenix::closure::self_t" title='phoenix::closure::self_t' data-type='closure&lt;T0, T1, T2, T3, T4, T5&gt;' data-ref="phoenix::closure::self_t">self_t</a>&gt; &gt; <dfn class="typedef" id="phoenix::closure::member2" title='phoenix::closure::member2' data-type='actor&lt;closure_member&lt;1, phoenix::closure::self_t&gt;&gt;' data-ref="phoenix::closure::member2">member2</dfn>;</td></tr>
+<tr><th id="360">360</th><td>    <b>typedef</b> <a class="type" href="actor.hpp.html#phoenix::actor" title='phoenix::actor' data-ref="phoenix::actor">actor</a>&lt;<a class="type" href="#phoenix::closure_member" title='phoenix::closure_member' data-ref="phoenix::closure_member">closure_member</a>&lt;<var>2</var>, <a class="typedef" href="#phoenix::closure::self_t" title='phoenix::closure::self_t' data-type='closure&lt;T0, T1, T2, T3, T4, T5&gt;' data-ref="phoenix::closure::self_t">self_t</a>&gt; &gt; <dfn class="typedef" id="phoenix::closure::member3" title='phoenix::closure::member3' data-type='actor&lt;closure_member&lt;2, phoenix::closure::self_t&gt;&gt;' data-ref="phoenix::closure::member3">member3</dfn>;</td></tr>
+<tr><th id="361">361</th><td></td></tr>
+<tr><th id="362">362</th><td><u>#<span data-ppcond="362">if</span> <a class="macro" href="../../../../../../../wave/include/boost/wave/wave_config.hpp.html#474" title="6" data-ref="_M/PHOENIX_LIMIT">PHOENIX_LIMIT</a> &gt; 3</u></td></tr>
+<tr><th id="363">363</th><td>    <b>typedef</b> <a class="type" href="actor.hpp.html#phoenix::actor" title='phoenix::actor' data-ref="phoenix::actor">actor</a>&lt;<a class="type" href="#phoenix::closure_member" title='phoenix::closure_member' data-ref="phoenix::closure_member">closure_member</a>&lt;<var>3</var>, <a class="typedef" href="#phoenix::closure::self_t" title='phoenix::closure::self_t' data-type='closure&lt;T0, T1, T2, T3, T4, T5&gt;' data-ref="phoenix::closure::self_t">self_t</a>&gt; &gt; <dfn class="typedef" id="phoenix::closure::member4" title='phoenix::closure::member4' data-type='actor&lt;closure_member&lt;3, phoenix::closure::self_t&gt;&gt;' data-ref="phoenix::closure::member4">member4</dfn>;</td></tr>
+<tr><th id="364">364</th><td>    <b>typedef</b> <a class="type" href="actor.hpp.html#phoenix::actor" title='phoenix::actor' data-ref="phoenix::actor">actor</a>&lt;<a class="type" href="#phoenix::closure_member" title='phoenix::closure_member' data-ref="phoenix::closure_member">closure_member</a>&lt;<var>4</var>, <a class="typedef" href="#phoenix::closure::self_t" title='phoenix::closure::self_t' data-type='closure&lt;T0, T1, T2, T3, T4, T5&gt;' data-ref="phoenix::closure::self_t">self_t</a>&gt; &gt; <dfn class="typedef" id="phoenix::closure::member5" title='phoenix::closure::member5' data-type='actor&lt;closure_member&lt;4, phoenix::closure::self_t&gt;&gt;' data-ref="phoenix::closure::member5">member5</dfn>;</td></tr>
+<tr><th id="365">365</th><td>    <b>typedef</b> <a class="type" href="actor.hpp.html#phoenix::actor" title='phoenix::actor' data-ref="phoenix::actor">actor</a>&lt;<a class="type" href="#phoenix::closure_member" title='phoenix::closure_member' data-ref="phoenix::closure_member">closure_member</a>&lt;<var>5</var>, <a class="typedef" href="#phoenix::closure::self_t" title='phoenix::closure::self_t' data-type='closure&lt;T0, T1, T2, T3, T4, T5&gt;' data-ref="phoenix::closure::self_t">self_t</a>&gt; &gt; <dfn class="typedef" id="phoenix::closure::member6" title='phoenix::closure::member6' data-type='actor&lt;closure_member&lt;5, phoenix::closure::self_t&gt;&gt;' data-ref="phoenix::closure::member6">member6</dfn>;</td></tr>
+<tr><th id="366">366</th><td></td></tr>
+<tr><th id="367">367</th><td><u>#<span data-ppcond="367">if</span> <a class="macro" href="../../../../../../../wave/include/boost/wave/wave_config.hpp.html#474" title="6" data-ref="_M/PHOENIX_LIMIT">PHOENIX_LIMIT</a> &gt; 6</u></td></tr>
+<tr><th id="368">368</th><td>    <b>typedef</b> actor&lt;closure_member&lt;<var>6</var>, self_t&gt; &gt; member7;</td></tr>
+<tr><th id="369">369</th><td>    <b>typedef</b> actor&lt;closure_member&lt;<var>7</var>, self_t&gt; &gt; member8;</td></tr>
+<tr><th id="370">370</th><td>    <b>typedef</b> actor&lt;closure_member&lt;<var>8</var>, self_t&gt; &gt; member9;</td></tr>
+<tr><th id="371">371</th><td></td></tr>
+<tr><th id="372">372</th><td><u>#if PHOENIX_LIMIT &gt; 9</u></td></tr>
+<tr><th id="373">373</th><td>    <b>typedef</b> actor&lt;closure_member&lt;<var>9</var>, self_t&gt; &gt; member10;</td></tr>
+<tr><th id="374">374</th><td>    <b>typedef</b> actor&lt;closure_member&lt;<var>10</var>, self_t&gt; &gt; member11;</td></tr>
+<tr><th id="375">375</th><td>    <b>typedef</b> actor&lt;closure_member&lt;<var>11</var>, self_t&gt; &gt; member12;</td></tr>
+<tr><th id="376">376</th><td></td></tr>
+<tr><th id="377">377</th><td><u>#if PHOENIX_LIMIT &gt; 12</u></td></tr>
+<tr><th id="378">378</th><td>    <b>typedef</b> actor&lt;closure_member&lt;<var>12</var>, self_t&gt; &gt; member13;</td></tr>
+<tr><th id="379">379</th><td>    <b>typedef</b> actor&lt;closure_member&lt;<var>13</var>, self_t&gt; &gt; member14;</td></tr>
+<tr><th id="380">380</th><td>    <b>typedef</b> actor&lt;closure_member&lt;<var>14</var>, self_t&gt; &gt; member15;</td></tr>
+<tr><th id="381">381</th><td></td></tr>
+<tr><th id="382">382</th><td><u>#endif</u></td></tr>
+<tr><th id="383">383</th><td><u>#endif</u></td></tr>
+<tr><th id="384">384</th><td><u>#<span data-ppcond="367">endif</span></u></td></tr>
+<tr><th id="385">385</th><td><u>#<span data-ppcond="362">endif</span></u></td></tr>
+<tr><th id="386">386</th><td></td></tr>
+<tr><th id="387">387</th><td><u>#<span data-ppcond="387">if</span> !defined(<span class="macro" data-ref="_M/__MWERKS__">__MWERKS__</span>) || (__MWERKS__ &gt; 0x3002)</u></td></tr>
+<tr><th id="388">388</th><td><b>private</b>:</td></tr>
+<tr><th id="389">389</th><td><u>#<span data-ppcond="387">endif</span></u></td></tr>
+<tr><th id="390">390</th><td></td></tr>
+<tr><th id="391">391</th><td>    <dfn class="decl fn" id="_ZN7phoenix7closureC1ERKNS_7closureIT_T0_T1_T2_T3_T4_EE" title='phoenix::closure::closure&lt;T0, T1, T2, T3, T4, T5&gt;' data-ref="_ZN7phoenix7closureC1ERKNS_7closureIT_T0_T1_T2_T3_T4_EE">closure</dfn>(closure <em>const</em>&amp;);            <i>// no copy</i></td></tr>
+<tr><th id="392">392</th><td>    closure&amp; <dfn class="decl fn" id="_ZN7phoenix7closureaSERKNS_7closureIT_T0_T1_T2_T3_T4_EE" title='phoenix::closure::operator=' data-ref="_ZN7phoenix7closureaSERKNS_7closureIT_T0_T1_T2_T3_T4_EE"><b>operator</b>=</dfn>(closure <em>const</em>&amp;); <i>// no assign</i></td></tr>
+<tr><th id="393">393</th><td></td></tr>
+<tr><th id="394">394</th><td><u>#<span data-ppcond="394">if</span> !defined(<span class="macro" data-ref="_M/__MWERKS__">__MWERKS__</span>) || (__MWERKS__ &gt; 0x3002)</u></td></tr>
+<tr><th id="395">395</th><td>    <b>template</b> &lt;<em>int</em> N, <b>typename</b> ClosureT&gt;</td></tr>
+<tr><th id="396">396</th><td>    <b>friend</b> <b>class</b> <dfn class="type" id="phoenix::closure_member" title='phoenix::closure_member' data-ref="phoenix::closure_member">closure_member</dfn>;</td></tr>
+<tr><th id="397">397</th><td></td></tr>
+<tr><th id="398">398</th><td>    <b>template</b> &lt;<b>typename</b> ClosureT&gt;</td></tr>
+<tr><th id="399">399</th><td>    <b>friend</b> <b>class</b> <dfn class="type" id="phoenix::closure_frame" title='phoenix::closure_frame' data-ref="phoenix::closure_frame">closure_frame</dfn>;</td></tr>
+<tr><th id="400">400</th><td><u>#<span data-ppcond="394">endif</span></u></td></tr>
+<tr><th id="401">401</th><td></td></tr>
+<tr><th id="402">402</th><td>    <b>typedef</b> <span class="namespace">impl::</span><a class="type" href="#phoenix::impl::closure_frame_holder" title='phoenix::impl::closure_frame_holder' data-ref="phoenix::impl::closure_frame_holder">closure_frame_holder</a>&lt;<a class="typedef" href="#phoenix::closure::closure_frame_t" title='phoenix::closure::closure_frame_t' data-type='closure_frame&lt;phoenix::closure::self_t&gt;' data-ref="phoenix::closure::closure_frame_t">closure_frame_t</a>&gt; <dfn class="typedef" id="phoenix::closure::holder_t" title='phoenix::closure::holder_t' data-type='impl::closure_frame_holder&lt;closure_frame_t&gt;' data-ref="phoenix::closure::holder_t">holder_t</dfn>;</td></tr>
+<tr><th id="403">403</th><td></td></tr>
+<tr><th id="404">404</th><td><u>#<span data-ppcond="404">ifdef</span> <a class="macro" href="../../../../../../../wave/include/boost/wave/wave_config.hpp.html#240" data-ref="_M/PHOENIX_THREADSAFE">PHOENIX_THREADSAFE</a></u></td></tr>
+<tr><th id="405">405</th><td>    <em>static</em> <span class="namespace">boost::</span><a class="type" href="../../../../../../../thread/include/boost/thread/tss.hpp.html#boost::thread_specific_ptr" title='boost::thread_specific_ptr' data-ref="boost::thread_specific_ptr">thread_specific_ptr</a>&lt;<a class="typedef" href="#phoenix::closure::holder_t" title='phoenix::closure::holder_t' data-type='impl::closure_frame_holder&lt;closure_frame_t&gt;' data-ref="phoenix::closure::holder_t">holder_t</a>*&gt; &amp;</td></tr>
+<tr><th id="406">406</th><td>    <dfn class="decl def fn" id="_ZN7phoenix7closure18tsp_frame_instanceEv" title='phoenix::closure::tsp_frame_instance' data-ref="_ZN7phoenix7closure18tsp_frame_instanceEv">tsp_frame_instance</dfn>()</td></tr>
+<tr><th id="407">407</th><td>    {</td></tr>
+<tr><th id="408">408</th><td>        <em>static</em> <span class="namespace">boost::</span><a class="type" href="../../../../../../../thread/include/boost/thread/tss.hpp.html#boost::thread_specific_ptr" title='boost::thread_specific_ptr' data-ref="boost::thread_specific_ptr">thread_specific_ptr</a>&lt;<a class="typedef" href="#phoenix::closure::holder_t" title='phoenix::closure::holder_t' data-type='impl::closure_frame_holder&lt;closure_frame_t&gt;' data-ref="phoenix::closure::holder_t">holder_t</a>*&gt; <dfn class="local col6 decl" id="886the_instance" title='the_instance' data-type='boost::thread_specific_ptr&lt;holder_t *&gt;' data-ref="886the_instance">the_instance</dfn>;</td></tr>
+<tr><th id="409">409</th><td>        <b>return</b> <a class="local col6 ref" href="#886the_instance" title='the_instance' data-ref="886the_instance">the_instance</a>;</td></tr>
+<tr><th id="410">410</th><td>    }</td></tr>
+<tr><th id="411">411</th><td></td></tr>
+<tr><th id="412">412</th><td>    <em>static</em> <em>void</em></td></tr>
+<tr><th id="413">413</th><td>    <dfn class="decl def fn" id="_ZN7phoenix7closure23tsp_frame_instance_initEv" title='phoenix::closure::tsp_frame_instance_init' data-ref="_ZN7phoenix7closure23tsp_frame_instance_initEv">tsp_frame_instance_init</dfn>()</td></tr>
+<tr><th id="414">414</th><td>    {</td></tr>
+<tr><th id="415">415</th><td>        <a class="member fn" href="#_ZN7phoenix7closure18tsp_frame_instanceEv" title='phoenix::closure::tsp_frame_instance' data-ref="_ZN7phoenix7closure18tsp_frame_instanceEv">tsp_frame_instance</a>();</td></tr>
+<tr><th id="416">416</th><td>    }</td></tr>
+<tr><th id="417">417</th><td><u>#<span data-ppcond="404">endif</span></u></td></tr>
+<tr><th id="418">418</th><td></td></tr>
+<tr><th id="419">419</th><td>    <em>static</em> <a class="typedef" href="#phoenix::closure::holder_t" title='phoenix::closure::holder_t' data-type='impl::closure_frame_holder&lt;closure_frame_t&gt;' data-ref="phoenix::closure::holder_t">holder_t</a> &amp;</td></tr>
+<tr><th id="420">420</th><td>    <dfn class="decl def fn" id="_ZN7phoenix7closure24closure_frame_holder_refEPNS_4impl20closure_frame_holderINS_13closure_frameINS_7closureIT_T0_T1_T2_T3_T4_EEEEEE" title='phoenix::closure::closure_frame_holder_ref' data-ref="_ZN7phoenix7closure24closure_frame_holder_refEPNS_4impl20closure_frame_holderINS_13closure_frameINS_7closureIT_T0_T1_T2_T3_T4_EEEEEE">closure_frame_holder_ref</dfn>(<a class="typedef" href="#phoenix::closure::holder_t" title='phoenix::closure::holder_t' data-type='impl::closure_frame_holder&lt;closure_frame_t&gt;' data-ref="phoenix::closure::holder_t">holder_t</a>* <dfn class="local col7 decl" id="887holder_" title='holder_' data-type='phoenix::closure::holder_t *' data-ref="887holder_">holder_</dfn> = <var>0</var>)</td></tr>
+<tr><th id="421">421</th><td>    {</td></tr>
+<tr><th id="422">422</th><td><u>#<span data-ppcond="422">ifdef</span> <a class="macro" href="../../../../../../../wave/include/boost/wave/wave_config.hpp.html#240" data-ref="_M/PHOENIX_THREADSAFE">PHOENIX_THREADSAFE</a></u></td></tr>
+<tr><th id="423">423</th><td><u>#<span data-ppcond="423">ifndef</span> <span class="macro" data-ref="_M/BOOST_THREAD_PROVIDES_ONCE_CXX11">BOOST_THREAD_PROVIDES_ONCE_CXX11</span></u></td></tr>
+<tr><th id="424">424</th><td>        <em>static</em> <span class="namespace">boost::</span><a class="type" href="../../../../../../../thread/include/boost/thread/pthread/once_atomic.hpp.html#boost::once_flag" title='boost::once_flag' data-ref="boost::once_flag">once_flag</a> <dfn class="local col8 decl" id="888been_here" title='been_here' data-type='boost::once_flag' data-ref="888been_here">been_here</dfn> = <a class="macro" href="../../../../../../../thread/include/boost/thread/pthread/once_atomic.hpp.html#93" title="{0}" data-ref="_M/BOOST_ONCE_INIT">BOOST_ONCE_INIT</a>;</td></tr>
+<tr><th id="425">425</th><td><u>#<span data-ppcond="423">else</span></u></td></tr>
+<tr><th id="426">426</th><td>        <em>static</em> boost::once_flag been_here;</td></tr>
+<tr><th id="427">427</th><td><u>#<span data-ppcond="423">endif</span></u></td></tr>
+<tr><th id="428">428</th><td>        <span class="namespace">boost::</span><a class="ref fn" href="../../../../../../../thread/include/boost/thread/pthread/once_atomic.hpp.html#_ZN5boost9call_onceERNS_9once_flagEOT_DpOT0_" title='boost::call_once' data-ref="_ZN5boost9call_onceERNS_9once_flagEOT_DpOT0_">call_once</a>(<span class='inlayHint'>flag&amp;:&nbsp;</span><span class='refarg'><a class="local col8 ref" href="#888been_here" title='been_here' data-ref="888been_here">been_here</a></span>, <span class='inlayHint'>f&amp;:&nbsp;</span><span class='refarg'><a class="member fn" href="#_ZN7phoenix7closure23tsp_frame_instance_initEv" title='phoenix::closure::tsp_frame_instance_init' data-ref="_ZN7phoenix7closure23tsp_frame_instance_initEv">tsp_frame_instance_init</a></span>);</td></tr>
+<tr><th id="429">429</th><td>        <span class="namespace">boost::</span><a class="type" href="../../../../../../../thread/include/boost/thread/tss.hpp.html#boost::thread_specific_ptr" title='boost::thread_specific_ptr' data-ref="boost::thread_specific_ptr">thread_specific_ptr</a>&lt;<a class="typedef" href="#phoenix::closure::holder_t" title='phoenix::closure::holder_t' data-type='impl::closure_frame_holder&lt;closure_frame_t&gt;' data-ref="phoenix::closure::holder_t">holder_t</a>*&gt; &amp;<dfn class="local col9 decl" id="889tsp_frame" title='tsp_frame' data-type='boost::thread_specific_ptr&lt;holder_t *&gt; &amp;' data-ref="889tsp_frame">tsp_frame</dfn> = <a class="member fn" href="#_ZN7phoenix7closure18tsp_frame_instanceEv" title='phoenix::closure::tsp_frame_instance' data-ref="_ZN7phoenix7closure18tsp_frame_instanceEv">tsp_frame_instance</a>();</td></tr>
+<tr><th id="430">430</th><td>        <b>if</b> (!<a class="local col9 ref" href="#889tsp_frame" title='tsp_frame' data-ref="889tsp_frame">tsp_frame</a>.get())</td></tr>
+<tr><th id="431">431</th><td>            <a class="local col9 ref" href="#889tsp_frame" title='tsp_frame' data-ref="889tsp_frame">tsp_frame</a>.reset(<b>new</b> <a class="typedef" href="#phoenix::closure::holder_t" title='phoenix::closure::holder_t' data-type='impl::closure_frame_holder&lt;closure_frame_t&gt;' data-ref="phoenix::closure::holder_t">holder_t</a> *(<var>0</var>));</td></tr>
+<tr><th id="432">432</th><td>        <a class="typedef" href="#phoenix::closure::holder_t" title='phoenix::closure::holder_t' data-type='impl::closure_frame_holder&lt;closure_frame_t&gt;' data-ref="phoenix::closure::holder_t">holder_t</a> *&amp; <dfn class="local col0 decl" id="890holder" title='holder' data-type='phoenix::closure::holder_t *&amp;' data-ref="890holder">holder</dfn> = *<a class="local col9 ref" href="#889tsp_frame" title='tsp_frame' data-ref="889tsp_frame">tsp_frame</a>;</td></tr>
+<tr><th id="433">433</th><td><u>#<span data-ppcond="422">else</span></u></td></tr>
+<tr><th id="434">434</th><td>        <em>static</em> holder_t* holder = <var>0</var>;</td></tr>
+<tr><th id="435">435</th><td><u>#<span data-ppcond="422">endif</span></u></td></tr>
+<tr><th id="436">436</th><td>        <b>if</b> (<a class="local col7 ref" href="#887holder_" title='holder_' data-ref="887holder_">holder_</a> != <var>0</var>)</td></tr>
+<tr><th id="437">437</th><td>            <a class="local col0 ref" href="#890holder" title='holder' data-ref="890holder">holder</a> = <a class="local col7 ref" href="#887holder_" title='holder_' data-ref="887holder_">holder_</a>;</td></tr>
+<tr><th id="438">438</th><td>        <b>return</b> *<a class="local col0 ref" href="#890holder" title='holder' data-ref="890holder">holder</a>;</td></tr>
+<tr><th id="439">439</th><td>    }</td></tr>
+<tr><th id="440">440</th><td></td></tr>
+<tr><th id="441">441</th><td>    <em>mutable</em> <a class="typedef" href="#phoenix::closure::holder_t" title='phoenix::closure::holder_t' data-type='impl::closure_frame_holder&lt;closure_frame_t&gt;' data-ref="phoenix::closure::holder_t">holder_t</a> <dfn class="decl field" id="phoenix::closure::frame" title='phoenix::closure::frame' data-ref="phoenix::closure::frame">frame</dfn>;</td></tr>
+<tr><th id="442">442</th><td>};</td></tr>
+<tr><th id="443">443</th><td></td></tr>
+<tr><th id="444">444</th><td><u>#<span data-ppcond="444">if</span> <a class="macro" href="../../../../../../../config/include/boost/config/workaround.hpp.html#271" title="((1 + 0 == 0) &amp;&amp; (BOOST_MSVC != 0) &amp;&amp; (1 % (( (BOOST_MSVC &gt;= 1400) ) + 1)))" data-ref="_M/BOOST_WORKAROUND">BOOST_WORKAROUND</a>(BOOST_MSVC, &gt;= 1400)</u></td></tr>
+<tr><th id="445">445</th><td><u>#pragma warning(pop)</u></td></tr>
+<tr><th id="446">446</th><td><u>#<span data-ppcond="444">endif</span></u></td></tr>
+<tr><th id="447">447</th><td></td></tr>
+<tr><th id="448">448</th><td>}</td></tr>
+<tr><th id="449">449</th><td>   <i>//  namespace phoenix</i></td></tr>
+<tr><th id="450">450</th><td></td></tr>
+<tr><th id="451">451</th><td><u>#<span data-ppcond="9">endif</span></u></td></tr>
+<tr><th id="452">452</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../../../../../../../wave/src/instantiate_cpp_exprgrammar.cpp.html'>boost-1.85.0/libs/wave/src/instantiate_cpp_exprgrammar.cpp</a><br/>Generated on <em>2024-Jun-14</em> from project boost-1.85.0 revision <em>1.85.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

@@ -1,0 +1,164 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>work_dispatcher.hpp source code [boost-1.85.0/libs/asio/include/boost/asio/detail/work_dispatcher.hpp] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="boost::asio::detail::is_work_dispatcher_required,boost::asio::detail::work_dispatcher "/>
+<link rel="stylesheet" href="../../../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'boost-1.85.0/libs/asio/include/boost/asio/detail/work_dispatcher.hpp'; var root_path = '../../../../../../..'; var data_path = '../../../../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../../../..'>boost-1.85.0</a>/<a href='../../../../..'>libs</a>/<a href='../../../..'>asio</a>/<a href='../../..'>include</a>/<a href='../..'>boost</a>/<a href='..'>asio</a>/<a href='./'>detail</a>/<a href='work_dispatcher.hpp.html'>work_dispatcher.hpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>//</i></td></tr>
+<tr><th id="2">2</th><td><i>// detail/work_dispatcher.hpp</i></td></tr>
+<tr><th id="3">3</th><td><i>// ~~~~~~~~~~~~~~~~~~~~~~~~~~</i></td></tr>
+<tr><th id="4">4</th><td><i>//</i></td></tr>
+<tr><th id="5">5</th><td><i>// Copyright (c) 2003-2024 Christopher M. Kohlhoff (chris at kohlhoff dot com)</i></td></tr>
+<tr><th id="6">6</th><td><i>//</i></td></tr>
+<tr><th id="7">7</th><td><i>// Distributed under the Boost Software License, Version 1.0. (See accompanying</i></td></tr>
+<tr><th id="8">8</th><td><i>// file LICENSE_1_0.txt or copy at <a href="http://www.boost.org/LICENSE_1_0.txt">http://www.boost.org/LICENSE_1_0.txt</a>)</i></td></tr>
+<tr><th id="9">9</th><td><i>//</i></td></tr>
+<tr><th id="10">10</th><td></td></tr>
+<tr><th id="11">11</th><td><u>#<span data-ppcond="11">ifndef</span> <span class="macro" data-ref="_M/BOOST_ASIO_DETAIL_WORK_DISPATCHER_HPP">BOOST_ASIO_DETAIL_WORK_DISPATCHER_HPP</span></u></td></tr>
+<tr><th id="12">12</th><td><u>#define <dfn class="macro" id="_M/BOOST_ASIO_DETAIL_WORK_DISPATCHER_HPP" data-ref="_M/BOOST_ASIO_DETAIL_WORK_DISPATCHER_HPP">BOOST_ASIO_DETAIL_WORK_DISPATCHER_HPP</dfn></u></td></tr>
+<tr><th id="13">13</th><td></td></tr>
+<tr><th id="14">14</th><td><u>#<span data-ppcond="14">if</span> defined(<span class="macro" data-ref="_M/_MSC_VER">_MSC_VER</span>) &amp;&amp; (_MSC_VER &gt;= 1200)</u></td></tr>
+<tr><th id="15">15</th><td><u># pragma once</u></td></tr>
+<tr><th id="16">16</th><td><u>#<span data-ppcond="14">endif</span> // defined(_MSC_VER) &amp;&amp; (_MSC_VER &gt;= 1200)</u></td></tr>
+<tr><th id="17">17</th><td></td></tr>
+<tr><th id="18">18</th><td><u>#include <a href="config.hpp.html">&lt;boost/asio/detail/config.hpp&gt;</a></u></td></tr>
+<tr><th id="19">19</th><td><u>#include <a href="bind_handler.hpp.html">&lt;boost/asio/detail/bind_handler.hpp&gt;</a></u></td></tr>
+<tr><th id="20">20</th><td><u>#include <a href="type_traits.hpp.html">&lt;boost/asio/detail/type_traits.hpp&gt;</a></u></td></tr>
+<tr><th id="21">21</th><td><u>#include <a href="../associated_executor.hpp.html">&lt;boost/asio/associated_executor.hpp&gt;</a></u></td></tr>
+<tr><th id="22">22</th><td><u>#include <a href="../associated_allocator.hpp.html">&lt;boost/asio/associated_allocator.hpp&gt;</a></u></td></tr>
+<tr><th id="23">23</th><td><u>#include <a href="../executor_work_guard.hpp.html">&lt;boost/asio/executor_work_guard.hpp&gt;</a></u></td></tr>
+<tr><th id="24">24</th><td><u>#include <a href="../execution/executor.hpp.html">&lt;boost/asio/execution/executor.hpp&gt;</a></u></td></tr>
+<tr><th id="25">25</th><td><u>#include <a href="../execution/allocator.hpp.html">&lt;boost/asio/execution/allocator.hpp&gt;</a></u></td></tr>
+<tr><th id="26">26</th><td><u>#include <a href="../execution/blocking.hpp.html">&lt;boost/asio/execution/blocking.hpp&gt;</a></u></td></tr>
+<tr><th id="27">27</th><td><u>#include <a href="../execution/outstanding_work.hpp.html">&lt;boost/asio/execution/outstanding_work.hpp&gt;</a></u></td></tr>
+<tr><th id="28">28</th><td><u>#include <a href="../prefer.hpp.html">&lt;boost/asio/prefer.hpp&gt;</a></u></td></tr>
+<tr><th id="29">29</th><td></td></tr>
+<tr><th id="30">30</th><td><u>#include <a href="push_options.hpp.html">&lt;boost/asio/detail/push_options.hpp&gt;</a></u></td></tr>
+<tr><th id="31">31</th><td></td></tr>
+<tr><th id="32">32</th><td><b>namespace</b> <span class="namespace">boost</span> {</td></tr>
+<tr><th id="33">33</th><td><b>namespace</b> <span class="namespace">asio</span> {</td></tr>
+<tr><th id="34">34</th><td><b>namespace</b> <span class="namespace">detail</span> {</td></tr>
+<tr><th id="35">35</th><td></td></tr>
+<tr><th id="36">36</th><td><b>template</b> &lt;<b>typename</b> Handler, <b>typename</b> Executor, <b>typename</b> = <em>void</em>&gt;</td></tr>
+<tr><th id="37">37</th><td><b>struct</b> <dfn class="type def" id="boost::asio::detail::is_work_dispatcher_required" title='boost::asio::detail::is_work_dispatcher_required' data-ref="boost::asio::detail::is_work_dispatcher_required">is_work_dispatcher_required</dfn> : true_type</td></tr>
+<tr><th id="38">38</th><td>{</td></tr>
+<tr><th id="39">39</th><td>};</td></tr>
+<tr><th id="40">40</th><td></td></tr>
+<tr><th id="41">41</th><td><b>template</b> &lt;<b>typename</b> Handler, <b>typename</b> Executor&gt;</td></tr>
+<tr><th id="42">42</th><td><b>struct</b> <dfn class="type def" id="boost::asio::detail::is_work_dispatcher_required" title='boost::asio::detail::is_work_dispatcher_required' data-ref="boost::asio::detail::is_work_dispatcher_required">is_work_dispatcher_required</dfn>&lt;Handler, Executor,</td></tr>
+<tr><th id="43">43</th><td>    <a class="type" href="type_traits.hpp.html#boost::asio::enable_if_t" title='boost::asio::enable_if_t' data-ref="boost::asio::enable_if_t">enable_if_t</a>&lt;</td></tr>
+<tr><th id="44">44</th><td>      <a class="type" href="../../../../../../../include/c++/9/type_traits.html#std::is_same" title='std::is_same' data-ref="std::is_same">is_same</a>&lt;</td></tr>
+<tr><th id="45">45</th><td>        <b>typename</b> <a class="type" href="../associated_executor.hpp.html#boost::asio::associated_executor" title='boost::asio::associated_executor' data-ref="boost::asio::associated_executor">associated_executor</a>&lt;Handler,</td></tr>
+<tr><th id="46">46</th><td>          Executor&gt;::asio_associated_executor_is_unspecialised,</td></tr>
+<tr><th id="47">47</th><td>        <em>void</em></td></tr>
+<tr><th id="48">48</th><td>      &gt;::value</td></tr>
+<tr><th id="49">49</th><td>    &gt;&gt; : false_type</td></tr>
+<tr><th id="50">50</th><td>{</td></tr>
+<tr><th id="51">51</th><td>};</td></tr>
+<tr><th id="52">52</th><td></td></tr>
+<tr><th id="53">53</th><td><b>template</b> &lt;<b>typename</b> Handler, <b>typename</b> Executor, <b>typename</b> = <em>void</em>&gt;</td></tr>
+<tr><th id="54">54</th><td><b>class</b> <dfn class="type def" id="boost::asio::detail::work_dispatcher" title='boost::asio::detail::work_dispatcher' data-ref="boost::asio::detail::work_dispatcher">work_dispatcher</dfn></td></tr>
+<tr><th id="55">55</th><td>{</td></tr>
+<tr><th id="56">56</th><td><b>public</b>:</td></tr>
+<tr><th id="57">57</th><td>  <b>template</b> &lt;<b>typename</b> CompletionHandler&gt;</td></tr>
+<tr><th id="58">58</th><td>  <dfn class="decl def fn" id="_ZN5boost4asio6detail15work_dispatcherC1EOTL0__RKT0_" title='boost::asio::detail::work_dispatcher::work_dispatcher&lt;Handler, Executor, type-parameter-0-2&gt;' data-ref="_ZN5boost4asio6detail15work_dispatcherC1EOTL0__RKT0_">work_dispatcher</dfn>(CompletionHandler&amp;&amp; <dfn class="local col8 decl" id="1478handler" title='handler' data-type='CompletionHandler &amp;&amp;' data-ref="1478handler">handler</dfn>,</td></tr>
+<tr><th id="59">59</th><td>      <em>const</em> Executor&amp; <dfn class="local col9 decl" id="1479handler_ex" title='handler_ex' data-type='const Executor &amp;' data-ref="1479handler_ex">handler_ex</dfn>)</td></tr>
+<tr><th id="60">60</th><td>    : <a class="member field" href="#boost::asio::detail::work_dispatcher::handler_" title='boost::asio::detail::work_dispatcher::handler_' data-ref="boost::asio::detail::work_dispatcher::handler_">handler_</a>(<b>static_cast</b>&lt;CompletionHandler&amp;&amp;&gt;(<a class="local col8 ref" href="#1478handler" title='handler' data-ref="1478handler">handler</a>)),</td></tr>
+<tr><th id="61">61</th><td>      <a class="member field" href="#boost::asio::detail::work_dispatcher::executor_" title='boost::asio::detail::work_dispatcher::executor_' data-ref="boost::asio::detail::work_dispatcher::executor_">executor_</a>(<span class="namespace">boost::asio::</span><a class="ref" href="../prefer.hpp.html#boost::asio::(anonymousnamespace)::prefer" title='boost::asio::(anonymous namespace)::prefer' data-ref="boost::asio::(anonymousnamespace)::prefer">prefer</a>(<a class="local col9 ref" href="#1479handler_ex" title='handler_ex' data-ref="1479handler_ex">handler_ex</a>,</td></tr>
+<tr><th id="62">62</th><td>          <span class="namespace">execution::</span><a class="ref" href="../execution/outstanding_work.hpp.html#boost::asio::execution::outstanding_work" title='boost::asio::execution::outstanding_work' data-ref="boost::asio::execution::outstanding_work">outstanding_work</a>.<a class="ref" href="../execution/outstanding_work.hpp.html#350" title='boost::asio::execution::detail::outstanding_work_t::tracked' data-ref="boost::asio::execution::detail::outstanding_work_t::tracked">tracked</a>))</td></tr>
+<tr><th id="63">63</th><td>  {</td></tr>
+<tr><th id="64">64</th><td>  }</td></tr>
+<tr><th id="65">65</th><td></td></tr>
+<tr><th id="66">66</th><td>  <dfn class="decl def fn" id="_ZN5boost4asio6detail15work_dispatcherC1ERKNS1_15work_dispatcherIT_T0_T1_EE" title='boost::asio::detail::work_dispatcher::work_dispatcher&lt;Handler, Executor, type-parameter-0-2&gt;' data-ref="_ZN5boost4asio6detail15work_dispatcherC1ERKNS1_15work_dispatcherIT_T0_T1_EE">work_dispatcher</dfn>(<em>const</em> work_dispatcher&amp; <dfn class="local col0 decl" id="1480other" title='other' data-type='const work_dispatcher&lt;Handler, Executor, type-parameter-0-2&gt; &amp;' data-ref="1480other">other</dfn>)</td></tr>
+<tr><th id="67">67</th><td>    : <a class="member field" href="#boost::asio::detail::work_dispatcher::handler_" title='boost::asio::detail::work_dispatcher::handler_' data-ref="boost::asio::detail::work_dispatcher::handler_">handler_</a>(<a class="local col0 ref" href="#1480other" title='other' data-ref="1480other">other</a>.handler_),</td></tr>
+<tr><th id="68">68</th><td>      <a class="member field" href="#boost::asio::detail::work_dispatcher::executor_" title='boost::asio::detail::work_dispatcher::executor_' data-ref="boost::asio::detail::work_dispatcher::executor_">executor_</a>(<a class="local col0 ref" href="#1480other" title='other' data-ref="1480other">other</a>.executor_)</td></tr>
+<tr><th id="69">69</th><td>  {</td></tr>
+<tr><th id="70">70</th><td>  }</td></tr>
+<tr><th id="71">71</th><td></td></tr>
+<tr><th id="72">72</th><td>  <dfn class="decl def fn" id="_ZN5boost4asio6detail15work_dispatcherC1EONS1_15work_dispatcherIT_T0_T1_EE" title='boost::asio::detail::work_dispatcher::work_dispatcher&lt;Handler, Executor, type-parameter-0-2&gt;' data-ref="_ZN5boost4asio6detail15work_dispatcherC1EONS1_15work_dispatcherIT_T0_T1_EE">work_dispatcher</dfn>(work_dispatcher&amp;&amp; <dfn class="local col1 decl" id="1481other" title='other' data-type='work_dispatcher&lt;Handler, Executor, type-parameter-0-2&gt; &amp;&amp;' data-ref="1481other">other</dfn>)</td></tr>
+<tr><th id="73">73</th><td>    : <a class="member field" href="#boost::asio::detail::work_dispatcher::handler_" title='boost::asio::detail::work_dispatcher::handler_' data-ref="boost::asio::detail::work_dispatcher::handler_">handler_</a>(<b>static_cast</b>&lt;Handler&amp;&amp;&gt;(<a class="local col1 ref" href="#1481other" title='other' data-ref="1481other">other</a>.handler_)),</td></tr>
+<tr><th id="74">74</th><td>      <a class="member field" href="#boost::asio::detail::work_dispatcher::executor_" title='boost::asio::detail::work_dispatcher::executor_' data-ref="boost::asio::detail::work_dispatcher::executor_">executor_</a>(<b>static_cast</b>&lt;<a class="typedef" href="#boost::asio::detail::work_dispatcher::work_executor_type" title='boost::asio::detail::work_dispatcher::work_executor_type' data-type='decay_t&lt;prefer_result_t&lt;const Executor &amp;, execution::outstanding_work_t::tracked_t&gt;&gt;' data-ref="boost::asio::detail::work_dispatcher::work_executor_type">work_executor_type</a>&amp;&amp;&gt;(<a class="local col1 ref" href="#1481other" title='other' data-ref="1481other">other</a>.executor_))</td></tr>
+<tr><th id="75">75</th><td>  {</td></tr>
+<tr><th id="76">76</th><td>  }</td></tr>
+<tr><th id="77">77</th><td></td></tr>
+<tr><th id="78">78</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN5boost4asio6detail15work_dispatcherclEv" title='boost::asio::detail::work_dispatcher::operator()' data-ref="_ZN5boost4asio6detail15work_dispatcherclEv"><b>operator</b>()</dfn>()</td></tr>
+<tr><th id="79">79</th><td>  {</td></tr>
+<tr><th id="80">80</th><td>    <a class="type" href="../associated_allocator.hpp.html#boost::asio::associated_allocator_t" title='boost::asio::associated_allocator_t' data-ref="boost::asio::associated_allocator_t">associated_allocator_t</a>&lt;Handler&gt; <dfn class="local col2 decl" id="1482alloc" title='alloc' data-type='associated_allocator_t&lt;Handler&gt;' data-ref="1482alloc">alloc</dfn>((get_associated_allocator)(<a class="member field" href="#boost::asio::detail::work_dispatcher::handler_" title='boost::asio::detail::work_dispatcher::handler_' data-ref="boost::asio::detail::work_dispatcher::handler_">handler_</a>));</td></tr>
+<tr><th id="81">81</th><td>    <span class="namespace">boost::asio::</span><a class="ref" href="../prefer.hpp.html#boost::asio::(anonymousnamespace)::prefer" title='boost::asio::(anonymous namespace)::prefer' data-ref="boost::asio::(anonymousnamespace)::prefer">prefer</a>(<a class="member field" href="#boost::asio::detail::work_dispatcher::executor_" title='boost::asio::detail::work_dispatcher::executor_' data-ref="boost::asio::detail::work_dispatcher::executor_">executor_</a>, <span class="namespace">execution::</span><a class="ref" href="../execution/allocator.hpp.html#boost::asio::execution::allocator" title='boost::asio::execution::allocator' data-ref="boost::asio::execution::allocator">allocator</a>(<a class="local col2 ref" href="#1482alloc" title='alloc' data-ref="1482alloc">alloc</a>)).execute(</td></tr>
+<tr><th id="82">82</th><td>        <span class="namespace">boost::asio::detail::</span>bind_handler(</td></tr>
+<tr><th id="83">83</th><td>          <b>static_cast</b>&lt;Handler&amp;&amp;&gt;(<a class="member field" href="#boost::asio::detail::work_dispatcher::handler_" title='boost::asio::detail::work_dispatcher::handler_' data-ref="boost::asio::detail::work_dispatcher::handler_">handler_</a>)));</td></tr>
+<tr><th id="84">84</th><td>  }</td></tr>
+<tr><th id="85">85</th><td></td></tr>
+<tr><th id="86">86</th><td><b>private</b>:</td></tr>
+<tr><th id="87">87</th><td>  <b>typedef</b> <a class="type" href="type_traits.hpp.html#boost::asio::decay_t" title='boost::asio::decay_t' data-ref="boost::asio::decay_t">decay_t</a>&lt;</td></tr>
+<tr><th id="88">88</th><td>      <a class="type" href="../prefer.hpp.html#boost::asio::prefer_result_t" title='boost::asio::prefer_result_t' data-ref="boost::asio::prefer_result_t">prefer_result_t</a>&lt;<em>const</em> Executor&amp;,</td></tr>
+<tr><th id="89">89</th><td>        <span class="namespace">execution::</span><a class="typedef" href="../execution/outstanding_work.hpp.html#boost::asio::execution::outstanding_work_t" title='boost::asio::execution::outstanding_work_t' data-type='detail::outstanding_work_t&lt;&gt;' data-ref="boost::asio::execution::outstanding_work_t">outstanding_work_t</a>::<a class="typedef" href="../execution/outstanding_work.hpp.html#boost::asio::execution::detail::outstanding_work_t{0}::tracked_t" title='boost::asio::execution::detail::outstanding_work_t&lt;0&gt;::tracked_t' data-type='detail::outstanding_work::tracked_t&lt;0&gt;' data-ref="boost::asio::execution::detail::outstanding_work_t{0}::tracked_t">tracked_t</a></td></tr>
+<tr><th id="90">90</th><td>      &gt;</td></tr>
+<tr><th id="91">91</th><td>    &gt; <dfn class="typedef" id="boost::asio::detail::work_dispatcher::work_executor_type" title='boost::asio::detail::work_dispatcher::work_executor_type' data-type='decay_t&lt;prefer_result_t&lt;const Executor &amp;, execution::outstanding_work_t::tracked_t&gt;&gt;' data-ref="boost::asio::detail::work_dispatcher::work_executor_type">work_executor_type</dfn>;</td></tr>
+<tr><th id="92">92</th><td></td></tr>
+<tr><th id="93">93</th><td>  Handler <dfn class="decl field" id="boost::asio::detail::work_dispatcher::handler_" title='boost::asio::detail::work_dispatcher::handler_' data-ref="boost::asio::detail::work_dispatcher::handler_">handler_</dfn>;</td></tr>
+<tr><th id="94">94</th><td>  <a class="typedef" href="#boost::asio::detail::work_dispatcher::work_executor_type" title='boost::asio::detail::work_dispatcher::work_executor_type' data-type='decay_t&lt;prefer_result_t&lt;const Executor &amp;, execution::outstanding_work_t::tracked_t&gt;&gt;' data-ref="boost::asio::detail::work_dispatcher::work_executor_type">work_executor_type</a> <dfn class="decl field" id="boost::asio::detail::work_dispatcher::executor_" title='boost::asio::detail::work_dispatcher::executor_' data-ref="boost::asio::detail::work_dispatcher::executor_">executor_</dfn>;</td></tr>
+<tr><th id="95">95</th><td>};</td></tr>
+<tr><th id="96">96</th><td></td></tr>
+<tr><th id="97">97</th><td><u>#<span data-ppcond="97">if</span> !defined(<span class="macro" data-ref="_M/BOOST_ASIO_NO_TS_EXECUTORS">BOOST_ASIO_NO_TS_EXECUTORS</span>)</u></td></tr>
+<tr><th id="98">98</th><td></td></tr>
+<tr><th id="99">99</th><td><b>template</b> &lt;<b>typename</b> Handler, <b>typename</b> Executor&gt;</td></tr>
+<tr><th id="100">100</th><td><b>class</b> <dfn class="type def" id="boost::asio::detail::work_dispatcher" title='boost::asio::detail::work_dispatcher' data-ref="boost::asio::detail::work_dispatcher">work_dispatcher</dfn>&lt;Handler, Executor,</td></tr>
+<tr><th id="101">101</th><td>    <a class="type" href="type_traits.hpp.html#boost::asio::enable_if_t" title='boost::asio::enable_if_t' data-ref="boost::asio::enable_if_t">enable_if_t</a>&lt;!<span class="namespace">execution::</span><a class="type" href="../execution/executor.hpp.html#boost::asio::execution::is_executor" title='boost::asio::execution::is_executor' data-ref="boost::asio::execution::is_executor">is_executor</a>&lt;Executor&gt;::value&gt;&gt;</td></tr>
+<tr><th id="102">102</th><td>{</td></tr>
+<tr><th id="103">103</th><td><b>public</b>:</td></tr>
+<tr><th id="104">104</th><td>  <b>template</b> &lt;<b>typename</b> CompletionHandler&gt;</td></tr>
+<tr><th id="105">105</th><td>  <dfn class="decl def fn" id="_ZN5boost4asio6detail15work_dispatcherIT_T0_NSt9enable_ifIXntsr9execution11is_executorIS4_EE5valueEvE4typeEEC1EOTL0__RKS4_" title='boost::asio::detail::work_dispatcher&lt;type-parameter-0-0, type-parameter-0-1, typename enable_if&lt;!execution::is_executor&lt;Executor&gt;::value, void&gt;::type&gt;::work_dispatcher&lt;type-parameter-0-0, type-parameter-0-1, typename enable_if&lt;!execution::is_executor&lt;Executor&gt;::value, void&gt;::type&gt;' data-ref="_ZN5boost4asio6detail15work_dispatcherIT_T0_NSt9enable_ifIXntsr9execution11is_executorIS4_EE5valueEvE4typeEEC1EOTL0__RKS4_">work_dispatcher</dfn>(CompletionHandler&amp;&amp; <dfn class="local col3 decl" id="1483handler" title='handler' data-type='CompletionHandler &amp;&amp;' data-ref="1483handler">handler</dfn>, <em>const</em> Executor&amp; <dfn class="local col4 decl" id="1484handler_ex" title='handler_ex' data-type='const Executor &amp;' data-ref="1484handler_ex">handler_ex</dfn>)</td></tr>
+<tr><th id="106">106</th><td>    : <a class="member field" href="#boost::asio::detail::work_dispatcher::work_" title='boost::asio::detail::work_dispatcher&lt;type-parameter-0-0, type-parameter-0-1, typename enable_if&lt;!execution::is_executor&lt;Executor&gt;::value, void&gt;::type&gt;::work_' data-ref="boost::asio::detail::work_dispatcher::work_">work_</a>(<a class="local col4 ref" href="#1484handler_ex" title='handler_ex' data-ref="1484handler_ex">handler_ex</a>),</td></tr>
+<tr><th id="107">107</th><td>      <a class="member field" href="#boost::asio::detail::work_dispatcher::handler_" title='boost::asio::detail::work_dispatcher&lt;type-parameter-0-0, type-parameter-0-1, typename enable_if&lt;!execution::is_executor&lt;Executor&gt;::value, void&gt;::type&gt;::handler_' data-ref="boost::asio::detail::work_dispatcher::handler_">handler_</a>(<b>static_cast</b>&lt;CompletionHandler&amp;&amp;&gt;(<a class="local col3 ref" href="#1483handler" title='handler' data-ref="1483handler">handler</a>))</td></tr>
+<tr><th id="108">108</th><td>  {</td></tr>
+<tr><th id="109">109</th><td>  }</td></tr>
+<tr><th id="110">110</th><td></td></tr>
+<tr><th id="111">111</th><td>  <dfn class="decl def fn" id="_ZN5boost4asio6detail15work_dispatcherIT_T0_NSt9enable_ifIXntsr9execution11is_executorIS4_EE5valueEvE4typeEEC1ERKNS2_IS3_S4_S7_EE" title='boost::asio::detail::work_dispatcher&lt;type-parameter-0-0, type-parameter-0-1, typename enable_if&lt;!execution::is_executor&lt;Executor&gt;::value, void&gt;::type&gt;::work_dispatcher&lt;type-parameter-0-0, type-parameter-0-1, typename enable_if&lt;!execution::is_executor&lt;Executor&gt;::value, void&gt;::type&gt;' data-ref="_ZN5boost4asio6detail15work_dispatcherIT_T0_NSt9enable_ifIXntsr9execution11is_executorIS4_EE5valueEvE4typeEEC1ERKNS2_IS3_S4_S7_EE">work_dispatcher</dfn>(<em>const</em> work_dispatcher&amp; <dfn class="local col5 decl" id="1485other" title='other' data-type='const work_dispatcher&lt;type-parameter-0-0, type-parameter-0-1, typename enable_if&lt;!execution::is_executor&lt;Executor&gt;::value, void&gt;::type&gt; &amp;' data-ref="1485other">other</dfn>)</td></tr>
+<tr><th id="112">112</th><td>    : <a class="member field" href="#boost::asio::detail::work_dispatcher::work_" title='boost::asio::detail::work_dispatcher&lt;type-parameter-0-0, type-parameter-0-1, typename enable_if&lt;!execution::is_executor&lt;Executor&gt;::value, void&gt;::type&gt;::work_' data-ref="boost::asio::detail::work_dispatcher::work_">work_</a>(<a class="local col5 ref" href="#1485other" title='other' data-ref="1485other">other</a>.work_),</td></tr>
+<tr><th id="113">113</th><td>      <a class="member field" href="#boost::asio::detail::work_dispatcher::handler_" title='boost::asio::detail::work_dispatcher&lt;type-parameter-0-0, type-parameter-0-1, typename enable_if&lt;!execution::is_executor&lt;Executor&gt;::value, void&gt;::type&gt;::handler_' data-ref="boost::asio::detail::work_dispatcher::handler_">handler_</a>(<a class="local col5 ref" href="#1485other" title='other' data-ref="1485other">other</a>.handler_)</td></tr>
+<tr><th id="114">114</th><td>  {</td></tr>
+<tr><th id="115">115</th><td>  }</td></tr>
+<tr><th id="116">116</th><td></td></tr>
+<tr><th id="117">117</th><td>  <dfn class="decl def fn" id="_ZN5boost4asio6detail15work_dispatcherIT_T0_NSt9enable_ifIXntsr9execution11is_executorIS4_EE5valueEvE4typeEEC1EONS2_IS3_S4_S7_EE" title='boost::asio::detail::work_dispatcher&lt;type-parameter-0-0, type-parameter-0-1, typename enable_if&lt;!execution::is_executor&lt;Executor&gt;::value, void&gt;::type&gt;::work_dispatcher&lt;type-parameter-0-0, type-parameter-0-1, typename enable_if&lt;!execution::is_executor&lt;Executor&gt;::value, void&gt;::type&gt;' data-ref="_ZN5boost4asio6detail15work_dispatcherIT_T0_NSt9enable_ifIXntsr9execution11is_executorIS4_EE5valueEvE4typeEEC1EONS2_IS3_S4_S7_EE">work_dispatcher</dfn>(work_dispatcher&amp;&amp; <dfn class="local col6 decl" id="1486other" title='other' data-type='work_dispatcher&lt;type-parameter-0-0, type-parameter-0-1, typename enable_if&lt;!execution::is_executor&lt;Executor&gt;::value, void&gt;::type&gt; &amp;&amp;' data-ref="1486other">other</dfn>)</td></tr>
+<tr><th id="118">118</th><td>    : <a class="member field" href="#boost::asio::detail::work_dispatcher::work_" title='boost::asio::detail::work_dispatcher&lt;type-parameter-0-0, type-parameter-0-1, typename enable_if&lt;!execution::is_executor&lt;Executor&gt;::value, void&gt;::type&gt;::work_' data-ref="boost::asio::detail::work_dispatcher::work_">work_</a>(<b>static_cast</b>&lt;<a class="type" href="../executor_work_guard.hpp.html#boost::asio::executor_work_guard" title='boost::asio::executor_work_guard' data-ref="boost::asio::executor_work_guard">executor_work_guard</a>&lt;Executor&gt;&amp;&amp;&gt;(<a class="local col6 ref" href="#1486other" title='other' data-ref="1486other">other</a>.work_)),</td></tr>
+<tr><th id="119">119</th><td>      <a class="member field" href="#boost::asio::detail::work_dispatcher::handler_" title='boost::asio::detail::work_dispatcher&lt;type-parameter-0-0, type-parameter-0-1, typename enable_if&lt;!execution::is_executor&lt;Executor&gt;::value, void&gt;::type&gt;::handler_' data-ref="boost::asio::detail::work_dispatcher::handler_">handler_</a>(<b>static_cast</b>&lt;Handler&amp;&amp;&gt;(<a class="local col6 ref" href="#1486other" title='other' data-ref="1486other">other</a>.handler_))</td></tr>
+<tr><th id="120">120</th><td>  {</td></tr>
+<tr><th id="121">121</th><td>  }</td></tr>
+<tr><th id="122">122</th><td></td></tr>
+<tr><th id="123">123</th><td>  <em>void</em> <dfn class="decl def fn" id="_ZN5boost4asio6detail15work_dispatcherIT_T0_NSt9enable_ifIXntsr9execution11is_executorIS4_EE5valueEvE4typeEEclEv" title='boost::asio::detail::work_dispatcher&lt;type-parameter-0-0, type-parameter-0-1, typename enable_if&lt;!execution::is_executor&lt;Executor&gt;::value, void&gt;::type&gt;::operator()' data-ref="_ZN5boost4asio6detail15work_dispatcherIT_T0_NSt9enable_ifIXntsr9execution11is_executorIS4_EE5valueEvE4typeEEclEv"><b>operator</b>()</dfn>()</td></tr>
+<tr><th id="124">124</th><td>  {</td></tr>
+<tr><th id="125">125</th><td>    <a class="type" href="../associated_allocator.hpp.html#boost::asio::associated_allocator_t" title='boost::asio::associated_allocator_t' data-ref="boost::asio::associated_allocator_t">associated_allocator_t</a>&lt;Handler&gt; <dfn class="local col7 decl" id="1487alloc" title='alloc' data-type='associated_allocator_t&lt;Handler&gt;' data-ref="1487alloc">alloc</dfn>((get_associated_allocator)(<a class="member field" href="#boost::asio::detail::work_dispatcher::handler_" title='boost::asio::detail::work_dispatcher&lt;type-parameter-0-0, type-parameter-0-1, typename enable_if&lt;!execution::is_executor&lt;Executor&gt;::value, void&gt;::type&gt;::handler_' data-ref="boost::asio::detail::work_dispatcher::handler_">handler_</a>));</td></tr>
+<tr><th id="126">126</th><td>    <a class="member field" href="#boost::asio::detail::work_dispatcher::work_" title='boost::asio::detail::work_dispatcher&lt;type-parameter-0-0, type-parameter-0-1, typename enable_if&lt;!execution::is_executor&lt;Executor&gt;::value, void&gt;::type&gt;::work_' data-ref="boost::asio::detail::work_dispatcher::work_">work_</a>.get_executor().dispatch(</td></tr>
+<tr><th id="127">127</th><td>        <span class="namespace">boost::asio::detail::</span>bind_handler(</td></tr>
+<tr><th id="128">128</th><td>          <b>static_cast</b>&lt;Handler&amp;&amp;&gt;(<a class="member field" href="#boost::asio::detail::work_dispatcher::handler_" title='boost::asio::detail::work_dispatcher&lt;type-parameter-0-0, type-parameter-0-1, typename enable_if&lt;!execution::is_executor&lt;Executor&gt;::value, void&gt;::type&gt;::handler_' data-ref="boost::asio::detail::work_dispatcher::handler_">handler_</a>)), <a class="local col7 ref" href="#1487alloc" title='alloc' data-ref="1487alloc">alloc</a>);</td></tr>
+<tr><th id="129">129</th><td>    <a class="member field" href="#boost::asio::detail::work_dispatcher::work_" title='boost::asio::detail::work_dispatcher&lt;type-parameter-0-0, type-parameter-0-1, typename enable_if&lt;!execution::is_executor&lt;Executor&gt;::value, void&gt;::type&gt;::work_' data-ref="boost::asio::detail::work_dispatcher::work_">work_</a>.reset();</td></tr>
+<tr><th id="130">130</th><td>  }</td></tr>
+<tr><th id="131">131</th><td></td></tr>
+<tr><th id="132">132</th><td><b>private</b>:</td></tr>
+<tr><th id="133">133</th><td>  <a class="type" href="../executor_work_guard.hpp.html#boost::asio::executor_work_guard" title='boost::asio::executor_work_guard' data-ref="boost::asio::executor_work_guard">executor_work_guard</a>&lt;Executor&gt; <dfn class="decl field" id="boost::asio::detail::work_dispatcher::work_" title='boost::asio::detail::work_dispatcher&lt;type-parameter-0-0, type-parameter-0-1, typename enable_if&lt;!execution::is_executor&lt;Executor&gt;::value, void&gt;::type&gt;::work_' data-ref="boost::asio::detail::work_dispatcher::work_">work_</dfn>;</td></tr>
+<tr><th id="134">134</th><td>  Handler <dfn class="decl field" id="boost::asio::detail::work_dispatcher::handler_" title='boost::asio::detail::work_dispatcher&lt;type-parameter-0-0, type-parameter-0-1, typename enable_if&lt;!execution::is_executor&lt;Executor&gt;::value, void&gt;::type&gt;::handler_' data-ref="boost::asio::detail::work_dispatcher::handler_">handler_</dfn>;</td></tr>
+<tr><th id="135">135</th><td>};</td></tr>
+<tr><th id="136">136</th><td></td></tr>
+<tr><th id="137">137</th><td><u>#<span data-ppcond="97">endif</span> // !defined(BOOST_ASIO_NO_TS_EXECUTORS)</u></td></tr>
+<tr><th id="138">138</th><td></td></tr>
+<tr><th id="139">139</th><td>} <i>// namespace detail</i></td></tr>
+<tr><th id="140">140</th><td>} <i>// namespace asio</i></td></tr>
+<tr><th id="141">141</th><td>} <i>// namespace boost</i></td></tr>
+<tr><th id="142">142</th><td></td></tr>
+<tr><th id="143">143</th><td><u>#include <a href="pop_options.hpp.html">&lt;boost/asio/detail/pop_options.hpp&gt;</a></u></td></tr>
+<tr><th id="144">144</th><td></td></tr>
+<tr><th id="145">145</th><td><u>#<span data-ppcond="11">endif</span> // BOOST_ASIO_DETAIL_WORK_DISPATCHER_HPP</u></td></tr>
+<tr><th id="146">146</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../../../../../log/src/syslog_backend.cpp.html'>boost-1.85.0/libs/log/src/syslog_backend.cpp</a><br/>Generated on <em>2024-Jun-14</em> from project boost-1.85.0 revision <em>1.85.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

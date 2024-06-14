@@ -1,0 +1,374 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>monotonic_resource.hpp source code [boost-1.85.0/libs/json/include/boost/json/monotonic_resource.hpp] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="boost::json::is_deallocate_trivial,boost::json::monotonic_resource "/>
+<link rel="stylesheet" href="../../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'boost-1.85.0/libs/json/include/boost/json/monotonic_resource.hpp'; var root_path = '../../../../../..'; var data_path = '../../../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../../..'>boost-1.85.0</a>/<a href='../../../..'>libs</a>/<a href='../../..'>json</a>/<a href='../..'>include</a>/<a href='..'>boost</a>/<a href='./'>json</a>/<a href='monotonic_resource.hpp.html'>monotonic_resource.hpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>//</i></td></tr>
+<tr><th id="2">2</th><td><i>// Copyright (c) 2019 Vinnie Falco (vinnie.falco@gmail.com)</i></td></tr>
+<tr><th id="3">3</th><td><i>// Copyright (c) 2020 Krystian Stasiowski (sdkrystian@gmail.com)</i></td></tr>
+<tr><th id="4">4</th><td><i>//</i></td></tr>
+<tr><th id="5">5</th><td><i>// Distributed under the Boost Software License, Version 1.0. (See accompanying</i></td></tr>
+<tr><th id="6">6</th><td><i>// file LICENSE_1_0.txt or copy at <a href="http://www.boost.org/LICENSE_1_0.txt">http://www.boost.org/LICENSE_1_0.txt</a>)</i></td></tr>
+<tr><th id="7">7</th><td><i>//</i></td></tr>
+<tr><th id="8">8</th><td><i>// Official repository: <a href="https://github.com/boostorg/json">https://github.com/boostorg/json</a></i></td></tr>
+<tr><th id="9">9</th><td><i>//</i></td></tr>
+<tr><th id="10">10</th><td></td></tr>
+<tr><th id="11">11</th><td><u>#<span data-ppcond="11">ifndef</span> <span class="macro" data-ref="_M/BOOST_JSON_MONOTONIC_RESOURCE_HPP">BOOST_JSON_MONOTONIC_RESOURCE_HPP</span></u></td></tr>
+<tr><th id="12">12</th><td><u>#define <dfn class="macro" id="_M/BOOST_JSON_MONOTONIC_RESOURCE_HPP" data-ref="_M/BOOST_JSON_MONOTONIC_RESOURCE_HPP">BOOST_JSON_MONOTONIC_RESOURCE_HPP</dfn></u></td></tr>
+<tr><th id="13">13</th><td></td></tr>
+<tr><th id="14">14</th><td><u>#include <a href="../../../../container/include/boost/container/pmr/memory_resource.hpp.html">&lt;boost/container/pmr/memory_resource.hpp&gt;</a></u></td></tr>
+<tr><th id="15">15</th><td><u>#include <a href="detail/config.hpp.html">&lt;boost/json/detail/config.hpp&gt;</a></u></td></tr>
+<tr><th id="16">16</th><td><u>#include <a href="memory_resource.hpp.html">&lt;boost/json/memory_resource.hpp&gt;</a></u></td></tr>
+<tr><th id="17">17</th><td><u>#include <a href="storage_ptr.hpp.html">&lt;boost/json/storage_ptr.hpp&gt;</a></u></td></tr>
+<tr><th id="18">18</th><td><u>#include <a href="../../../../../../include/c++/9/cstddef.html">&lt;cstddef&gt;</a></u></td></tr>
+<tr><th id="19">19</th><td><u>#include <a href="../../../../../../include/c++/9/utility.html">&lt;utility&gt;</a></u></td></tr>
+<tr><th id="20">20</th><td></td></tr>
+<tr><th id="21">21</th><td><b>namespace</b> <span class="namespace">boost</span> {</td></tr>
+<tr><th id="22">22</th><td><b>namespace</b> <span class="namespace">json</span> {</td></tr>
+<tr><th id="23">23</th><td></td></tr>
+<tr><th id="24">24</th><td><u>#<span data-ppcond="24">ifdef</span> <span class="macro" data-ref="_M/_MSC_VER">_MSC_VER</span></u></td></tr>
+<tr><th id="25">25</th><td><u>#pragma warning(push)</u></td></tr>
+<tr><th id="26">26</th><td><u>#pragma warning(disable: 4251) // class needs to have dll-interface to be used by clients of class</u></td></tr>
+<tr><th id="27">27</th><td><u>#pragma warning(disable: 4275) // non dll-interface class used as base for dll-interface class</u></td></tr>
+<tr><th id="28">28</th><td><u>#<span data-ppcond="24">endif</span></u></td></tr>
+<tr><th id="29">29</th><td></td></tr>
+<tr><th id="30">30</th><td><i>//----------------------------------------------------------</i></td></tr>
+<tr><th id="31">31</th><td></td></tr>
+<tr><th id="32">32</th><td><i class="doc">/** A dynamically allocating resource with a trivial deallocate</i></td></tr>
+<tr><th id="33">33</th><td><i class="doc"></i></td></tr>
+<tr><th id="34">34</th><td><i class="doc">    This memory resource is a special-purpose resource</i></td></tr>
+<tr><th id="35">35</th><td><i class="doc">    that releases allocated memory only when the resource</i></td></tr>
+<tr><th id="36">36</th><td><i class="doc">    is destroyed (or when<span class="command"> @ref</span> <span class="arg">release</span> is called).</i></td></tr>
+<tr><th id="37">37</th><td><i class="doc">    It has a trivial deallocate function; that is, the</i></td></tr>
+<tr><th id="38">38</th><td><i class="doc">    metafunction<span class="command"> @ref</span> <span class="arg">is_deallocate_trivial</span> returns `true`.<span class="command"></span></i></td></tr>
+<tr><th id="39">39</th><td><i class="doc"><span class="command">\n</span></i></td></tr>
+<tr><th id="40">40</th><td><i class="doc">    The resource can be constructed with an initial buffer.</i></td></tr>
+<tr><th id="41">41</th><td><i class="doc">    If there is no initial buffer, or if the buffer is</i></td></tr>
+<tr><th id="42">42</th><td><i class="doc">    exhausted, subsequent dynamic allocations are made from</i></td></tr>
+<tr><th id="43">43</th><td><i class="doc">    the system heap. The size of buffers obtained in this</i></td></tr>
+<tr><th id="44">44</th><td><i class="doc">    fashion follow a geometric progression.<span class="command"></span></i></td></tr>
+<tr><th id="45">45</th><td><i class="doc"><span class="command">\n</span></i></td></tr>
+<tr><th id="46">46</th><td><i class="doc">    The purpose of this resource is to optimize the use</i></td></tr>
+<tr><th id="47">47</th><td><i class="doc">    case for performing many allocations, followed by</i></td></tr>
+<tr><th id="48">48</th><td><i class="doc">    deallocating everything at once. This is precisely the</i></td></tr>
+<tr><th id="49">49</th><td><i class="doc">    pattern of memory allocation which occurs when parsing:</i></td></tr>
+<tr><th id="50">50</th><td><i class="doc">    allocation is performed for each parsed element, and</i></td></tr>
+<tr><th id="51">51</th><td><i class="doc">    when the the resulting<span class="command"> @ref</span> <span class="arg">value</span> is no longer needed,</i></td></tr>
+<tr><th id="52">52</th><td><i class="doc">    the entire structure is destroyed. However, it is not</i></td></tr>
+<tr><th id="53">53</th><td><i class="doc">    suited for modifying the value after parsing is</i></td></tr>
+<tr><th id="54">54</th><td><i class="doc">    complete; reallocations waste memory, since the</i></td></tr>
+<tr><th id="55">55</th><td><i class="doc">    older buffer is not reclaimed until the resource</i></td></tr>
+<tr><th id="56">56</th><td><i class="doc">    is destroyed.</i></td></tr>
+<tr><th id="57">57</th><td><i class="doc"></i></td></tr>
+<tr><th id="58">58</th><td><i class="doc">    <span class="command">@par</span> Example</i></td></tr>
+<tr><th id="59">59</th><td><i class="doc"></i></td></tr>
+<tr><th id="60">60</th><td><i class="doc">    This parses a JSON text into a value which uses a local</i></td></tr>
+<tr><th id="61">61</th><td><i class="doc">    stack buffer, then prints the result.</i></td></tr>
+<tr><th id="62">62</th><td><i class="doc"></i></td></tr>
+<tr><th id="63">63</th><td><i class="doc">    <span class="command">@code</span></i></td></tr>
+<tr><th id="64">64</th><td><i class="doc"><span class="verb"></span></i></td></tr>
+<tr><th id="65">65</th><td><i class="doc"><span class="verb"></span><span class="verb">    unsigned char buf[ 4000 ];</span></i></td></tr>
+<tr><th id="66">66</th><td><i class="doc"><span class="verb"></span><span class="verb">    monotonic_resource mr( buf );</span></i></td></tr>
+<tr><th id="67">67</th><td><i class="doc"><span class="verb"></span><span class="verb"></span></i></td></tr>
+<tr><th id="68">68</th><td><i class="doc"><span class="verb"></span><span class="verb">    // Parse the string, using our memory resource</span></i></td></tr>
+<tr><th id="69">69</th><td><i class="doc"><span class="verb"></span><span class="verb">    auto const jv = parse( "[1,2,3]", &amp;mr );</span></i></td></tr>
+<tr><th id="70">70</th><td><i class="doc"><span class="verb"></span><span class="verb"></span></i></td></tr>
+<tr><th id="71">71</th><td><i class="doc"><span class="verb"></span><span class="verb">    // Print the JSON</span></i></td></tr>
+<tr><th id="72">72</th><td><i class="doc"><span class="verb"></span><span class="verb">    std::cout &lt;&lt; jv;</span></i></td></tr>
+<tr><th id="73">73</th><td><i class="doc"><span class="verb"></span><span class="verb"></span></i></td></tr>
+<tr><th id="74">74</th><td><i class="doc"><span class="verb"></span>    @endcode</i></td></tr>
+<tr><th id="75">75</th><td><i class="doc"></i></td></tr>
+<tr><th id="76">76</th><td><i class="doc">    <span class="command">@note</span> The total amount of memory dynamically</i></td></tr>
+<tr><th id="77">77</th><td><i class="doc">    allocated is monotonically increasing; That is,</i></td></tr>
+<tr><th id="78">78</th><td><i class="doc">    it never decreases.</i></td></tr>
+<tr><th id="79">79</th><td><i class="doc"></i></td></tr>
+<tr><th id="80">80</th><td><i class="doc">    <span class="command">@par</span> Thread Safety</i></td></tr>
+<tr><th id="81">81</th><td><i class="doc">    Members of the same instance may not be</i></td></tr>
+<tr><th id="82">82</th><td><i class="doc">    called concurrently.</i></td></tr>
+<tr><th id="83">83</th><td><i class="doc"></i></td></tr>
+<tr><th id="84">84</th><td><i class="doc">    <span class="command">@see</span></i></td></tr>
+<tr><th id="85">85</th><td><i class="doc">        <a href="https://en.wikipedia.org/wiki/Region-based_memory_management">https://en.wikipedia.org/wiki/Region-based_memory_management</a></i></td></tr>
+<tr><th id="86">86</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="87">87</th><td><b>class</b></td></tr>
+<tr><th id="88">88</th><td>    <a class="macro" href="detail/config.hpp.html#70" title="" data-ref="_M/BOOST_JSON_DECL">BOOST_JSON_DECL</a></td></tr>
+<tr><th id="89">89</th><td>    <a class="macro" href="../../../../config/include/boost/config/compiler/clang.hpp.html#115" title="__attribute__((__visibility__(&quot;default&quot;)))" data-ref="_M/BOOST_SYMBOL_VISIBLE">BOOST_SYMBOL_VISIBLE</a></td></tr>
+<tr><th id="90">90</th><td><dfn class="type def" id="boost::json::monotonic_resource" title='boost::json::monotonic_resource' data-ref="boost::json::monotonic_resource">monotonic_resource</dfn> final</td></tr>
+<tr><th id="91">91</th><td>    : <b>public</b> <span class="namespace">container::pmr::</span><a class="type" href="../../../../container/include/boost/container/pmr/memory_resource.hpp.html#boost::container::pmr::memory_resource" title='boost::container::pmr::memory_resource' data-ref="boost::container::pmr::memory_resource">memory_resource</a></td></tr>
+<tr><th id="92">92</th><td>{</td></tr>
+<tr><th id="93">93</th><td>    <b>struct</b> <a class="type" href="impl/monotonic_resource.ipp.html#boost::json::monotonic_resource::block" title='boost::json::monotonic_resource::block' data-ref="boost::json::monotonic_resource::block" id="boost::json::monotonic_resource::block">block</a>;</td></tr>
+<tr><th id="94">94</th><td>    <b>struct</b> <dfn class="type def" id="boost::json::monotonic_resource::block_base" title='boost::json::monotonic_resource::block_base' data-ref="boost::json::monotonic_resource::block_base">block_base</dfn></td></tr>
+<tr><th id="95">95</th><td>    {</td></tr>
+<tr><th id="96">96</th><td>        <em>void</em>* <dfn class="decl field" id="boost::json::monotonic_resource::block_base::p" title='boost::json::monotonic_resource::block_base::p' data-ref="boost::json::monotonic_resource::block_base::p">p</dfn>;</td></tr>
+<tr><th id="97">97</th><td>        <span class="namespace">std::</span><a class="typedef" href="../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> <dfn class="decl field" id="boost::json::monotonic_resource::block_base::avail" title='boost::json::monotonic_resource::block_base::avail' data-ref="boost::json::monotonic_resource::block_base::avail">avail</dfn>;</td></tr>
+<tr><th id="98">98</th><td>        <span class="namespace">std::</span><a class="typedef" href="../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> <dfn class="decl field" id="boost::json::monotonic_resource::block_base::size" title='boost::json::monotonic_resource::block_base::size' data-ref="boost::json::monotonic_resource::block_base::size">size</dfn>;</td></tr>
+<tr><th id="99">99</th><td>        <a class="type" href="#boost::json::monotonic_resource::block_base" title='boost::json::monotonic_resource::block_base' data-ref="boost::json::monotonic_resource::block_base">block_base</a>* <dfn class="decl field" id="boost::json::monotonic_resource::block_base::next" title='boost::json::monotonic_resource::block_base::next' data-ref="boost::json::monotonic_resource::block_base::next">next</dfn>;</td></tr>
+<tr><th id="100">100</th><td>    };</td></tr>
+<tr><th id="101">101</th><td></td></tr>
+<tr><th id="102">102</th><td>    <a class="type" href="#boost::json::monotonic_resource::block_base" title='boost::json::monotonic_resource::block_base' data-ref="boost::json::monotonic_resource::block_base">block_base</a> <dfn class="decl field" id="boost::json::monotonic_resource::buffer_" title='boost::json::monotonic_resource::buffer_' data-ref="boost::json::monotonic_resource::buffer_">buffer_</dfn>;</td></tr>
+<tr><th id="103">103</th><td>    <a class="type" href="#boost::json::monotonic_resource::block_base" title='boost::json::monotonic_resource::block_base' data-ref="boost::json::monotonic_resource::block_base">block_base</a>* <dfn class="decl field" id="boost::json::monotonic_resource::head_" title='boost::json::monotonic_resource::head_' data-ref="boost::json::monotonic_resource::head_">head_</dfn> = &amp;<a class="ref field" href="#boost::json::monotonic_resource::buffer_" title='boost::json::monotonic_resource::buffer_' data-ref="boost::json::monotonic_resource::buffer_">buffer_</a>;</td></tr>
+<tr><th id="104">104</th><td>    <span class="namespace">std::</span><a class="typedef" href="../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> <dfn class="decl field" id="boost::json::monotonic_resource::next_size_" title='boost::json::monotonic_resource::next_size_' data-ref="boost::json::monotonic_resource::next_size_">next_size_</dfn> = <var>1024</var>;</td></tr>
+<tr><th id="105">105</th><td>    <a class="type" href="storage_ptr.hpp.html#boost::json::storage_ptr" title='boost::json::storage_ptr' data-ref="boost::json::storage_ptr">storage_ptr</a> <dfn class="decl field" id="boost::json::monotonic_resource::upstream_" title='boost::json::monotonic_resource::upstream_' data-ref="boost::json::monotonic_resource::upstream_">upstream_</dfn>;</td></tr>
+<tr><th id="106">106</th><td></td></tr>
+<tr><th id="107">107</th><td>    <em>static</em> <b>constexpr</b> <span class="namespace">std::</span><a class="typedef" href="../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> <dfn class="decl" id="boost::json::monotonic_resource::min_size_" title='boost::json::monotonic_resource::min_size_' data-ref="boost::json::monotonic_resource::min_size_">min_size_</dfn> = <var>1024</var>;</td></tr>
+<tr><th id="108">108</th><td>    <b>inline</b> <em>static</em> <b>constexpr</b> <span class="namespace">std::</span><a class="typedef" href="../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> <a class="decl fn" href="impl/monotonic_resource.ipp.html#_ZN5boost4json18monotonic_resource8max_sizeEv" title='boost::json::monotonic_resource::max_size' data-ref="_ZN5boost4json18monotonic_resource8max_sizeEv" id="_ZN5boost4json18monotonic_resource8max_sizeEv">max_size</a>();</td></tr>
+<tr><th id="109">109</th><td>    <b>inline</b> <em>static</em> <span class="namespace">std::</span><a class="typedef" href="../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> <a class="decl fn" href="impl/monotonic_resource.ipp.html#_ZN5boost4json18monotonic_resource10round_pow2Em" title='boost::json::monotonic_resource::round_pow2' data-ref="_ZN5boost4json18monotonic_resource10round_pow2Em" id="_ZN5boost4json18monotonic_resource10round_pow2Em">round_pow2</a>(</td></tr>
+<tr><th id="110">110</th><td>        <span class="namespace">std::</span><a class="typedef" href="../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> <dfn class="local col3 decl" id="2263n" title='n' data-type='std::size_t' data-ref="2263n">n</dfn>) <b>noexcept</b>;</td></tr>
+<tr><th id="111">111</th><td>    <b>inline</b> <em>static</em> <span class="namespace">std::</span><a class="typedef" href="../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> <a class="decl fn" href="impl/monotonic_resource.ipp.html#_ZN5boost4json18monotonic_resource9next_pow2Em" title='boost::json::monotonic_resource::next_pow2' data-ref="_ZN5boost4json18monotonic_resource9next_pow2Em" id="_ZN5boost4json18monotonic_resource9next_pow2Em">next_pow2</a>(</td></tr>
+<tr><th id="112">112</th><td>        <span class="namespace">std::</span><a class="typedef" href="../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> <dfn class="local col4 decl" id="2264n" title='n' data-type='std::size_t' data-ref="2264n">n</dfn>) <b>noexcept</b>;</td></tr>
+<tr><th id="113">113</th><td></td></tr>
+<tr><th id="114">114</th><td><b>public</b>:</td></tr>
+<tr><th id="115">115</th><td>    <i class="doc">/// Copy constructor (deleted)</i></td></tr>
+<tr><th id="116">116</th><td>    <dfn class="decl def fn" id="_ZN5boost4json18monotonic_resourceC1ERKS1_" title='boost::json::monotonic_resource::monotonic_resource' data-ref="_ZN5boost4json18monotonic_resourceC1ERKS1_">monotonic_resource</dfn>(</td></tr>
+<tr><th id="117">117</th><td>        <a class="type" href="#boost::json::monotonic_resource" title='boost::json::monotonic_resource' data-ref="boost::json::monotonic_resource">monotonic_resource</a> <em>const</em>&amp;) = <b>delete</b>;</td></tr>
+<tr><th id="118">118</th><td></td></tr>
+<tr><th id="119">119</th><td>    <i class="doc">/// Copy assignment (deleted)</i></td></tr>
+<tr><th id="120">120</th><td>    <a class="type" href="#boost::json::monotonic_resource" title='boost::json::monotonic_resource' data-ref="boost::json::monotonic_resource">monotonic_resource</a>&amp; <dfn class="decl def fn" id="_ZN5boost4json18monotonic_resourceaSERKS1_" title='boost::json::monotonic_resource::operator=' data-ref="_ZN5boost4json18monotonic_resourceaSERKS1_"><b>operator</b>=</dfn>(</td></tr>
+<tr><th id="121">121</th><td>        <a class="type" href="#boost::json::monotonic_resource" title='boost::json::monotonic_resource' data-ref="boost::json::monotonic_resource">monotonic_resource</a> <em>const</em>&amp;) = <b>delete</b>;</td></tr>
+<tr><th id="122">122</th><td></td></tr>
+<tr><th id="123">123</th><td>    <i class="doc">/** Destructor</i></td></tr>
+<tr><th id="124">124</th><td><i class="doc"></i></td></tr>
+<tr><th id="125">125</th><td><i class="doc">        Deallocates all the memory owned by this resource.</i></td></tr>
+<tr><th id="126">126</th><td><i class="doc"></i></td></tr>
+<tr><th id="127">127</th><td><i class="doc">        <span class="command">@par</span> Effects</i></td></tr>
+<tr><th id="128">128</th><td><i class="doc">        <span class="command">@code</span></i></td></tr>
+<tr><th id="129">129</th><td><i class="doc"><span class="verb">        this-&gt;release();</span></i></td></tr>
+<tr><th id="130">130</th><td><i class="doc"><span class="verb"></span>        @endcode</i></td></tr>
+<tr><th id="131">131</th><td><i class="doc"></i></td></tr>
+<tr><th id="132">132</th><td><i class="doc">        <span class="command">@par</span> Complexity</i></td></tr>
+<tr><th id="133">133</th><td><i class="doc">        Linear in the number of deallocations performed.</i></td></tr>
+<tr><th id="134">134</th><td><i class="doc"></i></td></tr>
+<tr><th id="135">135</th><td><i class="doc">        <span class="command">@par</span> Exception Safety</i></td></tr>
+<tr><th id="136">136</th><td><i class="doc">        No-throw guarantee.</i></td></tr>
+<tr><th id="137">137</th><td><i class="doc">    */</i></td></tr>
+<tr><th id="138">138</th><td>    <a class="virtual decl fn" href="impl/monotonic_resource.ipp.html#_ZN5boost4json18monotonic_resourceD1Ev" title='boost::json::monotonic_resource::~monotonic_resource' data-ref="_ZN5boost4json18monotonic_resourceD1Ev" id="_ZN5boost4json18monotonic_resourceD1Ev">~monotonic_resource</a>();</td></tr>
+<tr><th id="139">139</th><td></td></tr>
+<tr><th id="140">140</th><td>    <i class="doc">/** Constructor</i></td></tr>
+<tr><th id="141">141</th><td><i class="doc"></i></td></tr>
+<tr><th id="142">142</th><td><i class="doc">        This constructs the resource and indicates</i></td></tr>
+<tr><th id="143">143</th><td><i class="doc">        that the first internal dynamic allocation</i></td></tr>
+<tr><th id="144">144</th><td><i class="doc">        shall be at least `initial_size` bytes.</i></td></tr>
+<tr><th id="145">145</th><td><i class="doc">   <span class="command"> \n</span></i></td></tr>
+<tr><th id="146">146</th><td><i class="doc">        This constructor is guaranteed not to perform</i></td></tr>
+<tr><th id="147">147</th><td><i class="doc">        any dynamic allocations.</i></td></tr>
+<tr><th id="148">148</th><td><i class="doc"></i></td></tr>
+<tr><th id="149">149</th><td><i class="doc">        <span class="command">@par</span> Complexity</i></td></tr>
+<tr><th id="150">150</th><td><i class="doc">        Constant.</i></td></tr>
+<tr><th id="151">151</th><td><i class="doc"></i></td></tr>
+<tr><th id="152">152</th><td><i class="doc">        <span class="command">@par</span> Exception Safety</i></td></tr>
+<tr><th id="153">153</th><td><i class="doc">        No-throw guarantee.</i></td></tr>
+<tr><th id="154">154</th><td><i class="doc"></i></td></tr>
+<tr><th id="155">155</th><td><i class="doc">        <span class="command">@param</span> <span class="arg">initial_size</span> The size of the first</i></td></tr>
+<tr><th id="156">156</th><td><i class="doc">        internal dynamic allocation. If this is lower</i></td></tr>
+<tr><th id="157">157</th><td><i class="doc">        than the implementation-defined lower limit, then</i></td></tr>
+<tr><th id="158">158</th><td><i class="doc">        the lower limit is used instead.</i></td></tr>
+<tr><th id="159">159</th><td><i class="doc"></i></td></tr>
+<tr><th id="160">160</th><td><i class="doc">        <span class="command">@param</span> <span class="arg">upstream</span> An optional upstream memory resource</i></td></tr>
+<tr><th id="161">161</th><td><i class="doc">        to use for performing internal dynamic allocations.</i></td></tr>
+<tr><th id="162">162</th><td><i class="doc">        If this parameter is omitted, the default resource</i></td></tr>
+<tr><th id="163">163</th><td><i class="doc">        is used.</i></td></tr>
+<tr><th id="164">164</th><td><i class="doc">    */</i></td></tr>
+<tr><th id="165">165</th><td>    <b>explicit</b></td></tr>
+<tr><th id="166">166</th><td>    <a class="decl fn" href="impl/monotonic_resource.ipp.html#_ZN5boost4json18monotonic_resourceC1EmNS0_11storage_ptrE" title='boost::json::monotonic_resource::monotonic_resource' data-ref="_ZN5boost4json18monotonic_resourceC1EmNS0_11storage_ptrE" id="_ZN5boost4json18monotonic_resourceC1EmNS0_11storage_ptrE">monotonic_resource</a>(</td></tr>
+<tr><th id="167">167</th><td>        <span class="namespace">std::</span><a class="typedef" href="../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> <dfn class="local col5 decl" id="2265initial_size" title='initial_size' data-type='std::size_t' data-ref="2265initial_size">initial_size</dfn> = <var>1024</var>,</td></tr>
+<tr><th id="168">168</th><td>        <a class="type" href="storage_ptr.hpp.html#boost::json::storage_ptr" title='boost::json::storage_ptr' data-ref="boost::json::storage_ptr">storage_ptr</a> <dfn class="local col6 decl" id="2266upstream" title='upstream' data-type='boost::json::storage_ptr' data-ref="2266upstream">upstream</dfn> = <a class="ref fn" href="storage_ptr.hpp.html#_ZN5boost4json11storage_ptrC1Ev" title='boost::json::storage_ptr::storage_ptr' data-ref="_ZN5boost4json11storage_ptrC1Ev">{</a>}) <b>noexcept</b>;</td></tr>
+<tr><th id="169">169</th><td></td></tr>
+<tr><th id="170">170</th><td>    <i class="doc">/** Constructor</i></td></tr>
+<tr><th id="171">171</th><td><i class="doc"></i></td></tr>
+<tr><th id="172">172</th><td><i class="doc">        This constructs the resource and indicates that</i></td></tr>
+<tr><th id="173">173</th><td><i class="doc">        subsequent allocations should use the specified</i></td></tr>
+<tr><th id="174">174</th><td><i class="doc">        caller-owned buffer.</i></td></tr>
+<tr><th id="175">175</th><td><i class="doc">        When this buffer is exhausted, dynamic allocations</i></td></tr>
+<tr><th id="176">176</th><td><i class="doc">        from the upstream resource are made.</i></td></tr>
+<tr><th id="177">177</th><td><i class="doc">   <span class="command"> \n</span></i></td></tr>
+<tr><th id="178">178</th><td><i class="doc">        This constructor is guaranteed not to perform</i></td></tr>
+<tr><th id="179">179</th><td><i class="doc">        any dynamic allocations.</i></td></tr>
+<tr><th id="180">180</th><td><i class="doc"></i></td></tr>
+<tr><th id="181">181</th><td><i class="doc">        <span class="command">@par</span> Complexity</i></td></tr>
+<tr><th id="182">182</th><td><i class="doc">        Constant.</i></td></tr>
+<tr><th id="183">183</th><td><i class="doc"></i></td></tr>
+<tr><th id="184">184</th><td><i class="doc">        <span class="command">@par</span> Exception Safety</i></td></tr>
+<tr><th id="185">185</th><td><i class="doc">        No-throw guarantee.</i></td></tr>
+<tr><th id="186">186</th><td><i class="doc"></i></td></tr>
+<tr><th id="187">187</th><td><i class="doc">        <span class="command">@param</span> <span class="arg">buffer</span> The buffer to use.</i></td></tr>
+<tr><th id="188">188</th><td><i class="doc">        Ownership is not transferred; the caller is</i></td></tr>
+<tr><th id="189">189</th><td><i class="doc">        responsible for ensuring that the lifetime of</i></td></tr>
+<tr><th id="190">190</th><td><i class="doc">        the buffer extends until the resource is destroyed.</i></td></tr>
+<tr><th id="191">191</th><td><i class="doc"></i></td></tr>
+<tr><th id="192">192</th><td><i class="doc">        <span class="command">@param</span> <span class="arg">size</span> The number of valid bytes pointed</i></td></tr>
+<tr><th id="193">193</th><td><i class="doc">        to by `buffer`.</i></td></tr>
+<tr><th id="194">194</th><td><i class="doc"></i></td></tr>
+<tr><th id="195">195</th><td><i class="doc">        <span class="command">@param</span> <span class="arg">upstream</span> An optional upstream memory resource</i></td></tr>
+<tr><th id="196">196</th><td><i class="doc">        to use for performing internal dynamic allocations.</i></td></tr>
+<tr><th id="197">197</th><td><i class="doc">        If this parameter is omitted, the default resource</i></td></tr>
+<tr><th id="198">198</th><td><i class="doc">        is used.</i></td></tr>
+<tr><th id="199">199</th><td><i class="doc">    */</i></td></tr>
+<tr><th id="200">200</th><td>    <i class="doc">/** @{ */</i></td></tr>
+<tr><th id="201">201</th><td>    <a class="decl fn" href="impl/monotonic_resource.ipp.html#_ZN5boost4json18monotonic_resourceC1EPhmNS0_11storage_ptrE" title='boost::json::monotonic_resource::monotonic_resource' data-ref="_ZN5boost4json18monotonic_resourceC1EPhmNS0_11storage_ptrE" id="_ZN5boost4json18monotonic_resourceC1EPhmNS0_11storage_ptrE">monotonic_resource</a>(</td></tr>
+<tr><th id="202">202</th><td>        <em>unsigned</em> <em>char</em>* <dfn class="local col7 decl" id="2267buffer" title='buffer' data-type='unsigned char *' data-ref="2267buffer">buffer</dfn>,</td></tr>
+<tr><th id="203">203</th><td>        <span class="namespace">std::</span><a class="typedef" href="../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> <dfn class="local col8 decl" id="2268size" title='size' data-type='std::size_t' data-ref="2268size">size</dfn>,</td></tr>
+<tr><th id="204">204</th><td>        <a class="type" href="storage_ptr.hpp.html#boost::json::storage_ptr" title='boost::json::storage_ptr' data-ref="boost::json::storage_ptr">storage_ptr</a> <dfn class="local col9 decl" id="2269upstream" title='upstream' data-type='boost::json::storage_ptr' data-ref="2269upstream">upstream</dfn> = <a class="ref fn" href="storage_ptr.hpp.html#_ZN5boost4json11storage_ptrC1Ev" title='boost::json::storage_ptr::storage_ptr' data-ref="_ZN5boost4json11storage_ptrC1Ev">{</a>}) <b>noexcept</b>;</td></tr>
+<tr><th id="205">205</th><td></td></tr>
+<tr><th id="206">206</th><td><u>#<span data-ppcond="206">if</span> defined(<span class="macro" data-ref="_M/__cpp_lib_byte">__cpp_lib_byte</span>) || defined(<span class="macro" data-ref="_M/BOOST_JSON_DOCS">BOOST_JSON_DOCS</span>)</u></td></tr>
+<tr><th id="207">207</th><td>    monotonic_resource(</td></tr>
+<tr><th id="208">208</th><td>        std::byte* buffer,</td></tr>
+<tr><th id="209">209</th><td>        std::size_t size,</td></tr>
+<tr><th id="210">210</th><td>        storage_ptr upstream) <b>noexcept</b></td></tr>
+<tr><th id="211">211</th><td>        : monotonic_resource(<b>reinterpret_cast</b>&lt;</td></tr>
+<tr><th id="212">212</th><td>            <em>unsigned</em> <em>char</em>*&gt;(buffer), size,</td></tr>
+<tr><th id="213">213</th><td>                std::move(upstream))</td></tr>
+<tr><th id="214">214</th><td>    {</td></tr>
+<tr><th id="215">215</th><td>    }</td></tr>
+<tr><th id="216">216</th><td><u>#<span data-ppcond="206">endif</span></u></td></tr>
+<tr><th id="217">217</th><td>    <i class="doc">/** @} */</i></td></tr>
+<tr><th id="218">218</th><td></td></tr>
+<tr><th id="219">219</th><td>    <i class="doc">/** Constructor</i></td></tr>
+<tr><th id="220">220</th><td><i class="doc"></i></td></tr>
+<tr><th id="221">221</th><td><i class="doc">        This constructs the resource and indicates that</i></td></tr>
+<tr><th id="222">222</th><td><i class="doc">        subsequent allocations should use the specified</i></td></tr>
+<tr><th id="223">223</th><td><i class="doc">        caller-owned buffer.</i></td></tr>
+<tr><th id="224">224</th><td><i class="doc">        When this buffer is exhausted, dynamic allocations</i></td></tr>
+<tr><th id="225">225</th><td><i class="doc">        from the upstream resource are made.</i></td></tr>
+<tr><th id="226">226</th><td><i class="doc">   <span class="command"> \n</span></i></td></tr>
+<tr><th id="227">227</th><td><i class="doc">        This constructor is guaranteed not to perform</i></td></tr>
+<tr><th id="228">228</th><td><i class="doc">        any dynamic allocations.</i></td></tr>
+<tr><th id="229">229</th><td><i class="doc"></i></td></tr>
+<tr><th id="230">230</th><td><i class="doc">        <span class="command">@par</span> Complexity</i></td></tr>
+<tr><th id="231">231</th><td><i class="doc">        Constant.</i></td></tr>
+<tr><th id="232">232</th><td><i class="doc"></i></td></tr>
+<tr><th id="233">233</th><td><i class="doc">        <span class="command">@par</span> Exception Safety</i></td></tr>
+<tr><th id="234">234</th><td><i class="doc">        No-throw guarantee.</i></td></tr>
+<tr><th id="235">235</th><td><i class="doc"></i></td></tr>
+<tr><th id="236">236</th><td><i class="doc">        <span class="command">@param</span> <span class="arg">buffer</span> The buffer to use.</i></td></tr>
+<tr><th id="237">237</th><td><i class="doc">        Ownership is not transferred; the caller is</i></td></tr>
+<tr><th id="238">238</th><td><i class="doc">        responsible for ensuring that the lifetime of</i></td></tr>
+<tr><th id="239">239</th><td><i class="doc">        the buffer extends until the resource is destroyed.</i></td></tr>
+<tr><th id="240">240</th><td><i class="doc"></i></td></tr>
+<tr><th id="241">241</th><td><i class="doc">        <span class="command">@param</span> <span class="arg">upstream</span> An optional upstream memory resource</i></td></tr>
+<tr><th id="242">242</th><td><i class="doc">        to use for performing internal dynamic allocations.</i></td></tr>
+<tr><th id="243">243</th><td><i class="doc">        If this parameter is omitted, the default resource</i></td></tr>
+<tr><th id="244">244</th><td><i class="doc">        is used.</i></td></tr>
+<tr><th id="245">245</th><td><i class="doc">    */</i></td></tr>
+<tr><th id="246">246</th><td>    <i class="doc">/** @{ */</i></td></tr>
+<tr><th id="247">247</th><td>    <b>template</b>&lt;<span class="namespace">std::</span><a class="typedef" href="../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> N&gt;</td></tr>
+<tr><th id="248">248</th><td>    <b>explicit</b></td></tr>
+<tr><th id="249">249</th><td>    <dfn class="decl def fn" id="_ZN5boost4json18monotonic_resourceC1ERAT__hNS0_11storage_ptrE" title='boost::json::monotonic_resource::monotonic_resource' data-ref="_ZN5boost4json18monotonic_resourceC1ERAT__hNS0_11storage_ptrE">monotonic_resource</dfn>(</td></tr>
+<tr><th id="250">250</th><td>        <em>unsigned</em> <em>char</em>(&amp;<dfn class="local col0 decl" id="2270buffer" title='buffer' data-type='unsigned char (&amp;)[N]' data-ref="2270buffer">buffer</dfn>)[<a class="tu ref" href="#N" title='N' data-ref="N">N</a>],</td></tr>
+<tr><th id="251">251</th><td>        <a class="type" href="storage_ptr.hpp.html#boost::json::storage_ptr" title='boost::json::storage_ptr' data-ref="boost::json::storage_ptr">storage_ptr</a> <dfn class="local col1 decl" id="2271upstream" title='upstream' data-type='boost::json::storage_ptr' data-ref="2271upstream">upstream</dfn> = <a class="ref fn" href="storage_ptr.hpp.html#_ZN5boost4json11storage_ptrC1Ev" title='boost::json::storage_ptr::storage_ptr' data-ref="_ZN5boost4json11storage_ptrC1Ev">{</a>}) <b>noexcept</b></td></tr>
+<tr><th id="252">252</th><td>        : <a class="type" href="#boost::json::monotonic_resource" title='boost::json::monotonic_resource' data-ref="boost::json::monotonic_resource">monotonic_resource</a>(&amp;<a class="local col0 ref" href="#2270buffer" title='buffer' data-ref="2270buffer">buffer</a>[<var>0</var>],</td></tr>
+<tr><th id="253">253</th><td>            <a class="tu ref" href="#N" title='N' data-use='r' data-ref="N">N</a>, <span class="namespace">std::</span><a class="ref fn" href="../../../../../../include/c++/9/bits/move.h.html#_ZSt4moveOT_" title='std::move' data-ref="_ZSt4moveOT_">move</a>(<span class='refarg'><a class="local col1 ref" href="#2271upstream" title='upstream' data-ref="2271upstream">upstream</a></span>))</td></tr>
+<tr><th id="254">254</th><td>    {</td></tr>
+<tr><th id="255">255</th><td>    }</td></tr>
+<tr><th id="256">256</th><td></td></tr>
+<tr><th id="257">257</th><td><u>#<span data-ppcond="257">if</span> defined(<span class="macro" data-ref="_M/__cpp_lib_byte">__cpp_lib_byte</span>) || defined(<span class="macro" data-ref="_M/BOOST_JSON_DOCS">BOOST_JSON_DOCS</span>)</u></td></tr>
+<tr><th id="258">258</th><td>    <b>template</b>&lt;std::size_t N&gt;</td></tr>
+<tr><th id="259">259</th><td>    <b>explicit</b></td></tr>
+<tr><th id="260">260</th><td>    monotonic_resource(</td></tr>
+<tr><th id="261">261</th><td>        std::byte(&amp;buffer)[N],</td></tr>
+<tr><th id="262">262</th><td>        storage_ptr upstream = {}) <b>noexcept</b></td></tr>
+<tr><th id="263">263</th><td>        : monotonic_resource(&amp;buffer[<var>0</var>],</td></tr>
+<tr><th id="264">264</th><td>            N, std::move(upstream))</td></tr>
+<tr><th id="265">265</th><td>    {</td></tr>
+<tr><th id="266">266</th><td>    }</td></tr>
+<tr><th id="267">267</th><td><u>#<span data-ppcond="257">endif</span></u></td></tr>
+<tr><th id="268">268</th><td>    <i class="doc">/** @} */</i></td></tr>
+<tr><th id="269">269</th><td></td></tr>
+<tr><th id="270">270</th><td><u>#<span data-ppcond="270">ifndef</span> <span class="macro" data-ref="_M/BOOST_JSON_DOCS">BOOST_JSON_DOCS</span></u></td></tr>
+<tr><th id="271">271</th><td>    <i>// Safety net for accidental buffer overflows</i></td></tr>
+<tr><th id="272">272</th><td>    <b>template</b>&lt;<span class="namespace">std::</span><a class="typedef" href="../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> N&gt;</td></tr>
+<tr><th id="273">273</th><td>    <dfn class="decl def fn" id="_ZN5boost4json18monotonic_resourceC1ERAT__hmNS0_11storage_ptrE" title='boost::json::monotonic_resource::monotonic_resource' data-ref="_ZN5boost4json18monotonic_resourceC1ERAT__hmNS0_11storage_ptrE">monotonic_resource</dfn>(</td></tr>
+<tr><th id="274">274</th><td>        <em>unsigned</em> <em>char</em>(&amp;<dfn class="local col2 decl" id="2272buffer" title='buffer' data-type='unsigned char (&amp;)[N]' data-ref="2272buffer">buffer</dfn>)[<a class="tu ref" href="#N" title='N' data-ref="N">N</a>],</td></tr>
+<tr><th id="275">275</th><td>        <span class="namespace">std::</span><a class="typedef" href="../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> <dfn class="local col3 decl" id="2273n" title='n' data-type='std::size_t' data-ref="2273n">n</dfn>,</td></tr>
+<tr><th id="276">276</th><td>        <a class="type" href="storage_ptr.hpp.html#boost::json::storage_ptr" title='boost::json::storage_ptr' data-ref="boost::json::storage_ptr">storage_ptr</a> <dfn class="local col4 decl" id="2274upstream" title='upstream' data-type='boost::json::storage_ptr' data-ref="2274upstream">upstream</dfn> = <a class="ref fn" href="storage_ptr.hpp.html#_ZN5boost4json11storage_ptrC1Ev" title='boost::json::storage_ptr::storage_ptr' data-ref="_ZN5boost4json11storage_ptrC1Ev">{</a>}) <b>noexcept</b></td></tr>
+<tr><th id="277">277</th><td>        : <a class="type" href="#boost::json::monotonic_resource" title='boost::json::monotonic_resource' data-ref="boost::json::monotonic_resource">monotonic_resource</a>(&amp;<a class="local col2 ref" href="#2272buffer" title='buffer' data-ref="2272buffer">buffer</a>[<var>0</var>],</td></tr>
+<tr><th id="278">278</th><td>            <a class="local col3 ref" href="#2273n" title='n' data-ref="2273n">n</a>, <span class="namespace">std::</span><a class="ref fn" href="../../../../../../include/c++/9/bits/move.h.html#_ZSt4moveOT_" title='std::move' data-ref="_ZSt4moveOT_">move</a>(<span class='refarg'><a class="local col4 ref" href="#2274upstream" title='upstream' data-ref="2274upstream">upstream</a></span>))</td></tr>
+<tr><th id="279">279</th><td>    {</td></tr>
+<tr><th id="280">280</th><td>        <i>// If this goes off, check your parameters</i></td></tr>
+<tr><th id="281">281</th><td><i>        // closely, chances are you passed an array</i></td></tr>
+<tr><th id="282">282</th><td><i>        // thinking it was a pointer.</i></td></tr>
+<tr><th id="283">283</th><td>        <a class="macro" href="../../../../assert/include/boost/assert.hpp.html#60" title="(static_cast&lt;void&gt; (0))" data-ref="_M/BOOST_ASSERT">BOOST_ASSERT</a>(n &lt;= N);</td></tr>
+<tr><th id="284">284</th><td>    }</td></tr>
+<tr><th id="285">285</th><td></td></tr>
+<tr><th id="286">286</th><td><u>#<span data-ppcond="286">ifdef</span> <span class="macro" data-ref="_M/__cpp_lib_byte">__cpp_lib_byte</span></u></td></tr>
+<tr><th id="287">287</th><td>    <i>// Safety net for accidental buffer overflows</i></td></tr>
+<tr><th id="288">288</th><td>    <b>template</b>&lt;std::size_t N&gt;</td></tr>
+<tr><th id="289">289</th><td>    monotonic_resource(</td></tr>
+<tr><th id="290">290</th><td>        std::byte(&amp;buffer)[N],</td></tr>
+<tr><th id="291">291</th><td>        std::size_t n,</td></tr>
+<tr><th id="292">292</th><td>        storage_ptr upstream = {}) <b>noexcept</b></td></tr>
+<tr><th id="293">293</th><td>        : monotonic_resource(&amp;buffer[<var>0</var>],</td></tr>
+<tr><th id="294">294</th><td>            n, std::move(upstream))</td></tr>
+<tr><th id="295">295</th><td>    {</td></tr>
+<tr><th id="296">296</th><td>        <i>// If this goes off, check your parameters</i></td></tr>
+<tr><th id="297">297</th><td><i>        // closely, chances are you passed an array</i></td></tr>
+<tr><th id="298">298</th><td><i>        // thinking it was a pointer.</i></td></tr>
+<tr><th id="299">299</th><td>        BOOST_ASSERT(n &lt;= N);</td></tr>
+<tr><th id="300">300</th><td>    }</td></tr>
+<tr><th id="301">301</th><td><u>#<span data-ppcond="286">endif</span></u></td></tr>
+<tr><th id="302">302</th><td><u>#<span data-ppcond="270">endif</span></u></td></tr>
+<tr><th id="303">303</th><td></td></tr>
+<tr><th id="304">304</th><td>    <i class="doc">/** Release all allocated memory.</i></td></tr>
+<tr><th id="305">305</th><td><i class="doc"></i></td></tr>
+<tr><th id="306">306</th><td><i class="doc">        This function deallocates all allocated memory.</i></td></tr>
+<tr><th id="307">307</th><td><i class="doc">        If an initial buffer was provided upon construction,</i></td></tr>
+<tr><th id="308">308</th><td><i class="doc">        then all of the bytes will be available again for</i></td></tr>
+<tr><th id="309">309</th><td><i class="doc">        allocation. Allocated memory is deallocated even</i></td></tr>
+<tr><th id="310">310</th><td><i class="doc">        if deallocate has not been called for some of</i></td></tr>
+<tr><th id="311">311</th><td><i class="doc">        the allocated blocks.</i></td></tr>
+<tr><th id="312">312</th><td><i class="doc"></i></td></tr>
+<tr><th id="313">313</th><td><i class="doc">        <span class="command">@par</span> Complexity</i></td></tr>
+<tr><th id="314">314</th><td><i class="doc">        Linear in the number of deallocations performed.</i></td></tr>
+<tr><th id="315">315</th><td><i class="doc"></i></td></tr>
+<tr><th id="316">316</th><td><i class="doc">        <span class="command">@par</span> Exception Safety</i></td></tr>
+<tr><th id="317">317</th><td><i class="doc">        No-throw guarantee.</i></td></tr>
+<tr><th id="318">318</th><td><i class="doc">    */</i></td></tr>
+<tr><th id="319">319</th><td>    <em>void</em></td></tr>
+<tr><th id="320">320</th><td>    <a class="decl fn" href="impl/monotonic_resource.ipp.html#_ZN5boost4json18monotonic_resource7releaseEv" title='boost::json::monotonic_resource::release' data-ref="_ZN5boost4json18monotonic_resource7releaseEv" id="_ZN5boost4json18monotonic_resource7releaseEv">release</a>() <b>noexcept</b>;</td></tr>
+<tr><th id="321">321</th><td></td></tr>
+<tr><th id="322">322</th><td><b>protected</b>:</td></tr>
+<tr><th id="323">323</th><td><u>#<span data-ppcond="323">ifndef</span> <span class="macro" data-ref="_M/BOOST_JSON_DOCS">BOOST_JSON_DOCS</span></u></td></tr>
+<tr><th id="324">324</th><td>    <em>void</em>*</td></tr>
+<tr><th id="325">325</th><td>    <a class="virtual decl fn" href="impl/monotonic_resource.ipp.html#_ZN5boost4json18monotonic_resource11do_allocateEmm" title='boost::json::monotonic_resource::do_allocate' data-ref="_ZN5boost4json18monotonic_resource11do_allocateEmm" id="_ZN5boost4json18monotonic_resource11do_allocateEmm">do_allocate</a>(</td></tr>
+<tr><th id="326">326</th><td>        <span class="namespace">std::</span><a class="typedef" href="../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> <dfn class="local col5 decl" id="2275n" title='n' data-type='std::size_t' data-ref="2275n">n</dfn>,</td></tr>
+<tr><th id="327">327</th><td>        <span class="namespace">std::</span><a class="typedef" href="../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> <dfn class="local col6 decl" id="2276align" title='align' data-type='std::size_t' data-ref="2276align">align</dfn>) override;</td></tr>
+<tr><th id="328">328</th><td></td></tr>
+<tr><th id="329">329</th><td>    <em>void</em></td></tr>
+<tr><th id="330">330</th><td>    <a class="virtual decl fn" href="impl/monotonic_resource.ipp.html#_ZN5boost4json18monotonic_resource13do_deallocateEPvmm" title='boost::json::monotonic_resource::do_deallocate' data-ref="_ZN5boost4json18monotonic_resource13do_deallocateEPvmm" id="_ZN5boost4json18monotonic_resource13do_deallocateEPvmm">do_deallocate</a>(</td></tr>
+<tr><th id="331">331</th><td>        <em>void</em>* <dfn class="local col7 decl" id="2277p" title='p' data-type='void *' data-ref="2277p">p</dfn>,</td></tr>
+<tr><th id="332">332</th><td>        <span class="namespace">std::</span><a class="typedef" href="../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> <dfn class="local col8 decl" id="2278n" title='n' data-type='std::size_t' data-ref="2278n">n</dfn>,</td></tr>
+<tr><th id="333">333</th><td>        <span class="namespace">std::</span><a class="typedef" href="../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> <dfn class="local col9 decl" id="2279align" title='align' data-type='std::size_t' data-ref="2279align">align</dfn>) override;</td></tr>
+<tr><th id="334">334</th><td></td></tr>
+<tr><th id="335">335</th><td>    <em>bool</em></td></tr>
+<tr><th id="336">336</th><td>    <a class="virtual decl fn" href="impl/monotonic_resource.ipp.html#_ZNK5boost4json18monotonic_resource11do_is_equalERKNS_9container3pmr15memory_resourceE" title='boost::json::monotonic_resource::do_is_equal' data-ref="_ZNK5boost4json18monotonic_resource11do_is_equalERKNS_9container3pmr15memory_resourceE" id="_ZNK5boost4json18monotonic_resource11do_is_equalERKNS_9container3pmr15memory_resourceE">do_is_equal</a>(</td></tr>
+<tr><th id="337">337</th><td>        <a class="type" href="../../../../container/include/boost/container/pmr/memory_resource.hpp.html#boost::container::pmr::memory_resource" title='boost::container::pmr::memory_resource' data-ref="boost::container::pmr::memory_resource">memory_resource</a> <em>const</em>&amp; <dfn class="local col0 decl" id="2280mr" title='mr' data-type='const boost::container::pmr::memory_resource &amp;' data-ref="2280mr">mr</dfn>) <em>const</em> <b>noexcept</b> override;</td></tr>
+<tr><th id="338">338</th><td><u>#<span data-ppcond="323">endif</span></u></td></tr>
+<tr><th id="339">339</th><td>};</td></tr>
+<tr><th id="340">340</th><td></td></tr>
+<tr><th id="341">341</th><td><u>#<span data-ppcond="341">ifdef</span> <span class="macro" data-ref="_M/_MSC_VER">_MSC_VER</span></u></td></tr>
+<tr><th id="342">342</th><td><u>#pragma warning(pop)</u></td></tr>
+<tr><th id="343">343</th><td><u>#<span data-ppcond="341">endif</span></u></td></tr>
+<tr><th id="344">344</th><td></td></tr>
+<tr><th id="345">345</th><td><b>template</b>&lt;&gt;</td></tr>
+<tr><th id="346">346</th><td><b>struct</b> <dfn class="type def" id="boost::json::is_deallocate_trivial" title='boost::json::is_deallocate_trivial' data-ref="boost::json::is_deallocate_trivial"><a class="type" href="is_deallocate_trivial.hpp.html#boost::json::is_deallocate_trivial" title='boost::json::is_deallocate_trivial' data-ref="boost::json::is_deallocate_trivial">is_deallocate_trivial</a></dfn>&lt;</td></tr>
+<tr><th id="347">347</th><td>    <a class="type" href="#boost::json::monotonic_resource" title='boost::json::monotonic_resource' data-ref="boost::json::monotonic_resource">monotonic_resource</a>&gt;</td></tr>
+<tr><th id="348">348</th><td>{</td></tr>
+<tr><th id="349">349</th><td>    <em>static</em> <b>constexpr</b> <em>bool</em> <dfn class="decl" id="boost::json::is_deallocate_trivial{boost::json::monotonic_resource}::value" title='boost::json::is_deallocate_trivial&lt;boost::json::monotonic_resource&gt;::value' data-ref="boost::json::is_deallocate_trivial{boost::json::monotonic_resource}::value">value</dfn> = <b>true</b>;</td></tr>
+<tr><th id="350">350</th><td>};</td></tr>
+<tr><th id="351">351</th><td></td></tr>
+<tr><th id="352">352</th><td>} <i>// namespace json</i></td></tr>
+<tr><th id="353">353</th><td>} <i>// namespace boost</i></td></tr>
+<tr><th id="354">354</th><td></td></tr>
+<tr><th id="355">355</th><td><u>#<span data-ppcond="11">endif</span></u></td></tr>
+<tr><th id="356">356</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../../../src/src.cpp.html'>boost-1.85.0/libs/json/src/src.cpp</a><br/>Generated on <em>2024-Jun-14</em> from project boost-1.85.0 revision <em>1.85.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

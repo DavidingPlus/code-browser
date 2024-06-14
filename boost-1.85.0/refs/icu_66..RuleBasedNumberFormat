@@ -1,0 +1,578 @@
+<inh f='include/unicode/numfmt.h' l='175' c='icu_66::NumberFormat'/>
+<def f='include/unicode/rbnf.h' l='562' ll='1095'/>
+<use f='include/unicode/rbnf.h' l='680' c='_ZN6icu_6621RuleBasedNumberFormatC1ERKS0_'/>
+<use f='include/unicode/rbnf.h' l='687' c='_ZN6icu_6621RuleBasedNumberFormataSERKS0_'/>
+<use f='include/unicode/rbnf.h' l='687' c='_ZN6icu_6621RuleBasedNumberFormataSERKS0_'/>
+<use f='include/unicode/rbnf.h' l='701' c='_ZNK6icu_6621RuleBasedNumberFormat5cloneEv'/>
+<size>752</size>
+<doc f='include/unicode/rbnf.h' l='70'>/**
+ * The RuleBasedNumberFormat class formats numbers according to a set of rules. This number formatter is
+ * typically used for spelling out numeric values in words (e.g., 25,3476 as
+ * &amp;quot;twenty-five thousand three hundred seventy-six&amp;quot; or &amp;quot;vingt-cinq mille trois
+ * cents soixante-seize&amp;quot; or
+ * &amp;quot;f&amp;uuml;nfundzwanzigtausenddreihundertsechsundsiebzig&amp;quot;), but can also be used for
+ * other complicated formatting tasks, such as formatting a number of seconds as hours,
+ * minutes and seconds (e.g., 3,730 as &amp;quot;1:02:10&amp;quot;).
+ *
+ * &lt;p&gt;The resources contain three predefined formatters for each locale: spellout, which
+ * spells out a value in words (123 is &amp;quot;one hundred twenty-three&amp;quot;); ordinal, which
+ * appends an ordinal suffix to the end of a numeral (123 is &amp;quot;123rd&amp;quot;); and
+ * duration, which shows a duration in seconds as hours, minutes, and seconds (123 is
+ * &amp;quot;2:03&amp;quot;).&amp;nbsp; The client can also define more specialized &lt;tt&gt;RuleBasedNumberFormat&lt;/tt&gt;s
+ * by supplying programmer-defined rule sets.&lt;/p&gt;
+ *
+ * &lt;p&gt;The behavior of a &lt;tt&gt;RuleBasedNumberFormat&lt;/tt&gt; is specified by a textual description
+ * that is either passed to the constructor as a &lt;tt&gt;String&lt;/tt&gt; or loaded from a resource
+ * bundle. In its simplest form, the description consists of a semicolon-delimited list of &lt;em&gt;rules.&lt;/em&gt;
+ * Each rule has a string of output text and a value or range of values it is applicable to.
+ * In a typical spellout rule set, the first twenty rules are the words for the numbers from
+ * 0 to 19:&lt;/p&gt;
+ *
+ * &lt;pre&gt;zero; one; two; three; four; five; six; seven; eight; nine;
+ * ten; eleven; twelve; thirteen; fourteen; fifteen; sixteen; seventeen; eighteen; nineteen;&lt;/pre&gt;
+ *
+ * &lt;p&gt;For larger numbers, we can use the preceding set of rules to format the ones place, and
+ * we only have to supply the words for the multiples of 10:&lt;/p&gt;
+ *
+ * &lt;pre&gt; 20: twenty[-&amp;gt;&amp;gt;];
+ * 30: thirty[-&amp;gt;&amp;gt;];
+ * 40: forty[-&amp;gt;&amp;gt;];
+ * 50: fifty[-&amp;gt;&amp;gt;];
+ * 60: sixty[-&amp;gt;&amp;gt;];
+ * 70: seventy[-&amp;gt;&amp;gt;];
+ * 80: eighty[-&amp;gt;&amp;gt;];
+ * 90: ninety[-&amp;gt;&amp;gt;];&lt;/pre&gt;
+ *
+ * &lt;p&gt;In these rules, the &lt;em&gt;base value&lt;/em&gt; is spelled out explicitly and set off from the
+ * rule&apos;s output text with a colon. The rules are in a sorted list, and a rule is applicable
+ * to all numbers from its own base value to one less than the next rule&apos;s base value. The
+ * &amp;quot;&amp;gt;&amp;gt;&amp;quot; token is called a &lt;em&gt;substitution&lt;/em&gt; and tells the fomatter to
+ * isolate the number&apos;s ones digit, format it using this same set of rules, and place the
+ * result at the position of the &amp;quot;&amp;gt;&amp;gt;&amp;quot; token. Text in brackets is omitted if
+ * the number being formatted is an even multiple of 10 (the hyphen is a literal hyphen; 24
+ * is &amp;quot;twenty-four,&amp;quot; not &amp;quot;twenty four&amp;quot;).&lt;/p&gt;
+ *
+ * &lt;p&gt;For even larger numbers, we can actually look up several parts of the number in the
+ * list:&lt;/p&gt;
+ *
+ * &lt;pre&gt;100: &amp;lt;&amp;lt; hundred[ &amp;gt;&amp;gt;];&lt;/pre&gt;
+ *
+ * &lt;p&gt;The &amp;quot;&amp;lt;&amp;lt;&amp;quot; represents a new kind of substitution. The &amp;lt;&amp;lt; isolates
+ * the hundreds digit (and any digits to its left), formats it using this same rule set, and
+ * places the result where the &amp;quot;&amp;lt;&amp;lt;&amp;quot; was. Notice also that the meaning of
+ * &amp;gt;&amp;gt; has changed: it now refers to both the tens and the ones digits. The meaning of
+ * both substitutions depends on the rule&apos;s base value. The base value determines the rule&apos;s &lt;em&gt;divisor,&lt;/em&gt;
+ * which is the highest power of 10 that is less than or equal to the base value (the user
+ * can change this). To fill in the substitutions, the formatter divides the number being
+ * formatted by the divisor. The integral quotient is used to fill in the &amp;lt;&amp;lt;
+ * substitution, and the remainder is used to fill in the &amp;gt;&amp;gt; substitution. The meaning
+ * of the brackets changes similarly: text in brackets is omitted if the value being
+ * formatted is an even multiple of the rule&apos;s divisor. The rules are applied recursively, so
+ * if a substitution is filled in with text that includes another substitution, that
+ * substitution is also filled in.&lt;/p&gt;
+ *
+ * &lt;p&gt;This rule covers values up to 999, at which point we add another rule:&lt;/p&gt;
+ *
+ * &lt;pre&gt;1000: &amp;lt;&amp;lt; thousand[ &amp;gt;&amp;gt;];&lt;/pre&gt;
+ *
+ * &lt;p&gt;Again, the meanings of the brackets and substitution tokens shift because the rule&apos;s
+ * base value is a higher power of 10, changing the rule&apos;s divisor. This rule can actually be
+ * used all the way up to 999,999. This allows us to finish out the rules as follows:&lt;/p&gt;
+ *
+ * &lt;pre&gt; 1,000,000: &amp;lt;&amp;lt; million[ &amp;gt;&amp;gt;];
+ * 1,000,000,000: &amp;lt;&amp;lt; billion[ &amp;gt;&amp;gt;];
+ * 1,000,000,000,000: &amp;lt;&amp;lt; trillion[ &amp;gt;&amp;gt;];
+ * 1,000,000,000,000,000: OUT OF RANGE!;&lt;/pre&gt;
+ *
+ * &lt;p&gt;Commas, periods, and spaces can be used in the base values to improve legibility and
+ * are ignored by the rule parser. The last rule in the list is customarily treated as an
+ * &amp;quot;overflow rule,&amp;quot; applying to everything from its base value on up, and often (as
+ * in this example) being used to print out an error message or default representation.
+ * Notice also that the size of the major groupings in large numbers is controlled by the
+ * spacing of the rules: because in English we group numbers by thousand, the higher rules
+ * are separated from each other by a factor of 1,000.&lt;/p&gt;
+ *
+ * &lt;p&gt;To see how these rules actually work in practice, consider the following example:
+ * Formatting 25,430 with this rule set would work like this:&lt;/p&gt;
+ *
+ * &lt;table border=&quot;0&quot; width=&quot;100%&quot;&gt;
+ *   &lt;tr&gt;
+ *     &lt;td&gt;&lt;strong&gt;&amp;lt;&amp;lt; thousand &amp;gt;&amp;gt;&lt;/strong&gt;&lt;/td&gt;
+ *     &lt;td&gt;[the rule whose base value is 1,000 is applicable to 25,340]&lt;/td&gt;
+ *   &lt;/tr&gt;
+ *   &lt;tr&gt;
+ *     &lt;td&gt;&lt;strong&gt;twenty-&amp;gt;&amp;gt;&lt;/strong&gt; thousand &amp;gt;&amp;gt;&lt;/td&gt;
+ *     &lt;td&gt;[25,340 over 1,000 is 25. The rule for 20 applies.]&lt;/td&gt;
+ *   &lt;/tr&gt;
+ *   &lt;tr&gt;
+ *     &lt;td&gt;twenty-&lt;strong&gt;five&lt;/strong&gt; thousand &amp;gt;&amp;gt;&lt;/td&gt;
+ *     &lt;td&gt;[25 mod 10 is 5. The rule for 5 is &amp;quot;five.&amp;quot;&lt;/td&gt;
+ *   &lt;/tr&gt;
+ *   &lt;tr&gt;
+ *     &lt;td&gt;twenty-five thousand &lt;strong&gt;&amp;lt;&amp;lt; hundred &amp;gt;&amp;gt;&lt;/strong&gt;&lt;/td&gt;
+ *     &lt;td&gt;[25,340 mod 1,000 is 340. The rule for 100 applies.]&lt;/td&gt;
+ *   &lt;/tr&gt;
+ *   &lt;tr&gt;
+ *     &lt;td&gt;twenty-five thousand &lt;strong&gt;three&lt;/strong&gt; hundred &amp;gt;&amp;gt;&lt;/td&gt;
+ *     &lt;td&gt;[340 over 100 is 3. The rule for 3 is &amp;quot;three.&amp;quot;]&lt;/td&gt;
+ *   &lt;/tr&gt;
+ *   &lt;tr&gt;
+ *     &lt;td&gt;twenty-five thousand three hundred &lt;strong&gt;forty&lt;/strong&gt;&lt;/td&gt;
+ *     &lt;td&gt;[340 mod 100 is 40. The rule for 40 applies. Since 40 divides
+ *     evenly by 10, the hyphen and substitution in the brackets are omitted.]&lt;/td&gt;
+ *   &lt;/tr&gt;
+ * &lt;/table&gt;
+ *
+ * &lt;p&gt;The above syntax suffices only to format positive integers. To format negative numbers,
+ * we add a special rule:&lt;/p&gt;
+ *
+ * &lt;pre&gt;-x: minus &amp;gt;&amp;gt;;&lt;/pre&gt;
+ *
+ * &lt;p&gt;This is called a &lt;em&gt;negative-number rule,&lt;/em&gt; and is identified by &amp;quot;-x&amp;quot;
+ * where the base value would be. This rule is used to format all negative numbers. the
+ * &amp;gt;&amp;gt; token here means &amp;quot;find the number&apos;s absolute value, format it with these
+ * rules, and put the result here.&amp;quot;&lt;/p&gt;
+ *
+ * &lt;p&gt;We also add a special rule called a &lt;em&gt;fraction rule &lt;/em&gt;for numbers with fractional
+ * parts:&lt;/p&gt;
+ *
+ * &lt;pre&gt;x.x: &amp;lt;&amp;lt; point &amp;gt;&amp;gt;;&lt;/pre&gt;
+ *
+ * &lt;p&gt;This rule is used for all positive non-integers (negative non-integers pass through the
+ * negative-number rule first and then through this rule). Here, the &amp;lt;&amp;lt; token refers to
+ * the number&apos;s integral part, and the &amp;gt;&amp;gt; to the number&apos;s fractional part. The
+ * fractional part is formatted as a series of single-digit numbers (e.g., 123.456 would be
+ * formatted as &amp;quot;one hundred twenty-three point four five six&amp;quot;).&lt;/p&gt;
+ *
+ * &lt;p&gt;To see how this rule syntax is applied to various languages, examine the resource data.&lt;/p&gt;
+ *
+ * &lt;p&gt;There is actually much more flexibility built into the rule language than the
+ * description above shows. A formatter may own multiple rule sets, which can be selected by
+ * the caller, and which can use each other to fill in their substitutions. Substitutions can
+ * also be filled in with digits, using a DecimalFormat object. There is syntax that can be
+ * used to alter a rule&apos;s divisor in various ways. And there is provision for much more
+ * flexible fraction handling. A complete description of the rule syntax follows:&lt;/p&gt;
+ *
+ * &lt;hr&gt;
+ *
+ * &lt;p&gt;The description of a &lt;tt&gt;RuleBasedNumberFormat&lt;/tt&gt;&apos;s behavior consists of one or more &lt;em&gt;rule
+ * sets.&lt;/em&gt; Each rule set consists of a name, a colon, and a list of &lt;em&gt;rules.&lt;/em&gt; A rule
+ * set name must begin with a % sign. Rule sets with names that begin with a single % sign
+ * are &lt;em&gt;public:&lt;/em&gt; the caller can specify that they be used to format and parse numbers.
+ * Rule sets with names that begin with %% are &lt;em&gt;private:&lt;/em&gt; they exist only for the use
+ * of other rule sets. If a formatter only has one rule set, the name may be omitted.&lt;/p&gt;
+ *
+ * &lt;p&gt;The user can also specify a special &amp;quot;rule set&amp;quot; named &lt;tt&gt;%%lenient-parse&lt;/tt&gt;.
+ * The body of &lt;tt&gt;%%lenient-parse&lt;/tt&gt; isn&apos;t a set of number-formatting rules, but a &lt;tt&gt;RuleBasedCollator&lt;/tt&gt;
+ * description which is used to define equivalences for lenient parsing. For more information
+ * on the syntax, see &lt;tt&gt;RuleBasedCollator&lt;/tt&gt;. For more information on lenient parsing,
+ * see &lt;tt&gt;setLenientParse()&lt;/tt&gt;.  &lt;em&gt;Note:&lt;/em&gt; symbols that have syntactic meaning
+ * in collation rules, such as &apos;&amp;amp;&apos;, have no particular meaning when appearing outside
+ * of the &lt;tt&gt;lenient-parse&lt;/tt&gt; rule set.&lt;/p&gt;
+ *
+ * &lt;p&gt;The body of a rule set consists of an ordered, semicolon-delimited list of &lt;em&gt;rules.&lt;/em&gt;
+ * Internally, every rule has a base value, a divisor, rule text, and zero, one, or two &lt;em&gt;substitutions.&lt;/em&gt;
+ * These parameters are controlled by the description syntax, which consists of a &lt;em&gt;rule
+ * descriptor,&lt;/em&gt; a colon, and a &lt;em&gt;rule body.&lt;/em&gt;&lt;/p&gt;
+ *
+ * &lt;p&gt;A rule descriptor can take one of the following forms (text in &lt;em&gt;italics&lt;/em&gt; is the
+ * name of a token):&lt;/p&gt;
+ *
+ * &lt;table border=&quot;0&quot; width=&quot;100%&quot;&gt;
+ *   &lt;tr&gt;
+ *     &lt;td&gt;&lt;em&gt;bv&lt;/em&gt;:&lt;/td&gt;
+ *     &lt;td&gt;&lt;em&gt;bv&lt;/em&gt; specifies the rule&apos;s base value. &lt;em&gt;bv&lt;/em&gt; is a decimal
+ *     number expressed using ASCII digits. &lt;em&gt;bv&lt;/em&gt; may contain spaces, period, and commas,
+ *     which are ignored. The rule&apos;s divisor is the highest power of 10 less than or equal to
+ *     the base value.&lt;/td&gt;
+ *   &lt;/tr&gt;
+ *   &lt;tr&gt;
+ *     &lt;td&gt;&lt;em&gt;bv&lt;/em&gt;/&lt;em&gt;rad&lt;/em&gt;:&lt;/td&gt;
+ *     &lt;td&gt;&lt;em&gt;bv&lt;/em&gt; specifies the rule&apos;s base value. The rule&apos;s divisor is the
+ *     highest power of &lt;em&gt;rad&lt;/em&gt; less than or equal to the base value.&lt;/td&gt;
+ *   &lt;/tr&gt;
+ *   &lt;tr&gt;
+ *     &lt;td&gt;&lt;em&gt;bv&lt;/em&gt;&amp;gt;:&lt;/td&gt;
+ *     &lt;td&gt;&lt;em&gt;bv&lt;/em&gt; specifies the rule&apos;s base value. To calculate the divisor,
+ *     let the radix be 10, and the exponent be the highest exponent of the radix that yields a
+ *     result less than or equal to the base value. Every &amp;gt; character after the base value
+ *     decreases the exponent by 1. If the exponent is positive or 0, the divisor is the radix
+ *     raised to the power of the exponent; otherwise, the divisor is 1.&lt;/td&gt;
+ *   &lt;/tr&gt;
+ *   &lt;tr&gt;
+ *     &lt;td&gt;&lt;em&gt;bv&lt;/em&gt;/&lt;em&gt;rad&lt;/em&gt;&amp;gt;:&lt;/td&gt;
+ *     &lt;td&gt;&lt;em&gt;bv&lt;/em&gt; specifies the rule&apos;s base value. To calculate the divisor,
+ *     let the radix be &lt;em&gt;rad&lt;/em&gt;, and the exponent be the highest exponent of the radix that
+ *     yields a result less than or equal to the base value. Every &amp;gt; character after the radix
+ *     decreases the exponent by 1. If the exponent is positive or 0, the divisor is the radix
+ *     raised to the power of the exponent; otherwise, the divisor is 1.&lt;/td&gt;
+ *   &lt;/tr&gt;
+ *   &lt;tr&gt;
+ *     &lt;td&gt;-x:&lt;/td&gt;
+ *     &lt;td&gt;The rule is a negative-number rule.&lt;/td&gt;
+ *   &lt;/tr&gt;
+ *   &lt;tr&gt;
+ *     &lt;td&gt;x.x:&lt;/td&gt;
+ *     &lt;td&gt;The rule is an &lt;em&gt;improper fraction rule&lt;/em&gt;. If the full stop in
+ *     the middle of the rule name is replaced with the decimal point
+ *     that is used in the language or DecimalFormatSymbols, then that rule will
+ *     have precedence when formatting and parsing this rule. For example, some
+ *     languages use the comma, and can thus be written as x,x instead. For example,
+ *     you can use &quot;x.x: &amp;lt;&amp;lt; point &amp;gt;&amp;gt;;x,x: &amp;lt;&amp;lt; comma &amp;gt;&amp;gt;;&quot; to
+ *     handle the decimal point that matches the language&apos;s natural spelling of
+ *     the punctuation of either the full stop or comma.&lt;/td&gt;
+ *   &lt;/tr&gt;
+ *   &lt;tr&gt;
+ *     &lt;td&gt;0.x:&lt;/td&gt;
+ *     &lt;td&gt;The rule is a &lt;em&gt;proper fraction rule&lt;/em&gt;. If the full stop in
+ *     the middle of the rule name is replaced with the decimal point
+ *     that is used in the language or DecimalFormatSymbols, then that rule will
+ *     have precedence when formatting and parsing this rule. For example, some
+ *     languages use the comma, and can thus be written as 0,x instead. For example,
+ *     you can use &quot;0.x: point &amp;gt;&amp;gt;;0,x: comma &amp;gt;&amp;gt;;&quot; to
+ *     handle the decimal point that matches the language&apos;s natural spelling of
+ *     the punctuation of either the full stop or comma.&lt;/td&gt;
+ *   &lt;/tr&gt;
+ *   &lt;tr&gt;
+ *     &lt;td&gt;x.0:&lt;/td&gt;
+ *     &lt;td&gt;The rule is a &lt;em&gt;master rule&lt;/em&gt;. If the full stop in
+ *     the middle of the rule name is replaced with the decimal point
+ *     that is used in the language or DecimalFormatSymbols, then that rule will
+ *     have precedence when formatting and parsing this rule. For example, some
+ *     languages use the comma, and can thus be written as x,0 instead. For example,
+ *     you can use &quot;x.0: &amp;lt;&amp;lt; point;x,0: &amp;lt;&amp;lt; comma;&quot; to
+ *     handle the decimal point that matches the language&apos;s natural spelling of
+ *     the punctuation of either the full stop or comma.&lt;/td&gt;
+ *   &lt;/tr&gt;
+ *   &lt;tr&gt;
+ *     &lt;td&gt;Inf:&lt;/td&gt;
+ *     &lt;td&gt;The rule for infinity.&lt;/td&gt;
+ *   &lt;/tr&gt;
+ *   &lt;tr&gt;
+ *     &lt;td&gt;NaN:&lt;/td&gt;
+ *     &lt;td&gt;The rule for an IEEE 754 NaN (not a number).&lt;/td&gt;
+ *   &lt;/tr&gt;
+ *   &lt;tr&gt;
+ *     &lt;td&gt;&lt;em&gt;nothing&lt;/em&gt;&lt;/td&gt;
+ *     &lt;td&gt;If the rule&apos;s rule descriptor is left out, the base value is one plus the
+ *     preceding rule&apos;s base value (or zero if this is the first rule in the list) in a normal
+ *     rule set.&amp;nbsp; In a fraction rule set, the base value is the same as the preceding rule&apos;s
+ *     base value.&lt;/td&gt;
+ *   &lt;/tr&gt;
+ * &lt;/table&gt;
+ *
+ * &lt;p&gt;A rule set may be either a regular rule set or a &lt;em&gt;fraction rule set,&lt;/em&gt; depending
+ * on whether it is used to format a number&apos;s integral part (or the whole number) or a
+ * number&apos;s fractional part. Using a rule set to format a rule&apos;s fractional part makes it a
+ * fraction rule set.&lt;/p&gt;
+ *
+ * &lt;p&gt;Which rule is used to format a number is defined according to one of the following
+ * algorithms: If the rule set is a regular rule set, do the following:
+ *
+ * &lt;ul&gt;
+ *   &lt;li&gt;If the rule set includes a master rule (and the number was passed in as a &lt;tt&gt;double&lt;/tt&gt;),
+ *     use the master rule.&amp;nbsp; (If the number being formatted was passed in as a &lt;tt&gt;long&lt;/tt&gt;,
+ *     the master rule is ignored.)&lt;/li&gt;
+ *   &lt;li&gt;If the number is negative, use the negative-number rule.&lt;/li&gt;
+ *   &lt;li&gt;If the number has a fractional part and is greater than 1, use the improper fraction
+ *     rule.&lt;/li&gt;
+ *   &lt;li&gt;If the number has a fractional part and is between 0 and 1, use the proper fraction
+ *     rule.&lt;/li&gt;
+ *   &lt;li&gt;Binary-search the rule list for the rule with the highest base value less than or equal
+ *     to the number. If that rule has two substitutions, its base value is not an even multiple
+ *     of its divisor, and the number &lt;em&gt;is&lt;/em&gt; an even multiple of the rule&apos;s divisor, use the
+ *     rule that precedes it in the rule list. Otherwise, use the rule itself.&lt;/li&gt;
+ * &lt;/ul&gt;
+ *
+ * &lt;p&gt;If the rule set is a fraction rule set, do the following:
+ *
+ * &lt;ul&gt;
+ *   &lt;li&gt;Ignore negative-number and fraction rules.&lt;/li&gt;
+ *   &lt;li&gt;For each rule in the list, multiply the number being formatted (which will always be
+ *     between 0 and 1) by the rule&apos;s base value. Keep track of the distance between the result
+ *     the nearest integer.&lt;/li&gt;
+ *   &lt;li&gt;Use the rule that produced the result closest to zero in the above calculation. In the
+ *     event of a tie or a direct hit, use the first matching rule encountered. (The idea here is
+ *     to try each rule&apos;s base value as a possible denominator of a fraction. Whichever
+ *     denominator produces the fraction closest in value to the number being formatted wins.) If
+ *     the rule following the matching rule has the same base value, use it if the numerator of
+ *     the fraction is anything other than 1; if the numerator is 1, use the original matching
+ *     rule. (This is to allow singular and plural forms of the rule text without a lot of extra
+ *     hassle.)&lt;/li&gt;
+ * &lt;/ul&gt;
+ *
+ * &lt;p&gt;A rule&apos;s body consists of a string of characters terminated by a semicolon. The rule
+ * may include zero, one, or two &lt;em&gt;substitution tokens,&lt;/em&gt; and a range of text in
+ * brackets. The brackets denote optional text (and may also include one or both
+ * substitutions). The exact meanings of the substitution tokens, and under what conditions
+ * optional text is omitted, depend on the syntax of the substitution token and the context.
+ * The rest of the text in a rule body is literal text that is output when the rule matches
+ * the number being formatted.&lt;/p&gt;
+ *
+ * &lt;p&gt;A substitution token begins and ends with a &lt;em&gt;token character.&lt;/em&gt; The token
+ * character and the context together specify a mathematical operation to be performed on the
+ * number being formatted. An optional &lt;em&gt;substitution descriptor &lt;/em&gt;specifies how the
+ * value resulting from that operation is used to fill in the substitution. The position of
+ * the substitution token in the rule body specifies the location of the resultant text in
+ * the original rule text.&lt;/p&gt;
+ *
+ * &lt;p&gt;The meanings of the substitution token characters are as follows:&lt;/p&gt;
+ *
+ * &lt;table border=&quot;0&quot; width=&quot;100%&quot;&gt;
+ *   &lt;tr&gt;
+ *     &lt;td&gt;&amp;gt;&amp;gt;&lt;/td&gt;
+ *     &lt;td&gt;in normal rule&lt;/td&gt;
+ *     &lt;td&gt;Divide the number by the rule&apos;s divisor and format the remainder&lt;/td&gt;
+ *   &lt;/tr&gt;
+ *   &lt;tr&gt;
+ *     &lt;td&gt;&lt;/td&gt;
+ *     &lt;td&gt;in negative-number rule&lt;/td&gt;
+ *     &lt;td&gt;Find the absolute value of the number and format the result&lt;/td&gt;
+ *   &lt;/tr&gt;
+ *   &lt;tr&gt;
+ *     &lt;td&gt;&lt;/td&gt;
+ *     &lt;td&gt;in fraction or master rule&lt;/td&gt;
+ *     &lt;td&gt;Isolate the number&apos;s fractional part and format it.&lt;/td&gt;
+ *   &lt;/tr&gt;
+ *   &lt;tr&gt;
+ *     &lt;td&gt;&lt;/td&gt;
+ *     &lt;td&gt;in rule in fraction rule set&lt;/td&gt;
+ *     &lt;td&gt;Not allowed.&lt;/td&gt;
+ *   &lt;/tr&gt;
+ *   &lt;tr&gt;
+ *     &lt;td&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/td&gt;
+ *     &lt;td&gt;in normal rule&lt;/td&gt;
+ *     &lt;td&gt;Divide the number by the rule&apos;s divisor and format the remainder,
+ *       but bypass the normal rule-selection process and just use the
+ *       rule that precedes this one in this rule list.&lt;/td&gt;
+ *   &lt;/tr&gt;
+ *   &lt;tr&gt;
+ *     &lt;td&gt;&lt;/td&gt;
+ *     &lt;td&gt;in all other rules&lt;/td&gt;
+ *     &lt;td&gt;Not allowed.&lt;/td&gt;
+ *   &lt;/tr&gt;
+ *   &lt;tr&gt;
+ *     &lt;td&gt;&amp;lt;&amp;lt;&lt;/td&gt;
+ *     &lt;td&gt;in normal rule&lt;/td&gt;
+ *     &lt;td&gt;Divide the number by the rule&apos;s divisor and format the quotient&lt;/td&gt;
+ *   &lt;/tr&gt;
+ *   &lt;tr&gt;
+ *     &lt;td&gt;&lt;/td&gt;
+ *     &lt;td&gt;in negative-number rule&lt;/td&gt;
+ *     &lt;td&gt;Not allowed.&lt;/td&gt;
+ *   &lt;/tr&gt;
+ *   &lt;tr&gt;
+ *     &lt;td&gt;&lt;/td&gt;
+ *     &lt;td&gt;in fraction or master rule&lt;/td&gt;
+ *     &lt;td&gt;Isolate the number&apos;s integral part and format it.&lt;/td&gt;
+ *   &lt;/tr&gt;
+ *   &lt;tr&gt;
+ *     &lt;td&gt;&lt;/td&gt;
+ *     &lt;td&gt;in rule in fraction rule set&lt;/td&gt;
+ *     &lt;td&gt;Multiply the number by the rule&apos;s base value and format the result.&lt;/td&gt;
+ *   &lt;/tr&gt;
+ *   &lt;tr&gt;
+ *     &lt;td&gt;==&lt;/td&gt;
+ *     &lt;td&gt;in all rule sets&lt;/td&gt;
+ *     &lt;td&gt;Format the number unchanged&lt;/td&gt;
+ *   &lt;/tr&gt;
+ *   &lt;tr&gt;
+ *     &lt;td&gt;[]&lt;/td&gt;
+ *     &lt;td&gt;in normal rule&lt;/td&gt;
+ *     &lt;td&gt;Omit the optional text if the number is an even multiple of the rule&apos;s divisor&lt;/td&gt;
+ *   &lt;/tr&gt;
+ *   &lt;tr&gt;
+ *     &lt;td&gt;&lt;/td&gt;
+ *     &lt;td&gt;in negative-number rule&lt;/td&gt;
+ *     &lt;td&gt;Not allowed.&lt;/td&gt;
+ *   &lt;/tr&gt;
+ *   &lt;tr&gt;
+ *     &lt;td&gt;&lt;/td&gt;
+ *     &lt;td&gt;in improper-fraction rule&lt;/td&gt;
+ *     &lt;td&gt;Omit the optional text if the number is between 0 and 1 (same as specifying both an
+ *     x.x rule and a 0.x rule)&lt;/td&gt;
+ *   &lt;/tr&gt;
+ *   &lt;tr&gt;
+ *     &lt;td&gt;&lt;/td&gt;
+ *     &lt;td&gt;in master rule&lt;/td&gt;
+ *     &lt;td&gt;Omit the optional text if the number is an integer (same as specifying both an x.x
+ *     rule and an x.0 rule)&lt;/td&gt;
+ *   &lt;/tr&gt;
+ *   &lt;tr&gt;
+ *     &lt;td&gt;&lt;/td&gt;
+ *     &lt;td&gt;in proper-fraction rule&lt;/td&gt;
+ *     &lt;td&gt;Not allowed.&lt;/td&gt;
+ *   &lt;/tr&gt;
+ *   &lt;tr&gt;
+ *     &lt;td&gt;&lt;/td&gt;
+ *     &lt;td&gt;in rule in fraction rule set&lt;/td&gt;
+ *     &lt;td&gt;Omit the optional text if multiplying the number by the rule&apos;s base value yields 1.&lt;/td&gt;
+ *   &lt;/tr&gt;
+ *   &lt;tr&gt;
+ *     &lt;td width=&quot;37&quot;&gt;$(cardinal,&lt;i&gt;plural syntax&lt;/i&gt;)$&lt;/td&gt;
+ *     &lt;td width=&quot;23&quot;&gt;&lt;/td&gt;
+ *     &lt;td width=&quot;165&quot; valign=&quot;top&quot;&gt;in all rule sets&lt;/td&gt;
+ *     &lt;td&gt;This provides the ability to choose a word based on the number divided by the radix to the power of the
+ *     exponent of the base value for the specified locale, which is normally equivalent to the &amp;lt;&amp;lt; value.
+ *     This uses the cardinal plural rules from PluralFormat. All strings used in the plural format are treated
+ *     as the same base value for parsing.&lt;/td&gt;
+ *   &lt;/tr&gt;
+ *   &lt;tr&gt;
+ *     &lt;td width=&quot;37&quot;&gt;$(ordinal,&lt;i&gt;plural syntax&lt;/i&gt;)$&lt;/td&gt;
+ *     &lt;td width=&quot;23&quot;&gt;&lt;/td&gt;
+ *     &lt;td width=&quot;165&quot; valign=&quot;top&quot;&gt;in all rule sets&lt;/td&gt;
+ *     &lt;td&gt;This provides the ability to choose a word based on the number divided by the radix to the power of the
+ *     exponent of the base value for the specified locale, which is normally equivalent to the &amp;lt;&amp;lt; value.
+ *     This uses the ordinal plural rules from PluralFormat. All strings used in the plural format are treated
+ *     as the same base value for parsing.&lt;/td&gt;
+ *   &lt;/tr&gt;
+ * &lt;/table&gt;
+ *
+ * &lt;p&gt;The substitution descriptor (i.e., the text between the token characters) may take one
+ * of three forms:&lt;/p&gt;
+ *
+ * &lt;table border=&quot;0&quot; width=&quot;100%&quot;&gt;
+ *   &lt;tr&gt;
+ *     &lt;td&gt;a rule set name&lt;/td&gt;
+ *     &lt;td&gt;Perform the mathematical operation on the number, and format the result using the
+ *     named rule set.&lt;/td&gt;
+ *   &lt;/tr&gt;
+ *   &lt;tr&gt;
+ *     &lt;td&gt;a DecimalFormat pattern&lt;/td&gt;
+ *     &lt;td&gt;Perform the mathematical operation on the number, and format the result using a
+ *     DecimalFormat with the specified pattern.&amp;nbsp; The pattern must begin with 0 or #.&lt;/td&gt;
+ *   &lt;/tr&gt;
+ *   &lt;tr&gt;
+ *     &lt;td&gt;nothing&lt;/td&gt;
+ *     &lt;td&gt;Perform the mathematical operation on the number, and format the result using the rule
+ *     set containing the current rule, except:
+ *     &lt;ul&gt;
+ *       &lt;li&gt;You can&apos;t have an empty substitution descriptor with a == substitution.&lt;/li&gt;
+ *       &lt;li&gt;If you omit the substitution descriptor in a &amp;gt;&amp;gt; substitution in a fraction rule,
+ *         format the result one digit at a time using the rule set containing the current rule.&lt;/li&gt;
+ *       &lt;li&gt;If you omit the substitution descriptor in a &amp;lt;&amp;lt; substitution in a rule in a
+ *         fraction rule set, format the result using the default rule set for this formatter.&lt;/li&gt;
+ *     &lt;/ul&gt;
+ *     &lt;/td&gt;
+ *   &lt;/tr&gt;
+ * &lt;/table&gt;
+ *
+ * &lt;p&gt;Whitespace is ignored between a rule set name and a rule set body, between a rule
+ * descriptor and a rule body, or between rules. If a rule body begins with an apostrophe,
+ * the apostrophe is ignored, but all text after it becomes significant (this is how you can
+ * have a rule&apos;s rule text begin with whitespace). There is no escape function: the semicolon
+ * is not allowed in rule set names or in rule text, and the colon is not allowed in rule set
+ * names. The characters beginning a substitution token are always treated as the beginning
+ * of a substitution token.&lt;/p&gt;
+ *
+ * &lt;p&gt;See the resource data and the demo program for annotated examples of real rule sets
+ * using these features.&lt;/p&gt;
+ *
+ * &lt;p&gt;&lt;em&gt;User subclasses are not supported.&lt;/em&gt; While clients may write
+ * subclasses, such code will not necessarily work and will not be
+ * guaranteed to work stably from release to release.
+ *
+ * &lt;p&gt;&lt;b&gt;Localizations&lt;/b&gt;&lt;/p&gt;
+ * &lt;p&gt;Constructors are available that allow the specification of localizations for the
+ * public rule sets (and also allow more control over what public rule sets are available).
+ * Localization data is represented as a textual description.  The description represents
+ * an array of arrays of string.  The first element is an array of the public rule set names,
+ * each of these must be one of the public rule set names that appear in the rules.  Only
+ * names in this array will be treated as public rule set names by the API.  Each subsequent
+ * element is an array of localizations of these names.  The first element of one of these
+ * subarrays is the locale name, and the remaining elements are localizations of the
+ * public rule set names, in the same order as they were listed in the first arrray.&lt;/p&gt;
+ * &lt;p&gt;In the syntax, angle brackets &apos;&lt;&apos;, &apos;&gt;&apos; are used to delimit the arrays, and comma &apos;,&apos; is used
+ * to separate elements of an array.  Whitespace is ignored, unless quoted.&lt;/p&gt;
+ * &lt;p&gt;For example:&lt;pre&gt;
+ * &lt; &lt; %foo, %bar, %baz &gt;,
+ *   &lt; en, Foo, Bar, Baz &gt;,
+ *   &lt; fr, &apos;le Foo&apos;, &apos;le Bar&apos;, &apos;le Baz&apos; &gt;
+ *   &lt; zh, \\u7532, \\u4e59, \\u4e19 &gt; &gt;
+ * &lt;/pre&gt;&lt;/p&gt;
+ * @author Richard Gillam
+ * @see NumberFormat
+ * @see DecimalFormat
+ * @see PluralFormat
+ * @see PluralRules
+ * @stable ICU 2.0
+ */</doc>
+<fun r='_ZN6icu_6621RuleBasedNumberFormatC1ERKNS_13UnicodeStringER11UParseErrorR10UErrorCode'/>
+<fun r='_ZN6icu_6621RuleBasedNumberFormatC1ERKNS_13UnicodeStringES3_R11UParseErrorR10UErrorCode'/>
+<fun r='_ZN6icu_6621RuleBasedNumberFormatC1ERKNS_13UnicodeStringERKNS_6LocaleER11UParseErrorR10UErrorCode'/>
+<fun r='_ZN6icu_6621RuleBasedNumberFormatC1ERKNS_13UnicodeStringES3_RKNS_6LocaleER11UParseErrorR10UErrorCode'/>
+<fun r='_ZN6icu_6621RuleBasedNumberFormatC1ENS_15URBNFRuleSetTagERKNS_6LocaleER10UErrorCode'/>
+<fun r='_ZN6icu_6621RuleBasedNumberFormatC1ERKS0_'/>
+<fun r='_ZN6icu_6621RuleBasedNumberFormataSERKS0_'/>
+<fun r='_ZN6icu_6621RuleBasedNumberFormatD1Ev'/>
+<fun r='_ZNK6icu_6621RuleBasedNumberFormat5cloneEv'/>
+<fun r='_ZNK6icu_6621RuleBasedNumberFormateqERKNS_6FormatE'/>
+<fun r='_ZNK6icu_6621RuleBasedNumberFormat8getRulesEv'/>
+<fun r='_ZNK6icu_6621RuleBasedNumberFormat23getNumberOfRuleSetNamesEv'/>
+<fun r='_ZNK6icu_6621RuleBasedNumberFormat14getRuleSetNameEi'/>
+<fun r='_ZNK6icu_6621RuleBasedNumberFormat36getNumberOfRuleSetDisplayNameLocalesEv'/>
+<fun r='_ZNK6icu_6621RuleBasedNumberFormat27getRuleSetDisplayNameLocaleEiR10UErrorCode'/>
+<fun r='_ZN6icu_6621RuleBasedNumberFormat21getRuleSetDisplayNameEiRKNS_6LocaleE'/>
+<fun r='_ZN6icu_6621RuleBasedNumberFormat21getRuleSetDisplayNameERKNS_13UnicodeStringERKNS_6LocaleE'/>
+<fun r='_ZNK6icu_6621RuleBasedNumberFormat6formatEiRNS_13UnicodeStringERNS_13FieldPositionE'/>
+<fun r='_ZNK6icu_6621RuleBasedNumberFormat6formatElRNS_13UnicodeStringERNS_13FieldPositionE'/>
+<fun r='_ZNK6icu_6621RuleBasedNumberFormat6formatEdRNS_13UnicodeStringERNS_13FieldPositionE'/>
+<fun r='_ZNK6icu_6621RuleBasedNumberFormat6formatEiRKNS_13UnicodeStringERS1_RNS_13FieldPositionER10UErrorCode'/>
+<fun r='_ZNK6icu_6621RuleBasedNumberFormat6formatElRKNS_13UnicodeStringERS1_RNS_13FieldPositionER10UErrorCode'/>
+<fun r='_ZNK6icu_6621RuleBasedNumberFormat6formatEdRKNS_13UnicodeStringERS1_RNS_13FieldPositionER10UErrorCode'/>
+<fun r='_ZNK6icu_6621RuleBasedNumberFormat6formatERKNS_6number4impl15DecimalQuantityERNS_13UnicodeStringERNS_13FieldPositionER10UErrorCode'/>
+<fun r='_ZNK6icu_6621RuleBasedNumberFormat5parseERKNS_13UnicodeStringERNS_11FormattableERNS_13ParsePositionE'/>
+<fun r='_ZN6icu_6621RuleBasedNumberFormat10setLenientEa'/>
+<fun r='_ZNK6icu_6621RuleBasedNumberFormat9isLenientEv'/>
+<fun r='_ZN6icu_6621RuleBasedNumberFormat17setDefaultRuleSetERKNS_13UnicodeStringER10UErrorCode'/>
+<fun r='_ZNK6icu_6621RuleBasedNumberFormat21getDefaultRuleSetNameEv'/>
+<fun r='_ZN6icu_6621RuleBasedNumberFormat10setContextE15UDisplayContextR10UErrorCode'/>
+<fun r='_ZNK6icu_6621RuleBasedNumberFormat15getRoundingModeEv'/>
+<fun r='_ZN6icu_6621RuleBasedNumberFormat15setRoundingModeENS_12NumberFormat13ERoundingModeE'/>
+<fun r='_ZN6icu_6621RuleBasedNumberFormat16getStaticClassIDEv'/>
+<fun r='_ZNK6icu_6621RuleBasedNumberFormat17getDynamicClassIDEv'/>
+<fun r='_ZN6icu_6621RuleBasedNumberFormat25adoptDecimalFormatSymbolsEPNS_20DecimalFormatSymbolsE'/>
+<fun r='_ZN6icu_6621RuleBasedNumberFormat23setDecimalFormatSymbolsERKNS_20DecimalFormatSymbolsE'/>
+<fun r='_ZN6icu_6621RuleBasedNumberFormatC1Ev'/>
+<fun r='_ZN6icu_6621RuleBasedNumberFormatC1ERKNS_13UnicodeStringEPNS_16LocalizationInfoERKNS_6LocaleER11UParseErrorR10UErrorCode'/>
+<fun r='_ZN6icu_6621RuleBasedNumberFormat4initERKNS_13UnicodeStringEPNS_16LocalizationInfoER11UParseErrorR10UErrorCode'/>
+<fun r='_ZN6icu_6621RuleBasedNumberFormat29initCapitalizationContextInfoERKNS_6LocaleE'/>
+<fun r='_ZN6icu_6621RuleBasedNumberFormat7disposeEv'/>
+<fun r='_ZN6icu_6621RuleBasedNumberFormat15stripWhitespaceERNS_13UnicodeStringE'/>
+<fun r='_ZN6icu_6621RuleBasedNumberFormat18initDefaultRuleSetEv'/>
+<fun r='_ZNK6icu_6621RuleBasedNumberFormat11findRuleSetERKNS_13UnicodeStringER10UErrorCode'/>
+<fun r='_ZNK6icu_6621RuleBasedNumberFormat17getDefaultRuleSetEv'/>
+<fun r='_ZNK6icu_6621RuleBasedNumberFormat11getCollatorEv'/>
+<fun r='_ZN6icu_6621RuleBasedNumberFormat30initializeDecimalFormatSymbolsER10UErrorCode'/>
+<fun r='_ZNK6icu_6621RuleBasedNumberFormat23getDecimalFormatSymbolsEv'/>
+<fun r='_ZN6icu_6621RuleBasedNumberFormat29initializeDefaultInfinityRuleER10UErrorCode'/>
+<fun r='_ZNK6icu_6621RuleBasedNumberFormat22getDefaultInfinityRuleEv'/>
+<fun r='_ZN6icu_6621RuleBasedNumberFormat24initializeDefaultNaNRuleER10UErrorCode'/>
+<fun r='_ZNK6icu_6621RuleBasedNumberFormat17getDefaultNaNRuleEv'/>
+<fun r='_ZNK6icu_6621RuleBasedNumberFormat18createPluralFormatE11UPluralTypeRKNS_13UnicodeStringER10UErrorCode'/>
+<fun r='_ZNK6icu_6621RuleBasedNumberFormat30adjustForCapitalizationContextEiRNS_13UnicodeStringER10UErrorCode'/>
+<fun r='_ZNK6icu_6621RuleBasedNumberFormat6formatElPNS_9NFRuleSetERNS_13UnicodeStringER10UErrorCode'/>
+<fun r='_ZNK6icu_6621RuleBasedNumberFormat6formatEdRNS_9NFRuleSetERNS_13UnicodeStringER10UErrorCode'/>
+<mbr r='icu_66::RuleBasedNumberFormat::fRuleSets' o='2880' t='icu_66::NFRuleSet **'/>
+<mbr r='icu_66::RuleBasedNumberFormat::ruleSetDescriptions' o='2944' t='icu_66::UnicodeString *'/>
+<mbr r='icu_66::RuleBasedNumberFormat::numRuleSets' o='3008' t='int32_t'/>
+<mbr r='icu_66::RuleBasedNumberFormat::defaultRuleSet' o='3072' t='icu_66::NFRuleSet *'/>
+<mbr r='icu_66::RuleBasedNumberFormat::locale' o='3136' t='icu_66::Locale'/>
+<mbr r='icu_66::RuleBasedNumberFormat::collator' o='4928' t='icu_66::RuleBasedCollator *'/>
+<mbr r='icu_66::RuleBasedNumberFormat::decimalFormatSymbols' o='4992' t='icu_66::DecimalFormatSymbols *'/>
+<mbr r='icu_66::RuleBasedNumberFormat::defaultInfinityRule' o='5056' t='icu_66::NFRule *'/>
+<mbr r='icu_66::RuleBasedNumberFormat::defaultNaNRule' o='5120' t='icu_66::NFRule *'/>
+<mbr r='icu_66::RuleBasedNumberFormat::fRoundingMode' o='5184' t='icu_66::NumberFormat::ERoundingMode'/>
+<mbr r='icu_66::RuleBasedNumberFormat::lenient' o='5216' t='UBool'/>
+<mbr r='icu_66::RuleBasedNumberFormat::lenientParseRules' o='5248' t='icu_66::UnicodeString *'/>
+<mbr r='icu_66::RuleBasedNumberFormat::localizations' o='5312' t='icu_66::LocalizationInfo *'/>
+<mbr r='icu_66::RuleBasedNumberFormat::originalDescription' o='5376' t='icu_66::UnicodeString'/>
+<mbr r='icu_66::RuleBasedNumberFormat::capitalizationInfoSet' o='5888' t='UBool'/>
+<mbr r='icu_66::RuleBasedNumberFormat::capitalizationForUIListMenu' o='5896' t='UBool'/>
+<mbr r='icu_66::RuleBasedNumberFormat::capitalizationForStandAlone' o='5904' t='UBool'/>
+<mbr r='icu_66::RuleBasedNumberFormat::capitalizationBrkIter' o='5952' t='icu_66::BreakIterator *'/>
+<fun r='_ZNK6icu_6621RuleBasedNumberFormat9isLenientEv'/>
+<fun r='_ZNK6icu_6621RuleBasedNumberFormat17getDefaultRuleSetEv'/>
+<use f='boost-1.85.0/libs/locale/src/boost/locale/icu/formatters_cache.cpp' l='107' c='_ZNK5boost6locale8impl_icu16formatters_cache20create_number_formatENS1_12num_fmt_typeER10UErrorCode'/>
+<use f='boost-1.85.0/libs/locale/src/boost/locale/icu/formatters_cache.cpp' l='108' c='_ZNK5boost6locale8impl_icu16formatters_cache20create_number_formatENS1_12num_fmt_typeER10UErrorCode'/>
+<size>752</size>

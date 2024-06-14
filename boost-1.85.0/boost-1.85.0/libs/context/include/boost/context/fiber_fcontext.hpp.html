@@ -1,0 +1,436 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>fiber_fcontext.hpp source code [boost-1.85.0/libs/context/include/boost/context/fiber_fcontext.hpp] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="boost::context::detail::fiber_record,boost::context::fiber "/>
+<link rel="stylesheet" href="../../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'boost-1.85.0/libs/context/include/boost/context/fiber_fcontext.hpp'; var root_path = '../../../../../..'; var data_path = '../../../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../../..'>boost-1.85.0</a>/<a href='../../../..'>libs</a>/<a href='../../..'>context</a>/<a href='../..'>include</a>/<a href='..'>boost</a>/<a href='./'>context</a>/<a href='fiber_fcontext.hpp.html'>fiber_fcontext.hpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td></td></tr>
+<tr><th id="2">2</th><td><i>//          Copyright Oliver Kowalke 2017.</i></td></tr>
+<tr><th id="3">3</th><td><i>// Distributed under the Boost Software License, Version 1.0.</i></td></tr>
+<tr><th id="4">4</th><td><i>//    (See accompanying file LICENSE_1_0.txt or copy at</i></td></tr>
+<tr><th id="5">5</th><td><i>//          <a href="http://www.boost.org/LICENSE_1_0.txt">http://www.boost.org/LICENSE_1_0.txt</a>)</i></td></tr>
+<tr><th id="6">6</th><td></td></tr>
+<tr><th id="7">7</th><td><u>#<span data-ppcond="7">ifndef</span> <span class="macro" data-ref="_M/BOOST_CONTEXT_FIBER_H">BOOST_CONTEXT_FIBER_H</span></u></td></tr>
+<tr><th id="8">8</th><td><u>#define <dfn class="macro" id="_M/BOOST_CONTEXT_FIBER_H" data-ref="_M/BOOST_CONTEXT_FIBER_H">BOOST_CONTEXT_FIBER_H</dfn></u></td></tr>
+<tr><th id="9">9</th><td></td></tr>
+<tr><th id="10">10</th><td><u>#include <a href="detail/config.hpp.html">&lt;boost/context/detail/config.hpp&gt;</a></u></td></tr>
+<tr><th id="11">11</th><td></td></tr>
+<tr><th id="12">12</th><td><u>#include <a href="../../../../../../include/c++/9/algorithm.html">&lt;algorithm&gt;</a></u></td></tr>
+<tr><th id="13">13</th><td><u>#include <a href="../../../../../../include/c++/9/cstddef.html">&lt;cstddef&gt;</a></u></td></tr>
+<tr><th id="14">14</th><td><u>#include <a href="../../../../../../include/c++/9/cstdint.html">&lt;cstdint&gt;</a></u></td></tr>
+<tr><th id="15">15</th><td><u>#include <a href="../../../../../../include/c++/9/cstdlib.html">&lt;cstdlib&gt;</a></u></td></tr>
+<tr><th id="16">16</th><td><u>#include <a href="../../../../../../include/c++/9/exception.html">&lt;exception&gt;</a></u></td></tr>
+<tr><th id="17">17</th><td><u>#include <a href="../../../../../../include/c++/9/functional.html">&lt;functional&gt;</a></u></td></tr>
+<tr><th id="18">18</th><td><u>#include <a href="../../../../../../include/c++/9/memory.html">&lt;memory&gt;</a></u></td></tr>
+<tr><th id="19">19</th><td><u>#include <a href="../../../../../../include/c++/9/ostream.html">&lt;ostream&gt;</a></u></td></tr>
+<tr><th id="20">20</th><td><u>#include <a href="../../../../../../include/c++/9/tuple.html">&lt;tuple&gt;</a></u></td></tr>
+<tr><th id="21">21</th><td><u>#include <a href="../../../../../../include/c++/9/utility.html">&lt;utility&gt;</a></u></td></tr>
+<tr><th id="22">22</th><td></td></tr>
+<tr><th id="23">23</th><td><u>#include <a href="../../../../assert/include/boost/assert.hpp.html">&lt;boost/assert.hpp&gt;</a></u></td></tr>
+<tr><th id="24">24</th><td><u>#include <a href="../../../../config/include/boost/config.hpp.html">&lt;boost/config.hpp&gt;</a></u></td></tr>
+<tr><th id="25">25</th><td><u>#include <a href="../../../../smart_ptr/include/boost/intrusive_ptr.hpp.html">&lt;boost/intrusive_ptr.hpp&gt;</a></u></td></tr>
+<tr><th id="26">26</th><td></td></tr>
+<tr><th id="27">27</th><td><u>#<span data-ppcond="27">if</span> defined(<span class="macro" data-ref="_M/BOOST_NO_CXX14_STD_EXCHANGE">BOOST_NO_CXX14_STD_EXCHANGE</span>)</u></td></tr>
+<tr><th id="28">28</th><td><u>#include &lt;boost/context/detail/exchange.hpp&gt;</u></td></tr>
+<tr><th id="29">29</th><td><u>#<span data-ppcond="27">endif</span></u></td></tr>
+<tr><th id="30">30</th><td><u>#<span data-ppcond="30">if</span> defined(<a class="macro" href="../../../../config/include/boost/config/stdlib/libstdcpp3.hpp.html#359" data-ref="_M/BOOST_NO_CXX17_STD_INVOKE">BOOST_NO_CXX17_STD_INVOKE</a>)</u></td></tr>
+<tr><th id="31">31</th><td><u>#include <a href="detail/invoke.hpp.html">&lt;boost/context/detail/invoke.hpp&gt;</a></u></td></tr>
+<tr><th id="32">32</th><td><u>#<span data-ppcond="30">endif</span></u></td></tr>
+<tr><th id="33">33</th><td><u>#include <a href="detail/disable_overload.hpp.html">&lt;boost/context/detail/disable_overload.hpp&gt;</a></u></td></tr>
+<tr><th id="34">34</th><td><u>#include <a href="detail/exception.hpp.html">&lt;boost/context/detail/exception.hpp&gt;</a></u></td></tr>
+<tr><th id="35">35</th><td><u>#include <a href="detail/fcontext.hpp.html">&lt;boost/context/detail/fcontext.hpp&gt;</a></u></td></tr>
+<tr><th id="36">36</th><td><u>#include <a href="detail/tuple.hpp.html">&lt;boost/context/detail/tuple.hpp&gt;</a></u></td></tr>
+<tr><th id="37">37</th><td><u>#include <a href="fixedsize_stack.hpp.html">&lt;boost/context/fixedsize_stack.hpp&gt;</a></u></td></tr>
+<tr><th id="38">38</th><td><u>#include <a href="flags.hpp.html">&lt;boost/context/flags.hpp&gt;</a></u></td></tr>
+<tr><th id="39">39</th><td><u>#include <a href="preallocated.hpp.html">&lt;boost/context/preallocated.hpp&gt;</a></u></td></tr>
+<tr><th id="40">40</th><td><u>#include <a href="segmented_stack.hpp.html">&lt;boost/context/segmented_stack.hpp&gt;</a></u></td></tr>
+<tr><th id="41">41</th><td><u>#include <a href="stack_context.hpp.html">&lt;boost/context/stack_context.hpp&gt;</a></u></td></tr>
+<tr><th id="42">42</th><td></td></tr>
+<tr><th id="43">43</th><td><u>#<span data-ppcond="43">ifdef</span> <span class="macro" data-ref="_M/BOOST_HAS_ABI_HEADERS">BOOST_HAS_ABI_HEADERS</span></u></td></tr>
+<tr><th id="44">44</th><td><u># include BOOST_ABI_PREFIX</u></td></tr>
+<tr><th id="45">45</th><td><u>#<span data-ppcond="43">endif</span></u></td></tr>
+<tr><th id="46">46</th><td></td></tr>
+<tr><th id="47">47</th><td><u>#<span data-ppcond="47">if</span> defined(<span class="macro" data-ref="_M/__CET__">__CET__</span>) &amp;&amp; defined(<span class="macro" data-ref="_M/__unix__">__unix__</span>)</u></td></tr>
+<tr><th id="48">48</th><td><u>#  include &lt;cet.h&gt;</u></td></tr>
+<tr><th id="49">49</th><td><u>#  include &lt;sys/mman.h&gt;</u></td></tr>
+<tr><th id="50">50</th><td><u>#  define SHSTK_ENABLED (__CET__ &amp; 0x2)</u></td></tr>
+<tr><th id="51">51</th><td><u>#  define BOOST_CONTEXT_SHADOW_STACK (SHSTK_ENABLED &amp;&amp; SHADOW_STACK_SYSCALL)</u></td></tr>
+<tr><th id="52">52</th><td><u>#  define __NR_map_shadow_stack 451</u></td></tr>
+<tr><th id="53">53</th><td><u>#ifndef SHADOW_STACK_SET_TOKEN</u></td></tr>
+<tr><th id="54">54</th><td><u>#  define SHADOW_STACK_SET_TOKEN 0x1</u></td></tr>
+<tr><th id="55">55</th><td><u>#endif</u></td></tr>
+<tr><th id="56">56</th><td><u>#<span data-ppcond="47">endif</span></u></td></tr>
+<tr><th id="57">57</th><td></td></tr>
+<tr><th id="58">58</th><td><u>#<span data-ppcond="58">if</span> defined(<span class="macro" data-ref="_M/BOOST_MSVC">BOOST_MSVC</span>)</u></td></tr>
+<tr><th id="59">59</th><td><u># pragma warning(push)</u></td></tr>
+<tr><th id="60">60</th><td><u># pragma warning(disable: 4702)</u></td></tr>
+<tr><th id="61">61</th><td><u>#<span data-ppcond="58">endif</span></u></td></tr>
+<tr><th id="62">62</th><td></td></tr>
+<tr><th id="63">63</th><td><b>namespace</b> <span class="namespace">boost</span> {</td></tr>
+<tr><th id="64">64</th><td><b>namespace</b> <span class="namespace">context</span> {</td></tr>
+<tr><th id="65">65</th><td><b>namespace</b> <span class="namespace">detail</span> {</td></tr>
+<tr><th id="66">66</th><td></td></tr>
+<tr><th id="67">67</th><td><b>inline</b></td></tr>
+<tr><th id="68">68</th><td><a class="type" href="detail/fcontext.hpp.html#boost::context::detail::transfer_t" title='boost::context::detail::transfer_t' data-ref="boost::context::detail::transfer_t">transfer_t</a> <dfn class="decl def fn" id="_ZN5boost7context6detail12fiber_unwindENS1_10transfer_tE" title='boost::context::detail::fiber_unwind' data-ref="_ZN5boost7context6detail12fiber_unwindENS1_10transfer_tE">fiber_unwind</dfn>( <a class="type" href="detail/fcontext.hpp.html#boost::context::detail::transfer_t" title='boost::context::detail::transfer_t' data-ref="boost::context::detail::transfer_t">transfer_t</a> <dfn class="local col2 decl" id="102t" title='t' data-type='boost::context::detail::transfer_t' data-ref="102t">t</dfn>) {</td></tr>
+<tr><th id="69">69</th><td>    <b>throw</b> <a class="type" href="detail/exception.hpp.html#boost::context::detail::forced_unwind" title='boost::context::detail::forced_unwind' data-ref="boost::context::detail::forced_unwind">forced_unwind</a><a class="ref fn" href="detail/exception.hpp.html#_ZN5boost7context6detail13forced_unwindC1EPv" title='boost::context::detail::forced_unwind::forced_unwind' data-ref="_ZN5boost7context6detail13forced_unwindC1EPv">(</a> <a class="local col2 ref" href="#102t" title='t' data-ref="102t">t</a>.<a class="ref field" href="detail/fcontext.hpp.html#boost::context::detail::transfer_t::fctx" title='boost::context::detail::transfer_t::fctx' data-ref="boost::context::detail::transfer_t::fctx">fctx</a>);</td></tr>
+<tr><th id="70">70</th><td>    <b>return</b> { <span class='inlayHint'>.fctx:&nbsp;</span><b>nullptr</b>, <span class='inlayHint'>.data:&nbsp;</span><b>nullptr</b> };</td></tr>
+<tr><th id="71">71</th><td>}</td></tr>
+<tr><th id="72">72</th><td></td></tr>
+<tr><th id="73">73</th><td><b>template</b>&lt; <b>typename</b> Rec &gt;</td></tr>
+<tr><th id="74">74</th><td><a class="type" href="detail/fcontext.hpp.html#boost::context::detail::transfer_t" title='boost::context::detail::transfer_t' data-ref="boost::context::detail::transfer_t">transfer_t</a> <dfn class="decl def fn" id="_ZN5boost7context6detail10fiber_exitENS1_10transfer_tE" title='boost::context::detail::fiber_exit' data-ref="_ZN5boost7context6detail10fiber_exitENS1_10transfer_tE">fiber_exit</dfn>( <a class="type" href="detail/fcontext.hpp.html#boost::context::detail::transfer_t" title='boost::context::detail::transfer_t' data-ref="boost::context::detail::transfer_t">transfer_t</a> <dfn class="local col3 decl" id="103t" title='t' data-type='boost::context::detail::transfer_t' data-ref="103t">t</dfn>) <b>noexcept</b> {</td></tr>
+<tr><th id="75">75</th><td>    Rec * <dfn class="local col4 decl" id="104rec" title='rec' data-type='Rec *' data-ref="104rec">rec</dfn> = <b>static_cast</b>&lt; Rec * &gt;( <a class="local col3 ref" href="#103t" title='t' data-ref="103t">t</a>.<a class="ref field" href="detail/fcontext.hpp.html#boost::context::detail::transfer_t::data" title='boost::context::detail::transfer_t::data' data-ref="boost::context::detail::transfer_t::data">data</a>);</td></tr>
+<tr><th id="76">76</th><td><u>#<span data-ppcond="76">if</span> BOOST_CONTEXT_SHADOW_STACK</u></td></tr>
+<tr><th id="77">77</th><td>    <i>// destory shadow stack</i></td></tr>
+<tr><th id="78">78</th><td>    std::size_t ss_size = *((<em>unsigned</em> <em>long</em>*)(<b>reinterpret_cast</b>&lt; uintptr_t &gt;( rec)- <var>16</var>));</td></tr>
+<tr><th id="79">79</th><td>    <em>long</em> <em>unsigned</em> <em>int</em> ss_base = *((<em>unsigned</em> <em>long</em>*)(<b>reinterpret_cast</b>&lt; uintptr_t &gt;( rec)- <var>8</var>));</td></tr>
+<tr><th id="80">80</th><td>    munmap((<em>void</em> *)ss_base, ss_size);</td></tr>
+<tr><th id="81">81</th><td><u>#<span data-ppcond="76">endif</span></u></td></tr>
+<tr><th id="82">82</th><td>    <i>// destroy context stack</i></td></tr>
+<tr><th id="83">83</th><td>    <a class="local col4 ref" href="#104rec" title='rec' data-ref="104rec">rec</a>-&gt;deallocate();</td></tr>
+<tr><th id="84">84</th><td>    <b>return</b> { <span class='inlayHint'>.fctx:&nbsp;</span><b>nullptr</b>, <span class='inlayHint'>.data:&nbsp;</span><b>nullptr</b> };</td></tr>
+<tr><th id="85">85</th><td>}</td></tr>
+<tr><th id="86">86</th><td></td></tr>
+<tr><th id="87">87</th><td><b>template</b>&lt; <b>typename</b> Rec &gt;</td></tr>
+<tr><th id="88">88</th><td><em>void</em> <dfn class="decl def fn" id="_ZN5boost7context6detail11fiber_entryENS1_10transfer_tE" title='boost::context::detail::fiber_entry' data-ref="_ZN5boost7context6detail11fiber_entryENS1_10transfer_tE">fiber_entry</dfn>( <a class="type" href="detail/fcontext.hpp.html#boost::context::detail::transfer_t" title='boost::context::detail::transfer_t' data-ref="boost::context::detail::transfer_t">transfer_t</a> <dfn class="local col5 decl" id="105t" title='t' data-type='boost::context::detail::transfer_t' data-ref="105t">t</dfn>) <b>noexcept</b> {</td></tr>
+<tr><th id="89">89</th><td>    <i>// transfer control structure to the context-stack</i></td></tr>
+<tr><th id="90">90</th><td>    Rec * <dfn class="local col6 decl" id="106rec" title='rec' data-type='Rec *' data-ref="106rec">rec</dfn> = <b>static_cast</b>&lt; Rec * &gt;( <a class="local col5 ref" href="#105t" title='t' data-ref="105t">t</a>.<a class="ref field" href="detail/fcontext.hpp.html#boost::context::detail::transfer_t::data" title='boost::context::detail::transfer_t::data' data-ref="boost::context::detail::transfer_t::data">data</a>);</td></tr>
+<tr><th id="91">91</th><td>    <a class="macro" href="../../../../assert/include/boost/assert.hpp.html#60" title="(static_cast&lt;void&gt; (0))" data-ref="_M/BOOST_ASSERT">BOOST_ASSERT</a>( <b>nullptr</b> != t.fctx);</td></tr>
+<tr><th id="92">92</th><td>    <a class="macro" href="../../../../assert/include/boost/assert.hpp.html#60" title="(static_cast&lt;void&gt; (0))" data-ref="_M/BOOST_ASSERT">BOOST_ASSERT</a>( <b>nullptr</b> != rec);</td></tr>
+<tr><th id="93">93</th><td>    <b>try</b> {</td></tr>
+<tr><th id="94">94</th><td>        <i>// jump back to `create_context()`</i></td></tr>
+<tr><th id="95">95</th><td>        <a class="local col5 ref" href="#105t" title='t' data-ref="105t">t</a> <a class="ref fn" href="detail/fcontext.hpp.html#25" title='boost::context::detail::transfer_t::operator=' data-ref="_ZN5boost7context6detail10transfer_taSEOS2_">=</a> <a class="ref fn" href="detail/fcontext.hpp.html#boost::context::detail::jump_fcontext" title='boost::context::detail::jump_fcontext' data-ref="boost::context::detail::jump_fcontext">jump_fcontext</a>( <span class='inlayHint'>to:&nbsp;</span><a class="local col5 ref" href="#105t" title='t' data-ref="105t">t</a>.<a class="ref field" href="detail/fcontext.hpp.html#boost::context::detail::transfer_t::fctx" title='boost::context::detail::transfer_t::fctx' data-ref="boost::context::detail::transfer_t::fctx">fctx</a>, <span class='inlayHint'>vp:&nbsp;</span><b>nullptr</b>);</td></tr>
+<tr><th id="96">96</th><td>        <i>// start executing</i></td></tr>
+<tr><th id="97">97</th><td>        <a class="local col5 ref" href="#105t" title='t' data-ref="105t">t</a>.<a class="ref field" href="detail/fcontext.hpp.html#boost::context::detail::transfer_t::fctx" title='boost::context::detail::transfer_t::fctx' data-ref="boost::context::detail::transfer_t::fctx">fctx</a> = <a class="local col6 ref" href="#106rec" title='rec' data-ref="106rec">rec</a>-&gt;run( <a class="local col5 ref" href="#105t" title='t' data-ref="105t">t</a>.<a class="ref field" href="detail/fcontext.hpp.html#boost::context::detail::transfer_t::fctx" title='boost::context::detail::transfer_t::fctx' data-ref="boost::context::detail::transfer_t::fctx">fctx</a>);</td></tr>
+<tr><th id="98">98</th><td>    } <b>catch</b> ( <a class="type" href="detail/exception.hpp.html#boost::context::detail::forced_unwind" title='boost::context::detail::forced_unwind' data-ref="boost::context::detail::forced_unwind">forced_unwind</a> <em>const</em>&amp; <dfn class="local col7 decl" id="107ex" title='ex' data-type='const boost::context::detail::forced_unwind &amp;' data-ref="107ex">ex</dfn>) {</td></tr>
+<tr><th id="99">99</th><td>        <a class="local col5 ref" href="#105t" title='t' data-ref="105t">t</a> <a class="ref fn" href="detail/fcontext.hpp.html#25" title='boost::context::detail::transfer_t::operator=' data-ref="_ZN5boost7context6detail10transfer_taSEOS2_">=</a> { <span class='inlayHint'>.fctx:&nbsp;</span><a class="local col7 ref" href="#107ex" title='ex' data-ref="107ex">ex</a>.<a class="ref field" href="detail/exception.hpp.html#boost::context::detail::forced_unwind::fctx" title='boost::context::detail::forced_unwind::fctx' data-ref="boost::context::detail::forced_unwind::fctx">fctx</a>, <span class='inlayHint'>.data:&nbsp;</span><b>nullptr</b> };</td></tr>
+<tr><th id="100">100</th><td>    }</td></tr>
+<tr><th id="101">101</th><td>    <a class="macro" href="../../../../assert/include/boost/assert.hpp.html#60" title="(static_cast&lt;void&gt; (0))" data-ref="_M/BOOST_ASSERT">BOOST_ASSERT</a>( <b>nullptr</b> != t.fctx);</td></tr>
+<tr><th id="102">102</th><td>    <i>// destroy context-stack of `this`context on next context</i></td></tr>
+<tr><th id="103">103</th><td>    ontop_fcontext( <a class="local col5 ref" href="#105t" title='t' data-ref="105t">t</a>.<a class="ref field" href="detail/fcontext.hpp.html#boost::context::detail::transfer_t::fctx" title='boost::context::detail::transfer_t::fctx' data-ref="boost::context::detail::transfer_t::fctx">fctx</a>, <a class="local col6 ref" href="#106rec" title='rec' data-ref="106rec">rec</a>, fiber_exit&lt; Rec &gt;);</td></tr>
+<tr><th id="104">104</th><td>    <a class="macro" href="../../../../assert/include/boost/assert.hpp.html#61" title="(static_cast&lt;void&gt; (0))" data-ref="_M/BOOST_ASSERT_MSG">BOOST_ASSERT_MSG</a>( <b>false</b>, <q>"context already terminated"</q>);</td></tr>
+<tr><th id="105">105</th><td>}</td></tr>
+<tr><th id="106">106</th><td></td></tr>
+<tr><th id="107">107</th><td><b>template</b>&lt; <b>typename</b> Ctx, <b>typename</b> Fn &gt;</td></tr>
+<tr><th id="108">108</th><td><a class="type" href="detail/fcontext.hpp.html#boost::context::detail::transfer_t" title='boost::context::detail::transfer_t' data-ref="boost::context::detail::transfer_t">transfer_t</a> <dfn class="decl def fn" id="_ZN5boost7context6detail11fiber_ontopENS1_10transfer_tE" title='boost::context::detail::fiber_ontop' data-ref="_ZN5boost7context6detail11fiber_ontopENS1_10transfer_tE">fiber_ontop</dfn>( <a class="type" href="detail/fcontext.hpp.html#boost::context::detail::transfer_t" title='boost::context::detail::transfer_t' data-ref="boost::context::detail::transfer_t">transfer_t</a> <dfn class="local col8 decl" id="108t" title='t' data-type='boost::context::detail::transfer_t' data-ref="108t">t</dfn>) {</td></tr>
+<tr><th id="109">109</th><td>    <a class="macro" href="../../../../assert/include/boost/assert.hpp.html#60" title="(static_cast&lt;void&gt; (0))" data-ref="_M/BOOST_ASSERT">BOOST_ASSERT</a>( <b>nullptr</b> != t.data);</td></tr>
+<tr><th id="110">110</th><td>    <em>auto</em> <dfn class="local col9 decl" id="109p" title='p' data-type='auto' data-ref="109p">p</dfn> = *<b>static_cast</b>&lt; Fn * &gt;( <a class="local col8 ref" href="#108t" title='t' data-ref="108t">t</a>.<a class="ref field" href="detail/fcontext.hpp.html#boost::context::detail::transfer_t::data" title='boost::context::detail::transfer_t::data' data-ref="boost::context::detail::transfer_t::data">data</a>);</td></tr>
+<tr><th id="111">111</th><td>    <a class="local col8 ref" href="#108t" title='t' data-ref="108t">t</a>.<a class="ref field" href="detail/fcontext.hpp.html#boost::context::detail::transfer_t::data" title='boost::context::detail::transfer_t::data' data-ref="boost::context::detail::transfer_t::data">data</a> = <b>nullptr</b>;</td></tr>
+<tr><th id="112">112</th><td>    <i>// execute function, pass fiber via reference</i></td></tr>
+<tr><th id="113">113</th><td>    Ctx <dfn class="local col0 decl" id="110c" title='c' data-type='Ctx' data-ref="110c">c</dfn> = <a class="local col9 ref" href="#109p" title='p' data-ref="109p">p</a>( Ctx{ <a class="local col8 ref" href="#108t" title='t' data-ref="108t">t</a>.<a class="ref field" href="detail/fcontext.hpp.html#boost::context::detail::transfer_t::fctx" title='boost::context::detail::transfer_t::fctx' data-ref="boost::context::detail::transfer_t::fctx">fctx</a> } );</td></tr>
+<tr><th id="114">114</th><td><u>#<span data-ppcond="114">if</span> defined(<span class="macro" data-ref="_M/BOOST_NO_CXX14_STD_EXCHANGE">BOOST_NO_CXX14_STD_EXCHANGE</span>)</u></td></tr>
+<tr><th id="115">115</th><td>    <b>return</b> { exchange( c.fctx_, <b>nullptr</b>), <b>nullptr</b> };</td></tr>
+<tr><th id="116">116</th><td><u>#<span data-ppcond="114">else</span></u></td></tr>
+<tr><th id="117">117</th><td>    <b>return</b> { <span class="namespace">std::</span>exchange( <a class="local col0 ref" href="#110c" title='c' data-ref="110c">c</a>.fctx_, <b>nullptr</b>), <b>nullptr</b> };</td></tr>
+<tr><th id="118">118</th><td><u>#<span data-ppcond="114">endif</span></u></td></tr>
+<tr><th id="119">119</th><td>}</td></tr>
+<tr><th id="120">120</th><td></td></tr>
+<tr><th id="121">121</th><td><b>template</b>&lt; <b>typename</b> Ctx, <b>typename</b> StackAlloc, <b>typename</b> Fn &gt;</td></tr>
+<tr><th id="122">122</th><td><b>class</b> <dfn class="type def" id="boost::context::detail::fiber_record" title='boost::context::detail::fiber_record' data-ref="boost::context::detail::fiber_record">fiber_record</dfn> {</td></tr>
+<tr><th id="123">123</th><td><b>private</b>:</td></tr>
+<tr><th id="124">124</th><td>    <a class="type" href="stack_context.hpp.html#boost::context::stack_context" title='boost::context::stack_context' data-ref="boost::context::stack_context">stack_context</a>                                       <dfn class="decl field" id="boost::context::detail::fiber_record::sctx_" title='boost::context::detail::fiber_record::sctx_' data-ref="boost::context::detail::fiber_record::sctx_">sctx_</dfn>;</td></tr>
+<tr><th id="125">125</th><td>    <b>typename</b> <span class="namespace">std::</span><a class="type" href="../../../../../../include/c++/9/type_traits.html#std::decay" title='std::decay' data-ref="std::decay">decay</a>&lt; StackAlloc &gt;::type             <dfn class="decl field" id="boost::context::detail::fiber_record::salloc_" title='boost::context::detail::fiber_record::salloc_' data-ref="boost::context::detail::fiber_record::salloc_">salloc_</dfn>;</td></tr>
+<tr><th id="126">126</th><td>    <b>typename</b> <span class="namespace">std::</span><a class="type" href="../../../../../../include/c++/9/type_traits.html#std::decay" title='std::decay' data-ref="std::decay">decay</a>&lt; Fn &gt;::type                     <dfn class="decl field" id="boost::context::detail::fiber_record::fn_" title='boost::context::detail::fiber_record::fn_' data-ref="boost::context::detail::fiber_record::fn_">fn_</dfn>;</td></tr>
+<tr><th id="127">127</th><td></td></tr>
+<tr><th id="128">128</th><td>    <em>static</em> <em>void</em> <dfn class="decl def fn" id="_ZN5boost7context6detail12fiber_record7destroyEPNS1_12fiber_recordIT_T0_T1_EE" title='boost::context::detail::fiber_record::destroy' data-ref="_ZN5boost7context6detail12fiber_record7destroyEPNS1_12fiber_recordIT_T0_T1_EE">destroy</dfn>( fiber_record * <dfn class="local col1 decl" id="111p" title='p' data-type='fiber_record&lt;Ctx, StackAlloc, Fn&gt; *' data-ref="111p">p</dfn>) <b>noexcept</b> {</td></tr>
+<tr><th id="129">129</th><td>        <b>typename</b> <span class="namespace">std::</span><a class="type" href="../../../../../../include/c++/9/type_traits.html#std::decay" title='std::decay' data-ref="std::decay">decay</a>&lt; StackAlloc &gt;::type <dfn class="local col2 decl" id="112salloc" title='salloc' data-type='typename std::decay&lt;StackAlloc&gt;::type' data-ref="112salloc">salloc</dfn> = <span class="namespace">std::</span>move( <a class="local col1 ref" href="#111p" title='p' data-ref="111p">p</a>-&gt;salloc_);</td></tr>
+<tr><th id="130">130</th><td>        <a class="type" href="stack_context.hpp.html#boost::context::stack_context" title='boost::context::stack_context' data-ref="boost::context::stack_context">stack_context</a> <dfn class="local col3 decl" id="113sctx" title='sctx' data-type='boost::context::stack_context' data-ref="113sctx">sctx</dfn> = <a class="local col1 ref" href="#111p" title='p' data-ref="111p">p</a>-&gt;sctx_;</td></tr>
+<tr><th id="131">131</th><td>        <i>// deallocate fiber_record</i></td></tr>
+<tr><th id="132">132</th><td>        <a class="local col1 ref" href="#111p" title='p' data-ref="111p">p</a>-&gt;~fiber_record();</td></tr>
+<tr><th id="133">133</th><td>        <i>// destroy stack with stack allocator</i></td></tr>
+<tr><th id="134">134</th><td>        <a class="local col2 ref" href="#112salloc" title='salloc' data-ref="112salloc">salloc</a>.deallocate( <a class="local col3 ref" href="#113sctx" title='sctx' data-ref="113sctx">sctx</a>);</td></tr>
+<tr><th id="135">135</th><td>    }</td></tr>
+<tr><th id="136">136</th><td></td></tr>
+<tr><th id="137">137</th><td><b>public</b>:</td></tr>
+<tr><th id="138">138</th><td>    <dfn class="decl def fn" id="_ZN5boost7context6detail12fiber_recordC1ENS0_13stack_contextEOT0_OT1_" title='boost::context::detail::fiber_record::fiber_record&lt;Ctx, StackAlloc, Fn&gt;' data-ref="_ZN5boost7context6detail12fiber_recordC1ENS0_13stack_contextEOT0_OT1_">fiber_record</dfn>( <a class="type" href="stack_context.hpp.html#boost::context::stack_context" title='boost::context::stack_context' data-ref="boost::context::stack_context">stack_context</a> <dfn class="local col4 decl" id="114sctx" title='sctx' data-type='boost::context::stack_context' data-ref="114sctx">sctx</dfn>, StackAlloc &amp;&amp; <dfn class="local col5 decl" id="115salloc" title='salloc' data-type='StackAlloc &amp;&amp;' data-ref="115salloc">salloc</dfn>,</td></tr>
+<tr><th id="139">139</th><td>            Fn &amp;&amp; <dfn class="local col6 decl" id="116fn" title='fn' data-type='Fn &amp;&amp;' data-ref="116fn">fn</dfn>) <b>noexcept</b> :</td></tr>
+<tr><th id="140">140</th><td>        <a class="member field" href="#boost::context::detail::fiber_record::sctx_" title='boost::context::detail::fiber_record::sctx_' data-ref="boost::context::detail::fiber_record::sctx_">sctx_</a><a class="ref fn" href="stack_context.hpp.html#24" title='boost::context::stack_context::stack_context' data-ref="_ZN5boost7context13stack_contextC1ERKS1_">(</a> <a class="local col4 ref" href="#114sctx" title='sctx' data-ref="114sctx">sctx</a>),</td></tr>
+<tr><th id="141">141</th><td>        <a class="member field" href="#boost::context::detail::fiber_record::salloc_" title='boost::context::detail::fiber_record::salloc_' data-ref="boost::context::detail::fiber_record::salloc_">salloc_</a>( <span class="namespace">std::</span>forward&lt; StackAlloc &gt;( <a class="local col5 ref" href="#115salloc" title='salloc' data-ref="115salloc">salloc</a>)),</td></tr>
+<tr><th id="142">142</th><td>        <a class="member field" href="#boost::context::detail::fiber_record::fn_" title='boost::context::detail::fiber_record::fn_' data-ref="boost::context::detail::fiber_record::fn_">fn_</a>( <span class="namespace">std::</span>forward&lt; Fn &gt;( <a class="local col6 ref" href="#116fn" title='fn' data-ref="116fn">fn</a>) ) {</td></tr>
+<tr><th id="143">143</th><td>    }</td></tr>
+<tr><th id="144">144</th><td></td></tr>
+<tr><th id="145">145</th><td>    <dfn class="decl def fn" id="_ZN5boost7context6detail12fiber_recordC1ERKNS1_12fiber_recordIT_T0_T1_EE" title='boost::context::detail::fiber_record::fiber_record&lt;Ctx, StackAlloc, Fn&gt;' data-ref="_ZN5boost7context6detail12fiber_recordC1ERKNS1_12fiber_recordIT_T0_T1_EE">fiber_record</dfn>( fiber_record <em>const</em>&amp;) = <b>delete</b>;</td></tr>
+<tr><th id="146">146</th><td>    fiber_record &amp; <dfn class="decl def fn" id="_ZN5boost7context6detail12fiber_recordaSERKNS1_12fiber_recordIT_T0_T1_EE" title='boost::context::detail::fiber_record::operator=' data-ref="_ZN5boost7context6detail12fiber_recordaSERKNS1_12fiber_recordIT_T0_T1_EE"><b>operator</b>=</dfn>( fiber_record <em>const</em>&amp;) = <b>delete</b>;</td></tr>
+<tr><th id="147">147</th><td></td></tr>
+<tr><th id="148">148</th><td>    <em>void</em> <dfn class="decl def fn" id="_ZN5boost7context6detail12fiber_record10deallocateEv" title='boost::context::detail::fiber_record::deallocate' data-ref="_ZN5boost7context6detail12fiber_record10deallocateEv">deallocate</dfn>() <b>noexcept</b> {</td></tr>
+<tr><th id="149">149</th><td>        <a class="member fn" href="#_ZN5boost7context6detail12fiber_record7destroyEPNS1_12fiber_recordIT_T0_T1_EE" title='boost::context::detail::fiber_record::destroy' data-ref="_ZN5boost7context6detail12fiber_record7destroyEPNS1_12fiber_recordIT_T0_T1_EE">destroy</a>( <span class='inlayHint'>p:&nbsp;</span><b>this</b>);</td></tr>
+<tr><th id="150">150</th><td>    }</td></tr>
+<tr><th id="151">151</th><td></td></tr>
+<tr><th id="152">152</th><td>    <a class="typedef" href="detail/fcontext.hpp.html#boost::context::detail::fcontext_t" title='boost::context::detail::fcontext_t' data-type='void *' data-ref="boost::context::detail::fcontext_t">fcontext_t</a> <dfn class="decl def fn" id="_ZN5boost7context6detail12fiber_record3runEPv" title='boost::context::detail::fiber_record::run' data-ref="_ZN5boost7context6detail12fiber_record3runEPv">run</dfn>( <a class="typedef" href="detail/fcontext.hpp.html#boost::context::detail::fcontext_t" title='boost::context::detail::fcontext_t' data-type='void *' data-ref="boost::context::detail::fcontext_t">fcontext_t</a> <dfn class="local col7 decl" id="117fctx" title='fctx' data-type='boost::context::detail::fcontext_t' data-ref="117fctx">fctx</dfn>) {</td></tr>
+<tr><th id="153">153</th><td>        <i>// invoke context-function</i></td></tr>
+<tr><th id="154">154</th><td><u>#<span data-ppcond="154">if</span> defined(<a class="macro" href="../../../../config/include/boost/config/stdlib/libstdcpp3.hpp.html#359" data-ref="_M/BOOST_NO_CXX17_STD_INVOKE">BOOST_NO_CXX17_STD_INVOKE</a>)</u></td></tr>
+<tr><th id="155">155</th><td>        Ctx <dfn class="local col8 decl" id="118c" title='c' data-type='Ctx' data-ref="118c">c</dfn> = <span class="namespace">boost::context::detail::</span>invoke( <a class="member field" href="#boost::context::detail::fiber_record::fn_" title='boost::context::detail::fiber_record::fn_' data-ref="boost::context::detail::fiber_record::fn_">fn_</a>, Ctx{ <a class="local col7 ref" href="#117fctx" title='fctx' data-ref="117fctx">fctx</a> } );</td></tr>
+<tr><th id="156">156</th><td><u>#<span data-ppcond="154">else</span></u></td></tr>
+<tr><th id="157">157</th><td>        Ctx c = std::invoke( fn_, Ctx{ fctx } );</td></tr>
+<tr><th id="158">158</th><td><u>#<span data-ppcond="154">endif</span></u></td></tr>
+<tr><th id="159">159</th><td><u>#<span data-ppcond="159">if</span> defined(<span class="macro" data-ref="_M/BOOST_NO_CXX14_STD_EXCHANGE">BOOST_NO_CXX14_STD_EXCHANGE</span>)</u></td></tr>
+<tr><th id="160">160</th><td>        <b>return</b> exchange( c.fctx_, <b>nullptr</b>);</td></tr>
+<tr><th id="161">161</th><td><u>#<span data-ppcond="159">else</span></u></td></tr>
+<tr><th id="162">162</th><td>        <b>return</b> <span class="namespace">std::</span>exchange( <a class="local col8 ref" href="#118c" title='c' data-ref="118c">c</a>.fctx_, <b>nullptr</b>);</td></tr>
+<tr><th id="163">163</th><td><u>#<span data-ppcond="159">endif</span></u></td></tr>
+<tr><th id="164">164</th><td>    }</td></tr>
+<tr><th id="165">165</th><td>};</td></tr>
+<tr><th id="166">166</th><td></td></tr>
+<tr><th id="167">167</th><td><b>template</b>&lt; <b>typename</b> Record, <b>typename</b> StackAlloc, <b>typename</b> Fn &gt;</td></tr>
+<tr><th id="168">168</th><td><a class="typedef" href="detail/fcontext.hpp.html#boost::context::detail::fcontext_t" title='boost::context::detail::fcontext_t' data-type='void *' data-ref="boost::context::detail::fcontext_t">fcontext_t</a> <dfn class="decl def fn" id="_ZN5boost7context6detail13create_fiber1EOT0_OT1_" title='boost::context::detail::create_fiber1' data-ref="_ZN5boost7context6detail13create_fiber1EOT0_OT1_">create_fiber1</dfn>( StackAlloc &amp;&amp; <dfn class="local col9 decl" id="119salloc" title='salloc' data-type='StackAlloc &amp;&amp;' data-ref="119salloc">salloc</dfn>, Fn &amp;&amp; <dfn class="local col0 decl" id="120fn" title='fn' data-type='Fn &amp;&amp;' data-ref="120fn">fn</dfn>) {</td></tr>
+<tr><th id="169">169</th><td>    <em>auto</em> <dfn class="local col1 decl" id="121sctx" title='sctx' data-type='auto' data-ref="121sctx">sctx</dfn> = <a class="local col9 ref" href="#119salloc" title='salloc' data-ref="119salloc">salloc</a>.allocate();</td></tr>
+<tr><th id="170">170</th><td>    <i>// reserve space for control structure</i></td></tr>
+<tr><th id="171">171</th><td>	<em>void</em> * <dfn class="local col2 decl" id="122storage" title='storage' data-type='void *' data-ref="122storage">storage</dfn> = <b>reinterpret_cast</b>&lt; <em>void</em> * &gt;(</td></tr>
+<tr><th id="172">172</th><td>			( <b>reinterpret_cast</b>&lt; uintptr_t &gt;( <a class="local col1 ref" href="#121sctx" title='sctx' data-ref="121sctx">sctx</a>.sp) - <b>static_cast</b>&lt; uintptr_t &gt;( <b>sizeof</b>( Record) ) )</td></tr>
+<tr><th id="173">173</th><td>            &amp; ~<b>static_cast</b>&lt; uintptr_t &gt;( <var>0xff</var>) );</td></tr>
+<tr><th id="174">174</th><td>    <i>// placment new for control structure on context stack</i></td></tr>
+<tr><th id="175">175</th><td>    Record * <dfn class="local col3 decl" id="123record" title='record' data-type='Record *' data-ref="123record">record</dfn> = <b>new</b> ( <a class="local col2 ref" href="#122storage" title='storage' data-ref="122storage">storage</a>) Record{</td></tr>
+<tr><th id="176">176</th><td>            <a class="local col1 ref" href="#121sctx" title='sctx' data-ref="121sctx">sctx</a>, <span class="namespace">std::</span>forward&lt; StackAlloc &gt;( <a class="local col9 ref" href="#119salloc" title='salloc' data-ref="119salloc">salloc</a>), <span class="namespace">std::</span>forward&lt; Fn &gt;( <a class="local col0 ref" href="#120fn" title='fn' data-ref="120fn">fn</a>) };</td></tr>
+<tr><th id="177">177</th><td>    <i>// 64byte gab between control structure and stack top</i></td></tr>
+<tr><th id="178">178</th><td><i>    // should be 16byte aligned</i></td></tr>
+<tr><th id="179">179</th><td>    <em>void</em> * <dfn class="local col4 decl" id="124stack_top" title='stack_top' data-type='void *' data-ref="124stack_top">stack_top</dfn> = <b>reinterpret_cast</b>&lt; <em>void</em> * &gt;(</td></tr>
+<tr><th id="180">180</th><td>            <b>reinterpret_cast</b>&lt; uintptr_t &gt;( <a class="local col2 ref" href="#122storage" title='storage' data-ref="122storage">storage</a>) - <b>static_cast</b>&lt; uintptr_t &gt;( <var>64</var>) );</td></tr>
+<tr><th id="181">181</th><td>    <em>void</em> * <dfn class="local col5 decl" id="125stack_bottom" title='stack_bottom' data-type='void *' data-ref="125stack_bottom">stack_bottom</dfn> = <b>reinterpret_cast</b>&lt; <em>void</em> * &gt;(</td></tr>
+<tr><th id="182">182</th><td>            <b>reinterpret_cast</b>&lt; uintptr_t &gt;( <a class="local col1 ref" href="#121sctx" title='sctx' data-ref="121sctx">sctx</a>.sp) - <b>static_cast</b>&lt; uintptr_t &gt;( <a class="local col1 ref" href="#121sctx" title='sctx' data-ref="121sctx">sctx</a>.size) );</td></tr>
+<tr><th id="183">183</th><td>    <i>// create fast-context</i></td></tr>
+<tr><th id="184">184</th><td>    <em>const</em> <span class="namespace">std::</span><a class="typedef" href="../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> <dfn class="local col6 decl" id="126size" title='size' data-type='const std::size_t' data-ref="126size">size</dfn> = <b>reinterpret_cast</b>&lt; uintptr_t &gt;( <a class="local col4 ref" href="#124stack_top" title='stack_top' data-ref="124stack_top">stack_top</a>) - <b>reinterpret_cast</b>&lt; uintptr_t &gt;( <a class="local col5 ref" href="#125stack_bottom" title='stack_bottom' data-ref="125stack_bottom">stack_bottom</a>);</td></tr>
+<tr><th id="185">185</th><td></td></tr>
+<tr><th id="186">186</th><td><u>#<span data-ppcond="186">if</span> BOOST_CONTEXT_SHADOW_STACK</u></td></tr>
+<tr><th id="187">187</th><td>    std::size_t ss_size = size &gt;&gt; <var>5</var>;</td></tr>
+<tr><th id="188">188</th><td>    <i>// align shadow stack to 8 bytes.</i></td></tr>
+<tr><th id="189">189</th><td>	ss_size = (ss_size + <var>7</var>) &amp; ~<var>7</var>;</td></tr>
+<tr><th id="190">190</th><td>    <i>// Todo: shadow stack occupies at least 4KB</i></td></tr>
+<tr><th id="191">191</th><td>    ss_size = (ss_size &gt; <var>4096</var>) ? size : <var>4096</var>;</td></tr>
+<tr><th id="192">192</th><td>    <i>// create shadow stack</i></td></tr>
+<tr><th id="193">193</th><td>    <em>void</em> *ss_base = (<em>void</em> *)syscall(__NR_map_shadow_stack, <var>0</var>, ss_size, SHADOW_STACK_SET_TOKEN);</td></tr>
+<tr><th id="194">194</th><td>    BOOST_ASSERT(ss_base != -<var>1</var>);</td></tr>
+<tr><th id="195">195</th><td>    <em>unsigned</em> <em>long</em> ss_sp = (<em>unsigned</em> <em>long</em>)ss_base + ss_size;</td></tr>
+<tr><th id="196">196</th><td>    <i>/* pass the shadow stack pointer to make_fcontext</i></td></tr>
+<tr><th id="197">197</th><td><i>	 i.e., link the new shadow stack with the new fcontext</i></td></tr>
+<tr><th id="198">198</th><td><i>	 TODO should be a better way? */</i></td></tr>
+<tr><th id="199">199</th><td>    *((<em>unsigned</em> <em>long</em>*)(<b>reinterpret_cast</b>&lt; uintptr_t &gt;( stack_top)- <var>8</var>)) = ss_sp;</td></tr>
+<tr><th id="200">200</th><td>    <i>/* Todo: place shadow stack info in 64byte gap */</i></td></tr>
+<tr><th id="201">201</th><td>    *((<em>unsigned</em> <em>long</em>*)(<b>reinterpret_cast</b>&lt; uintptr_t &gt;( storage)- <var>8</var>)) = (<em>unsigned</em> <em>long</em>) ss_base;</td></tr>
+<tr><th id="202">202</th><td>    *((<em>unsigned</em> <em>long</em>*)(<b>reinterpret_cast</b>&lt; uintptr_t &gt;( storage)- <var>16</var>)) = ss_size;</td></tr>
+<tr><th id="203">203</th><td><u>#<span data-ppcond="186">endif</span></u></td></tr>
+<tr><th id="204">204</th><td>    <em>const</em> <a class="typedef" href="detail/fcontext.hpp.html#boost::context::detail::fcontext_t" title='boost::context::detail::fcontext_t' data-type='void *' data-ref="boost::context::detail::fcontext_t">fcontext_t</a> <dfn class="local col7 decl" id="127fctx" title='fctx' data-type='const boost::context::detail::fcontext_t' data-ref="127fctx">fctx</dfn> = make_fcontext( <a class="local col4 ref" href="#124stack_top" title='stack_top' data-ref="124stack_top">stack_top</a>, <a class="local col6 ref" href="#126size" title='size' data-ref="126size">size</a>, &amp; fiber_entry&lt; Record &gt;);</td></tr>
+<tr><th id="205">205</th><td>    <a class="macro" href="../../../../assert/include/boost/assert.hpp.html#60" title="(static_cast&lt;void&gt; (0))" data-ref="_M/BOOST_ASSERT">BOOST_ASSERT</a>( <b>nullptr</b> != fctx);</td></tr>
+<tr><th id="206">206</th><td>    <i>// transfer control structure to context-stack</i></td></tr>
+<tr><th id="207">207</th><td>    <b>return</b> jump_fcontext( <a class="local col7 ref" href="#127fctx" title='fctx' data-ref="127fctx">fctx</a>, <a class="local col3 ref" href="#123record" title='record' data-ref="123record">record</a>).fctx;</td></tr>
+<tr><th id="208">208</th><td>}</td></tr>
+<tr><th id="209">209</th><td></td></tr>
+<tr><th id="210">210</th><td><b>template</b>&lt; <b>typename</b> Record, <b>typename</b> StackAlloc, <b>typename</b> Fn &gt;</td></tr>
+<tr><th id="211">211</th><td><a class="typedef" href="detail/fcontext.hpp.html#boost::context::detail::fcontext_t" title='boost::context::detail::fcontext_t' data-type='void *' data-ref="boost::context::detail::fcontext_t">fcontext_t</a> <dfn class="decl def fn" id="_ZN5boost7context6detail13create_fiber2ENS0_12preallocatedEOT0_OT1_" title='boost::context::detail::create_fiber2' data-ref="_ZN5boost7context6detail13create_fiber2ENS0_12preallocatedEOT0_OT1_">create_fiber2</dfn>( <a class="type" href="preallocated.hpp.html#boost::context::preallocated" title='boost::context::preallocated' data-ref="boost::context::preallocated">preallocated</a> <dfn class="local col8 decl" id="128palloc" title='palloc' data-type='boost::context::preallocated' data-ref="128palloc">palloc</dfn>, StackAlloc &amp;&amp; <dfn class="local col9 decl" id="129salloc" title='salloc' data-type='StackAlloc &amp;&amp;' data-ref="129salloc">salloc</dfn>, Fn &amp;&amp; <dfn class="local col0 decl" id="130fn" title='fn' data-type='Fn &amp;&amp;' data-ref="130fn">fn</dfn>) {</td></tr>
+<tr><th id="212">212</th><td>    <i>// reserve space for control structure</i></td></tr>
+<tr><th id="213">213</th><td>    <em>void</em> * <dfn class="local col1 decl" id="131storage" title='storage' data-type='void *' data-ref="131storage">storage</dfn> = <b>reinterpret_cast</b>&lt; <em>void</em> * &gt;(</td></tr>
+<tr><th id="214">214</th><td>            ( <b>reinterpret_cast</b>&lt; uintptr_t &gt;( <a class="local col8 ref" href="#128palloc" title='palloc' data-ref="128palloc">palloc</a>.<a class="ref field" href="preallocated.hpp.html#boost::context::preallocated::sp" title='boost::context::preallocated::sp' data-ref="boost::context::preallocated::sp">sp</a>) - <b>static_cast</b>&lt; uintptr_t &gt;( <b>sizeof</b>( Record) ) )</td></tr>
+<tr><th id="215">215</th><td>            &amp; ~ <b>static_cast</b>&lt; uintptr_t &gt;( <var>0xff</var>) );</td></tr>
+<tr><th id="216">216</th><td>    <i>// placment new for control structure on context-stack</i></td></tr>
+<tr><th id="217">217</th><td>    Record * <dfn class="local col2 decl" id="132record" title='record' data-type='Record *' data-ref="132record">record</dfn> = <b>new</b> ( <a class="local col1 ref" href="#131storage" title='storage' data-ref="131storage">storage</a>) Record{</td></tr>
+<tr><th id="218">218</th><td>            <a class="local col8 ref" href="#128palloc" title='palloc' data-ref="128palloc">palloc</a>.<a class="ref field" href="preallocated.hpp.html#boost::context::preallocated::sctx" title='boost::context::preallocated::sctx' data-ref="boost::context::preallocated::sctx">sctx</a>, <span class="namespace">std::</span>forward&lt; StackAlloc &gt;( <a class="local col9 ref" href="#129salloc" title='salloc' data-ref="129salloc">salloc</a>), <span class="namespace">std::</span>forward&lt; Fn &gt;( <a class="local col0 ref" href="#130fn" title='fn' data-ref="130fn">fn</a>) };</td></tr>
+<tr><th id="219">219</th><td>    <i>// 64byte gab between control structure and stack top</i></td></tr>
+<tr><th id="220">220</th><td>    <em>void</em> * <dfn class="local col3 decl" id="133stack_top" title='stack_top' data-type='void *' data-ref="133stack_top">stack_top</dfn> = <b>reinterpret_cast</b>&lt; <em>void</em> * &gt;(</td></tr>
+<tr><th id="221">221</th><td>            <b>reinterpret_cast</b>&lt; uintptr_t &gt;( <a class="local col1 ref" href="#131storage" title='storage' data-ref="131storage">storage</a>) - <b>static_cast</b>&lt; uintptr_t &gt;( <var>64</var>) );</td></tr>
+<tr><th id="222">222</th><td>    <em>void</em> * <dfn class="local col4 decl" id="134stack_bottom" title='stack_bottom' data-type='void *' data-ref="134stack_bottom">stack_bottom</dfn> = <b>reinterpret_cast</b>&lt; <em>void</em> * &gt;(</td></tr>
+<tr><th id="223">223</th><td>            <b>reinterpret_cast</b>&lt; uintptr_t &gt;( <a class="local col8 ref" href="#128palloc" title='palloc' data-ref="128palloc">palloc</a>.<a class="ref field" href="preallocated.hpp.html#boost::context::preallocated::sctx" title='boost::context::preallocated::sctx' data-ref="boost::context::preallocated::sctx">sctx</a>.<a class="ref field" href="stack_context.hpp.html#boost::context::stack_context::sp" title='boost::context::stack_context::sp' data-ref="boost::context::stack_context::sp">sp</a>) - <b>static_cast</b>&lt; uintptr_t &gt;( <a class="local col8 ref" href="#128palloc" title='palloc' data-ref="128palloc">palloc</a>.<a class="ref field" href="preallocated.hpp.html#boost::context::preallocated::sctx" title='boost::context::preallocated::sctx' data-ref="boost::context::preallocated::sctx">sctx</a>.<a class="ref field" href="stack_context.hpp.html#boost::context::stack_context::size" title='boost::context::stack_context::size' data-ref="boost::context::stack_context::size">size</a>) );</td></tr>
+<tr><th id="224">224</th><td>    <i>// create fast-context</i></td></tr>
+<tr><th id="225">225</th><td>    <em>const</em> <span class="namespace">std::</span><a class="typedef" href="../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> <dfn class="local col5 decl" id="135size" title='size' data-type='const std::size_t' data-ref="135size">size</dfn> = <b>reinterpret_cast</b>&lt; uintptr_t &gt;( <a class="local col3 ref" href="#133stack_top" title='stack_top' data-ref="133stack_top">stack_top</a>) - <b>reinterpret_cast</b>&lt; uintptr_t &gt;( <a class="local col4 ref" href="#134stack_bottom" title='stack_bottom' data-ref="134stack_bottom">stack_bottom</a>);</td></tr>
+<tr><th id="226">226</th><td></td></tr>
+<tr><th id="227">227</th><td><u>#<span data-ppcond="227">if</span> BOOST_CONTEXT_SHADOW_STACK</u></td></tr>
+<tr><th id="228">228</th><td>    std::size_t ss_size = size &gt;&gt; <var>5</var>;</td></tr>
+<tr><th id="229">229</th><td>    <i>// align shadow stack to 8 bytes.</i></td></tr>
+<tr><th id="230">230</th><td>	ss_size = (ss_size + <var>7</var>) &amp; ~<var>7</var>;</td></tr>
+<tr><th id="231">231</th><td>    <i>// Todo: shadow stack occupies at least 4KB</i></td></tr>
+<tr><th id="232">232</th><td>    ss_size = (ss_size &gt; <var>4096</var>) ? size : <var>4096</var>;</td></tr>
+<tr><th id="233">233</th><td>    <i>// create shadow stack</i></td></tr>
+<tr><th id="234">234</th><td>    <em>void</em> *ss_base = (<em>void</em> *)syscall(__NR_map_shadow_stack, <var>0</var>, ss_size, SHADOW_STACK_SET_TOKEN);</td></tr>
+<tr><th id="235">235</th><td>    BOOST_ASSERT(ss_base != -<var>1</var>);</td></tr>
+<tr><th id="236">236</th><td>    <em>unsigned</em> <em>long</em> ss_sp = (<em>unsigned</em> <em>long</em>)ss_base + ss_size;</td></tr>
+<tr><th id="237">237</th><td>    <i>/* pass the shadow stack pointer to make_fcontext</i></td></tr>
+<tr><th id="238">238</th><td><i>	 i.e., link the new shadow stack with the new fcontext</i></td></tr>
+<tr><th id="239">239</th><td><i>	 TODO should be a better way? */</i></td></tr>
+<tr><th id="240">240</th><td>    *((<em>unsigned</em> <em>long</em>*)(<b>reinterpret_cast</b>&lt; uintptr_t &gt;( stack_top)- <var>8</var>)) = ss_sp;</td></tr>
+<tr><th id="241">241</th><td>    <i>/* Todo: place shadow stack info in 64byte gap */</i></td></tr>
+<tr><th id="242">242</th><td>    *((<em>unsigned</em> <em>long</em>*)(<b>reinterpret_cast</b>&lt; uintptr_t &gt;( storage)- <var>8</var>)) = (<em>unsigned</em> <em>long</em>) ss_base;</td></tr>
+<tr><th id="243">243</th><td>    *((<em>unsigned</em> <em>long</em>*)(<b>reinterpret_cast</b>&lt; uintptr_t &gt;( storage)- <var>16</var>)) = ss_size;</td></tr>
+<tr><th id="244">244</th><td><u>#<span data-ppcond="227">endif</span></u></td></tr>
+<tr><th id="245">245</th><td>    <em>const</em> <a class="typedef" href="detail/fcontext.hpp.html#boost::context::detail::fcontext_t" title='boost::context::detail::fcontext_t' data-type='void *' data-ref="boost::context::detail::fcontext_t">fcontext_t</a> <dfn class="local col6 decl" id="136fctx" title='fctx' data-type='const boost::context::detail::fcontext_t' data-ref="136fctx">fctx</dfn> = make_fcontext( <a class="local col3 ref" href="#133stack_top" title='stack_top' data-ref="133stack_top">stack_top</a>, <a class="local col5 ref" href="#135size" title='size' data-ref="135size">size</a>, &amp; fiber_entry&lt; Record &gt;);</td></tr>
+<tr><th id="246">246</th><td>    <a class="macro" href="../../../../assert/include/boost/assert.hpp.html#60" title="(static_cast&lt;void&gt; (0))" data-ref="_M/BOOST_ASSERT">BOOST_ASSERT</a>( <b>nullptr</b> != fctx);</td></tr>
+<tr><th id="247">247</th><td>    <i>// transfer control structure to context-stack</i></td></tr>
+<tr><th id="248">248</th><td>    <b>return</b> jump_fcontext( <a class="local col6 ref" href="#136fctx" title='fctx' data-ref="136fctx">fctx</a>, <a class="local col2 ref" href="#132record" title='record' data-ref="132record">record</a>).fctx;</td></tr>
+<tr><th id="249">249</th><td>}</td></tr>
+<tr><th id="250">250</th><td></td></tr>
+<tr><th id="251">251</th><td>}</td></tr>
+<tr><th id="252">252</th><td></td></tr>
+<tr><th id="253">253</th><td><b>class</b> <dfn class="type def" id="boost::context::fiber" title='boost::context::fiber' data-ref="boost::context::fiber">fiber</dfn> {</td></tr>
+<tr><th id="254">254</th><td><b>private</b>:</td></tr>
+<tr><th id="255">255</th><td>    <b>template</b>&lt; <b>typename</b> Ctx, <b>typename</b> StackAlloc, <b>typename</b> Fn &gt;</td></tr>
+<tr><th id="256">256</th><td>    <b>friend</b> <b>class</b> <span class="namespace">detail::</span><a class="type" href="#boost::context::detail::fiber_record" title='boost::context::detail::fiber_record' data-ref="boost::context::detail::fiber_record">fiber_record</a>;</td></tr>
+<tr><th id="257">257</th><td></td></tr>
+<tr><th id="258">258</th><td>    <b>template</b>&lt; <b>typename</b> Ctx, <b>typename</b> Fn &gt;</td></tr>
+<tr><th id="259">259</th><td>    <b>friend</b> <span class="namespace">detail::</span><a class="type" href="detail/fcontext.hpp.html#boost::context::detail::transfer_t" title='boost::context::detail::transfer_t' data-ref="boost::context::detail::transfer_t">transfer_t</a></td></tr>
+<tr><th id="260">260</th><td>    <span class="namespace">detail::</span><a class="decl fn" href="#_ZN5boost7context6detail11fiber_ontopENS1_10transfer_tE" title='boost::context::detail::fiber_ontop' data-ref="_ZN5boost7context6detail11fiber_ontopENS1_10transfer_tE">fiber_ontop</a>( <span class="namespace">detail::</span><a class="type" href="detail/fcontext.hpp.html#boost::context::detail::transfer_t" title='boost::context::detail::transfer_t' data-ref="boost::context::detail::transfer_t">transfer_t</a>);</td></tr>
+<tr><th id="261">261</th><td></td></tr>
+<tr><th id="262">262</th><td>    <span class="namespace">detail::</span><a class="typedef" href="detail/fcontext.hpp.html#boost::context::detail::fcontext_t" title='boost::context::detail::fcontext_t' data-type='void *' data-ref="boost::context::detail::fcontext_t">fcontext_t</a>  <dfn class="decl field" id="boost::context::fiber::fctx_" title='boost::context::fiber::fctx_' data-ref="boost::context::fiber::fctx_">fctx_</dfn>{ <b>nullptr</b> };</td></tr>
+<tr><th id="263">263</th><td></td></tr>
+<tr><th id="264">264</th><td>    <dfn class="decl def fn" id="_ZN5boost7context5fiberC1EPv" title='boost::context::fiber::fiber' data-ref="_ZN5boost7context5fiberC1EPv">fiber</dfn>( <span class="namespace">detail::</span><a class="typedef" href="detail/fcontext.hpp.html#boost::context::detail::fcontext_t" title='boost::context::detail::fcontext_t' data-type='void *' data-ref="boost::context::detail::fcontext_t">fcontext_t</a> <dfn class="local col7 decl" id="137fctx" title='fctx' data-type='detail::fcontext_t' data-ref="137fctx">fctx</dfn>) <b>noexcept</b> :</td></tr>
+<tr><th id="265">265</th><td>        <a class="member field" href="#boost::context::fiber::fctx_" title='boost::context::fiber::fctx_' data-ref="boost::context::fiber::fctx_">fctx_</a>{ <a class="local col7 ref" href="#137fctx" title='fctx' data-ref="137fctx">fctx</a> } {</td></tr>
+<tr><th id="266">266</th><td>    }</td></tr>
+<tr><th id="267">267</th><td></td></tr>
+<tr><th id="268">268</th><td><b>public</b>:</td></tr>
+<tr><th id="269">269</th><td>    <dfn class="decl def fn" id="_ZN5boost7context5fiberC1Ev" title='boost::context::fiber::fiber' data-ref="_ZN5boost7context5fiberC1Ev">fiber</dfn>() <b>noexcept</b> = <b>default</b>;</td></tr>
+<tr><th id="270">270</th><td></td></tr>
+<tr><th id="271">271</th><td>    <b>template</b>&lt; <b>typename</b> Fn, <b>typename</b> = <span class="namespace">detail::</span><a class="type" href="detail/disable_overload.hpp.html#boost::context::detail::disable_overload" title='boost::context::detail::disable_overload' data-ref="boost::context::detail::disable_overload">disable_overload</a>&lt; <a class="type" href="#boost::context::fiber" title='boost::context::fiber' data-ref="boost::context::fiber">fiber</a>, Fn &gt; &gt;</td></tr>
+<tr><th id="272">272</th><td>    <dfn class="decl def fn" id="_ZN5boost7context5fiberC1EOT_" title='boost::context::fiber::fiber' data-ref="_ZN5boost7context5fiberC1EOT_">fiber</dfn>( Fn &amp;&amp; <dfn class="local col8 decl" id="138fn" title='fn' data-type='Fn &amp;&amp;' data-ref="138fn">fn</dfn>) :</td></tr>
+<tr><th id="273">273</th><td>        <a class="type" href="#boost::context::fiber" title='boost::context::fiber' data-ref="boost::context::fiber">fiber</a>{ <span class="namespace">std::</span><a class="ref" href="../../../../../../include/c++/9/bits/uses_allocator.h.html#std::allocator_arg" title='std::allocator_arg' data-ref="std::allocator_arg">allocator_arg</a>, <a class="typedef" href="fixedsize_stack.hpp.html#boost::context::fixedsize_stack" title='boost::context::fixedsize_stack' data-type='basic_fixedsize_stack&lt;boost::context::stack_traits&gt;' data-ref="boost::context::fixedsize_stack">fixedsize_stack</a><a class="ref fn" href="fixedsize_stack.hpp.html#_ZN5boost7context21basic_fixedsize_stackC1Em" title='boost::context::basic_fixedsize_stack::basic_fixedsize_stack&lt;traitsT&gt;' data-ref="_ZN5boost7context21basic_fixedsize_stackC1Em">(</a>), <span class="namespace">std::</span>forward&lt; Fn &gt;( <a class="local col8 ref" href="#138fn" title='fn' data-ref="138fn">fn</a>) } {</td></tr>
+<tr><th id="274">274</th><td>    }</td></tr>
+<tr><th id="275">275</th><td></td></tr>
+<tr><th id="276">276</th><td>    <b>template</b>&lt; <b>typename</b> StackAlloc, <b>typename</b> Fn &gt;</td></tr>
+<tr><th id="277">277</th><td>    <dfn class="decl def fn" id="_ZN5boost7context5fiberC1ESt15allocator_arg_tOT_OT0_" title='boost::context::fiber::fiber' data-ref="_ZN5boost7context5fiberC1ESt15allocator_arg_tOT_OT0_">fiber</dfn>( <span class="namespace">std::</span><a class="type" href="../../../../../../include/c++/9/bits/uses_allocator.h.html#std::allocator_arg_t" title='std::allocator_arg_t' data-ref="std::allocator_arg_t">allocator_arg_t</a>, StackAlloc &amp;&amp; <dfn class="local col9 decl" id="139salloc" title='salloc' data-type='StackAlloc &amp;&amp;' data-ref="139salloc">salloc</dfn>, Fn &amp;&amp; <dfn class="local col0 decl" id="140fn" title='fn' data-type='Fn &amp;&amp;' data-ref="140fn">fn</dfn>) :</td></tr>
+<tr><th id="278">278</th><td>        <a class="member field" href="#boost::context::fiber::fctx_" title='boost::context::fiber::fctx_' data-ref="boost::context::fiber::fctx_">fctx_</a>{ <span class="namespace">detail::</span>create_fiber1&lt; <span class="namespace">detail::</span><a class="type" href="#boost::context::detail::fiber_record" title='boost::context::detail::fiber_record' data-ref="boost::context::detail::fiber_record">fiber_record</a>&lt; <a class="type" href="#boost::context::fiber" title='boost::context::fiber' data-ref="boost::context::fiber">fiber</a>, StackAlloc, Fn &gt; &gt;(</td></tr>
+<tr><th id="279">279</th><td>                <span class="namespace">std::</span>forward&lt; StackAlloc &gt;( <a class="local col9 ref" href="#139salloc" title='salloc' data-ref="139salloc">salloc</a>), <span class="namespace">std::</span>forward&lt; Fn &gt;( <a class="local col0 ref" href="#140fn" title='fn' data-ref="140fn">fn</a>) ) } {</td></tr>
+<tr><th id="280">280</th><td>    }</td></tr>
+<tr><th id="281">281</th><td></td></tr>
+<tr><th id="282">282</th><td>    <b>template</b>&lt; <b>typename</b> StackAlloc, <b>typename</b> Fn &gt;</td></tr>
+<tr><th id="283">283</th><td>    <dfn class="decl def fn" id="_ZN5boost7context5fiberC1ESt15allocator_arg_tNS0_12preallocatedEOT_OT0_" title='boost::context::fiber::fiber' data-ref="_ZN5boost7context5fiberC1ESt15allocator_arg_tNS0_12preallocatedEOT_OT0_">fiber</dfn>( <span class="namespace">std::</span><a class="type" href="../../../../../../include/c++/9/bits/uses_allocator.h.html#std::allocator_arg_t" title='std::allocator_arg_t' data-ref="std::allocator_arg_t">allocator_arg_t</a>, <a class="type" href="preallocated.hpp.html#boost::context::preallocated" title='boost::context::preallocated' data-ref="boost::context::preallocated">preallocated</a> <dfn class="local col1 decl" id="141palloc" title='palloc' data-type='boost::context::preallocated' data-ref="141palloc">palloc</dfn>, StackAlloc &amp;&amp; <dfn class="local col2 decl" id="142salloc" title='salloc' data-type='StackAlloc &amp;&amp;' data-ref="142salloc">salloc</dfn>, Fn &amp;&amp; <dfn class="local col3 decl" id="143fn" title='fn' data-type='Fn &amp;&amp;' data-ref="143fn">fn</dfn>) :</td></tr>
+<tr><th id="284">284</th><td>        <a class="member field" href="#boost::context::fiber::fctx_" title='boost::context::fiber::fctx_' data-ref="boost::context::fiber::fctx_">fctx_</a>{ <span class="namespace">detail::</span>create_fiber2&lt; <span class="namespace">detail::</span><a class="type" href="#boost::context::detail::fiber_record" title='boost::context::detail::fiber_record' data-ref="boost::context::detail::fiber_record">fiber_record</a>&lt; <a class="type" href="#boost::context::fiber" title='boost::context::fiber' data-ref="boost::context::fiber">fiber</a>, StackAlloc, Fn &gt; &gt;(</td></tr>
+<tr><th id="285">285</th><td>                <a class="local col1 ref" href="#141palloc" title='palloc' data-ref="141palloc">palloc</a>, <span class="namespace">std::</span>forward&lt; StackAlloc &gt;( <a class="local col2 ref" href="#142salloc" title='salloc' data-ref="142salloc">salloc</a>), <span class="namespace">std::</span>forward&lt; Fn &gt;( <a class="local col3 ref" href="#143fn" title='fn' data-ref="143fn">fn</a>) ) } {</td></tr>
+<tr><th id="286">286</th><td>    }</td></tr>
+<tr><th id="287">287</th><td></td></tr>
+<tr><th id="288">288</th><td><u>#<span data-ppcond="288">if</span> defined(<span class="macro" data-ref="_M/BOOST_USE_SEGMENTED_STACKS">BOOST_USE_SEGMENTED_STACKS</span>)</u></td></tr>
+<tr><th id="289">289</th><td>    <b>template</b>&lt; <b>typename</b> Fn &gt;</td></tr>
+<tr><th id="290">290</th><td>    fiber( std::allocator_arg_t, segmented_stack, Fn &amp;&amp;);</td></tr>
+<tr><th id="291">291</th><td></td></tr>
+<tr><th id="292">292</th><td>    <b>template</b>&lt; <b>typename</b> StackAlloc, <b>typename</b> Fn &gt;</td></tr>
+<tr><th id="293">293</th><td>    fiber( std::allocator_arg_t, preallocated, segmented_stack, Fn &amp;&amp;);</td></tr>
+<tr><th id="294">294</th><td><u>#<span data-ppcond="288">endif</span></u></td></tr>
+<tr><th id="295">295</th><td></td></tr>
+<tr><th id="296">296</th><td>    <dfn class="decl def fn" id="_ZN5boost7context5fiberD1Ev" title='boost::context::fiber::~fiber' data-ref="_ZN5boost7context5fiberD1Ev">~fiber</dfn>() {</td></tr>
+<tr><th id="297">297</th><td>        <b>if</b> ( <a class="macro" href="../../../../config/include/boost/config/compiler/clang.hpp.html#75" title="__builtin_expect(nullptr != fctx_, 0)" data-ref="_M/BOOST_UNLIKELY">BOOST_UNLIKELY</a>( <b>nullptr</b> != <a class="member field" href="#boost::context::fiber::fctx_" title='boost::context::fiber::fctx_' data-ref="boost::context::fiber::fctx_">fctx_</a>) ) {</td></tr>
+<tr><th id="298">298</th><td>            <span class="namespace">detail::</span><a class="ref fn" href="detail/fcontext.hpp.html#boost::context::detail::ontop_fcontext" title='boost::context::detail::ontop_fcontext' data-ref="boost::context::detail::ontop_fcontext">ontop_fcontext</a>(</td></tr>
+<tr><th id="299">299</th><td><u>#<span data-ppcond="299">if</span> defined(<span class="macro" data-ref="_M/BOOST_NO_CXX14_STD_EXCHANGE">BOOST_NO_CXX14_STD_EXCHANGE</span>)</u></td></tr>
+<tr><th id="300">300</th><td>                    detail::exchange( fctx_, <b>nullptr</b>),</td></tr>
+<tr><th id="301">301</th><td><u>#<span data-ppcond="299">else</span></u></td></tr>
+<tr><th id="302">302</th><td>                    <span class='inlayHint'>to:&nbsp;</span><span class="namespace">std::</span><a class="ref fn" href="../../../../../../include/c++/9/utility.html#_ZSt8exchangeRT_OT0_" title='std::exchange' data-ref="_ZSt8exchangeRT_OT0_">exchange</a>( <span class='inlayHint'>obj&amp;:&nbsp;</span><span class='refarg'><a class="member field" href="#boost::context::fiber::fctx_" title='boost::context::fiber::fctx_' data-ref="boost::context::fiber::fctx_">fctx_</a></span>, <span class='inlayHint'>new_val:&nbsp;</span><b>nullptr</b>),</td></tr>
+<tr><th id="303">303</th><td><u>#<span data-ppcond="299">endif</span></u></td></tr>
+<tr><th id="304">304</th><td>                   <span class='inlayHint'>vp:&nbsp;</span><b>nullptr</b>,</td></tr>
+<tr><th id="305">305</th><td>                   <span class='inlayHint'>fn:&nbsp;</span><span class="namespace">detail::</span><a class="ref fn" href="#_ZN5boost7context6detail12fiber_unwindENS1_10transfer_tE" title='boost::context::detail::fiber_unwind' data-ref="_ZN5boost7context6detail12fiber_unwindENS1_10transfer_tE">fiber_unwind</a>);</td></tr>
+<tr><th id="306">306</th><td>        }</td></tr>
+<tr><th id="307">307</th><td>    }</td></tr>
+<tr><th id="308">308</th><td></td></tr>
+<tr><th id="309">309</th><td>    <dfn class="decl def fn" id="_ZN5boost7context5fiberC1EOS1_" title='boost::context::fiber::fiber' data-ref="_ZN5boost7context5fiberC1EOS1_">fiber</dfn>( <a class="type" href="#boost::context::fiber" title='boost::context::fiber' data-ref="boost::context::fiber">fiber</a> &amp;&amp; <dfn class="local col4 decl" id="144other" title='other' data-type='boost::context::fiber &amp;&amp;' data-ref="144other">other</dfn>) <b>noexcept</b> {</td></tr>
+<tr><th id="310">310</th><td>        <a class="member fn" href="#_ZN5boost7context5fiber4swapERS1_" title='boost::context::fiber::swap' data-ref="_ZN5boost7context5fiber4swapERS1_">swap</a>( <span class='refarg'><a class="local col4 ref" href="#144other" title='other' data-ref="144other">other</a></span>);</td></tr>
+<tr><th id="311">311</th><td>    }</td></tr>
+<tr><th id="312">312</th><td></td></tr>
+<tr><th id="313">313</th><td>    <a class="type" href="#boost::context::fiber" title='boost::context::fiber' data-ref="boost::context::fiber">fiber</a> &amp; <dfn class="decl def fn" id="_ZN5boost7context5fiberaSEOS1_" title='boost::context::fiber::operator=' data-ref="_ZN5boost7context5fiberaSEOS1_"><b>operator</b>=</dfn>( <a class="type" href="#boost::context::fiber" title='boost::context::fiber' data-ref="boost::context::fiber">fiber</a> &amp;&amp; <dfn class="local col5 decl" id="145other" title='other' data-type='boost::context::fiber &amp;&amp;' data-ref="145other">other</dfn>) <b>noexcept</b> {</td></tr>
+<tr><th id="314">314</th><td>        <b>if</b> ( <a class="macro" href="../../../../config/include/boost/config/compiler/clang.hpp.html#74" title="__builtin_expect(this != &amp; other, 1)" data-ref="_M/BOOST_LIKELY">BOOST_LIKELY</a>( <b>this</b> != &amp; <a class="local col5 ref" href="#145other" title='other' data-ref="145other">other</a>) ) {</td></tr>
+<tr><th id="315">315</th><td>            <a class="type" href="#boost::context::fiber" title='boost::context::fiber' data-ref="boost::context::fiber">fiber</a> <dfn class="local col6 decl" id="146tmp" title='tmp' data-type='boost::context::fiber' data-ref="146tmp">tmp</dfn> = <a class="ref fn fake" href="#_ZN5boost7context5fiberC1EOS1_" title='boost::context::fiber::fiber' data-ref="_ZN5boost7context5fiberC1EOS1_"></a><span class="namespace">std::</span><a class="ref fn" href="../../../../../../include/c++/9/bits/move.h.html#_ZSt4moveOT_" title='std::move' data-ref="_ZSt4moveOT_">move</a>( <span class='refarg'><a class="local col5 ref" href="#145other" title='other' data-ref="145other">other</a></span>);</td></tr>
+<tr><th id="316">316</th><td>            <a class="member fn" href="#_ZN5boost7context5fiber4swapERS1_" title='boost::context::fiber::swap' data-ref="_ZN5boost7context5fiber4swapERS1_">swap</a>( <span class='inlayHint'>other&amp;:&nbsp;</span><span class='refarg'><a class="local col6 ref" href="#146tmp" title='tmp' data-ref="146tmp">tmp</a></span>);</td></tr>
+<tr><th id="317">317</th><td>        }</td></tr>
+<tr><th id="318">318</th><td>        <b>return</b> * <b>this</b>;</td></tr>
+<tr><th id="319">319</th><td>    }</td></tr>
+<tr><th id="320">320</th><td></td></tr>
+<tr><th id="321">321</th><td>    <dfn class="decl def fn" id="_ZN5boost7context5fiberC1ERKS1_" title='boost::context::fiber::fiber' data-ref="_ZN5boost7context5fiberC1ERKS1_">fiber</dfn>( <a class="type" href="#boost::context::fiber" title='boost::context::fiber' data-ref="boost::context::fiber">fiber</a> <em>const</em>&amp; <dfn class="local col7 decl" id="147other" title='other' data-type='const boost::context::fiber &amp;' data-ref="147other">other</dfn>) <b>noexcept</b> = <b>delete</b>;</td></tr>
+<tr><th id="322">322</th><td>    <a class="type" href="#boost::context::fiber" title='boost::context::fiber' data-ref="boost::context::fiber">fiber</a> &amp; <dfn class="decl def fn" id="_ZN5boost7context5fiberaSERKS1_" title='boost::context::fiber::operator=' data-ref="_ZN5boost7context5fiberaSERKS1_"><b>operator</b>=</dfn>( <a class="type" href="#boost::context::fiber" title='boost::context::fiber' data-ref="boost::context::fiber">fiber</a> <em>const</em>&amp; <dfn class="local col8 decl" id="148other" title='other' data-type='const boost::context::fiber &amp;' data-ref="148other">other</dfn>) <b>noexcept</b> = <b>delete</b>;</td></tr>
+<tr><th id="323">323</th><td></td></tr>
+<tr><th id="324">324</th><td>    <a class="type" href="#boost::context::fiber" title='boost::context::fiber' data-ref="boost::context::fiber">fiber</a> <dfn class="decl def fn" id="_ZNO5boost7context5fiber6resumeEv" title='boost::context::fiber::resume' data-ref="_ZNO5boost7context5fiber6resumeEv">resume</dfn>() &amp;&amp; {</td></tr>
+<tr><th id="325">325</th><td>        <a class="macro" href="../../../../assert/include/boost/assert.hpp.html#60" title="(static_cast&lt;void&gt; (0))" data-ref="_M/BOOST_ASSERT">BOOST_ASSERT</a>( <b>nullptr</b> != fctx_);</td></tr>
+<tr><th id="326">326</th><td>        <b>return</b> <a class="ref fn" href="#_ZN5boost7context5fiberC1EPv" title='boost::context::fiber::fiber' data-ref="_ZN5boost7context5fiberC1EPv">{</a> <span class="namespace">detail::</span><a class="ref fn" href="detail/fcontext.hpp.html#boost::context::detail::jump_fcontext" title='boost::context::detail::jump_fcontext' data-ref="boost::context::detail::jump_fcontext">jump_fcontext</a>(</td></tr>
+<tr><th id="327">327</th><td><u>#<span data-ppcond="327">if</span> defined(<span class="macro" data-ref="_M/BOOST_NO_CXX14_STD_EXCHANGE">BOOST_NO_CXX14_STD_EXCHANGE</span>)</u></td></tr>
+<tr><th id="328">328</th><td>                    detail::exchange( fctx_, <b>nullptr</b>),</td></tr>
+<tr><th id="329">329</th><td><u>#<span data-ppcond="327">else</span></u></td></tr>
+<tr><th id="330">330</th><td>                    <span class='inlayHint'>to:&nbsp;</span><span class="namespace">std::</span><a class="ref fn" href="../../../../../../include/c++/9/utility.html#_ZSt8exchangeRT_OT0_" title='std::exchange' data-ref="_ZSt8exchangeRT_OT0_">exchange</a>( <span class='inlayHint'>obj&amp;:&nbsp;</span><span class='refarg'><a class="member field" href="#boost::context::fiber::fctx_" title='boost::context::fiber::fctx_' data-ref="boost::context::fiber::fctx_">fctx_</a></span>, <span class='inlayHint'>new_val:&nbsp;</span><b>nullptr</b>),</td></tr>
+<tr><th id="331">331</th><td><u>#<span data-ppcond="327">endif</span></u></td></tr>
+<tr><th id="332">332</th><td>                    <span class='inlayHint'>vp:&nbsp;</span><b>nullptr</b>).<a class="ref field" href="detail/fcontext.hpp.html#boost::context::detail::transfer_t::fctx" title='boost::context::detail::transfer_t::fctx' data-ref="boost::context::detail::transfer_t::fctx">fctx</a> };</td></tr>
+<tr><th id="333">333</th><td>    }</td></tr>
+<tr><th id="334">334</th><td></td></tr>
+<tr><th id="335">335</th><td>    <b>template</b>&lt; <b>typename</b> Fn &gt;</td></tr>
+<tr><th id="336">336</th><td>    <a class="type" href="#boost::context::fiber" title='boost::context::fiber' data-ref="boost::context::fiber">fiber</a> <dfn class="decl def fn" id="_ZNO5boost7context5fiber11resume_withEOT_" title='boost::context::fiber::resume_with' data-ref="_ZNO5boost7context5fiber11resume_withEOT_">resume_with</dfn>( Fn &amp;&amp; <dfn class="local col9 decl" id="149fn" title='fn' data-type='Fn &amp;&amp;' data-ref="149fn">fn</dfn>) &amp;&amp; {</td></tr>
+<tr><th id="337">337</th><td>        <a class="macro" href="../../../../assert/include/boost/assert.hpp.html#60" title="(static_cast&lt;void&gt; (0))" data-ref="_M/BOOST_ASSERT">BOOST_ASSERT</a>( <b>nullptr</b> != fctx_);</td></tr>
+<tr><th id="338">338</th><td>        <em>auto</em> <dfn class="local col0 decl" id="150p" title='p' data-type='auto' data-ref="150p">p</dfn> = <span class="namespace">std::</span>forward&lt; Fn &gt;( <a class="local col9 ref" href="#149fn" title='fn' data-ref="149fn">fn</a>);</td></tr>
+<tr><th id="339">339</th><td>        <b>return</b> { <span class="namespace">detail::</span><a class="ref fn" href="detail/fcontext.hpp.html#boost::context::detail::ontop_fcontext" title='boost::context::detail::ontop_fcontext' data-ref="boost::context::detail::ontop_fcontext">ontop_fcontext</a>(</td></tr>
+<tr><th id="340">340</th><td><u>#<span data-ppcond="340">if</span> defined(<span class="macro" data-ref="_M/BOOST_NO_CXX14_STD_EXCHANGE">BOOST_NO_CXX14_STD_EXCHANGE</span>)</u></td></tr>
+<tr><th id="341">341</th><td>                    detail::exchange( fctx_, <b>nullptr</b>),</td></tr>
+<tr><th id="342">342</th><td><u>#<span data-ppcond="340">else</span></u></td></tr>
+<tr><th id="343">343</th><td>                    <span class='inlayHint'>to:&nbsp;</span><span class="namespace">std::</span><a class="ref fn" href="../../../../../../include/c++/9/utility.html#_ZSt8exchangeRT_OT0_" title='std::exchange' data-ref="_ZSt8exchangeRT_OT0_">exchange</a>( <span class='inlayHint'>obj&amp;:&nbsp;</span><span class='refarg'><a class="member field" href="#boost::context::fiber::fctx_" title='boost::context::fiber::fctx_' data-ref="boost::context::fiber::fctx_">fctx_</a></span>, <span class='inlayHint'>new_val:&nbsp;</span><b>nullptr</b>),</td></tr>
+<tr><th id="344">344</th><td><u>#<span data-ppcond="340">endif</span></u></td></tr>
+<tr><th id="345">345</th><td>                    <span class='inlayHint'>vp:&nbsp;</span>&amp; <a class="local col0 ref" href="#150p" title='p' data-ref="150p">p</a>,</td></tr>
+<tr><th id="346">346</th><td>                    <span class='inlayHint'>fn:&nbsp;</span><span class="namespace">detail::</span>fiber_ontop&lt; <a class="type" href="#boost::context::fiber" title='boost::context::fiber' data-ref="boost::context::fiber">fiber</a>, <b>decltype</b>(<a class="local col0 ref" href="#150p" title='p' data-ref="150p">p</a>) &gt;).fctx };</td></tr>
+<tr><th id="347">347</th><td>    }</td></tr>
+<tr><th id="348">348</th><td></td></tr>
+<tr><th id="349">349</th><td>    <b>explicit</b> <dfn class="decl def fn" id="_ZNK5boost7context5fibercvbEv" title='boost::context::fiber::operator bool' data-ref="_ZNK5boost7context5fibercvbEv"><b>operator</b> <em>bool</em></dfn>() <em>const</em> <b>noexcept</b> {</td></tr>
+<tr><th id="350">350</th><td>        <b>return</b> <b>nullptr</b> != <a class="member field" href="#boost::context::fiber::fctx_" title='boost::context::fiber::fctx_' data-ref="boost::context::fiber::fctx_">fctx_</a>;</td></tr>
+<tr><th id="351">351</th><td>    }</td></tr>
+<tr><th id="352">352</th><td></td></tr>
+<tr><th id="353">353</th><td>    <em>bool</em> <dfn class="decl def fn" id="_ZNK5boost7context5fiberntEv" title='boost::context::fiber::operator!' data-ref="_ZNK5boost7context5fiberntEv"><b>operator</b>!</dfn>() <em>const</em> <b>noexcept</b> {</td></tr>
+<tr><th id="354">354</th><td>        <b>return</b> <b>nullptr</b> == <a class="member field" href="#boost::context::fiber::fctx_" title='boost::context::fiber::fctx_' data-ref="boost::context::fiber::fctx_">fctx_</a>;</td></tr>
+<tr><th id="355">355</th><td>    }</td></tr>
+<tr><th id="356">356</th><td></td></tr>
+<tr><th id="357">357</th><td>    <em>bool</em> <dfn class="decl def fn" id="_ZNK5boost7context5fiberltERKS1_" title='boost::context::fiber::operator&lt;' data-ref="_ZNK5boost7context5fiberltERKS1_"><b>operator</b>&lt;</dfn>( <a class="type" href="#boost::context::fiber" title='boost::context::fiber' data-ref="boost::context::fiber">fiber</a> <em>const</em>&amp; <dfn class="local col1 decl" id="151other" title='other' data-type='const boost::context::fiber &amp;' data-ref="151other">other</dfn>) <em>const</em> <b>noexcept</b> {</td></tr>
+<tr><th id="358">358</th><td>        <b>return</b> <a class="member field" href="#boost::context::fiber::fctx_" title='boost::context::fiber::fctx_' data-ref="boost::context::fiber::fctx_">fctx_</a> &lt; <a class="local col1 ref" href="#151other" title='other' data-ref="151other">other</a>.<a class="member field" href="#boost::context::fiber::fctx_" title='boost::context::fiber::fctx_' data-ref="boost::context::fiber::fctx_">fctx_</a>;</td></tr>
+<tr><th id="359">359</th><td>    }</td></tr>
+<tr><th id="360">360</th><td></td></tr>
+<tr><th id="361">361</th><td>    <u>#<span data-ppcond="361">if</span> !defined(<span class="macro" data-ref="_M/BOOST_EMBTC">BOOST_EMBTC</span>)</u></td></tr>
+<tr><th id="362">362</th><td>    </td></tr>
+<tr><th id="363">363</th><td>    <b>template</b>&lt; <b>typename</b> charT, <b>class</b> traitsT &gt;</td></tr>
+<tr><th id="364">364</th><td>    <b>friend</b> <span class="namespace">std::</span><a class="type" href="../../../../../../include/c++/9/iosfwd.html#std::basic_ostream" title='std::basic_ostream' data-ref="std::basic_ostream">basic_ostream</a>&lt; charT, traitsT &gt; &amp;</td></tr>
+<tr><th id="365">365</th><td>    <dfn class="decl def fn" id="_ZN5boost7contextlsERSt13basic_ostreamIT_T0_ERKNS0_5fiberE" title='boost::context::operator&lt;&lt;' data-ref="_ZN5boost7contextlsERSt13basic_ostreamIT_T0_ERKNS0_5fiberE"><b>operator</b>&lt;&lt;</dfn>( <span class="namespace">std::</span><a class="type" href="../../../../../../include/c++/9/iosfwd.html#std::basic_ostream" title='std::basic_ostream' data-ref="std::basic_ostream">basic_ostream</a>&lt; charT, traitsT &gt; &amp; <dfn class="local col2 decl" id="152os" title='os' data-type='std::basic_ostream&lt;charT, traitsT&gt; &amp;' data-ref="152os">os</dfn>, <a class="type" href="#boost::context::fiber" title='boost::context::fiber' data-ref="boost::context::fiber">fiber</a> <em>const</em>&amp; <dfn class="local col3 decl" id="153other" title='other' data-type='const boost::context::fiber &amp;' data-ref="153other">other</dfn>) {</td></tr>
+<tr><th id="366">366</th><td>        <b>if</b> ( <b>nullptr</b> != <a class="local col3 ref" href="#153other" title='other' data-ref="153other">other</a>.<a class="ref field" href="#boost::context::fiber::fctx_" title='boost::context::fiber::fctx_' data-ref="boost::context::fiber::fctx_">fctx_</a>) {</td></tr>
+<tr><th id="367">367</th><td>            <b>return</b> <a class="local col2 ref" href="#152os" title='os' data-ref="152os">os</a> &lt;&lt; <a class="local col3 ref" href="#153other" title='other' data-ref="153other">other</a>.<a class="ref field" href="#boost::context::fiber::fctx_" title='boost::context::fiber::fctx_' data-ref="boost::context::fiber::fctx_">fctx_</a>;</td></tr>
+<tr><th id="368">368</th><td>        } <b>else</b> {</td></tr>
+<tr><th id="369">369</th><td>            <b>return</b> <a class="local col2 ref" href="#152os" title='os' data-ref="152os">os</a> &lt;&lt; <q>"{not-a-context}"</q>;</td></tr>
+<tr><th id="370">370</th><td>        }</td></tr>
+<tr><th id="371">371</th><td>    }</td></tr>
+<tr><th id="372">372</th><td></td></tr>
+<tr><th id="373">373</th><td>    <u>#<span data-ppcond="361">else</span></u></td></tr>
+<tr><th id="374">374</th><td>    </td></tr>
+<tr><th id="375">375</th><td>    <b>template</b>&lt; <b>typename</b> charT, <b>class</b> traitsT &gt;</td></tr>
+<tr><th id="376">376</th><td>    <b>friend</b> std::basic_ostream&lt; charT, traitsT &gt; &amp;</td></tr>
+<tr><th id="377">377</th><td>    <b>operator</b>&lt;&lt;( std::basic_ostream&lt; charT, traitsT &gt; &amp; os, fiber <em>const</em>&amp; other);</td></tr>
+<tr><th id="378">378</th><td></td></tr>
+<tr><th id="379">379</th><td>    <u>#<span data-ppcond="361">endif</span></u></td></tr>
+<tr><th id="380">380</th><td></td></tr>
+<tr><th id="381">381</th><td>    <em>void</em> <dfn class="decl def fn" id="_ZN5boost7context5fiber4swapERS1_" title='boost::context::fiber::swap' data-ref="_ZN5boost7context5fiber4swapERS1_">swap</dfn>( <a class="type" href="#boost::context::fiber" title='boost::context::fiber' data-ref="boost::context::fiber">fiber</a> &amp; <dfn class="local col4 decl" id="154other" title='other' data-type='boost::context::fiber &amp;' data-ref="154other">other</dfn>) <b>noexcept</b> {</td></tr>
+<tr><th id="382">382</th><td>        <span class="namespace">std::</span><a class="ref fn" href="../../../../../../include/c++/9/bits/move.h.html#_ZSt4swapRT_S0_" title='std::swap' data-ref="_ZSt4swapRT_S0_">swap</a>( <span class='inlayHint'>a&amp;:&nbsp;</span><span class='refarg'><a class="member field" href="#boost::context::fiber::fctx_" title='boost::context::fiber::fctx_' data-ref="boost::context::fiber::fctx_">fctx_</a></span>, <span class='inlayHint'>b&amp;:&nbsp;</span><span class='refarg'><a class="local col4 ref" href="#154other" title='other' data-ref="154other">other</a>.<a class="member field" href="#boost::context::fiber::fctx_" title='boost::context::fiber::fctx_' data-ref="boost::context::fiber::fctx_">fctx_</a></span>);</td></tr>
+<tr><th id="383">383</th><td>    }</td></tr>
+<tr><th id="384">384</th><td>};</td></tr>
+<tr><th id="385">385</th><td></td></tr>
+<tr><th id="386">386</th><td><u>#<span data-ppcond="386">if</span> defined(<span class="macro" data-ref="_M/BOOST_EMBTC">BOOST_EMBTC</span>)</u></td></tr>
+<tr><th id="387">387</th><td></td></tr>
+<tr><th id="388">388</th><td>    <b>template</b>&lt; <b>typename</b> charT, <b>class</b> traitsT &gt;</td></tr>
+<tr><th id="389">389</th><td>    <b>inline</b> std::basic_ostream&lt; charT, traitsT &gt; &amp;</td></tr>
+<tr><th id="390">390</th><td>    <b>operator</b>&lt;&lt;( std::basic_ostream&lt; charT, traitsT &gt; &amp; os, fiber <em>const</em>&amp; other) {</td></tr>
+<tr><th id="391">391</th><td>        <b>if</b> ( <b>nullptr</b> != other.fctx_) {</td></tr>
+<tr><th id="392">392</th><td>            <b>return</b> os &lt;&lt; other.fctx_;</td></tr>
+<tr><th id="393">393</th><td>        } <b>else</b> {</td></tr>
+<tr><th id="394">394</th><td>            <b>return</b> os &lt;&lt; <q>"{not-a-context}"</q>;</td></tr>
+<tr><th id="395">395</th><td>        }</td></tr>
+<tr><th id="396">396</th><td>    }</td></tr>
+<tr><th id="397">397</th><td></td></tr>
+<tr><th id="398">398</th><td><u>#<span data-ppcond="386">endif</span></u></td></tr>
+<tr><th id="399">399</th><td>    </td></tr>
+<tr><th id="400">400</th><td><b>inline</b></td></tr>
+<tr><th id="401">401</th><td><em>void</em> <dfn class="decl def fn" id="_ZN5boost7context4swapERNS0_5fiberES2_" title='boost::context::swap' data-ref="_ZN5boost7context4swapERNS0_5fiberES2_">swap</dfn>( <a class="type" href="#boost::context::fiber" title='boost::context::fiber' data-ref="boost::context::fiber">fiber</a> &amp; <dfn class="local col5 decl" id="155l" title='l' data-type='boost::context::fiber &amp;' data-ref="155l">l</dfn>, <a class="type" href="#boost::context::fiber" title='boost::context::fiber' data-ref="boost::context::fiber">fiber</a> &amp; <dfn class="local col6 decl" id="156r" title='r' data-type='boost::context::fiber &amp;' data-ref="156r">r</dfn>) <b>noexcept</b> {</td></tr>
+<tr><th id="402">402</th><td>    <a class="local col5 ref" href="#155l" title='l' data-ref="155l">l</a>.<a class="ref fn" href="#_ZN5boost7context5fiber4swapERS1_" title='boost::context::fiber::swap' data-ref="_ZN5boost7context5fiber4swapERS1_">swap</a>( <span class='inlayHint'>other&amp;:&nbsp;</span><span class='refarg'><a class="local col6 ref" href="#156r" title='r' data-ref="156r">r</a></span>);</td></tr>
+<tr><th id="403">403</th><td>}</td></tr>
+<tr><th id="404">404</th><td></td></tr>
+<tr><th id="405">405</th><td><b>typedef</b> <a class="type" href="#boost::context::fiber" title='boost::context::fiber' data-ref="boost::context::fiber">fiber</a> <dfn class="typedef" id="boost::context::fiber_context" title='boost::context::fiber_context' data-type='boost::context::fiber' data-ref="boost::context::fiber_context">fiber_context</dfn>;</td></tr>
+<tr><th id="406">406</th><td></td></tr>
+<tr><th id="407">407</th><td>}}</td></tr>
+<tr><th id="408">408</th><td></td></tr>
+<tr><th id="409">409</th><td><u>#<span data-ppcond="409">if</span> defined(<span class="macro" data-ref="_M/BOOST_MSVC">BOOST_MSVC</span>)</u></td></tr>
+<tr><th id="410">410</th><td><u># pragma warning(pop)</u></td></tr>
+<tr><th id="411">411</th><td><u>#<span data-ppcond="409">endif</span></u></td></tr>
+<tr><th id="412">412</th><td></td></tr>
+<tr><th id="413">413</th><td><u>#<span data-ppcond="413">ifdef</span> <span class="macro" data-ref="_M/BOOST_HAS_ABI_HEADERS">BOOST_HAS_ABI_HEADERS</span></u></td></tr>
+<tr><th id="414">414</th><td><u># include BOOST_ABI_SUFFIX</u></td></tr>
+<tr><th id="415">415</th><td><u>#<span data-ppcond="413">endif</span></u></td></tr>
+<tr><th id="416">416</th><td></td></tr>
+<tr><th id="417">417</th><td><u>#<span data-ppcond="7">endif</span> // BOOST_CONTEXT_FIBER_H</u></td></tr>
+<tr><th id="418">418</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../../../../fiber/src/algo/algorithm.cpp.html'>boost-1.85.0/libs/fiber/src/algo/algorithm.cpp</a><br/>Generated on <em>2024-Jun-14</em> from project boost-1.85.0 revision <em>1.85.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

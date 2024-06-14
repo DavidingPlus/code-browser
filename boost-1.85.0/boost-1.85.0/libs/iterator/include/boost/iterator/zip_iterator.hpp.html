@@ -1,0 +1,386 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>zip_iterator.hpp source code [boost-1.85.0/libs/iterator/include/boost/iterator/zip_iterator.hpp] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="boost::iterators::detail::advance_iterator,boost::iterators::detail::converter,boost::iterators::detail::decrement_iterator,boost::iterators::detail::dereference_iterator,boost::iterators::detail::increment_iterator,boost::iterators::detail::minimum_traversal_category_in_iterator_tuple,boost::iterators::detail::tuple_of_references,boost::iterators::detail::zip_iterator_base,boost::iterators::zip_iterator "/>
+<link rel="stylesheet" href="../../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'boost-1.85.0/libs/iterator/include/boost/iterator/zip_iterator.hpp'; var root_path = '../../../../../..'; var data_path = '../../../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../../..'>boost-1.85.0</a>/<a href='../../../..'>libs</a>/<a href='../../..'>iterator</a>/<a href='../..'>include</a>/<a href='..'>boost</a>/<a href='./'>iterator</a>/<a href='zip_iterator.hpp.html'>zip_iterator.hpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>// Copyright David Abrahams and Thomas Becker 2000-2006.</i></td></tr>
+<tr><th id="2">2</th><td><i>// Copyright Kohei Takahashi 2012-2014.</i></td></tr>
+<tr><th id="3">3</th><td><i>//</i></td></tr>
+<tr><th id="4">4</th><td><i>// Distributed under the Boost Software License, Version 1.0. (See</i></td></tr>
+<tr><th id="5">5</th><td><i>// accompanying file LICENSE_1_0.txt or copy at</i></td></tr>
+<tr><th id="6">6</th><td><i>// <a href="http://www.boost.org/LICENSE_1_0.txt">http://www.boost.org/LICENSE_1_0.txt</a>)</i></td></tr>
+<tr><th id="7">7</th><td></td></tr>
+<tr><th id="8">8</th><td><u>#<span data-ppcond="8">ifndef</span> <span class="macro" data-ref="_M/BOOST_ZIP_ITERATOR_TMB_07_13_2003_HPP_">BOOST_ZIP_ITERATOR_TMB_07_13_2003_HPP_</span></u></td></tr>
+<tr><th id="9">9</th><td><u># define <dfn class="macro" id="_M/BOOST_ZIP_ITERATOR_TMB_07_13_2003_HPP_" data-ref="_M/BOOST_ZIP_ITERATOR_TMB_07_13_2003_HPP_">BOOST_ZIP_ITERATOR_TMB_07_13_2003_HPP_</dfn></u></td></tr>
+<tr><th id="10">10</th><td></td></tr>
+<tr><th id="11">11</th><td><u>#include &lt;stddef.h&gt;</u></td></tr>
+<tr><th id="12">12</th><td><u>#include <a href="iterator_traits.hpp.html">&lt;boost/iterator/iterator_traits.hpp&gt;</a></u></td></tr>
+<tr><th id="13">13</th><td><u>#include <a href="iterator_facade.hpp.html">&lt;boost/iterator/iterator_facade.hpp&gt;</a></u></td></tr>
+<tr><th id="14">14</th><td><u>#include <a href="iterator_adaptor.hpp.html">&lt;boost/iterator/iterator_adaptor.hpp&gt;</a> // for enable_if_convertible</u></td></tr>
+<tr><th id="15">15</th><td><u>#include <a href="iterator_categories.hpp.html">&lt;boost/iterator/iterator_categories.hpp&gt;</a></u></td></tr>
+<tr><th id="16">16</th><td></td></tr>
+<tr><th id="17">17</th><td><u>#include <a href="minimum_category.hpp.html">&lt;boost/iterator/minimum_category.hpp&gt;</a></u></td></tr>
+<tr><th id="18">18</th><td></td></tr>
+<tr><th id="19">19</th><td><u>#include <a href="../../../../../../include/c++/9/utility.html">&lt;utility&gt;</a> // for std::pair</u></td></tr>
+<tr><th id="20">20</th><td><u>#include <a href="../../../../fusion/include/boost/fusion/adapted/boost_tuple.hpp.html">&lt;boost/fusion/adapted/boost_tuple.hpp&gt;</a> // for backward compatibility</u></td></tr>
+<tr><th id="21">21</th><td></td></tr>
+<tr><th id="22">22</th><td><u>#include <a href="../../../../type_traits/include/boost/type_traits/remove_reference.hpp.html">&lt;boost/type_traits/remove_reference.hpp&gt;</a></u></td></tr>
+<tr><th id="23">23</th><td><u>#include <a href="../../../../type_traits/include/boost/type_traits/remove_cv.hpp.html">&lt;boost/type_traits/remove_cv.hpp&gt;</a></u></td></tr>
+<tr><th id="24">24</th><td></td></tr>
+<tr><th id="25">25</th><td><u>#include <a href="../../../../mpl/include/boost/mpl/at.hpp.html">&lt;boost/mpl/at.hpp&gt;</a></u></td></tr>
+<tr><th id="26">26</th><td><u>#include <a href="../../../../mpl/include/boost/mpl/fold.hpp.html">&lt;boost/mpl/fold.hpp&gt;</a></u></td></tr>
+<tr><th id="27">27</th><td><u>#include <a href="../../../../mpl/include/boost/mpl/transform.hpp.html">&lt;boost/mpl/transform.hpp&gt;</a></u></td></tr>
+<tr><th id="28">28</th><td><u>#include <a href="../../../../mpl/include/boost/mpl/placeholders.hpp.html">&lt;boost/mpl/placeholders.hpp&gt;</a></u></td></tr>
+<tr><th id="29">29</th><td></td></tr>
+<tr><th id="30">30</th><td><u>#include <a href="../../../../fusion/include/boost/fusion/algorithm/iteration/for_each.hpp.html">&lt;boost/fusion/algorithm/iteration/for_each.hpp&gt;</a></u></td></tr>
+<tr><th id="31">31</th><td><u>#include <a href="../../../../fusion/include/boost/fusion/algorithm/transformation/transform.hpp.html">&lt;boost/fusion/algorithm/transformation/transform.hpp&gt;</a></u></td></tr>
+<tr><th id="32">32</th><td><u>#include <a href="../../../../fusion/include/boost/fusion/sequence/convert.hpp.html">&lt;boost/fusion/sequence/convert.hpp&gt;</a></u></td></tr>
+<tr><th id="33">33</th><td><u>#include <a href="../../../../fusion/include/boost/fusion/sequence/intrinsic/at_c.hpp.html">&lt;boost/fusion/sequence/intrinsic/at_c.hpp&gt;</a></u></td></tr>
+<tr><th id="34">34</th><td><u>#include <a href="../../../../fusion/include/boost/fusion/sequence/comparison/equal_to.hpp.html">&lt;boost/fusion/sequence/comparison/equal_to.hpp&gt;</a></u></td></tr>
+<tr><th id="35">35</th><td><u>#include <a href="../../../../fusion/include/boost/fusion/support/tag_of_fwd.hpp.html">&lt;boost/fusion/support/tag_of_fwd.hpp&gt;</a></u></td></tr>
+<tr><th id="36">36</th><td></td></tr>
+<tr><th id="37">37</th><td><b>namespace</b> <span class="namespace">boost</span> {</td></tr>
+<tr><th id="38">38</th><td><b>namespace</b> <span class="namespace">iterators</span> {</td></tr>
+<tr><th id="39">39</th><td></td></tr>
+<tr><th id="40">40</th><td>  <i>// Zip iterator forward declaration for zip_iterator_base</i></td></tr>
+<tr><th id="41">41</th><td>  <b>template</b>&lt;<b>typename</b> IteratorTuple&gt;</td></tr>
+<tr><th id="42">42</th><td>  <b>class</b> <a class="type" href="#boost::iterators::zip_iterator" title='boost::iterators::zip_iterator' data-ref="boost::iterators::zip_iterator">zip_iterator</a>;</td></tr>
+<tr><th id="43">43</th><td></td></tr>
+<tr><th id="44">44</th><td>  <b>namespace</b> <span class="namespace">detail</span></td></tr>
+<tr><th id="45">45</th><td>  {</td></tr>
+<tr><th id="46">46</th><td></td></tr>
+<tr><th id="47">47</th><td>    <i>// Functors to be used with tuple algorithms</i></td></tr>
+<tr><th id="48">48</th><td><i>    //</i></td></tr>
+<tr><th id="49">49</th><td>    <b>template</b>&lt;<b>typename</b> DiffType&gt;</td></tr>
+<tr><th id="50">50</th><td>    <b>class</b> <dfn class="type def" id="boost::iterators::detail::advance_iterator" title='boost::iterators::detail::advance_iterator' data-ref="boost::iterators::detail::advance_iterator">advance_iterator</dfn></td></tr>
+<tr><th id="51">51</th><td>    {</td></tr>
+<tr><th id="52">52</th><td>    <b>public</b>:</td></tr>
+<tr><th id="53">53</th><td>      <dfn class="decl def fn" id="_ZN5boost9iterators6detail16advance_iteratorC1ET_" title='boost::iterators::detail::advance_iterator::advance_iterator&lt;DiffType&gt;' data-ref="_ZN5boost9iterators6detail16advance_iteratorC1ET_">advance_iterator</dfn>(DiffType <dfn class="local col2 decl" id="6412step" title='step' data-type='DiffType' data-ref="6412step">step</dfn>) : <a class="member field" href="#boost::iterators::detail::advance_iterator::m_step" title='boost::iterators::detail::advance_iterator::m_step' data-ref="boost::iterators::detail::advance_iterator::m_step">m_step</a>(<a class="local col2 ref" href="#6412step" title='step' data-ref="6412step">step</a>) {}</td></tr>
+<tr><th id="54">54</th><td></td></tr>
+<tr><th id="55">55</th><td>      <b>template</b>&lt;<b>typename</b> Iterator&gt;</td></tr>
+<tr><th id="56">56</th><td>      <em>void</em> <dfn class="decl def fn" id="_ZNK5boost9iterators6detail16advance_iteratorclERTL0__" title='boost::iterators::detail::advance_iterator::operator()' data-ref="_ZNK5boost9iterators6detail16advance_iteratorclERTL0__"><b>operator</b>()</dfn>(Iterator&amp; <dfn class="local col3 decl" id="6413it" title='it' data-type='Iterator &amp;' data-ref="6413it">it</dfn>) <em>const</em></td></tr>
+<tr><th id="57">57</th><td>      { <a class="local col3 ref" href="#6413it" title='it' data-ref="6413it">it</a> += <a class="member field" href="#boost::iterators::detail::advance_iterator::m_step" title='boost::iterators::detail::advance_iterator::m_step' data-ref="boost::iterators::detail::advance_iterator::m_step">m_step</a>; }</td></tr>
+<tr><th id="58">58</th><td></td></tr>
+<tr><th id="59">59</th><td>    <b>private</b>:</td></tr>
+<tr><th id="60">60</th><td>      DiffType <dfn class="decl field" id="boost::iterators::detail::advance_iterator::m_step" title='boost::iterators::detail::advance_iterator::m_step' data-ref="boost::iterators::detail::advance_iterator::m_step">m_step</dfn>;</td></tr>
+<tr><th id="61">61</th><td>    };</td></tr>
+<tr><th id="62">62</th><td>    <i>//</i></td></tr>
+<tr><th id="63">63</th><td>    <b>struct</b> <dfn class="type def" id="boost::iterators::detail::increment_iterator" title='boost::iterators::detail::increment_iterator' data-ref="boost::iterators::detail::increment_iterator">increment_iterator</dfn></td></tr>
+<tr><th id="64">64</th><td>    {</td></tr>
+<tr><th id="65">65</th><td>      <b>template</b>&lt;<b>typename</b> Iterator&gt;</td></tr>
+<tr><th id="66">66</th><td>      <em>void</em> <dfn class="decl def fn" id="_ZNK5boost9iterators6detail18increment_iteratorclERT_" title='boost::iterators::detail::increment_iterator::operator()' data-ref="_ZNK5boost9iterators6detail18increment_iteratorclERT_"><b>operator</b>()</dfn>(Iterator&amp; <dfn class="local col4 decl" id="6414it" title='it' data-type='Iterator &amp;' data-ref="6414it">it</dfn>) <em>const</em></td></tr>
+<tr><th id="67">67</th><td>      { ++<a class="local col4 ref" href="#6414it" title='it' data-ref="6414it">it</a>; }</td></tr>
+<tr><th id="68">68</th><td>    };</td></tr>
+<tr><th id="69">69</th><td>    <i>//</i></td></tr>
+<tr><th id="70">70</th><td>    <b>struct</b> <dfn class="type def" id="boost::iterators::detail::decrement_iterator" title='boost::iterators::detail::decrement_iterator' data-ref="boost::iterators::detail::decrement_iterator">decrement_iterator</dfn></td></tr>
+<tr><th id="71">71</th><td>    {</td></tr>
+<tr><th id="72">72</th><td>      <b>template</b>&lt;<b>typename</b> Iterator&gt;</td></tr>
+<tr><th id="73">73</th><td>      <em>void</em> <dfn class="decl def fn" id="_ZNK5boost9iterators6detail18decrement_iteratorclERT_" title='boost::iterators::detail::decrement_iterator::operator()' data-ref="_ZNK5boost9iterators6detail18decrement_iteratorclERT_"><b>operator</b>()</dfn>(Iterator&amp; <dfn class="local col5 decl" id="6415it" title='it' data-type='Iterator &amp;' data-ref="6415it">it</dfn>) <em>const</em></td></tr>
+<tr><th id="74">74</th><td>      { --<a class="local col5 ref" href="#6415it" title='it' data-ref="6415it">it</a>; }</td></tr>
+<tr><th id="75">75</th><td>    };</td></tr>
+<tr><th id="76">76</th><td>    <i>//</i></td></tr>
+<tr><th id="77">77</th><td>    <b>struct</b> <dfn class="type def" id="boost::iterators::detail::dereference_iterator" title='boost::iterators::detail::dereference_iterator' data-ref="boost::iterators::detail::dereference_iterator">dereference_iterator</dfn></td></tr>
+<tr><th id="78">78</th><td>    {</td></tr>
+<tr><th id="79">79</th><td>      <b>template</b>&lt;<b>typename</b>&gt;</td></tr>
+<tr><th id="80">80</th><td>      <b>struct</b> <dfn class="type" id="boost::iterators::detail::dereference_iterator::result" title='boost::iterators::detail::dereference_iterator::result' data-ref="boost::iterators::detail::dereference_iterator::result">result</dfn>;</td></tr>
+<tr><th id="81">81</th><td></td></tr>
+<tr><th id="82">82</th><td>      <b>template</b>&lt;<b>typename</b> This, <b>typename</b> Iterator&gt;</td></tr>
+<tr><th id="83">83</th><td>      <b>struct</b> <dfn class="type def" id="boost::iterators::detail::dereference_iterator::result" title='boost::iterators::detail::dereference_iterator::result' data-ref="boost::iterators::detail::dereference_iterator::result">result</dfn>&lt;This(Iterator)&gt;</td></tr>
+<tr><th id="84">84</th><td>      {</td></tr>
+<tr><th id="85">85</th><td>        <b>typedef</b> <b>typename</b></td></tr>
+<tr><th id="86">86</th><td>          <a class="type" href="../../../../type_traits/include/boost/type_traits/remove_cv.hpp.html#boost::remove_cv" title='boost::remove_cv' data-ref="boost::remove_cv">remove_cv</a>&lt;<b>typename</b> <a class="type" href="../../../../type_traits/include/boost/type_traits/remove_reference.hpp.html#boost::remove_reference" title='boost::remove_reference' data-ref="boost::remove_reference">remove_reference</a>&lt;Iterator&gt;::type&gt;::type</td></tr>
+<tr><th id="87">87</th><td>        <dfn class="typedef" id="boost::iterators::detail::dereference_iterator::result{type-parameter-0-0(type-parameter-0-1)}::iterator" title='boost::iterators::detail::dereference_iterator::result&lt;type-parameter-0-0 (type-parameter-0-1)&gt;::iterator' data-type='typename remove_cv&lt;typename remove_reference&lt;Iterator&gt;::type&gt;::type' data-ref="boost::iterators::detail::dereference_iterator::result{type-parameter-0-0(type-parameter-0-1)}::iterator">iterator</dfn>;</td></tr>
+<tr><th id="88">88</th><td></td></tr>
+<tr><th id="89">89</th><td>        <b>typedef</b> <b>typename</b> <a class="type" href="iterator_traits.hpp.html#boost::iterators::iterator_reference" title='boost::iterators::iterator_reference' data-ref="boost::iterators::iterator_reference">iterator_reference</a>&lt;<a class="typedef" href="#boost::iterators::detail::dereference_iterator::result{type-parameter-0-0(type-parameter-0-1)}::iterator" title='boost::iterators::detail::dereference_iterator::result&lt;type-parameter-0-0 (type-parameter-0-1)&gt;::iterator' data-type='typename remove_cv&lt;typename remove_reference&lt;Iterator&gt;::type&gt;::type' data-ref="boost::iterators::detail::dereference_iterator::result{type-parameter-0-0(type-parameter-0-1)}::iterator">iterator</a>&gt;::type <dfn class="typedef" id="boost::iterators::detail::dereference_iterator::result{type-parameter-0-0(type-parameter-0-1)}::type" title='boost::iterators::detail::dereference_iterator::result&lt;type-parameter-0-0 (type-parameter-0-1)&gt;::type' data-type='typename iterator_reference&lt;iterator&gt;::type' data-ref="boost::iterators::detail::dereference_iterator::result{type-parameter-0-0(type-parameter-0-1)}::type">type</dfn>;</td></tr>
+<tr><th id="90">90</th><td>      };</td></tr>
+<tr><th id="91">91</th><td></td></tr>
+<tr><th id="92">92</th><td>      <b>template</b>&lt;<b>typename</b> Iterator&gt;</td></tr>
+<tr><th id="93">93</th><td>        <b>typename</b> <a class="type" href="#boost::iterators::detail::dereference_iterator::result" title='boost::iterators::detail::dereference_iterator::result' data-ref="boost::iterators::detail::dereference_iterator::result">result</a>&lt;<a class="type" href="#boost::iterators::detail::dereference_iterator" title='boost::iterators::detail::dereference_iterator' data-ref="boost::iterators::detail::dereference_iterator">dereference_iterator</a>(Iterator)&gt;::type</td></tr>
+<tr><th id="94">94</th><td>        <dfn class="decl def fn" id="_ZNK5boost9iterators6detail20dereference_iteratorclERKT_" title='boost::iterators::detail::dereference_iterator::operator()' data-ref="_ZNK5boost9iterators6detail20dereference_iteratorclERKT_"><b>operator</b>()</dfn>(Iterator <em>const</em>&amp; <dfn class="local col6 decl" id="6416it" title='it' data-type='const Iterator &amp;' data-ref="6416it">it</dfn>) <em>const</em></td></tr>
+<tr><th id="95">95</th><td>      { <b>return</b> *<a class="local col6 ref" href="#6416it" title='it' data-ref="6416it">it</a>; }</td></tr>
+<tr><th id="96">96</th><td>    };</td></tr>
+<tr><th id="97">97</th><td></td></tr>
+<tr><th id="98">98</th><td>    <i>// Metafunction to obtain the type of the tuple whose element types</i></td></tr>
+<tr><th id="99">99</th><td><i>    // are the reference types of an iterator tuple.</i></td></tr>
+<tr><th id="100">100</th><td><i>    //</i></td></tr>
+<tr><th id="101">101</th><td>    <b>template</b>&lt;<b>typename</b> IteratorTuple&gt;</td></tr>
+<tr><th id="102">102</th><td>    <b>struct</b> <dfn class="type def" id="boost::iterators::detail::tuple_of_references" title='boost::iterators::detail::tuple_of_references' data-ref="boost::iterators::detail::tuple_of_references">tuple_of_references</dfn></td></tr>
+<tr><th id="103">103</th><td>      : <span class="namespace">mpl::</span><a class="type" href="../../../../mpl/include/boost/mpl/transform.hpp.html#138" title='boost::mpl::transform' data-ref="boost::mpl::transform">transform</a>&lt;</td></tr>
+<tr><th id="104">104</th><td>            IteratorTuple,</td></tr>
+<tr><th id="105">105</th><td>            <a class="type" href="iterator_traits.hpp.html#boost::iterators::iterator_reference" title='boost::iterators::iterator_reference' data-ref="boost::iterators::iterator_reference">iterator_reference</a>&lt;<span class="namespace">mpl::</span>_1&gt;</td></tr>
+<tr><th id="106">106</th><td>          &gt;</td></tr>
+<tr><th id="107">107</th><td>    {</td></tr>
+<tr><th id="108">108</th><td>    };</td></tr>
+<tr><th id="109">109</th><td></td></tr>
+<tr><th id="110">110</th><td>    <i>// Specialization for std::pair</i></td></tr>
+<tr><th id="111">111</th><td>    <b>template</b>&lt;<b>typename</b> Iterator1, <b>typename</b> Iterator2&gt;</td></tr>
+<tr><th id="112">112</th><td>    <b>struct</b> <dfn class="type def" id="boost::iterators::detail::tuple_of_references" title='boost::iterators::detail::tuple_of_references' data-ref="boost::iterators::detail::tuple_of_references">tuple_of_references</dfn>&lt;<span class="namespace">std::</span><a class="type" href="../../../../../../include/c++/9/bits/stl_pair.h.html#std::pair" title='std::pair' data-ref="std::pair">pair</a>&lt;Iterator1, Iterator2&gt; &gt;</td></tr>
+<tr><th id="113">113</th><td>    {</td></tr>
+<tr><th id="114">114</th><td>        <b>typedef</b> <span class="namespace">std::</span><a class="type" href="../../../../../../include/c++/9/bits/stl_pair.h.html#std::pair" title='std::pair' data-ref="std::pair">pair</a>&lt;</td></tr>
+<tr><th id="115">115</th><td>            <b>typename</b> <a class="type" href="iterator_traits.hpp.html#boost::iterators::iterator_reference" title='boost::iterators::iterator_reference' data-ref="boost::iterators::iterator_reference">iterator_reference</a>&lt;Iterator1&gt;::type</td></tr>
+<tr><th id="116">116</th><td>          , <b>typename</b> <a class="type" href="iterator_traits.hpp.html#boost::iterators::iterator_reference" title='boost::iterators::iterator_reference' data-ref="boost::iterators::iterator_reference">iterator_reference</a>&lt;Iterator2&gt;::type</td></tr>
+<tr><th id="117">117</th><td>        &gt; <dfn class="typedef" id="boost::iterators::detail::tuple_of_references{pair{type-parameter-0-0,type-parameter-0-1}}::type" title='boost::iterators::detail::tuple_of_references&lt;pair&lt;type-parameter-0-0, type-parameter-0-1&gt;&gt;::type' data-type='std::pair&lt;typename iterator_reference&lt;Iterator1&gt;::type, typename iterator_reference&lt;Iterator2&gt;::type&gt;' data-ref="boost::iterators::detail::tuple_of_references{pair{type-parameter-0-0,type-parameter-0-1}}::type">type</dfn>;</td></tr>
+<tr><th id="118">118</th><td>    };</td></tr>
+<tr><th id="119">119</th><td></td></tr>
+<tr><th id="120">120</th><td>    <i>// Metafunction to obtain the minimal traversal tag in a tuple</i></td></tr>
+<tr><th id="121">121</th><td><i>    // of iterators.</i></td></tr>
+<tr><th id="122">122</th><td><i>    //</i></td></tr>
+<tr><th id="123">123</th><td>    <b>template</b>&lt;<b>typename</b> IteratorTuple&gt;</td></tr>
+<tr><th id="124">124</th><td>    <b>struct</b> <dfn class="type def" id="boost::iterators::detail::minimum_traversal_category_in_iterator_tuple" title='boost::iterators::detail::minimum_traversal_category_in_iterator_tuple' data-ref="boost::iterators::detail::minimum_traversal_category_in_iterator_tuple">minimum_traversal_category_in_iterator_tuple</dfn></td></tr>
+<tr><th id="125">125</th><td>    {</td></tr>
+<tr><th id="126">126</th><td>      <b>typedef</b> <b>typename</b> <span class="namespace">mpl::</span><a class="type" href="../../../../mpl/include/boost/mpl/transform.hpp.html#138" title='boost::mpl::transform' data-ref="boost::mpl::transform">transform</a>&lt;</td></tr>
+<tr><th id="127">127</th><td>          IteratorTuple</td></tr>
+<tr><th id="128">128</th><td>        , <a class="type" href="iterator_categories.hpp.html#boost::iterators::pure_traversal_tag" title='boost::iterators::pure_traversal_tag' data-ref="boost::iterators::pure_traversal_tag">pure_traversal_tag</a>&lt;<a class="type" href="iterator_categories.hpp.html#boost::iterators::iterator_traversal" title='boost::iterators::iterator_traversal' data-ref="boost::iterators::iterator_traversal">iterator_traversal</a>&lt;&gt; &gt;</td></tr>
+<tr><th id="129">129</th><td>      &gt;::type <dfn class="typedef" id="boost::iterators::detail::minimum_traversal_category_in_iterator_tuple::tuple_of_traversal_tags" title='boost::iterators::detail::minimum_traversal_category_in_iterator_tuple::tuple_of_traversal_tags' data-type='typename mpl::transform&lt;IteratorTuple, pure_traversal_tag&lt;iterator_traversal&lt;&gt;&gt;&gt;::type' data-ref="boost::iterators::detail::minimum_traversal_category_in_iterator_tuple::tuple_of_traversal_tags">tuple_of_traversal_tags</dfn>;</td></tr>
+<tr><th id="130">130</th><td></td></tr>
+<tr><th id="131">131</th><td>      <b>typedef</b> <b>typename</b> <span class="namespace">mpl::</span><a class="type" href="../../../../mpl/include/boost/mpl/fold.hpp.html#boost::mpl::fold" title='boost::mpl::fold' data-ref="boost::mpl::fold">fold</a>&lt;</td></tr>
+<tr><th id="132">132</th><td>          <a class="typedef" href="#boost::iterators::detail::minimum_traversal_category_in_iterator_tuple::tuple_of_traversal_tags" title='boost::iterators::detail::minimum_traversal_category_in_iterator_tuple::tuple_of_traversal_tags' data-type='typename mpl::transform&lt;IteratorTuple, pure_traversal_tag&lt;iterator_traversal&lt;&gt;&gt;&gt;::type' data-ref="boost::iterators::detail::minimum_traversal_category_in_iterator_tuple::tuple_of_traversal_tags">tuple_of_traversal_tags</a></td></tr>
+<tr><th id="133">133</th><td>        , <a class="type" href="iterator_categories.hpp.html#boost::iterators::random_access_traversal_tag" title='boost::iterators::random_access_traversal_tag' data-ref="boost::iterators::random_access_traversal_tag">random_access_traversal_tag</a></td></tr>
+<tr><th id="134">134</th><td>        , <a class="type" href="minimum_category.hpp.html#boost::iterators::minimum_category" title='boost::iterators::minimum_category' data-ref="boost::iterators::minimum_category">minimum_category</a>&lt;&gt;</td></tr>
+<tr><th id="135">135</th><td>      &gt;::type <dfn class="typedef" id="boost::iterators::detail::minimum_traversal_category_in_iterator_tuple::type" title='boost::iterators::detail::minimum_traversal_category_in_iterator_tuple::type' data-type='typename mpl::fold&lt;tuple_of_traversal_tags, random_access_traversal_tag, minimum_category&lt;&gt;&gt;::type' data-ref="boost::iterators::detail::minimum_traversal_category_in_iterator_tuple::type">type</dfn>;</td></tr>
+<tr><th id="136">136</th><td>    };</td></tr>
+<tr><th id="137">137</th><td></td></tr>
+<tr><th id="138">138</th><td>    <b>template</b>&lt;<b>typename</b> Iterator1, <b>typename</b> Iterator2&gt;</td></tr>
+<tr><th id="139">139</th><td>    <b>struct</b> <dfn class="type def" id="boost::iterators::detail::minimum_traversal_category_in_iterator_tuple" title='boost::iterators::detail::minimum_traversal_category_in_iterator_tuple' data-ref="boost::iterators::detail::minimum_traversal_category_in_iterator_tuple">minimum_traversal_category_in_iterator_tuple</dfn>&lt;<span class="namespace">std::</span><a class="type" href="../../../../../../include/c++/9/bits/stl_pair.h.html#std::pair" title='std::pair' data-ref="std::pair">pair</a>&lt;Iterator1, Iterator2&gt; &gt;</td></tr>
+<tr><th id="140">140</th><td>    {</td></tr>
+<tr><th id="141">141</th><td>        <b>typedef</b> <b>typename</b> <a class="type" href="iterator_categories.hpp.html#boost::iterators::pure_traversal_tag" title='boost::iterators::pure_traversal_tag' data-ref="boost::iterators::pure_traversal_tag">pure_traversal_tag</a>&lt;</td></tr>
+<tr><th id="142">142</th><td>            <b>typename</b> <a class="type" href="iterator_categories.hpp.html#boost::iterators::iterator_traversal" title='boost::iterators::iterator_traversal' data-ref="boost::iterators::iterator_traversal">iterator_traversal</a>&lt;Iterator1&gt;::type</td></tr>
+<tr><th id="143">143</th><td>        &gt;::type <dfn class="typedef" id="boost::iterators::detail::minimum_traversal_category_in_iterator_tuple{pair{type-parameter-0-0,type-parameter-0-1}}::iterator1_traversal" title='boost::iterators::detail::minimum_traversal_category_in_iterator_tuple&lt;pair&lt;type-parameter-0-0, type-parameter-0-1&gt;&gt;::iterator1_traversal' data-type='typename pure_traversal_tag&lt;typename iterator_traversal&lt;Iterator1&gt;::type&gt;::type' data-ref="boost::iterators::detail::minimum_traversal_category_in_iterator_tuple{pair{type-parameter-0-0,type-parameter-0-1}}::iterator1_traversal">iterator1_traversal</dfn>;</td></tr>
+<tr><th id="144">144</th><td>        <b>typedef</b> <b>typename</b> <a class="type" href="iterator_categories.hpp.html#boost::iterators::pure_traversal_tag" title='boost::iterators::pure_traversal_tag' data-ref="boost::iterators::pure_traversal_tag">pure_traversal_tag</a>&lt;</td></tr>
+<tr><th id="145">145</th><td>            <b>typename</b> <a class="type" href="iterator_categories.hpp.html#boost::iterators::iterator_traversal" title='boost::iterators::iterator_traversal' data-ref="boost::iterators::iterator_traversal">iterator_traversal</a>&lt;Iterator2&gt;::type</td></tr>
+<tr><th id="146">146</th><td>        &gt;::type <dfn class="typedef" id="boost::iterators::detail::minimum_traversal_category_in_iterator_tuple{pair{type-parameter-0-0,type-parameter-0-1}}::iterator2_traversal" title='boost::iterators::detail::minimum_traversal_category_in_iterator_tuple&lt;pair&lt;type-parameter-0-0, type-parameter-0-1&gt;&gt;::iterator2_traversal' data-type='typename pure_traversal_tag&lt;typename iterator_traversal&lt;Iterator2&gt;::type&gt;::type' data-ref="boost::iterators::detail::minimum_traversal_category_in_iterator_tuple{pair{type-parameter-0-0,type-parameter-0-1}}::iterator2_traversal">iterator2_traversal</dfn>;</td></tr>
+<tr><th id="147">147</th><td></td></tr>
+<tr><th id="148">148</th><td>        <b>typedef</b> <b>typename</b> <a class="type" href="minimum_category.hpp.html#boost::iterators::minimum_category" title='boost::iterators::minimum_category' data-ref="boost::iterators::minimum_category">minimum_category</a>&lt;</td></tr>
+<tr><th id="149">149</th><td>            <a class="typedef" href="#boost::iterators::detail::minimum_traversal_category_in_iterator_tuple{pair{type-parameter-0-0,type-parameter-0-1}}::iterator1_traversal" title='boost::iterators::detail::minimum_traversal_category_in_iterator_tuple&lt;pair&lt;type-parameter-0-0, type-parameter-0-1&gt;&gt;::iterator1_traversal' data-type='typename pure_traversal_tag&lt;typename iterator_traversal&lt;Iterator1&gt;::type&gt;::type' data-ref="boost::iterators::detail::minimum_traversal_category_in_iterator_tuple{pair{type-parameter-0-0,type-parameter-0-1}}::iterator1_traversal">iterator1_traversal</a></td></tr>
+<tr><th id="150">150</th><td>          , <b>typename</b> <a class="type" href="minimum_category.hpp.html#boost::iterators::minimum_category" title='boost::iterators::minimum_category' data-ref="boost::iterators::minimum_category">minimum_category</a>&lt;</td></tr>
+<tr><th id="151">151</th><td>                <a class="typedef" href="#boost::iterators::detail::minimum_traversal_category_in_iterator_tuple{pair{type-parameter-0-0,type-parameter-0-1}}::iterator2_traversal" title='boost::iterators::detail::minimum_traversal_category_in_iterator_tuple&lt;pair&lt;type-parameter-0-0, type-parameter-0-1&gt;&gt;::iterator2_traversal' data-type='typename pure_traversal_tag&lt;typename iterator_traversal&lt;Iterator2&gt;::type&gt;::type' data-ref="boost::iterators::detail::minimum_traversal_category_in_iterator_tuple{pair{type-parameter-0-0,type-parameter-0-1}}::iterator2_traversal">iterator2_traversal</a></td></tr>
+<tr><th id="152">152</th><td>              , <a class="type" href="iterator_categories.hpp.html#boost::iterators::random_access_traversal_tag" title='boost::iterators::random_access_traversal_tag' data-ref="boost::iterators::random_access_traversal_tag">random_access_traversal_tag</a></td></tr>
+<tr><th id="153">153</th><td>            &gt;::type</td></tr>
+<tr><th id="154">154</th><td>        &gt;::type <dfn class="typedef" id="boost::iterators::detail::minimum_traversal_category_in_iterator_tuple{pair{type-parameter-0-0,type-parameter-0-1}}::type" title='boost::iterators::detail::minimum_traversal_category_in_iterator_tuple&lt;pair&lt;type-parameter-0-0, type-parameter-0-1&gt;&gt;::type' data-type='typename minimum_category&lt;iterator1_traversal, typename minimum_category&lt;iterator2_traversal, random_access_traversal_tag&gt;::type&gt;::type' data-ref="boost::iterators::detail::minimum_traversal_category_in_iterator_tuple{pair{type-parameter-0-0,type-parameter-0-1}}::type">type</dfn>;</td></tr>
+<tr><th id="155">155</th><td>    };</td></tr>
+<tr><th id="156">156</th><td></td></tr>
+<tr><th id="157">157</th><td>    <i>///////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="158">158</th><td><i>    //</i></td></tr>
+<tr><th id="159">159</th><td><i>    // Class zip_iterator_base</i></td></tr>
+<tr><th id="160">160</th><td><i>    //</i></td></tr>
+<tr><th id="161">161</th><td><i>    // Builds and exposes the iterator facade type from which the zip</i></td></tr>
+<tr><th id="162">162</th><td><i>    // iterator will be derived.</i></td></tr>
+<tr><th id="163">163</th><td><i>    //</i></td></tr>
+<tr><th id="164">164</th><td>    <b>template</b>&lt;<b>typename</b> IteratorTuple&gt;</td></tr>
+<tr><th id="165">165</th><td>    <b>struct</b> <dfn class="type def" id="boost::iterators::detail::zip_iterator_base" title='boost::iterators::detail::zip_iterator_base' data-ref="boost::iterators::detail::zip_iterator_base">zip_iterator_base</dfn></td></tr>
+<tr><th id="166">166</th><td>    {</td></tr>
+<tr><th id="167">167</th><td>     <b>private</b>:</td></tr>
+<tr><th id="168">168</th><td>        <i>// Reference type is the type of the tuple obtained from the</i></td></tr>
+<tr><th id="169">169</th><td><i>        // iterators' reference types.</i></td></tr>
+<tr><th id="170">170</th><td>        <b>typedef</b> <b>typename</b></td></tr>
+<tr><th id="171">171</th><td>        <span class="namespace">detail::</span><a class="type" href="#boost::iterators::detail::tuple_of_references" title='boost::iterators::detail::tuple_of_references' data-ref="boost::iterators::detail::tuple_of_references">tuple_of_references</a>&lt;IteratorTuple&gt;::type <dfn class="typedef" id="boost::iterators::detail::zip_iterator_base::reference" title='boost::iterators::detail::zip_iterator_base::reference' data-type='typename detail::tuple_of_references&lt;IteratorTuple&gt;::type' data-ref="boost::iterators::detail::zip_iterator_base::reference">reference</dfn>;</td></tr>
+<tr><th id="172">172</th><td></td></tr>
+<tr><th id="173">173</th><td>        <i>// Value type is the same as reference type.</i></td></tr>
+<tr><th id="174">174</th><td>        <b>typedef</b> <a class="typedef" href="#boost::iterators::detail::zip_iterator_base::reference" title='boost::iterators::detail::zip_iterator_base::reference' data-type='typename detail::tuple_of_references&lt;IteratorTuple&gt;::type' data-ref="boost::iterators::detail::zip_iterator_base::reference">reference</a> <dfn class="typedef" id="boost::iterators::detail::zip_iterator_base::value_type" title='boost::iterators::detail::zip_iterator_base::value_type' data-type='boost::iterators::detail::zip_iterator_base::reference' data-ref="boost::iterators::detail::zip_iterator_base::value_type">value_type</dfn>;</td></tr>
+<tr><th id="175">175</th><td></td></tr>
+<tr><th id="176">176</th><td>        <i>// Difference type is the first iterator's difference type</i></td></tr>
+<tr><th id="177">177</th><td>        <b>typedef</b> <b>typename</b> <a class="type" href="iterator_traits.hpp.html#boost::iterators::iterator_difference" title='boost::iterators::iterator_difference' data-ref="boost::iterators::iterator_difference">iterator_difference</a>&lt;</td></tr>
+<tr><th id="178">178</th><td>            <b>typename</b> <span class="namespace">mpl::</span><a class="type" href="../../../../mpl/include/boost/mpl/at.hpp.html#boost::mpl::at_c" title='boost::mpl::at_c' data-ref="boost::mpl::at_c">at_c</a>&lt;IteratorTuple, <var>0</var>&gt;::type</td></tr>
+<tr><th id="179">179</th><td>        &gt;::type <dfn class="typedef" id="boost::iterators::detail::zip_iterator_base::difference_type" title='boost::iterators::detail::zip_iterator_base::difference_type' data-type='typename iterator_difference&lt;typename mpl::at_c&lt;IteratorTuple, 0&gt;::type&gt;::type' data-ref="boost::iterators::detail::zip_iterator_base::difference_type">difference_type</dfn>;</td></tr>
+<tr><th id="180">180</th><td></td></tr>
+<tr><th id="181">181</th><td>        <i>// Traversal catetgory is the minimum traversal category in the</i></td></tr>
+<tr><th id="182">182</th><td><i>        // iterator tuple.</i></td></tr>
+<tr><th id="183">183</th><td>        <b>typedef</b> <b>typename</b></td></tr>
+<tr><th id="184">184</th><td>        <span class="namespace">detail::</span><a class="type" href="#boost::iterators::detail::minimum_traversal_category_in_iterator_tuple" title='boost::iterators::detail::minimum_traversal_category_in_iterator_tuple' data-ref="boost::iterators::detail::minimum_traversal_category_in_iterator_tuple">minimum_traversal_category_in_iterator_tuple</a>&lt;</td></tr>
+<tr><th id="185">185</th><td>            IteratorTuple</td></tr>
+<tr><th id="186">186</th><td>        &gt;::type <dfn class="typedef" id="boost::iterators::detail::zip_iterator_base::traversal_category" title='boost::iterators::detail::zip_iterator_base::traversal_category' data-type='typename detail::minimum_traversal_category_in_iterator_tuple&lt;IteratorTuple&gt;::type' data-ref="boost::iterators::detail::zip_iterator_base::traversal_category">traversal_category</dfn>;</td></tr>
+<tr><th id="187">187</th><td>     <b>public</b>:</td></tr>
+<tr><th id="188">188</th><td></td></tr>
+<tr><th id="189">189</th><td>        <i>// The iterator facade type from which the zip iterator will</i></td></tr>
+<tr><th id="190">190</th><td><i>        // be derived.</i></td></tr>
+<tr><th id="191">191</th><td>        <b>typedef</b> <a class="type" href="iterator_facade.hpp.html#boost::iterators::iterator_facade" title='boost::iterators::iterator_facade' data-ref="boost::iterators::iterator_facade">iterator_facade</a>&lt;</td></tr>
+<tr><th id="192">192</th><td>            <a class="type" href="#boost::iterators::zip_iterator" title='boost::iterators::zip_iterator' data-ref="boost::iterators::zip_iterator">zip_iterator</a>&lt;IteratorTuple&gt;,</td></tr>
+<tr><th id="193">193</th><td>            <a class="typedef" href="#boost::iterators::detail::zip_iterator_base::value_type" title='boost::iterators::detail::zip_iterator_base::value_type' data-type='boost::iterators::detail::zip_iterator_base::reference' data-ref="boost::iterators::detail::zip_iterator_base::value_type">value_type</a>,</td></tr>
+<tr><th id="194">194</th><td>            <a class="typedef" href="#boost::iterators::detail::zip_iterator_base::traversal_category" title='boost::iterators::detail::zip_iterator_base::traversal_category' data-type='typename detail::minimum_traversal_category_in_iterator_tuple&lt;IteratorTuple&gt;::type' data-ref="boost::iterators::detail::zip_iterator_base::traversal_category">traversal_category</a>,</td></tr>
+<tr><th id="195">195</th><td>            <a class="typedef" href="#boost::iterators::detail::zip_iterator_base::reference" title='boost::iterators::detail::zip_iterator_base::reference' data-type='typename detail::tuple_of_references&lt;IteratorTuple&gt;::type' data-ref="boost::iterators::detail::zip_iterator_base::reference">reference</a>,</td></tr>
+<tr><th id="196">196</th><td>            <a class="typedef" href="#boost::iterators::detail::zip_iterator_base::difference_type" title='boost::iterators::detail::zip_iterator_base::difference_type' data-type='typename iterator_difference&lt;typename mpl::at_c&lt;IteratorTuple, 0&gt;::type&gt;::type' data-ref="boost::iterators::detail::zip_iterator_base::difference_type">difference_type</a></td></tr>
+<tr><th id="197">197</th><td>        &gt; <dfn class="typedef" id="boost::iterators::detail::zip_iterator_base::type" title='boost::iterators::detail::zip_iterator_base::type' data-type='iterator_facade&lt;zip_iterator&lt;IteratorTuple&gt;, boost::iterators::detail::zip_iterator_base::value_type, boost::iterators::detail::zip_iterator_base::traversal_category, boost::iterators::detail::zip_iterator_base::reference, boost::iterators::detail::zip_iterator_base::difference_type&gt;' data-ref="boost::iterators::detail::zip_iterator_base::type">type</dfn>;</td></tr>
+<tr><th id="198">198</th><td>    };</td></tr>
+<tr><th id="199">199</th><td></td></tr>
+<tr><th id="200">200</th><td>    <b>template</b> &lt;&gt;</td></tr>
+<tr><th id="201">201</th><td>    <b>struct</b> <dfn class="type def" id="boost::iterators::detail::zip_iterator_base" title='boost::iterators::detail::zip_iterator_base' data-ref="boost::iterators::detail::zip_iterator_base"><a class="type" href="#boost::iterators::detail::zip_iterator_base" title='boost::iterators::detail::zip_iterator_base' data-ref="boost::iterators::detail::zip_iterator_base">zip_iterator_base</a></dfn>&lt;<em>int</em>&gt;</td></tr>
+<tr><th id="202">202</th><td>    {</td></tr>
+<tr><th id="203">203</th><td>        <b>typedef</b> <em>int</em> <dfn class="typedef" id="boost::iterators::detail::zip_iterator_base{int}::type" title='boost::iterators::detail::zip_iterator_base&lt;int&gt;::type' data-type='int' data-ref="boost::iterators::detail::zip_iterator_base{int}::type">type</dfn>;</td></tr>
+<tr><th id="204">204</th><td>    };</td></tr>
+<tr><th id="205">205</th><td></td></tr>
+<tr><th id="206">206</th><td>    <b>template</b> &lt;<b>typename</b> reference&gt;</td></tr>
+<tr><th id="207">207</th><td>    <b>struct</b> <dfn class="type def" id="boost::iterators::detail::converter" title='boost::iterators::detail::converter' data-ref="boost::iterators::detail::converter">converter</dfn></td></tr>
+<tr><th id="208">208</th><td>    {</td></tr>
+<tr><th id="209">209</th><td>        <b>template</b> &lt;<b>typename</b> Seq&gt;</td></tr>
+<tr><th id="210">210</th><td>        <em>static</em> reference <dfn class="decl def fn" id="_ZN5boost9iterators6detail9converter4callETL0__" title='boost::iterators::detail::converter::call' data-ref="_ZN5boost9iterators6detail9converter4callETL0__">call</dfn>(Seq <dfn class="local col7 decl" id="6417seq" title='seq' data-type='Seq' data-ref="6417seq">seq</dfn>)</td></tr>
+<tr><th id="211">211</th><td>        {</td></tr>
+<tr><th id="212">212</th><td>            <b>typedef</b> <b>typename</b> <span class="namespace">fusion::traits::</span><a class="type" href="../../../../fusion/include/boost/fusion/support/tag_of_fwd.hpp.html#boost::fusion::traits::tag_of" title='boost::fusion::traits::tag_of' data-ref="boost::fusion::traits::tag_of">tag_of</a>&lt;reference&gt;::type <dfn class="local col8 typedef" id="6418tag" title='tag' data-type='typename fusion::traits::tag_of&lt;reference&gt;::type' data-ref="6418tag">tag</dfn>;</td></tr>
+<tr><th id="213">213</th><td>            <b>return</b> <span class="namespace">fusion::</span>convert&lt;<a class="local col8 typedef" href="#6418tag" title='tag' data-type='typename fusion::traits::tag_of&lt;reference&gt;::type' data-ref="6418tag">tag</a>&gt;(<a class="local col7 ref" href="#6417seq" title='seq' data-ref="6417seq">seq</a>);</td></tr>
+<tr><th id="214">214</th><td>        }</td></tr>
+<tr><th id="215">215</th><td>    };</td></tr>
+<tr><th id="216">216</th><td></td></tr>
+<tr><th id="217">217</th><td>    <b>template</b> &lt;<b>typename</b> Reference1, <b>typename</b> Reference2&gt;</td></tr>
+<tr><th id="218">218</th><td>    <b>struct</b> <dfn class="type def" id="boost::iterators::detail::converter" title='boost::iterators::detail::converter' data-ref="boost::iterators::detail::converter">converter</dfn>&lt;<span class="namespace">std::</span><a class="type" href="../../../../../../include/c++/9/bits/stl_pair.h.html#std::pair" title='std::pair' data-ref="std::pair">pair</a>&lt;Reference1, Reference2&gt; &gt;</td></tr>
+<tr><th id="219">219</th><td>    {</td></tr>
+<tr><th id="220">220</th><td>        <b>typedef</b> <span class="namespace">std::</span><a class="type" href="../../../../../../include/c++/9/bits/stl_pair.h.html#std::pair" title='std::pair' data-ref="std::pair">pair</a>&lt;Reference1, Reference2&gt; <dfn class="typedef" id="boost::iterators::detail::converter{pair{type-parameter-0-0,type-parameter-0-1}}::reference" title='boost::iterators::detail::converter&lt;pair&lt;type-parameter-0-0, type-parameter-0-1&gt;&gt;::reference' data-type='std::pair&lt;Reference1, Reference2&gt;' data-ref="boost::iterators::detail::converter{pair{type-parameter-0-0,type-parameter-0-1}}::reference">reference</dfn>;</td></tr>
+<tr><th id="221">221</th><td>        <b>template</b> &lt;<b>typename</b> Seq&gt;</td></tr>
+<tr><th id="222">222</th><td>        <em>static</em> <a class="typedef" href="#boost::iterators::detail::converter{pair{type-parameter-0-0,type-parameter-0-1}}::reference" title='boost::iterators::detail::converter&lt;pair&lt;type-parameter-0-0, type-parameter-0-1&gt;&gt;::reference' data-type='std::pair&lt;Reference1, Reference2&gt;' data-ref="boost::iterators::detail::converter{pair{type-parameter-0-0,type-parameter-0-1}}::reference">reference</a> <dfn class="decl def fn" id="_ZN5boost9iterators6detail9converterISt4pairIT_T0_EE4callETL0__" title='boost::iterators::detail::converter&lt;pair&lt;type-parameter-0-0, type-parameter-0-1&gt;&gt;::call' data-ref="_ZN5boost9iterators6detail9converterISt4pairIT_T0_EE4callETL0__">call</dfn>(Seq <dfn class="local col9 decl" id="6419seq" title='seq' data-type='Seq' data-ref="6419seq">seq</dfn>)</td></tr>
+<tr><th id="223">223</th><td>        {</td></tr>
+<tr><th id="224">224</th><td>            <b>return</b> <a class="typedef" href="#boost::iterators::detail::converter{pair{type-parameter-0-0,type-parameter-0-1}}::reference" title='boost::iterators::detail::converter&lt;pair&lt;type-parameter-0-0, type-parameter-0-1&gt;&gt;::reference' data-type='std::pair&lt;Reference1, Reference2&gt;' data-ref="boost::iterators::detail::converter{pair{type-parameter-0-0,type-parameter-0-1}}::reference">reference</a>(</td></tr>
+<tr><th id="225">225</th><td>                <span class="namespace">fusion::</span>at_c&lt;<var>0</var>&gt;(<a class="local col9 ref" href="#6419seq" title='seq' data-ref="6419seq">seq</a>)</td></tr>
+<tr><th id="226">226</th><td>              , <span class="namespace">fusion::</span>at_c&lt;<var>1</var>&gt;(<a class="local col9 ref" href="#6419seq" title='seq' data-ref="6419seq">seq</a>));</td></tr>
+<tr><th id="227">227</th><td>        }</td></tr>
+<tr><th id="228">228</th><td>    };</td></tr>
+<tr><th id="229">229</th><td>  }</td></tr>
+<tr><th id="230">230</th><td></td></tr>
+<tr><th id="231">231</th><td>  <i>/////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="232">232</th><td><i>  //</i></td></tr>
+<tr><th id="233">233</th><td><i>  // zip_iterator class definition</i></td></tr>
+<tr><th id="234">234</th><td><i>  //</i></td></tr>
+<tr><th id="235">235</th><td>  <b>template</b>&lt;<b>typename</b> IteratorTuple&gt;</td></tr>
+<tr><th id="236">236</th><td>  <b>class</b> <dfn class="type def" id="boost::iterators::zip_iterator" title='boost::iterators::zip_iterator' data-ref="boost::iterators::zip_iterator">zip_iterator</dfn> :</td></tr>
+<tr><th id="237">237</th><td>    <b>public</b> <span class="namespace">detail::</span><a class="type" href="#boost::iterators::detail::zip_iterator_base" title='boost::iterators::detail::zip_iterator_base' data-ref="boost::iterators::detail::zip_iterator_base">zip_iterator_base</a>&lt;IteratorTuple&gt;::type</td></tr>
+<tr><th id="238">238</th><td>  {</td></tr>
+<tr><th id="239">239</th><td></td></tr>
+<tr><th id="240">240</th><td>   <i>// Typedef super_t as our base class.</i></td></tr>
+<tr><th id="241">241</th><td>   <b>typedef</b> <b>typename</b></td></tr>
+<tr><th id="242">242</th><td>     <span class="namespace">detail::</span><a class="type" href="#boost::iterators::detail::zip_iterator_base" title='boost::iterators::detail::zip_iterator_base' data-ref="boost::iterators::detail::zip_iterator_base">zip_iterator_base</a>&lt;IteratorTuple&gt;::type <dfn class="typedef" id="boost::iterators::zip_iterator::super_t" title='boost::iterators::zip_iterator::super_t' data-type='typename detail::zip_iterator_base&lt;IteratorTuple&gt;::type' data-ref="boost::iterators::zip_iterator::super_t">super_t</dfn>;</td></tr>
+<tr><th id="243">243</th><td></td></tr>
+<tr><th id="244">244</th><td>   <i>// iterator_core_access is the iterator's best friend.</i></td></tr>
+<tr><th id="245">245</th><td>   <b>friend</b> <b>class</b> <a class="type" href="iterator_facade.hpp.html#boost::iterators::iterator_core_access" title='boost::iterators::iterator_core_access' data-ref="boost::iterators::iterator_core_access">iterator_core_access</a>;</td></tr>
+<tr><th id="246">246</th><td></td></tr>
+<tr><th id="247">247</th><td>  <b>public</b>:</td></tr>
+<tr><th id="248">248</th><td></td></tr>
+<tr><th id="249">249</th><td>    <i>// Construction</i></td></tr>
+<tr><th id="250">250</th><td><i>    // ============</i></td></tr>
+<tr><th id="251">251</th><td><i></i></td></tr>
+<tr><th id="252">252</th><td><i>    // Default constructor</i></td></tr>
+<tr><th id="253">253</th><td>    <dfn class="decl def fn" id="_ZN5boost9iterators12zip_iteratorC1Ev" title='boost::iterators::zip_iterator::zip_iterator&lt;IteratorTuple&gt;' data-ref="_ZN5boost9iterators12zip_iteratorC1Ev">zip_iterator</dfn>() { }</td></tr>
+<tr><th id="254">254</th><td></td></tr>
+<tr><th id="255">255</th><td>    <i>// Constructor from iterator tuple</i></td></tr>
+<tr><th id="256">256</th><td>    <dfn class="decl def fn" id="_ZN5boost9iterators12zip_iteratorC1ET_" title='boost::iterators::zip_iterator::zip_iterator&lt;IteratorTuple&gt;' data-ref="_ZN5boost9iterators12zip_iteratorC1ET_">zip_iterator</dfn>(IteratorTuple <dfn class="local col0 decl" id="6420iterator_tuple" title='iterator_tuple' data-type='IteratorTuple' data-ref="6420iterator_tuple">iterator_tuple</dfn>)</td></tr>
+<tr><th id="257">257</th><td>      : <a class="member field" href="#boost::iterators::zip_iterator::m_iterator_tuple" title='boost::iterators::zip_iterator::m_iterator_tuple' data-ref="boost::iterators::zip_iterator::m_iterator_tuple">m_iterator_tuple</a>(<a class="local col0 ref" href="#6420iterator_tuple" title='iterator_tuple' data-ref="6420iterator_tuple">iterator_tuple</a>)</td></tr>
+<tr><th id="258">258</th><td>    { }</td></tr>
+<tr><th id="259">259</th><td></td></tr>
+<tr><th id="260">260</th><td>    <i>// Copy constructor</i></td></tr>
+<tr><th id="261">261</th><td>    <b>template</b>&lt;<b>typename</b> OtherIteratorTuple&gt;</td></tr>
+<tr><th id="262">262</th><td>    <dfn class="decl def fn" id="_ZN5boost9iterators12zip_iteratorC1ERKNS0_12zip_iteratorITL0__EEPNS0_21enable_if_convertibleIS3_T_E4typeE" title='boost::iterators::zip_iterator::zip_iterator&lt;IteratorTuple&gt;' data-ref="_ZN5boost9iterators12zip_iteratorC1ERKNS0_12zip_iteratorITL0__EEPNS0_21enable_if_convertibleIS3_T_E4typeE">zip_iterator</dfn>(</td></tr>
+<tr><th id="263">263</th><td>       <em>const</em> <a class="type" href="#boost::iterators::zip_iterator" title='boost::iterators::zip_iterator' data-ref="boost::iterators::zip_iterator">zip_iterator</a>&lt;OtherIteratorTuple&gt;&amp; <dfn class="local col1 decl" id="6421other" title='other' data-type='const zip_iterator&lt;OtherIteratorTuple&gt; &amp;' data-ref="6421other">other</dfn>,</td></tr>
+<tr><th id="264">264</th><td>       <b>typename</b> <a class="type" href="iterator_adaptor.hpp.html#boost::iterators::enable_if_convertible" title='boost::iterators::enable_if_convertible' data-ref="boost::iterators::enable_if_convertible">enable_if_convertible</a>&lt;</td></tr>
+<tr><th id="265">265</th><td>         OtherIteratorTuple,</td></tr>
+<tr><th id="266">266</th><td>         IteratorTuple</td></tr>
+<tr><th id="267">267</th><td>         &gt;::type* = <var>0</var></td></tr>
+<tr><th id="268">268</th><td>    ) : <a class="member field" href="#boost::iterators::zip_iterator::m_iterator_tuple" title='boost::iterators::zip_iterator::m_iterator_tuple' data-ref="boost::iterators::zip_iterator::m_iterator_tuple">m_iterator_tuple</a>(<a class="local col1 ref" href="#6421other" title='other' data-ref="6421other">other</a>.get_iterator_tuple())</td></tr>
+<tr><th id="269">269</th><td>    {}</td></tr>
+<tr><th id="270">270</th><td></td></tr>
+<tr><th id="271">271</th><td>    <i>// Get method for the iterator tuple.</i></td></tr>
+<tr><th id="272">272</th><td>    <em>const</em> IteratorTuple&amp; <dfn class="decl def fn" id="_ZNK5boost9iterators12zip_iterator18get_iterator_tupleEv" title='boost::iterators::zip_iterator::get_iterator_tuple' data-ref="_ZNK5boost9iterators12zip_iterator18get_iterator_tupleEv">get_iterator_tuple</dfn>() <em>const</em></td></tr>
+<tr><th id="273">273</th><td>    { <b>return</b> <a class="member field" href="#boost::iterators::zip_iterator::m_iterator_tuple" title='boost::iterators::zip_iterator::m_iterator_tuple' data-ref="boost::iterators::zip_iterator::m_iterator_tuple">m_iterator_tuple</a>; }</td></tr>
+<tr><th id="274">274</th><td></td></tr>
+<tr><th id="275">275</th><td>  <b>private</b>:</td></tr>
+<tr><th id="276">276</th><td></td></tr>
+<tr><th id="277">277</th><td>    <i>// Implementation of Iterator Operations</i></td></tr>
+<tr><th id="278">278</th><td><i>    // =====================================</i></td></tr>
+<tr><th id="279">279</th><td><i></i></td></tr>
+<tr><th id="280">280</th><td><i>    // Dereferencing returns a tuple built from the dereferenced</i></td></tr>
+<tr><th id="281">281</th><td><i>    // iterators in the iterator tuple.</i></td></tr>
+<tr><th id="282">282</th><td>    <b>typename</b> <a class="typedef" href="#boost::iterators::zip_iterator::super_t" title='boost::iterators::zip_iterator::super_t' data-type='typename detail::zip_iterator_base&lt;IteratorTuple&gt;::type' data-ref="boost::iterators::zip_iterator::super_t">super_t</a>::reference <dfn class="decl def fn" id="_ZNK5boost9iterators12zip_iterator11dereferenceEv" title='boost::iterators::zip_iterator::dereference' data-ref="_ZNK5boost9iterators12zip_iterator11dereferenceEv">dereference</dfn>() <em>const</em></td></tr>
+<tr><th id="283">283</th><td>    {</td></tr>
+<tr><th id="284">284</th><td>        <b>typedef</b> <b>typename</b> <a class="typedef" href="#boost::iterators::zip_iterator::super_t" title='boost::iterators::zip_iterator::super_t' data-type='typename detail::zip_iterator_base&lt;IteratorTuple&gt;::type' data-ref="boost::iterators::zip_iterator::super_t">super_t</a>::reference <dfn class="local col2 typedef" id="6422reference" title='reference' data-type='typename super_t::reference' data-ref="6422reference">reference</dfn>;</td></tr>
+<tr><th id="285">285</th><td>        <b>typedef</b> <span class="namespace">detail::</span><a class="type" href="#boost::iterators::detail::converter" title='boost::iterators::detail::converter' data-ref="boost::iterators::detail::converter">converter</a>&lt;<a class="local col2 typedef" href="#6422reference" title='reference' data-type='typename super_t::reference' data-ref="6422reference">reference</a>&gt; <dfn class="local col3 typedef" id="6423gen" title='gen' data-type='detail::converter&lt;reference&gt;' data-ref="6423gen">gen</dfn>;</td></tr>
+<tr><th id="286">286</th><td>        <b>return</b> <a class="local col3 typedef" href="#6423gen" title='gen' data-type='detail::converter&lt;reference&gt;' data-ref="6423gen">gen</a>::call(<span class="namespace">fusion::</span>transform(</td></tr>
+<tr><th id="287">287</th><td>          <a class="member fn" href="#_ZNK5boost9iterators12zip_iterator18get_iterator_tupleEv" title='boost::iterators::zip_iterator::get_iterator_tuple' data-ref="_ZNK5boost9iterators12zip_iterator18get_iterator_tupleEv">get_iterator_tuple</a>(),</td></tr>
+<tr><th id="288">288</th><td>          <span class="namespace">detail::</span><a class="type" href="#boost::iterators::detail::dereference_iterator" title='boost::iterators::detail::dereference_iterator' data-ref="boost::iterators::detail::dereference_iterator">dereference_iterator</a><a class="ref fn" href="#77" title='boost::iterators::detail::dereference_iterator::dereference_iterator' data-ref="_ZN5boost9iterators6detail20dereference_iteratorC1Ev">(</a>)));</td></tr>
+<tr><th id="289">289</th><td>    }</td></tr>
+<tr><th id="290">290</th><td></td></tr>
+<tr><th id="291">291</th><td>    <i>// Two zip iterators are equal if all iterators in the iterator</i></td></tr>
+<tr><th id="292">292</th><td><i>    // tuple are equal. NOTE: It should be possible to implement this</i></td></tr>
+<tr><th id="293">293</th><td><i>    // as</i></td></tr>
+<tr><th id="294">294</th><td><i>    //</i></td></tr>
+<tr><th id="295">295</th><td><i>    // return get_iterator_tuple() == other.get_iterator_tuple();</i></td></tr>
+<tr><th id="296">296</th><td><i>    //</i></td></tr>
+<tr><th id="297">297</th><td><i>    // but equality of tuples currently (7/2003) does not compile</i></td></tr>
+<tr><th id="298">298</th><td><i>    // under several compilers. No point in bringing in a bunch</i></td></tr>
+<tr><th id="299">299</th><td><i>    // of #ifdefs here.</i></td></tr>
+<tr><th id="300">300</th><td><i>    //</i></td></tr>
+<tr><th id="301">301</th><td>    <b>template</b>&lt;<b>typename</b> OtherIteratorTuple&gt;</td></tr>
+<tr><th id="302">302</th><td>    <em>bool</em> <dfn class="decl def fn" id="_ZNK5boost9iterators12zip_iterator5equalERKNS0_12zip_iteratorITL0__EE" title='boost::iterators::zip_iterator::equal' data-ref="_ZNK5boost9iterators12zip_iterator5equalERKNS0_12zip_iteratorITL0__EE">equal</dfn>(<em>const</em> <a class="type" href="#boost::iterators::zip_iterator" title='boost::iterators::zip_iterator' data-ref="boost::iterators::zip_iterator">zip_iterator</a>&lt;OtherIteratorTuple&gt;&amp; <dfn class="local col4 decl" id="6424other" title='other' data-type='const zip_iterator&lt;OtherIteratorTuple&gt; &amp;' data-ref="6424other">other</dfn>) <em>const</em></td></tr>
+<tr><th id="303">303</th><td>    {</td></tr>
+<tr><th id="304">304</th><td>        <b>return</b> <span class="namespace">fusion::</span>equal_to(</td></tr>
+<tr><th id="305">305</th><td>          <a class="member fn" href="#_ZNK5boost9iterators12zip_iterator18get_iterator_tupleEv" title='boost::iterators::zip_iterator::get_iterator_tuple' data-ref="_ZNK5boost9iterators12zip_iterator18get_iterator_tupleEv">get_iterator_tuple</a>(),</td></tr>
+<tr><th id="306">306</th><td>          <a class="local col4 ref" href="#6424other" title='other' data-ref="6424other">other</a>.get_iterator_tuple());</td></tr>
+<tr><th id="307">307</th><td>    }</td></tr>
+<tr><th id="308">308</th><td></td></tr>
+<tr><th id="309">309</th><td>    <i>// Advancing a zip iterator means to advance all iterators in the</i></td></tr>
+<tr><th id="310">310</th><td><i>    // iterator tuple.</i></td></tr>
+<tr><th id="311">311</th><td>    <em>void</em> <dfn class="decl def fn" id="_ZN5boost9iterators12zip_iterator7advanceENS0_6detail17zip_iterator_baseIT_E4type15difference_typeE" title='boost::iterators::zip_iterator::advance' data-ref="_ZN5boost9iterators12zip_iterator7advanceENS0_6detail17zip_iterator_baseIT_E4type15difference_typeE">advance</dfn>(<b>typename</b> <a class="typedef" href="#boost::iterators::zip_iterator::super_t" title='boost::iterators::zip_iterator::super_t' data-type='typename detail::zip_iterator_base&lt;IteratorTuple&gt;::type' data-ref="boost::iterators::zip_iterator::super_t">super_t</a>::difference_type <dfn class="local col5 decl" id="6425n" title='n' data-type='typename super_t::difference_type' data-ref="6425n">n</dfn>)</td></tr>
+<tr><th id="312">312</th><td>    {</td></tr>
+<tr><th id="313">313</th><td>        <span class="namespace">fusion::</span>for_each(</td></tr>
+<tr><th id="314">314</th><td>          <a class="member field" href="#boost::iterators::zip_iterator::m_iterator_tuple" title='boost::iterators::zip_iterator::m_iterator_tuple' data-ref="boost::iterators::zip_iterator::m_iterator_tuple">m_iterator_tuple</a>,</td></tr>
+<tr><th id="315">315</th><td>          <span class="namespace">detail::</span><a class="type" href="#boost::iterators::detail::advance_iterator" title='boost::iterators::detail::advance_iterator' data-ref="boost::iterators::detail::advance_iterator">advance_iterator</a>&lt;<a class="macro" href="../../../../config/include/boost/config/detail/suffix.hpp.html#483" title="typename" data-ref="_M/BOOST_DEDUCED_TYPENAME">BOOST_DEDUCED_TYPENAME</a> <a class="typedef" href="#boost::iterators::zip_iterator::super_t" title='boost::iterators::zip_iterator::super_t' data-type='typename detail::zip_iterator_base&lt;IteratorTuple&gt;::type' data-ref="boost::iterators::zip_iterator::super_t">super_t</a>::difference_type&gt;(<a class="local col5 ref" href="#6425n" title='n' data-ref="6425n">n</a>));</td></tr>
+<tr><th id="316">316</th><td>    }</td></tr>
+<tr><th id="317">317</th><td>    <i>// Incrementing a zip iterator means to increment all iterators in</i></td></tr>
+<tr><th id="318">318</th><td><i>    // the iterator tuple.</i></td></tr>
+<tr><th id="319">319</th><td>    <em>void</em> <dfn class="decl def fn" id="_ZN5boost9iterators12zip_iterator9incrementEv" title='boost::iterators::zip_iterator::increment' data-ref="_ZN5boost9iterators12zip_iterator9incrementEv">increment</dfn>()</td></tr>
+<tr><th id="320">320</th><td>    {</td></tr>
+<tr><th id="321">321</th><td>        <span class="namespace">fusion::</span>for_each(</td></tr>
+<tr><th id="322">322</th><td>          <a class="member field" href="#boost::iterators::zip_iterator::m_iterator_tuple" title='boost::iterators::zip_iterator::m_iterator_tuple' data-ref="boost::iterators::zip_iterator::m_iterator_tuple">m_iterator_tuple</a>,</td></tr>
+<tr><th id="323">323</th><td>          <span class="namespace">detail::</span><a class="type" href="#boost::iterators::detail::increment_iterator" title='boost::iterators::detail::increment_iterator' data-ref="boost::iterators::detail::increment_iterator">increment_iterator</a><a class="ref fn" href="#63" title='boost::iterators::detail::increment_iterator::increment_iterator' data-ref="_ZN5boost9iterators6detail18increment_iteratorC1Ev">(</a>));</td></tr>
+<tr><th id="324">324</th><td>    }</td></tr>
+<tr><th id="325">325</th><td></td></tr>
+<tr><th id="326">326</th><td>    <i>// Decrementing a zip iterator means to decrement all iterators in</i></td></tr>
+<tr><th id="327">327</th><td><i>    // the iterator tuple.</i></td></tr>
+<tr><th id="328">328</th><td>    <em>void</em> <dfn class="decl def fn" id="_ZN5boost9iterators12zip_iterator9decrementEv" title='boost::iterators::zip_iterator::decrement' data-ref="_ZN5boost9iterators12zip_iterator9decrementEv">decrement</dfn>()</td></tr>
+<tr><th id="329">329</th><td>    {</td></tr>
+<tr><th id="330">330</th><td>        <span class="namespace">fusion::</span>for_each(</td></tr>
+<tr><th id="331">331</th><td>          <a class="member field" href="#boost::iterators::zip_iterator::m_iterator_tuple" title='boost::iterators::zip_iterator::m_iterator_tuple' data-ref="boost::iterators::zip_iterator::m_iterator_tuple">m_iterator_tuple</a>,</td></tr>
+<tr><th id="332">332</th><td>          <span class="namespace">detail::</span><a class="type" href="#boost::iterators::detail::decrement_iterator" title='boost::iterators::detail::decrement_iterator' data-ref="boost::iterators::detail::decrement_iterator">decrement_iterator</a><a class="ref fn" href="#70" title='boost::iterators::detail::decrement_iterator::decrement_iterator' data-ref="_ZN5boost9iterators6detail18decrement_iteratorC1Ev">(</a>));</td></tr>
+<tr><th id="333">333</th><td>    }</td></tr>
+<tr><th id="334">334</th><td></td></tr>
+<tr><th id="335">335</th><td>    <i>// Distance is calculated using the first iterator in the tuple.</i></td></tr>
+<tr><th id="336">336</th><td>    <b>template</b>&lt;<b>typename</b> OtherIteratorTuple&gt;</td></tr>
+<tr><th id="337">337</th><td>      <b>typename</b> <a class="typedef" href="#boost::iterators::zip_iterator::super_t" title='boost::iterators::zip_iterator::super_t' data-type='typename detail::zip_iterator_base&lt;IteratorTuple&gt;::type' data-ref="boost::iterators::zip_iterator::super_t">super_t</a>::difference_type <dfn class="decl def fn" id="_ZNK5boost9iterators12zip_iterator11distance_toERKNS0_12zip_iteratorITL0__EE" title='boost::iterators::zip_iterator::distance_to' data-ref="_ZNK5boost9iterators12zip_iterator11distance_toERKNS0_12zip_iteratorITL0__EE">distance_to</dfn>(</td></tr>
+<tr><th id="338">338</th><td>        <em>const</em> <a class="type" href="#boost::iterators::zip_iterator" title='boost::iterators::zip_iterator' data-ref="boost::iterators::zip_iterator">zip_iterator</a>&lt;OtherIteratorTuple&gt;&amp; <dfn class="local col6 decl" id="6426other" title='other' data-type='const zip_iterator&lt;OtherIteratorTuple&gt; &amp;' data-ref="6426other">other</dfn></td></tr>
+<tr><th id="339">339</th><td>        ) <em>const</em></td></tr>
+<tr><th id="340">340</th><td>    {</td></tr>
+<tr><th id="341">341</th><td>        <b>return</b> <span class="namespace">fusion::</span>at_c&lt;<var>0</var>&gt;(<a class="local col6 ref" href="#6426other" title='other' data-ref="6426other">other</a>.get_iterator_tuple()) -</td></tr>
+<tr><th id="342">342</th><td>            <span class="namespace">fusion::</span>at_c&lt;<var>0</var>&gt;(<b>this</b>-&gt;get_iterator_tuple());</td></tr>
+<tr><th id="343">343</th><td>    }</td></tr>
+<tr><th id="344">344</th><td></td></tr>
+<tr><th id="345">345</th><td>    <i>// Data Members</i></td></tr>
+<tr><th id="346">346</th><td><i>    // ============</i></td></tr>
+<tr><th id="347">347</th><td><i></i></td></tr>
+<tr><th id="348">348</th><td><i>    // The iterator tuple.</i></td></tr>
+<tr><th id="349">349</th><td>    IteratorTuple <dfn class="decl field" id="boost::iterators::zip_iterator::m_iterator_tuple" title='boost::iterators::zip_iterator::m_iterator_tuple' data-ref="boost::iterators::zip_iterator::m_iterator_tuple">m_iterator_tuple</dfn>;</td></tr>
+<tr><th id="350">350</th><td></td></tr>
+<tr><th id="351">351</th><td>  };</td></tr>
+<tr><th id="352">352</th><td></td></tr>
+<tr><th id="353">353</th><td>  <i>// Make function for zip iterator</i></td></tr>
+<tr><th id="354">354</th><td><i>  //</i></td></tr>
+<tr><th id="355">355</th><td>  <b>template</b>&lt;<b>typename</b> IteratorTuple&gt;</td></tr>
+<tr><th id="356">356</th><td>  <b>inline</b> <a class="type" href="#boost::iterators::zip_iterator" title='boost::iterators::zip_iterator' data-ref="boost::iterators::zip_iterator">zip_iterator</a>&lt;IteratorTuple&gt;</td></tr>
+<tr><th id="357">357</th><td>  <dfn class="decl def fn" id="_ZN5boost9iterators17make_zip_iteratorET_" title='boost::iterators::make_zip_iterator' data-ref="_ZN5boost9iterators17make_zip_iteratorET_">make_zip_iterator</dfn>(IteratorTuple <dfn class="local col7 decl" id="6427t" title='t' data-type='IteratorTuple' data-ref="6427t">t</dfn>)</td></tr>
+<tr><th id="358">358</th><td>  { <b>return</b> <a class="type" href="#boost::iterators::zip_iterator" title='boost::iterators::zip_iterator' data-ref="boost::iterators::zip_iterator">zip_iterator</a>&lt;IteratorTuple&gt;(<a class="local col7 ref" href="#6427t" title='t' data-ref="6427t">t</a>); }</td></tr>
+<tr><th id="359">359</th><td></td></tr>
+<tr><th id="360">360</th><td>} <i>// namespace iterators</i></td></tr>
+<tr><th id="361">361</th><td></td></tr>
+<tr><th id="362">362</th><td><b>using</b> <span class="namespace">iterators::</span>zip_iterator;</td></tr>
+<tr><th id="363">363</th><td><b>using</b> <span class="namespace">iterators::</span>make_zip_iterator;</td></tr>
+<tr><th id="364">364</th><td></td></tr>
+<tr><th id="365">365</th><td>} <i>// namespace boost</i></td></tr>
+<tr><th id="366">366</th><td></td></tr>
+<tr><th id="367">367</th><td><u>#<span data-ppcond="8">endif</span></u></td></tr>
+<tr><th id="368">368</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../../../../graph/src/graphml.cpp.html'>boost-1.85.0/libs/graph/src/graphml.cpp</a><br/>Generated on <em>2024-Jun-14</em> from project boost-1.85.0 revision <em>1.85.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

@@ -1,0 +1,857 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>to_chars_float_impl.hpp source code [boost-1.85.0/libs/charconv/src/to_chars_float_impl.hpp] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'boost-1.85.0/libs/charconv/src/to_chars_float_impl.hpp'; var root_path = '../../../..'; var data_path = '../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>boost-1.85.0</a>/<a href='../..'>libs</a>/<a href='..'>charconv</a>/<a href='./'>src</a>/<a href='to_chars_float_impl.hpp.html'>to_chars_float_impl.hpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>// Copyright 2022 Peter Dimov</i></td></tr>
+<tr><th id="2">2</th><td><i>// Copyright 2023 Matt Borland</i></td></tr>
+<tr><th id="3">3</th><td><i>// Copyright 2023 Junekey Jeon</i></td></tr>
+<tr><th id="4">4</th><td><i>// Distributed under the Boost Software License, Version 1.0.</i></td></tr>
+<tr><th id="5">5</th><td><i>// <a href="https://www.boost.org/LICENSE_1_0.txt">https://www.boost.org/LICENSE_1_0.txt</a></i></td></tr>
+<tr><th id="6">6</th><td></td></tr>
+<tr><th id="7">7</th><td><u>#<span data-ppcond="7">ifndef</span> <span class="macro" data-ref="_M/BOOST_CHARCONV_DETAIL_TO_CHARS_FLOAT_IMPL_HPP">BOOST_CHARCONV_DETAIL_TO_CHARS_FLOAT_IMPL_HPP</span></u></td></tr>
+<tr><th id="8">8</th><td><u>#define <dfn class="macro" id="_M/BOOST_CHARCONV_DETAIL_TO_CHARS_FLOAT_IMPL_HPP" data-ref="_M/BOOST_CHARCONV_DETAIL_TO_CHARS_FLOAT_IMPL_HPP">BOOST_CHARCONV_DETAIL_TO_CHARS_FLOAT_IMPL_HPP</dfn></u></td></tr>
+<tr><th id="9">9</th><td></td></tr>
+<tr><th id="10">10</th><td><u>#include <a href="../include/boost/charconv/detail/apply_sign.hpp.html">&lt;boost/charconv/detail/apply_sign.hpp&gt;</a></u></td></tr>
+<tr><th id="11">11</th><td><u>#include <a href="../include/boost/charconv/detail/integer_search_trees.hpp.html">&lt;boost/charconv/detail/integer_search_trees.hpp&gt;</a></u></td></tr>
+<tr><th id="12">12</th><td><u>#include <a href="../include/boost/charconv/detail/memcpy.hpp.html">&lt;boost/charconv/detail/memcpy.hpp&gt;</a></u></td></tr>
+<tr><th id="13">13</th><td><u>#include <a href="../include/boost/charconv/detail/config.hpp.html">&lt;boost/charconv/detail/config.hpp&gt;</a></u></td></tr>
+<tr><th id="14">14</th><td><u>#include <a href="../include/boost/charconv/detail/dragonbox/floff.hpp.html">&lt;boost/charconv/detail/dragonbox/floff.hpp&gt;</a></u></td></tr>
+<tr><th id="15">15</th><td><u>#include <a href="../include/boost/charconv/detail/bit_layouts.hpp.html">&lt;boost/charconv/detail/bit_layouts.hpp&gt;</a></u></td></tr>
+<tr><th id="16">16</th><td><u>#include <a href="../include/boost/charconv/detail/dragonbox/dragonbox.hpp.html">&lt;boost/charconv/detail/dragonbox/dragonbox.hpp&gt;</a></u></td></tr>
+<tr><th id="17">17</th><td><u>#include <a href="../include/boost/charconv/detail/to_chars_integer_impl.hpp.html">&lt;boost/charconv/detail/to_chars_integer_impl.hpp&gt;</a></u></td></tr>
+<tr><th id="18">18</th><td><u>#include <a href="../include/boost/charconv/detail/to_chars_result.hpp.html">&lt;boost/charconv/detail/to_chars_result.hpp&gt;</a></u></td></tr>
+<tr><th id="19">19</th><td><u>#include <a href="../include/boost/charconv/detail/emulated128.hpp.html">&lt;boost/charconv/detail/emulated128.hpp&gt;</a></u></td></tr>
+<tr><th id="20">20</th><td><u>#include <a href="../include/boost/charconv/detail/fallback_routines.hpp.html">&lt;boost/charconv/detail/fallback_routines.hpp&gt;</a></u></td></tr>
+<tr><th id="21">21</th><td><u>#include <a href="../include/boost/charconv/detail/buffer_sizing.hpp.html">&lt;boost/charconv/detail/buffer_sizing.hpp&gt;</a></u></td></tr>
+<tr><th id="22">22</th><td><u>#include <a href="../include/boost/charconv/config.hpp.html">&lt;boost/charconv/config.hpp&gt;</a></u></td></tr>
+<tr><th id="23">23</th><td><u>#include <a href="../include/boost/charconv/chars_format.hpp.html">&lt;boost/charconv/chars_format.hpp&gt;</a></u></td></tr>
+<tr><th id="24">24</th><td><u>#include <a href="../../../../include/c++/9/system_error.html">&lt;system_error&gt;</a></u></td></tr>
+<tr><th id="25">25</th><td><u>#include <a href="../../../../include/c++/9/type_traits.html">&lt;type_traits&gt;</a></u></td></tr>
+<tr><th id="26">26</th><td><u>#include <a href="../../../../include/c++/9/array.html">&lt;array&gt;</a></u></td></tr>
+<tr><th id="27">27</th><td><u>#include <a href="../../../../include/c++/9/limits.html">&lt;limits&gt;</a></u></td></tr>
+<tr><th id="28">28</th><td><u>#include <a href="../../../../include/c++/9/utility.html">&lt;utility&gt;</a></u></td></tr>
+<tr><th id="29">29</th><td><u>#include <a href="../../../../include/c++/9/cstring.html">&lt;cstring&gt;</a></u></td></tr>
+<tr><th id="30">30</th><td><u>#include <a href="../../../../include/c++/9/cstdio.html">&lt;cstdio&gt;</a></u></td></tr>
+<tr><th id="31">31</th><td><u>#include <a href="../../../../include/c++/9/cerrno.html">&lt;cerrno&gt;</a></u></td></tr>
+<tr><th id="32">32</th><td><u>#include <a href="../../../../include/c++/9/cstdint.html">&lt;cstdint&gt;</a></u></td></tr>
+<tr><th id="33">33</th><td><u>#include <a href="../../../../include/c++/9/climits.html">&lt;climits&gt;</a></u></td></tr>
+<tr><th id="34">34</th><td><u>#include <a href="../../../../include/c++/9/cmath.html">&lt;cmath&gt;</a></u></td></tr>
+<tr><th id="35">35</th><td></td></tr>
+<tr><th id="36">36</th><td><u>#<span data-ppcond="36">ifdef</span> <span class="macro" data-ref="_M/BOOST_CHARCONV_DEBUG_FIXED">BOOST_CHARCONV_DEBUG_FIXED</span></u></td></tr>
+<tr><th id="37">37</th><td><u>#include &lt;iomanip&gt;</u></td></tr>
+<tr><th id="38">38</th><td><u>#include &lt;iostream&gt;</u></td></tr>
+<tr><th id="39">39</th><td><u>#<span data-ppcond="36">endif</span></u></td></tr>
+<tr><th id="40">40</th><td></td></tr>
+<tr><th id="41">41</th><td><u>#<span data-ppcond="41">if</span> (<a class="macro" href="../include/boost/charconv/detail/bit_layouts.hpp.html#66" title="80" data-ref="_M/BOOST_CHARCONV_LDBL_BITS">BOOST_CHARCONV_LDBL_BITS</a> == 80 || <a class="macro" href="../include/boost/charconv/detail/bit_layouts.hpp.html#66" title="80" data-ref="_M/BOOST_CHARCONV_LDBL_BITS">BOOST_CHARCONV_LDBL_BITS</a> == 128) || defined(<span class="macro" data-ref="_M/BOOST_CHARCONV_HAS_FLOAT128">BOOST_CHARCONV_HAS_FLOAT128</span>)</u></td></tr>
+<tr><th id="42">42</th><td><u>#  include <a href="../include/boost/charconv/detail/ryu/ryu_generic_128.hpp.html">&lt;boost/charconv/detail/ryu/ryu_generic_128.hpp&gt;</a></u></td></tr>
+<tr><th id="43">43</th><td><u>#  include <a href="../include/boost/charconv/detail/issignaling.hpp.html">&lt;boost/charconv/detail/issignaling.hpp&gt;</a></u></td></tr>
+<tr><th id="44">44</th><td><u>#<span data-ppcond="41">endif</span></u></td></tr>
+<tr><th id="45">45</th><td></td></tr>
+<tr><th id="46">46</th><td><b>namespace</b> <span class="namespace">boost</span> {</td></tr>
+<tr><th id="47">47</th><td><b>namespace</b> <span class="namespace">charconv</span> {</td></tr>
+<tr><th id="48">48</th><td><b>namespace</b> <span class="namespace">detail</span> {</td></tr>
+<tr><th id="49">49</th><td></td></tr>
+<tr><th id="50">50</th><td><b>template</b> &lt;<b>typename</b> Real&gt;</td></tr>
+<tr><th id="51">51</th><td><b>inline</b> <a class="type" href="../include/boost/charconv/detail/to_chars_result.hpp.html#boost::charconv::to_chars_result" title='boost::charconv::to_chars_result' data-ref="boost::charconv::to_chars_result">to_chars_result</a> <dfn class="decl fn" id="_ZN5boost8charconv6detail18to_chars_nonfiniteEPcS2_T_i" title='boost::charconv::detail::to_chars_nonfinite' data-ref="_ZN5boost8charconv6detail18to_chars_nonfiniteEPcS2_T_i">to_chars_nonfinite</dfn>(<em>char</em>* <dfn class="local col6 decl" id="476first" title='first' data-type='char *' data-ref="476first">first</dfn>, <em>char</em>* <dfn class="local col7 decl" id="477last" title='last' data-type='char *' data-ref="477last">last</dfn>, Real <dfn class="local col8 decl" id="478value" title='value' data-type='Real' data-ref="478value">value</dfn>, <em>int</em> <dfn class="local col9 decl" id="479classification" title='classification' data-type='int' data-ref="479classification">classification</dfn>) <b>noexcept</b>;</td></tr>
+<tr><th id="52">52</th><td></td></tr>
+<tr><th id="53">53</th><td><u>#<span data-ppcond="53">if</span> <a class="macro" href="../include/boost/charconv/detail/bit_layouts.hpp.html#66" title="80" data-ref="_M/BOOST_CHARCONV_LDBL_BITS">BOOST_CHARCONV_LDBL_BITS</a> == 128 || defined(<span class="macro" data-ref="_M/BOOST_CHARCONV_HAS_STDFLOAT128">BOOST_CHARCONV_HAS_STDFLOAT128</span>)</u></td></tr>
+<tr><th id="54">54</th><td></td></tr>
+<tr><th id="55">55</th><td><b>template</b> &lt;<b>typename</b> Real&gt;</td></tr>
+<tr><th id="56">56</th><td><b>inline</b> to_chars_result to_chars_nonfinite(<em>char</em>* first, <em>char</em>* last, Real value, <em>int</em> classification) <b>noexcept</b></td></tr>
+<tr><th id="57">57</th><td>{</td></tr>
+<tr><th id="58">58</th><td>    std::ptrdiff_t offset {};</td></tr>
+<tr><th id="59">59</th><td>    std::ptrdiff_t buffer_size = last - first;</td></tr>
+<tr><th id="60">60</th><td></td></tr>
+<tr><th id="61">61</th><td>    <b>if</b> (classification == FP_NAN)</td></tr>
+<tr><th id="62">62</th><td>    {</td></tr>
+<tr><th id="63">63</th><td>        <em>bool</em> is_negative = <b>false</b>;</td></tr>
+<tr><th id="64">64</th><td>        <em>const</em> <em>bool</em> is_signaling = issignaling(value);</td></tr>
+<tr><th id="65">65</th><td></td></tr>
+<tr><th id="66">66</th><td>        <b>if</b> (std::signbit(value))</td></tr>
+<tr><th id="67">67</th><td>        {</td></tr>
+<tr><th id="68">68</th><td>            is_negative = <b>true</b>;</td></tr>
+<tr><th id="69">69</th><td>            *first++ = <kbd>'-'</kbd>;</td></tr>
+<tr><th id="70">70</th><td>        }</td></tr>
+<tr><th id="71">71</th><td></td></tr>
+<tr><th id="72">72</th><td>        <b>if</b> (is_signaling &amp;&amp; buffer_size &gt;= (<var>9</var> + <b>static_cast</b>&lt;<em>int</em>&gt;(is_negative)))</td></tr>
+<tr><th id="73">73</th><td>        {</td></tr>
+<tr><th id="74">74</th><td>            std::memcpy(first, <q>"nan(snan)"</q>, <var>9</var>);</td></tr>
+<tr><th id="75">75</th><td>            offset = <var>9</var> + <b>static_cast</b>&lt;<em>int</em>&gt;(is_negative);</td></tr>
+<tr><th id="76">76</th><td>        }</td></tr>
+<tr><th id="77">77</th><td>        <b>else</b> <b>if</b> (is_negative &amp;&amp; buffer_size &gt;= <var>9</var>)</td></tr>
+<tr><th id="78">78</th><td>        {</td></tr>
+<tr><th id="79">79</th><td>            std::memcpy(first, <q>"nan(ind)"</q>, <var>8</var>);</td></tr>
+<tr><th id="80">80</th><td>            offset = <var>8</var>;</td></tr>
+<tr><th id="81">81</th><td>        }</td></tr>
+<tr><th id="82">82</th><td>        <b>else</b> <b>if</b> (!is_negative &amp;&amp; !is_signaling &amp;&amp; buffer_size &gt;= <var>3</var>)</td></tr>
+<tr><th id="83">83</th><td>        {</td></tr>
+<tr><th id="84">84</th><td>            std::memcpy(first, <q>"nan"</q>, <var>3</var>);</td></tr>
+<tr><th id="85">85</th><td>            offset = <var>3</var>;</td></tr>
+<tr><th id="86">86</th><td>        }</td></tr>
+<tr><th id="87">87</th><td>        <b>else</b></td></tr>
+<tr><th id="88">88</th><td>        {</td></tr>
+<tr><th id="89">89</th><td>            <i>// Avoid buffer overflow</i></td></tr>
+<tr><th id="90">90</th><td>            <b>return</b> { first, std::errc::value_too_large };</td></tr>
+<tr><th id="91">91</th><td>        }</td></tr>
+<tr><th id="92">92</th><td></td></tr>
+<tr><th id="93">93</th><td>    }</td></tr>
+<tr><th id="94">94</th><td>    <b>else</b> <b>if</b> (classification == FP_INFINITE)</td></tr>
+<tr><th id="95">95</th><td>    {</td></tr>
+<tr><th id="96">96</th><td>        <em>auto</em> sign_bit_value = std::signbit(value);</td></tr>
+<tr><th id="97">97</th><td>        <b>if</b> (sign_bit_value &amp;&amp; buffer_size &gt;= <var>4</var>)</td></tr>
+<tr><th id="98">98</th><td>        {</td></tr>
+<tr><th id="99">99</th><td>            std::memcpy(first, <q>"-inf"</q>, <var>4</var>);</td></tr>
+<tr><th id="100">100</th><td>            offset = <var>4</var>;</td></tr>
+<tr><th id="101">101</th><td>        }</td></tr>
+<tr><th id="102">102</th><td>        <b>else</b> <b>if</b> (!sign_bit_value &amp;&amp; buffer_size &gt;= <var>3</var>)</td></tr>
+<tr><th id="103">103</th><td>        {</td></tr>
+<tr><th id="104">104</th><td>            std::memcpy(first, <q>"inf"</q>, <var>3</var>);</td></tr>
+<tr><th id="105">105</th><td>            offset = <var>3</var>;</td></tr>
+<tr><th id="106">106</th><td>        }</td></tr>
+<tr><th id="107">107</th><td>        <b>else</b></td></tr>
+<tr><th id="108">108</th><td>        {</td></tr>
+<tr><th id="109">109</th><td>            <i>// Avoid buffer overflow</i></td></tr>
+<tr><th id="110">110</th><td>            <b>return</b> { first, std::errc::value_too_large };</td></tr>
+<tr><th id="111">111</th><td>        }</td></tr>
+<tr><th id="112">112</th><td>    }</td></tr>
+<tr><th id="113">113</th><td>    <b>else</b></td></tr>
+<tr><th id="114">114</th><td>    {</td></tr>
+<tr><th id="115">115</th><td>        BOOST_UNREACHABLE_RETURN(first);</td></tr>
+<tr><th id="116">116</th><td>    }</td></tr>
+<tr><th id="117">117</th><td></td></tr>
+<tr><th id="118">118</th><td>    <b>return</b> { first + offset, std::errc() };</td></tr>
+<tr><th id="119">119</th><td>}</td></tr>
+<tr><th id="120">120</th><td></td></tr>
+<tr><th id="121">121</th><td><u>#<span data-ppcond="53">endif</span> // BOOST_CHARCONV_LDBL_BITS == 128</u></td></tr>
+<tr><th id="122">122</th><td></td></tr>
+<tr><th id="123">123</th><td><u>#<span data-ppcond="123">ifdef</span> <span class="macro" data-ref="_M/BOOST_CHARCONV_HAS_FLOAT128">BOOST_CHARCONV_HAS_FLOAT128</span></u></td></tr>
+<tr><th id="124">124</th><td></td></tr>
+<tr><th id="125">125</th><td><i>// GCC-5 evaluates the following specialization for other types</i></td></tr>
+<tr><th id="126">126</th><td><u>#if defined(__GNUC__) &amp;&amp; __GNUC__ == 5</u></td></tr>
+<tr><th id="127">127</th><td><u># pragma GCC diagnostic push</u></td></tr>
+<tr><th id="128">128</th><td><u># pragma GCC diagnostic ignored "-Wfloat-conversion"</u></td></tr>
+<tr><th id="129">129</th><td><u>#endif</u></td></tr>
+<tr><th id="130">130</th><td></td></tr>
+<tr><th id="131">131</th><td><b>template</b> &lt;&gt;</td></tr>
+<tr><th id="132">132</th><td><b>inline</b> to_chars_result to_chars_nonfinite&lt;<b>__float128</b>&gt;(<em>char</em>* first, <em>char</em>* last, <b>__float128</b> value, <em>int</em> classification) <b>noexcept</b></td></tr>
+<tr><th id="133">133</th><td>{</td></tr>
+<tr><th id="134">134</th><td>    std::ptrdiff_t offset {};</td></tr>
+<tr><th id="135">135</th><td>    std::ptrdiff_t buffer_size = last - first;</td></tr>
+<tr><th id="136">136</th><td></td></tr>
+<tr><th id="137">137</th><td>    IEEEbinary128 bits;</td></tr>
+<tr><th id="138">138</th><td>    std::memcpy(&amp;bits, &amp;value, <b>sizeof</b>(value));</td></tr>
+<tr><th id="139">139</th><td>    <em>const</em> <em>bool</em> is_negative = bits.sign;</td></tr>
+<tr><th id="140">140</th><td></td></tr>
+<tr><th id="141">141</th><td>    <b>if</b> (classification == FP_NAN)</td></tr>
+<tr><th id="142">142</th><td>    {</td></tr>
+<tr><th id="143">143</th><td>        <em>const</em> <em>bool</em> is_signaling = issignaling(value);</td></tr>
+<tr><th id="144">144</th><td></td></tr>
+<tr><th id="145">145</th><td>        <b>if</b> (is_negative)</td></tr>
+<tr><th id="146">146</th><td>        {</td></tr>
+<tr><th id="147">147</th><td>            *first++ = <kbd>'-'</kbd>;</td></tr>
+<tr><th id="148">148</th><td>        }</td></tr>
+<tr><th id="149">149</th><td></td></tr>
+<tr><th id="150">150</th><td>        <b>if</b> (is_signaling &amp;&amp; buffer_size &gt;= (<var>9</var> + <b>static_cast</b>&lt;<em>int</em>&gt;(is_negative)))</td></tr>
+<tr><th id="151">151</th><td>        {</td></tr>
+<tr><th id="152">152</th><td>            std::memcpy(first, <q>"nan(snan)"</q>, <var>9</var>);</td></tr>
+<tr><th id="153">153</th><td>            offset = <var>9</var> + <b>static_cast</b>&lt;<em>int</em>&gt;(is_negative);</td></tr>
+<tr><th id="154">154</th><td>        }</td></tr>
+<tr><th id="155">155</th><td>        <b>else</b> <b>if</b> (is_negative &amp;&amp; buffer_size &gt;= <var>9</var>)</td></tr>
+<tr><th id="156">156</th><td>        {</td></tr>
+<tr><th id="157">157</th><td>            std::memcpy(first, <q>"nan(ind)"</q>, <var>8</var>);</td></tr>
+<tr><th id="158">158</th><td>            offset = <var>8</var>;</td></tr>
+<tr><th id="159">159</th><td>        }</td></tr>
+<tr><th id="160">160</th><td>        <b>else</b> <b>if</b> (!is_negative &amp;&amp; !is_signaling &amp;&amp; buffer_size &gt;= <var>3</var>)</td></tr>
+<tr><th id="161">161</th><td>        {</td></tr>
+<tr><th id="162">162</th><td>            std::memcpy(first, <q>"nan"</q>, <var>3</var>);</td></tr>
+<tr><th id="163">163</th><td>            offset = <var>3</var>;</td></tr>
+<tr><th id="164">164</th><td>        }</td></tr>
+<tr><th id="165">165</th><td>        <b>else</b></td></tr>
+<tr><th id="166">166</th><td>        {</td></tr>
+<tr><th id="167">167</th><td>            <i>// Avoid buffer overflow</i></td></tr>
+<tr><th id="168">168</th><td>            <b>return</b> { first, std::errc::value_too_large };</td></tr>
+<tr><th id="169">169</th><td>        }</td></tr>
+<tr><th id="170">170</th><td></td></tr>
+<tr><th id="171">171</th><td>    }</td></tr>
+<tr><th id="172">172</th><td>    <b>else</b> <b>if</b> (classification == FP_INFINITE)</td></tr>
+<tr><th id="173">173</th><td>    {</td></tr>
+<tr><th id="174">174</th><td>        <b>if</b> (is_negative &amp;&amp; buffer_size &gt;= <var>4</var>)</td></tr>
+<tr><th id="175">175</th><td>        {</td></tr>
+<tr><th id="176">176</th><td>            std::memcpy(first, <q>"-inf"</q>, <var>4</var>);</td></tr>
+<tr><th id="177">177</th><td>            offset = <var>4</var>;</td></tr>
+<tr><th id="178">178</th><td>        }</td></tr>
+<tr><th id="179">179</th><td>        <b>else</b> <b>if</b> (!is_negative &amp;&amp; buffer_size &gt;= <var>3</var>)</td></tr>
+<tr><th id="180">180</th><td>        {</td></tr>
+<tr><th id="181">181</th><td>            std::memcpy(first, <q>"inf"</q>, <var>3</var>);</td></tr>
+<tr><th id="182">182</th><td>            offset = <var>3</var>;</td></tr>
+<tr><th id="183">183</th><td>        }</td></tr>
+<tr><th id="184">184</th><td>        <b>else</b></td></tr>
+<tr><th id="185">185</th><td>        {</td></tr>
+<tr><th id="186">186</th><td>            <i>// Avoid buffer overflow</i></td></tr>
+<tr><th id="187">187</th><td>            <b>return</b> { first, std::errc::value_too_large };</td></tr>
+<tr><th id="188">188</th><td>        }</td></tr>
+<tr><th id="189">189</th><td>    }</td></tr>
+<tr><th id="190">190</th><td>    <b>else</b></td></tr>
+<tr><th id="191">191</th><td>    {</td></tr>
+<tr><th id="192">192</th><td>        BOOST_UNREACHABLE_RETURN(first);</td></tr>
+<tr><th id="193">193</th><td>    }</td></tr>
+<tr><th id="194">194</th><td></td></tr>
+<tr><th id="195">195</th><td>    <b>return</b> { first + offset, std::errc() };</td></tr>
+<tr><th id="196">196</th><td>}</td></tr>
+<tr><th id="197">197</th><td></td></tr>
+<tr><th id="198">198</th><td><u>#if defined(__GNUC__) &amp;&amp; __GNUC__ == 5</u></td></tr>
+<tr><th id="199">199</th><td><u># pragma GCC diagnostic pop</u></td></tr>
+<tr><th id="200">200</th><td><u>#endif</u></td></tr>
+<tr><th id="201">201</th><td></td></tr>
+<tr><th id="202">202</th><td><u>#<span data-ppcond="123">endif</span> // BOOST_CHARCONV_HAS_FLOAT128</u></td></tr>
+<tr><th id="203">203</th><td></td></tr>
+<tr><th id="204">204</th><td><b>template</b> &lt;<b>typename</b> Unsigned_Integer, <b>typename</b> Real, <b>typename</b> <span class="namespace">std::</span><a class="type" href="../../../../include/c++/9/type_traits.html#std::enable_if" title='std::enable_if' data-ref="std::enable_if">enable_if</a>&lt;!<span class="namespace">std::</span><a class="type" href="../../../../include/c++/9/type_traits.html#std::is_same" title='std::is_same' data-ref="std::is_same">is_same</a>&lt;Unsigned_Integer, <a class="type" href="../include/boost/charconv/detail/emulated128.hpp.html#boost::charconv::detail::uint128" title='boost::charconv::detail::uint128' data-ref="boost::charconv::detail::uint128">uint128</a>&gt;::value, <em>bool</em>&gt;::type = <b>true</b>&gt;</td></tr>
+<tr><th id="205">205</th><td>Unsigned_Integer <dfn class="decl def fn" id="_ZN5boost8charconv6detail13convert_valueET0_" title='boost::charconv::detail::convert_value' data-ref="_ZN5boost8charconv6detail13convert_valueET0_">convert_value</dfn>(Real <dfn class="local col0 decl" id="480value" title='value' data-type='Real' data-ref="480value">value</dfn>) <b>noexcept</b></td></tr>
+<tr><th id="206">206</th><td>{</td></tr>
+<tr><th id="207">207</th><td>    Unsigned_Integer <dfn class="local col1 decl" id="481temp" title='temp' data-type='Unsigned_Integer' data-ref="481temp">temp</dfn>;</td></tr>
+<tr><th id="208">208</th><td>    <span class="namespace">std::</span><a class="ref fn" href="../../../../include/string.h.html#memcpy" title='memcpy' data-ref="memcpy">memcpy</a>(<span class='inlayHint'>dest:&nbsp;</span>&amp;<a class="local col1 ref" href="#481temp" title='temp' data-ref="481temp">temp</a>, <span class='inlayHint'>src:&nbsp;</span>&amp;<a class="local col0 ref" href="#480value" title='value' data-ref="480value">value</a>, <span class='inlayHint'>n:&nbsp;</span><b>sizeof</b>(Real));</td></tr>
+<tr><th id="209">209</th><td>    <b>return</b> <a class="local col1 ref" href="#481temp" title='temp' data-ref="481temp">temp</a>;</td></tr>
+<tr><th id="210">210</th><td>}</td></tr>
+<tr><th id="211">211</th><td></td></tr>
+<tr><th id="212">212</th><td><b>template</b> &lt;<b>typename</b> Unsigned_Integer, <b>typename</b> Real, <b>typename</b> <span class="namespace">std::</span><a class="type" href="../../../../include/c++/9/type_traits.html#std::enable_if" title='std::enable_if' data-ref="std::enable_if">enable_if</a>&lt;<span class="namespace">std::</span><a class="type" href="../../../../include/c++/9/type_traits.html#std::is_same" title='std::is_same' data-ref="std::is_same">is_same</a>&lt;Unsigned_Integer, <a class="type" href="../include/boost/charconv/detail/emulated128.hpp.html#boost::charconv::detail::uint128" title='boost::charconv::detail::uint128' data-ref="boost::charconv::detail::uint128">uint128</a>&gt;::value, <em>bool</em>&gt;::type = <b>true</b>&gt;</td></tr>
+<tr><th id="213">213</th><td>Unsigned_Integer <dfn class="decl def fn" id="_ZN5boost8charconv6detail13convert_valueET0_" title='boost::charconv::detail::convert_value' data-ref="_ZN5boost8charconv6detail13convert_valueET0_">convert_value</dfn>(Real <dfn class="local col2 decl" id="482value" title='value' data-type='Real' data-ref="482value">value</dfn>) <b>noexcept</b></td></tr>
+<tr><th id="214">214</th><td>{</td></tr>
+<tr><th id="215">215</th><td>    <a class="type" href="../include/boost/charconv/detail/emulated128.hpp.html#boost::charconv::detail::trivial_uint128" title='boost::charconv::detail::trivial_uint128' data-ref="boost::charconv::detail::trivial_uint128">trivial_uint128</a> <a class="ref fn fake" href="../include/boost/charconv/detail/emulated128.hpp.html#28" title='boost::charconv::detail::trivial_uint128::trivial_uint128' data-ref="_ZN5boost8charconv6detail15trivial_uint128C1Ev"></a><dfn class="local col3 decl" id="483trivial_bits" title='trivial_bits' data-type='boost::charconv::detail::trivial_uint128' data-ref="483trivial_bits">trivial_bits</dfn>; <i>// NOLINT : Does not need to be init since we memcpy the next step</i></td></tr>
+<tr><th id="216">216</th><td>    <span class="namespace">std::</span><a class="ref fn" href="../../../../include/string.h.html#memcpy" title='memcpy' data-ref="memcpy">memcpy</a>(<span class='inlayHint'>dest:&nbsp;</span>&amp;<a class="local col3 ref" href="#483trivial_bits" title='trivial_bits' data-ref="483trivial_bits">trivial_bits</a>, <span class='inlayHint'>src:&nbsp;</span>&amp;<a class="local col2 ref" href="#482value" title='value' data-ref="482value">value</a>, <span class='inlayHint'>n:&nbsp;</span><b>sizeof</b>(Real));</td></tr>
+<tr><th id="217">217</th><td>    Unsigned_Integer <dfn class="local col4 decl" id="484temp" title='temp' data-type='Unsigned_Integer' data-ref="484temp">temp</dfn> {<a class="local col3 ref" href="#483trivial_bits" title='trivial_bits' data-ref="483trivial_bits">trivial_bits</a>};</td></tr>
+<tr><th id="218">218</th><td>    <b>return</b> <a class="local col4 ref" href="#484temp" title='temp' data-ref="484temp">temp</a>;</td></tr>
+<tr><th id="219">219</th><td>}</td></tr>
+<tr><th id="220">220</th><td><u>#<span data-ppcond="220">ifdef</span> <span class="macro" data-ref="_M/BOOST_MSVC">BOOST_MSVC</span></u></td></tr>
+<tr><th id="221">221</th><td><u># pragma warning(push)</u></td></tr>
+<tr><th id="222">222</th><td><u># pragma warning(disable: 4127) // Conditional expression is constant (BOOST_IF_CONSTEXPR in pre-C++17 modes)</u></td></tr>
+<tr><th id="223">223</th><td><u>#<span data-ppcond="220">endif</span></u></td></tr>
+<tr><th id="224">224</th><td></td></tr>
+<tr><th id="225">225</th><td><b>template</b> &lt;<b>typename</b> Real, <b>typename</b> Unsigned_Integer&gt;</td></tr>
+<tr><th id="226">226</th><td><b>inline</b> <span class="namespace">std::</span>uint64_t <dfn class="decl def fn" id="_ZN5boost8charconv6detail11extract_expET_T0_i" title='boost::charconv::detail::extract_exp' data-ref="_ZN5boost8charconv6detail11extract_expET_T0_i">extract_exp</dfn>(Real, Unsigned_Integer <dfn class="local col5 decl" id="485uint_value" title='uint_value' data-type='Unsigned_Integer' data-ref="485uint_value">uint_value</dfn>, <em>int</em> <dfn class="local col6 decl" id="486significand_bits" title='significand_bits' data-type='int' data-ref="486significand_bits">significand_bits</dfn>) <b>noexcept</b></td></tr>
+<tr><th id="227">227</th><td>{</td></tr>
+<tr><th id="228">228</th><td>    <b>return</b> <b>static_cast</b>&lt;<span class="namespace">std::</span>uint64_t&gt;(<a class="local col5 ref" href="#485uint_value" title='uint_value' data-ref="485uint_value">uint_value</a> &gt;&gt; <a class="local col6 ref" href="#486significand_bits" title='significand_bits' data-ref="486significand_bits">significand_bits</a>);</td></tr>
+<tr><th id="229">229</th><td>}</td></tr>
+<tr><th id="230">230</th><td></td></tr>
+<tr><th id="231">231</th><td><u>#<span data-ppcond="231">if</span> <a class="macro" href="../include/boost/charconv/detail/bit_layouts.hpp.html#66" title="80" data-ref="_M/BOOST_CHARCONV_LDBL_BITS">BOOST_CHARCONV_LDBL_BITS</a> == 80</u></td></tr>
+<tr><th id="232">232</th><td></td></tr>
+<tr><th id="233">233</th><td><i>// In the 80-bit long double case we need to ignore the pad on top of the high bits</i></td></tr>
+<tr><th id="234">234</th><td><i>// and the 64-bits of significand in the low bits</i></td></tr>
+<tr><th id="235">235</th><td><i>// This is easiest to accomplish with a mask rather than all kinds of shifting</i></td></tr>
+<tr><th id="236">236</th><td><b>template</b> &lt;&gt;</td></tr>
+<tr><th id="237">237</th><td><b>inline</b> <span class="namespace">std::</span>uint64_t <dfn class="decl def fn" id="_ZN5boost8charconv6detail11extract_expET_T0_i" title='boost::charconv::detail::extract_exp' data-ref="_ZN5boost8charconv6detail11extract_expET_T0_i">extract_exp</dfn>&lt;<em>long</em> <em>double</em>, <a class="type" href="../include/boost/charconv/detail/emulated128.hpp.html#boost::charconv::detail::uint128" title='boost::charconv::detail::uint128' data-ref="boost::charconv::detail::uint128">uint128</a>&gt;(<em>long</em> <em>double</em>, <a class="type" href="../include/boost/charconv/detail/emulated128.hpp.html#boost::charconv::detail::uint128" title='boost::charconv::detail::uint128' data-ref="boost::charconv::detail::uint128">uint128</a> <dfn class="local col7 decl" id="487uint_value" title='uint_value' data-type='boost::charconv::detail::uint128' data-ref="487uint_value">uint_value</dfn>, <em>int</em>) <b>noexcept</b></td></tr>
+<tr><th id="238">238</th><td>{</td></tr>
+<tr><th id="239">239</th><td></td></tr>
+<tr><th id="240">240</th><td>    <b>constexpr</b> <em>auto</em> <dfn class="local col8 decl" id="488exp_mask" title='exp_mask' data-type='const boost::charconv::detail::uint128' data-ref="488exp_mask">exp_mask</dfn> = <a class="type" href="../include/boost/charconv/detail/emulated128.hpp.html#boost::charconv::detail::uint128" title='boost::charconv::detail::uint128' data-ref="boost::charconv::detail::uint128">uint128</a><a class="ref fn" href="../include/boost/charconv/detail/emulated128.hpp.html#_ZN5boost8charconv6detail7uint128C1Emm" title='boost::charconv::detail::uint128::uint128' data-ref="_ZN5boost8charconv6detail7uint128C1Emm">{</a><a class="macro" href="../../../../include/stdint.h.html#262" title="0x7FFFUL" data-ref="_M/UINT64_C">UINT64_C</a>(<var>0x7FFF</var>), <a class="macro" href="../../../../include/stdint.h.html#262" title="0UL" data-ref="_M/UINT64_C">UINT64_C</a>(<var>0</var>)};</td></tr>
+<tr><th id="241">241</th><td>    <em>auto</em> <dfn class="local col9 decl" id="489exponent" title='exponent' data-type='boost::charconv::detail::uint128' data-ref="489exponent">exponent</dfn> = <a class="ref fn fake" href="../include/boost/charconv/detail/emulated128.hpp.html#_ZN5boost8charconv6detail7uint128C1ERKS2_" title='boost::charconv::detail::uint128::uint128' data-ref="_ZN5boost8charconv6detail7uint128C1ERKS2_"></a><a class="local col7 ref" href="#487uint_value" title='uint_value' data-ref="487uint_value">uint_value</a> <a class="ref fn" href="../include/boost/charconv/detail/emulated128.hpp.html#_ZN5boost8charconv6detailanENS1_7uint128ES2_" title='boost::charconv::detail::operator&amp;' data-ref="_ZN5boost8charconv6detailanENS1_7uint128ES2_">&amp;</a> <a class="ref fn fake" href="../include/boost/charconv/detail/emulated128.hpp.html#_ZN5boost8charconv6detail7uint128C1ERKS2_" title='boost::charconv::detail::uint128::uint128' data-ref="_ZN5boost8charconv6detail7uint128C1ERKS2_"></a><a class="local col8 ref" href="#488exp_mask" title='exp_mask' data-ref="488exp_mask">exp_mask</a>;</td></tr>
+<tr><th id="242">242</th><td>    <b>return</b> <a class="local col9 ref" href="#489exponent" title='exponent' data-ref="489exponent">exponent</a>.<a class="ref field" href="../include/boost/charconv/detail/emulated128.hpp.html#boost::charconv::detail::uint128::high" title='boost::charconv::detail::uint128::high' data-ref="boost::charconv::detail::uint128::high">high</a>;</td></tr>
+<tr><th id="243">243</th><td>}</td></tr>
+<tr><th id="244">244</th><td></td></tr>
+<tr><th id="245">245</th><td><u>#<span data-ppcond="231">endif</span></u></td></tr>
+<tr><th id="246">246</th><td></td></tr>
+<tr><th id="247">247</th><td><b>template</b> &lt;<b>typename</b> Real&gt;</td></tr>
+<tr><th id="248">248</th><td><a class="type" href="../include/boost/charconv/detail/to_chars_result.hpp.html#boost::charconv::to_chars_result" title='boost::charconv::to_chars_result' data-ref="boost::charconv::to_chars_result">to_chars_result</a> <dfn class="decl def fn" id="_ZN5boost8charconv6detail12to_chars_hexEPcS2_T_i" title='boost::charconv::detail::to_chars_hex' data-ref="_ZN5boost8charconv6detail12to_chars_hexEPcS2_T_i">to_chars_hex</dfn>(<em>char</em>* <dfn class="local col0 decl" id="490first" title='first' data-type='char *' data-ref="490first">first</dfn>, <em>char</em>* <dfn class="local col1 decl" id="491last" title='last' data-type='char *' data-ref="491last">last</dfn>, Real <dfn class="local col2 decl" id="492value" title='value' data-type='Real' data-ref="492value">value</dfn>, <em>int</em> <dfn class="local col3 decl" id="493precision" title='precision' data-type='int' data-ref="493precision">precision</dfn>) <b>noexcept</b></td></tr>
+<tr><th id="249">249</th><td>{</td></tr>
+<tr><th id="250">250</th><td>    <i>// Sanity check our bounds</i></td></tr>
+<tr><th id="251">251</th><td>    <em>const</em> <span class="namespace">std::</span><a class="typedef" href="../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::ptrdiff_t" title='std::ptrdiff_t' data-type='long' data-ref="std::ptrdiff_t">ptrdiff_t</a> <dfn class="local col4 decl" id="494buffer_size" title='buffer_size' data-type='const std::ptrdiff_t' data-ref="494buffer_size">buffer_size</dfn> = <a class="local col1 ref" href="#491last" title='last' data-ref="491last">last</a> - <a class="local col0 ref" href="#490first" title='first' data-ref="490first">first</a>;</td></tr>
+<tr><th id="252">252</th><td>    <em>auto</em> <dfn class="local col5 decl" id="495real_precision" title='real_precision' data-type='auto' data-ref="495real_precision">real_precision</dfn> = get_real_precision&lt;Real&gt;(<a class="local col3 ref" href="#493precision" title='precision' data-ref="493precision">precision</a>);</td></tr>
+<tr><th id="253">253</th><td></td></tr>
+<tr><th id="254">254</th><td>    <b>if</b> (<a class="local col3 ref" href="#493precision" title='precision' data-ref="493precision">precision</a> != -<var>1</var>)</td></tr>
+<tr><th id="255">255</th><td>    {</td></tr>
+<tr><th id="256">256</th><td>        <a class="local col5 ref" href="#495real_precision" title='real_precision' data-ref="495real_precision">real_precision</a> = <a class="local col3 ref" href="#493precision" title='precision' data-ref="493precision">precision</a>;</td></tr>
+<tr><th id="257">257</th><td>    }</td></tr>
+<tr><th id="258">258</th><td></td></tr>
+<tr><th id="259">259</th><td>    <b>if</b> (<a class="local col4 ref" href="#494buffer_size" title='buffer_size' data-ref="494buffer_size">buffer_size</a> &lt; <a class="local col5 ref" href="#495real_precision" title='real_precision' data-ref="495real_precision">real_precision</a> || <a class="local col0 ref" href="#490first" title='first' data-ref="490first">first</a> &gt; <a class="local col1 ref" href="#491last" title='last' data-ref="491last">last</a>)</td></tr>
+<tr><th id="260">260</th><td>    {</td></tr>
+<tr><th id="261">261</th><td>        <b>return</b> {<span class='inlayHint'>.ptr:&nbsp;</span><a class="local col1 ref" href="#491last" title='last' data-ref="491last">last</a>, <span class='inlayHint'>.ec:&nbsp;</span><span class="namespace">std::</span><a class="type" href="../../../../include/x86_64-linux-gnu/c++/9/bits/error_constants.h.html#std::errc" title='std::errc' data-ref="std::errc">errc</a>::<a class="enum" href="../../../../include/x86_64-linux-gnu/c++/9/bits/error_constants.h.html#std::errc::value_too_large" title='std::errc::value_too_large' data-ref="std::errc::value_too_large">value_too_large</a>};</td></tr>
+<tr><th id="262">262</th><td>    }</td></tr>
+<tr><th id="263">263</th><td></td></tr>
+<tr><th id="264">264</th><td>    <i>// Extract the significand and the exponent</i></td></tr>
+<tr><th id="265">265</th><td>    <b>using</b> <dfn class="local col6 typedef" id="496type_layout" title='type_layout' data-type='typename std::conditional&lt;std::is_same&lt;Real, float&gt;::value, ieee754_binary32, typename std::conditional&lt;std::is_same&lt;Real, double&gt;::value, ieee754_binary64, ieee754_binary80&gt;::type&gt;::type' data-ref="496type_layout">type_layout</dfn> = <b>typename</b> <span class="namespace">std::</span><a class="type" href="../../../../include/c++/9/type_traits.html#std::conditional" title='std::conditional' data-ref="std::conditional">conditional</a>&lt;<span class="namespace">std::</span><a class="type" href="../../../../include/c++/9/type_traits.html#std::is_same" title='std::is_same' data-ref="std::is_same">is_same</a>&lt;Real, <em>float</em>&gt;::value, <a class="type" href="../include/boost/charconv/detail/bit_layouts.hpp.html#boost::charconv::detail::ieee754_binary32" title='boost::charconv::detail::ieee754_binary32' data-ref="boost::charconv::detail::ieee754_binary32">ieee754_binary32</a>,</td></tr>
+<tr><th id="266">266</th><td>            <b>typename</b> <span class="namespace">std::</span><a class="type" href="../../../../include/c++/9/type_traits.html#std::conditional" title='std::conditional' data-ref="std::conditional">conditional</a>&lt;<span class="namespace">std::</span><a class="type" href="../../../../include/c++/9/type_traits.html#std::is_same" title='std::is_same' data-ref="std::is_same">is_same</a>&lt;Real, <em>double</em>&gt;::value, <a class="type" href="../include/boost/charconv/detail/bit_layouts.hpp.html#boost::charconv::detail::ieee754_binary64" title='boost::charconv::detail::ieee754_binary64' data-ref="boost::charconv::detail::ieee754_binary64">ieee754_binary64</a>,</td></tr>
+<tr><th id="267">267</th><td>                    <u>#<span data-ppcond="267">ifdef</span> <span class="macro" data-ref="_M/BOOST_CHARCONV_HAS_FLOAT128">BOOST_CHARCONV_HAS_FLOAT128</span></u></td></tr>
+<tr><th id="268">268</th><td>                    <b>typename</b> std::conditional&lt;std::is_same&lt;Real, <b>__float128</b>&gt;::value || BOOST_CHARCONV_LDBL_BITS == <var>128</var>, ieee754_binary128, ieee754_binary80&gt;::type</td></tr>
+<tr><th id="269">269</th><td>                    <u>#<span data-ppcond="267">elif</span> <a class="macro" href="../include/boost/charconv/detail/bit_layouts.hpp.html#66" title="80" data-ref="_M/BOOST_CHARCONV_LDBL_BITS">BOOST_CHARCONV_LDBL_BITS</a> == 128</u></td></tr>
+<tr><th id="270">270</th><td>                    ieee754_binary128</td></tr>
+<tr><th id="271">271</th><td>                    <u>#<span data-ppcond="267">elif</span> <a class="macro" href="../include/boost/charconv/detail/bit_layouts.hpp.html#66" title="80" data-ref="_M/BOOST_CHARCONV_LDBL_BITS">BOOST_CHARCONV_LDBL_BITS</a> == 80</u></td></tr>
+<tr><th id="272">272</th><td>                    <a class="type" href="../include/boost/charconv/detail/bit_layouts.hpp.html#boost::charconv::detail::ieee754_binary80" title='boost::charconv::detail::ieee754_binary80' data-ref="boost::charconv::detail::ieee754_binary80">ieee754_binary80</a></td></tr>
+<tr><th id="273">273</th><td>                    <u>#<span data-ppcond="267">else</span></u></td></tr>
+<tr><th id="274">274</th><td>                    ieee754_binary64</td></tr>
+<tr><th id="275">275</th><td>                    <u>#<span data-ppcond="267">endif</span></u></td></tr>
+<tr><th id="276">276</th><td>            &gt;::type&gt;::type;</td></tr>
+<tr><th id="277">277</th><td></td></tr>
+<tr><th id="278">278</th><td>    <b>using</b> <dfn class="local col7 typedef" id="497Unsigned_Integer" title='Unsigned_Integer' data-type='typename std::conditional&lt;std::is_same&lt;Real, float&gt;::value, std::uint32_t, typename std::conditional&lt;std::is_same&lt;Real, double&gt;::value, std::uint64_t, uint128&gt;::type&gt;::type' data-ref="497Unsigned_Integer">Unsigned_Integer</dfn> = <b>typename</b> <span class="namespace">std::</span><a class="type" href="../../../../include/c++/9/type_traits.html#std::conditional" title='std::conditional' data-ref="std::conditional">conditional</a>&lt;<span class="namespace">std::</span><a class="type" href="../../../../include/c++/9/type_traits.html#std::is_same" title='std::is_same' data-ref="std::is_same">is_same</a>&lt;Real, <em>float</em>&gt;::value, <span class="namespace">std::</span>uint32_t,</td></tr>
+<tr><th id="279">279</th><td>            <b>typename</b> <span class="namespace">std::</span><a class="type" href="../../../../include/c++/9/type_traits.html#std::conditional" title='std::conditional' data-ref="std::conditional">conditional</a>&lt;<span class="namespace">std::</span><a class="type" href="../../../../include/c++/9/type_traits.html#std::is_same" title='std::is_same' data-ref="std::is_same">is_same</a>&lt;Real, <em>double</em>&gt;::value, <span class="namespace">std::</span>uint64_t, <a class="type" href="../include/boost/charconv/detail/emulated128.hpp.html#boost::charconv::detail::uint128" title='boost::charconv::detail::uint128' data-ref="boost::charconv::detail::uint128">uint128</a>&gt;::type&gt;::type;</td></tr>
+<tr><th id="280">280</th><td></td></tr>
+<tr><th id="281">281</th><td></td></tr>
+<tr><th id="282">282</th><td>    <a class="local col7 typedef" href="#497Unsigned_Integer" title='Unsigned_Integer' data-type='typename std::conditional&lt;std::is_same&lt;Real, float&gt;::value, std::uint32_t, typename std::conditional&lt;std::is_same&lt;Real, double&gt;::value, std::uint64_t, uint128&gt;::type&gt;::type' data-ref="497Unsigned_Integer">Unsigned_Integer</a> <dfn class="local col8 decl" id="498uint_value" title='uint_value' data-type='Unsigned_Integer' data-ref="498uint_value">uint_value</dfn> {convert_value&lt;<a class="local col7 typedef" href="#497Unsigned_Integer" title='Unsigned_Integer' data-type='typename std::conditional&lt;std::is_same&lt;Real, float&gt;::value, std::uint32_t, typename std::conditional&lt;std::is_same&lt;Real, double&gt;::value, std::uint64_t, uint128&gt;::type&gt;::type' data-ref="497Unsigned_Integer">Unsigned_Integer</a>&gt;(<a class="local col2 ref" href="#492value" title='value' data-ref="492value">value</a>)};</td></tr>
+<tr><th id="283">283</th><td></td></tr>
+<tr><th id="284">284</th><td>    <em>const</em> <a class="local col7 typedef" href="#497Unsigned_Integer" title='Unsigned_Integer' data-type='typename std::conditional&lt;std::is_same&lt;Real, float&gt;::value, std::uint32_t, typename std::conditional&lt;std::is_same&lt;Real, double&gt;::value, std::uint64_t, uint128&gt;::type&gt;::type' data-ref="497Unsigned_Integer">Unsigned_Integer</a> <dfn class="local col9 decl" id="499denorm_mask" title='denorm_mask' data-type='const Unsigned_Integer' data-ref="499denorm_mask">denorm_mask</dfn> = (<a class="local col7 typedef" href="#497Unsigned_Integer" title='Unsigned_Integer' data-type='typename std::conditional&lt;std::is_same&lt;Real, float&gt;::value, std::uint32_t, typename std::conditional&lt;std::is_same&lt;Real, double&gt;::value, std::uint64_t, uint128&gt;::type&gt;::type' data-ref="497Unsigned_Integer">Unsigned_Integer</a>(<var>1</var>) &lt;&lt; (<a class="local col6 typedef" href="#496type_layout" title='type_layout' data-type='typename std::conditional&lt;std::is_same&lt;Real, float&gt;::value, ieee754_binary32, typename std::conditional&lt;std::is_same&lt;Real, double&gt;::value, ieee754_binary64, ieee754_binary80&gt;::type&gt;::type' data-ref="496type_layout">type_layout</a>::significand_bits)) - <var>1</var>;</td></tr>
+<tr><th id="285">285</th><td>    <em>const</em> <a class="local col7 typedef" href="#497Unsigned_Integer" title='Unsigned_Integer' data-type='typename std::conditional&lt;std::is_same&lt;Real, float&gt;::value, std::uint32_t, typename std::conditional&lt;std::is_same&lt;Real, double&gt;::value, std::uint64_t, uint128&gt;::type&gt;::type' data-ref="497Unsigned_Integer">Unsigned_Integer</a> <dfn class="local col0 decl" id="500significand" title='significand' data-type='const Unsigned_Integer' data-ref="500significand">significand</dfn> = <a class="local col8 ref" href="#498uint_value" title='uint_value' data-ref="498uint_value">uint_value</a> &amp; <a class="local col9 ref" href="#499denorm_mask" title='denorm_mask' data-ref="499denorm_mask">denorm_mask</a>;</td></tr>
+<tr><th id="286">286</th><td>    <span class="namespace">std::</span>uint64_t <dfn class="local col1 decl" id="501exponent" title='exponent' data-type='std::uint64_t' data-ref="501exponent">exponent</dfn> = extract_exp(<a class="local col2 ref" href="#492value" title='value' data-ref="492value">value</a>, <a class="local col8 ref" href="#498uint_value" title='uint_value' data-ref="498uint_value">uint_value</a>, <a class="local col6 typedef" href="#496type_layout" title='type_layout' data-type='typename std::conditional&lt;std::is_same&lt;Real, float&gt;::value, ieee754_binary32, typename std::conditional&lt;std::is_same&lt;Real, double&gt;::value, ieee754_binary64, ieee754_binary80&gt;::type&gt;::type' data-ref="496type_layout">type_layout</a>::significand_bits);</td></tr>
+<tr><th id="287">287</th><td></td></tr>
+<tr><th id="288">288</th><td>    <a class="macro" href="../../config/include/boost/config/detail/suffix.hpp.html#1069" title="if" data-ref="_M/BOOST_IF_CONSTEXPR">BOOST_IF_CONSTEXPR</a> (!(<span class="namespace">std::</span><a class="type" href="../../../../include/c++/9/type_traits.html#std::is_same" title='std::is_same' data-ref="std::is_same">is_same</a>&lt;Real, <em>float</em>&gt;::value || <span class="namespace">std::</span><a class="type" href="../../../../include/c++/9/type_traits.html#std::is_same" title='std::is_same' data-ref="std::is_same">is_same</a>&lt;Real, <em>double</em>&gt;::value</td></tr>
+<tr><th id="289">289</th><td>                        <u>#<span data-ppcond="289">if</span> <a class="macro" href="../include/boost/charconv/detail/bit_layouts.hpp.html#66" title="80" data-ref="_M/BOOST_CHARCONV_LDBL_BITS">BOOST_CHARCONV_LDBL_BITS</a> == 80</u></td></tr>
+<tr><th id="290">290</th><td>                        || <span class="namespace">std::</span><a class="type" href="../../../../include/c++/9/type_traits.html#std::is_same" title='std::is_same' data-ref="std::is_same">is_same</a>&lt;Real, <em>long</em> <em>double</em>&gt;::value</td></tr>
+<tr><th id="291">291</th><td>                        <u>#<span data-ppcond="289">endif</span></u></td></tr>
+<tr><th id="292">292</th><td>                        ))</td></tr>
+<tr><th id="293">293</th><td>    {</td></tr>
+<tr><th id="294">294</th><td>        <a class="local col1 ref" href="#501exponent" title='exponent' data-ref="501exponent">exponent</a> += <var>2</var>;</td></tr>
+<tr><th id="295">295</th><td>    }</td></tr>
+<tr><th id="296">296</th><td></td></tr>
+<tr><th id="297">297</th><td>    <i>// Align the significand to the hexit boundaries (i.e. divisible by 4)</i></td></tr>
+<tr><th id="298">298</th><td>    <b>constexpr</b> <em>auto</em> <dfn class="local col2 decl" id="502hex_precision" title='hex_precision' data-type='const auto' data-ref="502hex_precision">hex_precision</dfn> = <span class="namespace">std::</span><a class="type" href="../../../../include/c++/9/type_traits.html#std::is_same" title='std::is_same' data-ref="std::is_same">is_same</a>&lt;Real, <em>float</em>&gt;::value ? <var>6</var> :</td></tr>
+<tr><th id="299">299</th><td>                                      <span class="namespace">std::</span><a class="type" href="../../../../include/c++/9/type_traits.html#std::is_same" title='std::is_same' data-ref="std::is_same">is_same</a>&lt;Real, <em>double</em>&gt;::value ? <var>13</var></td></tr>
+<tr><th id="300">300</th><td>                                      <u>#<span data-ppcond="300">if</span> <a class="macro" href="../include/boost/charconv/detail/bit_layouts.hpp.html#66" title="80" data-ref="_M/BOOST_CHARCONV_LDBL_BITS">BOOST_CHARCONV_LDBL_BITS</a> == 80</u></td></tr>
+<tr><th id="301">301</th><td>                                      : <span class="namespace">std::</span><a class="type" href="../../../../include/c++/9/type_traits.html#std::is_same" title='std::is_same' data-ref="std::is_same">is_same</a>&lt;Real, <em>long</em> <em>double</em>&gt;::value ? <var>15</var></td></tr>
+<tr><th id="302">302</th><td>                                      <u>#<span data-ppcond="300">endif</span></u></td></tr>
+<tr><th id="303">303</th><td>                                      : <var>28</var>;</td></tr>
+<tr><th id="304">304</th><td></td></tr>
+<tr><th id="305">305</th><td>    <b>constexpr</b> <em>auto</em> <dfn class="local col3 decl" id="503nibble_bits" title='nibble_bits' data-type='const int' data-ref="503nibble_bits">nibble_bits</dfn> = <span class="macro" title="8" data-ref="_M/CHAR_BIT">CHAR_BIT</span> / <var>2</var>;</td></tr>
+<tr><th id="306">306</th><td>    <b>constexpr</b> <em>auto</em> <dfn class="local col4 decl" id="504hex_bits" title='hex_bits' data-type='const auto' data-ref="504hex_bits">hex_bits</dfn> = <a class="local col2 ref" href="#502hex_precision" title='hex_precision' data-ref="502hex_precision">hex_precision</a> * <a class="local col3 ref" href="#503nibble_bits" title='nibble_bits' data-ref="503nibble_bits">nibble_bits</a>;</td></tr>
+<tr><th id="307">307</th><td>    <em>const</em> <a class="local col7 typedef" href="#497Unsigned_Integer" title='Unsigned_Integer' data-type='typename std::conditional&lt;std::is_same&lt;Real, float&gt;::value, std::uint32_t, typename std::conditional&lt;std::is_same&lt;Real, double&gt;::value, std::uint64_t, uint128&gt;::type&gt;::type' data-ref="497Unsigned_Integer">Unsigned_Integer</a> <dfn class="local col5 decl" id="505hex_mask" title='hex_mask' data-type='const Unsigned_Integer' data-ref="505hex_mask">hex_mask</dfn> = (<b>static_cast</b>&lt;<a class="local col7 typedef" href="#497Unsigned_Integer" title='Unsigned_Integer' data-type='typename std::conditional&lt;std::is_same&lt;Real, float&gt;::value, std::uint32_t, typename std::conditional&lt;std::is_same&lt;Real, double&gt;::value, std::uint64_t, uint128&gt;::type&gt;::type' data-ref="497Unsigned_Integer">Unsigned_Integer</a>&gt;(<var>1</var>) &lt;&lt; <a class="local col4 ref" href="#504hex_bits" title='hex_bits' data-ref="504hex_bits">hex_bits</a>) - <var>1</var>;</td></tr>
+<tr><th id="308">308</th><td></td></tr>
+<tr><th id="309">309</th><td>    <a class="local col7 typedef" href="#497Unsigned_Integer" title='Unsigned_Integer' data-type='typename std::conditional&lt;std::is_same&lt;Real, float&gt;::value, std::uint32_t, typename std::conditional&lt;std::is_same&lt;Real, double&gt;::value, std::uint64_t, uint128&gt;::type&gt;::type' data-ref="497Unsigned_Integer">Unsigned_Integer</a> <dfn class="local col6 decl" id="506aligned_significand" title='aligned_significand' data-type='Unsigned_Integer' data-ref="506aligned_significand">aligned_significand</dfn>;</td></tr>
+<tr><th id="310">310</th><td>    <a class="macro" href="../../config/include/boost/config/detail/suffix.hpp.html#1069" title="if" data-ref="_M/BOOST_IF_CONSTEXPR">BOOST_IF_CONSTEXPR</a> (<span class="namespace">std::</span><a class="type" href="../../../../include/c++/9/type_traits.html#std::is_same" title='std::is_same' data-ref="std::is_same">is_same</a>&lt;Real, <em>float</em>&gt;::value)</td></tr>
+<tr><th id="311">311</th><td>    {</td></tr>
+<tr><th id="312">312</th><td>        <a class="local col6 ref" href="#506aligned_significand" title='aligned_significand' data-ref="506aligned_significand">aligned_significand</a> = <a class="local col0 ref" href="#500significand" title='significand' data-ref="500significand">significand</a> &lt;&lt; <var>1</var>;</td></tr>
+<tr><th id="313">313</th><td>    }</td></tr>
+<tr><th id="314">314</th><td>    <b>else</b></td></tr>
+<tr><th id="315">315</th><td>    {</td></tr>
+<tr><th id="316">316</th><td>        <a class="local col6 ref" href="#506aligned_significand" title='aligned_significand' data-ref="506aligned_significand">aligned_significand</a> = <a class="local col0 ref" href="#500significand" title='significand' data-ref="500significand">significand</a>;</td></tr>
+<tr><th id="317">317</th><td>    }</td></tr>
+<tr><th id="318">318</th><td></td></tr>
+<tr><th id="319">319</th><td>    <i>// Adjust the exponent based on the bias as described in IEEE 754</i></td></tr>
+<tr><th id="320">320</th><td>    <span class="namespace">std::</span>int64_t <dfn class="local col7 decl" id="507unbiased_exponent" title='unbiased_exponent' data-type='std::int64_t' data-ref="507unbiased_exponent">unbiased_exponent</dfn>;</td></tr>
+<tr><th id="321">321</th><td>    <b>if</b> (<a class="local col1 ref" href="#501exponent" title='exponent' data-ref="501exponent">exponent</a> == <var>0</var> &amp;&amp; <a class="local col0 ref" href="#500significand" title='significand' data-ref="500significand">significand</a> != <var>0</var>)</td></tr>
+<tr><th id="322">322</th><td>    {</td></tr>
+<tr><th id="323">323</th><td>        <i>// Subnormal value since we already handled zero</i></td></tr>
+<tr><th id="324">324</th><td>        <a class="local col7 ref" href="#507unbiased_exponent" title='unbiased_exponent' data-ref="507unbiased_exponent">unbiased_exponent</a> = <var>1</var> + <a class="local col6 typedef" href="#496type_layout" title='type_layout' data-type='typename std::conditional&lt;std::is_same&lt;Real, float&gt;::value, ieee754_binary32, typename std::conditional&lt;std::is_same&lt;Real, double&gt;::value, ieee754_binary64, ieee754_binary80&gt;::type&gt;::type' data-ref="496type_layout">type_layout</a>::exponent_bias;</td></tr>
+<tr><th id="325">325</th><td>    }</td></tr>
+<tr><th id="326">326</th><td>    <b>else</b></td></tr>
+<tr><th id="327">327</th><td>    {</td></tr>
+<tr><th id="328">328</th><td>        <a class="local col6 ref" href="#506aligned_significand" title='aligned_significand' data-ref="506aligned_significand">aligned_significand</a> |= <b>static_cast</b>&lt;<a class="local col7 typedef" href="#497Unsigned_Integer" title='Unsigned_Integer' data-type='typename std::conditional&lt;std::is_same&lt;Real, float&gt;::value, std::uint32_t, typename std::conditional&lt;std::is_same&lt;Real, double&gt;::value, std::uint64_t, uint128&gt;::type&gt;::type' data-ref="497Unsigned_Integer">Unsigned_Integer</a>&gt;(<var>1</var>) &lt;&lt; <a class="local col4 ref" href="#504hex_bits" title='hex_bits' data-ref="504hex_bits">hex_bits</a>;</td></tr>
+<tr><th id="329">329</th><td>        <a class="local col7 ref" href="#507unbiased_exponent" title='unbiased_exponent' data-ref="507unbiased_exponent">unbiased_exponent</a> = <a class="local col1 ref" href="#501exponent" title='exponent' data-ref="501exponent">exponent</a> + <a class="local col6 typedef" href="#496type_layout" title='type_layout' data-type='typename std::conditional&lt;std::is_same&lt;Real, float&gt;::value, ieee754_binary32, typename std::conditional&lt;std::is_same&lt;Real, double&gt;::value, ieee754_binary64, ieee754_binary80&gt;::type&gt;::type' data-ref="496type_layout">type_layout</a>::exponent_bias;</td></tr>
+<tr><th id="330">330</th><td>    }</td></tr>
+<tr><th id="331">331</th><td></td></tr>
+<tr><th id="332">332</th><td>    <i>// Bounds check the exponent</i></td></tr>
+<tr><th id="333">333</th><td>    <a class="macro" href="../../config/include/boost/config/detail/suffix.hpp.html#1069" title="if" data-ref="_M/BOOST_IF_CONSTEXPR">BOOST_IF_CONSTEXPR</a> (<span class="namespace">std::</span><a class="type" href="../../../../include/c++/9/type_traits.html#std::is_same" title='std::is_same' data-ref="std::is_same">is_same</a>&lt;Real, <em>float</em>&gt;::value)</td></tr>
+<tr><th id="334">334</th><td>    {</td></tr>
+<tr><th id="335">335</th><td>        <b>if</b> (<a class="local col7 ref" href="#507unbiased_exponent" title='unbiased_exponent' data-ref="507unbiased_exponent">unbiased_exponent</a> &gt; <var>127</var>)</td></tr>
+<tr><th id="336">336</th><td>        {</td></tr>
+<tr><th id="337">337</th><td>            <a class="local col7 ref" href="#507unbiased_exponent" title='unbiased_exponent' data-ref="507unbiased_exponent">unbiased_exponent</a> -= <var>256</var>;</td></tr>
+<tr><th id="338">338</th><td>        }</td></tr>
+<tr><th id="339">339</th><td>    }</td></tr>
+<tr><th id="340">340</th><td>    <b>else</b> <a class="macro" href="../../config/include/boost/config/detail/suffix.hpp.html#1069" title="if" data-ref="_M/BOOST_IF_CONSTEXPR">BOOST_IF_CONSTEXPR</a> (<span class="namespace">std::</span><a class="type" href="../../../../include/c++/9/type_traits.html#std::is_same" title='std::is_same' data-ref="std::is_same">is_same</a>&lt;Real, <em>double</em>&gt;::value)</td></tr>
+<tr><th id="341">341</th><td>    {</td></tr>
+<tr><th id="342">342</th><td>        <b>if</b> (<a class="local col7 ref" href="#507unbiased_exponent" title='unbiased_exponent' data-ref="507unbiased_exponent">unbiased_exponent</a> &gt; <var>1023</var>)</td></tr>
+<tr><th id="343">343</th><td>        {</td></tr>
+<tr><th id="344">344</th><td>            <a class="local col7 ref" href="#507unbiased_exponent" title='unbiased_exponent' data-ref="507unbiased_exponent">unbiased_exponent</a> -= <var>2048</var>;</td></tr>
+<tr><th id="345">345</th><td>        }</td></tr>
+<tr><th id="346">346</th><td>    }</td></tr>
+<tr><th id="347">347</th><td>    <b>else</b> <a class="macro" href="../../config/include/boost/config/detail/suffix.hpp.html#1069" title="if" data-ref="_M/BOOST_IF_CONSTEXPR">BOOST_IF_CONSTEXPR</a> (<span class="namespace">std::</span><a class="type" href="../../../../include/c++/9/type_traits.html#std::is_same" title='std::is_same' data-ref="std::is_same">is_same</a>&lt;Real, <em>long</em> <em>double</em>&gt;::value)</td></tr>
+<tr><th id="348">348</th><td>    {</td></tr>
+<tr><th id="349">349</th><td>        <u>#<span data-ppcond="349">if</span> <a class="macro" href="../include/boost/charconv/detail/bit_layouts.hpp.html#66" title="80" data-ref="_M/BOOST_CHARCONV_LDBL_BITS">BOOST_CHARCONV_LDBL_BITS</a> == 80</u></td></tr>
+<tr><th id="350">350</th><td>        <b>while</b> (<a class="local col7 ref" href="#507unbiased_exponent" title='unbiased_exponent' data-ref="507unbiased_exponent">unbiased_exponent</a> &gt; <var>16383</var>)</td></tr>
+<tr><th id="351">351</th><td>        {</td></tr>
+<tr><th id="352">352</th><td>            <a class="local col7 ref" href="#507unbiased_exponent" title='unbiased_exponent' data-ref="507unbiased_exponent">unbiased_exponent</a> -= <var>32768</var>;</td></tr>
+<tr><th id="353">353</th><td>        }</td></tr>
+<tr><th id="354">354</th><td>        <a class="local col7 ref" href="#507unbiased_exponent" title='unbiased_exponent' data-ref="507unbiased_exponent">unbiased_exponent</a> -= <var>3</var>;</td></tr>
+<tr><th id="355">355</th><td>        <u>#<span data-ppcond="349">else</span></u></td></tr>
+<tr><th id="356">356</th><td>        <b>while</b> (unbiased_exponent &gt; <var>16383</var>)</td></tr>
+<tr><th id="357">357</th><td>        {</td></tr>
+<tr><th id="358">358</th><td>            unbiased_exponent -= <var>32768</var>;</td></tr>
+<tr><th id="359">359</th><td>        }</td></tr>
+<tr><th id="360">360</th><td>        <u>#<span data-ppcond="349">endif</span></u></td></tr>
+<tr><th id="361">361</th><td>    }</td></tr>
+<tr><th id="362">362</th><td>    <b>else</b></td></tr>
+<tr><th id="363">363</th><td>    {</td></tr>
+<tr><th id="364">364</th><td>        <b>while</b> (<a class="local col7 ref" href="#507unbiased_exponent" title='unbiased_exponent' data-ref="507unbiased_exponent">unbiased_exponent</a> &gt; <var>16383</var>)</td></tr>
+<tr><th id="365">365</th><td>        {</td></tr>
+<tr><th id="366">366</th><td>            <a class="local col7 ref" href="#507unbiased_exponent" title='unbiased_exponent' data-ref="507unbiased_exponent">unbiased_exponent</a> -= <var>32768</var>;</td></tr>
+<tr><th id="367">367</th><td>        }</td></tr>
+<tr><th id="368">368</th><td>    }</td></tr>
+<tr><th id="369">369</th><td></td></tr>
+<tr><th id="370">370</th><td>    <em>const</em> <span class="namespace">std::</span>uint32_t <dfn class="local col8 decl" id="508abs_unbiased_exponent" title='abs_unbiased_exponent' data-type='const std::uint32_t' data-ref="508abs_unbiased_exponent">abs_unbiased_exponent</dfn> = <a class="local col7 ref" href="#507unbiased_exponent" title='unbiased_exponent' data-ref="507unbiased_exponent">unbiased_exponent</a> &lt; <var>0</var> ? <b>static_cast</b>&lt;<span class="namespace">std::</span>uint32_t&gt;(-<a class="local col7 ref" href="#507unbiased_exponent" title='unbiased_exponent' data-ref="507unbiased_exponent">unbiased_exponent</a>) :</td></tr>
+<tr><th id="371">371</th><td>                                                <b>static_cast</b>&lt;<span class="namespace">std::</span>uint32_t&gt;(<a class="local col7 ref" href="#507unbiased_exponent" title='unbiased_exponent' data-ref="507unbiased_exponent">unbiased_exponent</a>);</td></tr>
+<tr><th id="372">372</th><td></td></tr>
+<tr><th id="373">373</th><td>    <i>// Bounds check</i></td></tr>
+<tr><th id="374">374</th><td>    <em>const</em> <span class="namespace">std::</span><a class="typedef" href="../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::ptrdiff_t" title='std::ptrdiff_t' data-type='long' data-ref="std::ptrdiff_t">ptrdiff_t</a> <dfn class="local col9 decl" id="509total_length" title='total_length' data-type='const std::ptrdiff_t' data-ref="509total_length">total_length</dfn> = total_buffer_length(<a class="local col5 ref" href="#495real_precision" title='real_precision' data-ref="495real_precision">real_precision</a>, <a class="local col8 ref" href="#508abs_unbiased_exponent" title='abs_unbiased_exponent' data-ref="508abs_unbiased_exponent">abs_unbiased_exponent</a>, (<a class="local col2 ref" href="#492value" title='value' data-ref="492value">value</a> &lt; <var>0</var>));</td></tr>
+<tr><th id="375">375</th><td>    <b>if</b> (<a class="local col9 ref" href="#509total_length" title='total_length' data-ref="509total_length">total_length</a> &gt; <a class="local col4 ref" href="#494buffer_size" title='buffer_size' data-ref="494buffer_size">buffer_size</a>)</td></tr>
+<tr><th id="376">376</th><td>    {</td></tr>
+<tr><th id="377">377</th><td>        <b>return</b> {<span class='inlayHint'>.ptr:&nbsp;</span><a class="local col1 ref" href="#491last" title='last' data-ref="491last">last</a>, <span class='inlayHint'>.ec:&nbsp;</span><span class="namespace">std::</span><a class="type" href="../../../../include/x86_64-linux-gnu/c++/9/bits/error_constants.h.html#std::errc" title='std::errc' data-ref="std::errc">errc</a>::<a class="enum" href="../../../../include/x86_64-linux-gnu/c++/9/bits/error_constants.h.html#std::errc::value_too_large" title='std::errc::value_too_large' data-ref="std::errc::value_too_large">value_too_large</a>};</td></tr>
+<tr><th id="378">378</th><td>    }</td></tr>
+<tr><th id="379">379</th><td></td></tr>
+<tr><th id="380">380</th><td>    <i>// Round if required</i></td></tr>
+<tr><th id="381">381</th><td>    <b>if</b> (<a class="local col5 ref" href="#495real_precision" title='real_precision' data-ref="495real_precision">real_precision</a> &lt; <a class="local col2 ref" href="#502hex_precision" title='hex_precision' data-ref="502hex_precision">hex_precision</a>)</td></tr>
+<tr><th id="382">382</th><td>    {</td></tr>
+<tr><th id="383">383</th><td>        <em>const</em> <em>int</em> <dfn class="local col0 decl" id="510lost_bits" title='lost_bits' data-type='const int' data-ref="510lost_bits">lost_bits</dfn> = (<a class="local col2 ref" href="#502hex_precision" title='hex_precision' data-ref="502hex_precision">hex_precision</a> - <a class="local col5 ref" href="#495real_precision" title='real_precision' data-ref="495real_precision">real_precision</a>) * <a class="local col3 ref" href="#503nibble_bits" title='nibble_bits' data-ref="503nibble_bits">nibble_bits</a>;</td></tr>
+<tr><th id="384">384</th><td>        <em>const</em> <a class="local col7 typedef" href="#497Unsigned_Integer" title='Unsigned_Integer' data-type='typename std::conditional&lt;std::is_same&lt;Real, float&gt;::value, std::uint32_t, typename std::conditional&lt;std::is_same&lt;Real, double&gt;::value, std::uint64_t, uint128&gt;::type&gt;::type' data-ref="497Unsigned_Integer">Unsigned_Integer</a> <dfn class="local col1 decl" id="511lsb_bit" title='lsb_bit' data-type='const Unsigned_Integer' data-ref="511lsb_bit">lsb_bit</dfn> = <a class="local col6 ref" href="#506aligned_significand" title='aligned_significand' data-ref="506aligned_significand">aligned_significand</a>;</td></tr>
+<tr><th id="385">385</th><td>        <em>const</em> <a class="local col7 typedef" href="#497Unsigned_Integer" title='Unsigned_Integer' data-type='typename std::conditional&lt;std::is_same&lt;Real, float&gt;::value, std::uint32_t, typename std::conditional&lt;std::is_same&lt;Real, double&gt;::value, std::uint64_t, uint128&gt;::type&gt;::type' data-ref="497Unsigned_Integer">Unsigned_Integer</a> <dfn class="local col2 decl" id="512round_bit" title='round_bit' data-type='const Unsigned_Integer' data-ref="512round_bit">round_bit</dfn> = <a class="local col6 ref" href="#506aligned_significand" title='aligned_significand' data-ref="506aligned_significand">aligned_significand</a> &lt;&lt; <var>1</var>;</td></tr>
+<tr><th id="386">386</th><td>        <em>const</em> <a class="local col7 typedef" href="#497Unsigned_Integer" title='Unsigned_Integer' data-type='typename std::conditional&lt;std::is_same&lt;Real, float&gt;::value, std::uint32_t, typename std::conditional&lt;std::is_same&lt;Real, double&gt;::value, std::uint64_t, uint128&gt;::type&gt;::type' data-ref="497Unsigned_Integer">Unsigned_Integer</a> <dfn class="local col3 decl" id="513tail_bit" title='tail_bit' data-type='const Unsigned_Integer' data-ref="513tail_bit">tail_bit</dfn> = <a class="local col2 ref" href="#512round_bit" title='round_bit' data-ref="512round_bit">round_bit</a> - <var>1</var>;</td></tr>
+<tr><th id="387">387</th><td>        <em>const</em> <a class="local col7 typedef" href="#497Unsigned_Integer" title='Unsigned_Integer' data-type='typename std::conditional&lt;std::is_same&lt;Real, float&gt;::value, std::uint32_t, typename std::conditional&lt;std::is_same&lt;Real, double&gt;::value, std::uint64_t, uint128&gt;::type&gt;::type' data-ref="497Unsigned_Integer">Unsigned_Integer</a> <dfn class="local col4 decl" id="514round" title='round' data-type='const Unsigned_Integer' data-ref="514round">round</dfn> = <a class="local col2 ref" href="#512round_bit" title='round_bit' data-ref="512round_bit">round_bit</a> &amp; (<a class="local col3 ref" href="#513tail_bit" title='tail_bit' data-ref="513tail_bit">tail_bit</a> | <a class="local col1 ref" href="#511lsb_bit" title='lsb_bit' data-ref="511lsb_bit">lsb_bit</a>) &amp; (<b>static_cast</b>&lt;<a class="local col7 typedef" href="#497Unsigned_Integer" title='Unsigned_Integer' data-type='typename std::conditional&lt;std::is_same&lt;Real, float&gt;::value, std::uint32_t, typename std::conditional&lt;std::is_same&lt;Real, double&gt;::value, std::uint64_t, uint128&gt;::type&gt;::type' data-ref="497Unsigned_Integer">Unsigned_Integer</a>&gt;(<var>1</var>) &lt;&lt; <a class="local col0 ref" href="#510lost_bits" title='lost_bits' data-ref="510lost_bits">lost_bits</a>);</td></tr>
+<tr><th id="388">388</th><td>        <a class="local col6 ref" href="#506aligned_significand" title='aligned_significand' data-ref="506aligned_significand">aligned_significand</a> += <a class="local col4 ref" href="#514round" title='round' data-ref="514round">round</a>;</td></tr>
+<tr><th id="389">389</th><td>    }</td></tr>
+<tr><th id="390">390</th><td></td></tr>
+<tr><th id="391">391</th><td>    <i>// Print the sign</i></td></tr>
+<tr><th id="392">392</th><td>    <b>if</b> (<a class="local col2 ref" href="#492value" title='value' data-ref="492value">value</a> &lt; <var>0</var>)</td></tr>
+<tr><th id="393">393</th><td>    {</td></tr>
+<tr><th id="394">394</th><td>        *<a class="local col0 ref" href="#490first" title='first' data-ref="490first">first</a>++ = <kbd>'-'</kbd>;</td></tr>
+<tr><th id="395">395</th><td>    }</td></tr>
+<tr><th id="396">396</th><td></td></tr>
+<tr><th id="397">397</th><td>    <i>// Print the integral part</i></td></tr>
+<tr><th id="398">398</th><td>    <u>#<span data-ppcond="398">if</span> <a class="macro" href="../include/boost/charconv/detail/bit_layouts.hpp.html#66" title="80" data-ref="_M/BOOST_CHARCONV_LDBL_BITS">BOOST_CHARCONV_LDBL_BITS</a> == 80</u></td></tr>
+<tr><th id="399">399</th><td>    <span class="namespace">std::</span>uint32_t <dfn class="local col5 decl" id="515leading_nibble" title='leading_nibble' data-type='std::uint32_t' data-ref="515leading_nibble">leading_nibble</dfn>;</td></tr>
+<tr><th id="400">400</th><td>    <a class="macro" href="../../config/include/boost/config/detail/suffix.hpp.html#1069" title="if" data-ref="_M/BOOST_IF_CONSTEXPR">BOOST_IF_CONSTEXPR</a> (<span class="namespace">std::</span><a class="type" href="../../../../include/c++/9/type_traits.html#std::is_same" title='std::is_same' data-ref="std::is_same">is_same</a>&lt;Real, <em>long</em> <em>double</em>&gt;::value)</td></tr>
+<tr><th id="401">401</th><td>    {</td></tr>
+<tr><th id="402">402</th><td>        <a class="local col5 ref" href="#515leading_nibble" title='leading_nibble' data-ref="515leading_nibble">leading_nibble</a> = <b>static_cast</b>&lt;<span class="namespace">std::</span>uint32_t&gt;(<a class="local col0 ref" href="#500significand" title='significand' data-ref="500significand">significand</a> &gt;&gt; <a class="local col4 ref" href="#504hex_bits" title='hex_bits' data-ref="504hex_bits">hex_bits</a>);</td></tr>
+<tr><th id="403">403</th><td>    }</td></tr>
+<tr><th id="404">404</th><td>    <b>else</b></td></tr>
+<tr><th id="405">405</th><td>    {</td></tr>
+<tr><th id="406">406</th><td>        <a class="local col5 ref" href="#515leading_nibble" title='leading_nibble' data-ref="515leading_nibble">leading_nibble</a> = <b>static_cast</b>&lt;<span class="namespace">std::</span>uint32_t&gt;(<a class="local col6 ref" href="#506aligned_significand" title='aligned_significand' data-ref="506aligned_significand">aligned_significand</a> &gt;&gt; <a class="local col4 ref" href="#504hex_bits" title='hex_bits' data-ref="504hex_bits">hex_bits</a>);</td></tr>
+<tr><th id="407">407</th><td>    }</td></tr>
+<tr><th id="408">408</th><td>    <u>#<span data-ppcond="398">else</span></u></td></tr>
+<tr><th id="409">409</th><td>    <em>const</em> <em>auto</em> leading_nibble = <b>static_cast</b>&lt;std::uint32_t&gt;(aligned_significand &gt;&gt; hex_bits);</td></tr>
+<tr><th id="410">410</th><td>    <u>#<span data-ppcond="398">endif</span></u></td></tr>
+<tr><th id="411">411</th><td></td></tr>
+<tr><th id="412">412</th><td>    <a class="macro" href="../include/boost/charconv/detail/config.hpp.html#13" title="(static_cast&lt;void&gt; (0))" data-ref="_M/BOOST_CHARCONV_ASSERT">BOOST_CHARCONV_ASSERT</a>(leading_nibble &lt; <var>16</var>);</td></tr>
+<tr><th id="413">413</th><td>    *<a class="local col0 ref" href="#490first" title='first' data-ref="490first">first</a>++ = <a class="ref" href="../include/boost/charconv/detail/to_chars_integer_impl.hpp.html#boost::charconv::detail::digit_table" title='boost::charconv::detail::digit_table' data-ref="boost::charconv::detail::digit_table">digit_table</a>[<a class="local col5 ref" href="#515leading_nibble" title='leading_nibble' data-ref="515leading_nibble">leading_nibble</a>];</td></tr>
+<tr><th id="414">414</th><td>    </td></tr>
+<tr><th id="415">415</th><td>    <a class="local col6 ref" href="#506aligned_significand" title='aligned_significand' data-ref="506aligned_significand">aligned_significand</a> &amp;= <a class="local col5 ref" href="#505hex_mask" title='hex_mask' data-ref="505hex_mask">hex_mask</a>;</td></tr>
+<tr><th id="416">416</th><td></td></tr>
+<tr><th id="417">417</th><td>    <i>// Print the fractional part</i></td></tr>
+<tr><th id="418">418</th><td>    <b>if</b> (<a class="local col5 ref" href="#495real_precision" title='real_precision' data-ref="495real_precision">real_precision</a> &gt; <var>0</var>)</td></tr>
+<tr><th id="419">419</th><td>    {</td></tr>
+<tr><th id="420">420</th><td>        *<a class="local col0 ref" href="#490first" title='first' data-ref="490first">first</a>++ = <kbd>'.'</kbd>;</td></tr>
+<tr><th id="421">421</th><td>        <span class="namespace">std::</span>int32_t <dfn class="local col6 decl" id="516remaining_bits" title='remaining_bits' data-type='std::int32_t' data-ref="516remaining_bits">remaining_bits</dfn> = <a class="local col4 ref" href="#504hex_bits" title='hex_bits' data-ref="504hex_bits">hex_bits</a>;</td></tr>
+<tr><th id="422">422</th><td></td></tr>
+<tr><th id="423">423</th><td>        <b>while</b> (<b>true</b>)</td></tr>
+<tr><th id="424">424</th><td>        {</td></tr>
+<tr><th id="425">425</th><td>            <a class="local col6 ref" href="#516remaining_bits" title='remaining_bits' data-ref="516remaining_bits">remaining_bits</a> -= <a class="local col3 ref" href="#503nibble_bits" title='nibble_bits' data-ref="503nibble_bits">nibble_bits</a>;</td></tr>
+<tr><th id="426">426</th><td>            <em>const</em> <em>auto</em> <dfn class="local col7 decl" id="517current_nibble" title='current_nibble' data-type='const std::uint32_t' data-ref="517current_nibble">current_nibble</dfn> = <b>static_cast</b>&lt;<span class="namespace">std::</span>uint32_t&gt;(<a class="local col6 ref" href="#506aligned_significand" title='aligned_significand' data-ref="506aligned_significand">aligned_significand</a> &gt;&gt; <a class="local col6 ref" href="#516remaining_bits" title='remaining_bits' data-ref="516remaining_bits">remaining_bits</a>);</td></tr>
+<tr><th id="427">427</th><td>            *<a class="local col0 ref" href="#490first" title='first' data-ref="490first">first</a>++ = <a class="ref" href="../include/boost/charconv/detail/to_chars_integer_impl.hpp.html#boost::charconv::detail::digit_table" title='boost::charconv::detail::digit_table' data-ref="boost::charconv::detail::digit_table">digit_table</a>[<a class="local col7 ref" href="#517current_nibble" title='current_nibble' data-ref="517current_nibble">current_nibble</a>];</td></tr>
+<tr><th id="428">428</th><td></td></tr>
+<tr><th id="429">429</th><td>            --<a class="local col5 ref" href="#495real_precision" title='real_precision' data-ref="495real_precision">real_precision</a>;</td></tr>
+<tr><th id="430">430</th><td>            <b>if</b> (<a class="local col5 ref" href="#495real_precision" title='real_precision' data-ref="495real_precision">real_precision</a> == <var>0</var>)</td></tr>
+<tr><th id="431">431</th><td>            {</td></tr>
+<tr><th id="432">432</th><td>                <b>break</b>;</td></tr>
+<tr><th id="433">433</th><td>            }</td></tr>
+<tr><th id="434">434</th><td>            <b>else</b> <b>if</b> (<a class="local col6 ref" href="#516remaining_bits" title='remaining_bits' data-ref="516remaining_bits">remaining_bits</a> == <var>0</var>)</td></tr>
+<tr><th id="435">435</th><td>            {</td></tr>
+<tr><th id="436">436</th><td>                <i>// Do not print trailing zeros with unspecified precision</i></td></tr>
+<tr><th id="437">437</th><td>                <b>if</b> (<a class="local col3 ref" href="#493precision" title='precision' data-ref="493precision">precision</a> != -<var>1</var>)</td></tr>
+<tr><th id="438">438</th><td>                {</td></tr>
+<tr><th id="439">439</th><td>                    <span class="namespace">std::</span><a class="ref fn" href="../../../../include/string.h.html#memset" title='memset' data-ref="memset">memset</a>(<span class='inlayHint'>s:&nbsp;</span><a class="local col0 ref" href="#490first" title='first' data-ref="490first">first</a>, <span class='inlayHint'>c:&nbsp;</span><kbd>'0'</kbd>, <span class='inlayHint'>n:&nbsp;</span><b>static_cast</b>&lt;<span class="namespace">std::</span><a class="typedef" href="../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a>&gt;(<a class="local col5 ref" href="#495real_precision" title='real_precision' data-ref="495real_precision">real_precision</a>));</td></tr>
+<tr><th id="440">440</th><td>                    <a class="local col0 ref" href="#490first" title='first' data-ref="490first">first</a> += <a class="local col5 ref" href="#495real_precision" title='real_precision' data-ref="495real_precision">real_precision</a>;</td></tr>
+<tr><th id="441">441</th><td>                }</td></tr>
+<tr><th id="442">442</th><td>                <b>break</b>;</td></tr>
+<tr><th id="443">443</th><td>            }</td></tr>
+<tr><th id="444">444</th><td></td></tr>
+<tr><th id="445">445</th><td>            <i>// Mask away the hexit we just printed</i></td></tr>
+<tr><th id="446">446</th><td>            <a class="local col6 ref" href="#506aligned_significand" title='aligned_significand' data-ref="506aligned_significand">aligned_significand</a> &amp;= (<b>static_cast</b>&lt;<a class="local col7 typedef" href="#497Unsigned_Integer" title='Unsigned_Integer' data-type='typename std::conditional&lt;std::is_same&lt;Real, float&gt;::value, std::uint32_t, typename std::conditional&lt;std::is_same&lt;Real, double&gt;::value, std::uint64_t, uint128&gt;::type&gt;::type' data-ref="497Unsigned_Integer">Unsigned_Integer</a>&gt;(<var>1</var>) &lt;&lt; <a class="local col6 ref" href="#516remaining_bits" title='remaining_bits' data-ref="516remaining_bits">remaining_bits</a>) - <var>1</var>;</td></tr>
+<tr><th id="447">447</th><td>        }</td></tr>
+<tr><th id="448">448</th><td>    }</td></tr>
+<tr><th id="449">449</th><td></td></tr>
+<tr><th id="450">450</th><td>    <i>// Remove any trailing zeros if the precision was unspecified</i></td></tr>
+<tr><th id="451">451</th><td>    <b>if</b> (<a class="local col3 ref" href="#493precision" title='precision' data-ref="493precision">precision</a> == -<var>1</var>)</td></tr>
+<tr><th id="452">452</th><td>    {</td></tr>
+<tr><th id="453">453</th><td>        --<a class="local col0 ref" href="#490first" title='first' data-ref="490first">first</a>;</td></tr>
+<tr><th id="454">454</th><td>        <b>while</b> (*<a class="local col0 ref" href="#490first" title='first' data-ref="490first">first</a> == <kbd>'0'</kbd>)</td></tr>
+<tr><th id="455">455</th><td>        {</td></tr>
+<tr><th id="456">456</th><td>            --<a class="local col0 ref" href="#490first" title='first' data-ref="490first">first</a>;</td></tr>
+<tr><th id="457">457</th><td>        }</td></tr>
+<tr><th id="458">458</th><td>        ++<a class="local col0 ref" href="#490first" title='first' data-ref="490first">first</a>;</td></tr>
+<tr><th id="459">459</th><td>    }</td></tr>
+<tr><th id="460">460</th><td></td></tr>
+<tr><th id="461">461</th><td>    <i>// Print the exponent</i></td></tr>
+<tr><th id="462">462</th><td>    *<a class="local col0 ref" href="#490first" title='first' data-ref="490first">first</a>++ = <kbd>'p'</kbd>;</td></tr>
+<tr><th id="463">463</th><td>    <b>if</b> (<a class="local col7 ref" href="#507unbiased_exponent" title='unbiased_exponent' data-ref="507unbiased_exponent">unbiased_exponent</a> &lt; <var>0</var>)</td></tr>
+<tr><th id="464">464</th><td>    {</td></tr>
+<tr><th id="465">465</th><td>        *<a class="local col0 ref" href="#490first" title='first' data-ref="490first">first</a>++ = <kbd>'-'</kbd>;</td></tr>
+<tr><th id="466">466</th><td>    }</td></tr>
+<tr><th id="467">467</th><td>    <b>else</b></td></tr>
+<tr><th id="468">468</th><td>    {</td></tr>
+<tr><th id="469">469</th><td>        *<a class="local col0 ref" href="#490first" title='first' data-ref="490first">first</a>++ = <kbd>'+'</kbd>;</td></tr>
+<tr><th id="470">470</th><td>    }</td></tr>
+<tr><th id="471">471</th><td></td></tr>
+<tr><th id="472">472</th><td>    <b>return</b> <a class="ref fn" href="../include/boost/charconv/detail/to_chars_integer_impl.hpp.html#_ZN5boost8charconv6detail12to_chars_intEPcS2_T_i" title='boost::charconv::detail::to_chars_int' data-ref="_ZN5boost8charconv6detail12to_chars_intEPcS2_T_i">to_chars_int</a>(<a class="local col0 ref" href="#490first" title='first' data-ref="490first">first</a>, <a class="local col1 ref" href="#491last" title='last' data-ref="491last">last</a>, <span class='inlayHint'>value:&nbsp;</span><a class="local col8 ref" href="#508abs_unbiased_exponent" title='abs_unbiased_exponent' data-ref="508abs_unbiased_exponent">abs_unbiased_exponent</a>);</td></tr>
+<tr><th id="473">473</th><td>}</td></tr>
+<tr><th id="474">474</th><td></td></tr>
+<tr><th id="475">475</th><td><u>#<span data-ppcond="475">ifdef</span> <span class="macro" data-ref="_M/BOOST_MSVC">BOOST_MSVC</span></u></td></tr>
+<tr><th id="476">476</th><td><u># pragma warning(pop)</u></td></tr>
+<tr><th id="477">477</th><td><u>#<span data-ppcond="475">endif</span></u></td></tr>
+<tr><th id="478">478</th><td></td></tr>
+<tr><th id="479">479</th><td><b>template</b> &lt;<b>typename</b> Real&gt;</td></tr>
+<tr><th id="480">480</th><td><a class="type" href="../include/boost/charconv/detail/to_chars_result.hpp.html#boost::charconv::to_chars_result" title='boost::charconv::to_chars_result' data-ref="boost::charconv::to_chars_result">to_chars_result</a> <dfn class="decl def fn" id="_ZN5boost8charconv6detail19to_chars_fixed_implEPcS2_T_NS0_12chars_formatEi" title='boost::charconv::detail::to_chars_fixed_impl' data-ref="_ZN5boost8charconv6detail19to_chars_fixed_implEPcS2_T_NS0_12chars_formatEi">to_chars_fixed_impl</dfn>(<em>char</em>* <dfn class="local col8 decl" id="518first" title='first' data-type='char *' data-ref="518first">first</dfn>, <em>char</em>* <dfn class="local col9 decl" id="519last" title='last' data-type='char *' data-ref="519last">last</dfn>, Real <dfn class="local col0 decl" id="520value" title='value' data-type='Real' data-ref="520value">value</dfn>, <a class="type" href="../include/boost/charconv/chars_format.hpp.html#boost::charconv::chars_format" title='boost::charconv::chars_format' data-ref="boost::charconv::chars_format">chars_format</a> <dfn class="local col1 decl" id="521fmt" title='fmt' data-type='boost::charconv::chars_format' data-ref="521fmt">fmt</dfn> = <a class="type" href="../include/boost/charconv/chars_format.hpp.html#boost::charconv::chars_format" title='boost::charconv::chars_format' data-ref="boost::charconv::chars_format">chars_format</a>::<a class="enum" href="../include/boost/charconv/chars_format.hpp.html#boost::charconv::chars_format::general" title='boost::charconv::chars_format::general' data-ref="boost::charconv::chars_format::general">general</a>, <em>int</em> <dfn class="local col2 decl" id="522precision" title='precision' data-type='int' data-ref="522precision">precision</dfn> = -<var>1</var>) <b>noexcept</b></td></tr>
+<tr><th id="481">481</th><td>{</td></tr>
+<tr><th id="482">482</th><td>    <em>const</em> <span class="namespace">std::</span><a class="typedef" href="../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::ptrdiff_t" title='std::ptrdiff_t' data-type='long' data-ref="std::ptrdiff_t">ptrdiff_t</a> <dfn class="local col3 decl" id="523buffer_size" title='buffer_size' data-type='const std::ptrdiff_t' data-ref="523buffer_size">buffer_size</dfn> = <a class="local col9 ref" href="#519last" title='last' data-ref="519last">last</a> - <a class="local col8 ref" href="#518first" title='first' data-ref="518first">first</a>;</td></tr>
+<tr><th id="483">483</th><td>    <em>auto</em> <dfn class="local col4 decl" id="524real_precision" title='real_precision' data-type='auto' data-ref="524real_precision">real_precision</dfn> = get_real_precision&lt;Real&gt;(<a class="local col2 ref" href="#522precision" title='precision' data-ref="522precision">precision</a>);</td></tr>
+<tr><th id="484">484</th><td>    <b>if</b> (<a class="local col3 ref" href="#523buffer_size" title='buffer_size' data-ref="523buffer_size">buffer_size</a> &lt; <a class="local col4 ref" href="#524real_precision" title='real_precision' data-ref="524real_precision">real_precision</a> || <a class="local col8 ref" href="#518first" title='first' data-ref="518first">first</a> &gt; <a class="local col9 ref" href="#519last" title='last' data-ref="519last">last</a>)</td></tr>
+<tr><th id="485">485</th><td>    {</td></tr>
+<tr><th id="486">486</th><td>        <b>return</b> {<span class='inlayHint'>.ptr:&nbsp;</span><a class="local col9 ref" href="#519last" title='last' data-ref="519last">last</a>, <span class='inlayHint'>.ec:&nbsp;</span><span class="namespace">std::</span><a class="type" href="../../../../include/x86_64-linux-gnu/c++/9/bits/error_constants.h.html#std::errc" title='std::errc' data-ref="std::errc">errc</a>::<a class="enum" href="../../../../include/x86_64-linux-gnu/c++/9/bits/error_constants.h.html#std::errc::value_too_large" title='std::errc::value_too_large' data-ref="std::errc::value_too_large">value_too_large</a>};</td></tr>
+<tr><th id="487">487</th><td>    }</td></tr>
+<tr><th id="488">488</th><td></td></tr>
+<tr><th id="489">489</th><td>    <em>auto</em> <dfn class="local col5 decl" id="525abs_value" title='abs_value' data-type='auto' data-ref="525abs_value">abs_value</dfn> = <span class="namespace">std::</span>abs(<a class="local col0 ref" href="#520value" title='value' data-ref="520value">value</a>);</td></tr>
+<tr><th id="490">490</th><td></td></tr>
+<tr><th id="491">491</th><td>    <em>auto</em> <dfn class="local col6 decl" id="526value_struct" title='value_struct' data-type='auto' data-ref="526value_struct">value_struct</dfn> = <span class="namespace">boost::charconv::detail::</span>to_decimal(<a class="local col0 ref" href="#520value" title='value' data-ref="520value">value</a>);</td></tr>
+<tr><th id="492">492</th><td>    <b>if</b> (<a class="local col6 ref" href="#526value_struct" title='value_struct' data-ref="526value_struct">value_struct</a>.is_negative)</td></tr>
+<tr><th id="493">493</th><td>    {</td></tr>
+<tr><th id="494">494</th><td>        *<a class="local col8 ref" href="#518first" title='first' data-ref="518first">first</a>++ = <kbd>'-'</kbd>;</td></tr>
+<tr><th id="495">495</th><td>    }</td></tr>
+<tr><th id="496">496</th><td></td></tr>
+<tr><th id="497">497</th><td>    <em>int</em> <dfn class="local col7 decl" id="527num_dig" title='num_dig' data-type='int' data-ref="527num_dig">num_dig</dfn> = <var>0</var>;</td></tr>
+<tr><th id="498">498</th><td>    <b>if</b> (<a class="local col2 ref" href="#522precision" title='precision' data-ref="522precision">precision</a> != -<var>1</var>)</td></tr>
+<tr><th id="499">499</th><td>    {</td></tr>
+<tr><th id="500">500</th><td>        <a class="local col7 ref" href="#527num_dig" title='num_dig' data-ref="527num_dig">num_dig</a> = num_digits(<a class="local col6 ref" href="#526value_struct" title='value_struct' data-ref="526value_struct">value_struct</a>.significand);</td></tr>
+<tr><th id="501">501</th><td>        <b>while</b> (<a class="local col7 ref" href="#527num_dig" title='num_dig' data-ref="527num_dig">num_dig</a> &gt; <a class="local col2 ref" href="#522precision" title='precision' data-ref="522precision">precision</a> + <var>2</var>)</td></tr>
+<tr><th id="502">502</th><td>        {</td></tr>
+<tr><th id="503">503</th><td>            <a class="local col6 ref" href="#526value_struct" title='value_struct' data-ref="526value_struct">value_struct</a>.significand /= <var>10</var>;</td></tr>
+<tr><th id="504">504</th><td>            ++<a class="local col6 ref" href="#526value_struct" title='value_struct' data-ref="526value_struct">value_struct</a>.exponent;</td></tr>
+<tr><th id="505">505</th><td>            --<a class="local col7 ref" href="#527num_dig" title='num_dig' data-ref="527num_dig">num_dig</a>;</td></tr>
+<tr><th id="506">506</th><td>        }</td></tr>
+<tr><th id="507">507</th><td></td></tr>
+<tr><th id="508">508</th><td>        <b>if</b> (<a class="local col7 ref" href="#527num_dig" title='num_dig' data-ref="527num_dig">num_dig</a> == <a class="local col2 ref" href="#522precision" title='precision' data-ref="522precision">precision</a> + <var>2</var>)</td></tr>
+<tr><th id="509">509</th><td>        {</td></tr>
+<tr><th id="510">510</th><td>            <em>const</em> <em>auto</em> <dfn class="local col8 decl" id="528trailing_dig" title='trailing_dig' data-type='const auto' data-ref="528trailing_dig">trailing_dig</dfn> = <a class="local col6 ref" href="#526value_struct" title='value_struct' data-ref="526value_struct">value_struct</a>.significand % <var>10</var>;</td></tr>
+<tr><th id="511">511</th><td>            <a class="local col6 ref" href="#526value_struct" title='value_struct' data-ref="526value_struct">value_struct</a>.significand /= <var>10</var>;</td></tr>
+<tr><th id="512">512</th><td>            ++<a class="local col6 ref" href="#526value_struct" title='value_struct' data-ref="526value_struct">value_struct</a>.exponent;</td></tr>
+<tr><th id="513">513</th><td>            --<a class="local col7 ref" href="#527num_dig" title='num_dig' data-ref="527num_dig">num_dig</a>;</td></tr>
+<tr><th id="514">514</th><td></td></tr>
+<tr><th id="515">515</th><td>            <b>if</b> (<a class="local col8 ref" href="#528trailing_dig" title='trailing_dig' data-ref="528trailing_dig">trailing_dig</a> &gt;= <var>5</var>)</td></tr>
+<tr><th id="516">516</th><td>            {</td></tr>
+<tr><th id="517">517</th><td>                ++<a class="local col6 ref" href="#526value_struct" title='value_struct' data-ref="526value_struct">value_struct</a>.significand;</td></tr>
+<tr><th id="518">518</th><td>            }</td></tr>
+<tr><th id="519">519</th><td>        }</td></tr>
+<tr><th id="520">520</th><td></td></tr>
+<tr><th id="521">521</th><td>        <i>// In general formatting we remove trailing 0s</i></td></tr>
+<tr><th id="522">522</th><td>        <b>if</b> (<a class="local col1 ref" href="#521fmt" title='fmt' data-ref="521fmt">fmt</a> == <a class="type" href="../include/boost/charconv/chars_format.hpp.html#boost::charconv::chars_format" title='boost::charconv::chars_format' data-ref="boost::charconv::chars_format">chars_format</a>::<a class="enum" href="../include/boost/charconv/chars_format.hpp.html#boost::charconv::chars_format::general" title='boost::charconv::chars_format::general' data-ref="boost::charconv::chars_format::general">general</a>)</td></tr>
+<tr><th id="523">523</th><td>        {</td></tr>
+<tr><th id="524">524</th><td>            <b>while</b> (<a class="local col6 ref" href="#526value_struct" title='value_struct' data-ref="526value_struct">value_struct</a>.significand % <var>10</var> == <var>0</var>)</td></tr>
+<tr><th id="525">525</th><td>            {</td></tr>
+<tr><th id="526">526</th><td>                <a class="local col6 ref" href="#526value_struct" title='value_struct' data-ref="526value_struct">value_struct</a>.significand /= <var>10</var>;</td></tr>
+<tr><th id="527">527</th><td>                ++<a class="local col6 ref" href="#526value_struct" title='value_struct' data-ref="526value_struct">value_struct</a>.exponent;</td></tr>
+<tr><th id="528">528</th><td>                --<a class="local col7 ref" href="#527num_dig" title='num_dig' data-ref="527num_dig">num_dig</a>;</td></tr>
+<tr><th id="529">529</th><td>            }</td></tr>
+<tr><th id="530">530</th><td>        }</td></tr>
+<tr><th id="531">531</th><td>    }</td></tr>
+<tr><th id="532">532</th><td></td></tr>
+<tr><th id="533">533</th><td>    <i>// Make sure the result will fit in the buffer</i></td></tr>
+<tr><th id="534">534</th><td>    <em>const</em> <span class="namespace">std::</span><a class="typedef" href="../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::ptrdiff_t" title='std::ptrdiff_t' data-type='long' data-ref="std::ptrdiff_t">ptrdiff_t</a> <dfn class="local col9 decl" id="529total_length" title='total_length' data-type='const std::ptrdiff_t' data-ref="529total_length">total_length</dfn> = total_buffer_length(<a class="local col7 ref" href="#527num_dig" title='num_dig' data-ref="527num_dig">num_dig</a>, <a class="local col6 ref" href="#526value_struct" title='value_struct' data-ref="526value_struct">value_struct</a>.exponent, (<a class="local col0 ref" href="#520value" title='value' data-ref="520value">value</a> &lt; <var>0</var>));</td></tr>
+<tr><th id="535">535</th><td>    <b>if</b> (<a class="local col9 ref" href="#529total_length" title='total_length' data-ref="529total_length">total_length</a> &gt; <a class="local col3 ref" href="#523buffer_size" title='buffer_size' data-ref="523buffer_size">buffer_size</a>)</td></tr>
+<tr><th id="536">536</th><td>    {</td></tr>
+<tr><th id="537">537</th><td>        <b>return</b> {<span class='inlayHint'>.ptr:&nbsp;</span><a class="local col9 ref" href="#519last" title='last' data-ref="519last">last</a>, <span class='inlayHint'>.ec:&nbsp;</span><span class="namespace">std::</span><a class="type" href="../../../../include/x86_64-linux-gnu/c++/9/bits/error_constants.h.html#std::errc" title='std::errc' data-ref="std::errc">errc</a>::<a class="enum" href="../../../../include/x86_64-linux-gnu/c++/9/bits/error_constants.h.html#std::errc::value_too_large" title='std::errc::value_too_large' data-ref="std::errc::value_too_large">value_too_large</a>};</td></tr>
+<tr><th id="538">538</th><td>    }</td></tr>
+<tr><th id="539">539</th><td></td></tr>
+<tr><th id="540">540</th><td>    <em>auto</em> <dfn class="local col0 decl" id="530r" title='r' data-type='auto' data-ref="530r">r</dfn> = to_chars_integer_impl(<a class="local col8 ref" href="#518first" title='first' data-ref="518first">first</a>, <a class="local col9 ref" href="#519last" title='last' data-ref="519last">last</a>, <a class="local col6 ref" href="#526value_struct" title='value_struct' data-ref="526value_struct">value_struct</a>.significand);</td></tr>
+<tr><th id="541">541</th><td>    <b>if</b> (<a class="local col0 ref" href="#530r" title='r' data-ref="530r">r</a>.ec != <span class="namespace">std::</span><a class="type" href="../../../../include/x86_64-linux-gnu/c++/9/bits/error_constants.h.html#std::errc" title='std::errc' data-ref="std::errc">errc</a>())</td></tr>
+<tr><th id="542">542</th><td>    {</td></tr>
+<tr><th id="543">543</th><td>        <b>return</b> <a class="local col0 ref" href="#530r" title='r' data-ref="530r">r</a>;</td></tr>
+<tr><th id="544">544</th><td>    }</td></tr>
+<tr><th id="545">545</th><td></td></tr>
+<tr><th id="546">546</th><td>    <i>// Bounds check</i></td></tr>
+<tr><th id="547">547</th><td>    <b>if</b> (<a class="local col5 ref" href="#525abs_value" title='abs_value' data-ref="525abs_value">abs_value</a> &gt;= <var>1</var>)</td></tr>
+<tr><th id="548">548</th><td>    {</td></tr>
+<tr><th id="549">549</th><td>        <b>if</b> (<a class="local col6 ref" href="#526value_struct" title='value_struct' data-ref="526value_struct">value_struct</a>.exponent &lt; <var>0</var> &amp;&amp; -<a class="local col6 ref" href="#526value_struct" title='value_struct' data-ref="526value_struct">value_struct</a>.exponent &lt; <a class="local col3 ref" href="#523buffer_size" title='buffer_size' data-ref="523buffer_size">buffer_size</a>)</td></tr>
+<tr><th id="550">550</th><td>        {</td></tr>
+<tr><th id="551">551</th><td>            <span class="namespace">std::</span><a class="ref fn" href="../../../../include/string.h.html#memmove" title='memmove' data-ref="memmove">memmove</a>(<span class='inlayHint'>dest:&nbsp;</span><a class="local col0 ref" href="#530r" title='r' data-ref="530r">r</a>.ptr + <a class="local col6 ref" href="#526value_struct" title='value_struct' data-ref="526value_struct">value_struct</a>.exponent + <var>1</var>, <span class='inlayHint'>src:&nbsp;</span><a class="local col0 ref" href="#530r" title='r' data-ref="530r">r</a>.ptr + <a class="local col6 ref" href="#526value_struct" title='value_struct' data-ref="526value_struct">value_struct</a>.exponent,</td></tr>
+<tr><th id="552">552</th><td>                         <span class='inlayHint'>n:&nbsp;</span><b>static_cast</b>&lt;<span class="namespace">std::</span><a class="typedef" href="../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a>&gt;(-<a class="local col6 ref" href="#526value_struct" title='value_struct' data-ref="526value_struct">value_struct</a>.exponent));</td></tr>
+<tr><th id="553">553</th><td>            <span class="namespace">std::</span><a class="ref fn" href="../../../../include/string.h.html#memset" title='memset' data-ref="memset">memset</a>(<span class='inlayHint'>s:&nbsp;</span><a class="local col0 ref" href="#530r" title='r' data-ref="530r">r</a>.ptr + <a class="local col6 ref" href="#526value_struct" title='value_struct' data-ref="526value_struct">value_struct</a>.exponent, <span class='inlayHint'>c:&nbsp;</span><kbd>'.'</kbd>, <span class='inlayHint'>n:&nbsp;</span><var>1</var>);</td></tr>
+<tr><th id="554">554</th><td>            ++<a class="local col0 ref" href="#530r" title='r' data-ref="530r">r</a>.ptr;</td></tr>
+<tr><th id="555">555</th><td>        }</td></tr>
+<tr><th id="556">556</th><td></td></tr>
+<tr><th id="557">557</th><td>        <b>while</b> (<span class="namespace">std::</span>fmod(<a class="local col5 ref" href="#525abs_value" title='abs_value' data-ref="525abs_value">abs_value</a>, <var>10</var>) == <var>0</var>)</td></tr>
+<tr><th id="558">558</th><td>        {</td></tr>
+<tr><th id="559">559</th><td>            *<a class="local col0 ref" href="#530r" title='r' data-ref="530r">r</a>.ptr++ = <kbd>'0'</kbd>;</td></tr>
+<tr><th id="560">560</th><td>            <a class="local col5 ref" href="#525abs_value" title='abs_value' data-ref="525abs_value">abs_value</a> /= <var>10</var>;</td></tr>
+<tr><th id="561">561</th><td>        }</td></tr>
+<tr><th id="562">562</th><td>    }</td></tr>
+<tr><th id="563">563</th><td>    <b>else</b></td></tr>
+<tr><th id="564">564</th><td>    {</td></tr>
+<tr><th id="565">565</th><td>        <u>#<span data-ppcond="565">ifdef</span> <span class="macro" data-ref="_M/BOOST_CHARCONV_DEBUG_FIXED">BOOST_CHARCONV_DEBUG_FIXED</span></u></td></tr>
+<tr><th id="566">566</th><td>        std::cerr &lt;&lt; std::setprecision(std::numeric_limits&lt;Real&gt;::digits10) &lt;&lt; <q>"Value: "</q> &lt;&lt; value</td></tr>
+<tr><th id="567">567</th><td>                  &lt;&lt; <q>"\n  Buf: "</q> &lt;&lt; first</td></tr>
+<tr><th id="568">568</th><td>                  &lt;&lt; <q>"\n  sig: "</q> &lt;&lt; value_struct.significand</td></tr>
+<tr><th id="569">569</th><td>                  &lt;&lt; <q>"\n  exp: "</q> &lt;&lt; value_struct.exponent &lt;&lt; std::endl;</td></tr>
+<tr><th id="570">570</th><td>        <u>#<span data-ppcond="565">endif</span></u></td></tr>
+<tr><th id="571">571</th><td></td></tr>
+<tr><th id="572">572</th><td>        <em>const</em> <em>auto</em> <dfn class="local col1 decl" id="531offset_bytes" title='offset_bytes' data-type='const std::size_t' data-ref="531offset_bytes">offset_bytes</dfn> = <b>static_cast</b>&lt;<span class="namespace">std::</span><a class="typedef" href="../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a>&gt;(-<a class="local col6 ref" href="#526value_struct" title='value_struct' data-ref="526value_struct">value_struct</a>.exponent - <a class="local col7 ref" href="#527num_dig" title='num_dig' data-ref="527num_dig">num_dig</a>);</td></tr>
+<tr><th id="573">573</th><td></td></tr>
+<tr><th id="574">574</th><td>        <span class="namespace">std::</span><a class="ref fn" href="../../../../include/string.h.html#memmove" title='memmove' data-ref="memmove">memmove</a>(<span class='inlayHint'>dest:&nbsp;</span><a class="local col8 ref" href="#518first" title='first' data-ref="518first">first</a> + <var>2</var> + <b>static_cast</b>&lt;<span class="namespace">std::</span><a class="typedef" href="../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a>&gt;(<a class="local col6 ref" href="#526value_struct" title='value_struct' data-ref="526value_struct">value_struct</a>.is_negative) + <a class="local col1 ref" href="#531offset_bytes" title='offset_bytes' data-ref="531offset_bytes">offset_bytes</a>,</td></tr>
+<tr><th id="575">575</th><td>                     <span class='inlayHint'>src:&nbsp;</span><a class="local col8 ref" href="#518first" title='first' data-ref="518first">first</a> + <b>static_cast</b>&lt;<span class="namespace">std::</span><a class="typedef" href="../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a>&gt;(<a class="local col6 ref" href="#526value_struct" title='value_struct' data-ref="526value_struct">value_struct</a>.is_negative),</td></tr>
+<tr><th id="576">576</th><td>                     <span class='inlayHint'>n:&nbsp;</span><b>static_cast</b>&lt;<span class="namespace">std::</span><a class="typedef" href="../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a>&gt;(-<a class="local col6 ref" href="#526value_struct" title='value_struct' data-ref="526value_struct">value_struct</a>.exponent) - <a class="local col1 ref" href="#531offset_bytes" title='offset_bytes' data-ref="531offset_bytes">offset_bytes</a>);</td></tr>
+<tr><th id="577">577</th><td></td></tr>
+<tr><th id="578">578</th><td>        <span class="namespace">std::</span><a class="ref fn" href="../../../../include/string.h.html#memcpy" title='memcpy' data-ref="memcpy">memcpy</a>(<span class='inlayHint'>dest:&nbsp;</span><a class="local col8 ref" href="#518first" title='first' data-ref="518first">first</a> + <b>static_cast</b>&lt;<span class="namespace">std::</span><a class="typedef" href="../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a>&gt;(<a class="local col6 ref" href="#526value_struct" title='value_struct' data-ref="526value_struct">value_struct</a>.is_negative), <span class='inlayHint'>src:&nbsp;</span><q>"0."</q>, <span class='inlayHint'>n:&nbsp;</span><var>2U</var>);</td></tr>
+<tr><th id="579">579</th><td>        <a class="local col8 ref" href="#518first" title='first' data-ref="518first">first</a> += <var>2</var>;</td></tr>
+<tr><th id="580">580</th><td>        <a class="local col0 ref" href="#530r" title='r' data-ref="530r">r</a>.ptr += <var>2</var>;</td></tr>
+<tr><th id="581">581</th><td></td></tr>
+<tr><th id="582">582</th><td>        <b>while</b> (<a class="local col7 ref" href="#527num_dig" title='num_dig' data-ref="527num_dig">num_dig</a> &lt; -<a class="local col6 ref" href="#526value_struct" title='value_struct' data-ref="526value_struct">value_struct</a>.exponent)</td></tr>
+<tr><th id="583">583</th><td>        {</td></tr>
+<tr><th id="584">584</th><td>            *<a class="local col8 ref" href="#518first" title='first' data-ref="518first">first</a>++ = <kbd>'0'</kbd>;</td></tr>
+<tr><th id="585">585</th><td>            ++<a class="local col7 ref" href="#527num_dig" title='num_dig' data-ref="527num_dig">num_dig</a>;</td></tr>
+<tr><th id="586">586</th><td>            ++<a class="local col0 ref" href="#530r" title='r' data-ref="530r">r</a>.ptr;</td></tr>
+<tr><th id="587">587</th><td>        }</td></tr>
+<tr><th id="588">588</th><td>    }</td></tr>
+<tr><th id="589">589</th><td></td></tr>
+<tr><th id="590">590</th><td>    <b>return</b> { <a class="local col0 ref" href="#530r" title='r' data-ref="530r">r</a>.ptr, <span class="namespace">std::</span><a class="type" href="../../../../include/x86_64-linux-gnu/c++/9/bits/error_constants.h.html#std::errc" title='std::errc' data-ref="std::errc">errc</a>() };</td></tr>
+<tr><th id="591">591</th><td>}</td></tr>
+<tr><th id="592">592</th><td></td></tr>
+<tr><th id="593">593</th><td><b>template</b> &lt;<b>typename</b> Real&gt;</td></tr>
+<tr><th id="594">594</th><td><a class="type" href="../include/boost/charconv/detail/to_chars_result.hpp.html#boost::charconv::to_chars_result" title='boost::charconv::to_chars_result' data-ref="boost::charconv::to_chars_result">to_chars_result</a> <dfn class="decl def fn" id="_ZN5boost8charconv6detail19to_chars_float_implEPcS2_T_NS0_12chars_formatEi" title='boost::charconv::detail::to_chars_float_impl' data-ref="_ZN5boost8charconv6detail19to_chars_float_implEPcS2_T_NS0_12chars_formatEi">to_chars_float_impl</dfn>(<em>char</em>* <dfn class="local col2 decl" id="532first" title='first' data-type='char *' data-ref="532first">first</dfn>, <em>char</em>* <dfn class="local col3 decl" id="533last" title='last' data-type='char *' data-ref="533last">last</dfn>, Real <dfn class="local col4 decl" id="534value" title='value' data-type='Real' data-ref="534value">value</dfn>, <a class="type" href="../include/boost/charconv/chars_format.hpp.html#boost::charconv::chars_format" title='boost::charconv::chars_format' data-ref="boost::charconv::chars_format">chars_format</a> <dfn class="local col5 decl" id="535fmt" title='fmt' data-type='boost::charconv::chars_format' data-ref="535fmt">fmt</dfn>, <em>int</em> <dfn class="local col6 decl" id="536precision" title='precision' data-type='int' data-ref="536precision">precision</dfn>) <b>noexcept</b></td></tr>
+<tr><th id="595">595</th><td>{</td></tr>
+<tr><th id="596">596</th><td>    <b>using</b> <dfn class="local col7 typedef" id="537Unsigned_Integer" title='Unsigned_Integer' data-type='typename std::conditional&lt;std::is_same&lt;Real, double&gt;::value, std::uint64_t, std::uint32_t&gt;::type' data-ref="537Unsigned_Integer">Unsigned_Integer</dfn> = <b>typename</b> <span class="namespace">std::</span><a class="type" href="../../../../include/c++/9/type_traits.html#std::conditional" title='std::conditional' data-ref="std::conditional">conditional</a>&lt;<span class="namespace">std::</span><a class="type" href="../../../../include/c++/9/type_traits.html#std::is_same" title='std::is_same' data-ref="std::is_same">is_same</a>&lt;Real, <em>double</em>&gt;::value, <span class="namespace">std::</span>uint64_t, <span class="namespace">std::</span>uint32_t&gt;::type;</td></tr>
+<tr><th id="597">597</th><td></td></tr>
+<tr><th id="598">598</th><td>    <i>// Sanity check our bounds</i></td></tr>
+<tr><th id="599">599</th><td>    <b>if</b> (<a class="local col2 ref" href="#532first" title='first' data-ref="532first">first</a> &gt;= <a class="local col3 ref" href="#533last" title='last' data-ref="533last">last</a>)</td></tr>
+<tr><th id="600">600</th><td>    {</td></tr>
+<tr><th id="601">601</th><td>        <b>return</b> {<span class='inlayHint'>.ptr:&nbsp;</span><a class="local col3 ref" href="#533last" title='last' data-ref="533last">last</a>, <span class='inlayHint'>.ec:&nbsp;</span><span class="namespace">std::</span><a class="type" href="../../../../include/x86_64-linux-gnu/c++/9/bits/error_constants.h.html#std::errc" title='std::errc' data-ref="std::errc">errc</a>::<a class="enum" href="../../../../include/x86_64-linux-gnu/c++/9/bits/error_constants.h.html#std::errc::value_too_large" title='std::errc::value_too_large' data-ref="std::errc::value_too_large">value_too_large</a>};</td></tr>
+<tr><th id="602">602</th><td>    }</td></tr>
+<tr><th id="603">603</th><td></td></tr>
+<tr><th id="604">604</th><td>    <em>auto</em> <dfn class="local col8 decl" id="538abs_value" title='abs_value' data-type='auto' data-ref="538abs_value">abs_value</dfn> = <span class="namespace">std::</span>abs(<a class="local col4 ref" href="#534value" title='value' data-ref="534value">value</a>);</td></tr>
+<tr><th id="605">605</th><td>    <b>constexpr</b> <em>auto</em> <dfn class="local col9 decl" id="539max_fractional_value" title='max_fractional_value' data-type='const auto' data-ref="539max_fractional_value">max_fractional_value</dfn> = <span class="namespace">std::</span><a class="type" href="../../../../include/c++/9/type_traits.html#std::is_same" title='std::is_same' data-ref="std::is_same">is_same</a>&lt;Real, <em>double</em>&gt;::value ? <b>static_cast</b>&lt;Real&gt;(<var>1e16</var>) : <b>static_cast</b>&lt;Real&gt;(<var>1e7</var>);</td></tr>
+<tr><th id="606">606</th><td>    <b>constexpr</b> <em>auto</em> <dfn class="local col0 decl" id="540max_value" title='max_value' data-type='const auto' data-ref="540max_value">max_value</dfn> = <b>static_cast</b>&lt;Real&gt;((<span class="namespace">std::</span><a class="type" href="../../../../include/c++/9/limits.html#std::numeric_limits" title='std::numeric_limits' data-ref="std::numeric_limits">numeric_limits</a>&lt;<a class="local col7 typedef" href="#537Unsigned_Integer" title='Unsigned_Integer' data-type='typename std::conditional&lt;std::is_same&lt;Real, double&gt;::value, std::uint64_t, std::uint32_t&gt;::type' data-ref="537Unsigned_Integer">Unsigned_Integer</a>&gt;::max)());</td></tr>
+<tr><th id="607">607</th><td></td></tr>
+<tr><th id="608">608</th><td>    <i>// Unspecified precision so we always go with the shortest representation</i></td></tr>
+<tr><th id="609">609</th><td>    <b>if</b> (<a class="local col6 ref" href="#536precision" title='precision' data-ref="536precision">precision</a> == -<var>1</var>)</td></tr>
+<tr><th id="610">610</th><td>    {</td></tr>
+<tr><th id="611">611</th><td>        <b>if</b> (<a class="local col5 ref" href="#535fmt" title='fmt' data-ref="535fmt">fmt</a> == <span class="namespace">boost::charconv::</span><a class="type" href="../include/boost/charconv/chars_format.hpp.html#boost::charconv::chars_format" title='boost::charconv::chars_format' data-ref="boost::charconv::chars_format">chars_format</a>::<a class="enum" href="../include/boost/charconv/chars_format.hpp.html#boost::charconv::chars_format::general" title='boost::charconv::chars_format::general' data-ref="boost::charconv::chars_format::general">general</a> || <a class="local col5 ref" href="#535fmt" title='fmt' data-ref="535fmt">fmt</a> == <span class="namespace">boost::charconv::</span><a class="type" href="../include/boost/charconv/chars_format.hpp.html#boost::charconv::chars_format" title='boost::charconv::chars_format' data-ref="boost::charconv::chars_format">chars_format</a>::<a class="enum" href="../include/boost/charconv/chars_format.hpp.html#boost::charconv::chars_format::fixed" title='boost::charconv::chars_format::fixed' data-ref="boost::charconv::chars_format::fixed">fixed</a>)</td></tr>
+<tr><th id="612">612</th><td>        {</td></tr>
+<tr><th id="613">613</th><td>            <b>if</b> (<a class="local col8 ref" href="#538abs_value" title='abs_value' data-ref="538abs_value">abs_value</a> &gt;= <var>1</var> &amp;&amp; <a class="local col8 ref" href="#538abs_value" title='abs_value' data-ref="538abs_value">abs_value</a> &lt; <a class="local col9 ref" href="#539max_fractional_value" title='max_fractional_value' data-ref="539max_fractional_value">max_fractional_value</a>)</td></tr>
+<tr><th id="614">614</th><td>            {</td></tr>
+<tr><th id="615">615</th><td>                <b>return</b> to_chars_fixed_impl(<a class="local col2 ref" href="#532first" title='first' data-ref="532first">first</a>, <a class="local col3 ref" href="#533last" title='last' data-ref="533last">last</a>, <a class="local col4 ref" href="#534value" title='value' data-ref="534value">value</a>, <a class="local col5 ref" href="#535fmt" title='fmt' data-ref="535fmt">fmt</a>, <a class="local col6 ref" href="#536precision" title='precision' data-ref="536precision">precision</a>);</td></tr>
+<tr><th id="616">616</th><td>            }</td></tr>
+<tr><th id="617">617</th><td>            <b>else</b> <b>if</b> (<a class="local col8 ref" href="#538abs_value" title='abs_value' data-ref="538abs_value">abs_value</a> &gt;= <a class="local col9 ref" href="#539max_fractional_value" title='max_fractional_value' data-ref="539max_fractional_value">max_fractional_value</a> &amp;&amp; <a class="local col8 ref" href="#538abs_value" title='abs_value' data-ref="538abs_value">abs_value</a> &lt; <a class="local col0 ref" href="#540max_value" title='max_value' data-ref="540max_value">max_value</a>)</td></tr>
+<tr><th id="618">618</th><td>            {</td></tr>
+<tr><th id="619">619</th><td>                <b>if</b> (<a class="local col4 ref" href="#534value" title='value' data-ref="534value">value</a> &lt; <var>0</var>)</td></tr>
+<tr><th id="620">620</th><td>                {</td></tr>
+<tr><th id="621">621</th><td>                    *<a class="local col2 ref" href="#532first" title='first' data-ref="532first">first</a>++ = <kbd>'-'</kbd>;</td></tr>
+<tr><th id="622">622</th><td>                }</td></tr>
+<tr><th id="623">623</th><td>                <b>return</b> <a class="ref fn" href="../include/boost/charconv/detail/to_chars_integer_impl.hpp.html#_ZN5boost8charconv6detail21to_chars_integer_implEPcS2_T_" title='boost::charconv::detail::to_chars_integer_impl' data-ref="_ZN5boost8charconv6detail21to_chars_integer_implEPcS2_T_">to_chars_integer_impl</a>(<a class="local col2 ref" href="#532first" title='first' data-ref="532first">first</a>, <a class="local col3 ref" href="#533last" title='last' data-ref="533last">last</a>, <span class='inlayHint'>value:&nbsp;</span><b>static_cast</b>&lt;<span class="namespace">std::</span>uint64_t&gt;(<a class="local col8 ref" href="#538abs_value" title='abs_value' data-ref="538abs_value">abs_value</a>));</td></tr>
+<tr><th id="624">624</th><td>            }</td></tr>
+<tr><th id="625">625</th><td>            <b>else</b></td></tr>
+<tr><th id="626">626</th><td>            {</td></tr>
+<tr><th id="627">627</th><td>                <b>return</b> <span class="namespace">boost::charconv::detail::</span>dragonbox_to_chars(<a class="local col4 ref" href="#534value" title='value' data-ref="534value">value</a>, <a class="local col2 ref" href="#532first" title='first' data-ref="532first">first</a>, <a class="local col3 ref" href="#533last" title='last' data-ref="533last">last</a>, <a class="local col5 ref" href="#535fmt" title='fmt' data-ref="535fmt">fmt</a>);</td></tr>
+<tr><th id="628">628</th><td>            }</td></tr>
+<tr><th id="629">629</th><td>        }</td></tr>
+<tr><th id="630">630</th><td>        <b>else</b> <b>if</b> (<a class="local col5 ref" href="#535fmt" title='fmt' data-ref="535fmt">fmt</a> == <span class="namespace">boost::charconv::</span><a class="type" href="../include/boost/charconv/chars_format.hpp.html#boost::charconv::chars_format" title='boost::charconv::chars_format' data-ref="boost::charconv::chars_format">chars_format</a>::<a class="enum" href="../include/boost/charconv/chars_format.hpp.html#boost::charconv::chars_format::scientific" title='boost::charconv::chars_format::scientific' data-ref="boost::charconv::chars_format::scientific">scientific</a>)</td></tr>
+<tr><th id="631">631</th><td>        {</td></tr>
+<tr><th id="632">632</th><td>            <b>return</b> <span class="namespace">boost::charconv::detail::</span>dragonbox_to_chars(<a class="local col4 ref" href="#534value" title='value' data-ref="534value">value</a>, <a class="local col2 ref" href="#532first" title='first' data-ref="532first">first</a>, <a class="local col3 ref" href="#533last" title='last' data-ref="533last">last</a>, <a class="local col5 ref" href="#535fmt" title='fmt' data-ref="535fmt">fmt</a>);</td></tr>
+<tr><th id="633">633</th><td>        }</td></tr>
+<tr><th id="634">634</th><td>    }</td></tr>
+<tr><th id="635">635</th><td>    <b>else</b></td></tr>
+<tr><th id="636">636</th><td>    {</td></tr>
+<tr><th id="637">637</th><td>        <b>if</b> (<a class="local col5 ref" href="#535fmt" title='fmt' data-ref="535fmt">fmt</a> != <span class="namespace">boost::charconv::</span><a class="type" href="../include/boost/charconv/chars_format.hpp.html#boost::charconv::chars_format" title='boost::charconv::chars_format' data-ref="boost::charconv::chars_format">chars_format</a>::<a class="enum" href="../include/boost/charconv/chars_format.hpp.html#boost::charconv::chars_format::hex" title='boost::charconv::chars_format::hex' data-ref="boost::charconv::chars_format::hex">hex</a>)</td></tr>
+<tr><th id="638">638</th><td>        {</td></tr>
+<tr><th id="639">639</th><td>            <b>if</b> (<a class="local col5 ref" href="#535fmt" title='fmt' data-ref="535fmt">fmt</a> == <span class="namespace">boost::charconv::</span><a class="type" href="../include/boost/charconv/chars_format.hpp.html#boost::charconv::chars_format" title='boost::charconv::chars_format' data-ref="boost::charconv::chars_format">chars_format</a>::<a class="enum" href="../include/boost/charconv/chars_format.hpp.html#boost::charconv::chars_format::general" title='boost::charconv::chars_format::general' data-ref="boost::charconv::chars_format::general">general</a>)</td></tr>
+<tr><th id="640">640</th><td>            {</td></tr>
+<tr><th id="641">641</th><td>                <b>constexpr</b> <em>int</em> <dfn class="local col1 decl" id="541max_output_length" title='max_output_length' data-type='const int' data-ref="541max_output_length">max_output_length</dfn> = <span class="namespace">std::</span><a class="type" href="../../../../include/c++/9/type_traits.html#std::is_same" title='std::is_same' data-ref="std::is_same">is_same</a>&lt;Real, <em>double</em>&gt;::value ? <var>773</var> : <var>117</var>;</td></tr>
+<tr><th id="642">642</th><td>                <b>constexpr</b> <em>int</em> <dfn class="local col2 decl" id="542max_precision" title='max_precision' data-type='const int' data-ref="542max_precision">max_precision</dfn> = <span class="namespace">std::</span><a class="type" href="../../../../include/c++/9/type_traits.html#std::is_same" title='std::is_same' data-ref="std::is_same">is_same</a>&lt;Real, <em>double</em>&gt;::value ? <var>767</var> : <var>112</var>;</td></tr>
+<tr><th id="643">643</th><td>                <i>// We remove trailing zeros, so precision &gt; max_precision is same as precision == max_precision.</i></td></tr>
+<tr><th id="644">644</th><td>                <b>if</b> (<a class="local col6 ref" href="#536precision" title='precision' data-ref="536precision">precision</a> &gt; <a class="local col2 ref" href="#542max_precision" title='max_precision' data-ref="542max_precision">max_precision</a>)</td></tr>
+<tr><th id="645">645</th><td>                {</td></tr>
+<tr><th id="646">646</th><td>                    <a class="local col6 ref" href="#536precision" title='precision' data-ref="536precision">precision</a> = <a class="local col2 ref" href="#542max_precision" title='max_precision' data-ref="542max_precision">max_precision</a>;</td></tr>
+<tr><th id="647">647</th><td>                }</td></tr>
+<tr><th id="648">648</th><td>                <em>char</em> <dfn class="local col3 decl" id="543temp_buffer" title='temp_buffer' data-type='char[max_output_length]' data-ref="543temp_buffer">temp_buffer</dfn>[<a class="local col1 ref" href="#541max_output_length" title='max_output_length' data-ref="541max_output_length">max_output_length</a>];</td></tr>
+<tr><th id="649">649</th><td>                <em>auto</em> <dfn class="local col4 decl" id="544result" title='result' data-type='auto' data-ref="544result">result</dfn> = <span class="namespace">boost::charconv::detail::</span>floff&lt;<span class="namespace">boost::charconv::detail::</span><a class="type" href="../include/boost/charconv/detail/dragonbox/floff.hpp.html#boost::charconv::detail::main_cache_full" title='boost::charconv::detail::main_cache_full' data-ref="boost::charconv::detail::main_cache_full">main_cache_full</a>,</td></tr>
+<tr><th id="650">650</th><td>                                                             <span class="namespace">boost::charconv::detail::</span><a class="typedef" href="../include/boost/charconv/detail/dragonbox/floff.hpp.html#boost::charconv::detail::extended_cache_long" title='boost::charconv::detail::extended_cache_long' data-type='extended_cache_long_impl&lt;true&gt;' data-ref="boost::charconv::detail::extended_cache_long">extended_cache_long</a>&gt;(<a class="local col4 ref" href="#534value" title='value' data-ref="534value">value</a>, <a class="local col6 ref" href="#536precision" title='precision' data-ref="536precision">precision</a>,</td></tr>
+<tr><th id="651">651</th><td>                                                                                                           <a class="local col3 ref" href="#543temp_buffer" title='temp_buffer' data-ref="543temp_buffer">temp_buffer</a>,</td></tr>
+<tr><th id="652">652</th><td>                                                                                                           <a class="local col3 ref" href="#543temp_buffer" title='temp_buffer' data-ref="543temp_buffer">temp_buffer</a> + <a class="local col1 ref" href="#541max_output_length" title='max_output_length' data-ref="541max_output_length">max_output_length</a>,</td></tr>
+<tr><th id="653">653</th><td>                                                                                                           <a class="local col5 ref" href="#535fmt" title='fmt' data-ref="535fmt">fmt</a>);</td></tr>
+<tr><th id="654">654</th><td>                <em>auto</em> <dfn class="local col5 decl" id="545output_size" title='output_size' data-type='std::size_t' data-ref="545output_size">output_size</dfn> = <b>static_cast</b>&lt;<span class="namespace">std::</span><a class="typedef" href="../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a>&gt;(<a class="local col4 ref" href="#544result" title='result' data-ref="544result">result</a>.ptr - <a class="local col3 ref" href="#543temp_buffer" title='temp_buffer' data-ref="543temp_buffer">temp_buffer</a>);</td></tr>
+<tr><th id="655">655</th><td>                <b>if</b> (<b>static_cast</b>&lt;<span class="namespace">std::</span><a class="typedef" href="../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a>&gt;(<a class="local col3 ref" href="#533last" title='last' data-ref="533last">last</a> - <a class="local col2 ref" href="#532first" title='first' data-ref="532first">first</a>) &lt; <a class="local col5 ref" href="#545output_size" title='output_size' data-ref="545output_size">output_size</a>)</td></tr>
+<tr><th id="656">656</th><td>                {</td></tr>
+<tr><th id="657">657</th><td>                    <b>return</b> {<span class='inlayHint'>.ptr:&nbsp;</span><a class="local col3 ref" href="#533last" title='last' data-ref="533last">last</a>, <span class='inlayHint'>.ec:&nbsp;</span><span class="namespace">std::</span><a class="type" href="../../../../include/x86_64-linux-gnu/c++/9/bits/error_constants.h.html#std::errc" title='std::errc' data-ref="std::errc">errc</a>::<a class="enum" href="../../../../include/x86_64-linux-gnu/c++/9/bits/error_constants.h.html#std::errc::value_too_large" title='std::errc::value_too_large' data-ref="std::errc::value_too_large">value_too_large</a>};</td></tr>
+<tr><th id="658">658</th><td>                }</td></tr>
+<tr><th id="659">659</th><td>                <span class="namespace">std::</span><a class="ref fn" href="../../../../include/string.h.html#memcpy" title='memcpy' data-ref="memcpy">memcpy</a>(<span class='inlayHint'>dest:&nbsp;</span><a class="local col2 ref" href="#532first" title='first' data-ref="532first">first</a>, <span class='inlayHint'>src:&nbsp;</span><a class="local col3 ref" href="#543temp_buffer" title='temp_buffer' data-ref="543temp_buffer">temp_buffer</a>, <span class='inlayHint'>n:&nbsp;</span><a class="local col5 ref" href="#545output_size" title='output_size' data-ref="545output_size">output_size</a>);</td></tr>
+<tr><th id="660">660</th><td>                <b>return</b> {<span class='inlayHint'>.ptr:&nbsp;</span><a class="local col2 ref" href="#532first" title='first' data-ref="532first">first</a> + <a class="local col5 ref" href="#545output_size" title='output_size' data-ref="545output_size">output_size</a>, <span class='inlayHint'>.ec:&nbsp;</span><span class="namespace">std::</span><a class="type" href="../../../../include/x86_64-linux-gnu/c++/9/bits/error_constants.h.html#std::errc" title='std::errc' data-ref="std::errc">errc</a>()};</td></tr>
+<tr><th id="661">661</th><td>                </td></tr>
+<tr><th id="662">662</th><td>            }</td></tr>
+<tr><th id="663">663</th><td>            <b>return</b> <span class="namespace">boost::charconv::detail::</span>floff&lt;<span class="namespace">boost::charconv::detail::</span><a class="type" href="../include/boost/charconv/detail/dragonbox/floff.hpp.html#boost::charconv::detail::main_cache_full" title='boost::charconv::detail::main_cache_full' data-ref="boost::charconv::detail::main_cache_full">main_cache_full</a>,</td></tr>
+<tr><th id="664">664</th><td>                                                  <span class="namespace">boost::charconv::detail::</span><a class="typedef" href="../include/boost/charconv/detail/dragonbox/floff.hpp.html#boost::charconv::detail::extended_cache_long" title='boost::charconv::detail::extended_cache_long' data-type='extended_cache_long_impl&lt;true&gt;' data-ref="boost::charconv::detail::extended_cache_long">extended_cache_long</a>&gt;(<a class="local col4 ref" href="#534value" title='value' data-ref="534value">value</a>, <a class="local col6 ref" href="#536precision" title='precision' data-ref="536precision">precision</a>,</td></tr>
+<tr><th id="665">665</th><td>                                                                                                <a class="local col2 ref" href="#532first" title='first' data-ref="532first">first</a>, <a class="local col3 ref" href="#533last" title='last' data-ref="533last">last</a>, <a class="local col5 ref" href="#535fmt" title='fmt' data-ref="535fmt">fmt</a>);</td></tr>
+<tr><th id="666">666</th><td>        }</td></tr>
+<tr><th id="667">667</th><td>    }</td></tr>
+<tr><th id="668">668</th><td></td></tr>
+<tr><th id="669">669</th><td>    <em>const</em> <em>int</em> <dfn class="local col6 decl" id="546classification" title='classification' data-type='const int' data-ref="546classification">classification</dfn> = <span class="namespace">std::</span>fpclassify(<a class="local col4 ref" href="#534value" title='value' data-ref="534value">value</a>);</td></tr>
+<tr><th id="670">670</th><td>    <b>switch</b> (<a class="local col6 ref" href="#546classification" title='classification' data-ref="546classification">classification</a>)</td></tr>
+<tr><th id="671">671</th><td>    {</td></tr>
+<tr><th id="672">672</th><td>        <b>case</b> <a class="macro" href="../../../../include/math.h.html#859" title="1" data-ref="_M/FP_INFINITE">FP_INFINITE</a>:</td></tr>
+<tr><th id="673">673</th><td>        <b>case</b> <a class="macro" href="../../../../include/math.h.html#856" title="0" data-ref="_M/FP_NAN">FP_NAN</a>:</td></tr>
+<tr><th id="674">674</th><td>            <i>// The dragonbox impl will return the correct type of NaN</i></td></tr>
+<tr><th id="675">675</th><td>            <b>return</b> <span class="namespace">boost::charconv::detail::</span>dragonbox_to_chars(<a class="local col4 ref" href="#534value" title='value' data-ref="534value">value</a>, <a class="local col2 ref" href="#532first" title='first' data-ref="532first">first</a>, <a class="local col3 ref" href="#533last" title='last' data-ref="533last">last</a>, <a class="type" href="../include/boost/charconv/chars_format.hpp.html#boost::charconv::chars_format" title='boost::charconv::chars_format' data-ref="boost::charconv::chars_format">chars_format</a>::<a class="enum" href="../include/boost/charconv/chars_format.hpp.html#boost::charconv::chars_format::general" title='boost::charconv::chars_format::general' data-ref="boost::charconv::chars_format::general">general</a>);</td></tr>
+<tr><th id="676">676</th><td>        <b>case</b> <a class="macro" href="../../../../include/math.h.html#862" title="2" data-ref="_M/FP_ZERO">FP_ZERO</a>:</td></tr>
+<tr><th id="677">677</th><td>            <b>if</b> (<span class="namespace">std::</span>signbit(<a class="local col4 ref" href="#534value" title='value' data-ref="534value">value</a>))</td></tr>
+<tr><th id="678">678</th><td>            {</td></tr>
+<tr><th id="679">679</th><td>                *<a class="local col2 ref" href="#532first" title='first' data-ref="532first">first</a>++ = <kbd>'-'</kbd>;</td></tr>
+<tr><th id="680">680</th><td>            }</td></tr>
+<tr><th id="681">681</th><td>            <span class="namespace">std::</span><a class="ref fn" href="../../../../include/string.h.html#memcpy" title='memcpy' data-ref="memcpy">memcpy</a>(<span class='inlayHint'>dest:&nbsp;</span><a class="local col2 ref" href="#532first" title='first' data-ref="532first">first</a>, <span class='inlayHint'>src:&nbsp;</span><q>"0p+0"</q>, <span class='inlayHint'>n:&nbsp;</span><var>4</var>); <i>// NOLINT : No null terminator is purposeful</i></td></tr>
+<tr><th id="682">682</th><td>            <b>return</b> {<span class='inlayHint'>.ptr:&nbsp;</span><a class="local col2 ref" href="#532first" title='first' data-ref="532first">first</a> + <var>4</var>, <span class='inlayHint'>.ec:&nbsp;</span><span class="namespace">std::</span><a class="type" href="../../../../include/x86_64-linux-gnu/c++/9/bits/error_constants.h.html#std::errc" title='std::errc' data-ref="std::errc">errc</a>()};</td></tr>
+<tr><th id="683">683</th><td>        <b>default</b>:</td></tr>
+<tr><th id="684">684</th><td>            <i>// Do nothing</i></td></tr>
+<tr><th id="685">685</th><td>            (<em>void</em>)<a class="local col6 ref" href="#536precision" title='precision' data-ref="536precision">precision</a>;</td></tr>
+<tr><th id="686">686</th><td>    }</td></tr>
+<tr><th id="687">687</th><td></td></tr>
+<tr><th id="688">688</th><td>    <i>// Hex handles both cases already</i></td></tr>
+<tr><th id="689">689</th><td>    <b>return</b> <span class="namespace">boost::charconv::detail::</span>to_chars_hex(<a class="local col2 ref" href="#532first" title='first' data-ref="532first">first</a>, <a class="local col3 ref" href="#533last" title='last' data-ref="533last">last</a>, <a class="local col4 ref" href="#534value" title='value' data-ref="534value">value</a>, <a class="local col6 ref" href="#536precision" title='precision' data-ref="536precision">precision</a>);</td></tr>
+<tr><th id="690">690</th><td>}</td></tr>
+<tr><th id="691">691</th><td></td></tr>
+<tr><th id="692">692</th><td><u>#<span data-ppcond="692">if</span> (<a class="macro" href="../include/boost/charconv/detail/bit_layouts.hpp.html#66" title="80" data-ref="_M/BOOST_CHARCONV_LDBL_BITS">BOOST_CHARCONV_LDBL_BITS</a> == 80 || <a class="macro" href="../include/boost/charconv/detail/bit_layouts.hpp.html#66" title="80" data-ref="_M/BOOST_CHARCONV_LDBL_BITS">BOOST_CHARCONV_LDBL_BITS</a> == 128)</u></td></tr>
+<tr><th id="693">693</th><td></td></tr>
+<tr><th id="694">694</th><td><b>template</b> &lt;&gt;</td></tr>
+<tr><th id="695">695</th><td><a class="type" href="../include/boost/charconv/detail/to_chars_result.hpp.html#boost::charconv::to_chars_result" title='boost::charconv::to_chars_result' data-ref="boost::charconv::to_chars_result">to_chars_result</a> <dfn class="decl def fn" id="_ZN5boost8charconv6detail19to_chars_float_implEPcS2_T_NS0_12chars_formatEi" title='boost::charconv::detail::to_chars_float_impl' data-ref="_ZN5boost8charconv6detail19to_chars_float_implEPcS2_T_NS0_12chars_formatEi">to_chars_float_impl</dfn>(<em>char</em>* <dfn class="local col7 decl" id="547first" title='first' data-type='char *' data-ref="547first">first</dfn>, <em>char</em>* <dfn class="local col8 decl" id="548last" title='last' data-type='char *' data-ref="548last">last</dfn>, <em>long</em> <em>double</em> <dfn class="local col9 decl" id="549value" title='value' data-type='long double' data-ref="549value">value</dfn>, <a class="type" href="../include/boost/charconv/chars_format.hpp.html#boost::charconv::chars_format" title='boost::charconv::chars_format' data-ref="boost::charconv::chars_format">chars_format</a> <dfn class="local col0 decl" id="550fmt" title='fmt' data-type='boost::charconv::chars_format' data-ref="550fmt">fmt</dfn>, <em>int</em> <dfn class="local col1 decl" id="551precision" title='precision' data-type='int' data-ref="551precision">precision</dfn>) <b>noexcept</b></td></tr>
+<tr><th id="696">696</th><td>{</td></tr>
+<tr><th id="697">697</th><td>    <b>static_assert</b>(<span class="namespace">std::</span><a class="type" href="../../../../include/c++/9/limits.html#std::numeric_limits" title='std::numeric_limits' data-ref="std::numeric_limits">numeric_limits</a>&lt;<em>long</em> <em>double</em>&gt;::<a class="ref" href="../../../../include/c++/9/limits.html#std::numeric_limits{longdouble}::is_iec559" title='std::numeric_limits&lt;long double&gt;::is_iec559' data-ref="std::numeric_limits{longdouble}::is_iec559">is_iec559</a>, <q>"Long double must be IEEE 754 compliant"</q>);</td></tr>
+<tr><th id="698">698</th><td></td></tr>
+<tr><th id="699">699</th><td>    <em>const</em> <em>auto</em> <dfn class="local col2 decl" id="552classification" title='classification' data-type='const int' data-ref="552classification">classification</dfn> = <span class="namespace">std::</span><a class="ref fn" href="../../../../include/c++/9/cmath.html#_ZSt10fpclassifye" title='std::fpclassify' data-ref="_ZSt10fpclassifye">fpclassify</a>(<span class='inlayHint'>x:&nbsp;</span><a class="local col9 ref" href="#549value" title='value' data-ref="549value">value</a>);</td></tr>
+<tr><th id="700">700</th><td>    <u>#<span data-ppcond="700">if</span> <a class="macro" href="../include/boost/charconv/detail/bit_layouts.hpp.html#66" title="80" data-ref="_M/BOOST_CHARCONV_LDBL_BITS">BOOST_CHARCONV_LDBL_BITS</a> == 128</u></td></tr>
+<tr><th id="701">701</th><td>    <b>if</b> (classification == FP_NAN || classification == FP_INFINITE)</td></tr>
+<tr><th id="702">702</th><td>    {</td></tr>
+<tr><th id="703">703</th><td>        <b>return</b> boost::charconv::detail::to_chars_nonfinite(first, last, value, classification);</td></tr>
+<tr><th id="704">704</th><td>    }</td></tr>
+<tr><th id="705">705</th><td>    <u>#<span data-ppcond="700">else</span></u></td></tr>
+<tr><th id="706">706</th><td>    <b>if</b> (<a class="local col2 ref" href="#552classification" title='classification' data-ref="552classification">classification</a> == <a class="macro" href="../../../../include/math.h.html#856" title="0" data-ref="_M/FP_NAN">FP_NAN</a> || <a class="local col2 ref" href="#552classification" title='classification' data-ref="552classification">classification</a> == <a class="macro" href="../../../../include/math.h.html#859" title="1" data-ref="_M/FP_INFINITE">FP_INFINITE</a>)</td></tr>
+<tr><th id="707">707</th><td>    {</td></tr>
+<tr><th id="708">708</th><td>        <em>const</em> <em>auto</em> <dfn class="local col3 decl" id="553fd128" title='fd128' data-type='const struct floating_decimal_128' data-ref="553fd128">fd128</dfn> = <span class="namespace">boost::charconv::detail::ryu::</span><a class="ref fn" href="../include/boost/charconv/detail/ryu/ryu_generic_128.hpp.html#_ZN5boost8charconv6detail3ryuL20long_double_to_fd128Ee" title='boost::charconv::detail::ryu::long_double_to_fd128' data-ref="_ZN5boost8charconv6detail3ryuL20long_double_to_fd128Ee">long_double_to_fd128</a>(<span class='inlayHint'>d:&nbsp;</span><a class="local col9 ref" href="#549value" title='value' data-ref="549value">value</a>);</td></tr>
+<tr><th id="709">709</th><td>        <em>const</em> <em>auto</em> <dfn class="local col4 decl" id="554num_chars" title='num_chars' data-type='const int' data-ref="554num_chars">num_chars</dfn> = <span class="namespace">boost::charconv::detail::ryu::</span><a class="ref fn" href="../include/boost/charconv/detail/ryu/ryu_generic_128.hpp.html#_ZN5boost8charconv6detail3ryuL16generic_to_charsENS2_20floating_decimal_128EPclNS0_12chars_formatEi" title='boost::charconv::detail::ryu::generic_to_chars' data-ref="_ZN5boost8charconv6detail3ryuL16generic_to_charsENS2_20floating_decimal_128EPclNS0_12chars_formatEi">generic_to_chars</a>(<a class="ref fn fake" href="../include/boost/charconv/detail/ryu/ryu_generic_128.hpp.html#27" title='boost::charconv::detail::ryu::floating_decimal_128::floating_decimal_128' data-ref="_ZN5boost8charconv6detail3ryu20floating_decimal_128C1ERKS3_"></a><span class='inlayHint'>v:&nbsp;</span><a class="local col3 ref" href="#553fd128" title='fd128' data-ref="553fd128">fd128</a>, <span class='inlayHint'>result:&nbsp;</span><a class="local col7 ref" href="#547first" title='first' data-ref="547first">first</a>, <span class='inlayHint'>result_size:&nbsp;</span><a class="local col8 ref" href="#548last" title='last' data-ref="548last">last</a> - <a class="local col7 ref" href="#547first" title='first' data-ref="547first">first</a>, <a class="local col0 ref" href="#550fmt" title='fmt' data-ref="550fmt">fmt</a>, <a class="local col1 ref" href="#551precision" title='precision' data-ref="551precision">precision</a>);</td></tr>
+<tr><th id="710">710</th><td></td></tr>
+<tr><th id="711">711</th><td>        <b>if</b> (<a class="local col4 ref" href="#554num_chars" title='num_chars' data-ref="554num_chars">num_chars</a> &gt; <var>0</var>)</td></tr>
+<tr><th id="712">712</th><td>        {</td></tr>
+<tr><th id="713">713</th><td>            <b>return</b> { <span class='inlayHint'>.ptr:&nbsp;</span><a class="local col7 ref" href="#547first" title='first' data-ref="547first">first</a> + <a class="local col4 ref" href="#554num_chars" title='num_chars' data-ref="554num_chars">num_chars</a>, <span class='inlayHint'>.ec:&nbsp;</span><span class="namespace">std::</span><a class="type" href="../../../../include/x86_64-linux-gnu/c++/9/bits/error_constants.h.html#std::errc" title='std::errc' data-ref="std::errc">errc</a>() };</td></tr>
+<tr><th id="714">714</th><td>        }</td></tr>
+<tr><th id="715">715</th><td>        <b>else</b></td></tr>
+<tr><th id="716">716</th><td>        {</td></tr>
+<tr><th id="717">717</th><td>            <b>return</b> {<span class='inlayHint'>.ptr:&nbsp;</span><a class="local col8 ref" href="#548last" title='last' data-ref="548last">last</a>, <span class='inlayHint'>.ec:&nbsp;</span><span class="namespace">std::</span><a class="type" href="../../../../include/x86_64-linux-gnu/c++/9/bits/error_constants.h.html#std::errc" title='std::errc' data-ref="std::errc">errc</a>::<a class="enum" href="../../../../include/x86_64-linux-gnu/c++/9/bits/error_constants.h.html#std::errc::value_too_large" title='std::errc::value_too_large' data-ref="std::errc::value_too_large">value_too_large</a>};</td></tr>
+<tr><th id="718">718</th><td>        }</td></tr>
+<tr><th id="719">719</th><td>    }</td></tr>
+<tr><th id="720">720</th><td>    <u>#<span data-ppcond="700">endif</span></u></td></tr>
+<tr><th id="721">721</th><td></td></tr>
+<tr><th id="722">722</th><td>    <i>// Sanity check our bounds</i></td></tr>
+<tr><th id="723">723</th><td>    <em>const</em> <span class="namespace">std::</span><a class="typedef" href="../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::ptrdiff_t" title='std::ptrdiff_t' data-type='long' data-ref="std::ptrdiff_t">ptrdiff_t</a> <dfn class="local col5 decl" id="555buffer_size" title='buffer_size' data-type='const std::ptrdiff_t' data-ref="555buffer_size">buffer_size</dfn> = <a class="local col8 ref" href="#548last" title='last' data-ref="548last">last</a> - <a class="local col7 ref" href="#547first" title='first' data-ref="547first">first</a>;</td></tr>
+<tr><th id="724">724</th><td>    <em>auto</em> <dfn class="local col6 decl" id="556real_precision" title='real_precision' data-type='int' data-ref="556real_precision">real_precision</dfn> = <span class="namespace">boost::charconv::detail::</span><a class="ref fn" href="../include/boost/charconv/detail/buffer_sizing.hpp.html#_ZN5boost8charconv6detail18get_real_precisionEi" title='boost::charconv::detail::get_real_precision' data-ref="_ZN5boost8charconv6detail18get_real_precisionEi">get_real_precision</a>&lt;<em>long</em> <em>double</em>&gt;(<a class="local col1 ref" href="#551precision" title='precision' data-ref="551precision">precision</a>);</td></tr>
+<tr><th id="725">725</th><td>    <b>if</b> (<a class="local col5 ref" href="#555buffer_size" title='buffer_size' data-ref="555buffer_size">buffer_size</a> &lt; <a class="local col6 ref" href="#556real_precision" title='real_precision' data-ref="556real_precision">real_precision</a> || <a class="local col7 ref" href="#547first" title='first' data-ref="547first">first</a> &gt; <a class="local col8 ref" href="#548last" title='last' data-ref="548last">last</a>)</td></tr>
+<tr><th id="726">726</th><td>    {</td></tr>
+<tr><th id="727">727</th><td>        <b>return</b> {<span class='inlayHint'>.ptr:&nbsp;</span><a class="local col8 ref" href="#548last" title='last' data-ref="548last">last</a>, <span class='inlayHint'>.ec:&nbsp;</span><span class="namespace">std::</span><a class="type" href="../../../../include/x86_64-linux-gnu/c++/9/bits/error_constants.h.html#std::errc" title='std::errc' data-ref="std::errc">errc</a>::<a class="enum" href="../../../../include/x86_64-linux-gnu/c++/9/bits/error_constants.h.html#std::errc::value_too_large" title='std::errc::value_too_large' data-ref="std::errc::value_too_large">value_too_large</a>};</td></tr>
+<tr><th id="728">728</th><td>    }</td></tr>
+<tr><th id="729">729</th><td></td></tr>
+<tr><th id="730">730</th><td>    <b>if</b> (<a class="local col0 ref" href="#550fmt" title='fmt' data-ref="550fmt">fmt</a> == <span class="namespace">boost::charconv::</span><a class="type" href="../include/boost/charconv/chars_format.hpp.html#boost::charconv::chars_format" title='boost::charconv::chars_format' data-ref="boost::charconv::chars_format">chars_format</a>::<a class="enum" href="../include/boost/charconv/chars_format.hpp.html#boost::charconv::chars_format::general" title='boost::charconv::chars_format::general' data-ref="boost::charconv::chars_format::general">general</a> || <a class="local col0 ref" href="#550fmt" title='fmt' data-ref="550fmt">fmt</a> == <span class="namespace">boost::charconv::</span><a class="type" href="../include/boost/charconv/chars_format.hpp.html#boost::charconv::chars_format" title='boost::charconv::chars_format' data-ref="boost::charconv::chars_format">chars_format</a>::<a class="enum" href="../include/boost/charconv/chars_format.hpp.html#boost::charconv::chars_format::scientific" title='boost::charconv::chars_format::scientific' data-ref="boost::charconv::chars_format::scientific">scientific</a>)</td></tr>
+<tr><th id="731">731</th><td>    {</td></tr>
+<tr><th id="732">732</th><td>        <em>const</em> <em>auto</em> <dfn class="local col7 decl" id="557fd128" title='fd128' data-type='const struct floating_decimal_128' data-ref="557fd128">fd128</dfn> = <span class="namespace">boost::charconv::detail::ryu::</span><a class="ref fn" href="../include/boost/charconv/detail/ryu/ryu_generic_128.hpp.html#_ZN5boost8charconv6detail3ryuL20long_double_to_fd128Ee" title='boost::charconv::detail::ryu::long_double_to_fd128' data-ref="_ZN5boost8charconv6detail3ryuL20long_double_to_fd128Ee">long_double_to_fd128</a>(<span class='inlayHint'>d:&nbsp;</span><a class="local col9 ref" href="#549value" title='value' data-ref="549value">value</a>);</td></tr>
+<tr><th id="733">733</th><td>        <em>const</em> <em>auto</em> <dfn class="local col8 decl" id="558num_chars" title='num_chars' data-type='const int' data-ref="558num_chars">num_chars</dfn> = <span class="namespace">boost::charconv::detail::ryu::</span><a class="ref fn" href="../include/boost/charconv/detail/ryu/ryu_generic_128.hpp.html#_ZN5boost8charconv6detail3ryuL16generic_to_charsENS2_20floating_decimal_128EPclNS0_12chars_formatEi" title='boost::charconv::detail::ryu::generic_to_chars' data-ref="_ZN5boost8charconv6detail3ryuL16generic_to_charsENS2_20floating_decimal_128EPclNS0_12chars_formatEi">generic_to_chars</a>(<a class="ref fn fake" href="../include/boost/charconv/detail/ryu/ryu_generic_128.hpp.html#27" title='boost::charconv::detail::ryu::floating_decimal_128::floating_decimal_128' data-ref="_ZN5boost8charconv6detail3ryu20floating_decimal_128C1ERKS3_"></a><span class='inlayHint'>v:&nbsp;</span><a class="local col7 ref" href="#557fd128" title='fd128' data-ref="557fd128">fd128</a>, <span class='inlayHint'>result:&nbsp;</span><a class="local col7 ref" href="#547first" title='first' data-ref="547first">first</a>, <span class='inlayHint'>result_size:&nbsp;</span><a class="local col8 ref" href="#548last" title='last' data-ref="548last">last</a> - <a class="local col7 ref" href="#547first" title='first' data-ref="547first">first</a>, <a class="local col0 ref" href="#550fmt" title='fmt' data-ref="550fmt">fmt</a>, <a class="local col1 ref" href="#551precision" title='precision' data-ref="551precision">precision</a>);</td></tr>
+<tr><th id="734">734</th><td></td></tr>
+<tr><th id="735">735</th><td>        <b>if</b> (<a class="local col8 ref" href="#558num_chars" title='num_chars' data-ref="558num_chars">num_chars</a> &gt; <var>0</var>)</td></tr>
+<tr><th id="736">736</th><td>        {</td></tr>
+<tr><th id="737">737</th><td>            <b>return</b> { <span class='inlayHint'>.ptr:&nbsp;</span><a class="local col7 ref" href="#547first" title='first' data-ref="547first">first</a> + <a class="local col8 ref" href="#558num_chars" title='num_chars' data-ref="558num_chars">num_chars</a>, <span class='inlayHint'>.ec:&nbsp;</span><span class="namespace">std::</span><a class="type" href="../../../../include/x86_64-linux-gnu/c++/9/bits/error_constants.h.html#std::errc" title='std::errc' data-ref="std::errc">errc</a>() };</td></tr>
+<tr><th id="738">738</th><td>        }</td></tr>
+<tr><th id="739">739</th><td>    }</td></tr>
+<tr><th id="740">740</th><td>    <b>else</b> <b>if</b> (<a class="local col0 ref" href="#550fmt" title='fmt' data-ref="550fmt">fmt</a> == <span class="namespace">boost::charconv::</span><a class="type" href="../include/boost/charconv/chars_format.hpp.html#boost::charconv::chars_format" title='boost::charconv::chars_format' data-ref="boost::charconv::chars_format">chars_format</a>::<a class="enum" href="../include/boost/charconv/chars_format.hpp.html#boost::charconv::chars_format::hex" title='boost::charconv::chars_format::hex' data-ref="boost::charconv::chars_format::hex">hex</a>)</td></tr>
+<tr><th id="741">741</th><td>    {</td></tr>
+<tr><th id="742">742</th><td>        <b>return</b> <span class="namespace">boost::charconv::detail::</span><a class="ref fn" href="#_ZN5boost8charconv6detail12to_chars_hexEPcS2_T_i" title='boost::charconv::detail::to_chars_hex' data-ref="_ZN5boost8charconv6detail12to_chars_hexEPcS2_T_i">to_chars_hex</a>(<a class="local col7 ref" href="#547first" title='first' data-ref="547first">first</a>, <a class="local col8 ref" href="#548last" title='last' data-ref="548last">last</a>, <a class="local col9 ref" href="#549value" title='value' data-ref="549value">value</a>, <a class="local col1 ref" href="#551precision" title='precision' data-ref="551precision">precision</a>);</td></tr>
+<tr><th id="743">743</th><td>    }</td></tr>
+<tr><th id="744">744</th><td>    <b>else</b> <b>if</b> (<a class="local col0 ref" href="#550fmt" title='fmt' data-ref="550fmt">fmt</a> == <span class="namespace">boost::charconv::</span><a class="type" href="../include/boost/charconv/chars_format.hpp.html#boost::charconv::chars_format" title='boost::charconv::chars_format' data-ref="boost::charconv::chars_format">chars_format</a>::<a class="enum" href="../include/boost/charconv/chars_format.hpp.html#boost::charconv::chars_format::fixed" title='boost::charconv::chars_format::fixed' data-ref="boost::charconv::chars_format::fixed">fixed</a>)</td></tr>
+<tr><th id="745">745</th><td>    {</td></tr>
+<tr><th id="746">746</th><td>        <em>const</em> <em>auto</em> <dfn class="local col9 decl" id="559fd128" title='fd128' data-type='const struct floating_decimal_128' data-ref="559fd128">fd128</dfn> = <span class="namespace">boost::charconv::detail::ryu::</span><a class="ref fn" href="../include/boost/charconv/detail/ryu/ryu_generic_128.hpp.html#_ZN5boost8charconv6detail3ryuL20long_double_to_fd128Ee" title='boost::charconv::detail::ryu::long_double_to_fd128' data-ref="_ZN5boost8charconv6detail3ryuL20long_double_to_fd128Ee">long_double_to_fd128</a>(<span class='inlayHint'>d:&nbsp;</span><a class="local col9 ref" href="#549value" title='value' data-ref="549value">value</a>);</td></tr>
+<tr><th id="747">747</th><td>        <em>const</em> <em>auto</em> <dfn class="local col0 decl" id="560num_chars" title='num_chars' data-type='const int' data-ref="560num_chars">num_chars</dfn> = <span class="namespace">boost::charconv::detail::ryu::</span><a class="ref fn" href="../include/boost/charconv/detail/ryu/ryu_generic_128.hpp.html#_ZN5boost8charconv6detail3ryuL22generic_to_chars_fixedENS2_20floating_decimal_128EPcli" title='boost::charconv::detail::ryu::generic_to_chars_fixed' data-ref="_ZN5boost8charconv6detail3ryuL22generic_to_chars_fixedENS2_20floating_decimal_128EPcli">generic_to_chars_fixed</a>(<a class="ref fn fake" href="../include/boost/charconv/detail/ryu/ryu_generic_128.hpp.html#27" title='boost::charconv::detail::ryu::floating_decimal_128::floating_decimal_128' data-ref="_ZN5boost8charconv6detail3ryu20floating_decimal_128C1ERKS3_"></a><span class='inlayHint'>v:&nbsp;</span><a class="local col9 ref" href="#559fd128" title='fd128' data-ref="559fd128">fd128</a>, <span class='inlayHint'>result:&nbsp;</span><a class="local col7 ref" href="#547first" title='first' data-ref="547first">first</a>, <span class='inlayHint'>result_size:&nbsp;</span><a class="local col8 ref" href="#548last" title='last' data-ref="548last">last</a> - <a class="local col7 ref" href="#547first" title='first' data-ref="547first">first</a>, <a class="local col1 ref" href="#551precision" title='precision' data-ref="551precision">precision</a>);</td></tr>
+<tr><th id="748">748</th><td></td></tr>
+<tr><th id="749">749</th><td>        <b>if</b> (<a class="local col0 ref" href="#560num_chars" title='num_chars' data-ref="560num_chars">num_chars</a> &gt; <var>0</var>)</td></tr>
+<tr><th id="750">750</th><td>        {</td></tr>
+<tr><th id="751">751</th><td>            <b>return</b> { <span class='inlayHint'>.ptr:&nbsp;</span><a class="local col7 ref" href="#547first" title='first' data-ref="547first">first</a> + <a class="local col0 ref" href="#560num_chars" title='num_chars' data-ref="560num_chars">num_chars</a>, <span class='inlayHint'>.ec:&nbsp;</span><span class="namespace">std::</span><a class="type" href="../../../../include/x86_64-linux-gnu/c++/9/bits/error_constants.h.html#std::errc" title='std::errc' data-ref="std::errc">errc</a>() };</td></tr>
+<tr><th id="752">752</th><td>        }</td></tr>
+<tr><th id="753">753</th><td>        <b>else</b> <b>if</b> (<a class="local col0 ref" href="#560num_chars" title='num_chars' data-ref="560num_chars">num_chars</a> == -<b>static_cast</b>&lt;<em>int</em>&gt;(<span class="namespace">std::</span><a class="type" href="../../../../include/x86_64-linux-gnu/c++/9/bits/error_constants.h.html#std::errc" title='std::errc' data-ref="std::errc">errc</a>::<a class="enum" href="../../../../include/x86_64-linux-gnu/c++/9/bits/error_constants.h.html#std::errc::value_too_large" title='std::errc::value_too_large' data-ref="std::errc::value_too_large">value_too_large</a>))</td></tr>
+<tr><th id="754">754</th><td>        {</td></tr>
+<tr><th id="755">755</th><td>            <b>return</b> { <span class='inlayHint'>.ptr:&nbsp;</span><a class="local col8 ref" href="#548last" title='last' data-ref="548last">last</a>, <span class='inlayHint'>.ec:&nbsp;</span><span class="namespace">std::</span><a class="type" href="../../../../include/x86_64-linux-gnu/c++/9/bits/error_constants.h.html#std::errc" title='std::errc' data-ref="std::errc">errc</a>::<a class="enum" href="../../../../include/x86_64-linux-gnu/c++/9/bits/error_constants.h.html#std::errc::value_too_large" title='std::errc::value_too_large' data-ref="std::errc::value_too_large">value_too_large</a> };</td></tr>
+<tr><th id="756">756</th><td>        }</td></tr>
+<tr><th id="757">757</th><td>    }</td></tr>
+<tr><th id="758">758</th><td></td></tr>
+<tr><th id="759">759</th><td>    <i>// Fallback to printf methods</i></td></tr>
+<tr><th id="760">760</th><td>    <b>return</b> <span class="namespace">boost::charconv::detail::</span><a class="ref fn" href="../include/boost/charconv/detail/fallback_routines.hpp.html#_ZN5boost8charconv6detail20to_chars_printf_implEPcS2_T_NS0_12chars_formatEi" title='boost::charconv::detail::to_chars_printf_impl' data-ref="_ZN5boost8charconv6detail20to_chars_printf_implEPcS2_T_NS0_12chars_formatEi">to_chars_printf_impl</a>(<a class="local col7 ref" href="#547first" title='first' data-ref="547first">first</a>, <a class="local col8 ref" href="#548last" title='last' data-ref="548last">last</a>, <a class="local col9 ref" href="#549value" title='value' data-ref="549value">value</a>, <a class="local col0 ref" href="#550fmt" title='fmt' data-ref="550fmt">fmt</a>, <a class="local col1 ref" href="#551precision" title='precision' data-ref="551precision">precision</a>);</td></tr>
+<tr><th id="761">761</th><td>}</td></tr>
+<tr><th id="762">762</th><td></td></tr>
+<tr><th id="763">763</th><td><u>#<span data-ppcond="692">endif</span></u></td></tr>
+<tr><th id="764">764</th><td></td></tr>
+<tr><th id="765">765</th><td><u>#<span data-ppcond="765">ifdef</span> <span class="macro" data-ref="_M/BOOST_CHARCONV_HAS_FLOAT128">BOOST_CHARCONV_HAS_FLOAT128</span></u></td></tr>
+<tr><th id="766">766</th><td></td></tr>
+<tr><th id="767">767</th><td><b>template</b> &lt;&gt;</td></tr>
+<tr><th id="768">768</th><td>to_chars_result to_chars_float_impl(<em>char</em>* first, <em>char</em>* last, <b>__float128</b> value, chars_format fmt, <em>int</em> precision) <b>noexcept</b></td></tr>
+<tr><th id="769">769</th><td>{</td></tr>
+<tr><th id="770">770</th><td>    <i>// Sanity check our bounds</i></td></tr>
+<tr><th id="771">771</th><td>    <b>if</b> (first &gt;= last)</td></tr>
+<tr><th id="772">772</th><td>    {</td></tr>
+<tr><th id="773">773</th><td>        <b>return</b> {last, std::errc::value_too_large};</td></tr>
+<tr><th id="774">774</th><td>    }</td></tr>
+<tr><th id="775">775</th><td></td></tr>
+<tr><th id="776">776</th><td>    <em>char</em>* <em>const</em> original_first = first;</td></tr>
+<tr><th id="777">777</th><td></td></tr>
+<tr><th id="778">778</th><td>    <b>if</b> (isnanq(value))</td></tr>
+<tr><th id="779">779</th><td>    {</td></tr>
+<tr><th id="780">780</th><td>        <b>return</b> boost::charconv::detail::to_chars_nonfinite(first, last, value, FP_NAN);</td></tr>
+<tr><th id="781">781</th><td>    }</td></tr>
+<tr><th id="782">782</th><td>    <b>else</b> <b>if</b> (isinfq(value))</td></tr>
+<tr><th id="783">783</th><td>    {</td></tr>
+<tr><th id="784">784</th><td>        <b>return</b> boost::charconv::detail::to_chars_nonfinite(first, last, value, FP_INFINITE);</td></tr>
+<tr><th id="785">785</th><td>    }</td></tr>
+<tr><th id="786">786</th><td></td></tr>
+<tr><th id="787">787</th><td>    <i>// Sanity check our bounds</i></td></tr>
+<tr><th id="788">788</th><td>    <em>const</em> std::ptrdiff_t buffer_size = last - first;</td></tr>
+<tr><th id="789">789</th><td>    <em>auto</em> real_precision = boost::charconv::detail::get_real_precision&lt;<b>__float128</b>&gt;(precision);</td></tr>
+<tr><th id="790">790</th><td>    <b>if</b> (buffer_size &lt; real_precision || first &gt; last)</td></tr>
+<tr><th id="791">791</th><td>    {</td></tr>
+<tr><th id="792">792</th><td>        <b>return</b> {last, std::errc::value_too_large};</td></tr>
+<tr><th id="793">793</th><td>    }</td></tr>
+<tr><th id="794">794</th><td></td></tr>
+<tr><th id="795">795</th><td>    <b>if</b> ((fmt == boost::charconv::chars_format::general || fmt == boost::charconv::chars_format::scientific))</td></tr>
+<tr><th id="796">796</th><td>    {</td></tr>
+<tr><th id="797">797</th><td>        <em>const</em> <em>auto</em> fd128 = boost::charconv::detail::ryu::float128_to_fd128(value);</td></tr>
+<tr><th id="798">798</th><td>        <em>const</em> <em>auto</em> num_chars = boost::charconv::detail::ryu::generic_to_chars(fd128, first, last - first, fmt, precision);</td></tr>
+<tr><th id="799">799</th><td></td></tr>
+<tr><th id="800">800</th><td>        <b>if</b> (num_chars &gt; <var>0</var>)</td></tr>
+<tr><th id="801">801</th><td>        {</td></tr>
+<tr><th id="802">802</th><td>            <b>return</b> { first + num_chars, std::errc() };</td></tr>
+<tr><th id="803">803</th><td>        }</td></tr>
+<tr><th id="804">804</th><td>        <b>else</b> <b>if</b> (num_chars == -<var>1</var>)</td></tr>
+<tr><th id="805">805</th><td>        {</td></tr>
+<tr><th id="806">806</th><td>            <b>return</b> {last, std::errc::value_too_large};</td></tr>
+<tr><th id="807">807</th><td>        }</td></tr>
+<tr><th id="808">808</th><td>    }</td></tr>
+<tr><th id="809">809</th><td>    <b>else</b> <b>if</b> (fmt == boost::charconv::chars_format::hex)</td></tr>
+<tr><th id="810">810</th><td>    {</td></tr>
+<tr><th id="811">811</th><td>        <b>return</b> boost::charconv::detail::to_chars_hex(first, last, value, precision);</td></tr>
+<tr><th id="812">812</th><td>    }</td></tr>
+<tr><th id="813">813</th><td>    <b>else</b> <b>if</b> (fmt == boost::charconv::chars_format::fixed)</td></tr>
+<tr><th id="814">814</th><td>    {</td></tr>
+<tr><th id="815">815</th><td>        <em>const</em> <em>auto</em> fd128 = boost::charconv::detail::ryu::float128_to_fd128(value);</td></tr>
+<tr><th id="816">816</th><td>        <em>const</em> <em>auto</em> num_chars = boost::charconv::detail::ryu::generic_to_chars_fixed(fd128, first, last - first, precision);</td></tr>
+<tr><th id="817">817</th><td></td></tr>
+<tr><th id="818">818</th><td>        <b>if</b> (num_chars &gt; <var>0</var>)</td></tr>
+<tr><th id="819">819</th><td>        {</td></tr>
+<tr><th id="820">820</th><td>            <b>return</b> { first + num_chars, std::errc() };</td></tr>
+<tr><th id="821">821</th><td>        }</td></tr>
+<tr><th id="822">822</th><td>        <b>else</b> <b>if</b> (num_chars == -<b>static_cast</b>&lt;<em>int</em>&gt;(std::errc::value_too_large))</td></tr>
+<tr><th id="823">823</th><td>        {</td></tr>
+<tr><th id="824">824</th><td>            <b>return</b> { last, std::errc::value_too_large };</td></tr>
+<tr><th id="825">825</th><td>        }</td></tr>
+<tr><th id="826">826</th><td>    }</td></tr>
+<tr><th id="827">827</th><td></td></tr>
+<tr><th id="828">828</th><td>    first = original_first;</td></tr>
+<tr><th id="829">829</th><td>    <i>// Fallback to printf</i></td></tr>
+<tr><th id="830">830</th><td>    <b>return</b> boost::charconv::detail::to_chars_printf_impl(first, last, value, fmt, precision);</td></tr>
+<tr><th id="831">831</th><td>}</td></tr>
+<tr><th id="832">832</th><td></td></tr>
+<tr><th id="833">833</th><td><u>#<span data-ppcond="765">endif</span></u></td></tr>
+<tr><th id="834">834</th><td></td></tr>
+<tr><th id="835">835</th><td>} <i>// namespace detail</i></td></tr>
+<tr><th id="836">836</th><td>} <i>// namespace charconv</i></td></tr>
+<tr><th id="837">837</th><td>} <i>// namespace detail</i></td></tr>
+<tr><th id="838">838</th><td></td></tr>
+<tr><th id="839">839</th><td><u>#<span data-ppcond="7">endif</span> //BOOST_CHARCONV_DETAIL_TO_CHARS_FLOAT_IMPL_HPP</u></td></tr>
+<tr><th id="840">840</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='to_chars.cpp.html'>boost-1.85.0/libs/charconv/src/to_chars.cpp</a><br/>Generated on <em>2024-Jun-14</em> from project boost-1.85.0 revision <em>1.85.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

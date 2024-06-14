@@ -1,0 +1,173 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>next_prior.hpp source code [boost-1.85.0/libs/iterator/include/boost/next_prior.hpp] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="boost::next_prior_detail::next_advance_impl,boost::next_prior_detail::next_plus_assign_impl,boost::next_prior_detail::next_plus_impl,boost::next_prior_detail::prior_advance_impl,boost::next_prior_detail::prior_minus_assign_impl,boost::next_prior_detail::prior_minus_impl "/>
+<link rel="stylesheet" href="../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'boost-1.85.0/libs/iterator/include/boost/next_prior.hpp'; var root_path = '../../../../..'; var data_path = '../../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../..'>boost-1.85.0</a>/<a href='../../..'>libs</a>/<a href='../..'>iterator</a>/<a href='..'>include</a>/<a href='./'>boost</a>/<a href='next_prior.hpp.html'>next_prior.hpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>//  Boost next_prior.hpp header file  ---------------------------------------//</i></td></tr>
+<tr><th id="2">2</th><td><i></i></td></tr>
+<tr><th id="3">3</th><td><i>//  (C) Copyright Dave Abrahams and Daniel Walker 1999-2003.</i></td></tr>
+<tr><th id="4">4</th><td><i>//  Copyright (c) Andrey Semashev 2017</i></td></tr>
+<tr><th id="5">5</th><td><i>//</i></td></tr>
+<tr><th id="6">6</th><td><i>//  Distributed under the Boost Software License, Version 1.0.</i></td></tr>
+<tr><th id="7">7</th><td><i>//  (See accompanying file LICENSE_1_0.txt or copy at</i></td></tr>
+<tr><th id="8">8</th><td><i>//  <a href="http://www.boost.org/LICENSE_1_0.txt">http://www.boost.org/LICENSE_1_0.txt</a>)</i></td></tr>
+<tr><th id="9">9</th><td><i></i></td></tr>
+<tr><th id="10">10</th><td><i>//  See <a href="http://www.boost.org/libs/utility">http://www.boost.org/libs/utility</a> for documentation.</i></td></tr>
+<tr><th id="11">11</th><td><i></i></td></tr>
+<tr><th id="12">12</th><td><i>//  Revision History</i></td></tr>
+<tr><th id="13">13</th><td><i>//  13 Dec 2003  Added next(x, n) and prior(x, n) (Daniel Walker)</i></td></tr>
+<tr><th id="14">14</th><td></td></tr>
+<tr><th id="15">15</th><td><u>#<span data-ppcond="15">ifndef</span> <span class="macro" data-ref="_M/BOOST_NEXT_PRIOR_HPP_INCLUDED">BOOST_NEXT_PRIOR_HPP_INCLUDED</span></u></td></tr>
+<tr><th id="16">16</th><td><u>#define <dfn class="macro" id="_M/BOOST_NEXT_PRIOR_HPP_INCLUDED" data-ref="_M/BOOST_NEXT_PRIOR_HPP_INCLUDED">BOOST_NEXT_PRIOR_HPP_INCLUDED</dfn></u></td></tr>
+<tr><th id="17">17</th><td></td></tr>
+<tr><th id="18">18</th><td><u>#include <a href="../../../config/include/boost/config.hpp.html">&lt;boost/config.hpp&gt;</a></u></td></tr>
+<tr><th id="19">19</th><td><u>#include <a href="../../../type_traits/include/boost/type_traits/has_plus.hpp.html">&lt;boost/type_traits/has_plus.hpp&gt;</a></u></td></tr>
+<tr><th id="20">20</th><td><u>#include <a href="../../../type_traits/include/boost/type_traits/has_plus_assign.hpp.html">&lt;boost/type_traits/has_plus_assign.hpp&gt;</a></u></td></tr>
+<tr><th id="21">21</th><td><u>#include <a href="../../../type_traits/include/boost/type_traits/has_minus.hpp.html">&lt;boost/type_traits/has_minus.hpp&gt;</a></u></td></tr>
+<tr><th id="22">22</th><td><u>#include <a href="../../../type_traits/include/boost/type_traits/has_minus_assign.hpp.html">&lt;boost/type_traits/has_minus_assign.hpp&gt;</a></u></td></tr>
+<tr><th id="23">23</th><td><u>#include <a href="iterator/is_iterator.hpp.html">&lt;boost/iterator/is_iterator.hpp&gt;</a></u></td></tr>
+<tr><th id="24">24</th><td><u>#include <a href="iterator/advance.hpp.html">&lt;boost/iterator/advance.hpp&gt;</a></u></td></tr>
+<tr><th id="25">25</th><td><u>#include <a href="iterator/reverse_iterator.hpp.html">&lt;boost/iterator/reverse_iterator.hpp&gt;</a></u></td></tr>
+<tr><th id="26">26</th><td></td></tr>
+<tr><th id="27">27</th><td><b>namespace</b> <span class="namespace">boost</span> {</td></tr>
+<tr><th id="28">28</th><td></td></tr>
+<tr><th id="29">29</th><td><i>//  Helper functions for classes like bidirectional iterators not supporting</i></td></tr>
+<tr><th id="30">30</th><td><i>//  operator+ and operator-</i></td></tr>
+<tr><th id="31">31</th><td><i>//</i></td></tr>
+<tr><th id="32">32</th><td><i>//  Usage:</i></td></tr>
+<tr><th id="33">33</th><td><i>//    const std::list&lt;T&gt;::iterator p = get_some_iterator();</i></td></tr>
+<tr><th id="34">34</th><td><i>//    const std::list&lt;T&gt;::iterator prev = boost::prior(p);</i></td></tr>
+<tr><th id="35">35</th><td><i>//    const std::list&lt;T&gt;::iterator next = boost::next(prev, 2);</i></td></tr>
+<tr><th id="36">36</th><td><i></i></td></tr>
+<tr><th id="37">37</th><td><i>//  Contributed by Dave Abrahams</i></td></tr>
+<tr><th id="38">38</th><td></td></tr>
+<tr><th id="39">39</th><td><b>namespace</b> <span class="namespace">next_prior_detail</span> {</td></tr>
+<tr><th id="40">40</th><td></td></tr>
+<tr><th id="41">41</th><td><b>template</b>&lt; <b>typename</b> T, <b>typename</b> Distance, <em>bool</em> HasPlus = <a class="type" href="../../../type_traits/include/boost/type_traits/detail/has_binary_operator.hpp.html#74" title='boost::has_plus' data-ref="boost::has_plus">has_plus</a>&lt; T, Distance &gt;::value &gt;</td></tr>
+<tr><th id="42">42</th><td><b>struct</b> <dfn class="type" id="boost::next_prior_detail::next_plus_impl" title='boost::next_prior_detail::next_plus_impl' data-ref="boost::next_prior_detail::next_plus_impl">next_plus_impl</dfn>;</td></tr>
+<tr><th id="43">43</th><td></td></tr>
+<tr><th id="44">44</th><td><b>template</b>&lt; <b>typename</b> T, <b>typename</b> Distance &gt;</td></tr>
+<tr><th id="45">45</th><td><b>struct</b> <dfn class="type def" id="boost::next_prior_detail::next_plus_impl" title='boost::next_prior_detail::next_plus_impl' data-ref="boost::next_prior_detail::next_plus_impl">next_plus_impl</dfn>&lt; T, Distance, <b>true</b> &gt;</td></tr>
+<tr><th id="46">46</th><td>{</td></tr>
+<tr><th id="47">47</th><td>    <em>static</em> T <dfn class="decl def fn" id="_ZN5boost17next_prior_detail14next_plus_implIT_T0_Lb1EE4callES2_S3_" title='boost::next_prior_detail::next_plus_impl&lt;type-parameter-0-0, type-parameter-0-1, true&gt;::call' data-ref="_ZN5boost17next_prior_detail14next_plus_implIT_T0_Lb1EE4callES2_S3_">call</dfn>(T <dfn class="local col3 decl" id="1663x" title='x' data-type='T' data-ref="1663x">x</dfn>, Distance <dfn class="local col4 decl" id="1664n" title='n' data-type='Distance' data-ref="1664n">n</dfn>)</td></tr>
+<tr><th id="48">48</th><td>    {</td></tr>
+<tr><th id="49">49</th><td>        <b>return</b> <a class="local col3 ref" href="#1663x" title='x' data-ref="1663x">x</a> + <a class="local col4 ref" href="#1664n" title='n' data-ref="1664n">n</a>;</td></tr>
+<tr><th id="50">50</th><td>    }</td></tr>
+<tr><th id="51">51</th><td>};</td></tr>
+<tr><th id="52">52</th><td></td></tr>
+<tr><th id="53">53</th><td><b>template</b>&lt; <b>typename</b> T, <b>typename</b> Distance, <em>bool</em> HasPlusAssign = <a class="type" href="../../../type_traits/include/boost/type_traits/has_plus_assign.hpp.html#boost::has_plus_assign" title='boost::has_plus_assign' data-ref="boost::has_plus_assign">has_plus_assign</a>&lt; T, Distance &gt;::value &gt;</td></tr>
+<tr><th id="54">54</th><td><b>struct</b> <dfn class="type def" id="boost::next_prior_detail::next_plus_assign_impl" title='boost::next_prior_detail::next_plus_assign_impl' data-ref="boost::next_prior_detail::next_plus_assign_impl">next_plus_assign_impl</dfn> :</td></tr>
+<tr><th id="55">55</th><td>    <b>public</b> <a class="type" href="#boost::next_prior_detail::next_plus_impl" title='boost::next_prior_detail::next_plus_impl' data-ref="boost::next_prior_detail::next_plus_impl">next_plus_impl</a>&lt; T, Distance &gt;</td></tr>
+<tr><th id="56">56</th><td>{</td></tr>
+<tr><th id="57">57</th><td>};</td></tr>
+<tr><th id="58">58</th><td></td></tr>
+<tr><th id="59">59</th><td><b>template</b>&lt; <b>typename</b> T, <b>typename</b> Distance &gt;</td></tr>
+<tr><th id="60">60</th><td><b>struct</b> <dfn class="type def" id="boost::next_prior_detail::next_plus_assign_impl" title='boost::next_prior_detail::next_plus_assign_impl' data-ref="boost::next_prior_detail::next_plus_assign_impl">next_plus_assign_impl</dfn>&lt; T, Distance, <b>true</b> &gt;</td></tr>
+<tr><th id="61">61</th><td>{</td></tr>
+<tr><th id="62">62</th><td>    <em>static</em> T <dfn class="decl def fn" id="_ZN5boost17next_prior_detail21next_plus_assign_implIT_T0_Lb1EE4callES2_S3_" title='boost::next_prior_detail::next_plus_assign_impl&lt;type-parameter-0-0, type-parameter-0-1, true&gt;::call' data-ref="_ZN5boost17next_prior_detail21next_plus_assign_implIT_T0_Lb1EE4callES2_S3_">call</dfn>(T <dfn class="local col5 decl" id="1665x" title='x' data-type='T' data-ref="1665x">x</dfn>, Distance <dfn class="local col6 decl" id="1666n" title='n' data-type='Distance' data-ref="1666n">n</dfn>)</td></tr>
+<tr><th id="63">63</th><td>    {</td></tr>
+<tr><th id="64">64</th><td>        <a class="local col5 ref" href="#1665x" title='x' data-ref="1665x">x</a> += <a class="local col6 ref" href="#1666n" title='n' data-ref="1666n">n</a>;</td></tr>
+<tr><th id="65">65</th><td>        <b>return</b> <a class="local col5 ref" href="#1665x" title='x' data-ref="1665x">x</a>;</td></tr>
+<tr><th id="66">66</th><td>    }</td></tr>
+<tr><th id="67">67</th><td>};</td></tr>
+<tr><th id="68">68</th><td></td></tr>
+<tr><th id="69">69</th><td><b>template</b>&lt; <b>typename</b> T, <b>typename</b> Distance, <em>bool</em> IsIterator = <span class="namespace">boost::iterators::</span><a class="type" href="iterator/is_iterator.hpp.html#boost::iterators::is_iterator" title='boost::iterators::is_iterator' data-ref="boost::iterators::is_iterator">is_iterator</a>&lt; T &gt;::value &gt;</td></tr>
+<tr><th id="70">70</th><td><b>struct</b> <dfn class="type def" id="boost::next_prior_detail::next_advance_impl" title='boost::next_prior_detail::next_advance_impl' data-ref="boost::next_prior_detail::next_advance_impl">next_advance_impl</dfn> :</td></tr>
+<tr><th id="71">71</th><td>    <b>public</b> <a class="type" href="#boost::next_prior_detail::next_plus_assign_impl" title='boost::next_prior_detail::next_plus_assign_impl' data-ref="boost::next_prior_detail::next_plus_assign_impl">next_plus_assign_impl</a>&lt; T, Distance &gt;</td></tr>
+<tr><th id="72">72</th><td>{</td></tr>
+<tr><th id="73">73</th><td>};</td></tr>
+<tr><th id="74">74</th><td></td></tr>
+<tr><th id="75">75</th><td><b>template</b>&lt; <b>typename</b> T, <b>typename</b> Distance &gt;</td></tr>
+<tr><th id="76">76</th><td><b>struct</b> <dfn class="type def" id="boost::next_prior_detail::next_advance_impl" title='boost::next_prior_detail::next_advance_impl' data-ref="boost::next_prior_detail::next_advance_impl">next_advance_impl</dfn>&lt; T, Distance, <b>true</b> &gt;</td></tr>
+<tr><th id="77">77</th><td>{</td></tr>
+<tr><th id="78">78</th><td>    <em>static</em> T <dfn class="decl def fn" id="_ZN5boost17next_prior_detail17next_advance_implIT_T0_Lb1EE4callES2_S3_" title='boost::next_prior_detail::next_advance_impl&lt;type-parameter-0-0, type-parameter-0-1, true&gt;::call' data-ref="_ZN5boost17next_prior_detail17next_advance_implIT_T0_Lb1EE4callES2_S3_">call</dfn>(T <dfn class="local col7 decl" id="1667x" title='x' data-type='T' data-ref="1667x">x</dfn>, Distance <dfn class="local col8 decl" id="1668n" title='n' data-type='Distance' data-ref="1668n">n</dfn>)</td></tr>
+<tr><th id="79">79</th><td>    {</td></tr>
+<tr><th id="80">80</th><td>        <span class="namespace">boost::iterators::</span>advance(<a class="local col7 ref" href="#1667x" title='x' data-ref="1667x">x</a>, <a class="local col8 ref" href="#1668n" title='n' data-ref="1668n">n</a>);</td></tr>
+<tr><th id="81">81</th><td>        <b>return</b> <a class="local col7 ref" href="#1667x" title='x' data-ref="1667x">x</a>;</td></tr>
+<tr><th id="82">82</th><td>    }</td></tr>
+<tr><th id="83">83</th><td>};</td></tr>
+<tr><th id="84">84</th><td></td></tr>
+<tr><th id="85">85</th><td></td></tr>
+<tr><th id="86">86</th><td><b>template</b>&lt; <b>typename</b> T, <b>typename</b> Distance, <em>bool</em> HasMinus = <a class="type" href="../../../type_traits/include/boost/type_traits/has_minus.hpp.html#boost::has_minus" title='boost::has_minus' data-ref="boost::has_minus">has_minus</a>&lt; T, Distance &gt;::value &gt;</td></tr>
+<tr><th id="87">87</th><td><b>struct</b> <dfn class="type" id="boost::next_prior_detail::prior_minus_impl" title='boost::next_prior_detail::prior_minus_impl' data-ref="boost::next_prior_detail::prior_minus_impl">prior_minus_impl</dfn>;</td></tr>
+<tr><th id="88">88</th><td></td></tr>
+<tr><th id="89">89</th><td><b>template</b>&lt; <b>typename</b> T, <b>typename</b> Distance &gt;</td></tr>
+<tr><th id="90">90</th><td><b>struct</b> <dfn class="type def" id="boost::next_prior_detail::prior_minus_impl" title='boost::next_prior_detail::prior_minus_impl' data-ref="boost::next_prior_detail::prior_minus_impl">prior_minus_impl</dfn>&lt; T, Distance, <b>true</b> &gt;</td></tr>
+<tr><th id="91">91</th><td>{</td></tr>
+<tr><th id="92">92</th><td>    <em>static</em> T <dfn class="decl def fn" id="_ZN5boost17next_prior_detail16prior_minus_implIT_T0_Lb1EE4callES2_S3_" title='boost::next_prior_detail::prior_minus_impl&lt;type-parameter-0-0, type-parameter-0-1, true&gt;::call' data-ref="_ZN5boost17next_prior_detail16prior_minus_implIT_T0_Lb1EE4callES2_S3_">call</dfn>(T <dfn class="local col9 decl" id="1669x" title='x' data-type='T' data-ref="1669x">x</dfn>, Distance <dfn class="local col0 decl" id="1670n" title='n' data-type='Distance' data-ref="1670n">n</dfn>)</td></tr>
+<tr><th id="93">93</th><td>    {</td></tr>
+<tr><th id="94">94</th><td>        <b>return</b> <a class="local col9 ref" href="#1669x" title='x' data-ref="1669x">x</a> - <a class="local col0 ref" href="#1670n" title='n' data-ref="1670n">n</a>;</td></tr>
+<tr><th id="95">95</th><td>    }</td></tr>
+<tr><th id="96">96</th><td>};</td></tr>
+<tr><th id="97">97</th><td></td></tr>
+<tr><th id="98">98</th><td><b>template</b>&lt; <b>typename</b> T, <b>typename</b> Distance, <em>bool</em> HasMinusAssign = <a class="type" href="../../../type_traits/include/boost/type_traits/has_minus_assign.hpp.html#boost::has_minus_assign" title='boost::has_minus_assign' data-ref="boost::has_minus_assign">has_minus_assign</a>&lt; T, Distance &gt;::value &gt;</td></tr>
+<tr><th id="99">99</th><td><b>struct</b> <dfn class="type def" id="boost::next_prior_detail::prior_minus_assign_impl" title='boost::next_prior_detail::prior_minus_assign_impl' data-ref="boost::next_prior_detail::prior_minus_assign_impl">prior_minus_assign_impl</dfn> :</td></tr>
+<tr><th id="100">100</th><td>    <b>public</b> <a class="type" href="#boost::next_prior_detail::prior_minus_impl" title='boost::next_prior_detail::prior_minus_impl' data-ref="boost::next_prior_detail::prior_minus_impl">prior_minus_impl</a>&lt; T, Distance &gt;</td></tr>
+<tr><th id="101">101</th><td>{</td></tr>
+<tr><th id="102">102</th><td>};</td></tr>
+<tr><th id="103">103</th><td></td></tr>
+<tr><th id="104">104</th><td><b>template</b>&lt; <b>typename</b> T, <b>typename</b> Distance &gt;</td></tr>
+<tr><th id="105">105</th><td><b>struct</b> <dfn class="type def" id="boost::next_prior_detail::prior_minus_assign_impl" title='boost::next_prior_detail::prior_minus_assign_impl' data-ref="boost::next_prior_detail::prior_minus_assign_impl">prior_minus_assign_impl</dfn>&lt; T, Distance, <b>true</b> &gt;</td></tr>
+<tr><th id="106">106</th><td>{</td></tr>
+<tr><th id="107">107</th><td>    <em>static</em> T <dfn class="decl def fn" id="_ZN5boost17next_prior_detail23prior_minus_assign_implIT_T0_Lb1EE4callES2_S3_" title='boost::next_prior_detail::prior_minus_assign_impl&lt;type-parameter-0-0, type-parameter-0-1, true&gt;::call' data-ref="_ZN5boost17next_prior_detail23prior_minus_assign_implIT_T0_Lb1EE4callES2_S3_">call</dfn>(T <dfn class="local col1 decl" id="1671x" title='x' data-type='T' data-ref="1671x">x</dfn>, Distance <dfn class="local col2 decl" id="1672n" title='n' data-type='Distance' data-ref="1672n">n</dfn>)</td></tr>
+<tr><th id="108">108</th><td>    {</td></tr>
+<tr><th id="109">109</th><td>        <a class="local col1 ref" href="#1671x" title='x' data-ref="1671x">x</a> -= <a class="local col2 ref" href="#1672n" title='n' data-ref="1672n">n</a>;</td></tr>
+<tr><th id="110">110</th><td>        <b>return</b> <a class="local col1 ref" href="#1671x" title='x' data-ref="1671x">x</a>;</td></tr>
+<tr><th id="111">111</th><td>    }</td></tr>
+<tr><th id="112">112</th><td>};</td></tr>
+<tr><th id="113">113</th><td></td></tr>
+<tr><th id="114">114</th><td><b>template</b>&lt; <b>typename</b> T, <b>typename</b> Distance, <em>bool</em> IsIterator = <span class="namespace">boost::iterators::</span><a class="type" href="iterator/is_iterator.hpp.html#boost::iterators::is_iterator" title='boost::iterators::is_iterator' data-ref="boost::iterators::is_iterator">is_iterator</a>&lt; T &gt;::value &gt;</td></tr>
+<tr><th id="115">115</th><td><b>struct</b> <dfn class="type def" id="boost::next_prior_detail::prior_advance_impl" title='boost::next_prior_detail::prior_advance_impl' data-ref="boost::next_prior_detail::prior_advance_impl">prior_advance_impl</dfn> :</td></tr>
+<tr><th id="116">116</th><td>    <b>public</b> <a class="type" href="#boost::next_prior_detail::prior_minus_assign_impl" title='boost::next_prior_detail::prior_minus_assign_impl' data-ref="boost::next_prior_detail::prior_minus_assign_impl">prior_minus_assign_impl</a>&lt; T, Distance &gt;</td></tr>
+<tr><th id="117">117</th><td>{</td></tr>
+<tr><th id="118">118</th><td>};</td></tr>
+<tr><th id="119">119</th><td></td></tr>
+<tr><th id="120">120</th><td><b>template</b>&lt; <b>typename</b> T, <b>typename</b> Distance &gt;</td></tr>
+<tr><th id="121">121</th><td><b>struct</b> <dfn class="type def" id="boost::next_prior_detail::prior_advance_impl" title='boost::next_prior_detail::prior_advance_impl' data-ref="boost::next_prior_detail::prior_advance_impl">prior_advance_impl</dfn>&lt; T, Distance, <b>true</b> &gt;</td></tr>
+<tr><th id="122">122</th><td>{</td></tr>
+<tr><th id="123">123</th><td>    <em>static</em> T <dfn class="decl def fn" id="_ZN5boost17next_prior_detail18prior_advance_implIT_T0_Lb1EE4callES2_S3_" title='boost::next_prior_detail::prior_advance_impl&lt;type-parameter-0-0, type-parameter-0-1, true&gt;::call' data-ref="_ZN5boost17next_prior_detail18prior_advance_implIT_T0_Lb1EE4callES2_S3_">call</dfn>(T <dfn class="local col3 decl" id="1673x" title='x' data-type='T' data-ref="1673x">x</dfn>, Distance <dfn class="local col4 decl" id="1674n" title='n' data-type='Distance' data-ref="1674n">n</dfn>)</td></tr>
+<tr><th id="124">124</th><td>    {</td></tr>
+<tr><th id="125">125</th><td>        <i>// Avoid negating n to sidestep possible integer overflow</i></td></tr>
+<tr><th id="126">126</th><td>        <span class="namespace">boost::iterators::</span><a class="type" href="iterator/reverse_iterator.hpp.html#boost::iterators::reverse_iterator" title='boost::iterators::reverse_iterator' data-ref="boost::iterators::reverse_iterator">reverse_iterator</a>&lt; T &gt; <dfn class="local col5 decl" id="1675rx" title='rx' data-type='boost::iterators::reverse_iterator&lt;T&gt;' data-ref="1675rx">rx</dfn>(<a class="local col3 ref" href="#1673x" title='x' data-ref="1673x">x</a>);</td></tr>
+<tr><th id="127">127</th><td>        <span class="namespace">boost::iterators::</span>advance(<a class="local col5 ref" href="#1675rx" title='rx' data-ref="1675rx">rx</a>, <a class="local col4 ref" href="#1674n" title='n' data-ref="1674n">n</a>);</td></tr>
+<tr><th id="128">128</th><td>        <b>return</b> <a class="local col5 ref" href="#1675rx" title='rx' data-ref="1675rx">rx</a>.base();</td></tr>
+<tr><th id="129">129</th><td>    }</td></tr>
+<tr><th id="130">130</th><td>};</td></tr>
+<tr><th id="131">131</th><td></td></tr>
+<tr><th id="132">132</th><td>} <i>// namespace next_prior_detail</i></td></tr>
+<tr><th id="133">133</th><td></td></tr>
+<tr><th id="134">134</th><td><b>template</b> &lt;<b>class</b> T&gt;</td></tr>
+<tr><th id="135">135</th><td><b>inline</b> T <dfn class="decl def fn" id="_ZN5boost4nextET_" title='boost::next' data-ref="_ZN5boost4nextET_">next</dfn>(T <dfn class="local col6 decl" id="1676x" title='x' data-type='T' data-ref="1676x">x</dfn>) { <b>return</b> ++<a class="local col6 ref" href="#1676x" title='x' data-ref="1676x">x</a>; }</td></tr>
+<tr><th id="136">136</th><td></td></tr>
+<tr><th id="137">137</th><td><b>template</b> &lt;<b>class</b> T, <b>class</b> Distance&gt;</td></tr>
+<tr><th id="138">138</th><td><b>inline</b> T <dfn class="decl def fn" id="_ZN5boost4nextET_T0_" title='boost::next' data-ref="_ZN5boost4nextET_T0_">next</dfn>(T <dfn class="local col7 decl" id="1677x" title='x' data-type='T' data-ref="1677x">x</dfn>, Distance <dfn class="local col8 decl" id="1678n" title='n' data-type='Distance' data-ref="1678n">n</dfn>)</td></tr>
+<tr><th id="139">139</th><td>{</td></tr>
+<tr><th id="140">140</th><td>    <b>return</b> <span class="namespace">next_prior_detail::</span><a class="type" href="#boost::next_prior_detail::next_advance_impl" title='boost::next_prior_detail::next_advance_impl' data-ref="boost::next_prior_detail::next_advance_impl">next_advance_impl</a>&lt; T, Distance &gt;::call(<a class="local col7 ref" href="#1677x" title='x' data-ref="1677x">x</a>, <a class="local col8 ref" href="#1678n" title='n' data-ref="1678n">n</a>);</td></tr>
+<tr><th id="141">141</th><td>}</td></tr>
+<tr><th id="142">142</th><td></td></tr>
+<tr><th id="143">143</th><td><b>template</b> &lt;<b>class</b> T&gt;</td></tr>
+<tr><th id="144">144</th><td><b>inline</b> T <dfn class="decl def fn" id="_ZN5boost5priorET_" title='boost::prior' data-ref="_ZN5boost5priorET_">prior</dfn>(T <dfn class="local col9 decl" id="1679x" title='x' data-type='T' data-ref="1679x">x</dfn>) { <b>return</b> --<a class="local col9 ref" href="#1679x" title='x' data-ref="1679x">x</a>; }</td></tr>
+<tr><th id="145">145</th><td></td></tr>
+<tr><th id="146">146</th><td><b>template</b> &lt;<b>class</b> T, <b>class</b> Distance&gt;</td></tr>
+<tr><th id="147">147</th><td><b>inline</b> T <dfn class="decl def fn" id="_ZN5boost5priorET_T0_" title='boost::prior' data-ref="_ZN5boost5priorET_T0_">prior</dfn>(T <dfn class="local col0 decl" id="1680x" title='x' data-type='T' data-ref="1680x">x</dfn>, Distance <dfn class="local col1 decl" id="1681n" title='n' data-type='Distance' data-ref="1681n">n</dfn>)</td></tr>
+<tr><th id="148">148</th><td>{</td></tr>
+<tr><th id="149">149</th><td>    <b>return</b> <span class="namespace">next_prior_detail::</span><a class="type" href="#boost::next_prior_detail::prior_advance_impl" title='boost::next_prior_detail::prior_advance_impl' data-ref="boost::next_prior_detail::prior_advance_impl">prior_advance_impl</a>&lt; T, Distance &gt;::call(<a class="local col0 ref" href="#1680x" title='x' data-ref="1680x">x</a>, <a class="local col1 ref" href="#1681n" title='n' data-ref="1681n">n</a>);</td></tr>
+<tr><th id="150">150</th><td>}</td></tr>
+<tr><th id="151">151</th><td></td></tr>
+<tr><th id="152">152</th><td>} <i>// namespace boost</i></td></tr>
+<tr><th id="153">153</th><td></td></tr>
+<tr><th id="154">154</th><td><u>#<span data-ppcond="15">endif</span>  // BOOST_NEXT_PRIOR_HPP_INCLUDED</u></td></tr>
+<tr><th id="155">155</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../../../fiber/src/numa/linux/topology.cpp.html'>boost-1.85.0/libs/fiber/src/numa/linux/topology.cpp</a><br/>Generated on <em>2024-Jun-14</em> from project boost-1.85.0 revision <em>1.85.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

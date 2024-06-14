@@ -1,0 +1,886 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>thread.hpp source code [boost-1.85.0/libs/thread/include/boost/thread/detail/thread.hpp] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="boost::detail::thread_data,boost::detail::thread_exit_function,boost::detail::thread_exit_function_base,boost::thread "/>
+<link rel="stylesheet" href="../../../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'boost-1.85.0/libs/thread/include/boost/thread/detail/thread.hpp'; var root_path = '../../../../../../..'; var data_path = '../../../../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../../../..'>boost-1.85.0</a>/<a href='../../../../..'>libs</a>/<a href='../../../..'>thread</a>/<a href='../../..'>include</a>/<a href='../..'>boost</a>/<a href='..'>thread</a>/<a href='./'>detail</a>/<a href='thread.hpp.html'>thread.hpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><u>#<span data-ppcond="1">ifndef</span> <span class="macro" data-ref="_M/BOOST_THREAD_THREAD_COMMON_HPP">BOOST_THREAD_THREAD_COMMON_HPP</span></u></td></tr>
+<tr><th id="2">2</th><td><u>#define <dfn class="macro" id="_M/BOOST_THREAD_THREAD_COMMON_HPP" data-ref="_M/BOOST_THREAD_THREAD_COMMON_HPP">BOOST_THREAD_THREAD_COMMON_HPP</dfn></u></td></tr>
+<tr><th id="3">3</th><td><i>// Distributed under the Boost Software License, Version 1.0. (See</i></td></tr>
+<tr><th id="4">4</th><td><i>// accompanying file LICENSE_1_0.txt or copy at</i></td></tr>
+<tr><th id="5">5</th><td><i>// <a href="http://www.boost.org/LICENSE_1_0.txt">http://www.boost.org/LICENSE_1_0.txt</a>)</i></td></tr>
+<tr><th id="6">6</th><td><i>// (C) Copyright 2007-2010 Anthony Williams</i></td></tr>
+<tr><th id="7">7</th><td><i>// (C) Copyright 2011-2012 Vicente J. Botet Escriba</i></td></tr>
+<tr><th id="8">8</th><td></td></tr>
+<tr><th id="9">9</th><td><u>#include <a href="config.hpp.html">&lt;boost/thread/detail/config.hpp&gt;</a></u></td></tr>
+<tr><th id="10">10</th><td><u>#include <a href="../../../../../predef/include/boost/predef/platform.h.html">&lt;boost/predef/platform.h&gt;</a></u></td></tr>
+<tr><th id="11">11</th><td></td></tr>
+<tr><th id="12">12</th><td><u>#include <a href="../exceptions.hpp.html">&lt;boost/thread/exceptions.hpp&gt;</a></u></td></tr>
+<tr><th id="13">13</th><td><u>#<span data-ppcond="13">ifndef</span> <span class="macro" data-ref="_M/BOOST_NO_IOSTREAM">BOOST_NO_IOSTREAM</span></u></td></tr>
+<tr><th id="14">14</th><td><u>#include <a href="../../../../../../../include/c++/9/ostream.html">&lt;ostream&gt;</a></u></td></tr>
+<tr><th id="15">15</th><td><u>#<span data-ppcond="13">endif</span></u></td></tr>
+<tr><th id="16">16</th><td><u>#include <a href="move.hpp.html">&lt;boost/thread/detail/move.hpp&gt;</a></u></td></tr>
+<tr><th id="17">17</th><td><u>#include <a href="../mutex.hpp.html">&lt;boost/thread/mutex.hpp&gt;</a></u></td></tr>
+<tr><th id="18">18</th><td><u>#<span data-ppcond="18">if</span> defined <a class="macro" href="config.hpp.html#253" data-ref="_M/BOOST_THREAD_USES_DATETIME">BOOST_THREAD_USES_DATETIME</a></u></td></tr>
+<tr><th id="19">19</th><td><u>#include <a href="../xtime.hpp.html">&lt;boost/thread/xtime.hpp&gt;</a></u></td></tr>
+<tr><th id="20">20</th><td><u>#<span data-ppcond="18">endif</span></u></td></tr>
+<tr><th id="21">21</th><td><u>#<span data-ppcond="21">if</span> defined <a class="macro" href="config.hpp.html#356" data-ref="_M/BOOST_THREAD_PROVIDES_INTERRUPTIONS">BOOST_THREAD_PROVIDES_INTERRUPTIONS</a></u></td></tr>
+<tr><th id="22">22</th><td><u>#include <a href="../interruption.hpp.html">&lt;boost/thread/interruption.hpp&gt;</a></u></td></tr>
+<tr><th id="23">23</th><td><u>#<span data-ppcond="21">endif</span></u></td></tr>
+<tr><th id="24">24</th><td><u>#include <a href="thread_heap_alloc.hpp.html">&lt;boost/thread/detail/thread_heap_alloc.hpp&gt;</a></u></td></tr>
+<tr><th id="25">25</th><td><u>#include <a href="make_tuple_indices.hpp.html">&lt;boost/thread/detail/make_tuple_indices.hpp&gt;</a></u></td></tr>
+<tr><th id="26">26</th><td><u>#include <a href="invoke.hpp.html">&lt;boost/thread/detail/invoke.hpp&gt;</a></u></td></tr>
+<tr><th id="27">27</th><td><u>#include <a href="is_convertible.hpp.html">&lt;boost/thread/detail/is_convertible.hpp&gt;</a></u></td></tr>
+<tr><th id="28">28</th><td><u>#include <a href="../../../../../assert/include/boost/assert.hpp.html">&lt;boost/assert.hpp&gt;</a></u></td></tr>
+<tr><th id="29">29</th><td><u>#include <a href="../../../../../../../include/c++/9/list.html">&lt;list&gt;</a></u></td></tr>
+<tr><th id="30">30</th><td><u>#include <a href="../../../../../../../include/c++/9/algorithm.html">&lt;algorithm&gt;</a></u></td></tr>
+<tr><th id="31">31</th><td><u>#include <a href="../../../../../core/include/boost/core/ref.hpp.html">&lt;boost/core/ref.hpp&gt;</a></u></td></tr>
+<tr><th id="32">32</th><td><u>#include <a href="../../../../../config/include/boost/cstdint.hpp.html">&lt;boost/cstdint.hpp&gt;</a></u></td></tr>
+<tr><th id="33">33</th><td><u>#include <a href="../../../../../bind/include/boost/bind/bind.hpp.html">&lt;boost/bind/bind.hpp&gt;</a></u></td></tr>
+<tr><th id="34">34</th><td><u>#include <a href="../../../../../../../include/c++/9/stdlib.h.html">&lt;stdlib.h&gt;</a></u></td></tr>
+<tr><th id="35">35</th><td><u>#include <a href="../../../../../../../include/c++/9/memory.html">&lt;memory&gt;</a></u></td></tr>
+<tr><th id="36">36</th><td><u>#include <a href="../../../../../core/include/boost/core/enable_if.hpp.html">&lt;boost/core/enable_if.hpp&gt;</a></u></td></tr>
+<tr><th id="37">37</th><td><u>#include <a href="../../../../../type_traits/include/boost/type_traits/remove_reference.hpp.html">&lt;boost/type_traits/remove_reference.hpp&gt;</a></u></td></tr>
+<tr><th id="38">38</th><td><u>#include <a href="../../../../../io/include/boost/io/ios_state.hpp.html">&lt;boost/io/ios_state.hpp&gt;</a></u></td></tr>
+<tr><th id="39">39</th><td><u>#include <a href="../../../../../type_traits/include/boost/type_traits/is_same.hpp.html">&lt;boost/type_traits/is_same.hpp&gt;</a></u></td></tr>
+<tr><th id="40">40</th><td><u>#include <a href="../../../../../type_traits/include/boost/type_traits/decay.hpp.html">&lt;boost/type_traits/decay.hpp&gt;</a></u></td></tr>
+<tr><th id="41">41</th><td><u>#include <a href="../../../../../container_hash/include/boost/functional/hash.hpp.html">&lt;boost/functional/hash.hpp&gt;</a></u></td></tr>
+<tr><th id="42">42</th><td><u>#include <a href="platform_time.hpp.html">&lt;boost/thread/detail/platform_time.hpp&gt;</a></u></td></tr>
+<tr><th id="43">43</th><td><u>#<span data-ppcond="43">ifdef</span> <a class="macro" href="config.hpp.html#143" data-ref="_M/BOOST_THREAD_USES_CHRONO">BOOST_THREAD_USES_CHRONO</a></u></td></tr>
+<tr><th id="44">44</th><td><u>#include <a href="../../../../../chrono/include/boost/chrono/system_clocks.hpp.html">&lt;boost/chrono/system_clocks.hpp&gt;</a></u></td></tr>
+<tr><th id="45">45</th><td><u>#include <a href="../../../../../chrono/include/boost/chrono/ceil.hpp.html">&lt;boost/chrono/ceil.hpp&gt;</a></u></td></tr>
+<tr><th id="46">46</th><td><u>#<span data-ppcond="43">endif</span></u></td></tr>
+<tr><th id="47">47</th><td></td></tr>
+<tr><th id="48">48</th><td><u>#<span data-ppcond="48">if</span> defined(<span class="macro" data-ref="_M/BOOST_THREAD_PROVIDES_VARIADIC_THREAD">BOOST_THREAD_PROVIDES_VARIADIC_THREAD</span>)</u></td></tr>
+<tr><th id="49">49</th><td><u>#include &lt;tuple&gt;</u></td></tr>
+<tr><th id="50">50</th><td><u>#<span data-ppcond="48">endif</span></u></td></tr>
+<tr><th id="51">51</th><td><u>#include <a href="../../../../../config/include/boost/config/abi_prefix.hpp.html">&lt;boost/config/abi_prefix.hpp&gt;</a></u></td></tr>
+<tr><th id="52">52</th><td></td></tr>
+<tr><th id="53">53</th><td><u>#<span data-ppcond="53">ifdef</span> <span class="macro" data-ref="_M/BOOST_MSVC">BOOST_MSVC</span></u></td></tr>
+<tr><th id="54">54</th><td><u>#pragma warning(push)</u></td></tr>
+<tr><th id="55">55</th><td><u>#pragma warning(disable:4251)</u></td></tr>
+<tr><th id="56">56</th><td><u>#<span data-ppcond="53">endif</span></u></td></tr>
+<tr><th id="57">57</th><td></td></tr>
+<tr><th id="58">58</th><td><b>namespace</b> <span class="namespace">boost</span></td></tr>
+<tr><th id="59">59</th><td>{</td></tr>
+<tr><th id="60">60</th><td></td></tr>
+<tr><th id="61">61</th><td>    <b>namespace</b> <span class="namespace">detail</span></td></tr>
+<tr><th id="62">62</th><td>    {</td></tr>
+<tr><th id="63">63</th><td></td></tr>
+<tr><th id="64">64</th><td><u>#<span data-ppcond="64">if</span> defined(<span class="macro" data-ref="_M/BOOST_THREAD_PROVIDES_VARIADIC_THREAD">BOOST_THREAD_PROVIDES_VARIADIC_THREAD</span>)</u></td></tr>
+<tr><th id="65">65</th><td></td></tr>
+<tr><th id="66">66</th><td>      <b>template</b>&lt;<b>typename</b> F, <b>class</b> ...ArgTypes&gt;</td></tr>
+<tr><th id="67">67</th><td>      <b>class</b> thread_data:</td></tr>
+<tr><th id="68">68</th><td>          <b>public</b> detail::thread_data_base</td></tr>
+<tr><th id="69">69</th><td>      {</td></tr>
+<tr><th id="70">70</th><td>      <b>public</b>:</td></tr>
+<tr><th id="71">71</th><td>          BOOST_THREAD_NO_COPYABLE(thread_data)</td></tr>
+<tr><th id="72">72</th><td>            thread_data(BOOST_THREAD_RV_REF(F) f_, BOOST_THREAD_RV_REF(ArgTypes)... args_):</td></tr>
+<tr><th id="73">73</th><td>              fp(boost::forward&lt;F&gt;(f_), boost::forward&lt;ArgTypes&gt;(args_)...)</td></tr>
+<tr><th id="74">74</th><td>            {}</td></tr>
+<tr><th id="75">75</th><td>          <b>template</b> &lt;std::size_t ...Indices&gt;</td></tr>
+<tr><th id="76">76</th><td>          <em>void</em> run2(tuple_indices&lt;Indices...&gt;)</td></tr>
+<tr><th id="77">77</th><td>          {</td></tr>
+<tr><th id="78">78</th><td></td></tr>
+<tr><th id="79">79</th><td>              detail::invoke(std::move(std::get&lt;<var>0</var>&gt;(fp)), std::move(std::get&lt;Indices&gt;(fp))...);</td></tr>
+<tr><th id="80">80</th><td>          }</td></tr>
+<tr><th id="81">81</th><td>          <em>void</em> run()</td></tr>
+<tr><th id="82">82</th><td>          {</td></tr>
+<tr><th id="83">83</th><td>              <b>typedef</b> <b>typename</b> make_tuple_indices&lt;std::tuple_size&lt;std::tuple&lt;F, ArgTypes...&gt; &gt;::value, <var>1</var>&gt;::type index_type;</td></tr>
+<tr><th id="84">84</th><td></td></tr>
+<tr><th id="85">85</th><td>              run2(index_type());</td></tr>
+<tr><th id="86">86</th><td>          }</td></tr>
+<tr><th id="87">87</th><td></td></tr>
+<tr><th id="88">88</th><td>      <b>private</b>:</td></tr>
+<tr><th id="89">89</th><td>          std::tuple&lt;<b>typename</b> decay&lt;F&gt;::type, <b>typename</b> decay&lt;ArgTypes&gt;::type...&gt; fp;</td></tr>
+<tr><th id="90">90</th><td>      };</td></tr>
+<tr><th id="91">91</th><td><u>#<span data-ppcond="64">else</span> // defined(BOOST_THREAD_PROVIDES_VARIADIC_THREAD)</u></td></tr>
+<tr><th id="92">92</th><td></td></tr>
+<tr><th id="93">93</th><td>        <b>template</b>&lt;<b>typename</b> F&gt;</td></tr>
+<tr><th id="94">94</th><td>        <b>class</b> <dfn class="type def" id="boost::detail::thread_data" title='boost::detail::thread_data' data-ref="boost::detail::thread_data">thread_data</dfn>:</td></tr>
+<tr><th id="95">95</th><td>            <b>public</b> <span class="namespace">detail::</span><a class="type" href="../pthread/thread_data.hpp.html#boost::detail::thread_data_base" title='boost::detail::thread_data_base' data-ref="boost::detail::thread_data_base">thread_data_base</a></td></tr>
+<tr><th id="96">96</th><td>        {</td></tr>
+<tr><th id="97">97</th><td>        <b>public</b>:</td></tr>
+<tr><th id="98">98</th><td>            <a class="macro" href="delete.hpp.html#54" title="thread_data(thread_data const&amp;) = delete; thread_data&amp; operator=(thread_data const&amp;) = delete;" data-ref="_M/BOOST_THREAD_NO_COPYABLE">BOOST_THREAD_NO_COPYABLE</a>(<dfn class="decl def fn" id="_ZN5boost6detail11thread_dataC1ERKNS0_11thread_dataIT_EE" title='boost::detail::thread_data::thread_data&lt;F&gt;' data-ref="_ZN5boost6detail11thread_dataC1ERKNS0_11thread_dataIT_EE">thread_data</dfn>)</td></tr>
+<tr><th id="99">99</th><td><u>#<span data-ppcond="99">ifndef</span> <span class="macro" data-ref="_M/BOOST_NO_CXX11_RVALUE_REFERENCES">BOOST_NO_CXX11_RVALUE_REFERENCES</span></u></td></tr>
+<tr><th id="100">100</th><td>              <dfn class="decl def fn" id="_ZN5boost6detail11thread_dataC1EOT_" title='boost::detail::thread_data::thread_data&lt;F&gt;' data-ref="_ZN5boost6detail11thread_dataC1EOT_">thread_data</dfn>(<a class="macro" href="move.hpp.html#82" title="F &amp;&amp;" data-ref="_M/BOOST_THREAD_RV_REF">BOOST_THREAD_RV_REF</a>(F) <dfn class="local col0 decl" id="200f_" title='f_' data-type='F &amp;&amp;' data-ref="200f_">f_</dfn>):</td></tr>
+<tr><th id="101">101</th><td>                <a class="member field" href="#boost::detail::thread_data::f" title='boost::detail::thread_data::f' data-ref="boost::detail::thread_data::f">f</a>(<span class="namespace">boost::</span>forward&lt;F&gt;(<a class="local col0 ref" href="#200f_" title='f_' data-ref="200f_">f_</a>))</td></tr>
+<tr><th id="102">102</th><td>              {}</td></tr>
+<tr><th id="103">103</th><td><i>// This overloading must be removed if we want the packaged_task's tests to pass.</i></td></tr>
+<tr><th id="104">104</th><td><i>//            thread_data(F&amp; f_):</i></td></tr>
+<tr><th id="105">105</th><td><i>//                f(f_)</i></td></tr>
+<tr><th id="106">106</th><td><i>//            {}</i></td></tr>
+<tr><th id="107">107</th><td><u>#<span data-ppcond="99">else</span></u></td></tr>
+<tr><th id="108">108</th><td></td></tr>
+<tr><th id="109">109</th><td>            thread_data(BOOST_THREAD_RV_REF(F) f_):</td></tr>
+<tr><th id="110">110</th><td>              f(f_)</td></tr>
+<tr><th id="111">111</th><td>            {}</td></tr>
+<tr><th id="112">112</th><td>            thread_data(F f_):</td></tr>
+<tr><th id="113">113</th><td>                f(f_)</td></tr>
+<tr><th id="114">114</th><td>            {}</td></tr>
+<tr><th id="115">115</th><td><u>#<span data-ppcond="99">endif</span></u></td></tr>
+<tr><th id="116">116</th><td>            <i>//thread_data() {}</i></td></tr>
+<tr><th id="117">117</th><td></td></tr>
+<tr><th id="118">118</th><td>            <em>void</em> <dfn class="virtual decl def fn" id="_ZN5boost6detail11thread_data3runEv" title='boost::detail::thread_data::run' data-ref="_ZN5boost6detail11thread_data3runEv">run</dfn>()</td></tr>
+<tr><th id="119">119</th><td>            {</td></tr>
+<tr><th id="120">120</th><td>                <a class="member field" href="#boost::detail::thread_data::f" title='boost::detail::thread_data::f' data-ref="boost::detail::thread_data::f">f</a>();</td></tr>
+<tr><th id="121">121</th><td>            }</td></tr>
+<tr><th id="122">122</th><td></td></tr>
+<tr><th id="123">123</th><td>        <b>private</b>:</td></tr>
+<tr><th id="124">124</th><td>            F <dfn class="decl field" id="boost::detail::thread_data::f" title='boost::detail::thread_data::f' data-ref="boost::detail::thread_data::f">f</dfn>;</td></tr>
+<tr><th id="125">125</th><td>        };</td></tr>
+<tr><th id="126">126</th><td></td></tr>
+<tr><th id="127">127</th><td>        <b>template</b>&lt;<b>typename</b> F&gt;</td></tr>
+<tr><th id="128">128</th><td>        <b>class</b> <dfn class="type def" id="boost::detail::thread_data" title='boost::detail::thread_data' data-ref="boost::detail::thread_data">thread_data</dfn>&lt;<span class="namespace">boost::</span><a class="type" href="../../../../../core/include/boost/core/ref.hpp.html#boost::reference_wrapper" title='boost::reference_wrapper' data-ref="boost::reference_wrapper">reference_wrapper</a>&lt;F&gt; &gt;:</td></tr>
+<tr><th id="129">129</th><td>            <b>public</b> <span class="namespace">detail::</span><a class="type" href="../pthread/thread_data.hpp.html#boost::detail::thread_data_base" title='boost::detail::thread_data_base' data-ref="boost::detail::thread_data_base">thread_data_base</a></td></tr>
+<tr><th id="130">130</th><td>        {</td></tr>
+<tr><th id="131">131</th><td>        <b>private</b>:</td></tr>
+<tr><th id="132">132</th><td>            F&amp; <dfn class="decl field" id="boost::detail::thread_data::f" title='boost::detail::thread_data&lt;reference_wrapper&lt;type-parameter-0-0&gt;&gt;::f' data-ref="boost::detail::thread_data::f">f</dfn>;</td></tr>
+<tr><th id="133">133</th><td>        <b>public</b>:</td></tr>
+<tr><th id="134">134</th><td>            <a class="macro" href="delete.hpp.html#54" title="thread_data(thread_data const&amp;) = delete; thread_data&amp; operator=(thread_data const&amp;) = delete;" data-ref="_M/BOOST_THREAD_NO_COPYABLE">BOOST_THREAD_NO_COPYABLE</a>(<dfn class="decl def fn" id="_ZN5boost6detail11thread_dataINS_17reference_wrapperIT_EEEC1ERKNS1_IS4_EE" title='boost::detail::thread_data&lt;reference_wrapper&lt;type-parameter-0-0&gt;&gt;::thread_data&lt;reference_wrapper&lt;type-parameter-0-0&gt; &gt;' data-ref="_ZN5boost6detail11thread_dataINS_17reference_wrapperIT_EEEC1ERKNS1_IS4_EE">thread_data</dfn>)</td></tr>
+<tr><th id="135">135</th><td>            <dfn class="decl def fn" id="_ZN5boost6detail11thread_dataINS_17reference_wrapperIT_EEEC1ES4_" title='boost::detail::thread_data&lt;reference_wrapper&lt;type-parameter-0-0&gt;&gt;::thread_data&lt;reference_wrapper&lt;type-parameter-0-0&gt; &gt;' data-ref="_ZN5boost6detail11thread_dataINS_17reference_wrapperIT_EEEC1ES4_">thread_data</dfn>(<span class="namespace">boost::</span><a class="type" href="../../../../../core/include/boost/core/ref.hpp.html#boost::reference_wrapper" title='boost::reference_wrapper' data-ref="boost::reference_wrapper">reference_wrapper</a>&lt;F&gt; <dfn class="local col1 decl" id="201f_" title='f_' data-type='boost::reference_wrapper&lt;F&gt;' data-ref="201f_">f_</dfn>):</td></tr>
+<tr><th id="136">136</th><td>                <a class="member field" href="#boost::detail::thread_data::f" title='boost::detail::thread_data&lt;reference_wrapper&lt;type-parameter-0-0&gt;&gt;::f' data-ref="boost::detail::thread_data::f">f</a>(<a class="local col1 ref" href="#201f_" title='f_' data-ref="201f_">f_</a>)</td></tr>
+<tr><th id="137">137</th><td>            {}</td></tr>
+<tr><th id="138">138</th><td>            <em>void</em> <dfn class="virtual decl def fn" id="_ZN5boost6detail11thread_dataINS_17reference_wrapperIT_EEE3runEv" title='boost::detail::thread_data&lt;reference_wrapper&lt;type-parameter-0-0&gt;&gt;::run' data-ref="_ZN5boost6detail11thread_dataINS_17reference_wrapperIT_EEE3runEv">run</dfn>()</td></tr>
+<tr><th id="139">139</th><td>            {</td></tr>
+<tr><th id="140">140</th><td>                <a class="member field" href="#boost::detail::thread_data::f" title='boost::detail::thread_data&lt;reference_wrapper&lt;type-parameter-0-0&gt;&gt;::f' data-ref="boost::detail::thread_data::f">f</a>();</td></tr>
+<tr><th id="141">141</th><td>            }</td></tr>
+<tr><th id="142">142</th><td>        };</td></tr>
+<tr><th id="143">143</th><td></td></tr>
+<tr><th id="144">144</th><td>        <b>template</b>&lt;<b>typename</b> F&gt;</td></tr>
+<tr><th id="145">145</th><td>        <b>class</b> <dfn class="type def" id="boost::detail::thread_data" title='boost::detail::thread_data' data-ref="boost::detail::thread_data">thread_data</dfn>&lt;<em>const</em> <span class="namespace">boost::</span><a class="type" href="../../../../../core/include/boost/core/ref.hpp.html#boost::reference_wrapper" title='boost::reference_wrapper' data-ref="boost::reference_wrapper">reference_wrapper</a>&lt;F&gt; &gt;:</td></tr>
+<tr><th id="146">146</th><td>            <b>public</b> <span class="namespace">detail::</span><a class="type" href="../pthread/thread_data.hpp.html#boost::detail::thread_data_base" title='boost::detail::thread_data_base' data-ref="boost::detail::thread_data_base">thread_data_base</a></td></tr>
+<tr><th id="147">147</th><td>        {</td></tr>
+<tr><th id="148">148</th><td>        <b>private</b>:</td></tr>
+<tr><th id="149">149</th><td>            F&amp; <dfn class="decl field" id="boost::detail::thread_data::f" title='boost::detail::thread_data&lt;const reference_wrapper&lt;type-parameter-0-0&gt;&gt;::f' data-ref="boost::detail::thread_data::f">f</dfn>;</td></tr>
+<tr><th id="150">150</th><td>        <b>public</b>:</td></tr>
+<tr><th id="151">151</th><td>            <a class="macro" href="delete.hpp.html#54" title="thread_data(thread_data const&amp;) = delete; thread_data&amp; operator=(thread_data const&amp;) = delete;" data-ref="_M/BOOST_THREAD_NO_COPYABLE">BOOST_THREAD_NO_COPYABLE</a>(<dfn class="decl def fn" id="_ZN5boost6detail11thread_dataIKNS_17reference_wrapperIT_EEEC1ERKNS1_IS5_EE" title='boost::detail::thread_data&lt;const reference_wrapper&lt;type-parameter-0-0&gt;&gt;::thread_data&lt;const reference_wrapper&lt;type-parameter-0-0&gt; &gt;' data-ref="_ZN5boost6detail11thread_dataIKNS_17reference_wrapperIT_EEEC1ERKNS1_IS5_EE">thread_data</dfn>)</td></tr>
+<tr><th id="152">152</th><td>            <dfn class="decl def fn" id="_ZN5boost6detail11thread_dataIKNS_17reference_wrapperIT_EEEC1ES4_" title='boost::detail::thread_data&lt;const reference_wrapper&lt;type-parameter-0-0&gt;&gt;::thread_data&lt;const reference_wrapper&lt;type-parameter-0-0&gt; &gt;' data-ref="_ZN5boost6detail11thread_dataIKNS_17reference_wrapperIT_EEEC1ES4_">thread_data</dfn>(<em>const</em> <span class="namespace">boost::</span><a class="type" href="../../../../../core/include/boost/core/ref.hpp.html#boost::reference_wrapper" title='boost::reference_wrapper' data-ref="boost::reference_wrapper">reference_wrapper</a>&lt;F&gt; <dfn class="local col2 decl" id="202f_" title='f_' data-type='const boost::reference_wrapper&lt;F&gt;' data-ref="202f_">f_</dfn>):</td></tr>
+<tr><th id="153">153</th><td>                <a class="member field" href="#boost::detail::thread_data::f" title='boost::detail::thread_data&lt;const reference_wrapper&lt;type-parameter-0-0&gt;&gt;::f' data-ref="boost::detail::thread_data::f">f</a>(<a class="local col2 ref" href="#202f_" title='f_' data-ref="202f_">f_</a>)</td></tr>
+<tr><th id="154">154</th><td>            {}</td></tr>
+<tr><th id="155">155</th><td>            <em>void</em> <dfn class="virtual decl def fn" id="_ZN5boost6detail11thread_dataIKNS_17reference_wrapperIT_EEE3runEv" title='boost::detail::thread_data&lt;const reference_wrapper&lt;type-parameter-0-0&gt;&gt;::run' data-ref="_ZN5boost6detail11thread_dataIKNS_17reference_wrapperIT_EEE3runEv">run</dfn>()</td></tr>
+<tr><th id="156">156</th><td>            {</td></tr>
+<tr><th id="157">157</th><td>                <a class="member field" href="#boost::detail::thread_data::f" title='boost::detail::thread_data&lt;const reference_wrapper&lt;type-parameter-0-0&gt;&gt;::f' data-ref="boost::detail::thread_data::f">f</a>();</td></tr>
+<tr><th id="158">158</th><td>            }</td></tr>
+<tr><th id="159">159</th><td>        };</td></tr>
+<tr><th id="160">160</th><td><u>#<span data-ppcond="64">endif</span></u></td></tr>
+<tr><th id="161">161</th><td>    }</td></tr>
+<tr><th id="162">162</th><td></td></tr>
+<tr><th id="163">163</th><td>    <b>class</b> <a class="macro" href="config.hpp.html#500" title="__attribute__((__visibility__(&quot;default&quot;)))" data-ref="_M/BOOST_THREAD_DECL">BOOST_THREAD_DECL</a> <dfn class="type def" id="boost::thread" title='boost::thread' data-ref="boost::thread">thread</dfn></td></tr>
+<tr><th id="164">164</th><td>    {</td></tr>
+<tr><th id="165">165</th><td>    <b>public</b>:</td></tr>
+<tr><th id="166">166</th><td>      <b>typedef</b> <a class="type" href="../pthread/thread_data.hpp.html#boost::thread_attributes" title='boost::thread_attributes' data-ref="boost::thread_attributes">thread_attributes</a> <dfn class="typedef" id="boost::thread::attributes" title='boost::thread::attributes' data-type='boost::thread_attributes' data-ref="boost::thread::attributes">attributes</dfn>;</td></tr>
+<tr><th id="167">167</th><td></td></tr>
+<tr><th id="168">168</th><td>      <a class="macro" href="move.hpp.html#269" title="thread(thread const&amp;) = delete; thread&amp; operator=(thread const&amp;) = delete; typedef int boost_move_no_copy_constructor_or_assign;" data-ref="_M/BOOST_THREAD_MOVABLE_ONLY">BOOST_THREAD_MOVABLE_ONLY</a>(<dfn class="decl def fn" id="_ZN5boost6threadC1ERKS0_" title='boost::thread::thread' data-ref="_ZN5boost6threadC1ERKS0_"><a class="type" href="#boost::thread" title='boost::thread' data-ref="boost::thread"><a class="type" href="#boost::thread" title='boost::thread' data-ref="boost::thread"><a class="type" href="#boost::thread" title='boost::thread' data-ref="boost::thread">thread</a></a></a></dfn>)</td></tr>
+<tr><th id="169">169</th><td>    <b>private</b>:</td></tr>
+<tr><th id="170">170</th><td></td></tr>
+<tr><th id="171">171</th><td>        <b>struct</b> <dfn class="type" id="boost::thread::dummy" title='boost::thread::dummy' data-ref="boost::thread::dummy">dummy</dfn>;</td></tr>
+<tr><th id="172">172</th><td></td></tr>
+<tr><th id="173">173</th><td>        <em>void</em> <dfn class="decl fn" id="_ZN5boost6thread14release_handleEv" title='boost::thread::release_handle' data-ref="_ZN5boost6thread14release_handleEv">release_handle</dfn>();</td></tr>
+<tr><th id="174">174</th><td></td></tr>
+<tr><th id="175">175</th><td>        <span class="namespace">detail::</span><a class="typedef" href="../pthread/thread_data.hpp.html#boost::detail::thread_data_ptr" title='boost::detail::thread_data_ptr' data-type='boost::shared_ptr&lt;thread_data_base&gt;' data-ref="boost::detail::thread_data_ptr">thread_data_ptr</a> <dfn class="decl field" id="boost::thread::thread_info" title='boost::thread::thread_info' data-ref="boost::thread::thread_info">thread_info</dfn>;</td></tr>
+<tr><th id="176">176</th><td></td></tr>
+<tr><th id="177">177</th><td>    <b>private</b>:</td></tr>
+<tr><th id="178">178</th><td>        <em>bool</em> <dfn class="decl fn" id="_ZN5boost6thread21start_thread_noexceptEv" title='boost::thread::start_thread_noexcept' data-ref="_ZN5boost6thread21start_thread_noexceptEv">start_thread_noexcept</dfn>();</td></tr>
+<tr><th id="179">179</th><td>        <em>bool</em> <dfn class="decl fn" id="_ZN5boost6thread21start_thread_noexceptERKNS_17thread_attributesE" title='boost::thread::start_thread_noexcept' data-ref="_ZN5boost6thread21start_thread_noexceptERKNS_17thread_attributesE">start_thread_noexcept</dfn>(<em>const</em> <a class="typedef" href="#boost::thread::attributes" title='boost::thread::attributes' data-type='boost::thread_attributes' data-ref="boost::thread::attributes">attributes</a>&amp; <dfn class="local col3 decl" id="203attr" title='attr' data-type='const boost::thread::attributes &amp;' data-ref="203attr">attr</dfn>);</td></tr>
+<tr><th id="180">180</th><td>        <em>void</em> <dfn class="decl def fn" id="_ZN5boost6thread12start_threadEv" title='boost::thread::start_thread' data-ref="_ZN5boost6thread12start_threadEv">start_thread</dfn>()</td></tr>
+<tr><th id="181">181</th><td>        {</td></tr>
+<tr><th id="182">182</th><td>          <b>if</b> (!<a class="member fn" href="#_ZN5boost6thread21start_thread_noexceptEv" title='boost::thread::start_thread_noexcept' data-ref="_ZN5boost6thread21start_thread_noexceptEv">start_thread_noexcept</a>())</td></tr>
+<tr><th id="183">183</th><td>          {</td></tr>
+<tr><th id="184">184</th><td>            <span class="namespace">boost::</span><a class="ref fn" href="../../../../../throw_exception/include/boost/throw_exception.hpp.html#_ZN5boost15throw_exceptionERKT_" title='boost::throw_exception' data-ref="_ZN5boost15throw_exceptionERKT_">throw_exception</a>(<span class='inlayHint'>e:&nbsp;</span><a class="type" href="../exceptions.hpp.html#boost::thread_resource_error" title='boost::thread_resource_error' data-ref="boost::thread_resource_error">thread_resource_error</a><a class="ref fn" href="../exceptions.hpp.html#_ZN5boost21thread_resource_errorC1Ev" title='boost::thread_resource_error::thread_resource_error' data-ref="_ZN5boost21thread_resource_errorC1Ev">(</a>));</td></tr>
+<tr><th id="185">185</th><td>          }</td></tr>
+<tr><th id="186">186</th><td>        }</td></tr>
+<tr><th id="187">187</th><td>        <em>void</em> <dfn class="decl def fn" id="_ZN5boost6thread12start_threadERKNS_17thread_attributesE" title='boost::thread::start_thread' data-ref="_ZN5boost6thread12start_threadERKNS_17thread_attributesE">start_thread</dfn>(<em>const</em> <a class="typedef" href="#boost::thread::attributes" title='boost::thread::attributes' data-type='boost::thread_attributes' data-ref="boost::thread::attributes">attributes</a>&amp; <dfn class="local col4 decl" id="204attr" title='attr' data-type='const boost::thread::attributes &amp;' data-ref="204attr">attr</dfn>)</td></tr>
+<tr><th id="188">188</th><td>        {</td></tr>
+<tr><th id="189">189</th><td>          <b>if</b> (!<a class="member fn" href="#_ZN5boost6thread21start_thread_noexceptERKNS_17thread_attributesE" title='boost::thread::start_thread_noexcept' data-ref="_ZN5boost6thread21start_thread_noexceptERKNS_17thread_attributesE">start_thread_noexcept</a>(<a class="local col4 ref" href="#204attr" title='attr' data-ref="204attr">attr</a>))</td></tr>
+<tr><th id="190">190</th><td>          {</td></tr>
+<tr><th id="191">191</th><td>            <span class="namespace">boost::</span><a class="ref fn" href="../../../../../throw_exception/include/boost/throw_exception.hpp.html#_ZN5boost15throw_exceptionERKT_" title='boost::throw_exception' data-ref="_ZN5boost15throw_exceptionERKT_">throw_exception</a>(<span class='inlayHint'>e:&nbsp;</span><a class="type" href="../exceptions.hpp.html#boost::thread_resource_error" title='boost::thread_resource_error' data-ref="boost::thread_resource_error">thread_resource_error</a><a class="ref fn" href="../exceptions.hpp.html#_ZN5boost21thread_resource_errorC1Ev" title='boost::thread_resource_error::thread_resource_error' data-ref="_ZN5boost21thread_resource_errorC1Ev">(</a>));</td></tr>
+<tr><th id="192">192</th><td>          }</td></tr>
+<tr><th id="193">193</th><td>        }</td></tr>
+<tr><th id="194">194</th><td></td></tr>
+<tr><th id="195">195</th><td>        <b>explicit</b> <dfn class="decl fn" id="_ZN5boost6threadC1ENS_10shared_ptrINS_6detail16thread_data_baseEEE" title='boost::thread::thread' data-ref="_ZN5boost6threadC1ENS_10shared_ptrINS_6detail16thread_data_baseEEE">thread</dfn>(<span class="namespace">detail::</span><a class="typedef" href="../pthread/thread_data.hpp.html#boost::detail::thread_data_ptr" title='boost::detail::thread_data_ptr' data-type='boost::shared_ptr&lt;thread_data_base&gt;' data-ref="boost::detail::thread_data_ptr">thread_data_ptr</a> <dfn class="local col5 decl" id="205data" title='data' data-type='detail::thread_data_ptr' data-ref="205data">data</dfn>);</td></tr>
+<tr><th id="196">196</th><td></td></tr>
+<tr><th id="197">197</th><td>        <span class="namespace">detail::</span><a class="typedef" href="../pthread/thread_data.hpp.html#boost::detail::thread_data_ptr" title='boost::detail::thread_data_ptr' data-type='boost::shared_ptr&lt;thread_data_base&gt;' data-ref="boost::detail::thread_data_ptr">thread_data_ptr</a> <dfn class="decl fn" id="_ZNK5boost6thread15get_thread_infoEv" title='boost::thread::get_thread_info' data-ref="_ZNK5boost6thread15get_thread_infoEv">get_thread_info</dfn> <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#374" title="" data-ref="_M/BOOST_PREVENT_MACRO_SUBSTITUTION">BOOST_PREVENT_MACRO_SUBSTITUTION</a> () <em>const</em>;</td></tr>
+<tr><th id="198">198</th><td></td></tr>
+<tr><th id="199">199</th><td><u>#<span data-ppcond="199">ifndef</span> <span class="macro" data-ref="_M/BOOST_NO_CXX11_RVALUE_REFERENCES">BOOST_NO_CXX11_RVALUE_REFERENCES</span></u></td></tr>
+<tr><th id="200">200</th><td><u>#<span data-ppcond="200">if</span> defined(<span class="macro" data-ref="_M/BOOST_THREAD_PROVIDES_VARIADIC_THREAD">BOOST_THREAD_PROVIDES_VARIADIC_THREAD</span>)</u></td></tr>
+<tr><th id="201">201</th><td>        <b>template</b>&lt;<b>typename</b> F, <b>class</b> ...ArgTypes&gt;</td></tr>
+<tr><th id="202">202</th><td>        <em>static</em> <b>inline</b> detail::thread_data_ptr make_thread_info(BOOST_THREAD_RV_REF(F) f, BOOST_THREAD_RV_REF(ArgTypes)... args)</td></tr>
+<tr><th id="203">203</th><td>        {</td></tr>
+<tr><th id="204">204</th><td>            <b>return</b> detail::thread_data_ptr(detail::heap_new&lt;</td></tr>
+<tr><th id="205">205</th><td>                  detail::thread_data&lt;<b>typename</b> boost::remove_reference&lt;F&gt;::type, ArgTypes...&gt;</td></tr>
+<tr><th id="206">206</th><td>                  &gt;(</td></tr>
+<tr><th id="207">207</th><td>                    boost::forward&lt;F&gt;(f), boost::forward&lt;ArgTypes&gt;(args)...</td></tr>
+<tr><th id="208">208</th><td>                  )</td></tr>
+<tr><th id="209">209</th><td>                );</td></tr>
+<tr><th id="210">210</th><td>        }</td></tr>
+<tr><th id="211">211</th><td><u>#<span data-ppcond="200">else</span></u></td></tr>
+<tr><th id="212">212</th><td>        <b>template</b>&lt;<b>typename</b> F&gt;</td></tr>
+<tr><th id="213">213</th><td>        <em>static</em> <b>inline</b> <span class="namespace">detail::</span><a class="typedef" href="../pthread/thread_data.hpp.html#boost::detail::thread_data_ptr" title='boost::detail::thread_data_ptr' data-type='boost::shared_ptr&lt;thread_data_base&gt;' data-ref="boost::detail::thread_data_ptr">thread_data_ptr</a> <dfn class="decl def fn" id="_ZN5boost6thread16make_thread_infoEOT_" title='boost::thread::make_thread_info' data-ref="_ZN5boost6thread16make_thread_infoEOT_">make_thread_info</dfn>(<a class="macro" href="move.hpp.html#82" title="F &amp;&amp;" data-ref="_M/BOOST_THREAD_RV_REF">BOOST_THREAD_RV_REF</a>(F) <dfn class="local col6 decl" id="206f" title='f' data-type='F &amp;&amp;' data-ref="206f">f</dfn>)</td></tr>
+<tr><th id="214">214</th><td>        {</td></tr>
+<tr><th id="215">215</th><td>            <b>return</b> <span class="namespace">detail::</span><a class="typedef" href="../pthread/thread_data.hpp.html#boost::detail::thread_data_ptr" title='boost::detail::thread_data_ptr' data-type='boost::shared_ptr&lt;thread_data_base&gt;' data-ref="boost::detail::thread_data_ptr">thread_data_ptr</a>(<span class="namespace">detail::</span>heap_new&lt;<span class="namespace">detail::</span><a class="type" href="#boost::detail::thread_data" title='boost::detail::thread_data' data-ref="boost::detail::thread_data">thread_data</a>&lt;<b>typename</b> <span class="namespace">boost::</span><a class="type" href="../../../../../type_traits/include/boost/type_traits/remove_reference.hpp.html#boost::remove_reference" title='boost::remove_reference' data-ref="boost::remove_reference">remove_reference</a>&lt;F&gt;::type&gt; &gt;(</td></tr>
+<tr><th id="216">216</th><td>                <span class="namespace">boost::</span>forward&lt;F&gt;(<a class="local col6 ref" href="#206f" title='f' data-ref="206f">f</a>)));</td></tr>
+<tr><th id="217">217</th><td>        }</td></tr>
+<tr><th id="218">218</th><td><u>#<span data-ppcond="200">endif</span></u></td></tr>
+<tr><th id="219">219</th><td>        <em>static</em> <b>inline</b> <span class="namespace">detail::</span><a class="typedef" href="../pthread/thread_data.hpp.html#boost::detail::thread_data_ptr" title='boost::detail::thread_data_ptr' data-type='boost::shared_ptr&lt;thread_data_base&gt;' data-ref="boost::detail::thread_data_ptr">thread_data_ptr</a> <dfn class="decl def fn" id="_ZN5boost6thread16make_thread_infoEPFvvE" title='boost::thread::make_thread_info' data-ref="_ZN5boost6thread16make_thread_infoEPFvvE">make_thread_info</dfn>(<em>void</em> (*<dfn class="local col7 decl" id="207f" title='f' data-type='void (*)()' data-ref="207f">f</dfn>)())</td></tr>
+<tr><th id="220">220</th><td>        {</td></tr>
+<tr><th id="221">221</th><td>            <b>return</b> <span class="namespace">detail::</span><a class="typedef" href="../pthread/thread_data.hpp.html#boost::detail::thread_data_ptr" title='boost::detail::thread_data_ptr' data-type='boost::shared_ptr&lt;thread_data_base&gt;' data-ref="boost::detail::thread_data_ptr">thread_data_ptr</a><a class="ref fn" href="../../../../../smart_ptr/include/boost/smart_ptr/shared_ptr.hpp.html#_ZN5boost10shared_ptrC1EPTL0__" title='boost::shared_ptr::shared_ptr&lt;T&gt;' data-ref="_ZN5boost10shared_ptrC1EPTL0__">(</a><span class="namespace">detail::</span><a class="ref fn" href="../pthread/thread_heap_alloc.hpp.html#_ZN5boost6detail8heap_newEOT0_" title='boost::detail::heap_new' data-ref="_ZN5boost6detail8heap_newEOT0_">heap_new</a>&lt;<span class="namespace">detail::</span><a class="type" href="#boost::detail::thread_data" title='boost::detail::thread_data' data-ref="boost::detail::thread_data">thread_data</a>&lt;<em>void</em>(*)()&gt; &gt;(</td></tr>
+<tr><th id="222">222</th><td>                <span class='inlayHint'>a1:&nbsp;</span><span class="namespace">boost::</span><a class="ref fn" href="../../../../../move/include/boost/move/utility_core.hpp.html#_ZN5boost7forwardERNS_11move_detail16remove_referenceIT_E4typeE" title='boost::forward' data-ref="_ZN5boost7forwardERNS_11move_detail16remove_referenceIT_E4typeE">forward</a>&lt;<em>void</em>(*)()&gt;(<span class='inlayHint'>t&amp;:&nbsp;</span><span class='refarg'><a class="local col7 ref" href="#207f" title='f' data-ref="207f">f</a></span>)));</td></tr>
+<tr><th id="223">223</th><td>        }</td></tr>
+<tr><th id="224">224</th><td><u>#<span data-ppcond="199">else</span></u></td></tr>
+<tr><th id="225">225</th><td>        <b>template</b>&lt;<b>typename</b> F&gt;</td></tr>
+<tr><th id="226">226</th><td>        <em>static</em> <b>inline</b> detail::thread_data_ptr make_thread_info(F f</td></tr>
+<tr><th id="227">227</th><td>            , <b>typename</b> disable_if_c&lt;</td></tr>
+<tr><th id="228">228</th><td>                <i>//boost::thread_detail::is_convertible&lt;F&amp;,BOOST_THREAD_RV_REF(F)&gt;::value ||</i></td></tr>
+<tr><th id="229">229</th><td>                is_same&lt;<b>typename</b> decay&lt;F&gt;::type, thread&gt;::value,</td></tr>
+<tr><th id="230">230</th><td>                dummy* &gt;::type=<var>0</var></td></tr>
+<tr><th id="231">231</th><td>                )</td></tr>
+<tr><th id="232">232</th><td>        {</td></tr>
+<tr><th id="233">233</th><td>            <b>return</b> detail::thread_data_ptr(detail::heap_new&lt;detail::thread_data&lt;F&gt; &gt;(f));</td></tr>
+<tr><th id="234">234</th><td>        }</td></tr>
+<tr><th id="235">235</th><td>        <b>template</b>&lt;<b>typename</b> F&gt;</td></tr>
+<tr><th id="236">236</th><td>        <em>static</em> <b>inline</b> detail::thread_data_ptr make_thread_info(BOOST_THREAD_RV_REF(F) f)</td></tr>
+<tr><th id="237">237</th><td>        {</td></tr>
+<tr><th id="238">238</th><td>            <b>return</b> detail::thread_data_ptr(detail::heap_new&lt;detail::thread_data&lt;F&gt; &gt;(f));</td></tr>
+<tr><th id="239">239</th><td>        }</td></tr>
+<tr><th id="240">240</th><td></td></tr>
+<tr><th id="241">241</th><td><u>#<span data-ppcond="199">endif</span></u></td></tr>
+<tr><th id="242">242</th><td>    <b>public</b>:</td></tr>
+<tr><th id="243">243</th><td><u>#<span data-ppcond="243">if</span> 0 // This should not be needed anymore. Use instead BOOST_THREAD_MAKE_RV_REF.</u></td></tr>
+<tr><th id="244">244</th><td><u>#if BOOST_WORKAROUND(__SUNPRO_CC, &lt; 0x5100)</u></td></tr>
+<tr><th id="245">245</th><td>        thread(<em>const</em> <em>volatile</em> thread&amp;);</td></tr>
+<tr><th id="246">246</th><td><u>#endif</u></td></tr>
+<tr><th id="247">247</th><td><u>#<span data-ppcond="243">endif</span></u></td></tr>
+<tr><th id="248">248</th><td>        <dfn class="decl fn" id="_ZN5boost6threadC1Ev" title='boost::thread::thread' data-ref="_ZN5boost6threadC1Ev">thread</dfn>() <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1020" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a>;</td></tr>
+<tr><th id="249">249</th><td>        <dfn class="decl def fn" id="_ZN5boost6threadD1Ev" title='boost::thread::~thread' data-ref="_ZN5boost6threadD1Ev">~thread</dfn>()</td></tr>
+<tr><th id="250">250</th><td>        {</td></tr>
+<tr><th id="251">251</th><td></td></tr>
+<tr><th id="252">252</th><td>    <u>#<span data-ppcond="252">if</span> defined <span class="macro" data-ref="_M/BOOST_THREAD_PROVIDES_THREAD_DESTRUCTOR_CALLS_TERMINATE_IF_JOINABLE">BOOST_THREAD_PROVIDES_THREAD_DESTRUCTOR_CALLS_TERMINATE_IF_JOINABLE</span></u></td></tr>
+<tr><th id="253">253</th><td>          <b>if</b> (joinable()) {</td></tr>
+<tr><th id="254">254</th><td>            std::terminate();</td></tr>
+<tr><th id="255">255</th><td>          }</td></tr>
+<tr><th id="256">256</th><td>    <u>#<span data-ppcond="252">else</span></u></td></tr>
+<tr><th id="257">257</th><td>            <a class="member fn" href="#_ZN5boost6thread6detachEv" title='boost::thread::detach' data-ref="_ZN5boost6thread6detachEv">detach</a>();</td></tr>
+<tr><th id="258">258</th><td>    <u>#<span data-ppcond="252">endif</span></u></td></tr>
+<tr><th id="259">259</th><td>        }</td></tr>
+<tr><th id="260">260</th><td><u>#<span data-ppcond="260">ifndef</span> <span class="macro" data-ref="_M/BOOST_NO_CXX11_RVALUE_REFERENCES">BOOST_NO_CXX11_RVALUE_REFERENCES</span></u></td></tr>
+<tr><th id="261">261</th><td>        <b>template</b> &lt;</td></tr>
+<tr><th id="262">262</th><td>          <b>class</b> F</td></tr>
+<tr><th id="263">263</th><td>        &gt;</td></tr>
+<tr><th id="264">264</th><td>        <b>explicit</b> <dfn class="decl def fn" id="_ZN5boost6threadC1EOT_" title='boost::thread::thread' data-ref="_ZN5boost6threadC1EOT_">thread</dfn>(<a class="macro" href="move.hpp.html#82" title="F &amp;&amp;" data-ref="_M/BOOST_THREAD_RV_REF">BOOST_THREAD_RV_REF</a>(F) <dfn class="local col8 decl" id="208f" title='f' data-type='F &amp;&amp;' data-ref="208f">f</dfn></td></tr>
+<tr><th id="265">265</th><td>        <i>//, typename disable_if&lt;is_same&lt;typename decay&lt;F&gt;::type, thread&gt;, dummy* &gt;::type=0</i></td></tr>
+<tr><th id="266">266</th><td>        ):</td></tr>
+<tr><th id="267">267</th><td>          <a class="member field" href="#boost::thread::thread_info" title='boost::thread::thread_info' data-ref="boost::thread::thread_info">thread_info</a>(make_thread_info(<span class="namespace">thread_detail::</span>decay_copy(<span class="namespace">boost::</span>forward&lt;F&gt;(<a class="local col8 ref" href="#208f" title='f' data-ref="208f">f</a>))))</td></tr>
+<tr><th id="268">268</th><td>        {</td></tr>
+<tr><th id="269">269</th><td>            <a class="member fn" href="#_ZN5boost6thread12start_threadEv" title='boost::thread::start_thread' data-ref="_ZN5boost6thread12start_threadEv">start_thread</a>();</td></tr>
+<tr><th id="270">270</th><td>        }</td></tr>
+<tr><th id="271">271</th><td>        <b>template</b> &lt;</td></tr>
+<tr><th id="272">272</th><td>          <b>class</b> F</td></tr>
+<tr><th id="273">273</th><td>        &gt;</td></tr>
+<tr><th id="274">274</th><td>        <dfn class="decl def fn" id="_ZN5boost6threadC1ERKNS_17thread_attributesEOT_" title='boost::thread::thread' data-ref="_ZN5boost6threadC1ERKNS_17thread_attributesEOT_">thread</dfn>(<a class="typedef" href="#boost::thread::attributes" title='boost::thread::attributes' data-type='boost::thread_attributes' data-ref="boost::thread::attributes">attributes</a> <em>const</em>&amp; <dfn class="local col9 decl" id="209attrs" title='attrs' data-type='const boost::thread::attributes &amp;' data-ref="209attrs">attrs</dfn>, <a class="macro" href="move.hpp.html#82" title="F &amp;&amp;" data-ref="_M/BOOST_THREAD_RV_REF">BOOST_THREAD_RV_REF</a>(F) <dfn class="local col0 decl" id="210f" title='f' data-type='F &amp;&amp;' data-ref="210f">f</dfn>):</td></tr>
+<tr><th id="275">275</th><td>          <a class="member field" href="#boost::thread::thread_info" title='boost::thread::thread_info' data-ref="boost::thread::thread_info">thread_info</a>(make_thread_info(<span class="namespace">thread_detail::</span>decay_copy(<span class="namespace">boost::</span>forward&lt;F&gt;(<a class="local col0 ref" href="#210f" title='f' data-ref="210f">f</a>))))</td></tr>
+<tr><th id="276">276</th><td>        {</td></tr>
+<tr><th id="277">277</th><td>            <a class="member fn" href="#_ZN5boost6thread12start_threadERKNS_17thread_attributesE" title='boost::thread::start_thread' data-ref="_ZN5boost6thread12start_threadERKNS_17thread_attributesE">start_thread</a>(<span class='inlayHint'>attr:&nbsp;</span><a class="local col9 ref" href="#209attrs" title='attrs' data-ref="209attrs">attrs</a>);</td></tr>
+<tr><th id="278">278</th><td>        }</td></tr>
+<tr><th id="279">279</th><td></td></tr>
+<tr><th id="280">280</th><td><u>#<span data-ppcond="260">else</span></u></td></tr>
+<tr><th id="281">281</th><td><u>#ifdef BOOST_NO_SFINAE</u></td></tr>
+<tr><th id="282">282</th><td>        <b>template</b> &lt;<b>class</b> F&gt;</td></tr>
+<tr><th id="283">283</th><td>        <b>explicit</b> thread(F f):</td></tr>
+<tr><th id="284">284</th><td>            thread_info(make_thread_info(f))</td></tr>
+<tr><th id="285">285</th><td>        {</td></tr>
+<tr><th id="286">286</th><td>            start_thread();</td></tr>
+<tr><th id="287">287</th><td>        }</td></tr>
+<tr><th id="288">288</th><td>        <b>template</b> &lt;<b>class</b> F&gt;</td></tr>
+<tr><th id="289">289</th><td>        thread(attributes <em>const</em>&amp; attrs, F f):</td></tr>
+<tr><th id="290">290</th><td>            thread_info(make_thread_info(f))</td></tr>
+<tr><th id="291">291</th><td>        {</td></tr>
+<tr><th id="292">292</th><td>            start_thread(attrs);</td></tr>
+<tr><th id="293">293</th><td>        }</td></tr>
+<tr><th id="294">294</th><td><u>#else</u></td></tr>
+<tr><th id="295">295</th><td>        <b>template</b> &lt;<b>class</b> F&gt;</td></tr>
+<tr><th id="296">296</th><td>        <b>explicit</b> thread(F f</td></tr>
+<tr><th id="297">297</th><td>        , <b>typename</b> disable_if_c&lt;</td></tr>
+<tr><th id="298">298</th><td>        boost::thread_detail::is_rv&lt;F&gt;::value <i>// todo as a thread_detail::is_rv</i></td></tr>
+<tr><th id="299">299</th><td>        <i>//boost::thread_detail::is_convertible&lt;F&amp;,BOOST_THREAD_RV_REF(F)&gt;::value</i></td></tr>
+<tr><th id="300">300</th><td><i>            //|| is_same&lt;typename decay&lt;F&gt;::type, thread&gt;::value</i></td></tr>
+<tr><th id="301">301</th><td>           , dummy* &gt;::type=<var>0</var></td></tr>
+<tr><th id="302">302</th><td>        ):</td></tr>
+<tr><th id="303">303</th><td>            thread_info(make_thread_info(f))</td></tr>
+<tr><th id="304">304</th><td>        {</td></tr>
+<tr><th id="305">305</th><td>            start_thread();</td></tr>
+<tr><th id="306">306</th><td>        }</td></tr>
+<tr><th id="307">307</th><td>        <b>template</b> &lt;<b>class</b> F&gt;</td></tr>
+<tr><th id="308">308</th><td>        thread(attributes <em>const</em>&amp; attrs, F f</td></tr>
+<tr><th id="309">309</th><td>            , <b>typename</b> disable_if&lt;boost::thread_detail::is_rv&lt;F&gt;, dummy* &gt;::type=<var>0</var></td></tr>
+<tr><th id="310">310</th><td>            <i>//, typename disable_if&lt;boost::thread_detail::is_convertible&lt;F&amp;,BOOST_THREAD_RV_REF(F) &gt;, dummy* &gt;::type=0</i></td></tr>
+<tr><th id="311">311</th><td>        ):</td></tr>
+<tr><th id="312">312</th><td>            thread_info(make_thread_info(f))</td></tr>
+<tr><th id="313">313</th><td>        {</td></tr>
+<tr><th id="314">314</th><td>            start_thread(attrs);</td></tr>
+<tr><th id="315">315</th><td>        }</td></tr>
+<tr><th id="316">316</th><td><u>#endif</u></td></tr>
+<tr><th id="317">317</th><td>        <b>template</b> &lt;<b>class</b> F&gt;</td></tr>
+<tr><th id="318">318</th><td>        <b>explicit</b> thread(BOOST_THREAD_RV_REF(F) f</td></tr>
+<tr><th id="319">319</th><td>        , <b>typename</b> disable_if&lt;is_same&lt;<b>typename</b> decay&lt;F&gt;::type, thread&gt;, dummy* &gt;::type=<var>0</var></td></tr>
+<tr><th id="320">320</th><td>        ):</td></tr>
+<tr><th id="321">321</th><td><u>#ifdef BOOST_THREAD_USES_MOVE</u></td></tr>
+<tr><th id="322">322</th><td>        thread_info(make_thread_info(boost::move&lt;F&gt;(f))) <i>// todo : Add forward</i></td></tr>
+<tr><th id="323">323</th><td><u>#else</u></td></tr>
+<tr><th id="324">324</th><td>        thread_info(make_thread_info(f)) <i>// todo : Add forward</i></td></tr>
+<tr><th id="325">325</th><td><u>#endif</u></td></tr>
+<tr><th id="326">326</th><td>        {</td></tr>
+<tr><th id="327">327</th><td>            start_thread();</td></tr>
+<tr><th id="328">328</th><td>        }</td></tr>
+<tr><th id="329">329</th><td></td></tr>
+<tr><th id="330">330</th><td>        <b>template</b> &lt;<b>class</b> F&gt;</td></tr>
+<tr><th id="331">331</th><td>        thread(attributes <em>const</em>&amp; attrs, BOOST_THREAD_RV_REF(F) f):</td></tr>
+<tr><th id="332">332</th><td><u>#ifdef BOOST_THREAD_USES_MOVE</u></td></tr>
+<tr><th id="333">333</th><td>            thread_info(make_thread_info(boost::move&lt;F&gt;(f))) <i>// todo : Add forward</i></td></tr>
+<tr><th id="334">334</th><td><u>#else</u></td></tr>
+<tr><th id="335">335</th><td>            thread_info(make_thread_info(f)) <i>// todo : Add forward</i></td></tr>
+<tr><th id="336">336</th><td><u>#endif</u></td></tr>
+<tr><th id="337">337</th><td>        {</td></tr>
+<tr><th id="338">338</th><td>            start_thread(attrs);</td></tr>
+<tr><th id="339">339</th><td>        }</td></tr>
+<tr><th id="340">340</th><td><u>#<span data-ppcond="260">endif</span></u></td></tr>
+<tr><th id="341">341</th><td>        <dfn class="decl def fn" id="_ZN5boost6threadC1EOS0_" title='boost::thread::thread' data-ref="_ZN5boost6threadC1EOS0_">thread</dfn>(<a class="macro" href="move.hpp.html#82" title="thread &amp;&amp;" data-ref="_M/BOOST_THREAD_RV_REF">BOOST_THREAD_RV_REF</a>(<a class="type" href="#boost::thread" title='boost::thread' data-ref="boost::thread">thread</a>) <dfn class="local col1 decl" id="211x" title='x' data-type='boost::thread &amp;&amp;' data-ref="211x">x</dfn>) <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1020" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="342">342</th><td>        {</td></tr>
+<tr><th id="343">343</th><td>            <a class="member field" href="#boost::thread::thread_info" title='boost::thread::thread_info' data-ref="boost::thread::thread_info">thread_info</a><a class="ref fn" href="../../../../../smart_ptr/include/boost/smart_ptr/shared_ptr.hpp.html#_ZN5boost10shared_ptraSERKNS_10shared_ptrIT_EE" title='boost::shared_ptr::operator=' data-ref="_ZN5boost10shared_ptraSERKNS_10shared_ptrIT_EE">=</a><a class="macro" href="move.hpp.html#86" title="x" data-ref="_M/BOOST_THREAD_RV">BOOST_THREAD_RV</a>(<a class="local col1 ref" href="#211x" title='x' data-ref="211x">x</a>).<a class="member field" href="#boost::thread::thread_info" title='boost::thread::thread_info' data-ref="boost::thread::thread_info">thread_info</a>;</td></tr>
+<tr><th id="344">344</th><td>            <a class="macro" href="move.hpp.html#86" title="x" data-ref="_M/BOOST_THREAD_RV">BOOST_THREAD_RV</a>(<a class="local col1 ref" href="#211x" title='x' data-ref="211x">x</a>).<a class="member field" href="#boost::thread::thread_info" title='boost::thread::thread_info' data-ref="boost::thread::thread_info">thread_info</a>.<a class="ref fn" href="../../../../../smart_ptr/include/boost/smart_ptr/shared_ptr.hpp.html#_ZN5boost10shared_ptr5resetEv" title='boost::shared_ptr::reset' data-ref="_ZN5boost10shared_ptr5resetEv">reset</a>();</td></tr>
+<tr><th id="345">345</th><td>        }</td></tr>
+<tr><th id="346">346</th><td><u>#<span data-ppcond="346">if</span> 0 // This should not be needed anymore. Use instead BOOST_THREAD_MAKE_RV_REF.</u></td></tr>
+<tr><th id="347">347</th><td><u>#if BOOST_WORKAROUND(__SUNPRO_CC, &lt; 0x5100)</u></td></tr>
+<tr><th id="348">348</th><td>        thread&amp; <b>operator</b>=(thread x)</td></tr>
+<tr><th id="349">349</th><td>        {</td></tr>
+<tr><th id="350">350</th><td>            swap(x);</td></tr>
+<tr><th id="351">351</th><td>            <b>return</b> *<b>this</b>;</td></tr>
+<tr><th id="352">352</th><td>        }</td></tr>
+<tr><th id="353">353</th><td><u>#endif</u></td></tr>
+<tr><th id="354">354</th><td><u>#<span data-ppcond="346">endif</span></u></td></tr>
+<tr><th id="355">355</th><td></td></tr>
+<tr><th id="356">356</th><td>        <a class="type" href="#boost::thread" title='boost::thread' data-ref="boost::thread">thread</a>&amp; <dfn class="decl def fn" id="_ZN5boost6threadaSEOS0_" title='boost::thread::operator=' data-ref="_ZN5boost6threadaSEOS0_"><b>operator</b>=</dfn>(<a class="macro" href="move.hpp.html#82" title="thread &amp;&amp;" data-ref="_M/BOOST_THREAD_RV_REF">BOOST_THREAD_RV_REF</a>(<a class="type" href="#boost::thread" title='boost::thread' data-ref="boost::thread">thread</a>) <dfn class="local col2 decl" id="212other" title='other' data-type='boost::thread &amp;&amp;' data-ref="212other">other</dfn>) <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1020" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="357">357</th><td>        {</td></tr>
+<tr><th id="358">358</th><td></td></tr>
+<tr><th id="359">359</th><td><u>#<span data-ppcond="359">if</span> defined <span class="macro" data-ref="_M/BOOST_THREAD_PROVIDES_THREAD_MOVE_ASSIGN_CALLS_TERMINATE_IF_JOINABLE">BOOST_THREAD_PROVIDES_THREAD_MOVE_ASSIGN_CALLS_TERMINATE_IF_JOINABLE</span></u></td></tr>
+<tr><th id="360">360</th><td>            <b>if</b> (joinable()) std::terminate();</td></tr>
+<tr><th id="361">361</th><td><u>#<span data-ppcond="359">else</span></u></td></tr>
+<tr><th id="362">362</th><td>            <a class="member fn" href="#_ZN5boost6thread6detachEv" title='boost::thread::detach' data-ref="_ZN5boost6thread6detachEv">detach</a>();</td></tr>
+<tr><th id="363">363</th><td><u>#<span data-ppcond="359">endif</span></u></td></tr>
+<tr><th id="364">364</th><td>            <a class="member field" href="#boost::thread::thread_info" title='boost::thread::thread_info' data-ref="boost::thread::thread_info">thread_info</a><a class="ref fn" href="../../../../../smart_ptr/include/boost/smart_ptr/shared_ptr.hpp.html#_ZN5boost10shared_ptraSERKNS_10shared_ptrIT_EE" title='boost::shared_ptr::operator=' data-ref="_ZN5boost10shared_ptraSERKNS_10shared_ptrIT_EE">=</a><a class="macro" href="move.hpp.html#86" title="other" data-ref="_M/BOOST_THREAD_RV">BOOST_THREAD_RV</a>(<a class="local col2 ref" href="#212other" title='other' data-ref="212other">other</a>).<a class="member field" href="#boost::thread::thread_info" title='boost::thread::thread_info' data-ref="boost::thread::thread_info">thread_info</a>;</td></tr>
+<tr><th id="365">365</th><td>            <a class="macro" href="move.hpp.html#86" title="other" data-ref="_M/BOOST_THREAD_RV">BOOST_THREAD_RV</a>(<a class="local col2 ref" href="#212other" title='other' data-ref="212other">other</a>).<a class="member field" href="#boost::thread::thread_info" title='boost::thread::thread_info' data-ref="boost::thread::thread_info">thread_info</a>.<a class="ref fn" href="../../../../../smart_ptr/include/boost/smart_ptr/shared_ptr.hpp.html#_ZN5boost10shared_ptr5resetEv" title='boost::shared_ptr::reset' data-ref="_ZN5boost10shared_ptr5resetEv">reset</a>();</td></tr>
+<tr><th id="366">366</th><td>            <b>return</b> *<b>this</b>;</td></tr>
+<tr><th id="367">367</th><td>        }</td></tr>
+<tr><th id="368">368</th><td></td></tr>
+<tr><th id="369">369</th><td><u>#<span data-ppcond="369">if</span> defined(<span class="macro" data-ref="_M/BOOST_THREAD_PROVIDES_VARIADIC_THREAD">BOOST_THREAD_PROVIDES_VARIADIC_THREAD</span>)</u></td></tr>
+<tr><th id="370">370</th><td>        <b>template</b> &lt;<b>class</b> F, <b>class</b> Arg, <b>class</b> ...Args&gt;</td></tr>
+<tr><th id="371">371</th><td>        thread(F&amp;&amp; f, Arg&amp;&amp; arg, Args&amp;&amp;... args) :</td></tr>
+<tr><th id="372">372</th><td>          thread_info(make_thread_info(</td></tr>
+<tr><th id="373">373</th><td>              thread_detail::decay_copy(boost::forward&lt;F&gt;(f)),</td></tr>
+<tr><th id="374">374</th><td>              thread_detail::decay_copy(boost::forward&lt;Arg&gt;(arg)),</td></tr>
+<tr><th id="375">375</th><td>              thread_detail::decay_copy(boost::forward&lt;Args&gt;(args))...)</td></tr>
+<tr><th id="376">376</th><td>          )</td></tr>
+<tr><th id="377">377</th><td></td></tr>
+<tr><th id="378">378</th><td>        {</td></tr>
+<tr><th id="379">379</th><td>          start_thread();</td></tr>
+<tr><th id="380">380</th><td>        }</td></tr>
+<tr><th id="381">381</th><td>        <b>template</b> &lt;<b>class</b> F, <b>class</b> Arg, <b>class</b> ...Args&gt;</td></tr>
+<tr><th id="382">382</th><td>        thread(attributes <em>const</em>&amp; attrs, F&amp;&amp; f, Arg&amp;&amp; arg, Args&amp;&amp;... args) :</td></tr>
+<tr><th id="383">383</th><td>          thread_info(make_thread_info(</td></tr>
+<tr><th id="384">384</th><td>              thread_detail::decay_copy(boost::forward&lt;F&gt;(f)),</td></tr>
+<tr><th id="385">385</th><td>              thread_detail::decay_copy(boost::forward&lt;Arg&gt;(arg)),</td></tr>
+<tr><th id="386">386</th><td>              thread_detail::decay_copy(boost::forward&lt;Args&gt;(args))...)</td></tr>
+<tr><th id="387">387</th><td>          )</td></tr>
+<tr><th id="388">388</th><td></td></tr>
+<tr><th id="389">389</th><td>        {</td></tr>
+<tr><th id="390">390</th><td>          start_thread(attrs);</td></tr>
+<tr><th id="391">391</th><td>        }</td></tr>
+<tr><th id="392">392</th><td><u>#<span data-ppcond="369">else</span></u></td></tr>
+<tr><th id="393">393</th><td>        <b>template</b> &lt;<b>class</b> F,<b>class</b> A1&gt;</td></tr>
+<tr><th id="394">394</th><td>        <dfn class="decl def fn" id="_ZN5boost6threadC1ET_T0_NS_10disable_ifINS_13thread_detail14is_convertibleIRS1_NS_17thread_attributesEEEPNS0_5dummyEE4typeE" title='boost::thread::thread' data-ref="_ZN5boost6threadC1ET_T0_NS_10disable_ifINS_13thread_detail14is_convertibleIRS1_NS_17thread_attributesEEEPNS0_5dummyEE4typeE">thread</dfn>(F <dfn class="local col3 decl" id="213f" title='f' data-type='F' data-ref="213f">f</dfn>,A1 <dfn class="local col4 decl" id="214a1" title='a1' data-type='A1' data-ref="214a1">a1</dfn>,<b>typename</b> <a class="type" href="../../../../../core/include/boost/core/enable_if.hpp.html#boost::disable_if" title='boost::disable_if' data-ref="boost::disable_if">disable_if</a>&lt;<span class="namespace">boost::thread_detail::</span><a class="type" href="is_convertible.hpp.html#boost::thread_detail::is_convertible" title='boost::thread_detail::is_convertible' data-ref="boost::thread_detail::is_convertible">is_convertible</a>&lt;F&amp;,<a class="type" href="../pthread/thread_data.hpp.html#boost::thread_attributes" title='boost::thread_attributes' data-ref="boost::thread_attributes">thread_attributes</a> &gt;, <a class="type" href="#boost::thread::dummy" title='boost::thread::dummy' data-ref="boost::thread::dummy">dummy</a>* &gt;::type=<var>0</var>):</td></tr>
+<tr><th id="395">395</th><td>            <a class="member field" href="#boost::thread::thread_info" title='boost::thread::thread_info' data-ref="boost::thread::thread_info">thread_info</a>(make_thread_info(<span class="namespace">boost::</span>bind(<span class="namespace">boost::</span><a class="type" href="../../../../../core/include/boost/type.hpp.html#boost::type" title='boost::type' data-ref="boost::type">type</a>&lt;<em>void</em>&gt;<a class="ref fn" href="../../../../../core/include/boost/type.hpp.html#14" title='boost::type&lt;void&gt;::type' data-ref="_ZN5boost4typeIvEC1Ev">(</a>),<a class="local col3 ref" href="#213f" title='f' data-ref="213f">f</a>,<a class="local col4 ref" href="#214a1" title='a1' data-ref="214a1">a1</a>)))</td></tr>
+<tr><th id="396">396</th><td>        {</td></tr>
+<tr><th id="397">397</th><td>            <a class="member fn" href="#_ZN5boost6thread12start_threadEv" title='boost::thread::start_thread' data-ref="_ZN5boost6thread12start_threadEv">start_thread</a>();</td></tr>
+<tr><th id="398">398</th><td>        }</td></tr>
+<tr><th id="399">399</th><td>        <b>template</b> &lt;<b>class</b> F,<b>class</b> A1,<b>class</b> A2&gt;</td></tr>
+<tr><th id="400">400</th><td>        <dfn class="decl def fn" id="_ZN5boost6threadC1ET_T0_T1_" title='boost::thread::thread' data-ref="_ZN5boost6threadC1ET_T0_T1_">thread</dfn>(F <dfn class="local col5 decl" id="215f" title='f' data-type='F' data-ref="215f">f</dfn>,A1 <dfn class="local col6 decl" id="216a1" title='a1' data-type='A1' data-ref="216a1">a1</dfn>,A2 <dfn class="local col7 decl" id="217a2" title='a2' data-type='A2' data-ref="217a2">a2</dfn>):</td></tr>
+<tr><th id="401">401</th><td>            <a class="member field" href="#boost::thread::thread_info" title='boost::thread::thread_info' data-ref="boost::thread::thread_info">thread_info</a>(make_thread_info(<span class="namespace">boost::</span>bind(<span class="namespace">boost::</span><a class="type" href="../../../../../core/include/boost/type.hpp.html#boost::type" title='boost::type' data-ref="boost::type">type</a>&lt;<em>void</em>&gt;<a class="ref fn" href="../../../../../core/include/boost/type.hpp.html#14" title='boost::type&lt;void&gt;::type' data-ref="_ZN5boost4typeIvEC1Ev">(</a>),<a class="local col5 ref" href="#215f" title='f' data-ref="215f">f</a>,<a class="local col6 ref" href="#216a1" title='a1' data-ref="216a1">a1</a>,<a class="local col7 ref" href="#217a2" title='a2' data-ref="217a2">a2</a>)))</td></tr>
+<tr><th id="402">402</th><td>        {</td></tr>
+<tr><th id="403">403</th><td>            <a class="member fn" href="#_ZN5boost6thread12start_threadEv" title='boost::thread::start_thread' data-ref="_ZN5boost6thread12start_threadEv">start_thread</a>();</td></tr>
+<tr><th id="404">404</th><td>        }</td></tr>
+<tr><th id="405">405</th><td></td></tr>
+<tr><th id="406">406</th><td>        <b>template</b> &lt;<b>class</b> F,<b>class</b> A1,<b>class</b> A2,<b>class</b> A3&gt;</td></tr>
+<tr><th id="407">407</th><td>        <dfn class="decl def fn" id="_ZN5boost6threadC1ET_T0_T1_T2_" title='boost::thread::thread' data-ref="_ZN5boost6threadC1ET_T0_T1_T2_">thread</dfn>(F <dfn class="local col8 decl" id="218f" title='f' data-type='F' data-ref="218f">f</dfn>,A1 <dfn class="local col9 decl" id="219a1" title='a1' data-type='A1' data-ref="219a1">a1</dfn>,A2 <dfn class="local col0 decl" id="220a2" title='a2' data-type='A2' data-ref="220a2">a2</dfn>,A3 <dfn class="local col1 decl" id="221a3" title='a3' data-type='A3' data-ref="221a3">a3</dfn>):</td></tr>
+<tr><th id="408">408</th><td>            <a class="member field" href="#boost::thread::thread_info" title='boost::thread::thread_info' data-ref="boost::thread::thread_info">thread_info</a>(make_thread_info(<span class="namespace">boost::</span>bind(<span class="namespace">boost::</span><a class="type" href="../../../../../core/include/boost/type.hpp.html#boost::type" title='boost::type' data-ref="boost::type">type</a>&lt;<em>void</em>&gt;<a class="ref fn" href="../../../../../core/include/boost/type.hpp.html#14" title='boost::type&lt;void&gt;::type' data-ref="_ZN5boost4typeIvEC1Ev">(</a>),<a class="local col8 ref" href="#218f" title='f' data-ref="218f">f</a>,<a class="local col9 ref" href="#219a1" title='a1' data-ref="219a1">a1</a>,<a class="local col0 ref" href="#220a2" title='a2' data-ref="220a2">a2</a>,<a class="local col1 ref" href="#221a3" title='a3' data-ref="221a3">a3</a>)))</td></tr>
+<tr><th id="409">409</th><td>        {</td></tr>
+<tr><th id="410">410</th><td>            <a class="member fn" href="#_ZN5boost6thread12start_threadEv" title='boost::thread::start_thread' data-ref="_ZN5boost6thread12start_threadEv">start_thread</a>();</td></tr>
+<tr><th id="411">411</th><td>        }</td></tr>
+<tr><th id="412">412</th><td></td></tr>
+<tr><th id="413">413</th><td>        <b>template</b> &lt;<b>class</b> F,<b>class</b> A1,<b>class</b> A2,<b>class</b> A3,<b>class</b> A4&gt;</td></tr>
+<tr><th id="414">414</th><td>        <dfn class="decl def fn" id="_ZN5boost6threadC1ET_T0_T1_T2_T3_" title='boost::thread::thread' data-ref="_ZN5boost6threadC1ET_T0_T1_T2_T3_">thread</dfn>(F <dfn class="local col2 decl" id="222f" title='f' data-type='F' data-ref="222f">f</dfn>,A1 <dfn class="local col3 decl" id="223a1" title='a1' data-type='A1' data-ref="223a1">a1</dfn>,A2 <dfn class="local col4 decl" id="224a2" title='a2' data-type='A2' data-ref="224a2">a2</dfn>,A3 <dfn class="local col5 decl" id="225a3" title='a3' data-type='A3' data-ref="225a3">a3</dfn>,A4 <dfn class="local col6 decl" id="226a4" title='a4' data-type='A4' data-ref="226a4">a4</dfn>):</td></tr>
+<tr><th id="415">415</th><td>            <a class="member field" href="#boost::thread::thread_info" title='boost::thread::thread_info' data-ref="boost::thread::thread_info">thread_info</a>(make_thread_info(<span class="namespace">boost::</span>bind(<span class="namespace">boost::</span><a class="type" href="../../../../../core/include/boost/type.hpp.html#boost::type" title='boost::type' data-ref="boost::type">type</a>&lt;<em>void</em>&gt;<a class="ref fn" href="../../../../../core/include/boost/type.hpp.html#14" title='boost::type&lt;void&gt;::type' data-ref="_ZN5boost4typeIvEC1Ev">(</a>),<a class="local col2 ref" href="#222f" title='f' data-ref="222f">f</a>,<a class="local col3 ref" href="#223a1" title='a1' data-ref="223a1">a1</a>,<a class="local col4 ref" href="#224a2" title='a2' data-ref="224a2">a2</a>,<a class="local col5 ref" href="#225a3" title='a3' data-ref="225a3">a3</a>,<a class="local col6 ref" href="#226a4" title='a4' data-ref="226a4">a4</a>)))</td></tr>
+<tr><th id="416">416</th><td>        {</td></tr>
+<tr><th id="417">417</th><td>            <a class="member fn" href="#_ZN5boost6thread12start_threadEv" title='boost::thread::start_thread' data-ref="_ZN5boost6thread12start_threadEv">start_thread</a>();</td></tr>
+<tr><th id="418">418</th><td>        }</td></tr>
+<tr><th id="419">419</th><td></td></tr>
+<tr><th id="420">420</th><td>        <b>template</b> &lt;<b>class</b> F,<b>class</b> A1,<b>class</b> A2,<b>class</b> A3,<b>class</b> A4,<b>class</b> A5&gt;</td></tr>
+<tr><th id="421">421</th><td>        <dfn class="decl def fn" id="_ZN5boost6threadC1ET_T0_T1_T2_T3_T4_" title='boost::thread::thread' data-ref="_ZN5boost6threadC1ET_T0_T1_T2_T3_T4_">thread</dfn>(F <dfn class="local col7 decl" id="227f" title='f' data-type='F' data-ref="227f">f</dfn>,A1 <dfn class="local col8 decl" id="228a1" title='a1' data-type='A1' data-ref="228a1">a1</dfn>,A2 <dfn class="local col9 decl" id="229a2" title='a2' data-type='A2' data-ref="229a2">a2</dfn>,A3 <dfn class="local col0 decl" id="230a3" title='a3' data-type='A3' data-ref="230a3">a3</dfn>,A4 <dfn class="local col1 decl" id="231a4" title='a4' data-type='A4' data-ref="231a4">a4</dfn>,A5 <dfn class="local col2 decl" id="232a5" title='a5' data-type='A5' data-ref="232a5">a5</dfn>):</td></tr>
+<tr><th id="422">422</th><td>            <a class="member field" href="#boost::thread::thread_info" title='boost::thread::thread_info' data-ref="boost::thread::thread_info">thread_info</a>(make_thread_info(<span class="namespace">boost::</span>bind(<span class="namespace">boost::</span><a class="type" href="../../../../../core/include/boost/type.hpp.html#boost::type" title='boost::type' data-ref="boost::type">type</a>&lt;<em>void</em>&gt;<a class="ref fn" href="../../../../../core/include/boost/type.hpp.html#14" title='boost::type&lt;void&gt;::type' data-ref="_ZN5boost4typeIvEC1Ev">(</a>),<a class="local col7 ref" href="#227f" title='f' data-ref="227f">f</a>,<a class="local col8 ref" href="#228a1" title='a1' data-ref="228a1">a1</a>,<a class="local col9 ref" href="#229a2" title='a2' data-ref="229a2">a2</a>,<a class="local col0 ref" href="#230a3" title='a3' data-ref="230a3">a3</a>,<a class="local col1 ref" href="#231a4" title='a4' data-ref="231a4">a4</a>,<a class="local col2 ref" href="#232a5" title='a5' data-ref="232a5">a5</a>)))</td></tr>
+<tr><th id="423">423</th><td>        {</td></tr>
+<tr><th id="424">424</th><td>            <a class="member fn" href="#_ZN5boost6thread12start_threadEv" title='boost::thread::start_thread' data-ref="_ZN5boost6thread12start_threadEv">start_thread</a>();</td></tr>
+<tr><th id="425">425</th><td>        }</td></tr>
+<tr><th id="426">426</th><td></td></tr>
+<tr><th id="427">427</th><td>        <b>template</b> &lt;<b>class</b> F,<b>class</b> A1,<b>class</b> A2,<b>class</b> A3,<b>class</b> A4,<b>class</b> A5,<b>class</b> A6&gt;</td></tr>
+<tr><th id="428">428</th><td>        <dfn class="decl def fn" id="_ZN5boost6threadC1ET_T0_T1_T2_T3_T4_T5_" title='boost::thread::thread' data-ref="_ZN5boost6threadC1ET_T0_T1_T2_T3_T4_T5_">thread</dfn>(F <dfn class="local col3 decl" id="233f" title='f' data-type='F' data-ref="233f">f</dfn>,A1 <dfn class="local col4 decl" id="234a1" title='a1' data-type='A1' data-ref="234a1">a1</dfn>,A2 <dfn class="local col5 decl" id="235a2" title='a2' data-type='A2' data-ref="235a2">a2</dfn>,A3 <dfn class="local col6 decl" id="236a3" title='a3' data-type='A3' data-ref="236a3">a3</dfn>,A4 <dfn class="local col7 decl" id="237a4" title='a4' data-type='A4' data-ref="237a4">a4</dfn>,A5 <dfn class="local col8 decl" id="238a5" title='a5' data-type='A5' data-ref="238a5">a5</dfn>,A6 <dfn class="local col9 decl" id="239a6" title='a6' data-type='A6' data-ref="239a6">a6</dfn>):</td></tr>
+<tr><th id="429">429</th><td>            <a class="member field" href="#boost::thread::thread_info" title='boost::thread::thread_info' data-ref="boost::thread::thread_info">thread_info</a>(make_thread_info(<span class="namespace">boost::</span>bind(<span class="namespace">boost::</span><a class="type" href="../../../../../core/include/boost/type.hpp.html#boost::type" title='boost::type' data-ref="boost::type">type</a>&lt;<em>void</em>&gt;<a class="ref fn" href="../../../../../core/include/boost/type.hpp.html#14" title='boost::type&lt;void&gt;::type' data-ref="_ZN5boost4typeIvEC1Ev">(</a>),<a class="local col3 ref" href="#233f" title='f' data-ref="233f">f</a>,<a class="local col4 ref" href="#234a1" title='a1' data-ref="234a1">a1</a>,<a class="local col5 ref" href="#235a2" title='a2' data-ref="235a2">a2</a>,<a class="local col6 ref" href="#236a3" title='a3' data-ref="236a3">a3</a>,<a class="local col7 ref" href="#237a4" title='a4' data-ref="237a4">a4</a>,<a class="local col8 ref" href="#238a5" title='a5' data-ref="238a5">a5</a>,<a class="local col9 ref" href="#239a6" title='a6' data-ref="239a6">a6</a>)))</td></tr>
+<tr><th id="430">430</th><td>        {</td></tr>
+<tr><th id="431">431</th><td>            <a class="member fn" href="#_ZN5boost6thread12start_threadEv" title='boost::thread::start_thread' data-ref="_ZN5boost6thread12start_threadEv">start_thread</a>();</td></tr>
+<tr><th id="432">432</th><td>        }</td></tr>
+<tr><th id="433">433</th><td></td></tr>
+<tr><th id="434">434</th><td>        <b>template</b> &lt;<b>class</b> F,<b>class</b> A1,<b>class</b> A2,<b>class</b> A3,<b>class</b> A4,<b>class</b> A5,<b>class</b> A6,<b>class</b> A7&gt;</td></tr>
+<tr><th id="435">435</th><td>        <dfn class="decl def fn" id="_ZN5boost6threadC1ET_T0_T1_T2_T3_T4_T5_T6_" title='boost::thread::thread' data-ref="_ZN5boost6threadC1ET_T0_T1_T2_T3_T4_T5_T6_">thread</dfn>(F <dfn class="local col0 decl" id="240f" title='f' data-type='F' data-ref="240f">f</dfn>,A1 <dfn class="local col1 decl" id="241a1" title='a1' data-type='A1' data-ref="241a1">a1</dfn>,A2 <dfn class="local col2 decl" id="242a2" title='a2' data-type='A2' data-ref="242a2">a2</dfn>,A3 <dfn class="local col3 decl" id="243a3" title='a3' data-type='A3' data-ref="243a3">a3</dfn>,A4 <dfn class="local col4 decl" id="244a4" title='a4' data-type='A4' data-ref="244a4">a4</dfn>,A5 <dfn class="local col5 decl" id="245a5" title='a5' data-type='A5' data-ref="245a5">a5</dfn>,A6 <dfn class="local col6 decl" id="246a6" title='a6' data-type='A6' data-ref="246a6">a6</dfn>,A7 <dfn class="local col7 decl" id="247a7" title='a7' data-type='A7' data-ref="247a7">a7</dfn>):</td></tr>
+<tr><th id="436">436</th><td>            <a class="member field" href="#boost::thread::thread_info" title='boost::thread::thread_info' data-ref="boost::thread::thread_info">thread_info</a>(make_thread_info(<span class="namespace">boost::</span>bind(<span class="namespace">boost::</span><a class="type" href="../../../../../core/include/boost/type.hpp.html#boost::type" title='boost::type' data-ref="boost::type">type</a>&lt;<em>void</em>&gt;<a class="ref fn" href="../../../../../core/include/boost/type.hpp.html#14" title='boost::type&lt;void&gt;::type' data-ref="_ZN5boost4typeIvEC1Ev">(</a>),<a class="local col0 ref" href="#240f" title='f' data-ref="240f">f</a>,<a class="local col1 ref" href="#241a1" title='a1' data-ref="241a1">a1</a>,<a class="local col2 ref" href="#242a2" title='a2' data-ref="242a2">a2</a>,<a class="local col3 ref" href="#243a3" title='a3' data-ref="243a3">a3</a>,<a class="local col4 ref" href="#244a4" title='a4' data-ref="244a4">a4</a>,<a class="local col5 ref" href="#245a5" title='a5' data-ref="245a5">a5</a>,<a class="local col6 ref" href="#246a6" title='a6' data-ref="246a6">a6</a>,<a class="local col7 ref" href="#247a7" title='a7' data-ref="247a7">a7</a>)))</td></tr>
+<tr><th id="437">437</th><td>        {</td></tr>
+<tr><th id="438">438</th><td>            <a class="member fn" href="#_ZN5boost6thread12start_threadEv" title='boost::thread::start_thread' data-ref="_ZN5boost6thread12start_threadEv">start_thread</a>();</td></tr>
+<tr><th id="439">439</th><td>        }</td></tr>
+<tr><th id="440">440</th><td></td></tr>
+<tr><th id="441">441</th><td>        <b>template</b> &lt;<b>class</b> F,<b>class</b> A1,<b>class</b> A2,<b>class</b> A3,<b>class</b> A4,<b>class</b> A5,<b>class</b> A6,<b>class</b> A7,<b>class</b> A8&gt;</td></tr>
+<tr><th id="442">442</th><td>        <dfn class="decl def fn" id="_ZN5boost6threadC1ET_T0_T1_T2_T3_T4_T5_T6_T7_" title='boost::thread::thread' data-ref="_ZN5boost6threadC1ET_T0_T1_T2_T3_T4_T5_T6_T7_">thread</dfn>(F <dfn class="local col8 decl" id="248f" title='f' data-type='F' data-ref="248f">f</dfn>,A1 <dfn class="local col9 decl" id="249a1" title='a1' data-type='A1' data-ref="249a1">a1</dfn>,A2 <dfn class="local col0 decl" id="250a2" title='a2' data-type='A2' data-ref="250a2">a2</dfn>,A3 <dfn class="local col1 decl" id="251a3" title='a3' data-type='A3' data-ref="251a3">a3</dfn>,A4 <dfn class="local col2 decl" id="252a4" title='a4' data-type='A4' data-ref="252a4">a4</dfn>,A5 <dfn class="local col3 decl" id="253a5" title='a5' data-type='A5' data-ref="253a5">a5</dfn>,A6 <dfn class="local col4 decl" id="254a6" title='a6' data-type='A6' data-ref="254a6">a6</dfn>,A7 <dfn class="local col5 decl" id="255a7" title='a7' data-type='A7' data-ref="255a7">a7</dfn>,A8 <dfn class="local col6 decl" id="256a8" title='a8' data-type='A8' data-ref="256a8">a8</dfn>):</td></tr>
+<tr><th id="443">443</th><td>            <a class="member field" href="#boost::thread::thread_info" title='boost::thread::thread_info' data-ref="boost::thread::thread_info">thread_info</a>(make_thread_info(<span class="namespace">boost::</span>bind(<span class="namespace">boost::</span><a class="type" href="../../../../../core/include/boost/type.hpp.html#boost::type" title='boost::type' data-ref="boost::type">type</a>&lt;<em>void</em>&gt;<a class="ref fn" href="../../../../../core/include/boost/type.hpp.html#14" title='boost::type&lt;void&gt;::type' data-ref="_ZN5boost4typeIvEC1Ev">(</a>),<a class="local col8 ref" href="#248f" title='f' data-ref="248f">f</a>,<a class="local col9 ref" href="#249a1" title='a1' data-ref="249a1">a1</a>,<a class="local col0 ref" href="#250a2" title='a2' data-ref="250a2">a2</a>,<a class="local col1 ref" href="#251a3" title='a3' data-ref="251a3">a3</a>,<a class="local col2 ref" href="#252a4" title='a4' data-ref="252a4">a4</a>,<a class="local col3 ref" href="#253a5" title='a5' data-ref="253a5">a5</a>,<a class="local col4 ref" href="#254a6" title='a6' data-ref="254a6">a6</a>,<a class="local col5 ref" href="#255a7" title='a7' data-ref="255a7">a7</a>,<a class="local col6 ref" href="#256a8" title='a8' data-ref="256a8">a8</a>)))</td></tr>
+<tr><th id="444">444</th><td>        {</td></tr>
+<tr><th id="445">445</th><td>            <a class="member fn" href="#_ZN5boost6thread12start_threadEv" title='boost::thread::start_thread' data-ref="_ZN5boost6thread12start_threadEv">start_thread</a>();</td></tr>
+<tr><th id="446">446</th><td>        }</td></tr>
+<tr><th id="447">447</th><td></td></tr>
+<tr><th id="448">448</th><td>        <b>template</b> &lt;<b>class</b> F,<b>class</b> A1,<b>class</b> A2,<b>class</b> A3,<b>class</b> A4,<b>class</b> A5,<b>class</b> A6,<b>class</b> A7,<b>class</b> A8,<b>class</b> A9&gt;</td></tr>
+<tr><th id="449">449</th><td>        <dfn class="decl def fn" id="_ZN5boost6threadC1ET_T0_T1_T2_T3_T4_T5_T6_T7_T8_" title='boost::thread::thread' data-ref="_ZN5boost6threadC1ET_T0_T1_T2_T3_T4_T5_T6_T7_T8_">thread</dfn>(F <dfn class="local col7 decl" id="257f" title='f' data-type='F' data-ref="257f">f</dfn>,A1 <dfn class="local col8 decl" id="258a1" title='a1' data-type='A1' data-ref="258a1">a1</dfn>,A2 <dfn class="local col9 decl" id="259a2" title='a2' data-type='A2' data-ref="259a2">a2</dfn>,A3 <dfn class="local col0 decl" id="260a3" title='a3' data-type='A3' data-ref="260a3">a3</dfn>,A4 <dfn class="local col1 decl" id="261a4" title='a4' data-type='A4' data-ref="261a4">a4</dfn>,A5 <dfn class="local col2 decl" id="262a5" title='a5' data-type='A5' data-ref="262a5">a5</dfn>,A6 <dfn class="local col3 decl" id="263a6" title='a6' data-type='A6' data-ref="263a6">a6</dfn>,A7 <dfn class="local col4 decl" id="264a7" title='a7' data-type='A7' data-ref="264a7">a7</dfn>,A8 <dfn class="local col5 decl" id="265a8" title='a8' data-type='A8' data-ref="265a8">a8</dfn>,A9 <dfn class="local col6 decl" id="266a9" title='a9' data-type='A9' data-ref="266a9">a9</dfn>):</td></tr>
+<tr><th id="450">450</th><td>            <a class="member field" href="#boost::thread::thread_info" title='boost::thread::thread_info' data-ref="boost::thread::thread_info">thread_info</a>(make_thread_info(<span class="namespace">boost::</span>bind(<span class="namespace">boost::</span><a class="type" href="../../../../../core/include/boost/type.hpp.html#boost::type" title='boost::type' data-ref="boost::type">type</a>&lt;<em>void</em>&gt;<a class="ref fn" href="../../../../../core/include/boost/type.hpp.html#14" title='boost::type&lt;void&gt;::type' data-ref="_ZN5boost4typeIvEC1Ev">(</a>),<a class="local col7 ref" href="#257f" title='f' data-ref="257f">f</a>,<a class="local col8 ref" href="#258a1" title='a1' data-ref="258a1">a1</a>,<a class="local col9 ref" href="#259a2" title='a2' data-ref="259a2">a2</a>,<a class="local col0 ref" href="#260a3" title='a3' data-ref="260a3">a3</a>,<a class="local col1 ref" href="#261a4" title='a4' data-ref="261a4">a4</a>,<a class="local col2 ref" href="#262a5" title='a5' data-ref="262a5">a5</a>,<a class="local col3 ref" href="#263a6" title='a6' data-ref="263a6">a6</a>,<a class="local col4 ref" href="#264a7" title='a7' data-ref="264a7">a7</a>,<a class="local col5 ref" href="#265a8" title='a8' data-ref="265a8">a8</a>,<a class="local col6 ref" href="#266a9" title='a9' data-ref="266a9">a9</a>)))</td></tr>
+<tr><th id="451">451</th><td>        {</td></tr>
+<tr><th id="452">452</th><td>            <a class="member fn" href="#_ZN5boost6thread12start_threadEv" title='boost::thread::start_thread' data-ref="_ZN5boost6thread12start_threadEv">start_thread</a>();</td></tr>
+<tr><th id="453">453</th><td>        }</td></tr>
+<tr><th id="454">454</th><td><u>#<span data-ppcond="369">endif</span></u></td></tr>
+<tr><th id="455">455</th><td>        <em>void</em> <dfn class="decl def fn" id="_ZN5boost6thread4swapERS0_" title='boost::thread::swap' data-ref="_ZN5boost6thread4swapERS0_">swap</dfn>(<a class="type" href="#boost::thread" title='boost::thread' data-ref="boost::thread">thread</a>&amp; <dfn class="local col7 decl" id="267x" title='x' data-type='boost::thread &amp;' data-ref="267x">x</dfn>) <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1020" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="456">456</th><td>        {</td></tr>
+<tr><th id="457">457</th><td>            <a class="member field" href="#boost::thread::thread_info" title='boost::thread::thread_info' data-ref="boost::thread::thread_info">thread_info</a>.<a class="ref fn" href="../../../../../smart_ptr/include/boost/smart_ptr/shared_ptr.hpp.html#_ZN5boost10shared_ptr4swapERNS_10shared_ptrIT_EE" title='boost::shared_ptr::swap' data-ref="_ZN5boost10shared_ptr4swapERNS_10shared_ptrIT_EE">swap</a>(<span class='inlayHint'>other&amp;:&nbsp;</span><span class='refarg'><a class="local col7 ref" href="#267x" title='x' data-ref="267x">x</a>.<a class="member field" href="#boost::thread::thread_info" title='boost::thread::thread_info' data-ref="boost::thread::thread_info">thread_info</a></span>);</td></tr>
+<tr><th id="458">458</th><td>        }</td></tr>
+<tr><th id="459">459</th><td></td></tr>
+<tr><th id="460">460</th><td>        <b>class</b> <a class="type" href="#boost::thread::id" title='boost::thread::id' data-ref="boost::thread::id">id</a>;</td></tr>
+<tr><th id="461">461</th><td>        <a class="type" href="#boost::thread::id" title='boost::thread::id' data-ref="boost::thread::id">id</a> <a class="decl fn" href="#_ZNK5boost6thread6get_idEv" title='boost::thread::get_id' data-ref="_ZNK5boost6thread6get_idEv">get_id</a>() <em>const</em> <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1020" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a>;</td></tr>
+<tr><th id="462">462</th><td></td></tr>
+<tr><th id="463">463</th><td>        <em>bool</em> <dfn class="decl fn" id="_ZNK5boost6thread8joinableEv" title='boost::thread::joinable' data-ref="_ZNK5boost6thread8joinableEv">joinable</dfn>() <em>const</em> <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1020" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a>;</td></tr>
+<tr><th id="464">464</th><td>    <b>private</b>:</td></tr>
+<tr><th id="465">465</th><td>        <em>bool</em> <dfn class="decl fn" id="_ZN5boost6thread13join_noexceptEv" title='boost::thread::join_noexcept' data-ref="_ZN5boost6thread13join_noexceptEv">join_noexcept</dfn>();</td></tr>
+<tr><th id="466">466</th><td>        <em>bool</em> <dfn class="decl fn" id="_ZN5boost6thread26do_try_join_until_noexceptERKNS_6detail23mono_platform_timepointERb" title='boost::thread::do_try_join_until_noexcept' data-ref="_ZN5boost6thread26do_try_join_until_noexceptERKNS_6detail23mono_platform_timepointERb">do_try_join_until_noexcept</dfn>(<span class="namespace">detail::</span><a class="typedef" href="platform_time.hpp.html#boost::detail::internal_platform_timepoint" title='boost::detail::internal_platform_timepoint' data-type='boost::detail::mono_platform_timepoint' data-ref="boost::detail::internal_platform_timepoint">internal_platform_timepoint</a> <em>const</em> &amp;<dfn class="local col8 decl" id="268timeout" title='timeout' data-type='const detail::internal_platform_timepoint &amp;' data-ref="268timeout">timeout</dfn>, <em>bool</em>&amp; <dfn class="local col9 decl" id="269res" title='res' data-type='bool &amp;' data-ref="269res">res</dfn>);</td></tr>
+<tr><th id="467">467</th><td>        <em>bool</em> <a class="decl fn" href="#_ZN5boost6thread17do_try_join_untilERKNS_6detail23mono_platform_timepointE" title='boost::thread::do_try_join_until' data-ref="_ZN5boost6thread17do_try_join_untilERKNS_6detail23mono_platform_timepointE">do_try_join_until</a>(<span class="namespace">detail::</span><a class="typedef" href="platform_time.hpp.html#boost::detail::internal_platform_timepoint" title='boost::detail::internal_platform_timepoint' data-type='boost::detail::mono_platform_timepoint' data-ref="boost::detail::internal_platform_timepoint">internal_platform_timepoint</a> <em>const</em> &amp;<dfn class="local col0 decl" id="270timeout" title='timeout' data-type='const detail::internal_platform_timepoint &amp;' data-ref="270timeout">timeout</dfn>);</td></tr>
+<tr><th id="468">468</th><td>    <b>public</b>:</td></tr>
+<tr><th id="469">469</th><td>        <em>void</em> <a class="decl fn" href="#_ZN5boost6thread4joinEv" title='boost::thread::join' data-ref="_ZN5boost6thread4joinEv">join</a>();</td></tr>
+<tr><th id="470">470</th><td></td></tr>
+<tr><th id="471">471</th><td><u>#<span data-ppcond="471">ifdef</span> <a class="macro" href="config.hpp.html#143" data-ref="_M/BOOST_THREAD_USES_CHRONO">BOOST_THREAD_USES_CHRONO</a></u></td></tr>
+<tr><th id="472">472</th><td>        <b>template</b> &lt;<b>class</b> Duration&gt;</td></tr>
+<tr><th id="473">473</th><td>        <em>bool</em> <dfn class="decl def fn" id="_ZN5boost6thread14try_join_untilERKNS_6chrono10time_pointINS1_12steady_clockET_EE" title='boost::thread::try_join_until' data-ref="_ZN5boost6thread14try_join_untilERKNS_6chrono10time_pointINS1_12steady_clockET_EE">try_join_until</dfn>(<em>const</em> <span class="namespace">chrono::</span><a class="type" href="../../../../../chrono/include/boost/chrono/time_point.hpp.html#boost::chrono::time_point" title='boost::chrono::time_point' data-ref="boost::chrono::time_point">time_point</a>&lt;<span class="namespace">detail::</span><a class="typedef" href="platform_time.hpp.html#boost::detail::internal_chrono_clock" title='boost::detail::internal_chrono_clock' data-type='chrono::steady_clock' data-ref="boost::detail::internal_chrono_clock">internal_chrono_clock</a>, Duration&gt;&amp; <dfn class="local col1 decl" id="271t" title='t' data-type='const chrono::time_point&lt;detail::internal_chrono_clock, Duration&gt; &amp;' data-ref="271t">t</dfn>)</td></tr>
+<tr><th id="474">474</th><td>        {</td></tr>
+<tr><th id="475">475</th><td>          <b>return</b> <a class="member fn" href="#_ZN5boost6thread17do_try_join_untilERKNS_6detail23mono_platform_timepointE" title='boost::thread::do_try_join_until' data-ref="_ZN5boost6thread17do_try_join_untilERKNS_6detail23mono_platform_timepointE">do_try_join_until</a>(<span class='inlayHint'>timeout:&nbsp;</span><span class="namespace">boost::detail::</span><a class="typedef" href="platform_time.hpp.html#boost::detail::internal_platform_timepoint" title='boost::detail::internal_platform_timepoint' data-type='boost::detail::mono_platform_timepoint' data-ref="boost::detail::internal_platform_timepoint">internal_platform_timepoint</a>(<a class="local col1 ref" href="#271t" title='t' data-ref="271t">t</a>));</td></tr>
+<tr><th id="476">476</th><td>        }</td></tr>
+<tr><th id="477">477</th><td></td></tr>
+<tr><th id="478">478</th><td>        <b>template</b> &lt;<b>class</b> Clock, <b>class</b> Duration&gt;</td></tr>
+<tr><th id="479">479</th><td>        <em>bool</em> <dfn class="decl def fn" id="_ZN5boost6thread14try_join_untilERKNS_6chrono10time_pointIT_T0_EE" title='boost::thread::try_join_until' data-ref="_ZN5boost6thread14try_join_untilERKNS_6chrono10time_pointIT_T0_EE">try_join_until</dfn>(<em>const</em> <span class="namespace">chrono::</span><a class="type" href="../../../../../chrono/include/boost/chrono/time_point.hpp.html#boost::chrono::time_point" title='boost::chrono::time_point' data-ref="boost::chrono::time_point">time_point</a>&lt;Clock, Duration&gt;&amp; <dfn class="local col2 decl" id="272t" title='t' data-type='const chrono::time_point&lt;Clock, Duration&gt; &amp;' data-ref="272t">t</dfn>)</td></tr>
+<tr><th id="480">480</th><td>        {</td></tr>
+<tr><th id="481">481</th><td>          <b>typedef</b> <b>typename</b> <a class="type" href="../../../../../type_traits/include/boost/type_traits/common_type.hpp.html#boost::common_type" title='boost::common_type' data-ref="boost::common_type">common_type</a>&lt;Duration, <b>typename</b> Clock::duration&gt;::type <dfn class="local col3 typedef" id="273common_duration" title='common_duration' data-type='typename common_type&lt;Duration, typename Clock::duration&gt;::type' data-ref="273common_duration">common_duration</dfn>;</td></tr>
+<tr><th id="482">482</th><td>          <a class="local col3 typedef" href="#273common_duration" title='common_duration' data-type='typename common_type&lt;Duration, typename Clock::duration&gt;::type' data-ref="273common_duration">common_duration</a> <dfn class="local col4 decl" id="274d" title='d' data-type='common_duration' data-ref="274d">d</dfn>(<a class="local col2 ref" href="#272t" title='t' data-ref="272t">t</a> - Clock::now());</td></tr>
+<tr><th id="483">483</th><td>          <a class="local col4 ref" href="#274d" title='d' data-ref="274d">d</a> = (<span class="namespace">std::</span>min)(<a class="local col4 ref" href="#274d" title='d' data-ref="274d">d</a>, <a class="local col3 typedef" href="#273common_duration" title='common_duration' data-type='typename common_type&lt;Duration, typename Clock::duration&gt;::type' data-ref="273common_duration">common_duration</a>(<span class="namespace">chrono::</span><a class="typedef" href="../../../../../chrono/include/boost/chrono/duration.hpp.html#boost::chrono::milliseconds" title='boost::chrono::milliseconds' data-type='duration&lt;boost::int_least64_t, std::milli&gt;' data-ref="boost::chrono::milliseconds">milliseconds</a><a class="ref fn" href="../../../../../chrono/include/boost/chrono/duration.hpp.html#_ZN5boost6chrono8durationC1ERKTL0__PNS_9enable_ifINS_3mpl4and_INS_14is_convertibleIS2_T_EENS6_3or_INS0_23treat_as_floating_pointIS9_EENS7_INS6_4not_IS13443382" title='boost::chrono::duration::duration&lt;Rep, Period&gt;' data-ref="_ZN5boost6chrono8durationC1ERKTL0__PNS_9enable_ifINS_3mpl4and_INS_14is_convertibleIS2_T_EENS6_3or_INS0_23treat_as_floating_pointIS9_EENS7_INS6_4not_IS13443382">(</a><a class="macro" href="config.hpp.html#58" title="100" data-ref="_M/BOOST_THREAD_POLL_INTERVAL_MILLISECONDS">BOOST_THREAD_POLL_INTERVAL_MILLISECONDS</a>)));</td></tr>
+<tr><th id="484">484</th><td>          <b>while</b> ( ! try_join_until(<span class="namespace">detail::</span><a class="typedef" href="platform_time.hpp.html#boost::detail::internal_chrono_clock" title='boost::detail::internal_chrono_clock' data-type='chrono::steady_clock' data-ref="boost::detail::internal_chrono_clock">internal_chrono_clock</a>::<a class="ref fn" href="../../../../../chrono/include/boost/chrono/system_clocks.hpp.html#_ZN5boost6chrono12steady_clock3nowEv" title='boost::chrono::steady_clock::now' data-ref="_ZN5boost6chrono12steady_clock3nowEv">now</a>() + <a class="local col4 ref" href="#274d" title='d' data-ref="274d">d</a>) )</td></tr>
+<tr><th id="485">485</th><td>          {</td></tr>
+<tr><th id="486">486</th><td>            <a class="local col4 ref" href="#274d" title='d' data-ref="274d">d</a> = <a class="local col2 ref" href="#272t" title='t' data-ref="272t">t</a> - Clock::now();</td></tr>
+<tr><th id="487">487</th><td>            <b>if</b> ( <a class="local col4 ref" href="#274d" title='d' data-ref="274d">d</a> &lt;= <a class="local col3 typedef" href="#273common_duration" title='common_duration' data-type='typename common_type&lt;Duration, typename Clock::duration&gt;::type' data-ref="273common_duration">common_duration</a>::zero() ) <b>return</b> <b>false</b>; <i>// timeout occurred</i></td></tr>
+<tr><th id="488">488</th><td>            <a class="local col4 ref" href="#274d" title='d' data-ref="274d">d</a> = (<span class="namespace">std::</span>min)(<a class="local col4 ref" href="#274d" title='d' data-ref="274d">d</a>, <a class="local col3 typedef" href="#273common_duration" title='common_duration' data-type='typename common_type&lt;Duration, typename Clock::duration&gt;::type' data-ref="273common_duration">common_duration</a>(<span class="namespace">chrono::</span><a class="typedef" href="../../../../../chrono/include/boost/chrono/duration.hpp.html#boost::chrono::milliseconds" title='boost::chrono::milliseconds' data-type='duration&lt;boost::int_least64_t, std::milli&gt;' data-ref="boost::chrono::milliseconds">milliseconds</a><a class="ref fn" href="../../../../../chrono/include/boost/chrono/duration.hpp.html#_ZN5boost6chrono8durationC1ERKTL0__PNS_9enable_ifINS_3mpl4and_INS_14is_convertibleIS2_T_EENS6_3or_INS0_23treat_as_floating_pointIS9_EENS7_INS6_4not_IS13443382" title='boost::chrono::duration::duration&lt;Rep, Period&gt;' data-ref="_ZN5boost6chrono8durationC1ERKTL0__PNS_9enable_ifINS_3mpl4and_INS_14is_convertibleIS2_T_EENS6_3or_INS0_23treat_as_floating_pointIS9_EENS7_INS6_4not_IS13443382">(</a><a class="macro" href="config.hpp.html#58" title="100" data-ref="_M/BOOST_THREAD_POLL_INTERVAL_MILLISECONDS">BOOST_THREAD_POLL_INTERVAL_MILLISECONDS</a>)));</td></tr>
+<tr><th id="489">489</th><td>          }</td></tr>
+<tr><th id="490">490</th><td>          <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="491">491</th><td>        }</td></tr>
+<tr><th id="492">492</th><td></td></tr>
+<tr><th id="493">493</th><td>        <b>template</b> &lt;<b>class</b> Rep, <b>class</b> Period&gt;</td></tr>
+<tr><th id="494">494</th><td>        <em>bool</em> <dfn class="decl def fn" id="_ZN5boost6thread12try_join_forERKNS_6chrono8durationIT_T0_EE" title='boost::thread::try_join_for' data-ref="_ZN5boost6thread12try_join_forERKNS_6chrono8durationIT_T0_EE">try_join_for</dfn>(<em>const</em> <span class="namespace">chrono::</span><a class="type" href="../../../../../chrono/include/boost/chrono/duration.hpp.html#boost::chrono::duration" title='boost::chrono::duration' data-ref="boost::chrono::duration">duration</a>&lt;Rep, Period&gt;&amp; <dfn class="local col5 decl" id="275rel_time" title='rel_time' data-type='const chrono::duration&lt;Rep, Period&gt; &amp;' data-ref="275rel_time">rel_time</dfn>)</td></tr>
+<tr><th id="495">495</th><td>        {</td></tr>
+<tr><th id="496">496</th><td>          <b>return</b> try_join_until(<span class="namespace">chrono::</span><a class="type" href="../../../../../chrono/include/boost/chrono/system_clocks.hpp.html#boost::chrono::steady_clock" title='boost::chrono::steady_clock' data-ref="boost::chrono::steady_clock">steady_clock</a>::<a class="ref fn" href="../../../../../chrono/include/boost/chrono/system_clocks.hpp.html#_ZN5boost6chrono12steady_clock3nowEv" title='boost::chrono::steady_clock::now' data-ref="_ZN5boost6chrono12steady_clock3nowEv">now</a>() + <a class="local col5 ref" href="#275rel_time" title='rel_time' data-ref="275rel_time">rel_time</a>);</td></tr>
+<tr><th id="497">497</th><td>        }</td></tr>
+<tr><th id="498">498</th><td><u>#<span data-ppcond="471">endif</span></u></td></tr>
+<tr><th id="499">499</th><td><u>#<span data-ppcond="499">if</span> defined <a class="macro" href="config.hpp.html#253" data-ref="_M/BOOST_THREAD_USES_DATETIME">BOOST_THREAD_USES_DATETIME</a></u></td></tr>
+<tr><th id="500">500</th><td>        <em>bool</em> <dfn class="decl def fn" id="_ZN5boost6thread10timed_joinERKNS_10posix_time5ptimeE" title='boost::thread::timed_join' data-ref="_ZN5boost6thread10timed_joinERKNS_10posix_time5ptimeE">timed_join</dfn>(<em>const</em> <a class="typedef" href="../thread_time.hpp.html#boost::system_time" title='boost::system_time' data-type='boost::posix_time::ptime' data-ref="boost::system_time">system_time</a>&amp; <dfn class="local col6 decl" id="276abs_time" title='abs_time' data-type='const boost::system_time &amp;' data-ref="276abs_time">abs_time</dfn>)</td></tr>
+<tr><th id="501">501</th><td>        {</td></tr>
+<tr><th id="502">502</th><td>          <em>const</em> <span class="namespace">detail::</span><a class="type" href="platform_time.hpp.html#boost::detail::real_platform_timepoint" title='boost::detail::real_platform_timepoint' data-ref="boost::detail::real_platform_timepoint">real_platform_timepoint</a> <dfn class="local col7 decl" id="277ts" title='ts' data-type='const detail::real_platform_timepoint' data-ref="277ts">ts</dfn><a class="ref fn" href="platform_time.hpp.html#_ZN5boost6detail23real_platform_timepointC1ERKNS_10posix_time5ptimeE" title='boost::detail::real_platform_timepoint::real_platform_timepoint' data-ref="_ZN5boost6detail23real_platform_timepointC1ERKNS_10posix_time5ptimeE">(</a><a class="local col6 ref" href="#276abs_time" title='abs_time' data-ref="276abs_time">abs_time</a>);</td></tr>
+<tr><th id="503">503</th><td><u>#<span data-ppcond="503">if</span> defined <a class="macro" href="config.hpp.html#438" data-ref="_M/BOOST_THREAD_INTERNAL_CLOCK_IS_MONO">BOOST_THREAD_INTERNAL_CLOCK_IS_MONO</a></u></td></tr>
+<tr><th id="504">504</th><td>          <span class="namespace">detail::</span><a class="type" href="platform_time.hpp.html#boost::detail::platform_duration" title='boost::detail::platform_duration' data-ref="boost::detail::platform_duration">platform_duration</a> <dfn class="local col8 decl" id="278d" title='d' data-type='detail::platform_duration' data-ref="278d">d</dfn><a class="ref fn" href="platform_time.hpp.html#131" title='boost::detail::platform_duration::platform_duration' data-ref="_ZN5boost6detail17platform_durationC1EOS1_">(</a><a class="local col7 ref" href="#277ts" title='ts' data-ref="277ts">ts</a> <a class="ref fn" href="platform_time.hpp.html#_ZN5boost6detailmiERKNS0_23real_platform_timepointES3_" title='boost::detail::operator-' data-ref="_ZN5boost6detailmiERKNS0_23real_platform_timepointES3_">-</a> <span class="namespace">detail::</span><a class="type" href="platform_time.hpp.html#boost::detail::real_platform_clock" title='boost::detail::real_platform_clock' data-ref="boost::detail::real_platform_clock">real_platform_clock</a>::<a class="ref fn" href="platform_time.hpp.html#_ZN5boost6detail19real_platform_clock3nowEv" title='boost::detail::real_platform_clock::now' data-ref="_ZN5boost6detail19real_platform_clock3nowEv">now</a>());</td></tr>
+<tr><th id="505">505</th><td>          <a class="local col8 ref" href="#278d" title='d' data-ref="278d">d</a> <a class="ref fn" href="platform_time.hpp.html#131" title='boost::detail::platform_duration::operator=' data-ref="_ZN5boost6detail17platform_durationaSERKS1_">=</a> (<span class="namespace">std::</span><a class="ref fn" href="../../../../../../../include/c++/9/bits/algorithmfwd.h.html#_ZSt3minRKT_S1_" title='std::min' data-ref="_ZSt3minRKT_S1_">min</a>)(<span class='inlayHint'>a:&nbsp;</span><a class="local col8 ref" href="#278d" title='d' data-ref="278d">d</a>, <span class='inlayHint'>b:&nbsp;</span><span class="namespace">detail::</span><a class="ref fn" href="platform_time.hpp.html#_ZN5boost6detailL21platform_millisecondsERKl" title='boost::detail::platform_milliseconds' data-ref="_ZN5boost6detailL21platform_millisecondsERKl">platform_milliseconds</a>(<a class="macro" href="config.hpp.html#58" title="100" data-ref="_M/BOOST_THREAD_POLL_INTERVAL_MILLISECONDS">BOOST_THREAD_POLL_INTERVAL_MILLISECONDS</a>));</td></tr>
+<tr><th id="506">506</th><td>          <b>while</b> ( ! <a class="member fn" href="#_ZN5boost6thread17do_try_join_untilERKNS_6detail23mono_platform_timepointE" title='boost::thread::do_try_join_until' data-ref="_ZN5boost6thread17do_try_join_untilERKNS_6detail23mono_platform_timepointE">do_try_join_until</a>(<span class='inlayHint'>timeout:&nbsp;</span><span class="namespace">detail::</span><a class="typedef" href="platform_time.hpp.html#boost::detail::internal_platform_clock" title='boost::detail::internal_platform_clock' data-type='boost::detail::mono_platform_clock' data-ref="boost::detail::internal_platform_clock">internal_platform_clock</a>::<a class="ref fn" href="platform_time.hpp.html#_ZN5boost6detail19mono_platform_clock3nowEv" title='boost::detail::mono_platform_clock::now' data-ref="_ZN5boost6detail19mono_platform_clock3nowEv">now</a>() <a class="ref fn" href="platform_time.hpp.html#_ZN5boost6detailplERKNS0_23mono_platform_timepointERKNS0_17platform_durationE" title='boost::detail::operator+' data-ref="_ZN5boost6detailplERKNS0_23mono_platform_timepointERKNS0_17platform_durationE">+</a> <a class="local col8 ref" href="#278d" title='d' data-ref="278d">d</a>) )</td></tr>
+<tr><th id="507">507</th><td>          {</td></tr>
+<tr><th id="508">508</th><td>            <a class="local col8 ref" href="#278d" title='d' data-ref="278d">d</a> <a class="ref fn" href="platform_time.hpp.html#131" title='boost::detail::platform_duration::operator=' data-ref="_ZN5boost6detail17platform_durationaSEOS1_">=</a> <a class="local col7 ref" href="#277ts" title='ts' data-ref="277ts">ts</a> <a class="ref fn" href="platform_time.hpp.html#_ZN5boost6detailmiERKNS0_23real_platform_timepointES3_" title='boost::detail::operator-' data-ref="_ZN5boost6detailmiERKNS0_23real_platform_timepointES3_">-</a> <span class="namespace">detail::</span><a class="type" href="platform_time.hpp.html#boost::detail::real_platform_clock" title='boost::detail::real_platform_clock' data-ref="boost::detail::real_platform_clock">real_platform_clock</a>::<a class="ref fn" href="platform_time.hpp.html#_ZN5boost6detail19real_platform_clock3nowEv" title='boost::detail::real_platform_clock::now' data-ref="_ZN5boost6detail19real_platform_clock3nowEv">now</a>();</td></tr>
+<tr><th id="509">509</th><td>            <b>if</b> ( <a class="local col8 ref" href="#278d" title='d' data-ref="278d">d</a> <a class="ref fn" href="platform_time.hpp.html#_ZN5boost6detailleERKNS0_17platform_durationES3_" title='boost::detail::operator&lt;=' data-ref="_ZN5boost6detailleERKNS0_17platform_durationES3_">&lt;=</a> <span class="namespace">detail::</span><a class="type" href="platform_time.hpp.html#boost::detail::platform_duration" title='boost::detail::platform_duration' data-ref="boost::detail::platform_duration">platform_duration</a>::<a class="ref fn" href="platform_time.hpp.html#_ZN5boost6detail17platform_duration4zeroEv" title='boost::detail::platform_duration::zero' data-ref="_ZN5boost6detail17platform_duration4zeroEv">zero</a>() ) <b>return</b> <b>false</b>; <i>// timeout occurred</i></td></tr>
+<tr><th id="510">510</th><td>            <a class="local col8 ref" href="#278d" title='d' data-ref="278d">d</a> <a class="ref fn" href="platform_time.hpp.html#131" title='boost::detail::platform_duration::operator=' data-ref="_ZN5boost6detail17platform_durationaSERKS1_">=</a> (<span class="namespace">std::</span><a class="ref fn" href="../../../../../../../include/c++/9/bits/algorithmfwd.h.html#_ZSt3minRKT_S1_" title='std::min' data-ref="_ZSt3minRKT_S1_">min</a>)(<span class='inlayHint'>a:&nbsp;</span><a class="local col8 ref" href="#278d" title='d' data-ref="278d">d</a>, <span class='inlayHint'>b:&nbsp;</span><span class="namespace">detail::</span><a class="ref fn" href="platform_time.hpp.html#_ZN5boost6detailL21platform_millisecondsERKl" title='boost::detail::platform_milliseconds' data-ref="_ZN5boost6detailL21platform_millisecondsERKl">platform_milliseconds</a>(<a class="macro" href="config.hpp.html#58" title="100" data-ref="_M/BOOST_THREAD_POLL_INTERVAL_MILLISECONDS">BOOST_THREAD_POLL_INTERVAL_MILLISECONDS</a>));</td></tr>
+<tr><th id="511">511</th><td>          }</td></tr>
+<tr><th id="512">512</th><td>          <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="513">513</th><td><u>#<span data-ppcond="503">else</span></u></td></tr>
+<tr><th id="514">514</th><td>          <b>return</b> do_try_join_until(ts);</td></tr>
+<tr><th id="515">515</th><td><u>#<span data-ppcond="503">endif</span></u></td></tr>
+<tr><th id="516">516</th><td>        }</td></tr>
+<tr><th id="517">517</th><td></td></tr>
+<tr><th id="518">518</th><td>        <b>template</b>&lt;<b>typename</b> TimeDuration&gt;</td></tr>
+<tr><th id="519">519</th><td>        <em>bool</em> <dfn class="decl def fn" id="_ZN5boost6thread10timed_joinERKT_" title='boost::thread::timed_join' data-ref="_ZN5boost6thread10timed_joinERKT_">timed_join</dfn>(TimeDuration <em>const</em>&amp; <dfn class="local col9 decl" id="279rel_time" title='rel_time' data-type='const TimeDuration &amp;' data-ref="279rel_time">rel_time</dfn>)</td></tr>
+<tr><th id="520">520</th><td>        {</td></tr>
+<tr><th id="521">521</th><td>          <span class="namespace">detail::</span><a class="type" href="platform_time.hpp.html#boost::detail::platform_duration" title='boost::detail::platform_duration' data-ref="boost::detail::platform_duration">platform_duration</a> <dfn class="local col0 decl" id="280d" title='d' data-type='detail::platform_duration' data-ref="280d">d</dfn>(<a class="local col9 ref" href="#279rel_time" title='rel_time' data-ref="279rel_time">rel_time</a>);</td></tr>
+<tr><th id="522">522</th><td><u>#<span data-ppcond="522">if</span> defined(<a class="macro" href="config.hpp.html#437" data-ref="_M/BOOST_THREAD_HAS_MONO_CLOCK">BOOST_THREAD_HAS_MONO_CLOCK</a>) &amp;&amp; !defined(<a class="macro" href="config.hpp.html#438" data-ref="_M/BOOST_THREAD_INTERNAL_CLOCK_IS_MONO">BOOST_THREAD_INTERNAL_CLOCK_IS_MONO</a>)</u></td></tr>
+<tr><th id="523">523</th><td>          <em>const</em> detail::mono_platform_timepoint ts(detail::mono_platform_clock::now() + d);</td></tr>
+<tr><th id="524">524</th><td>          d = (std::min)(d, detail::platform_milliseconds(BOOST_THREAD_POLL_INTERVAL_MILLISECONDS));</td></tr>
+<tr><th id="525">525</th><td>          <b>while</b> ( ! do_try_join_until(detail::internal_platform_clock::now() + d) )</td></tr>
+<tr><th id="526">526</th><td>          {</td></tr>
+<tr><th id="527">527</th><td>            d = ts - detail::mono_platform_clock::now();</td></tr>
+<tr><th id="528">528</th><td>            <b>if</b> ( d &lt;= detail::platform_duration::zero() ) <b>return</b> <b>false</b>; <i>// timeout occurred</i></td></tr>
+<tr><th id="529">529</th><td>            d = (std::min)(d, detail::platform_milliseconds(BOOST_THREAD_POLL_INTERVAL_MILLISECONDS));</td></tr>
+<tr><th id="530">530</th><td>          }</td></tr>
+<tr><th id="531">531</th><td>          <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="532">532</th><td><u>#<span data-ppcond="522">else</span></u></td></tr>
+<tr><th id="533">533</th><td>          <b>return</b> <a class="member fn" href="#_ZN5boost6thread17do_try_join_untilERKNS_6detail23mono_platform_timepointE" title='boost::thread::do_try_join_until' data-ref="_ZN5boost6thread17do_try_join_untilERKNS_6detail23mono_platform_timepointE">do_try_join_until</a>(<span class='inlayHint'>timeout:&nbsp;</span><span class="namespace">detail::</span><a class="typedef" href="platform_time.hpp.html#boost::detail::internal_platform_clock" title='boost::detail::internal_platform_clock' data-type='boost::detail::mono_platform_clock' data-ref="boost::detail::internal_platform_clock">internal_platform_clock</a>::<a class="ref fn" href="platform_time.hpp.html#_ZN5boost6detail19mono_platform_clock3nowEv" title='boost::detail::mono_platform_clock::now' data-ref="_ZN5boost6detail19mono_platform_clock3nowEv">now</a>() <a class="ref fn" href="platform_time.hpp.html#_ZN5boost6detailplERKNS0_23mono_platform_timepointERKNS0_17platform_durationE" title='boost::detail::operator+' data-ref="_ZN5boost6detailplERKNS0_23mono_platform_timepointERKNS0_17platform_durationE">+</a> <a class="local col0 ref" href="#280d" title='d' data-ref="280d">d</a>);</td></tr>
+<tr><th id="534">534</th><td><u>#<span data-ppcond="522">endif</span></u></td></tr>
+<tr><th id="535">535</th><td>        }</td></tr>
+<tr><th id="536">536</th><td><u>#<span data-ppcond="499">endif</span></u></td></tr>
+<tr><th id="537">537</th><td>        <em>void</em> <dfn class="decl fn" id="_ZN5boost6thread6detachEv" title='boost::thread::detach' data-ref="_ZN5boost6thread6detachEv">detach</dfn>();</td></tr>
+<tr><th id="538">538</th><td></td></tr>
+<tr><th id="539">539</th><td>        <em>static</em> <em>unsigned</em> <dfn class="decl fn" id="_ZN5boost6thread20hardware_concurrencyEv" title='boost::thread::hardware_concurrency' data-ref="_ZN5boost6thread20hardware_concurrencyEv">hardware_concurrency</dfn>() <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1020" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a>;</td></tr>
+<tr><th id="540">540</th><td>        <em>static</em> <em>unsigned</em> <dfn class="decl fn" id="_ZN5boost6thread20physical_concurrencyEv" title='boost::thread::physical_concurrency' data-ref="_ZN5boost6thread20physical_concurrencyEv">physical_concurrency</dfn>() <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1020" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a>;</td></tr>
+<tr><th id="541">541</th><td></td></tr>
+<tr><th id="542">542</th><td><u>#define <dfn class="macro" id="_M/BOOST_THREAD_DEFINES_THREAD_NATIVE_HANDLE" data-ref="_M/BOOST_THREAD_DEFINES_THREAD_NATIVE_HANDLE">BOOST_THREAD_DEFINES_THREAD_NATIVE_HANDLE</dfn></u></td></tr>
+<tr><th id="543">543</th><td>        <b>typedef</b> <span class="namespace">detail::</span><a class="type" href="../pthread/thread_data.hpp.html#boost::detail::thread_data_base" title='boost::detail::thread_data_base' data-ref="boost::detail::thread_data_base">thread_data_base</a>::<a class="typedef" href="../pthread/thread_data.hpp.html#boost::detail::thread_data_base::native_handle_type" title='boost::detail::thread_data_base::native_handle_type' data-type='pthread_t' data-ref="boost::detail::thread_data_base::native_handle_type">native_handle_type</a> <dfn class="typedef" id="boost::thread::native_handle_type" title='boost::thread::native_handle_type' data-type='detail::thread_data_base::native_handle_type' data-ref="boost::thread::native_handle_type">native_handle_type</dfn>;</td></tr>
+<tr><th id="544">544</th><td>        <a class="typedef" href="#boost::thread::native_handle_type" title='boost::thread::native_handle_type' data-type='detail::thread_data_base::native_handle_type' data-ref="boost::thread::native_handle_type">native_handle_type</a> <dfn class="decl fn" id="_ZN5boost6thread13native_handleEv" title='boost::thread::native_handle' data-ref="_ZN5boost6thread13native_handleEv">native_handle</dfn>();</td></tr>
+<tr><th id="545">545</th><td></td></tr>
+<tr><th id="546">546</th><td><u>#<span data-ppcond="546">if</span> defined <a class="macro" href="config.hpp.html#171" data-ref="_M/BOOST_THREAD_PROVIDES_THREAD_EQ">BOOST_THREAD_PROVIDES_THREAD_EQ</a></u></td></tr>
+<tr><th id="547">547</th><td>        <i>// Use thread::id when comparisions are needed</i></td></tr>
+<tr><th id="548">548</th><td><i>        // backwards compatibility</i></td></tr>
+<tr><th id="549">549</th><td>        <em>bool</em> <a class="decl fn" href="#_ZNK5boost6threadeqERKS0_" title='boost::thread::operator==' data-ref="_ZNK5boost6threadeqERKS0_"><b>operator</b>==</a>(<em>const</em> <a class="type" href="#boost::thread" title='boost::thread' data-ref="boost::thread">thread</a>&amp; <dfn class="local col1 decl" id="281other" title='other' data-type='const boost::thread &amp;' data-ref="281other">other</dfn>) <em>const</em>;</td></tr>
+<tr><th id="550">550</th><td>        <em>bool</em> <a class="decl fn" href="#_ZNK5boost6threadneERKS0_" title='boost::thread::operator!=' data-ref="_ZNK5boost6threadneERKS0_"><b>operator</b>!=</a>(<em>const</em> <a class="type" href="#boost::thread" title='boost::thread' data-ref="boost::thread">thread</a>&amp; <dfn class="local col2 decl" id="282other" title='other' data-type='const boost::thread &amp;' data-ref="282other">other</dfn>) <em>const</em>;</td></tr>
+<tr><th id="551">551</th><td><u>#<span data-ppcond="546">endif</span></u></td></tr>
+<tr><th id="552">552</th><td><u>#<span data-ppcond="552">if</span> defined <a class="macro" href="config.hpp.html#253" data-ref="_M/BOOST_THREAD_USES_DATETIME">BOOST_THREAD_USES_DATETIME</a></u></td></tr>
+<tr><th id="553">553</th><td>        <em>static</em> <b>inline</b> <em>void</em> <dfn class="decl def fn" id="_ZN5boost6thread5yieldEv" title='boost::thread::yield' data-ref="_ZN5boost6thread5yieldEv">yield</dfn>() <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1020" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="554">554</th><td>        {</td></tr>
+<tr><th id="555">555</th><td>            <span class="namespace">this_thread::</span><a class="ref fn" href="../pthread/thread_data.hpp.html#_ZN5boost11this_thread5yieldEv" title='boost::this_thread::yield' data-ref="_ZN5boost11this_thread5yieldEv">yield</a>();</td></tr>
+<tr><th id="556">556</th><td>        }</td></tr>
+<tr><th id="557">557</th><td></td></tr>
+<tr><th id="558">558</th><td>        <em>static</em> <b>inline</b> <em>void</em> <dfn class="decl def fn" id="_ZN5boost6thread5sleepERKNS_10posix_time5ptimeE" title='boost::thread::sleep' data-ref="_ZN5boost6thread5sleepERKNS_10posix_time5ptimeE">sleep</dfn>(<em>const</em> <a class="typedef" href="../thread_time.hpp.html#boost::system_time" title='boost::system_time' data-type='boost::posix_time::ptime' data-ref="boost::system_time">system_time</a>&amp; <dfn class="local col3 decl" id="283xt" title='xt' data-type='const boost::system_time &amp;' data-ref="283xt">xt</dfn>)</td></tr>
+<tr><th id="559">559</th><td>        {</td></tr>
+<tr><th id="560">560</th><td>            <span class="namespace">this_thread::</span><a class="ref fn" href="../pthread/thread_data.hpp.html#_ZN5boost11this_thread5sleepERKNS_10posix_time5ptimeE" title='boost::this_thread::sleep' data-ref="_ZN5boost11this_thread5sleepERKNS_10posix_time5ptimeE">sleep</a>(<span class='inlayHint'>abs_time:&nbsp;</span><a class="local col3 ref" href="#283xt" title='xt' data-ref="283xt">xt</a>);</td></tr>
+<tr><th id="561">561</th><td>        }</td></tr>
+<tr><th id="562">562</th><td><u>#<span data-ppcond="552">endif</span></u></td></tr>
+<tr><th id="563">563</th><td></td></tr>
+<tr><th id="564">564</th><td><u>#<span data-ppcond="564">if</span> defined <a class="macro" href="config.hpp.html#356" data-ref="_M/BOOST_THREAD_PROVIDES_INTERRUPTIONS">BOOST_THREAD_PROVIDES_INTERRUPTIONS</a></u></td></tr>
+<tr><th id="565">565</th><td>        <i>// extensions</i></td></tr>
+<tr><th id="566">566</th><td>        <em>void</em> <dfn class="decl fn" id="_ZN5boost6thread9interruptEv" title='boost::thread::interrupt' data-ref="_ZN5boost6thread9interruptEv">interrupt</dfn>();</td></tr>
+<tr><th id="567">567</th><td>        <em>bool</em> <dfn class="decl fn" id="_ZNK5boost6thread22interruption_requestedEv" title='boost::thread::interruption_requested' data-ref="_ZNK5boost6thread22interruption_requestedEv">interruption_requested</dfn>() <em>const</em> <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1020" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a>;</td></tr>
+<tr><th id="568">568</th><td><u>#<span data-ppcond="564">endif</span></u></td></tr>
+<tr><th id="569">569</th><td>    };</td></tr>
+<tr><th id="570">570</th><td></td></tr>
+<tr><th id="571">571</th><td>    <b>inline</b> <em>void</em> <dfn class="decl def fn" id="_ZN5boost4swapERNS_6threadES1_" title='boost::swap' data-ref="_ZN5boost4swapERNS_6threadES1_">swap</dfn>(<a class="type" href="#boost::thread" title='boost::thread' data-ref="boost::thread">thread</a>&amp; <dfn class="local col4 decl" id="284lhs" title='lhs' data-type='boost::thread &amp;' data-ref="284lhs">lhs</dfn>,<a class="type" href="#boost::thread" title='boost::thread' data-ref="boost::thread">thread</a>&amp; <dfn class="local col5 decl" id="285rhs" title='rhs' data-type='boost::thread &amp;' data-ref="285rhs">rhs</dfn>) <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1020" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="572">572</th><td>    {</td></tr>
+<tr><th id="573">573</th><td>        <b>return</b> <a class="local col4 ref" href="#284lhs" title='lhs' data-ref="284lhs">lhs</a>.<a class="ref fn" href="#_ZN5boost6thread4swapERS0_" title='boost::thread::swap' data-ref="_ZN5boost6thread4swapERS0_">swap</a>(<span class='inlayHint'>x&amp;:&nbsp;</span><span class='refarg'><a class="local col5 ref" href="#285rhs" title='rhs' data-ref="285rhs">rhs</a></span>);</td></tr>
+<tr><th id="574">574</th><td>    }</td></tr>
+<tr><th id="575">575</th><td></td></tr>
+<tr><th id="576">576</th><td><u>#<span data-ppcond="576">ifndef</span> <span class="macro" data-ref="_M/BOOST_NO_CXX11_RVALUE_REFERENCES">BOOST_NO_CXX11_RVALUE_REFERENCES</span></u></td></tr>
+<tr><th id="577">577</th><td>    <b>inline</b> <a class="type" href="#boost::thread" title='boost::thread' data-ref="boost::thread">thread</a>&amp;&amp; <dfn class="decl def fn" id="_ZN5boost4moveERNS_6threadE" title='boost::move' data-ref="_ZN5boost4moveERNS_6threadE">move</dfn>(<a class="type" href="#boost::thread" title='boost::thread' data-ref="boost::thread">thread</a>&amp; <dfn class="local col6 decl" id="286t" title='t' data-type='boost::thread &amp;' data-ref="286t">t</dfn>) <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1020" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="578">578</th><td>    {</td></tr>
+<tr><th id="579">579</th><td>        <b>return</b> <b>static_cast</b>&lt;<a class="type" href="#boost::thread" title='boost::thread' data-ref="boost::thread">thread</a>&amp;&amp;&gt;(<a class="local col6 ref" href="#286t" title='t' data-ref="286t">t</a>);</td></tr>
+<tr><th id="580">580</th><td>    }</td></tr>
+<tr><th id="581">581</th><td><u>#<span data-ppcond="576">endif</span></u></td></tr>
+<tr><th id="582">582</th><td></td></tr>
+<tr><th id="583">583</th><td>    <a class="macro" href="move.hpp.html#89" title="" data-ref="_M/BOOST_THREAD_DCL_MOVABLE">BOOST_THREAD_DCL_MOVABLE</a>(thread)</td></tr>
+<tr><th id="584">584</th><td></td></tr>
+<tr><th id="585">585</th><td>    <b>namespace</b> <span class="namespace">this_thread</span></td></tr>
+<tr><th id="586">586</th><td>    {</td></tr>
+<tr><th id="587">587</th><td><u>#<span data-ppcond="587">ifdef</span> <a class="macro" href="platform.hpp.html#69" data-ref="_M/BOOST_THREAD_PLATFORM_PTHREAD">BOOST_THREAD_PLATFORM_PTHREAD</a></u></td></tr>
+<tr><th id="588">588</th><td>        <a class="type" href="#boost::thread" title='boost::thread' data-ref="boost::thread">thread</a>::<a class="type" href="#boost::thread::id" title='boost::thread::id' data-ref="boost::thread::id">id</a> <a class="decl fn" href="#_ZN5boost11this_thread6get_idEv" title='boost::this_thread::get_id' data-ref="_ZN5boost11this_thread6get_idEv">get_id</a>() <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1020" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a>;</td></tr>
+<tr><th id="589">589</th><td><u>#<span data-ppcond="587">else</span></u></td></tr>
+<tr><th id="590">590</th><td>        thread::id BOOST_THREAD_DECL get_id() BOOST_NOEXCEPT;</td></tr>
+<tr><th id="591">591</th><td><u>#<span data-ppcond="587">endif</span></u></td></tr>
+<tr><th id="592">592</th><td></td></tr>
+<tr><th id="593">593</th><td><u>#<span data-ppcond="593">if</span> defined <a class="macro" href="config.hpp.html#253" data-ref="_M/BOOST_THREAD_USES_DATETIME">BOOST_THREAD_USES_DATETIME</a></u></td></tr>
+<tr><th id="594">594</th><td>        <b>inline</b> <a class="macro" href="../../../../../config/include/boost/config/compiler/clang.hpp.html#115" title="__attribute__((__visibility__(&quot;default&quot;)))" data-ref="_M/BOOST_SYMBOL_VISIBLE">BOOST_SYMBOL_VISIBLE</a> <em>void</em> <dfn class="decl def fn" id="_ZN5boost11this_thread5sleepERKNS_5xtimeE" title='boost::this_thread::sleep' data-ref="_ZN5boost11this_thread5sleepERKNS_5xtimeE">sleep</dfn>(<span class="namespace">::boost::</span><a class="type" href="../xtime.hpp.html#boost::xtime" title='boost::xtime' data-ref="boost::xtime">xtime</a> <em>const</em>&amp; <dfn class="local col7 decl" id="287abs_time" title='abs_time' data-type='const ::boost::xtime &amp;' data-ref="287abs_time">abs_time</dfn>)</td></tr>
+<tr><th id="595">595</th><td>        {</td></tr>
+<tr><th id="596">596</th><td>            <a class="ref fn" href="../pthread/thread_data.hpp.html#_ZN5boost11this_thread5sleepERKNS_10posix_time5ptimeE" title='boost::this_thread::sleep' data-ref="_ZN5boost11this_thread5sleepERKNS_10posix_time5ptimeE">sleep</a>(<a class="typedef" href="../thread_time.hpp.html#boost::system_time" title='boost::system_time' data-type='boost::posix_time::ptime' data-ref="boost::system_time">system_time</a><a class="ref fn" href="../../../../../date_time/include/boost/date_time/posix_time/ptime.hpp.html#32" title='boost::posix_time::ptime::ptime' data-ref="_ZN5boost10posix_time5ptimeC1EOS1_">(</a><a class="ref fn fake" href="../xtime.hpp.html#_ZNK5boost5xtimecvNS_10posix_time5ptimeEEv" title='boost::xtime::operator ptime' data-ref="_ZNK5boost5xtimecvNS_10posix_time5ptimeEEv"></a><a class="local col7 ref" href="#287abs_time" title='abs_time' data-ref="287abs_time">abs_time</a>));</td></tr>
+<tr><th id="597">597</th><td>        }</td></tr>
+<tr><th id="598">598</th><td><u>#<span data-ppcond="593">endif</span></u></td></tr>
+<tr><th id="599">599</th><td>    }</td></tr>
+<tr><th id="600">600</th><td></td></tr>
+<tr><th id="601">601</th><td>    <b>class</b> <a class="macro" href="../../../../../config/include/boost/config/compiler/clang.hpp.html#115" title="__attribute__((__visibility__(&quot;default&quot;)))" data-ref="_M/BOOST_SYMBOL_VISIBLE">BOOST_SYMBOL_VISIBLE</a> <a class="type" href="#boost::thread" title='boost::thread' data-ref="boost::thread">thread</a>::<dfn class="type def" id="boost::thread::id" title='boost::thread::id' data-ref="boost::thread::id">id</dfn></td></tr>
+<tr><th id="602">602</th><td>    {</td></tr>
+<tr><th id="603">603</th><td>    <b>private</b>:</td></tr>
+<tr><th id="604">604</th><td>    </td></tr>
+<tr><th id="605">605</th><td>    <u>#<span data-ppcond="605">if</span> !defined(<span class="macro" data-ref="_M/BOOST_EMBTC">BOOST_EMBTC</span>)</u></td></tr>
+<tr><th id="606">606</th><td>      </td></tr>
+<tr><th id="607">607</th><td>        <b>friend</b> <b>inline</b></td></tr>
+<tr><th id="608">608</th><td>        <span class="namespace">std::</span><a class="typedef" href="../../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a></td></tr>
+<tr><th id="609">609</th><td>        <dfn class="decl def fn" id="_ZN5boost10hash_valueERKNS_6thread2idE" title='boost::hash_value' data-ref="_ZN5boost10hash_valueERKNS_6thread2idE">hash_value</dfn>(<em>const</em> <a class="type" href="#boost::thread" title='boost::thread' data-ref="boost::thread">thread</a>::<a class="type" href="#boost::thread::id" title='boost::thread::id' data-ref="boost::thread::id">id</a> &amp;<dfn class="local col8 decl" id="288v" title='v' data-type='const thread::id &amp;' data-ref="288v">v</dfn>)</td></tr>
+<tr><th id="610">610</th><td>        {</td></tr>
+<tr><th id="611">611</th><td><u>#<span data-ppcond="611">if</span> defined <a class="macro" href="config.hpp.html#122" data-ref="_M/BOOST_THREAD_PROVIDES_BASIC_THREAD_ID">BOOST_THREAD_PROVIDES_BASIC_THREAD_ID</a></u></td></tr>
+<tr><th id="612">612</th><td>          <b>return</b> <a class="ref fn" href="../../../../../container_hash/include/boost/container_hash/detail/hash_integral.hpp.html#_ZN5boost10hash_valueET_" title='boost::hash_value' data-ref="_ZN5boost10hash_valueET_">hash_value</a>(<span class='inlayHint'>v:&nbsp;</span><a class="local col8 ref" href="#288v" title='v' data-ref="288v">v</a>.<a class="ref field" href="#boost::thread::id::thread_data" title='boost::thread::id::thread_data' data-ref="boost::thread::id::thread_data">thread_data</a>);</td></tr>
+<tr><th id="613">613</th><td><u>#<span data-ppcond="611">else</span></u></td></tr>
+<tr><th id="614">614</th><td>          <b>return</b> hash_value(v.thread_data.get());</td></tr>
+<tr><th id="615">615</th><td><u>#<span data-ppcond="611">endif</span></u></td></tr>
+<tr><th id="616">616</th><td>        }</td></tr>
+<tr><th id="617">617</th><td></td></tr>
+<tr><th id="618">618</th><td>    <u>#<span data-ppcond="605">else</span></u></td></tr>
+<tr><th id="619">619</th><td>      </td></tr>
+<tr><th id="620">620</th><td>        <b>friend</b></td></tr>
+<tr><th id="621">621</th><td>        std::size_t</td></tr>
+<tr><th id="622">622</th><td>        hash_value(<em>const</em> thread::id &amp;v);</td></tr>
+<tr><th id="623">623</th><td></td></tr>
+<tr><th id="624">624</th><td>    <u>#<span data-ppcond="605">endif</span></u></td></tr>
+<tr><th id="625">625</th><td>      </td></tr>
+<tr><th id="626">626</th><td><u>#<span data-ppcond="626">if</span> defined <a class="macro" href="config.hpp.html#122" data-ref="_M/BOOST_THREAD_PROVIDES_BASIC_THREAD_ID">BOOST_THREAD_PROVIDES_BASIC_THREAD_ID</a></u></td></tr>
+<tr><th id="627">627</th><td><u>#<span data-ppcond="627">if</span> defined(<span class="macro" data-ref="_M/BOOST_THREAD_PLATFORM_WIN32">BOOST_THREAD_PLATFORM_WIN32</span>)</u></td></tr>
+<tr><th id="628">628</th><td>        <b>typedef</b> <em>unsigned</em> <em>int</em> data;</td></tr>
+<tr><th id="629">629</th><td><u>#<span data-ppcond="627">else</span></u></td></tr>
+<tr><th id="630">630</th><td>        <b>typedef</b> <a class="type" href="#boost::thread" title='boost::thread' data-ref="boost::thread">thread</a>::<a class="typedef" href="#boost::thread::native_handle_type" title='boost::thread::native_handle_type' data-type='detail::thread_data_base::native_handle_type' data-ref="boost::thread::native_handle_type">native_handle_type</a> <dfn class="typedef" id="boost::thread::id::data" title='boost::thread::id::data' data-type='thread::native_handle_type' data-ref="boost::thread::id::data">data</dfn>;</td></tr>
+<tr><th id="631">631</th><td><u>#<span data-ppcond="627">endif</span></u></td></tr>
+<tr><th id="632">632</th><td><u>#<span data-ppcond="626">else</span></u></td></tr>
+<tr><th id="633">633</th><td>        <b>typedef</b> detail::thread_data_ptr data;</td></tr>
+<tr><th id="634">634</th><td><u>#<span data-ppcond="626">endif</span></u></td></tr>
+<tr><th id="635">635</th><td>        <a class="typedef" href="#boost::thread::id::data" title='boost::thread::id::data' data-type='thread::native_handle_type' data-ref="boost::thread::id::data">data</a> <dfn class="decl field" id="boost::thread::id::thread_data" title='boost::thread::id::thread_data' data-ref="boost::thread::id::thread_data">thread_data</dfn>;</td></tr>
+<tr><th id="636">636</th><td></td></tr>
+<tr><th id="637">637</th><td>        <dfn class="decl def fn" id="_ZN5boost6thread2idC1Em" title='boost::thread::id::id' data-ref="_ZN5boost6thread2idC1Em">id</dfn>(<a class="typedef" href="#boost::thread::id::data" title='boost::thread::id::data' data-type='thread::native_handle_type' data-ref="boost::thread::id::data">data</a> <dfn class="local col9 decl" id="289thread_data_" title='thread_data_' data-type='boost::thread::id::data' data-ref="289thread_data_">thread_data_</dfn>):</td></tr>
+<tr><th id="638">638</th><td>            <a class="member field" href="#boost::thread::id::thread_data" title='boost::thread::id::thread_data' data-ref="boost::thread::id::thread_data">thread_data</a>(<a class="local col9 ref" href="#289thread_data_" title='thread_data_' data-ref="289thread_data_">thread_data_</a>)</td></tr>
+<tr><th id="639">639</th><td>        {}</td></tr>
+<tr><th id="640">640</th><td>        <b>friend</b> <b>class</b> <a class="type" href="#boost::thread" title='boost::thread' data-ref="boost::thread">thread</a>;</td></tr>
+<tr><th id="641">641</th><td>        <b>friend</b> <a class="type" href="#boost::thread::id" title='boost::thread::id' data-ref="boost::thread::id">id</a> <a class="macro" href="config.hpp.html#500" title="__attribute__((__visibility__(&quot;default&quot;)))" data-ref="_M/BOOST_THREAD_DECL">BOOST_THREAD_DECL</a> <span class="namespace">this_thread::</span><a class="decl fn" href="#_ZN5boost11this_thread6get_idEv" title='boost::this_thread::get_id' data-ref="_ZN5boost11this_thread6get_idEv">get_id</a>() <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1020" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a>;</td></tr>
+<tr><th id="642">642</th><td>    <b>public</b>:</td></tr>
+<tr><th id="643">643</th><td>        <dfn class="decl def fn" id="_ZN5boost6thread2idC1Ev" title='boost::thread::id::id' data-ref="_ZN5boost6thread2idC1Ev">id</dfn>() <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1020" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a>:</td></tr>
+<tr><th id="644">644</th><td><u>#<span data-ppcond="644">if</span> defined <a class="macro" href="config.hpp.html#122" data-ref="_M/BOOST_THREAD_PROVIDES_BASIC_THREAD_ID">BOOST_THREAD_PROVIDES_BASIC_THREAD_ID</a></u></td></tr>
+<tr><th id="645">645</th><td>        <a class="member field" href="#boost::thread::id::thread_data" title='boost::thread::id::thread_data' data-ref="boost::thread::id::thread_data">thread_data</a>(<var>0</var>)</td></tr>
+<tr><th id="646">646</th><td><u>#<span data-ppcond="644">else</span></u></td></tr>
+<tr><th id="647">647</th><td>        thread_data()</td></tr>
+<tr><th id="648">648</th><td><u>#<span data-ppcond="644">endif</span></u></td></tr>
+<tr><th id="649">649</th><td>        {}</td></tr>
+<tr><th id="650">650</th><td></td></tr>
+<tr><th id="651">651</th><td>        <em>bool</em> <dfn class="decl def fn" id="_ZNK5boost6thread2ideqERKS1_" title='boost::thread::id::operator==' data-ref="_ZNK5boost6thread2ideqERKS1_"><b>operator</b>==</dfn>(<em>const</em> <a class="type" href="#boost::thread::id" title='boost::thread::id' data-ref="boost::thread::id">id</a>&amp; <dfn class="local col0 decl" id="290y" title='y' data-type='const boost::thread::id &amp;' data-ref="290y">y</dfn>) <em>const</em> <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1020" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="652">652</th><td>        {</td></tr>
+<tr><th id="653">653</th><td>            <b>return</b> <a class="member field" href="#boost::thread::id::thread_data" title='boost::thread::id::thread_data' data-ref="boost::thread::id::thread_data">thread_data</a>==<a class="local col0 ref" href="#290y" title='y' data-ref="290y">y</a>.<a class="member field" href="#boost::thread::id::thread_data" title='boost::thread::id::thread_data' data-ref="boost::thread::id::thread_data">thread_data</a>;</td></tr>
+<tr><th id="654">654</th><td>        }</td></tr>
+<tr><th id="655">655</th><td></td></tr>
+<tr><th id="656">656</th><td>        <em>bool</em> <dfn class="decl def fn" id="_ZNK5boost6thread2idneERKS1_" title='boost::thread::id::operator!=' data-ref="_ZNK5boost6thread2idneERKS1_"><b>operator</b>!=</dfn>(<em>const</em> <a class="type" href="#boost::thread::id" title='boost::thread::id' data-ref="boost::thread::id">id</a>&amp; <dfn class="local col1 decl" id="291y" title='y' data-type='const boost::thread::id &amp;' data-ref="291y">y</dfn>) <em>const</em> <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1020" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="657">657</th><td>        {</td></tr>
+<tr><th id="658">658</th><td>            <b>return</b> <a class="member field" href="#boost::thread::id::thread_data" title='boost::thread::id::thread_data' data-ref="boost::thread::id::thread_data">thread_data</a>!=<a class="local col1 ref" href="#291y" title='y' data-ref="291y">y</a>.<a class="member field" href="#boost::thread::id::thread_data" title='boost::thread::id::thread_data' data-ref="boost::thread::id::thread_data">thread_data</a>;</td></tr>
+<tr><th id="659">659</th><td>        }</td></tr>
+<tr><th id="660">660</th><td></td></tr>
+<tr><th id="661">661</th><td>        <em>bool</em> <dfn class="decl def fn" id="_ZNK5boost6thread2idltERKS1_" title='boost::thread::id::operator&lt;' data-ref="_ZNK5boost6thread2idltERKS1_"><b>operator</b>&lt;</dfn>(<em>const</em> <a class="type" href="#boost::thread::id" title='boost::thread::id' data-ref="boost::thread::id">id</a>&amp; <dfn class="local col2 decl" id="292y" title='y' data-type='const boost::thread::id &amp;' data-ref="292y">y</dfn>) <em>const</em> <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1020" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="662">662</th><td>        {</td></tr>
+<tr><th id="663">663</th><td>            <b>return</b> <a class="member field" href="#boost::thread::id::thread_data" title='boost::thread::id::thread_data' data-ref="boost::thread::id::thread_data">thread_data</a>&lt;<a class="local col2 ref" href="#292y" title='y' data-ref="292y">y</a>.<a class="member field" href="#boost::thread::id::thread_data" title='boost::thread::id::thread_data' data-ref="boost::thread::id::thread_data">thread_data</a>;</td></tr>
+<tr><th id="664">664</th><td>        }</td></tr>
+<tr><th id="665">665</th><td></td></tr>
+<tr><th id="666">666</th><td>        <em>bool</em> <dfn class="decl def fn" id="_ZNK5boost6thread2idgtERKS1_" title='boost::thread::id::operator&gt;' data-ref="_ZNK5boost6thread2idgtERKS1_"><b>operator</b>&gt;</dfn>(<em>const</em> <a class="type" href="#boost::thread::id" title='boost::thread::id' data-ref="boost::thread::id">id</a>&amp; <dfn class="local col3 decl" id="293y" title='y' data-type='const boost::thread::id &amp;' data-ref="293y">y</dfn>) <em>const</em> <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1020" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="667">667</th><td>        {</td></tr>
+<tr><th id="668">668</th><td>            <b>return</b> <a class="local col3 ref" href="#293y" title='y' data-ref="293y">y</a>.<a class="member field" href="#boost::thread::id::thread_data" title='boost::thread::id::thread_data' data-ref="boost::thread::id::thread_data">thread_data</a>&lt;<a class="member field" href="#boost::thread::id::thread_data" title='boost::thread::id::thread_data' data-ref="boost::thread::id::thread_data">thread_data</a>;</td></tr>
+<tr><th id="669">669</th><td>        }</td></tr>
+<tr><th id="670">670</th><td></td></tr>
+<tr><th id="671">671</th><td>        <em>bool</em> <dfn class="decl def fn" id="_ZNK5boost6thread2idleERKS1_" title='boost::thread::id::operator&lt;=' data-ref="_ZNK5boost6thread2idleERKS1_"><b>operator</b>&lt;=</dfn>(<em>const</em> <a class="type" href="#boost::thread::id" title='boost::thread::id' data-ref="boost::thread::id">id</a>&amp; <dfn class="local col4 decl" id="294y" title='y' data-type='const boost::thread::id &amp;' data-ref="294y">y</dfn>) <em>const</em> <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1020" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="672">672</th><td>        {</td></tr>
+<tr><th id="673">673</th><td>            <b>return</b> !(<a class="local col4 ref" href="#294y" title='y' data-ref="294y">y</a>.<a class="member field" href="#boost::thread::id::thread_data" title='boost::thread::id::thread_data' data-ref="boost::thread::id::thread_data">thread_data</a>&lt;<a class="member field" href="#boost::thread::id::thread_data" title='boost::thread::id::thread_data' data-ref="boost::thread::id::thread_data">thread_data</a>);</td></tr>
+<tr><th id="674">674</th><td>        }</td></tr>
+<tr><th id="675">675</th><td></td></tr>
+<tr><th id="676">676</th><td>        <em>bool</em> <dfn class="decl def fn" id="_ZNK5boost6thread2idgeERKS1_" title='boost::thread::id::operator&gt;=' data-ref="_ZNK5boost6thread2idgeERKS1_"><b>operator</b>&gt;=</dfn>(<em>const</em> <a class="type" href="#boost::thread::id" title='boost::thread::id' data-ref="boost::thread::id">id</a>&amp; <dfn class="local col5 decl" id="295y" title='y' data-type='const boost::thread::id &amp;' data-ref="295y">y</dfn>) <em>const</em> <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1020" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="677">677</th><td>        {</td></tr>
+<tr><th id="678">678</th><td>            <b>return</b> !(<a class="member field" href="#boost::thread::id::thread_data" title='boost::thread::id::thread_data' data-ref="boost::thread::id::thread_data">thread_data</a>&lt;<a class="local col5 ref" href="#295y" title='y' data-ref="295y">y</a>.<a class="member field" href="#boost::thread::id::thread_data" title='boost::thread::id::thread_data' data-ref="boost::thread::id::thread_data">thread_data</a>);</td></tr>
+<tr><th id="679">679</th><td>        }</td></tr>
+<tr><th id="680">680</th><td></td></tr>
+<tr><th id="681">681</th><td><u>#<span data-ppcond="681">ifndef</span> <span class="macro" data-ref="_M/BOOST_NO_IOSTREAM">BOOST_NO_IOSTREAM</span></u></td></tr>
+<tr><th id="682">682</th><td><u>#<span data-ppcond="682">ifndef</span> <span class="macro" data-ref="_M/BOOST_NO_MEMBER_TEMPLATE_FRIENDS">BOOST_NO_MEMBER_TEMPLATE_FRIENDS</span></u></td></tr>
+<tr><th id="683">683</th><td>        <b>template</b>&lt;<b>class</b> charT, <b>class</b> traits&gt;</td></tr>
+<tr><th id="684">684</th><td>        <b>friend</b> <a class="macro" href="../../../../../config/include/boost/config/compiler/clang.hpp.html#115" title="__attribute__((__visibility__(&quot;default&quot;)))" data-ref="_M/BOOST_SYMBOL_VISIBLE">BOOST_SYMBOL_VISIBLE</a></td></tr>
+<tr><th id="685">685</th><td>  <span class="namespace">std::</span><a class="type" href="../../../../../../../include/c++/9/iosfwd.html#std::basic_ostream" title='std::basic_ostream' data-ref="std::basic_ostream">basic_ostream</a>&lt;charT, traits&gt;&amp;</td></tr>
+<tr><th id="686">686</th><td>        <dfn class="decl def fn" id="_ZN5boostlsERSt13basic_ostreamIT_T0_ERKNS_6thread2idE" title='boost::operator&lt;&lt;' data-ref="_ZN5boostlsERSt13basic_ostreamIT_T0_ERKNS_6thread2idE"><b>operator</b>&lt;&lt;</dfn>(<span class="namespace">std::</span><a class="type" href="../../../../../../../include/c++/9/iosfwd.html#std::basic_ostream" title='std::basic_ostream' data-ref="std::basic_ostream">basic_ostream</a>&lt;charT, traits&gt;&amp; <dfn class="local col6 decl" id="296os" title='os' data-type='std::basic_ostream&lt;charT, traits&gt; &amp;' data-ref="296os">os</dfn>, <em>const</em> <a class="type" href="#boost::thread::id" title='boost::thread::id' data-ref="boost::thread::id">id</a>&amp; <dfn class="local col7 decl" id="297x" title='x' data-type='const boost::thread::id &amp;' data-ref="297x">x</dfn>)</td></tr>
+<tr><th id="687">687</th><td>        {</td></tr>
+<tr><th id="688">688</th><td>            <b>if</b>(<a class="local col7 ref" href="#297x" title='x' data-ref="297x">x</a>.<a class="ref field" href="#boost::thread::id::thread_data" title='boost::thread::id::thread_data' data-ref="boost::thread::id::thread_data">thread_data</a>)</td></tr>
+<tr><th id="689">689</th><td>            {</td></tr>
+<tr><th id="690">690</th><td>                <span class="namespace">io::</span><a class="type" href="../../../../../io/include/boost/io/ios_state.hpp.html#boost::io::ios_flags_saver" title='boost::io::ios_flags_saver' data-ref="boost::io::ios_flags_saver">ios_flags_saver</a>  <dfn class="local col8 decl" id="298ifs" title='ifs' data-type='io::ios_flags_saver' data-ref="298ifs">ifs</dfn>( <a class="local col6 ref" href="#296os" title='os' data-ref="296os">os</a> );</td></tr>
+<tr><th id="691">691</th><td>                <b>return</b> <a class="local col6 ref" href="#296os" title='os' data-ref="296os">os</a>&lt;&lt; <span class="namespace">std::</span><a class="ref fn" href="../../../../../../../include/c++/9/bits/ios_base.h.html#_ZSt3hexRSt8ios_base" title='std::hex' data-ref="_ZSt3hexRSt8ios_base">hex</a> &lt;&lt; <a class="local col7 ref" href="#297x" title='x' data-ref="297x">x</a>.<a class="ref field" href="#boost::thread::id::thread_data" title='boost::thread::id::thread_data' data-ref="boost::thread::id::thread_data">thread_data</a>;</td></tr>
+<tr><th id="692">692</th><td>            }</td></tr>
+<tr><th id="693">693</th><td>            <b>else</b></td></tr>
+<tr><th id="694">694</th><td>            {</td></tr>
+<tr><th id="695">695</th><td>                <b>return</b> <a class="local col6 ref" href="#296os" title='os' data-ref="296os">os</a>&lt;&lt;<q>"{Not-any-thread}"</q>;</td></tr>
+<tr><th id="696">696</th><td>            }</td></tr>
+<tr><th id="697">697</th><td>        }</td></tr>
+<tr><th id="698">698</th><td><u>#<span data-ppcond="682">else</span></u></td></tr>
+<tr><th id="699">699</th><td>        <b>template</b>&lt;<b>class</b> charT, <b>class</b> traits&gt;</td></tr>
+<tr><th id="700">700</th><td>        BOOST_SYMBOL_VISIBLE</td></tr>
+<tr><th id="701">701</th><td>  std::basic_ostream&lt;charT, traits&gt;&amp;</td></tr>
+<tr><th id="702">702</th><td>        print(std::basic_ostream&lt;charT, traits&gt;&amp; os) <em>const</em></td></tr>
+<tr><th id="703">703</th><td>        {</td></tr>
+<tr><th id="704">704</th><td>            <b>if</b>(thread_data)</td></tr>
+<tr><th id="705">705</th><td>            {</td></tr>
+<tr><th id="706">706</th><td>              io::ios_flags_saver  ifs( os );</td></tr>
+<tr><th id="707">707</th><td>              <b>return</b> os&lt;&lt; std::hex &lt;&lt; thread_data;</td></tr>
+<tr><th id="708">708</th><td>            }</td></tr>
+<tr><th id="709">709</th><td>            <b>else</b></td></tr>
+<tr><th id="710">710</th><td>            {</td></tr>
+<tr><th id="711">711</th><td>                <b>return</b> os&lt;&lt;<q>"{Not-any-thread}"</q>;</td></tr>
+<tr><th id="712">712</th><td>            }</td></tr>
+<tr><th id="713">713</th><td>        }</td></tr>
+<tr><th id="714">714</th><td></td></tr>
+<tr><th id="715">715</th><td><u>#<span data-ppcond="682">endif</span></u></td></tr>
+<tr><th id="716">716</th><td><u>#<span data-ppcond="681">endif</span></u></td></tr>
+<tr><th id="717">717</th><td>    };</td></tr>
+<tr><th id="718">718</th><td>    </td></tr>
+<tr><th id="719">719</th><td><u>#<span data-ppcond="719">if</span> defined(<span class="macro" data-ref="_M/BOOST_EMBTC">BOOST_EMBTC</span>)</u></td></tr>
+<tr><th id="720">720</th><td></td></tr>
+<tr><th id="721">721</th><td>        <b>inline</b></td></tr>
+<tr><th id="722">722</th><td>        std::size_t</td></tr>
+<tr><th id="723">723</th><td>        hash_value(<em>const</em> thread::id &amp;v)</td></tr>
+<tr><th id="724">724</th><td>        {</td></tr>
+<tr><th id="725">725</th><td><u>#if defined BOOST_THREAD_PROVIDES_BASIC_THREAD_ID</u></td></tr>
+<tr><th id="726">726</th><td>          <b>return</b> hash_value(v.thread_data);</td></tr>
+<tr><th id="727">727</th><td><u>#else</u></td></tr>
+<tr><th id="728">728</th><td>          <b>return</b> hash_value(v.thread_data.get());</td></tr>
+<tr><th id="729">729</th><td><u>#endif</u></td></tr>
+<tr><th id="730">730</th><td>        }</td></tr>
+<tr><th id="731">731</th><td></td></tr>
+<tr><th id="732">732</th><td><u>#<span data-ppcond="719">endif</span></u></td></tr>
+<tr><th id="733">733</th><td></td></tr>
+<tr><th id="734">734</th><td><u>#<span data-ppcond="734">ifdef</span> <a class="macro" href="platform.hpp.html#69" data-ref="_M/BOOST_THREAD_PLATFORM_PTHREAD">BOOST_THREAD_PLATFORM_PTHREAD</a></u></td></tr>
+<tr><th id="735">735</th><td>    <b>inline</b> <a class="type" href="#boost::thread" title='boost::thread' data-ref="boost::thread">thread</a>::<a class="type" href="#boost::thread::id" title='boost::thread::id' data-ref="boost::thread::id">id</a> <a class="type" href="#boost::thread" title='boost::thread' data-ref="boost::thread">thread</a>::<dfn class="decl def fn" id="_ZNK5boost6thread6get_idEv" title='boost::thread::get_id' data-ref="_ZNK5boost6thread6get_idEv">get_id</dfn>() <em>const</em> <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1020" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="736">736</th><td>    {</td></tr>
+<tr><th id="737">737</th><td>    <u>#<span data-ppcond="737">if</span> defined <a class="macro" href="config.hpp.html#122" data-ref="_M/BOOST_THREAD_PROVIDES_BASIC_THREAD_ID">BOOST_THREAD_PROVIDES_BASIC_THREAD_ID</a></u></td></tr>
+<tr><th id="738">738</th><td>        <b>return</b> <a class="ref fn fake" href="#_ZN5boost6thread2idC1Em" title='boost::thread::id::id' data-ref="_ZN5boost6thread2idC1Em"></a><b>const_cast</b>&lt;<a class="type" href="#boost::thread" title='boost::thread' data-ref="boost::thread">thread</a>*&gt;(<b>this</b>)-&gt;<a class="member fn" href="#_ZN5boost6thread13native_handleEv" title='boost::thread::native_handle' data-ref="_ZN5boost6thread13native_handleEv">native_handle</a>();</td></tr>
+<tr><th id="739">739</th><td>    <u>#<span data-ppcond="737">else</span></u></td></tr>
+<tr><th id="740">740</th><td>        detail::thread_data_ptr <em>const</em> local_thread_info=(get_thread_info)();</td></tr>
+<tr><th id="741">741</th><td>        <b>return</b> (local_thread_info? id(local_thread_info) : id());</td></tr>
+<tr><th id="742">742</th><td>    <u>#<span data-ppcond="737">endif</span></u></td></tr>
+<tr><th id="743">743</th><td>    }</td></tr>
+<tr><th id="744">744</th><td></td></tr>
+<tr><th id="745">745</th><td>    <b>namespace</b> <span class="namespace">this_thread</span></td></tr>
+<tr><th id="746">746</th><td>    {</td></tr>
+<tr><th id="747">747</th><td>        <b>inline</b> <a class="type" href="#boost::thread" title='boost::thread' data-ref="boost::thread">thread</a>::<a class="type" href="#boost::thread::id" title='boost::thread::id' data-ref="boost::thread::id">id</a> <dfn class="decl def fn" id="_ZN5boost11this_thread6get_idEv" title='boost::this_thread::get_id' data-ref="_ZN5boost11this_thread6get_idEv">get_id</dfn>() <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1020" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="748">748</th><td>        {</td></tr>
+<tr><th id="749">749</th><td>        <u>#<span data-ppcond="749">if</span> defined <a class="macro" href="config.hpp.html#122" data-ref="_M/BOOST_THREAD_PROVIDES_BASIC_THREAD_ID">BOOST_THREAD_PROVIDES_BASIC_THREAD_ID</a></u></td></tr>
+<tr><th id="750">750</th><td>             <b>return</b> <a class="ref fn fake" href="#_ZN5boost6thread2idC1Em" title='boost::thread::id::id' data-ref="_ZN5boost6thread2idC1Em"></a><a class="ref fn" href="../../../../../../../include/pthread.h.html#pthread_self" title='pthread_self' data-ref="pthread_self">pthread_self</a>();</td></tr>
+<tr><th id="751">751</th><td>        <u>#<span data-ppcond="749">else</span></u></td></tr>
+<tr><th id="752">752</th><td>            boost::detail::thread_data_base* <em>const</em> thread_info=get_or_make_current_thread_data();</td></tr>
+<tr><th id="753">753</th><td>            <b>return</b> (thread_info?thread::id(thread_info-&gt;shared_from_this()):thread::id());</td></tr>
+<tr><th id="754">754</th><td>        <u>#<span data-ppcond="749">endif</span></u></td></tr>
+<tr><th id="755">755</th><td>        }</td></tr>
+<tr><th id="756">756</th><td>    }</td></tr>
+<tr><th id="757">757</th><td><u>#<span data-ppcond="734">endif</span></u></td></tr>
+<tr><th id="758">758</th><td>    <b>inline</b> <em>void</em> <a class="type" href="#boost::thread" title='boost::thread' data-ref="boost::thread">thread</a>::<dfn class="decl def fn" id="_ZN5boost6thread4joinEv" title='boost::thread::join' data-ref="_ZN5boost6thread4joinEv">join</dfn>() {</td></tr>
+<tr><th id="759">759</th><td>        <b>if</b> (<span class="namespace">this_thread::</span><a class="ref fn" href="#_ZN5boost11this_thread6get_idEv" title='boost::this_thread::get_id' data-ref="_ZN5boost11this_thread6get_idEv">get_id</a>() <a class="ref fn" href="#_ZNK5boost6thread2ideqERKS1_" title='boost::thread::id::operator==' data-ref="_ZNK5boost6thread2ideqERKS1_">==</a> <a class="member fn" href="#_ZNK5boost6thread6get_idEv" title='boost::thread::get_id' data-ref="_ZNK5boost6thread6get_idEv">get_id</a>())</td></tr>
+<tr><th id="760">760</th><td>          <span class="namespace">boost::</span><a class="ref fn" href="../../../../../throw_exception/include/boost/throw_exception.hpp.html#_ZN5boost15throw_exceptionERKT_" title='boost::throw_exception' data-ref="_ZN5boost15throw_exceptionERKT_">throw_exception</a>(<span class='inlayHint'>e:&nbsp;</span><a class="type" href="../exceptions.hpp.html#boost::thread_resource_error" title='boost::thread_resource_error' data-ref="boost::thread_resource_error">thread_resource_error</a><a class="ref fn" href="../exceptions.hpp.html#_ZN5boost21thread_resource_errorC1EiPKc" title='boost::thread_resource_error::thread_resource_error' data-ref="_ZN5boost21thread_resource_errorC1EiPKc">(</a><b>static_cast</b>&lt;<em>int</em>&gt;(<span class="namespace">system::errc::</span><a class="enum" href="../../../../../system/include/boost/system/detail/errc.hpp.html#boost::system::errc::resource_deadlock_would_occur" title='boost::system::errc::resource_deadlock_would_occur' data-ref="boost::system::errc::resource_deadlock_would_occur">resource_deadlock_would_occur</a>), <q>"boost thread: trying joining itself"</q>));</td></tr>
+<tr><th id="761">761</th><td></td></tr>
+<tr><th id="762">762</th><td>        <a class="macro" href="config.hpp.html#70" title="(void)(join_noexcept())" data-ref="_M/BOOST_THREAD_VERIFY_PRECONDITION">BOOST_THREAD_VERIFY_PRECONDITION</a>( <a class="member fn" href="#_ZN5boost6thread13join_noexceptEv" title='boost::thread::join_noexcept' data-ref="_ZN5boost6thread13join_noexceptEv">join_noexcept</a>(),</td></tr>
+<tr><th id="763">763</th><td>            thread_resource_error(<b>static_cast</b>&lt;<em>int</em>&gt;(system::errc::invalid_argument), <q>"boost thread: thread not joinable"</q>)</td></tr>
+<tr><th id="764">764</th><td>        );</td></tr>
+<tr><th id="765">765</th><td>    }</td></tr>
+<tr><th id="766">766</th><td></td></tr>
+<tr><th id="767">767</th><td>    <b>inline</b> <em>bool</em> <a class="type" href="#boost::thread" title='boost::thread' data-ref="boost::thread">thread</a>::<dfn class="decl def fn" id="_ZN5boost6thread17do_try_join_untilERKNS_6detail23mono_platform_timepointE" title='boost::thread::do_try_join_until' data-ref="_ZN5boost6thread17do_try_join_untilERKNS_6detail23mono_platform_timepointE">do_try_join_until</dfn>(<span class="namespace">detail::</span><a class="typedef" href="platform_time.hpp.html#boost::detail::internal_platform_timepoint" title='boost::detail::internal_platform_timepoint' data-type='boost::detail::mono_platform_timepoint' data-ref="boost::detail::internal_platform_timepoint">internal_platform_timepoint</a> <em>const</em> &amp;<dfn class="local col9 decl" id="299timeout" title='timeout' data-type='const detail::internal_platform_timepoint &amp;' data-ref="299timeout">timeout</dfn>)</td></tr>
+<tr><th id="768">768</th><td>    {</td></tr>
+<tr><th id="769">769</th><td>        <b>if</b> (<span class="namespace">this_thread::</span><a class="ref fn" href="#_ZN5boost11this_thread6get_idEv" title='boost::this_thread::get_id' data-ref="_ZN5boost11this_thread6get_idEv">get_id</a>() <a class="ref fn" href="#_ZNK5boost6thread2ideqERKS1_" title='boost::thread::id::operator==' data-ref="_ZNK5boost6thread2ideqERKS1_">==</a> <a class="member fn" href="#_ZNK5boost6thread6get_idEv" title='boost::thread::get_id' data-ref="_ZNK5boost6thread6get_idEv">get_id</a>())</td></tr>
+<tr><th id="770">770</th><td>          <span class="namespace">boost::</span><a class="ref fn" href="../../../../../throw_exception/include/boost/throw_exception.hpp.html#_ZN5boost15throw_exceptionERKT_" title='boost::throw_exception' data-ref="_ZN5boost15throw_exceptionERKT_">throw_exception</a>(<span class='inlayHint'>e:&nbsp;</span><a class="type" href="../exceptions.hpp.html#boost::thread_resource_error" title='boost::thread_resource_error' data-ref="boost::thread_resource_error">thread_resource_error</a><a class="ref fn" href="../exceptions.hpp.html#_ZN5boost21thread_resource_errorC1EiPKc" title='boost::thread_resource_error::thread_resource_error' data-ref="_ZN5boost21thread_resource_errorC1EiPKc">(</a><b>static_cast</b>&lt;<em>int</em>&gt;(<span class="namespace">system::errc::</span><a class="enum" href="../../../../../system/include/boost/system/detail/errc.hpp.html#boost::system::errc::resource_deadlock_would_occur" title='boost::system::errc::resource_deadlock_would_occur' data-ref="boost::system::errc::resource_deadlock_would_occur">resource_deadlock_would_occur</a>), <q>"boost thread: trying joining itself"</q>));</td></tr>
+<tr><th id="771">771</th><td>        <em>bool</em> <dfn class="local col0 decl" id="300res" title='res' data-type='bool' data-ref="300res">res</dfn>;</td></tr>
+<tr><th id="772">772</th><td>        <b>if</b> (<a class="member fn" href="#_ZN5boost6thread26do_try_join_until_noexceptERKNS_6detail23mono_platform_timepointERb" title='boost::thread::do_try_join_until_noexcept' data-ref="_ZN5boost6thread26do_try_join_until_noexceptERKNS_6detail23mono_platform_timepointERb">do_try_join_until_noexcept</a>(<a class="local col9 ref" href="#299timeout" title='timeout' data-ref="299timeout">timeout</a>, <span class='refarg'><a class="local col0 ref" href="#300res" title='res' data-ref="300res">res</a></span>))</td></tr>
+<tr><th id="773">773</th><td>        {</td></tr>
+<tr><th id="774">774</th><td>          <b>return</b> <a class="local col0 ref" href="#300res" title='res' data-ref="300res">res</a>;</td></tr>
+<tr><th id="775">775</th><td>        }</td></tr>
+<tr><th id="776">776</th><td>        <b>else</b></td></tr>
+<tr><th id="777">777</th><td>        {</td></tr>
+<tr><th id="778">778</th><td>          <a class="macro" href="config.hpp.html#72" title="return (false)" data-ref="_M/BOOST_THREAD_THROW_ELSE_RETURN">BOOST_THREAD_THROW_ELSE_RETURN</a>(</td></tr>
+<tr><th id="779">779</th><td>            (thread_resource_error(<b>static_cast</b>&lt;<em>int</em>&gt;(system::errc::invalid_argument), <q>"boost thread: thread not joinable"</q>)),</td></tr>
+<tr><th id="780">780</th><td>            <b>false</b></td></tr>
+<tr><th id="781">781</th><td>          );</td></tr>
+<tr><th id="782">782</th><td>        }</td></tr>
+<tr><th id="783">783</th><td>    }</td></tr>
+<tr><th id="784">784</th><td></td></tr>
+<tr><th id="785">785</th><td><u>#<span data-ppcond="785">if</span> !defined(<span class="macro" data-ref="_M/BOOST_NO_IOSTREAM">BOOST_NO_IOSTREAM</span>) &amp;&amp; defined(<span class="macro" data-ref="_M/BOOST_NO_MEMBER_TEMPLATE_FRIENDS">BOOST_NO_MEMBER_TEMPLATE_FRIENDS</span>)</u></td></tr>
+<tr><th id="786">786</th><td>    <b>template</b>&lt;<b>class</b> charT, <b>class</b> traits&gt;</td></tr>
+<tr><th id="787">787</th><td>    BOOST_SYMBOL_VISIBLE</td></tr>
+<tr><th id="788">788</th><td>    std::basic_ostream&lt;charT, traits&gt;&amp;</td></tr>
+<tr><th id="789">789</th><td>    <b>operator</b>&lt;&lt;(std::basic_ostream&lt;charT, traits&gt;&amp; os, <em>const</em> thread::id&amp; x)</td></tr>
+<tr><th id="790">790</th><td>    {</td></tr>
+<tr><th id="791">791</th><td>        <b>return</b> x.print(os);</td></tr>
+<tr><th id="792">792</th><td>    }</td></tr>
+<tr><th id="793">793</th><td><u>#<span data-ppcond="785">endif</span></u></td></tr>
+<tr><th id="794">794</th><td></td></tr>
+<tr><th id="795">795</th><td><u>#<span data-ppcond="795">if</span> defined <a class="macro" href="config.hpp.html#171" data-ref="_M/BOOST_THREAD_PROVIDES_THREAD_EQ">BOOST_THREAD_PROVIDES_THREAD_EQ</a></u></td></tr>
+<tr><th id="796">796</th><td>    <b>inline</b> <em>bool</em> <a class="type" href="#boost::thread" title='boost::thread' data-ref="boost::thread">thread</a>::<dfn class="decl def fn" id="_ZNK5boost6threadeqERKS0_" title='boost::thread::operator==' data-ref="_ZNK5boost6threadeqERKS0_"><b>operator</b>==</dfn>(<em>const</em> <a class="type" href="#boost::thread" title='boost::thread' data-ref="boost::thread">thread</a>&amp; <dfn class="local col1 decl" id="301other" title='other' data-type='const boost::thread &amp;' data-ref="301other">other</dfn>) <em>const</em></td></tr>
+<tr><th id="797">797</th><td>    {</td></tr>
+<tr><th id="798">798</th><td>        <b>return</b> <a class="member fn" href="#_ZNK5boost6thread6get_idEv" title='boost::thread::get_id' data-ref="_ZNK5boost6thread6get_idEv">get_id</a>()<a class="ref fn" href="#_ZNK5boost6thread2ideqERKS1_" title='boost::thread::id::operator==' data-ref="_ZNK5boost6thread2ideqERKS1_">==</a><a class="local col1 ref" href="#301other" title='other' data-ref="301other">other</a>.<a class="member fn" href="#_ZNK5boost6thread6get_idEv" title='boost::thread::get_id' data-ref="_ZNK5boost6thread6get_idEv">get_id</a>();</td></tr>
+<tr><th id="799">799</th><td>    }</td></tr>
+<tr><th id="800">800</th><td></td></tr>
+<tr><th id="801">801</th><td>    <b>inline</b> <em>bool</em> <a class="type" href="#boost::thread" title='boost::thread' data-ref="boost::thread">thread</a>::<dfn class="decl def fn" id="_ZNK5boost6threadneERKS0_" title='boost::thread::operator!=' data-ref="_ZNK5boost6threadneERKS0_"><b>operator</b>!=</dfn>(<em>const</em> <a class="type" href="#boost::thread" title='boost::thread' data-ref="boost::thread">thread</a>&amp; <dfn class="local col2 decl" id="302other" title='other' data-type='const boost::thread &amp;' data-ref="302other">other</dfn>) <em>const</em></td></tr>
+<tr><th id="802">802</th><td>    {</td></tr>
+<tr><th id="803">803</th><td>        <b>return</b> <a class="member fn" href="#_ZNK5boost6thread6get_idEv" title='boost::thread::get_id' data-ref="_ZNK5boost6thread6get_idEv">get_id</a>()<a class="ref fn" href="#_ZNK5boost6thread2idneERKS1_" title='boost::thread::id::operator!=' data-ref="_ZNK5boost6thread2idneERKS1_">!=</a><a class="local col2 ref" href="#302other" title='other' data-ref="302other">other</a>.<a class="member fn" href="#_ZNK5boost6thread6get_idEv" title='boost::thread::get_id' data-ref="_ZNK5boost6thread6get_idEv">get_id</a>();</td></tr>
+<tr><th id="804">804</th><td>    }</td></tr>
+<tr><th id="805">805</th><td><u>#<span data-ppcond="795">endif</span></u></td></tr>
+<tr><th id="806">806</th><td></td></tr>
+<tr><th id="807">807</th><td>    <b>namespace</b> <span class="namespace">detail</span></td></tr>
+<tr><th id="808">808</th><td>    {</td></tr>
+<tr><th id="809">809</th><td>        <b>struct</b> <dfn class="type def" id="boost::detail::thread_exit_function_base" title='boost::detail::thread_exit_function_base' data-ref="boost::detail::thread_exit_function_base">thread_exit_function_base</dfn></td></tr>
+<tr><th id="810">810</th><td>        {</td></tr>
+<tr><th id="811">811</th><td>            <b>virtual</b> <dfn class="virtual decl def fn" id="_ZN5boost6detail25thread_exit_function_baseD1Ev" title='boost::detail::thread_exit_function_base::~thread_exit_function_base' data-ref="_ZN5boost6detail25thread_exit_function_baseD1Ev">~thread_exit_function_base</dfn>()</td></tr>
+<tr><th id="812">812</th><td>            {}</td></tr>
+<tr><th id="813">813</th><td>            <b>virtual</b> <em>void</em> <dfn class="virtual decl fn" id="_ZN5boost6detail25thread_exit_function_baseclEv" title='boost::detail::thread_exit_function_base::operator()' data-ref="_ZN5boost6detail25thread_exit_function_baseclEv"><b>operator</b>()</dfn>()=<var>0</var>;</td></tr>
+<tr><th id="814">814</th><td>        };</td></tr>
+<tr><th id="815">815</th><td></td></tr>
+<tr><th id="816">816</th><td>        <b>template</b>&lt;<b>typename</b> F&gt;</td></tr>
+<tr><th id="817">817</th><td>        <b>struct</b> <dfn class="type def" id="boost::detail::thread_exit_function" title='boost::detail::thread_exit_function' data-ref="boost::detail::thread_exit_function">thread_exit_function</dfn>:</td></tr>
+<tr><th id="818">818</th><td>            <a class="type" href="#boost::detail::thread_exit_function_base" title='boost::detail::thread_exit_function_base' data-ref="boost::detail::thread_exit_function_base">thread_exit_function_base</a></td></tr>
+<tr><th id="819">819</th><td>        {</td></tr>
+<tr><th id="820">820</th><td>            F <dfn class="decl field" id="boost::detail::thread_exit_function::f" title='boost::detail::thread_exit_function::f' data-ref="boost::detail::thread_exit_function::f">f</dfn>;</td></tr>
+<tr><th id="821">821</th><td></td></tr>
+<tr><th id="822">822</th><td>            <dfn class="decl def fn" id="_ZN5boost6detail20thread_exit_functionC1ET_" title='boost::detail::thread_exit_function::thread_exit_function&lt;F&gt;' data-ref="_ZN5boost6detail20thread_exit_functionC1ET_">thread_exit_function</dfn>(F <dfn class="local col3 decl" id="303f_" title='f_' data-type='F' data-ref="303f_">f_</dfn>):</td></tr>
+<tr><th id="823">823</th><td>                <a class="member field" href="#boost::detail::thread_exit_function::f" title='boost::detail::thread_exit_function::f' data-ref="boost::detail::thread_exit_function::f">f</a>(<a class="local col3 ref" href="#303f_" title='f_' data-ref="303f_">f_</a>)</td></tr>
+<tr><th id="824">824</th><td>            {}</td></tr>
+<tr><th id="825">825</th><td></td></tr>
+<tr><th id="826">826</th><td>            <em>void</em> <dfn class="virtual decl def fn" id="_ZN5boost6detail20thread_exit_functionclEv" title='boost::detail::thread_exit_function::operator()' data-ref="_ZN5boost6detail20thread_exit_functionclEv"><b>operator</b>()</dfn>()</td></tr>
+<tr><th id="827">827</th><td>            {</td></tr>
+<tr><th id="828">828</th><td>                <a class="member field" href="#boost::detail::thread_exit_function::f" title='boost::detail::thread_exit_function::f' data-ref="boost::detail::thread_exit_function::f">f</a>();</td></tr>
+<tr><th id="829">829</th><td>            }</td></tr>
+<tr><th id="830">830</th><td>        };</td></tr>
+<tr><th id="831">831</th><td></td></tr>
+<tr><th id="832">832</th><td>        <em>void</em> <a class="macro" href="config.hpp.html#500" title="__attribute__((__visibility__(&quot;default&quot;)))" data-ref="_M/BOOST_THREAD_DECL">BOOST_THREAD_DECL</a> <dfn class="decl fn" id="_ZN5boost6detail24add_thread_exit_functionEPNS0_25thread_exit_function_baseE" title='boost::detail::add_thread_exit_function' data-ref="_ZN5boost6detail24add_thread_exit_functionEPNS0_25thread_exit_function_baseE">add_thread_exit_function</dfn>(<a class="type" href="#boost::detail::thread_exit_function_base" title='boost::detail::thread_exit_function_base' data-ref="boost::detail::thread_exit_function_base">thread_exit_function_base</a>*);</td></tr>
+<tr><th id="833">833</th><td><i>//#ifndef BOOST_NO_EXCEPTIONS</i></td></tr>
+<tr><th id="834">834</th><td>        <b>struct</b> <a class="type" href="../future.hpp.html#boost::detail::shared_state_base" title='boost::detail::shared_state_base' data-ref="boost::detail::shared_state_base" id="boost::detail::shared_state_base">shared_state_base</a>;</td></tr>
+<tr><th id="835">835</th><td><u>#<span data-ppcond="835">if</span> defined(<span class="macro" data-ref="_M/BOOST_THREAD_PLATFORM_WIN32">BOOST_THREAD_PLATFORM_WIN32</span>)</u></td></tr>
+<tr><th id="836">836</th><td>        <b>inline</b> <em>void</em> make_ready_at_thread_exit(shared_ptr&lt;shared_state_base&gt; as)</td></tr>
+<tr><th id="837">837</th><td>        {</td></tr>
+<tr><th id="838">838</th><td>          detail::thread_data_base* <em>const</em> current_thread_data(detail::get_current_thread_data());</td></tr>
+<tr><th id="839">839</th><td>          <b>if</b>(current_thread_data)</td></tr>
+<tr><th id="840">840</th><td>          {</td></tr>
+<tr><th id="841">841</th><td>            current_thread_data-&gt;make_ready_at_thread_exit(as);</td></tr>
+<tr><th id="842">842</th><td>          }</td></tr>
+<tr><th id="843">843</th><td>        }</td></tr>
+<tr><th id="844">844</th><td><u>#<span data-ppcond="835">else</span></u></td></tr>
+<tr><th id="845">845</th><td>        <em>void</em> <a class="macro" href="config.hpp.html#500" title="__attribute__((__visibility__(&quot;default&quot;)))" data-ref="_M/BOOST_THREAD_DECL">BOOST_THREAD_DECL</a> <dfn class="decl fn" id="_ZN5boost6detail25make_ready_at_thread_exitENS_10shared_ptrINS0_17shared_state_baseEEE" title='boost::detail::make_ready_at_thread_exit' data-ref="_ZN5boost6detail25make_ready_at_thread_exitENS_10shared_ptrINS0_17shared_state_baseEEE">make_ready_at_thread_exit</dfn>(<a class="type" href="../../../../../throw_exception/include/boost/exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;<a class="type" href="../future.hpp.html#boost::detail::shared_state_base" title='boost::detail::shared_state_base' data-ref="boost::detail::shared_state_base">shared_state_base</a>&gt; <dfn class="local col4 decl" id="304as" title='as' data-type='shared_ptr&lt;boost::detail::shared_state_base&gt;' data-ref="304as">as</dfn>);</td></tr>
+<tr><th id="846">846</th><td><u>#<span data-ppcond="835">endif</span></u></td></tr>
+<tr><th id="847">847</th><td><i>//#endif</i></td></tr>
+<tr><th id="848">848</th><td>    }</td></tr>
+<tr><th id="849">849</th><td></td></tr>
+<tr><th id="850">850</th><td>    <b>namespace</b> <span class="namespace">this_thread</span></td></tr>
+<tr><th id="851">851</th><td>    {</td></tr>
+<tr><th id="852">852</th><td>        <b>template</b>&lt;<b>typename</b> F&gt;</td></tr>
+<tr><th id="853">853</th><td>        <em>void</em> <dfn class="decl def fn" id="_ZN5boost11this_thread14at_thread_exitET_" title='boost::this_thread::at_thread_exit' data-ref="_ZN5boost11this_thread14at_thread_exitET_">at_thread_exit</dfn>(F <dfn class="local col5 decl" id="305f" title='f' data-type='F' data-ref="305f">f</dfn>)</td></tr>
+<tr><th id="854">854</th><td>        {</td></tr>
+<tr><th id="855">855</th><td>            <span class="namespace">detail::</span><a class="type" href="#boost::detail::thread_exit_function_base" title='boost::detail::thread_exit_function_base' data-ref="boost::detail::thread_exit_function_base">thread_exit_function_base</a>* <em>const</em> <dfn class="local col6 decl" id="306thread_exit_func" title='thread_exit_func' data-type='detail::thread_exit_function_base *const' data-ref="306thread_exit_func">thread_exit_func</dfn>=<span class="namespace">detail::</span>heap_new&lt;<span class="namespace">detail::</span><a class="type" href="#boost::detail::thread_exit_function" title='boost::detail::thread_exit_function' data-ref="boost::detail::thread_exit_function">thread_exit_function</a>&lt;F&gt; &gt;(<a class="local col5 ref" href="#305f" title='f' data-ref="305f">f</a>);</td></tr>
+<tr><th id="856">856</th><td>            <span class="namespace">detail::</span><a class="ref fn" href="#_ZN5boost6detail24add_thread_exit_functionEPNS0_25thread_exit_function_baseE" title='boost::detail::add_thread_exit_function' data-ref="_ZN5boost6detail24add_thread_exit_functionEPNS0_25thread_exit_function_baseE">add_thread_exit_function</a>(<a class="local col6 ref" href="#306thread_exit_func" title='thread_exit_func' data-ref="306thread_exit_func">thread_exit_func</a>);</td></tr>
+<tr><th id="857">857</th><td>        }</td></tr>
+<tr><th id="858">858</th><td>    }</td></tr>
+<tr><th id="859">859</th><td>}</td></tr>
+<tr><th id="860">860</th><td></td></tr>
+<tr><th id="861">861</th><td><u>#<span data-ppcond="861">ifdef</span> <span class="macro" data-ref="_M/BOOST_MSVC">BOOST_MSVC</span></u></td></tr>
+<tr><th id="862">862</th><td><u>#pragma warning(pop)</u></td></tr>
+<tr><th id="863">863</th><td><u>#<span data-ppcond="861">endif</span></u></td></tr>
+<tr><th id="864">864</th><td></td></tr>
+<tr><th id="865">865</th><td><u>#include <a href="../../../../../config/include/boost/config/abi_suffix.hpp.html">&lt;boost/config/abi_suffix.hpp&gt;</a></u></td></tr>
+<tr><th id="866">866</th><td></td></tr>
+<tr><th id="867">867</th><td><u>#<span data-ppcond="1">endif</span></u></td></tr>
+<tr><th id="868">868</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../../../../../locale/src/boost/locale/icu/collator.cpp.html'>boost-1.85.0/libs/locale/src/boost/locale/icu/collator.cpp</a><br/>Generated on <em>2024-Jun-14</em> from project boost-1.85.0 revision <em>1.85.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

@@ -1,0 +1,407 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>get.hpp source code [boost-1.85.0/libs/variant/include/boost/variant/get.hpp] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="boost::bad_get,boost::detail::variant::get_visitor "/>
+<link rel="stylesheet" href="../../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'boost-1.85.0/libs/variant/include/boost/variant/get.hpp'; var root_path = '../../../../../..'; var data_path = '../../../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../../..'>boost-1.85.0</a>/<a href='../../../..'>libs</a>/<a href='../../..'>variant</a>/<a href='../..'>include</a>/<a href='..'>boost</a>/<a href='./'>variant</a>/<a href='get.hpp.html'>get.hpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>//-----------------------------------------------------------------------------</i></td></tr>
+<tr><th id="2">2</th><td><i>// boost variant/get.hpp header file</i></td></tr>
+<tr><th id="3">3</th><td><i>// See <a href="http://www.boost.org">http://www.boost.org</a> for updates, documentation, and revision history.</i></td></tr>
+<tr><th id="4">4</th><td><i>//-----------------------------------------------------------------------------</i></td></tr>
+<tr><th id="5">5</th><td><i>//</i></td></tr>
+<tr><th id="6">6</th><td><i>// Copyright (c) 2003 Eric Friedman, Itay Maman</i></td></tr>
+<tr><th id="7">7</th><td><i>// Copyright (c) 2014-2024 Antony Polukhin</i></td></tr>
+<tr><th id="8">8</th><td><i>//</i></td></tr>
+<tr><th id="9">9</th><td><i>// Distributed under the Boost Software License, Version 1.0. (See</i></td></tr>
+<tr><th id="10">10</th><td><i>// accompanying file LICENSE_1_0.txt or copy at</i></td></tr>
+<tr><th id="11">11</th><td><i>// <a href="http://www.boost.org/LICENSE_1_0.txt">http://www.boost.org/LICENSE_1_0.txt</a>)</i></td></tr>
+<tr><th id="12">12</th><td></td></tr>
+<tr><th id="13">13</th><td><u>#<span data-ppcond="13">ifndef</span> <span class="macro" data-ref="_M/BOOST_VARIANT_GET_HPP">BOOST_VARIANT_GET_HPP</span></u></td></tr>
+<tr><th id="14">14</th><td><u>#define <dfn class="macro" id="_M/BOOST_VARIANT_GET_HPP" data-ref="_M/BOOST_VARIANT_GET_HPP">BOOST_VARIANT_GET_HPP</dfn></u></td></tr>
+<tr><th id="15">15</th><td></td></tr>
+<tr><th id="16">16</th><td><u>#include <a href="../../../../../../include/c++/9/exception.html">&lt;exception&gt;</a></u></td></tr>
+<tr><th id="17">17</th><td></td></tr>
+<tr><th id="18">18</th><td><u>#include <a href="../../../../config/include/boost/config.hpp.html">&lt;boost/config.hpp&gt;</a></u></td></tr>
+<tr><th id="19">19</th><td><u>#include <a href="../../../../core/include/boost/core/addressof.hpp.html">&lt;boost/core/addressof.hpp&gt;</a></u></td></tr>
+<tr><th id="20">20</th><td><u>#include <a href="../../../../config/include/boost/detail/workaround.hpp.html">&lt;boost/detail/workaround.hpp&gt;</a></u></td></tr>
+<tr><th id="21">21</th><td><u>#include <a href="../../../../static_assert/include/boost/static_assert.hpp.html">&lt;boost/static_assert.hpp&gt;</a></u></td></tr>
+<tr><th id="22">22</th><td><u>#include <a href="../../../../throw_exception/include/boost/throw_exception.hpp.html">&lt;boost/throw_exception.hpp&gt;</a></u></td></tr>
+<tr><th id="23">23</th><td><u>#include <a href="variant_fwd.hpp.html">&lt;boost/variant/variant_fwd.hpp&gt;</a></u></td></tr>
+<tr><th id="24">24</th><td><u>#include <a href="detail/element_index.hpp.html">&lt;boost/variant/detail/element_index.hpp&gt;</a></u></td></tr>
+<tr><th id="25">25</th><td><u>#include <a href="detail/move.hpp.html">&lt;boost/variant/detail/move.hpp&gt;</a></u></td></tr>
+<tr><th id="26">26</th><td></td></tr>
+<tr><th id="27">27</th><td><u>#include <a href="../../../../type_traits/include/boost/type_traits/add_reference.hpp.html">&lt;boost/type_traits/add_reference.hpp&gt;</a></u></td></tr>
+<tr><th id="28">28</th><td><u>#include <a href="../../../../type_traits/include/boost/type_traits/add_pointer.hpp.html">&lt;boost/type_traits/add_pointer.hpp&gt;</a></u></td></tr>
+<tr><th id="29">29</th><td><u>#include <a href="../../../../type_traits/include/boost/type_traits/is_lvalue_reference.hpp.html">&lt;boost/type_traits/is_lvalue_reference.hpp&gt;</a></u></td></tr>
+<tr><th id="30">30</th><td></td></tr>
+<tr><th id="31">31</th><td><b>namespace</b> <span class="namespace">boost</span> {</td></tr>
+<tr><th id="32">32</th><td></td></tr>
+<tr><th id="33">33</th><td><u>#<span data-ppcond="33">if</span> defined(<a class="macro" href="../../../../config/include/boost/config/compiler/clang.hpp.html#367" data-ref="_M/BOOST_CLANG">BOOST_CLANG</a>)</u></td></tr>
+<tr><th id="34">34</th><td><u>#   pragma clang diagnostic push</u></td></tr>
+<tr><th id="35">35</th><td><u>#   pragma clang diagnostic ignored "-Wweak-vtables"</u></td></tr>
+<tr><th id="36">36</th><td><u>#<span data-ppcond="33">endif</span></u></td></tr>
+<tr><th id="37">37</th><td><i>//////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="38">38</th><td><i>// class bad_get</i></td></tr>
+<tr><th id="39">39</th><td><i>//</i></td></tr>
+<tr><th id="40">40</th><td><i>// The exception thrown in the event of a failed get of a value.</i></td></tr>
+<tr><th id="41">41</th><td><i>//</i></td></tr>
+<tr><th id="42">42</th><td><b>class</b> <a class="macro" href="../../../../config/include/boost/config/compiler/clang.hpp.html#115" title="__attribute__((__visibility__(&quot;default&quot;)))" data-ref="_M/BOOST_SYMBOL_VISIBLE">BOOST_SYMBOL_VISIBLE</a> <dfn class="type def" id="boost::bad_get" title='boost::bad_get' data-ref="boost::bad_get">bad_get</dfn></td></tr>
+<tr><th id="43">43</th><td>    : <b>public</b> <span class="namespace">std::</span><a class="type" href="../../../../../../include/c++/9/bits/exception.h.html#std::exception" title='std::exception' data-ref="std::exception">exception</a></td></tr>
+<tr><th id="44">44</th><td>{</td></tr>
+<tr><th id="45">45</th><td><b>public</b>: <i>// std::exception implementation</i></td></tr>
+<tr><th id="46">46</th><td></td></tr>
+<tr><th id="47">47</th><td>    <em>const</em> <em>char</em> * <dfn class="virtual decl def fn" id="_ZNK5boost7bad_get4whatEv" title='boost::bad_get::what' data-ref="_ZNK5boost7bad_get4whatEv">what</dfn>() <em>const</em> <a class="macro" href="../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a> <a class="macro" href="../../../../config/include/boost/config/detail/suffix.hpp.html#720" title="override" data-ref="_M/BOOST_OVERRIDE">BOOST_OVERRIDE</a></td></tr>
+<tr><th id="48">48</th><td>    {</td></tr>
+<tr><th id="49">49</th><td>        <b>return</b> <q>"boost::bad_get: "</q></td></tr>
+<tr><th id="50">50</th><td>               <q>"failed value get using boost::get"</q>;</td></tr>
+<tr><th id="51">51</th><td>    }</td></tr>
+<tr><th id="52">52</th><td></td></tr>
+<tr><th id="53">53</th><td>};</td></tr>
+<tr><th id="54">54</th><td><u>#<span data-ppcond="54">if</span> defined(<a class="macro" href="../../../../config/include/boost/config/compiler/clang.hpp.html#367" data-ref="_M/BOOST_CLANG">BOOST_CLANG</a>)</u></td></tr>
+<tr><th id="55">55</th><td><u>#   pragma clang diagnostic pop</u></td></tr>
+<tr><th id="56">56</th><td><u>#<span data-ppcond="54">endif</span></u></td></tr>
+<tr><th id="57">57</th><td></td></tr>
+<tr><th id="58">58</th><td></td></tr>
+<tr><th id="59">59</th><td><i>//////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="60">60</th><td><i>// function template get&lt;T&gt;</i></td></tr>
+<tr><th id="61">61</th><td><i>//</i></td></tr>
+<tr><th id="62">62</th><td><i>// Retrieves content of given variant object if content is of type T.</i></td></tr>
+<tr><th id="63">63</th><td><i>// Otherwise: pointer ver. returns 0; reference ver. throws bad_get.</i></td></tr>
+<tr><th id="64">64</th><td><i>//</i></td></tr>
+<tr><th id="65">65</th><td></td></tr>
+<tr><th id="66">66</th><td><b>namespace</b> <span class="namespace">detail</span> { <b>namespace</b> <span class="namespace">variant</span> {</td></tr>
+<tr><th id="67">67</th><td></td></tr>
+<tr><th id="68">68</th><td><i>// (detail) class template get_visitor</i></td></tr>
+<tr><th id="69">69</th><td><i>//</i></td></tr>
+<tr><th id="70">70</th><td><i>// Generic static visitor that: if the value is of the specified type,</i></td></tr>
+<tr><th id="71">71</th><td><i>// returns a pointer to the value it visits; else a null pointer.</i></td></tr>
+<tr><th id="72">72</th><td><i>//</i></td></tr>
+<tr><th id="73">73</th><td><b>template</b> &lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="74">74</th><td><b>struct</b> <dfn class="type def" id="boost::detail::variant::get_visitor" title='boost::detail::variant::get_visitor' data-ref="boost::detail::variant::get_visitor">get_visitor</dfn></td></tr>
+<tr><th id="75">75</th><td>{</td></tr>
+<tr><th id="76">76</th><td><b>private</b>: <i>// private typedefs</i></td></tr>
+<tr><th id="77">77</th><td></td></tr>
+<tr><th id="78">78</th><td>    <b>typedef</b> <b>typename</b> <a class="type" href="../../../../type_traits/include/boost/type_traits/add_pointer.hpp.html#boost::add_pointer" title='boost::add_pointer' data-ref="boost::add_pointer">add_pointer</a>&lt;T&gt;::type <dfn class="typedef" id="boost::detail::variant::get_visitor::pointer" title='boost::detail::variant::get_visitor::pointer' data-type='typename add_pointer&lt;T&gt;::type' data-ref="boost::detail::variant::get_visitor::pointer">pointer</dfn>;</td></tr>
+<tr><th id="79">79</th><td>    <b>typedef</b> <b>typename</b> <a class="type" href="../../../../type_traits/include/boost/type_traits/add_reference.hpp.html#boost::add_reference" title='boost::add_reference' data-ref="boost::add_reference">add_reference</a>&lt;T&gt;::type <dfn class="typedef" id="boost::detail::variant::get_visitor::reference" title='boost::detail::variant::get_visitor::reference' data-type='typename add_reference&lt;T&gt;::type' data-ref="boost::detail::variant::get_visitor::reference">reference</dfn>;</td></tr>
+<tr><th id="80">80</th><td></td></tr>
+<tr><th id="81">81</th><td><b>public</b>: <i>// visitor typedefs</i></td></tr>
+<tr><th id="82">82</th><td></td></tr>
+<tr><th id="83">83</th><td>    <b>typedef</b> <a class="typedef" href="#boost::detail::variant::get_visitor::pointer" title='boost::detail::variant::get_visitor::pointer' data-type='typename add_pointer&lt;T&gt;::type' data-ref="boost::detail::variant::get_visitor::pointer">pointer</a> <dfn class="typedef" id="boost::detail::variant::get_visitor::result_type" title='boost::detail::variant::get_visitor::result_type' data-type='boost::detail::variant::get_visitor::pointer' data-ref="boost::detail::variant::get_visitor::result_type">result_type</dfn>;</td></tr>
+<tr><th id="84">84</th><td></td></tr>
+<tr><th id="85">85</th><td><b>public</b>: <i>// visitor interfaces</i></td></tr>
+<tr><th id="86">86</th><td></td></tr>
+<tr><th id="87">87</th><td>    <a class="typedef" href="#boost::detail::variant::get_visitor::pointer" title='boost::detail::variant::get_visitor::pointer' data-type='typename add_pointer&lt;T&gt;::type' data-ref="boost::detail::variant::get_visitor::pointer">pointer</a> <dfn class="decl def fn" id="_ZNK5boost6detail7variant11get_visitorclENS_13add_referenceIT_E4typeE" title='boost::detail::variant::get_visitor::operator()' data-ref="_ZNK5boost6detail7variant11get_visitorclENS_13add_referenceIT_E4typeE"><b>operator</b>()</dfn>(<a class="typedef" href="#boost::detail::variant::get_visitor::reference" title='boost::detail::variant::get_visitor::reference' data-type='typename add_reference&lt;T&gt;::type' data-ref="boost::detail::variant::get_visitor::reference">reference</a> <dfn class="local col6 decl" id="586operand" title='operand' data-type='boost::detail::variant::get_visitor::reference' data-ref="586operand">operand</dfn>) <em>const</em> <a class="macro" href="../../../../config/include/boost/config/detail/suffix.hpp.html#1020" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="88">88</th><td>    {</td></tr>
+<tr><th id="89">89</th><td>        <b>return</b> <span class="namespace">boost::</span>addressof(<a class="local col6 ref" href="#586operand" title='operand' data-ref="586operand">operand</a>);</td></tr>
+<tr><th id="90">90</th><td>    }</td></tr>
+<tr><th id="91">91</th><td></td></tr>
+<tr><th id="92">92</th><td>    <b>template</b> &lt;<b>typename</b> U&gt;</td></tr>
+<tr><th id="93">93</th><td>    <a class="typedef" href="#boost::detail::variant::get_visitor::pointer" title='boost::detail::variant::get_visitor::pointer' data-type='typename add_pointer&lt;T&gt;::type' data-ref="boost::detail::variant::get_visitor::pointer">pointer</a> <dfn class="decl def fn" id="_ZNK5boost6detail7variant11get_visitorclERKTL0__" title='boost::detail::variant::get_visitor::operator()' data-ref="_ZNK5boost6detail7variant11get_visitorclERKTL0__"><b>operator</b>()</dfn>(<em>const</em> U&amp;) <em>const</em> <a class="macro" href="../../../../config/include/boost/config/detail/suffix.hpp.html#1020" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="94">94</th><td>    {</td></tr>
+<tr><th id="95">95</th><td>        <b>return</b> <b>static_cast</b>&lt;<a class="typedef" href="#boost::detail::variant::get_visitor::pointer" title='boost::detail::variant::get_visitor::pointer' data-type='typename add_pointer&lt;T&gt;::type' data-ref="boost::detail::variant::get_visitor::pointer">pointer</a>&gt;(<var>0</var>);</td></tr>
+<tr><th id="96">96</th><td>    }</td></tr>
+<tr><th id="97">97</th><td>};</td></tr>
+<tr><th id="98">98</th><td></td></tr>
+<tr><th id="99">99</th><td>}} <i>// namespace detail::variant</i></td></tr>
+<tr><th id="100">100</th><td></td></tr>
+<tr><th id="101">101</th><td><u>#<span data-ppcond="101">ifndef</span> <span class="macro" data-ref="_M/BOOST_VARIANT_AUX_GET_EXPLICIT_TEMPLATE_TYPE">BOOST_VARIANT_AUX_GET_EXPLICIT_TEMPLATE_TYPE</span></u></td></tr>
+<tr><th id="102">102</th><td><u>#   <span data-ppcond="102">if</span> !<a class="macro" href="../../../../config/include/boost/config/workaround.hpp.html#271" title="((1 + 0 == 0) &amp;&amp; (BOOST_BORLANDC != 0) &amp;&amp; (1 % (( (BOOST_BORLANDC != ((0x0551)-(0x0551))) ) + 1)))" data-ref="_M/BOOST_WORKAROUND">BOOST_WORKAROUND</a>(BOOST_BORLANDC, <a class="macro" href="../../../../config/include/boost/config/workaround.hpp.html#296" title="!= ((0x0551)-(0x0551))" data-ref="_M/BOOST_TESTED_AT">BOOST_TESTED_AT</a>(0x0551))</u></td></tr>
+<tr><th id="103">103</th><td><u>#       define <dfn class="macro" id="_M/BOOST_VARIANT_AUX_GET_EXPLICIT_TEMPLATE_TYPE" data-ref="_M/BOOST_VARIANT_AUX_GET_EXPLICIT_TEMPLATE_TYPE">BOOST_VARIANT_AUX_GET_EXPLICIT_TEMPLATE_TYPE</dfn>(t)</u></td></tr>
+<tr><th id="104">104</th><td><u>#   <span data-ppcond="102">else</span></u></td></tr>
+<tr><th id="105">105</th><td><u>#       if defined(BOOST_NO_CXX11_NULLPTR)</u></td></tr>
+<tr><th id="106">106</th><td><u>#           define BOOST_VARIANT_AUX_GET_EXPLICIT_TEMPLATE_TYPE(t)  \</u></td></tr>
+<tr><th id="107">107</th><td><u>            , t* = 0</u></td></tr>
+<tr><th id="108">108</th><td><u>#       else</u></td></tr>
+<tr><th id="109">109</th><td><u>#           define BOOST_VARIANT_AUX_GET_EXPLICIT_TEMPLATE_TYPE(t)  \</u></td></tr>
+<tr><th id="110">110</th><td><u>            , t* = nullptr</u></td></tr>
+<tr><th id="111">111</th><td><u>#       endif</u></td></tr>
+<tr><th id="112">112</th><td><u>#   <span data-ppcond="102">endif</span></u></td></tr>
+<tr><th id="113">113</th><td><u>#<span data-ppcond="101">endif</span></u></td></tr>
+<tr><th id="114">114</th><td></td></tr>
+<tr><th id="115">115</th><td><i>/////////////////////////////////////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="116">116</th><td><i>// relaxed_get&lt;U&gt;(variant) methods</i></td></tr>
+<tr><th id="117">117</th><td><i>//</i></td></tr>
+<tr><th id="118">118</th><td><b>template</b> &lt;<b>typename</b> U, <a class="macro" href="variant_fwd.hpp.html#72" title="typename T0, typename... TN" data-ref="_M/BOOST_VARIANT_ENUM_PARAMS">BOOST_VARIANT_ENUM_PARAMS</a>(<b>typename</b> T) &gt;</td></tr>
+<tr><th id="119">119</th><td><b>inline</b></td></tr>
+<tr><th id="120">120</th><td>    <b>typename</b> <a class="type" href="../../../../type_traits/include/boost/type_traits/add_pointer.hpp.html#boost::add_pointer" title='boost::add_pointer' data-ref="boost::add_pointer">add_pointer</a>&lt;U&gt;::type</td></tr>
+<tr><th id="121">121</th><td><dfn class="decl def fn" id="_ZN5boost11relaxed_getEPNS_7variantIT0_JDpT1_EEE" title='boost::relaxed_get' data-ref="_ZN5boost11relaxed_getEPNS_7variantIT0_JDpT1_EEE">relaxed_get</dfn>(</td></tr>
+<tr><th id="122">122</th><td>      <span class="namespace">boost::</span><a class="type" href="variant_fwd.hpp.html#boost::variant" title='boost::variant' data-ref="boost::variant">variant</a>&lt; <a class="macro" href="variant_fwd.hpp.html#72" title="T0, TN..." data-ref="_M/BOOST_VARIANT_ENUM_PARAMS">BOOST_VARIANT_ENUM_PARAMS</a>(T) &gt;* <dfn class="local col7 decl" id="587operand" title='operand' data-type='boost::variant&lt;T0, TN...&gt; *' data-ref="587operand">operand</dfn></td></tr>
+<tr><th id="123">123</th><td>      <a class="macro" href="#103" title="" data-ref="_M/BOOST_VARIANT_AUX_GET_EXPLICIT_TEMPLATE_TYPE">BOOST_VARIANT_AUX_GET_EXPLICIT_TEMPLATE_TYPE</a>(U)</td></tr>
+<tr><th id="124">124</th><td>    ) <a class="macro" href="../../../../config/include/boost/config/detail/suffix.hpp.html#1020" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="125">125</th><td>{</td></tr>
+<tr><th id="126">126</th><td>    <b>typedef</b> <b>typename</b> <a class="type" href="../../../../type_traits/include/boost/type_traits/add_pointer.hpp.html#boost::add_pointer" title='boost::add_pointer' data-ref="boost::add_pointer">add_pointer</a>&lt;U&gt;::type <dfn class="local col8 typedef" id="588U_ptr" title='U_ptr' data-type='typename add_pointer&lt;U&gt;::type' data-ref="588U_ptr">U_ptr</dfn>;</td></tr>
+<tr><th id="127">127</th><td>    <b>if</b> (!<a class="local col7 ref" href="#587operand" title='operand' data-ref="587operand">operand</a>) <b>return</b> <b>static_cast</b>&lt;<a class="local col8 typedef" href="#588U_ptr" title='U_ptr' data-type='typename add_pointer&lt;U&gt;::type' data-ref="588U_ptr">U_ptr</a>&gt;(<var>0</var>);</td></tr>
+<tr><th id="128">128</th><td></td></tr>
+<tr><th id="129">129</th><td>    <span class="namespace">detail::variant::</span><a class="type" href="#boost::detail::variant::get_visitor" title='boost::detail::variant::get_visitor' data-ref="boost::detail::variant::get_visitor">get_visitor</a>&lt;U&gt; <dfn class="local col9 decl" id="589v" title='v' data-type='detail::variant::get_visitor&lt;U&gt;' data-ref="589v">v</dfn>;</td></tr>
+<tr><th id="130">130</th><td>    <b>return</b> <a class="local col7 ref" href="#587operand" title='operand' data-ref="587operand">operand</a>-&gt;apply_visitor(<a class="local col9 ref" href="#589v" title='v' data-ref="589v">v</a>);</td></tr>
+<tr><th id="131">131</th><td>}</td></tr>
+<tr><th id="132">132</th><td></td></tr>
+<tr><th id="133">133</th><td><b>template</b> &lt;<b>typename</b> U, <a class="macro" href="variant_fwd.hpp.html#72" title="typename T0, typename... TN" data-ref="_M/BOOST_VARIANT_ENUM_PARAMS">BOOST_VARIANT_ENUM_PARAMS</a>(<b>typename</b> T) &gt;</td></tr>
+<tr><th id="134">134</th><td><b>inline</b></td></tr>
+<tr><th id="135">135</th><td>    <b>typename</b> <a class="type" href="../../../../type_traits/include/boost/type_traits/add_pointer.hpp.html#boost::add_pointer" title='boost::add_pointer' data-ref="boost::add_pointer">add_pointer</a>&lt;<em>const</em> U&gt;::type</td></tr>
+<tr><th id="136">136</th><td><dfn class="decl def fn" id="_ZN5boost11relaxed_getEPKNS_7variantIT0_JDpT1_EEE" title='boost::relaxed_get' data-ref="_ZN5boost11relaxed_getEPKNS_7variantIT0_JDpT1_EEE">relaxed_get</dfn>(</td></tr>
+<tr><th id="137">137</th><td>      <em>const</em> <span class="namespace">boost::</span><a class="type" href="variant_fwd.hpp.html#boost::variant" title='boost::variant' data-ref="boost::variant">variant</a>&lt; <a class="macro" href="variant_fwd.hpp.html#72" title="T0, TN..." data-ref="_M/BOOST_VARIANT_ENUM_PARAMS">BOOST_VARIANT_ENUM_PARAMS</a>(T) &gt;* <dfn class="local col0 decl" id="590operand" title='operand' data-type='const boost::variant&lt;T0, TN...&gt; *' data-ref="590operand">operand</dfn></td></tr>
+<tr><th id="138">138</th><td>      <a class="macro" href="#103" title="" data-ref="_M/BOOST_VARIANT_AUX_GET_EXPLICIT_TEMPLATE_TYPE">BOOST_VARIANT_AUX_GET_EXPLICIT_TEMPLATE_TYPE</a>(U)</td></tr>
+<tr><th id="139">139</th><td>    ) <a class="macro" href="../../../../config/include/boost/config/detail/suffix.hpp.html#1020" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="140">140</th><td>{</td></tr>
+<tr><th id="141">141</th><td>    <b>typedef</b> <b>typename</b> <a class="type" href="../../../../type_traits/include/boost/type_traits/add_pointer.hpp.html#boost::add_pointer" title='boost::add_pointer' data-ref="boost::add_pointer">add_pointer</a>&lt;<em>const</em> U&gt;::type <dfn class="local col1 typedef" id="591U_ptr" title='U_ptr' data-type='typename add_pointer&lt;const U&gt;::type' data-ref="591U_ptr">U_ptr</dfn>;</td></tr>
+<tr><th id="142">142</th><td>    <b>if</b> (!<a class="local col0 ref" href="#590operand" title='operand' data-ref="590operand">operand</a>) <b>return</b> <b>static_cast</b>&lt;<a class="local col1 typedef" href="#591U_ptr" title='U_ptr' data-type='typename add_pointer&lt;const U&gt;::type' data-ref="591U_ptr">U_ptr</a>&gt;(<var>0</var>);</td></tr>
+<tr><th id="143">143</th><td></td></tr>
+<tr><th id="144">144</th><td>    <span class="namespace">detail::variant::</span><a class="type" href="#boost::detail::variant::get_visitor" title='boost::detail::variant::get_visitor' data-ref="boost::detail::variant::get_visitor">get_visitor</a>&lt;<em>const</em> U&gt; <dfn class="local col2 decl" id="592v" title='v' data-type='detail::variant::get_visitor&lt;const U&gt;' data-ref="592v">v</dfn>;</td></tr>
+<tr><th id="145">145</th><td>    <b>return</b> <a class="local col0 ref" href="#590operand" title='operand' data-ref="590operand">operand</a>-&gt;apply_visitor(<a class="local col2 ref" href="#592v" title='v' data-ref="592v">v</a>);</td></tr>
+<tr><th id="146">146</th><td>}</td></tr>
+<tr><th id="147">147</th><td></td></tr>
+<tr><th id="148">148</th><td><b>template</b> &lt;<b>typename</b> U, <a class="macro" href="variant_fwd.hpp.html#72" title="typename T0, typename... TN" data-ref="_M/BOOST_VARIANT_ENUM_PARAMS">BOOST_VARIANT_ENUM_PARAMS</a>(<b>typename</b> T) &gt;</td></tr>
+<tr><th id="149">149</th><td><b>inline</b></td></tr>
+<tr><th id="150">150</th><td>    <b>typename</b> <a class="type" href="../../../../type_traits/include/boost/type_traits/add_reference.hpp.html#boost::add_reference" title='boost::add_reference' data-ref="boost::add_reference">add_reference</a>&lt;U&gt;::type</td></tr>
+<tr><th id="151">151</th><td><dfn class="decl def fn" id="_ZN5boost11relaxed_getERNS_7variantIT0_JDpT1_EEE" title='boost::relaxed_get' data-ref="_ZN5boost11relaxed_getERNS_7variantIT0_JDpT1_EEE">relaxed_get</dfn>(</td></tr>
+<tr><th id="152">152</th><td>      <span class="namespace">boost::</span><a class="type" href="variant_fwd.hpp.html#boost::variant" title='boost::variant' data-ref="boost::variant">variant</a>&lt; <a class="macro" href="variant_fwd.hpp.html#72" title="T0, TN..." data-ref="_M/BOOST_VARIANT_ENUM_PARAMS">BOOST_VARIANT_ENUM_PARAMS</a>(T) &gt;&amp; <dfn class="local col3 decl" id="593operand" title='operand' data-type='boost::variant&lt;T0, TN...&gt; &amp;' data-ref="593operand">operand</dfn></td></tr>
+<tr><th id="153">153</th><td>      <a class="macro" href="#103" title="" data-ref="_M/BOOST_VARIANT_AUX_GET_EXPLICIT_TEMPLATE_TYPE">BOOST_VARIANT_AUX_GET_EXPLICIT_TEMPLATE_TYPE</a>(U)</td></tr>
+<tr><th id="154">154</th><td>    )</td></tr>
+<tr><th id="155">155</th><td>{</td></tr>
+<tr><th id="156">156</th><td>    <b>typedef</b> <b>typename</b> <a class="type" href="../../../../type_traits/include/boost/type_traits/add_pointer.hpp.html#boost::add_pointer" title='boost::add_pointer' data-ref="boost::add_pointer">add_pointer</a>&lt;U&gt;::type <dfn class="local col4 typedef" id="594U_ptr" title='U_ptr' data-type='typename add_pointer&lt;U&gt;::type' data-ref="594U_ptr">U_ptr</dfn>;</td></tr>
+<tr><th id="157">157</th><td>    <a class="local col4 typedef" href="#594U_ptr" title='U_ptr' data-type='typename add_pointer&lt;U&gt;::type' data-ref="594U_ptr">U_ptr</a> <dfn class="local col5 decl" id="595result" title='result' data-type='U_ptr' data-ref="595result">result</dfn> = relaxed_get&lt;U&gt;(<span class="namespace">boost::</span>addressof(<a class="local col3 ref" href="#593operand" title='operand' data-ref="593operand">operand</a>));</td></tr>
+<tr><th id="158">158</th><td></td></tr>
+<tr><th id="159">159</th><td>    <b>if</b> (!<a class="local col5 ref" href="#595result" title='result' data-ref="595result">result</a>)</td></tr>
+<tr><th id="160">160</th><td>        <span class="namespace">boost::</span><a class="ref fn" href="../../../../throw_exception/include/boost/throw_exception.hpp.html#_ZN5boost15throw_exceptionERKT_" title='boost::throw_exception' data-ref="_ZN5boost15throw_exceptionERKT_">throw_exception</a>(<span class='inlayHint'>e:&nbsp;</span><a class="type" href="#boost::bad_get" title='boost::bad_get' data-ref="boost::bad_get">bad_get</a><a class="ref fn" href="#42" title='boost::bad_get::bad_get' data-ref="_ZN5boost7bad_getC1Ev">(</a>));</td></tr>
+<tr><th id="161">161</th><td>    <b>return</b> *<a class="local col5 ref" href="#595result" title='result' data-ref="595result">result</a>;</td></tr>
+<tr><th id="162">162</th><td>}</td></tr>
+<tr><th id="163">163</th><td></td></tr>
+<tr><th id="164">164</th><td><b>template</b> &lt;<b>typename</b> U, <a class="macro" href="variant_fwd.hpp.html#72" title="typename T0, typename... TN" data-ref="_M/BOOST_VARIANT_ENUM_PARAMS">BOOST_VARIANT_ENUM_PARAMS</a>(<b>typename</b> T) &gt;</td></tr>
+<tr><th id="165">165</th><td><b>inline</b></td></tr>
+<tr><th id="166">166</th><td>    <b>typename</b> <a class="type" href="../../../../type_traits/include/boost/type_traits/add_reference.hpp.html#boost::add_reference" title='boost::add_reference' data-ref="boost::add_reference">add_reference</a>&lt;<em>const</em> U&gt;::type</td></tr>
+<tr><th id="167">167</th><td><dfn class="decl def fn" id="_ZN5boost11relaxed_getERKNS_7variantIT0_JDpT1_EEE" title='boost::relaxed_get' data-ref="_ZN5boost11relaxed_getERKNS_7variantIT0_JDpT1_EEE">relaxed_get</dfn>(</td></tr>
+<tr><th id="168">168</th><td>      <em>const</em> <span class="namespace">boost::</span><a class="type" href="variant_fwd.hpp.html#boost::variant" title='boost::variant' data-ref="boost::variant">variant</a>&lt; <a class="macro" href="variant_fwd.hpp.html#72" title="T0, TN..." data-ref="_M/BOOST_VARIANT_ENUM_PARAMS">BOOST_VARIANT_ENUM_PARAMS</a>(T) &gt;&amp; <dfn class="local col6 decl" id="596operand" title='operand' data-type='const boost::variant&lt;T0, TN...&gt; &amp;' data-ref="596operand">operand</dfn></td></tr>
+<tr><th id="169">169</th><td>      <a class="macro" href="#103" title="" data-ref="_M/BOOST_VARIANT_AUX_GET_EXPLICIT_TEMPLATE_TYPE">BOOST_VARIANT_AUX_GET_EXPLICIT_TEMPLATE_TYPE</a>(U)</td></tr>
+<tr><th id="170">170</th><td>    )</td></tr>
+<tr><th id="171">171</th><td>{</td></tr>
+<tr><th id="172">172</th><td>    <b>typedef</b> <b>typename</b> <a class="type" href="../../../../type_traits/include/boost/type_traits/add_pointer.hpp.html#boost::add_pointer" title='boost::add_pointer' data-ref="boost::add_pointer">add_pointer</a>&lt;<em>const</em> U&gt;::type <dfn class="local col7 typedef" id="597U_ptr" title='U_ptr' data-type='typename add_pointer&lt;const U&gt;::type' data-ref="597U_ptr">U_ptr</dfn>;</td></tr>
+<tr><th id="173">173</th><td>    <a class="local col7 typedef" href="#597U_ptr" title='U_ptr' data-type='typename add_pointer&lt;const U&gt;::type' data-ref="597U_ptr">U_ptr</a> <dfn class="local col8 decl" id="598result" title='result' data-type='U_ptr' data-ref="598result">result</dfn> = relaxed_get&lt;<em>const</em> U&gt;(<span class="namespace">boost::</span>addressof(<a class="local col6 ref" href="#596operand" title='operand' data-ref="596operand">operand</a>));</td></tr>
+<tr><th id="174">174</th><td></td></tr>
+<tr><th id="175">175</th><td>    <b>if</b> (!<a class="local col8 ref" href="#598result" title='result' data-ref="598result">result</a>)</td></tr>
+<tr><th id="176">176</th><td>        <span class="namespace">boost::</span><a class="ref fn" href="../../../../throw_exception/include/boost/throw_exception.hpp.html#_ZN5boost15throw_exceptionERKT_" title='boost::throw_exception' data-ref="_ZN5boost15throw_exceptionERKT_">throw_exception</a>(<span class='inlayHint'>e:&nbsp;</span><a class="type" href="#boost::bad_get" title='boost::bad_get' data-ref="boost::bad_get">bad_get</a><a class="ref fn" href="#42" title='boost::bad_get::bad_get' data-ref="_ZN5boost7bad_getC1Ev">(</a>));</td></tr>
+<tr><th id="177">177</th><td>    <b>return</b> *<a class="local col8 ref" href="#598result" title='result' data-ref="598result">result</a>;</td></tr>
+<tr><th id="178">178</th><td>}</td></tr>
+<tr><th id="179">179</th><td></td></tr>
+<tr><th id="180">180</th><td><u>#<span data-ppcond="180">ifndef</span> <span class="macro" data-ref="_M/BOOST_NO_CXX11_RVALUE_REFERENCES">BOOST_NO_CXX11_RVALUE_REFERENCES</span></u></td></tr>
+<tr><th id="181">181</th><td></td></tr>
+<tr><th id="182">182</th><td><u>#<span data-ppcond="182">if</span> defined(<span class="macro" data-ref="_M/BOOST_MSVC">BOOST_MSVC</span>) &amp;&amp; (_MSC_VER &lt; 1900) // MSVC-2014 has fixed the incorrect diagnostics.</u></td></tr>
+<tr><th id="183">183</th><td><u>#   pragma warning(push)</u></td></tr>
+<tr><th id="184">184</th><td><u>#   pragma warning(disable: 4172) // returning address of local variable or temporary</u></td></tr>
+<tr><th id="185">185</th><td><u>#<span data-ppcond="182">endif</span></u></td></tr>
+<tr><th id="186">186</th><td></td></tr>
+<tr><th id="187">187</th><td><b>template</b> &lt;<b>typename</b> U, <a class="macro" href="variant_fwd.hpp.html#72" title="typename T0, typename... TN" data-ref="_M/BOOST_VARIANT_ENUM_PARAMS">BOOST_VARIANT_ENUM_PARAMS</a>(<b>typename</b> T) &gt;</td></tr>
+<tr><th id="188">188</th><td><b>inline</b></td></tr>
+<tr><th id="189">189</th><td>    U&amp;&amp;</td></tr>
+<tr><th id="190">190</th><td><dfn class="decl def fn" id="_ZN5boost11relaxed_getEONS_7variantIT0_JDpT1_EEE" title='boost::relaxed_get' data-ref="_ZN5boost11relaxed_getEONS_7variantIT0_JDpT1_EEE">relaxed_get</dfn>(</td></tr>
+<tr><th id="191">191</th><td>      <span class="namespace">boost::</span><a class="type" href="variant_fwd.hpp.html#boost::variant" title='boost::variant' data-ref="boost::variant">variant</a>&lt; <a class="macro" href="variant_fwd.hpp.html#72" title="T0, TN..." data-ref="_M/BOOST_VARIANT_ENUM_PARAMS">BOOST_VARIANT_ENUM_PARAMS</a>(T) &gt;&amp;&amp; <dfn class="local col9 decl" id="599operand" title='operand' data-type='boost::variant&lt;T0, TN...&gt; &amp;&amp;' data-ref="599operand">operand</dfn></td></tr>
+<tr><th id="192">192</th><td>      <a class="macro" href="#103" title="" data-ref="_M/BOOST_VARIANT_AUX_GET_EXPLICIT_TEMPLATE_TYPE">BOOST_VARIANT_AUX_GET_EXPLICIT_TEMPLATE_TYPE</a>(U)</td></tr>
+<tr><th id="193">193</th><td>    )</td></tr>
+<tr><th id="194">194</th><td>{</td></tr>
+<tr><th id="195">195</th><td>    <b>typedef</b> <b>typename</b> <a class="type" href="../../../../type_traits/include/boost/type_traits/add_pointer.hpp.html#boost::add_pointer" title='boost::add_pointer' data-ref="boost::add_pointer">add_pointer</a>&lt;U&gt;::type <dfn class="local col0 typedef" id="600U_ptr" title='U_ptr' data-type='typename add_pointer&lt;U&gt;::type' data-ref="600U_ptr">U_ptr</dfn>;</td></tr>
+<tr><th id="196">196</th><td>    <a class="local col0 typedef" href="#600U_ptr" title='U_ptr' data-type='typename add_pointer&lt;U&gt;::type' data-ref="600U_ptr">U_ptr</a> <dfn class="local col1 decl" id="601result" title='result' data-type='U_ptr' data-ref="601result">result</dfn> = relaxed_get&lt;U&gt;(<span class="namespace">boost::</span>addressof(<a class="local col9 ref" href="#599operand" title='operand' data-ref="599operand">operand</a>));</td></tr>
+<tr><th id="197">197</th><td></td></tr>
+<tr><th id="198">198</th><td>    <b>if</b> (!<a class="local col1 ref" href="#601result" title='result' data-ref="601result">result</a>)</td></tr>
+<tr><th id="199">199</th><td>        <span class="namespace">boost::</span><a class="ref fn" href="../../../../throw_exception/include/boost/throw_exception.hpp.html#_ZN5boost15throw_exceptionERKT_" title='boost::throw_exception' data-ref="_ZN5boost15throw_exceptionERKT_">throw_exception</a>(<span class='inlayHint'>e:&nbsp;</span><a class="type" href="#boost::bad_get" title='boost::bad_get' data-ref="boost::bad_get">bad_get</a><a class="ref fn" href="#42" title='boost::bad_get::bad_get' data-ref="_ZN5boost7bad_getC1Ev">(</a>));</td></tr>
+<tr><th id="200">200</th><td>    <b>return</b> <b>static_cast</b>&lt;U&amp;&amp;&gt;(*<a class="local col1 ref" href="#601result" title='result' data-ref="601result">result</a>);</td></tr>
+<tr><th id="201">201</th><td>}</td></tr>
+<tr><th id="202">202</th><td></td></tr>
+<tr><th id="203">203</th><td><u>#<span data-ppcond="203">if</span> defined(<span class="macro" data-ref="_M/BOOST_MSVC">BOOST_MSVC</span>) &amp;&amp; (_MSC_VER &lt; 1900)</u></td></tr>
+<tr><th id="204">204</th><td><u>#   pragma warning(pop)</u></td></tr>
+<tr><th id="205">205</th><td><u>#<span data-ppcond="203">endif</span></u></td></tr>
+<tr><th id="206">206</th><td></td></tr>
+<tr><th id="207">207</th><td><u>#<span data-ppcond="180">endif</span></u></td></tr>
+<tr><th id="208">208</th><td></td></tr>
+<tr><th id="209">209</th><td><i>/////////////////////////////////////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="210">210</th><td><i>// strict_get&lt;U&gt;(variant) methods</i></td></tr>
+<tr><th id="211">211</th><td><i>//</i></td></tr>
+<tr><th id="212">212</th><td><b>template</b> &lt;<b>typename</b> U, <a class="macro" href="variant_fwd.hpp.html#72" title="typename T0, typename... TN" data-ref="_M/BOOST_VARIANT_ENUM_PARAMS">BOOST_VARIANT_ENUM_PARAMS</a>(<b>typename</b> T) &gt;</td></tr>
+<tr><th id="213">213</th><td><b>inline</b></td></tr>
+<tr><th id="214">214</th><td>    <b>typename</b> <a class="type" href="../../../../type_traits/include/boost/type_traits/add_pointer.hpp.html#boost::add_pointer" title='boost::add_pointer' data-ref="boost::add_pointer">add_pointer</a>&lt;U&gt;::type</td></tr>
+<tr><th id="215">215</th><td><dfn class="decl def fn" id="_ZN5boost10strict_getEPNS_7variantIT0_JDpT1_EEE" title='boost::strict_get' data-ref="_ZN5boost10strict_getEPNS_7variantIT0_JDpT1_EEE">strict_get</dfn>(</td></tr>
+<tr><th id="216">216</th><td>      <span class="namespace">boost::</span><a class="type" href="variant_fwd.hpp.html#boost::variant" title='boost::variant' data-ref="boost::variant">variant</a>&lt; <a class="macro" href="variant_fwd.hpp.html#72" title="T0, TN..." data-ref="_M/BOOST_VARIANT_ENUM_PARAMS">BOOST_VARIANT_ENUM_PARAMS</a>(T) &gt;* <dfn class="local col2 decl" id="602operand" title='operand' data-type='boost::variant&lt;T0, TN...&gt; *' data-ref="602operand">operand</dfn></td></tr>
+<tr><th id="217">217</th><td>      <a class="macro" href="#103" title="" data-ref="_M/BOOST_VARIANT_AUX_GET_EXPLICIT_TEMPLATE_TYPE">BOOST_VARIANT_AUX_GET_EXPLICIT_TEMPLATE_TYPE</a>(U)</td></tr>
+<tr><th id="218">218</th><td>    ) <a class="macro" href="../../../../config/include/boost/config/detail/suffix.hpp.html#1020" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="219">219</th><td>{</td></tr>
+<tr><th id="220">220</th><td>    <a class="macro" href="../../../../static_assert/include/boost/static_assert.hpp.html#32" title="static_assert((boost::detail::variant::holds_element&lt;boost::variant&lt; T0, TN... &gt;, U &gt;::value), &quot;boost::variant does not contain specified type U, &quot; &quot;call to boost::get&lt;U&gt;(boost::variant&lt;T...&gt;*) will always return NULL&quot;)" data-ref="_M/BOOST_STATIC_ASSERT_MSG">BOOST_STATIC_ASSERT_MSG</a>(</td></tr>
+<tr><th id="221">221</th><td>        (boost::detail::variant::<a class="type" href="detail/element_index.hpp.html#boost::detail::variant::holds_element" title='boost::detail::variant::holds_element' data-ref="boost::detail::variant::holds_element">holds_element</a>&lt;boost::<a class="type" href="variant_fwd.hpp.html#boost::variant" title='boost::variant' data-ref="boost::variant">variant</a>&lt; <a class="macro" href="variant_fwd.hpp.html#72" title="T0, TN..." data-ref="_M/BOOST_VARIANT_ENUM_PARAMS">BOOST_VARIANT_ENUM_PARAMS</a>(T) &gt;, U &gt;::value),</td></tr>
+<tr><th id="222">222</th><td>        <q>"boost::variant does not contain specified type U, "</q></td></tr>
+<tr><th id="223">223</th><td>        <q>"call to boost::get&lt;U&gt;(boost::variant&lt;T...&gt;*) will always return NULL"</q></td></tr>
+<tr><th id="224">224</th><td>    );</td></tr>
+<tr><th id="225">225</th><td></td></tr>
+<tr><th id="226">226</th><td>    <b>return</b> relaxed_get&lt;U&gt;(<a class="local col2 ref" href="#602operand" title='operand' data-ref="602operand">operand</a>);</td></tr>
+<tr><th id="227">227</th><td>}</td></tr>
+<tr><th id="228">228</th><td></td></tr>
+<tr><th id="229">229</th><td><b>template</b> &lt;<b>typename</b> U, <a class="macro" href="variant_fwd.hpp.html#72" title="typename T0, typename... TN" data-ref="_M/BOOST_VARIANT_ENUM_PARAMS">BOOST_VARIANT_ENUM_PARAMS</a>(<b>typename</b> T) &gt;</td></tr>
+<tr><th id="230">230</th><td><b>inline</b></td></tr>
+<tr><th id="231">231</th><td>    <b>typename</b> <a class="type" href="../../../../type_traits/include/boost/type_traits/add_pointer.hpp.html#boost::add_pointer" title='boost::add_pointer' data-ref="boost::add_pointer">add_pointer</a>&lt;<em>const</em> U&gt;::type</td></tr>
+<tr><th id="232">232</th><td><dfn class="decl def fn" id="_ZN5boost10strict_getEPKNS_7variantIT0_JDpT1_EEE" title='boost::strict_get' data-ref="_ZN5boost10strict_getEPKNS_7variantIT0_JDpT1_EEE">strict_get</dfn>(</td></tr>
+<tr><th id="233">233</th><td>      <em>const</em> <span class="namespace">boost::</span><a class="type" href="variant_fwd.hpp.html#boost::variant" title='boost::variant' data-ref="boost::variant">variant</a>&lt; <a class="macro" href="variant_fwd.hpp.html#72" title="T0, TN..." data-ref="_M/BOOST_VARIANT_ENUM_PARAMS">BOOST_VARIANT_ENUM_PARAMS</a>(T) &gt;* <dfn class="local col3 decl" id="603operand" title='operand' data-type='const boost::variant&lt;T0, TN...&gt; *' data-ref="603operand">operand</dfn></td></tr>
+<tr><th id="234">234</th><td>      <a class="macro" href="#103" title="" data-ref="_M/BOOST_VARIANT_AUX_GET_EXPLICIT_TEMPLATE_TYPE">BOOST_VARIANT_AUX_GET_EXPLICIT_TEMPLATE_TYPE</a>(U)</td></tr>
+<tr><th id="235">235</th><td>    ) <a class="macro" href="../../../../config/include/boost/config/detail/suffix.hpp.html#1020" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="236">236</th><td>{</td></tr>
+<tr><th id="237">237</th><td>    <a class="macro" href="../../../../static_assert/include/boost/static_assert.hpp.html#32" title="static_assert((boost::detail::variant::holds_element&lt;boost::variant&lt; T0, TN... &gt;, const U &gt;::value), &quot;boost::variant does not contain specified type U, &quot; &quot;call to boost::get&lt;U&gt;(const boost::variant&lt;T...&gt;*) will always return NULL&quot;)" data-ref="_M/BOOST_STATIC_ASSERT_MSG">BOOST_STATIC_ASSERT_MSG</a>(</td></tr>
+<tr><th id="238">238</th><td>        (boost::detail::variant::<a class="type" href="detail/element_index.hpp.html#boost::detail::variant::holds_element" title='boost::detail::variant::holds_element' data-ref="boost::detail::variant::holds_element">holds_element</a>&lt;boost::<a class="type" href="variant_fwd.hpp.html#boost::variant" title='boost::variant' data-ref="boost::variant">variant</a>&lt; <a class="macro" href="variant_fwd.hpp.html#72" title="T0, TN..." data-ref="_M/BOOST_VARIANT_ENUM_PARAMS">BOOST_VARIANT_ENUM_PARAMS</a>(T) &gt;, <em>const</em> U &gt;::value),</td></tr>
+<tr><th id="239">239</th><td>        <q>"boost::variant does not contain specified type U, "</q></td></tr>
+<tr><th id="240">240</th><td>        <q>"call to boost::get&lt;U&gt;(const boost::variant&lt;T...&gt;*) will always return NULL"</q></td></tr>
+<tr><th id="241">241</th><td>    );</td></tr>
+<tr><th id="242">242</th><td></td></tr>
+<tr><th id="243">243</th><td>    <b>return</b> relaxed_get&lt;U&gt;(<a class="local col3 ref" href="#603operand" title='operand' data-ref="603operand">operand</a>);</td></tr>
+<tr><th id="244">244</th><td>}</td></tr>
+<tr><th id="245">245</th><td></td></tr>
+<tr><th id="246">246</th><td><b>template</b> &lt;<b>typename</b> U, <a class="macro" href="variant_fwd.hpp.html#72" title="typename T0, typename... TN" data-ref="_M/BOOST_VARIANT_ENUM_PARAMS">BOOST_VARIANT_ENUM_PARAMS</a>(<b>typename</b> T) &gt;</td></tr>
+<tr><th id="247">247</th><td><b>inline</b></td></tr>
+<tr><th id="248">248</th><td>    <b>typename</b> <a class="type" href="../../../../type_traits/include/boost/type_traits/add_reference.hpp.html#boost::add_reference" title='boost::add_reference' data-ref="boost::add_reference">add_reference</a>&lt;U&gt;::type</td></tr>
+<tr><th id="249">249</th><td><dfn class="decl def fn" id="_ZN5boost10strict_getERNS_7variantIT0_JDpT1_EEE" title='boost::strict_get' data-ref="_ZN5boost10strict_getERNS_7variantIT0_JDpT1_EEE">strict_get</dfn>(</td></tr>
+<tr><th id="250">250</th><td>      <span class="namespace">boost::</span><a class="type" href="variant_fwd.hpp.html#boost::variant" title='boost::variant' data-ref="boost::variant">variant</a>&lt; <a class="macro" href="variant_fwd.hpp.html#72" title="T0, TN..." data-ref="_M/BOOST_VARIANT_ENUM_PARAMS">BOOST_VARIANT_ENUM_PARAMS</a>(T) &gt;&amp; <dfn class="local col4 decl" id="604operand" title='operand' data-type='boost::variant&lt;T0, TN...&gt; &amp;' data-ref="604operand">operand</dfn></td></tr>
+<tr><th id="251">251</th><td>      <a class="macro" href="#103" title="" data-ref="_M/BOOST_VARIANT_AUX_GET_EXPLICIT_TEMPLATE_TYPE">BOOST_VARIANT_AUX_GET_EXPLICIT_TEMPLATE_TYPE</a>(U)</td></tr>
+<tr><th id="252">252</th><td>    )</td></tr>
+<tr><th id="253">253</th><td>{</td></tr>
+<tr><th id="254">254</th><td>    <a class="macro" href="../../../../static_assert/include/boost/static_assert.hpp.html#32" title="static_assert((boost::detail::variant::holds_element&lt;boost::variant&lt; T0, TN... &gt;, U &gt;::value), &quot;boost::variant does not contain specified type U, &quot; &quot;call to boost::get&lt;U&gt;(boost::variant&lt;T...&gt;&amp;) will always throw boost::bad_get exception&quot;)" data-ref="_M/BOOST_STATIC_ASSERT_MSG">BOOST_STATIC_ASSERT_MSG</a>(</td></tr>
+<tr><th id="255">255</th><td>        (boost::detail::variant::<a class="type" href="detail/element_index.hpp.html#boost::detail::variant::holds_element" title='boost::detail::variant::holds_element' data-ref="boost::detail::variant::holds_element">holds_element</a>&lt;boost::<a class="type" href="variant_fwd.hpp.html#boost::variant" title='boost::variant' data-ref="boost::variant">variant</a>&lt; <a class="macro" href="variant_fwd.hpp.html#72" title="T0, TN..." data-ref="_M/BOOST_VARIANT_ENUM_PARAMS">BOOST_VARIANT_ENUM_PARAMS</a>(T) &gt;, U &gt;::value),</td></tr>
+<tr><th id="256">256</th><td>        <q>"boost::variant does not contain specified type U, "</q></td></tr>
+<tr><th id="257">257</th><td>        <q>"call to boost::get&lt;U&gt;(boost::variant&lt;T...&gt;&amp;) will always throw boost::bad_get exception"</q></td></tr>
+<tr><th id="258">258</th><td>    );</td></tr>
+<tr><th id="259">259</th><td></td></tr>
+<tr><th id="260">260</th><td>    <b>return</b> relaxed_get&lt;U&gt;(<a class="local col4 ref" href="#604operand" title='operand' data-ref="604operand">operand</a>);</td></tr>
+<tr><th id="261">261</th><td>}</td></tr>
+<tr><th id="262">262</th><td></td></tr>
+<tr><th id="263">263</th><td><b>template</b> &lt;<b>typename</b> U, <a class="macro" href="variant_fwd.hpp.html#72" title="typename T0, typename... TN" data-ref="_M/BOOST_VARIANT_ENUM_PARAMS">BOOST_VARIANT_ENUM_PARAMS</a>(<b>typename</b> T) &gt;</td></tr>
+<tr><th id="264">264</th><td><b>inline</b></td></tr>
+<tr><th id="265">265</th><td>    <b>typename</b> <a class="type" href="../../../../type_traits/include/boost/type_traits/add_reference.hpp.html#boost::add_reference" title='boost::add_reference' data-ref="boost::add_reference">add_reference</a>&lt;<em>const</em> U&gt;::type</td></tr>
+<tr><th id="266">266</th><td><dfn class="decl def fn" id="_ZN5boost10strict_getERKNS_7variantIT0_JDpT1_EEE" title='boost::strict_get' data-ref="_ZN5boost10strict_getERKNS_7variantIT0_JDpT1_EEE">strict_get</dfn>(</td></tr>
+<tr><th id="267">267</th><td>      <em>const</em> <span class="namespace">boost::</span><a class="type" href="variant_fwd.hpp.html#boost::variant" title='boost::variant' data-ref="boost::variant">variant</a>&lt; <a class="macro" href="variant_fwd.hpp.html#72" title="T0, TN..." data-ref="_M/BOOST_VARIANT_ENUM_PARAMS">BOOST_VARIANT_ENUM_PARAMS</a>(T) &gt;&amp; <dfn class="local col5 decl" id="605operand" title='operand' data-type='const boost::variant&lt;T0, TN...&gt; &amp;' data-ref="605operand">operand</dfn></td></tr>
+<tr><th id="268">268</th><td>      <a class="macro" href="#103" title="" data-ref="_M/BOOST_VARIANT_AUX_GET_EXPLICIT_TEMPLATE_TYPE">BOOST_VARIANT_AUX_GET_EXPLICIT_TEMPLATE_TYPE</a>(U)</td></tr>
+<tr><th id="269">269</th><td>    )</td></tr>
+<tr><th id="270">270</th><td>{</td></tr>
+<tr><th id="271">271</th><td>    <a class="macro" href="../../../../static_assert/include/boost/static_assert.hpp.html#32" title="static_assert((boost::detail::variant::holds_element&lt;boost::variant&lt; T0, TN... &gt;, const U &gt;::value), &quot;boost::variant does not contain specified type U, &quot; &quot;call to boost::get&lt;U&gt;(const boost::variant&lt;T...&gt;&amp;) will always throw boost::bad_get exception&quot;)" data-ref="_M/BOOST_STATIC_ASSERT_MSG">BOOST_STATIC_ASSERT_MSG</a>(</td></tr>
+<tr><th id="272">272</th><td>        (boost::detail::variant::<a class="type" href="detail/element_index.hpp.html#boost::detail::variant::holds_element" title='boost::detail::variant::holds_element' data-ref="boost::detail::variant::holds_element">holds_element</a>&lt;boost::<a class="type" href="variant_fwd.hpp.html#boost::variant" title='boost::variant' data-ref="boost::variant">variant</a>&lt; <a class="macro" href="variant_fwd.hpp.html#72" title="T0, TN..." data-ref="_M/BOOST_VARIANT_ENUM_PARAMS">BOOST_VARIANT_ENUM_PARAMS</a>(T) &gt;, <em>const</em> U &gt;::value),</td></tr>
+<tr><th id="273">273</th><td>        <q>"boost::variant does not contain specified type U, "</q></td></tr>
+<tr><th id="274">274</th><td>        <q>"call to boost::get&lt;U&gt;(const boost::variant&lt;T...&gt;&amp;) will always throw boost::bad_get exception"</q></td></tr>
+<tr><th id="275">275</th><td>    );</td></tr>
+<tr><th id="276">276</th><td></td></tr>
+<tr><th id="277">277</th><td>    <b>return</b> relaxed_get&lt;U&gt;(<a class="local col5 ref" href="#605operand" title='operand' data-ref="605operand">operand</a>);</td></tr>
+<tr><th id="278">278</th><td>}</td></tr>
+<tr><th id="279">279</th><td></td></tr>
+<tr><th id="280">280</th><td><u>#<span data-ppcond="280">ifndef</span> <span class="macro" data-ref="_M/BOOST_NO_CXX11_RVALUE_REFERENCES">BOOST_NO_CXX11_RVALUE_REFERENCES</span></u></td></tr>
+<tr><th id="281">281</th><td><b>template</b> &lt;<b>typename</b> U, <a class="macro" href="variant_fwd.hpp.html#72" title="typename T0, typename... TN" data-ref="_M/BOOST_VARIANT_ENUM_PARAMS">BOOST_VARIANT_ENUM_PARAMS</a>(<b>typename</b> T) &gt;</td></tr>
+<tr><th id="282">282</th><td><b>inline</b></td></tr>
+<tr><th id="283">283</th><td>    U&amp;&amp;</td></tr>
+<tr><th id="284">284</th><td><dfn class="decl def fn" id="_ZN5boost10strict_getEONS_7variantIT0_JDpT1_EEE" title='boost::strict_get' data-ref="_ZN5boost10strict_getEONS_7variantIT0_JDpT1_EEE">strict_get</dfn>(</td></tr>
+<tr><th id="285">285</th><td>      <span class="namespace">boost::</span><a class="type" href="variant_fwd.hpp.html#boost::variant" title='boost::variant' data-ref="boost::variant">variant</a>&lt; <a class="macro" href="variant_fwd.hpp.html#72" title="T0, TN..." data-ref="_M/BOOST_VARIANT_ENUM_PARAMS">BOOST_VARIANT_ENUM_PARAMS</a>(T) &gt;&amp;&amp; <dfn class="local col6 decl" id="606operand" title='operand' data-type='boost::variant&lt;T0, TN...&gt; &amp;&amp;' data-ref="606operand">operand</dfn></td></tr>
+<tr><th id="286">286</th><td>      <a class="macro" href="#103" title="" data-ref="_M/BOOST_VARIANT_AUX_GET_EXPLICIT_TEMPLATE_TYPE">BOOST_VARIANT_AUX_GET_EXPLICIT_TEMPLATE_TYPE</a>(U)</td></tr>
+<tr><th id="287">287</th><td>    )</td></tr>
+<tr><th id="288">288</th><td>{</td></tr>
+<tr><th id="289">289</th><td>    <a class="macro" href="../../../../static_assert/include/boost/static_assert.hpp.html#32" title="static_assert((!boost::is_lvalue_reference&lt;U&gt;::value), &quot;remove ampersand &apos;&amp;&apos; from template type U in boost::get&lt;U&gt;(boost::variant&lt;T...&gt;&amp;&amp;) &quot;)" data-ref="_M/BOOST_STATIC_ASSERT_MSG">BOOST_STATIC_ASSERT_MSG</a>(</td></tr>
+<tr><th id="290">290</th><td>        (!boost::<a class="type" href="../../../../type_traits/include/boost/type_traits/is_lvalue_reference.hpp.html#boost::is_lvalue_reference" title='boost::is_lvalue_reference' data-ref="boost::is_lvalue_reference">is_lvalue_reference</a>&lt;U&gt;::value),</td></tr>
+<tr><th id="291">291</th><td>        <q>"remove ampersand '&amp;' from template type U in boost::get&lt;U&gt;(boost::variant&lt;T...&gt;&amp;&amp;) "</q></td></tr>
+<tr><th id="292">292</th><td>    );</td></tr>
+<tr><th id="293">293</th><td></td></tr>
+<tr><th id="294">294</th><td>    <a class="macro" href="../../../../static_assert/include/boost/static_assert.hpp.html#32" title="static_assert((boost::detail::variant::holds_element&lt;boost::variant&lt; T0, TN... &gt;, U &gt;::value), &quot;boost::variant does not contain specified type U, &quot; &quot;call to boost::get&lt;U&gt;(const boost::variant&lt;T...&gt;&amp;) will always throw boost::bad_get exception&quot;)" data-ref="_M/BOOST_STATIC_ASSERT_MSG">BOOST_STATIC_ASSERT_MSG</a>(</td></tr>
+<tr><th id="295">295</th><td>        (boost::detail::variant::<a class="type" href="detail/element_index.hpp.html#boost::detail::variant::holds_element" title='boost::detail::variant::holds_element' data-ref="boost::detail::variant::holds_element">holds_element</a>&lt;boost::<a class="type" href="variant_fwd.hpp.html#boost::variant" title='boost::variant' data-ref="boost::variant">variant</a>&lt; <a class="macro" href="variant_fwd.hpp.html#72" title="T0, TN..." data-ref="_M/BOOST_VARIANT_ENUM_PARAMS">BOOST_VARIANT_ENUM_PARAMS</a>(T) &gt;, U &gt;::value),</td></tr>
+<tr><th id="296">296</th><td>        <q>"boost::variant does not contain specified type U, "</q></td></tr>
+<tr><th id="297">297</th><td>        <q>"call to boost::get&lt;U&gt;(const boost::variant&lt;T...&gt;&amp;) will always throw boost::bad_get exception"</q></td></tr>
+<tr><th id="298">298</th><td>    );</td></tr>
+<tr><th id="299">299</th><td></td></tr>
+<tr><th id="300">300</th><td>    <b>return</b> relaxed_get&lt;U&gt;(<span class="namespace">detail::variant::</span>move(<a class="local col6 ref" href="#606operand" title='operand' data-ref="606operand">operand</a>));</td></tr>
+<tr><th id="301">301</th><td>}</td></tr>
+<tr><th id="302">302</th><td><u>#<span data-ppcond="280">endif</span></u></td></tr>
+<tr><th id="303">303</th><td></td></tr>
+<tr><th id="304">304</th><td><i>/////////////////////////////////////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="305">305</th><td><i>// get&lt;U&gt;(variant) methods</i></td></tr>
+<tr><th id="306">306</th><td><i>//</i></td></tr>
+<tr><th id="307">307</th><td></td></tr>
+<tr><th id="308">308</th><td><b>template</b> &lt;<b>typename</b> U, <a class="macro" href="variant_fwd.hpp.html#72" title="typename T0, typename... TN" data-ref="_M/BOOST_VARIANT_ENUM_PARAMS">BOOST_VARIANT_ENUM_PARAMS</a>(<b>typename</b> T) &gt;</td></tr>
+<tr><th id="309">309</th><td><b>inline</b></td></tr>
+<tr><th id="310">310</th><td>    <b>typename</b> <a class="type" href="../../../../type_traits/include/boost/type_traits/add_pointer.hpp.html#boost::add_pointer" title='boost::add_pointer' data-ref="boost::add_pointer">add_pointer</a>&lt;U&gt;::type</td></tr>
+<tr><th id="311">311</th><td><dfn class="decl def fn" id="_ZN5boost3getEPNS_7variantIT0_JDpT1_EEE" title='boost::get' data-ref="_ZN5boost3getEPNS_7variantIT0_JDpT1_EEE">get</dfn>(</td></tr>
+<tr><th id="312">312</th><td>      <span class="namespace">boost::</span><a class="type" href="variant_fwd.hpp.html#boost::variant" title='boost::variant' data-ref="boost::variant">variant</a>&lt; <a class="macro" href="variant_fwd.hpp.html#72" title="T0, TN..." data-ref="_M/BOOST_VARIANT_ENUM_PARAMS">BOOST_VARIANT_ENUM_PARAMS</a>(T) &gt;* <dfn class="local col7 decl" id="607operand" title='operand' data-type='boost::variant&lt;T0, TN...&gt; *' data-ref="607operand">operand</dfn></td></tr>
+<tr><th id="313">313</th><td>      <a class="macro" href="#103" title="" data-ref="_M/BOOST_VARIANT_AUX_GET_EXPLICIT_TEMPLATE_TYPE">BOOST_VARIANT_AUX_GET_EXPLICIT_TEMPLATE_TYPE</a>(U)</td></tr>
+<tr><th id="314">314</th><td>    ) <a class="macro" href="../../../../config/include/boost/config/detail/suffix.hpp.html#1020" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="315">315</th><td>{</td></tr>
+<tr><th id="316">316</th><td><u>#<span data-ppcond="316">ifdef</span> <span class="macro" data-ref="_M/BOOST_VARIANT_USE_RELAXED_GET_BY_DEFAULT">BOOST_VARIANT_USE_RELAXED_GET_BY_DEFAULT</span></u></td></tr>
+<tr><th id="317">317</th><td>    <b>return</b> relaxed_get&lt;U&gt;(operand);</td></tr>
+<tr><th id="318">318</th><td><u>#<span data-ppcond="316">else</span></u></td></tr>
+<tr><th id="319">319</th><td>    <b>return</b> strict_get&lt;U&gt;(<a class="local col7 ref" href="#607operand" title='operand' data-ref="607operand">operand</a>);</td></tr>
+<tr><th id="320">320</th><td><u>#<span data-ppcond="316">endif</span></u></td></tr>
+<tr><th id="321">321</th><td></td></tr>
+<tr><th id="322">322</th><td>}</td></tr>
+<tr><th id="323">323</th><td></td></tr>
+<tr><th id="324">324</th><td><b>template</b> &lt;<b>typename</b> U, <a class="macro" href="variant_fwd.hpp.html#72" title="typename T0, typename... TN" data-ref="_M/BOOST_VARIANT_ENUM_PARAMS">BOOST_VARIANT_ENUM_PARAMS</a>(<b>typename</b> T) &gt;</td></tr>
+<tr><th id="325">325</th><td><b>inline</b></td></tr>
+<tr><th id="326">326</th><td>    <b>typename</b> <a class="type" href="../../../../type_traits/include/boost/type_traits/add_pointer.hpp.html#boost::add_pointer" title='boost::add_pointer' data-ref="boost::add_pointer">add_pointer</a>&lt;<em>const</em> U&gt;::type</td></tr>
+<tr><th id="327">327</th><td><dfn class="decl def fn" id="_ZN5boost3getEPKNS_7variantIT0_JDpT1_EEE" title='boost::get' data-ref="_ZN5boost3getEPKNS_7variantIT0_JDpT1_EEE">get</dfn>(</td></tr>
+<tr><th id="328">328</th><td>      <em>const</em> <span class="namespace">boost::</span><a class="type" href="variant_fwd.hpp.html#boost::variant" title='boost::variant' data-ref="boost::variant">variant</a>&lt; <a class="macro" href="variant_fwd.hpp.html#72" title="T0, TN..." data-ref="_M/BOOST_VARIANT_ENUM_PARAMS">BOOST_VARIANT_ENUM_PARAMS</a>(T) &gt;* <dfn class="local col8 decl" id="608operand" title='operand' data-type='const boost::variant&lt;T0, TN...&gt; *' data-ref="608operand">operand</dfn></td></tr>
+<tr><th id="329">329</th><td>      <a class="macro" href="#103" title="" data-ref="_M/BOOST_VARIANT_AUX_GET_EXPLICIT_TEMPLATE_TYPE">BOOST_VARIANT_AUX_GET_EXPLICIT_TEMPLATE_TYPE</a>(U)</td></tr>
+<tr><th id="330">330</th><td>    ) <a class="macro" href="../../../../config/include/boost/config/detail/suffix.hpp.html#1020" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="331">331</th><td>{</td></tr>
+<tr><th id="332">332</th><td><u>#<span data-ppcond="332">ifdef</span> <span class="macro" data-ref="_M/BOOST_VARIANT_USE_RELAXED_GET_BY_DEFAULT">BOOST_VARIANT_USE_RELAXED_GET_BY_DEFAULT</span></u></td></tr>
+<tr><th id="333">333</th><td>    <b>return</b> relaxed_get&lt;U&gt;(operand);</td></tr>
+<tr><th id="334">334</th><td><u>#<span data-ppcond="332">else</span></u></td></tr>
+<tr><th id="335">335</th><td>    <b>return</b> strict_get&lt;U&gt;(<a class="local col8 ref" href="#608operand" title='operand' data-ref="608operand">operand</a>);</td></tr>
+<tr><th id="336">336</th><td><u>#<span data-ppcond="332">endif</span></u></td></tr>
+<tr><th id="337">337</th><td>}</td></tr>
+<tr><th id="338">338</th><td></td></tr>
+<tr><th id="339">339</th><td><b>template</b> &lt;<b>typename</b> U, <a class="macro" href="variant_fwd.hpp.html#72" title="typename T0, typename... TN" data-ref="_M/BOOST_VARIANT_ENUM_PARAMS">BOOST_VARIANT_ENUM_PARAMS</a>(<b>typename</b> T) &gt;</td></tr>
+<tr><th id="340">340</th><td><b>inline</b></td></tr>
+<tr><th id="341">341</th><td>    <b>typename</b> <a class="type" href="../../../../type_traits/include/boost/type_traits/add_reference.hpp.html#boost::add_reference" title='boost::add_reference' data-ref="boost::add_reference">add_reference</a>&lt;U&gt;::type</td></tr>
+<tr><th id="342">342</th><td><dfn class="decl def fn" id="_ZN5boost3getERNS_7variantIT0_JDpT1_EEE" title='boost::get' data-ref="_ZN5boost3getERNS_7variantIT0_JDpT1_EEE">get</dfn>(</td></tr>
+<tr><th id="343">343</th><td>      <span class="namespace">boost::</span><a class="type" href="variant_fwd.hpp.html#boost::variant" title='boost::variant' data-ref="boost::variant">variant</a>&lt; <a class="macro" href="variant_fwd.hpp.html#72" title="T0, TN..." data-ref="_M/BOOST_VARIANT_ENUM_PARAMS">BOOST_VARIANT_ENUM_PARAMS</a>(T) &gt;&amp; <dfn class="local col9 decl" id="609operand" title='operand' data-type='boost::variant&lt;T0, TN...&gt; &amp;' data-ref="609operand">operand</dfn></td></tr>
+<tr><th id="344">344</th><td>      <a class="macro" href="#103" title="" data-ref="_M/BOOST_VARIANT_AUX_GET_EXPLICIT_TEMPLATE_TYPE">BOOST_VARIANT_AUX_GET_EXPLICIT_TEMPLATE_TYPE</a>(U)</td></tr>
+<tr><th id="345">345</th><td>    )</td></tr>
+<tr><th id="346">346</th><td>{</td></tr>
+<tr><th id="347">347</th><td><u>#<span data-ppcond="347">ifdef</span> <span class="macro" data-ref="_M/BOOST_VARIANT_USE_RELAXED_GET_BY_DEFAULT">BOOST_VARIANT_USE_RELAXED_GET_BY_DEFAULT</span></u></td></tr>
+<tr><th id="348">348</th><td>    <b>return</b> relaxed_get&lt;U&gt;(operand);</td></tr>
+<tr><th id="349">349</th><td><u>#<span data-ppcond="347">else</span></u></td></tr>
+<tr><th id="350">350</th><td>    <b>return</b> strict_get&lt;U&gt;(<a class="local col9 ref" href="#609operand" title='operand' data-ref="609operand">operand</a>);</td></tr>
+<tr><th id="351">351</th><td><u>#<span data-ppcond="347">endif</span></u></td></tr>
+<tr><th id="352">352</th><td>}</td></tr>
+<tr><th id="353">353</th><td></td></tr>
+<tr><th id="354">354</th><td><b>template</b> &lt;<b>typename</b> U, <a class="macro" href="variant_fwd.hpp.html#72" title="typename T0, typename... TN" data-ref="_M/BOOST_VARIANT_ENUM_PARAMS">BOOST_VARIANT_ENUM_PARAMS</a>(<b>typename</b> T) &gt;</td></tr>
+<tr><th id="355">355</th><td><b>inline</b></td></tr>
+<tr><th id="356">356</th><td>    <b>typename</b> <a class="type" href="../../../../type_traits/include/boost/type_traits/add_reference.hpp.html#boost::add_reference" title='boost::add_reference' data-ref="boost::add_reference">add_reference</a>&lt;<em>const</em> U&gt;::type</td></tr>
+<tr><th id="357">357</th><td><dfn class="decl def fn" id="_ZN5boost3getERKNS_7variantIT0_JDpT1_EEE" title='boost::get' data-ref="_ZN5boost3getERKNS_7variantIT0_JDpT1_EEE">get</dfn>(</td></tr>
+<tr><th id="358">358</th><td>      <em>const</em> <span class="namespace">boost::</span><a class="type" href="variant_fwd.hpp.html#boost::variant" title='boost::variant' data-ref="boost::variant">variant</a>&lt; <a class="macro" href="variant_fwd.hpp.html#72" title="T0, TN..." data-ref="_M/BOOST_VARIANT_ENUM_PARAMS">BOOST_VARIANT_ENUM_PARAMS</a>(T) &gt;&amp; <dfn class="local col0 decl" id="610operand" title='operand' data-type='const boost::variant&lt;T0, TN...&gt; &amp;' data-ref="610operand">operand</dfn></td></tr>
+<tr><th id="359">359</th><td>      <a class="macro" href="#103" title="" data-ref="_M/BOOST_VARIANT_AUX_GET_EXPLICIT_TEMPLATE_TYPE">BOOST_VARIANT_AUX_GET_EXPLICIT_TEMPLATE_TYPE</a>(U)</td></tr>
+<tr><th id="360">360</th><td>    )</td></tr>
+<tr><th id="361">361</th><td>{</td></tr>
+<tr><th id="362">362</th><td><u>#<span data-ppcond="362">ifdef</span> <span class="macro" data-ref="_M/BOOST_VARIANT_USE_RELAXED_GET_BY_DEFAULT">BOOST_VARIANT_USE_RELAXED_GET_BY_DEFAULT</span></u></td></tr>
+<tr><th id="363">363</th><td>    <b>return</b> relaxed_get&lt;U&gt;(operand);</td></tr>
+<tr><th id="364">364</th><td><u>#<span data-ppcond="362">else</span></u></td></tr>
+<tr><th id="365">365</th><td>    <b>return</b> strict_get&lt;U&gt;(<a class="local col0 ref" href="#610operand" title='operand' data-ref="610operand">operand</a>);</td></tr>
+<tr><th id="366">366</th><td><u>#<span data-ppcond="362">endif</span></u></td></tr>
+<tr><th id="367">367</th><td>}</td></tr>
+<tr><th id="368">368</th><td></td></tr>
+<tr><th id="369">369</th><td><u>#<span data-ppcond="369">ifndef</span> <span class="macro" data-ref="_M/BOOST_NO_CXX11_RVALUE_REFERENCES">BOOST_NO_CXX11_RVALUE_REFERENCES</span></u></td></tr>
+<tr><th id="370">370</th><td><b>template</b> &lt;<b>typename</b> U, <a class="macro" href="variant_fwd.hpp.html#72" title="typename T0, typename... TN" data-ref="_M/BOOST_VARIANT_ENUM_PARAMS">BOOST_VARIANT_ENUM_PARAMS</a>(<b>typename</b> T) &gt;</td></tr>
+<tr><th id="371">371</th><td><b>inline</b></td></tr>
+<tr><th id="372">372</th><td>    U&amp;&amp;</td></tr>
+<tr><th id="373">373</th><td><dfn class="decl def fn" id="_ZN5boost3getEONS_7variantIT0_JDpT1_EEE" title='boost::get' data-ref="_ZN5boost3getEONS_7variantIT0_JDpT1_EEE">get</dfn>(</td></tr>
+<tr><th id="374">374</th><td>      <span class="namespace">boost::</span><a class="type" href="variant_fwd.hpp.html#boost::variant" title='boost::variant' data-ref="boost::variant">variant</a>&lt; <a class="macro" href="variant_fwd.hpp.html#72" title="T0, TN..." data-ref="_M/BOOST_VARIANT_ENUM_PARAMS">BOOST_VARIANT_ENUM_PARAMS</a>(T) &gt;&amp;&amp; <dfn class="local col1 decl" id="611operand" title='operand' data-type='boost::variant&lt;T0, TN...&gt; &amp;&amp;' data-ref="611operand">operand</dfn></td></tr>
+<tr><th id="375">375</th><td>      <a class="macro" href="#103" title="" data-ref="_M/BOOST_VARIANT_AUX_GET_EXPLICIT_TEMPLATE_TYPE">BOOST_VARIANT_AUX_GET_EXPLICIT_TEMPLATE_TYPE</a>(U)</td></tr>
+<tr><th id="376">376</th><td>    )</td></tr>
+<tr><th id="377">377</th><td>{</td></tr>
+<tr><th id="378">378</th><td><u>#<span data-ppcond="378">ifdef</span> <span class="macro" data-ref="_M/BOOST_VARIANT_USE_RELAXED_GET_BY_DEFAULT">BOOST_VARIANT_USE_RELAXED_GET_BY_DEFAULT</span></u></td></tr>
+<tr><th id="379">379</th><td>    <b>return</b> relaxed_get&lt;U&gt;(detail::variant::move(operand));</td></tr>
+<tr><th id="380">380</th><td><u>#<span data-ppcond="378">else</span></u></td></tr>
+<tr><th id="381">381</th><td>    <b>return</b> strict_get&lt;U&gt;(<span class="namespace">detail::variant::</span>move(<a class="local col1 ref" href="#611operand" title='operand' data-ref="611operand">operand</a>));</td></tr>
+<tr><th id="382">382</th><td><u>#<span data-ppcond="378">endif</span></u></td></tr>
+<tr><th id="383">383</th><td>}</td></tr>
+<tr><th id="384">384</th><td><u>#<span data-ppcond="369">endif</span></u></td></tr>
+<tr><th id="385">385</th><td></td></tr>
+<tr><th id="386">386</th><td>} <i>// namespace boost</i></td></tr>
+<tr><th id="387">387</th><td></td></tr>
+<tr><th id="388">388</th><td><u>#<span data-ppcond="13">endif</span> // BOOST_VARIANT_GET_HPP</u></td></tr>
+<tr><th id="389">389</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../../../../log/src/date_time_format_parser.cpp.html'>boost-1.85.0/libs/log/src/date_time_format_parser.cpp</a><br/>Generated on <em>2024-Jun-14</em> from project boost-1.85.0 revision <em>1.85.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

@@ -1,0 +1,148 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>fixed_size_queue_policy.hpp source code [boost-1.85.0/libs/spirit/include/boost/spirit/home/support/iterators/detail/fixed_size_queue_policy.hpp] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="boost::spirit::iterator_policies::fixed_size_queue "/>
+<link rel="stylesheet" href="../../../../../../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'boost-1.85.0/libs/spirit/include/boost/spirit/home/support/iterators/detail/fixed_size_queue_policy.hpp'; var root_path = '../../../../../../../../../..'; var data_path = '../../../../../../../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../../../../../../..'>boost-1.85.0</a>/<a href='../../../../../../../..'>libs</a>/<a href='../../../../../../..'>spirit</a>/<a href='../../../../../..'>include</a>/<a href='../../../../..'>boost</a>/<a href='../../../..'>spirit</a>/<a href='../../..'>home</a>/<a href='../..'>support</a>/<a href='..'>iterators</a>/<a href='./'>detail</a>/<a href='fixed_size_queue_policy.hpp.html'>fixed_size_queue_policy.hpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>//  Copyright (c) 2001 Daniel C. Nuffer</i></td></tr>
+<tr><th id="2">2</th><td><i>//  Copyright (c) 2001-2011 Hartmut Kaiser</i></td></tr>
+<tr><th id="3">3</th><td><i>// </i></td></tr>
+<tr><th id="4">4</th><td><i>//  Distributed under the Boost Software License, Version 1.0. (See accompanying</i></td></tr>
+<tr><th id="5">5</th><td><i>//  file LICENSE_1_0.txt or copy at <a href="http://www.boost.org/LICENSE_1_0.txt">http://www.boost.org/LICENSE_1_0.txt</a>)</i></td></tr>
+<tr><th id="6">6</th><td></td></tr>
+<tr><th id="7">7</th><td><u>#<span data-ppcond="7">if</span> !defined(<span class="macro" data-ref="_M/BOOST_SPIRIT_ITERATOR_FIXED_SIZE_QUEUE_POLICY_MAR_16_2007_1134AM">BOOST_SPIRIT_ITERATOR_FIXED_SIZE_QUEUE_POLICY_MAR_16_2007_1134AM</span>)</u></td></tr>
+<tr><th id="8">8</th><td><u>#define <dfn class="macro" id="_M/BOOST_SPIRIT_ITERATOR_FIXED_SIZE_QUEUE_POLICY_MAR_16_2007_1134AM" data-ref="_M/BOOST_SPIRIT_ITERATOR_FIXED_SIZE_QUEUE_POLICY_MAR_16_2007_1134AM">BOOST_SPIRIT_ITERATOR_FIXED_SIZE_QUEUE_POLICY_MAR_16_2007_1134AM</dfn></u></td></tr>
+<tr><th id="9">9</th><td></td></tr>
+<tr><th id="10">10</th><td><u>#include <a href="multi_pass.hpp.html">&lt;boost/spirit/home/support/iterators/detail/multi_pass.hpp&gt;</a></u></td></tr>
+<tr><th id="11">11</th><td><u>#include <a href="fixed_size_queue.hpp.html">&lt;boost/spirit/home/support/iterators/detail/fixed_size_queue.hpp&gt;</a></u></td></tr>
+<tr><th id="12">12</th><td><u>#include <a href="../../../../../../../../core/include/boost/core/invoke_swap.hpp.html">&lt;boost/core/invoke_swap.hpp&gt;</a></u></td></tr>
+<tr><th id="13">13</th><td><u>#include <a href="../../../../../../../../assert/include/boost/assert.hpp.html">&lt;boost/assert.hpp&gt;</a></u></td></tr>
+<tr><th id="14">14</th><td><u>#include <a href="../../../../../../../../../../include/c++/9/cstdlib.html">&lt;cstdlib&gt;</a></u></td></tr>
+<tr><th id="15">15</th><td></td></tr>
+<tr><th id="16">16</th><td><b>namespace</b> <span class="namespace">boost</span> { <b>namespace</b> <span class="namespace">spirit</span> { <b>namespace</b> <span class="namespace">iterator_policies</span></td></tr>
+<tr><th id="17">17</th><td>{</td></tr>
+<tr><th id="18">18</th><td>    <i>///////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="19">19</th><td><i>    //  class fixed_size_queue</i></td></tr>
+<tr><th id="20">20</th><td><i>    //  Implementation of the StoragePolicy used by multi_pass</i></td></tr>
+<tr><th id="21">21</th><td><i>    //  fixed_size_queue keeps a circular buffer (implemented by</i></td></tr>
+<tr><th id="22">22</th><td><i>    //  boost::spirit::fixed_size_queue class) that is size N+1 and stores N </i></td></tr>
+<tr><th id="23">23</th><td><i>    //  elements.</i></td></tr>
+<tr><th id="24">24</th><td><i>    // </i></td></tr>
+<tr><th id="25">25</th><td><i>    //  It is up to the user to ensure that there is enough look ahead for </i></td></tr>
+<tr><th id="26">26</th><td><i>    //  their grammar. Currently there is no way to tell if an iterator is </i></td></tr>
+<tr><th id="27">27</th><td><i>    //  pointing to forgotten data. The leading iterator will put an item in </i></td></tr>
+<tr><th id="28">28</th><td><i>    //  the queue and remove one when it is incremented. No dynamic allocation </i></td></tr>
+<tr><th id="29">29</th><td><i>    //  is done, except on creation of the queue (fixed_size_queue constructor).</i></td></tr>
+<tr><th id="30">30</th><td><i>    ///////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="31">31</th><td>    <b>template</b> &lt;<span class="namespace">std::</span><a class="typedef" href="../../../../../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> N&gt;</td></tr>
+<tr><th id="32">32</th><td>    <b>struct</b> <dfn class="type def" id="boost::spirit::iterator_policies::fixed_size_queue" title='boost::spirit::iterator_policies::fixed_size_queue' data-ref="boost::spirit::iterator_policies::fixed_size_queue">fixed_size_queue</dfn></td></tr>
+<tr><th id="33">33</th><td>    {</td></tr>
+<tr><th id="34">34</th><td>        <i>///////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="35">35</th><td>        <b>template</b> &lt;<b>typename</b> Value&gt;</td></tr>
+<tr><th id="36">36</th><td>        <b>class</b> <dfn class="type def" id="boost::spirit::iterator_policies::fixed_size_queue::unique" title='boost::spirit::iterator_policies::fixed_size_queue::unique' data-ref="boost::spirit::iterator_policies::fixed_size_queue::unique">unique</dfn> : <b>public</b> <span class="namespace">detail::</span><a class="type" href="multi_pass.hpp.html#boost::spirit::detail::default_storage_policy" title='boost::spirit::detail::default_storage_policy' data-ref="boost::spirit::detail::default_storage_policy">default_storage_policy</a></td></tr>
+<tr><th id="37">37</th><td>        {</td></tr>
+<tr><th id="38">38</th><td>        <b>private</b>:</td></tr>
+<tr><th id="39">39</th><td>            <b>typedef</b> <span class="namespace">detail::</span><a class="type" href="fixed_size_queue.hpp.html#boost::spirit::detail::fixed_size_queue" title='boost::spirit::detail::fixed_size_queue' data-ref="boost::spirit::detail::fixed_size_queue">fixed_size_queue</a>&lt;Value, <a class="tu member" href="#boost::spirit::iterator_policies::fixed_size_queue::N" title='boost::spirit::iterator_policies::fixed_size_queue::N' data-ref="boost::spirit::iterator_policies::fixed_size_queue::N">N</a>&gt; <dfn class="typedef" id="boost::spirit::iterator_policies::fixed_size_queue::unique::queue_type" title='boost::spirit::iterator_policies::fixed_size_queue::unique::queue_type' data-type='detail::fixed_size_queue&lt;Value, N&gt;' data-ref="boost::spirit::iterator_policies::fixed_size_queue::unique::queue_type">queue_type</dfn>;</td></tr>
+<tr><th id="40">40</th><td></td></tr>
+<tr><th id="41">41</th><td>        <b>protected</b>:</td></tr>
+<tr><th id="42">42</th><td>            <dfn class="decl def fn" id="_ZN5boost6spirit17iterator_policies16fixed_size_queue6uniqueC1Ev" title='boost::spirit::iterator_policies::fixed_size_queue::unique::unique&lt;Value&gt;' data-ref="_ZN5boost6spirit17iterator_policies16fixed_size_queue6uniqueC1Ev">unique</dfn>() {}</td></tr>
+<tr><th id="43">43</th><td></td></tr>
+<tr><th id="44">44</th><td>            <dfn class="decl def fn" id="_ZN5boost6spirit17iterator_policies16fixed_size_queue6uniqueC1ERKNS2_6uniqueITL0__EE" title='boost::spirit::iterator_policies::fixed_size_queue::unique::unique&lt;Value&gt;' data-ref="_ZN5boost6spirit17iterator_policies16fixed_size_queue6uniqueC1ERKNS2_6uniqueITL0__EE">unique</dfn>(unique <em>const</em>&amp; <dfn class="local col1 decl" id="401x" title='x' data-type='const unique&lt;Value&gt; &amp;' data-ref="401x">x</dfn>)</td></tr>
+<tr><th id="45">45</th><td>              : <a class="member field" href="#boost::spirit::iterator_policies::fixed_size_queue::unique::queued_position" title='boost::spirit::iterator_policies::fixed_size_queue::unique::queued_position' data-ref="boost::spirit::iterator_policies::fixed_size_queue::unique::queued_position">queued_position</a>(<a class="local col1 ref" href="#401x" title='x' data-ref="401x">x</a>.queued_position) {}</td></tr>
+<tr><th id="46">46</th><td></td></tr>
+<tr><th id="47">47</th><td>            <em>void</em> <dfn class="decl def fn" id="_ZN5boost6spirit17iterator_policies16fixed_size_queue6unique4swapERNS2_6uniqueITL0__EE" title='boost::spirit::iterator_policies::fixed_size_queue::unique::swap' data-ref="_ZN5boost6spirit17iterator_policies16fixed_size_queue6unique4swapERNS2_6uniqueITL0__EE">swap</dfn>(unique&amp; <dfn class="local col2 decl" id="402x" title='x' data-type='unique&lt;Value&gt; &amp;' data-ref="402x">x</dfn>)</td></tr>
+<tr><th id="48">48</th><td>            {</td></tr>
+<tr><th id="49">49</th><td>                <span class="namespace">boost::core::</span>invoke_swap(<a class="member field" href="#boost::spirit::iterator_policies::fixed_size_queue::unique::queued_position" title='boost::spirit::iterator_policies::fixed_size_queue::unique::queued_position' data-ref="boost::spirit::iterator_policies::fixed_size_queue::unique::queued_position">queued_position</a>, <a class="local col2 ref" href="#402x" title='x' data-ref="402x">x</a>.queued_position);</td></tr>
+<tr><th id="50">50</th><td>            }</td></tr>
+<tr><th id="51">51</th><td></td></tr>
+<tr><th id="52">52</th><td>            <i>//  This is called when the iterator is dereferenced. It's a </i></td></tr>
+<tr><th id="53">53</th><td><i>            //  template method so we can recover the type of the multi_pass </i></td></tr>
+<tr><th id="54">54</th><td><i>            //  iterator and access the m_input data member.</i></td></tr>
+<tr><th id="55">55</th><td>            <b>template</b> &lt;<b>typename</b> MultiPass&gt;</td></tr>
+<tr><th id="56">56</th><td>            <em>static</em> <b>typename</b> MultiPass::reference </td></tr>
+<tr><th id="57">57</th><td>            <dfn class="decl def fn" id="_ZN5boost6spirit17iterator_policies16fixed_size_queue6unique11dereferenceERKTL1__" title='boost::spirit::iterator_policies::fixed_size_queue::unique::dereference' data-ref="_ZN5boost6spirit17iterator_policies16fixed_size_queue6unique11dereferenceERKTL1__">dereference</dfn>(MultiPass <em>const</em>&amp; <dfn class="local col3 decl" id="403mp" title='mp' data-type='const MultiPass &amp;' data-ref="403mp">mp</dfn>)</td></tr>
+<tr><th id="58">58</th><td>            {</td></tr>
+<tr><th id="59">59</th><td>                <b>if</b> (!<a class="local col3 ref" href="#403mp" title='mp' data-ref="403mp">mp</a>.queued_position.get_position().is_initialized())</td></tr>
+<tr><th id="60">60</th><td>                   <a class="local col3 ref" href="#403mp" title='mp' data-ref="403mp">mp</a>.queued_position.get_position().set_queue(&amp;<a class="local col3 ref" href="#403mp" title='mp' data-ref="403mp">mp</a>.shared()-&gt;queued_elements);</td></tr>
+<tr><th id="61">61</th><td></td></tr>
+<tr><th id="62">62</th><td>                <b>if</b> (<a class="local col3 ref" href="#403mp" title='mp' data-ref="403mp">mp</a>.queued_position == <a class="local col3 ref" href="#403mp" title='mp' data-ref="403mp">mp</a>.shared()-&gt;queued_elements.end())</td></tr>
+<tr><th id="63">63</th><td>                    <b>return</b> MultiPass::get_input(<a class="local col3 ref" href="#403mp" title='mp' data-ref="403mp">mp</a>);</td></tr>
+<tr><th id="64">64</th><td></td></tr>
+<tr><th id="65">65</th><td>                <b>return</b> *<a class="local col3 ref" href="#403mp" title='mp' data-ref="403mp">mp</a>.queued_position;</td></tr>
+<tr><th id="66">66</th><td>            }</td></tr>
+<tr><th id="67">67</th><td></td></tr>
+<tr><th id="68">68</th><td>            <i>//  This is called when the iterator is incremented. It's a </i></td></tr>
+<tr><th id="69">69</th><td><i>            //  template method so we can recover the type of the multi_pass </i></td></tr>
+<tr><th id="70">70</th><td><i>            //  iterator and access the m_input data member.</i></td></tr>
+<tr><th id="71">71</th><td>            <b>template</b> &lt;<b>typename</b> MultiPass&gt;</td></tr>
+<tr><th id="72">72</th><td>            <em>static</em> <em>void</em> <dfn class="decl def fn" id="_ZN5boost6spirit17iterator_policies16fixed_size_queue6unique9incrementERTL1__" title='boost::spirit::iterator_policies::fixed_size_queue::unique::increment' data-ref="_ZN5boost6spirit17iterator_policies16fixed_size_queue6unique9incrementERTL1__">increment</dfn>(MultiPass&amp; <dfn class="local col4 decl" id="404mp" title='mp' data-type='MultiPass &amp;' data-ref="404mp">mp</dfn>)</td></tr>
+<tr><th id="73">73</th><td>            {</td></tr>
+<tr><th id="74">74</th><td>                <b>if</b> (!<a class="local col4 ref" href="#404mp" title='mp' data-ref="404mp">mp</a>.queued_position.get_position().is_initialized())</td></tr>
+<tr><th id="75">75</th><td>                    <a class="local col4 ref" href="#404mp" title='mp' data-ref="404mp">mp</a>.queued_position.get_position().set_queue(&amp;<a class="local col4 ref" href="#404mp" title='mp' data-ref="404mp">mp</a>.shared()-&gt;queued_elements);</td></tr>
+<tr><th id="76">76</th><td></td></tr>
+<tr><th id="77">77</th><td>                <b>if</b> (<a class="local col4 ref" href="#404mp" title='mp' data-ref="404mp">mp</a>.queued_position == <a class="local col4 ref" href="#404mp" title='mp' data-ref="404mp">mp</a>.shared()-&gt;queued_elements.end())</td></tr>
+<tr><th id="78">78</th><td>                {</td></tr>
+<tr><th id="79">79</th><td>                    <i>// don't let the queue get larger than N</i></td></tr>
+<tr><th id="80">80</th><td>                    <b>if</b> (<a class="local col4 ref" href="#404mp" title='mp' data-ref="404mp">mp</a>.shared()-&gt;queued_elements.size() &gt;= <a class="tu ref" href="#boost::spirit::iterator_policies::fixed_size_queue::N" title='boost::spirit::iterator_policies::fixed_size_queue::N' data-ref="boost::spirit::iterator_policies::fixed_size_queue::N">N</a>)</td></tr>
+<tr><th id="81">81</th><td>                        <a class="local col4 ref" href="#404mp" title='mp' data-ref="404mp">mp</a>.shared()-&gt;queued_elements.pop_front();</td></tr>
+<tr><th id="82">82</th><td></td></tr>
+<tr><th id="83">83</th><td>                    <a class="local col4 ref" href="#404mp" title='mp' data-ref="404mp">mp</a>.shared()-&gt;queued_elements.push_back(</td></tr>
+<tr><th id="84">84</th><td>                        MultiPass::get_input(<a class="local col4 ref" href="#404mp" title='mp' data-ref="404mp">mp</a>));</td></tr>
+<tr><th id="85">85</th><td>                    MultiPass::advance_input(<a class="local col4 ref" href="#404mp" title='mp' data-ref="404mp">mp</a>);</td></tr>
+<tr><th id="86">86</th><td>                }</td></tr>
+<tr><th id="87">87</th><td>                ++<a class="local col4 ref" href="#404mp" title='mp' data-ref="404mp">mp</a>.queued_position;</td></tr>
+<tr><th id="88">88</th><td>            }</td></tr>
+<tr><th id="89">89</th><td></td></tr>
+<tr><th id="90">90</th><td>            <i>// clear_queue is a no-op</i></td></tr>
+<tr><th id="91">91</th><td><i></i></td></tr>
+<tr><th id="92">92</th><td><i>            // called to determine whether the iterator is an eof iterator</i></td></tr>
+<tr><th id="93">93</th><td>            <b>template</b> &lt;<b>typename</b> MultiPass&gt;</td></tr>
+<tr><th id="94">94</th><td>            <em>static</em> <em>bool</em> <dfn class="decl def fn" id="_ZN5boost6spirit17iterator_policies16fixed_size_queue6unique6is_eofERKTL1__" title='boost::spirit::iterator_policies::fixed_size_queue::unique::is_eof' data-ref="_ZN5boost6spirit17iterator_policies16fixed_size_queue6unique6is_eofERKTL1__">is_eof</dfn>(MultiPass <em>const</em>&amp; <dfn class="local col5 decl" id="405mp" title='mp' data-type='const MultiPass &amp;' data-ref="405mp">mp</dfn>)</td></tr>
+<tr><th id="95">95</th><td>            {</td></tr>
+<tr><th id="96">96</th><td>                <b>return</b> <a class="local col5 ref" href="#405mp" title='mp' data-ref="405mp">mp</a>.queued_position == <a class="local col5 ref" href="#405mp" title='mp' data-ref="405mp">mp</a>.shared()-&gt;queued_elements.end() &amp;&amp;</td></tr>
+<tr><th id="97">97</th><td>                       MultiPass::input_at_eof(<a class="local col5 ref" href="#405mp" title='mp' data-ref="405mp">mp</a>);</td></tr>
+<tr><th id="98">98</th><td>            }</td></tr>
+<tr><th id="99">99</th><td></td></tr>
+<tr><th id="100">100</th><td>            <i>// called by operator==</i></td></tr>
+<tr><th id="101">101</th><td>            <b>template</b> &lt;<b>typename</b> MultiPass&gt;</td></tr>
+<tr><th id="102">102</th><td>            <em>static</em> <em>bool</em> <dfn class="decl def fn" id="_ZN5boost6spirit17iterator_policies16fixed_size_queue6unique8equal_toERKTL1__S6_" title='boost::spirit::iterator_policies::fixed_size_queue::unique::equal_to' data-ref="_ZN5boost6spirit17iterator_policies16fixed_size_queue6unique8equal_toERKTL1__S6_">equal_to</dfn>(MultiPass <em>const</em>&amp; <dfn class="local col6 decl" id="406mp" title='mp' data-type='const MultiPass &amp;' data-ref="406mp">mp</dfn>, MultiPass <em>const</em>&amp; <dfn class="local col7 decl" id="407x" title='x' data-type='const MultiPass &amp;' data-ref="407x">x</dfn>) </td></tr>
+<tr><th id="103">103</th><td>            {</td></tr>
+<tr><th id="104">104</th><td>                <b>return</b> <a class="local col6 ref" href="#406mp" title='mp' data-ref="406mp">mp</a>.queued_position == <a class="local col7 ref" href="#407x" title='x' data-ref="407x">x</a>.queued_position;</td></tr>
+<tr><th id="105">105</th><td>            }</td></tr>
+<tr><th id="106">106</th><td></td></tr>
+<tr><th id="107">107</th><td>            <i>// called by operator&lt;</i></td></tr>
+<tr><th id="108">108</th><td>            <b>template</b> &lt;<b>typename</b> MultiPass&gt;</td></tr>
+<tr><th id="109">109</th><td>            <em>static</em> <em>bool</em> <dfn class="decl def fn" id="_ZN5boost6spirit17iterator_policies16fixed_size_queue6unique9less_thanERKTL1__S6_" title='boost::spirit::iterator_policies::fixed_size_queue::unique::less_than' data-ref="_ZN5boost6spirit17iterator_policies16fixed_size_queue6unique9less_thanERKTL1__S6_">less_than</dfn>(MultiPass <em>const</em>&amp; <dfn class="local col8 decl" id="408mp" title='mp' data-type='const MultiPass &amp;' data-ref="408mp">mp</dfn>, MultiPass <em>const</em>&amp; <dfn class="local col9 decl" id="409x" title='x' data-type='const MultiPass &amp;' data-ref="409x">x</dfn>)</td></tr>
+<tr><th id="110">110</th><td>            {</td></tr>
+<tr><th id="111">111</th><td>                <b>return</b> <a class="local col8 ref" href="#408mp" title='mp' data-ref="408mp">mp</a>.queued_position &lt; <a class="local col9 ref" href="#409x" title='x' data-ref="409x">x</a>.queued_position;</td></tr>
+<tr><th id="112">112</th><td>            }</td></tr>
+<tr><th id="113">113</th><td></td></tr>
+<tr><th id="114">114</th><td>        <b>protected</b>:</td></tr>
+<tr><th id="115">115</th><td>            <em>mutable</em> <b>typename</b> <a class="typedef" href="#boost::spirit::iterator_policies::fixed_size_queue::unique::queue_type" title='boost::spirit::iterator_policies::fixed_size_queue::unique::queue_type' data-type='detail::fixed_size_queue&lt;Value, N&gt;' data-ref="boost::spirit::iterator_policies::fixed_size_queue::unique::queue_type">queue_type</a>::iterator <dfn class="decl field" id="boost::spirit::iterator_policies::fixed_size_queue::unique::queued_position" title='boost::spirit::iterator_policies::fixed_size_queue::unique::queued_position' data-ref="boost::spirit::iterator_policies::fixed_size_queue::unique::queued_position">queued_position</dfn>;</td></tr>
+<tr><th id="116">116</th><td>        }; </td></tr>
+<tr><th id="117">117</th><td></td></tr>
+<tr><th id="118">118</th><td>        <i>///////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="119">119</th><td>        <b>template</b> &lt;<b>typename</b> Value&gt;</td></tr>
+<tr><th id="120">120</th><td>        <b>struct</b> <dfn class="type def" id="boost::spirit::iterator_policies::fixed_size_queue::shared" title='boost::spirit::iterator_policies::fixed_size_queue::shared' data-ref="boost::spirit::iterator_policies::fixed_size_queue::shared">shared</dfn></td></tr>
+<tr><th id="121">121</th><td>        {</td></tr>
+<tr><th id="122">122</th><td>            <b>typedef</b> <span class="namespace">detail::</span><a class="type" href="fixed_size_queue.hpp.html#boost::spirit::detail::fixed_size_queue" title='boost::spirit::detail::fixed_size_queue' data-ref="boost::spirit::detail::fixed_size_queue">fixed_size_queue</a>&lt;Value, <a class="tu member" href="#boost::spirit::iterator_policies::fixed_size_queue::N" title='boost::spirit::iterator_policies::fixed_size_queue::N' data-ref="boost::spirit::iterator_policies::fixed_size_queue::N">N</a>&gt; <dfn class="typedef" id="boost::spirit::iterator_policies::fixed_size_queue::shared::queue_type" title='boost::spirit::iterator_policies::fixed_size_queue::shared::queue_type' data-type='detail::fixed_size_queue&lt;Value, N&gt;' data-ref="boost::spirit::iterator_policies::fixed_size_queue::shared::queue_type">queue_type</dfn>;</td></tr>
+<tr><th id="123">123</th><td>            <a class="typedef" href="#boost::spirit::iterator_policies::fixed_size_queue::shared::queue_type" title='boost::spirit::iterator_policies::fixed_size_queue::shared::queue_type' data-type='detail::fixed_size_queue&lt;Value, N&gt;' data-ref="boost::spirit::iterator_policies::fixed_size_queue::shared::queue_type">queue_type</a> <dfn class="decl field" id="boost::spirit::iterator_policies::fixed_size_queue::shared::queued_elements" title='boost::spirit::iterator_policies::fixed_size_queue::shared::queued_elements' data-ref="boost::spirit::iterator_policies::fixed_size_queue::shared::queued_elements">queued_elements</dfn>;</td></tr>
+<tr><th id="124">124</th><td>        }; </td></tr>
+<tr><th id="125">125</th><td>    }; </td></tr>
+<tr><th id="126">126</th><td></td></tr>
+<tr><th id="127">127</th><td>}}}</td></tr>
+<tr><th id="128">128</th><td></td></tr>
+<tr><th id="129">129</th><td><u>#<span data-ppcond="7">endif</span></u></td></tr>
+<tr><th id="130">130</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../../../../../../../../wave/src/instantiate_cpp_exprgrammar.cpp.html'>boost-1.85.0/libs/wave/src/instantiate_cpp_exprgrammar.cpp</a><br/>Generated on <em>2024-Jun-14</em> from project boost-1.85.0 revision <em>1.85.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

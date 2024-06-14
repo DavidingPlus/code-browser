@@ -1,0 +1,145 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>static_log2.hpp source code [boost-1.85.0/libs/integer/include/boost/integer/static_log2.hpp] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="boost::detail::static_log2_impl::choose_initial_n,boost::detail::static_log2_impl::static_log2_impl,boost::static_log2 "/>
+<link rel="stylesheet" href="../../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'boost-1.85.0/libs/integer/include/boost/integer/static_log2.hpp'; var root_path = '../../../../../..'; var data_path = '../../../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../../..'>boost-1.85.0</a>/<a href='../../../..'>libs</a>/<a href='../../..'>integer</a>/<a href='../..'>include</a>/<a href='..'>boost</a>/<a href='./'>integer</a>/<a href='static_log2.hpp.html'>static_log2.hpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>// -------------- Boost static_log2.hpp header file  ----------------------- //</i></td></tr>
+<tr><th id="2">2</th><td><i>//</i></td></tr>
+<tr><th id="3">3</th><td><i>//                 Copyright (C) 2001 Daryle Walker.</i></td></tr>
+<tr><th id="4">4</th><td><i>//                 Copyright (C) 2003 Vesa Karvonen.</i></td></tr>
+<tr><th id="5">5</th><td><i>//                 Copyright (C) 2003 Gennaro Prota.</i></td></tr>
+<tr><th id="6">6</th><td><i>//</i></td></tr>
+<tr><th id="7">7</th><td><i>//     Distributed under the Boost Software License, Version 1.0.</i></td></tr>
+<tr><th id="8">8</th><td><i>//        (See accompanying file LICENSE_1_0.txt or copy at</i></td></tr>
+<tr><th id="9">9</th><td><i>//              <a href="https://www.boost.org/LICENSE_1_0.txt">https://www.boost.org/LICENSE_1_0.txt</a>)</i></td></tr>
+<tr><th id="10">10</th><td><i>//</i></td></tr>
+<tr><th id="11">11</th><td><i>//         ---------------------------------------------------</i></td></tr>
+<tr><th id="12">12</th><td><i>//       See <a href="https://www.boost.org/libs/integer">https://www.boost.org/libs/integer</a> for documentation.</i></td></tr>
+<tr><th id="13">13</th><td><i>// ------------------------------------------------------------------------- //</i></td></tr>
+<tr><th id="14">14</th><td></td></tr>
+<tr><th id="15">15</th><td></td></tr>
+<tr><th id="16">16</th><td><u>#<span data-ppcond="16">ifndef</span> <span class="macro" data-ref="_M/BOOST_INTEGER_STATIC_LOG2_HPP">BOOST_INTEGER_STATIC_LOG2_HPP</span></u></td></tr>
+<tr><th id="17">17</th><td><u>#define <dfn class="macro" id="_M/BOOST_INTEGER_STATIC_LOG2_HPP" data-ref="_M/BOOST_INTEGER_STATIC_LOG2_HPP">BOOST_INTEGER_STATIC_LOG2_HPP</dfn></u></td></tr>
+<tr><th id="18">18</th><td></td></tr>
+<tr><th id="19">19</th><td><u>#include <a href="../../../../config/include/boost/config.hpp.html">&lt;boost/config.hpp&gt;</a></u></td></tr>
+<tr><th id="20">20</th><td><u>#include <a href="../integer_fwd.hpp.html">&lt;boost/integer_fwd.hpp&gt;</a></u></td></tr>
+<tr><th id="21">21</th><td></td></tr>
+<tr><th id="22">22</th><td><b>namespace</b> <span class="namespace">boost</span> {</td></tr>
+<tr><th id="23">23</th><td></td></tr>
+<tr><th id="24">24</th><td> <b>namespace</b> <span class="namespace">detail</span> {</td></tr>
+<tr><th id="25">25</th><td></td></tr>
+<tr><th id="26">26</th><td>     <b>namespace</b> <span class="namespace">static_log2_impl</span> {</td></tr>
+<tr><th id="27">27</th><td></td></tr>
+<tr><th id="28">28</th><td>     <i>// choose_initial_n&lt;&gt;</i></td></tr>
+<tr><th id="29">29</th><td><i>     //</i></td></tr>
+<tr><th id="30">30</th><td><i>     // Recursively doubles its integer argument, until it</i></td></tr>
+<tr><th id="31">31</th><td><i>     // becomes &gt;= of the "width" (C99, 6.2.6.2p4) of</i></td></tr>
+<tr><th id="32">32</th><td><i>     // static_log2_argument_type.</i></td></tr>
+<tr><th id="33">33</th><td><i>     //</i></td></tr>
+<tr><th id="34">34</th><td><i>     // Used to get the maximum power of two less then the width.</i></td></tr>
+<tr><th id="35">35</th><td><i>     //</i></td></tr>
+<tr><th id="36">36</th><td><i>     // Example: if on your platform argument_type has 48 value</i></td></tr>
+<tr><th id="37">37</th><td><i>     //          bits it yields n=32.</i></td></tr>
+<tr><th id="38">38</th><td><i>     //</i></td></tr>
+<tr><th id="39">39</th><td><i>     // It's easy to prove that, starting from such a value</i></td></tr>
+<tr><th id="40">40</th><td><i>     // of n, the core algorithm works correctly for any width</i></td></tr>
+<tr><th id="41">41</th><td><i>     // of static_log2_argument_type and that recursion always</i></td></tr>
+<tr><th id="42">42</th><td><i>     // terminates with x = 1 and n = 0 (see the algorithm's</i></td></tr>
+<tr><th id="43">43</th><td><i>     // invariant).</i></td></tr>
+<tr><th id="44">44</th><td></td></tr>
+<tr><th id="45">45</th><td>     <b>typedef</b> <span class="namespace">boost::</span><a class="typedef" href="../integer_fwd.hpp.html#boost::static_log2_argument_type" title='boost::static_log2_argument_type' data-type='boost::uintmax_t' data-ref="boost::static_log2_argument_type">static_log2_argument_type</a> <dfn class="typedef" id="boost::detail::static_log2_impl::argument_type" title='boost::detail::static_log2_impl::argument_type' data-type='boost::static_log2_argument_type' data-ref="boost::detail::static_log2_impl::argument_type">argument_type</dfn>;</td></tr>
+<tr><th id="46">46</th><td>     <b>typedef</b> <span class="namespace">boost::</span><a class="typedef" href="../integer_fwd.hpp.html#boost::static_log2_result_type" title='boost::static_log2_result_type' data-type='int' data-ref="boost::static_log2_result_type">static_log2_result_type</a> <dfn class="typedef" id="boost::detail::static_log2_impl::result_type" title='boost::detail::static_log2_impl::result_type' data-type='boost::static_log2_result_type' data-ref="boost::detail::static_log2_impl::result_type">result_type</dfn>;</td></tr>
+<tr><th id="47">47</th><td></td></tr>
+<tr><th id="48">48</th><td>     <b>template</b> &lt;<a class="typedef" href="#boost::detail::static_log2_impl::result_type" title='boost::detail::static_log2_impl::result_type' data-type='boost::static_log2_result_type' data-ref="boost::detail::static_log2_impl::result_type">result_type</a> n&gt;</td></tr>
+<tr><th id="49">49</th><td>     <b>struct</b> <dfn class="type def" id="boost::detail::static_log2_impl::choose_initial_n" title='boost::detail::static_log2_impl::choose_initial_n' data-ref="boost::detail::static_log2_impl::choose_initial_n">choose_initial_n</dfn> {</td></tr>
+<tr><th id="50">50</th><td></td></tr>
+<tr><th id="51">51</th><td>         <a class="macro" href="../../../../config/include/boost/config/detail/suffix.hpp.html#410" title="static const bool c = (argument_type(1) &lt;&lt; n &lt;&lt; n) != 0" data-ref="_M/BOOST_STATIC_CONSTANT">BOOST_STATIC_CONSTANT</a>(<em>bool</em>, <dfn class="decl" id="boost::detail::static_log2_impl::choose_initial_n::c" title='boost::detail::static_log2_impl::choose_initial_n::c' data-ref="boost::detail::static_log2_impl::choose_initial_n::c">c</dfn> = (<a class="typedef" href="#boost::detail::static_log2_impl::argument_type" title='boost::detail::static_log2_impl::argument_type' data-type='boost::static_log2_argument_type' data-ref="boost::detail::static_log2_impl::argument_type">argument_type</a>(<var>1</var>) &lt;&lt; <a class="tu ref" href="#boost::detail::static_log2_impl::choose_initial_n::n" title='boost::detail::static_log2_impl::choose_initial_n::n' data-use='r' data-ref="boost::detail::static_log2_impl::choose_initial_n::n">n</a> &lt;&lt; <a class="tu ref" href="#boost::detail::static_log2_impl::choose_initial_n::n" title='boost::detail::static_log2_impl::choose_initial_n::n' data-use='r' data-ref="boost::detail::static_log2_impl::choose_initial_n::n">n</a>) != <var>0</var>);</td></tr>
+<tr><th id="52">52</th><td>         <a class="macro" href="../../../../config/include/boost/config/detail/suffix.hpp.html#410" title="static const result_type value = !c*n + choose_initial_n&lt;2*c*n&gt;::value" data-ref="_M/BOOST_STATIC_CONSTANT">BOOST_STATIC_CONSTANT</a>(</td></tr>
+<tr><th id="53">53</th><td>             <a class="typedef" href="#boost::detail::static_log2_impl::result_type" title='boost::detail::static_log2_impl::result_type' data-type='boost::static_log2_result_type' data-ref="boost::detail::static_log2_impl::result_type">result_type</a>,</td></tr>
+<tr><th id="54">54</th><td>             <dfn class="decl" id="boost::detail::static_log2_impl::choose_initial_n::value" title='boost::detail::static_log2_impl::choose_initial_n::value' data-ref="boost::detail::static_log2_impl::choose_initial_n::value">value</dfn> = !<a class="ref" href="#51" title='boost::detail::static_log2_impl::choose_initial_n::c' data-ref="boost::detail::static_log2_impl::choose_initial_n::c">c</a>*<a class="tu ref" href="#boost::detail::static_log2_impl::choose_initial_n::n" title='boost::detail::static_log2_impl::choose_initial_n::n' data-use='r' data-ref="boost::detail::static_log2_impl::choose_initial_n::n">n</a> + <a class="type" href="#boost::detail::static_log2_impl::choose_initial_n" title='boost::detail::static_log2_impl::choose_initial_n' data-ref="boost::detail::static_log2_impl::choose_initial_n">choose_initial_n</a>&lt;<var>2</var>*<a class="ref" href="#51" title='boost::detail::static_log2_impl::choose_initial_n::c' data-ref="boost::detail::static_log2_impl::choose_initial_n::c">c</a>*<a class="tu ref" href="#boost::detail::static_log2_impl::choose_initial_n::n" title='boost::detail::static_log2_impl::choose_initial_n::n' data-use='r' data-ref="boost::detail::static_log2_impl::choose_initial_n::n">n</a>&gt;::value</td></tr>
+<tr><th id="55">55</th><td>         );</td></tr>
+<tr><th id="56">56</th><td></td></tr>
+<tr><th id="57">57</th><td>     };</td></tr>
+<tr><th id="58">58</th><td></td></tr>
+<tr><th id="59">59</th><td>     <b>template</b> &lt;&gt;</td></tr>
+<tr><th id="60">60</th><td>     <b>struct</b> <dfn class="type def" id="boost::detail::static_log2_impl::choose_initial_n" title='boost::detail::static_log2_impl::choose_initial_n' data-ref="boost::detail::static_log2_impl::choose_initial_n"><a class="type" href="#boost::detail::static_log2_impl::choose_initial_n" title='boost::detail::static_log2_impl::choose_initial_n' data-ref="boost::detail::static_log2_impl::choose_initial_n">choose_initial_n</a></dfn>&lt;<var>0</var>&gt; {</td></tr>
+<tr><th id="61">61</th><td>         <a class="macro" href="../../../../config/include/boost/config/detail/suffix.hpp.html#410" title="static const result_type value = 0" data-ref="_M/BOOST_STATIC_CONSTANT">BOOST_STATIC_CONSTANT</a>(<a class="typedef" href="#boost::detail::static_log2_impl::result_type" title='boost::detail::static_log2_impl::result_type' data-type='boost::static_log2_result_type' data-ref="boost::detail::static_log2_impl::result_type">result_type</a>, <dfn class="decl" id="boost::detail::static_log2_impl::choose_initial_n{0}::value" title='boost::detail::static_log2_impl::choose_initial_n&lt;0&gt;::value' data-ref="boost::detail::static_log2_impl::choose_initial_n{0}::value">value</dfn> = <var>0</var>);</td></tr>
+<tr><th id="62">62</th><td>     };</td></tr>
+<tr><th id="63">63</th><td></td></tr>
+<tr><th id="64">64</th><td></td></tr>
+<tr><th id="65">65</th><td></td></tr>
+<tr><th id="66">66</th><td>     <i>// start computing from n_zero - must be a power of two</i></td></tr>
+<tr><th id="67">67</th><td>     <em>const</em> <a class="typedef" href="#boost::detail::static_log2_impl::result_type" title='boost::detail::static_log2_impl::result_type' data-type='boost::static_log2_result_type' data-ref="boost::detail::static_log2_impl::result_type">result_type</a> <dfn class="decl def" id="boost::detail::static_log2_impl::n_zero" title='boost::detail::static_log2_impl::n_zero' data-ref="boost::detail::static_log2_impl::n_zero">n_zero</dfn> = <var>16</var>;</td></tr>
+<tr><th id="68">68</th><td>     <em>const</em> <a class="typedef" href="#boost::detail::static_log2_impl::result_type" title='boost::detail::static_log2_impl::result_type' data-type='boost::static_log2_result_type' data-ref="boost::detail::static_log2_impl::result_type">result_type</a> <dfn class="decl def" id="boost::detail::static_log2_impl::initial_n" title='boost::detail::static_log2_impl::initial_n' data-ref="boost::detail::static_log2_impl::initial_n">initial_n</dfn> = <a class="type" href="#boost::detail::static_log2_impl::choose_initial_n" title='boost::detail::static_log2_impl::choose_initial_n' data-ref="boost::detail::static_log2_impl::choose_initial_n">choose_initial_n</a>&lt;<a class="ref" href="#boost::detail::static_log2_impl::n_zero" title='boost::detail::static_log2_impl::n_zero' data-ref="boost::detail::static_log2_impl::n_zero">n_zero</a>&gt;::<a class="ref" href="#52" title='boost::detail::static_log2_impl::choose_initial_n::value' data-ref="boost::detail::static_log2_impl::choose_initial_n::value">value</a>;</td></tr>
+<tr><th id="69">69</th><td></td></tr>
+<tr><th id="70">70</th><td>     <i>// static_log2_impl&lt;&gt;</i></td></tr>
+<tr><th id="71">71</th><td><i>     //</i></td></tr>
+<tr><th id="72">72</th><td><i>     // * Invariant:</i></td></tr>
+<tr><th id="73">73</th><td><i>     //                 2n</i></td></tr>
+<tr><th id="74">74</th><td><i>     //  1 &lt;= x &amp;&amp; x &lt; 2    at the start of each recursion</i></td></tr>
+<tr><th id="75">75</th><td><i>     //                     (see also choose_initial_n&lt;&gt;)</i></td></tr>
+<tr><th id="76">76</th><td><i>     //</i></td></tr>
+<tr><th id="77">77</th><td><i>     // * Type requirements:</i></td></tr>
+<tr><th id="78">78</th><td><i>     //</i></td></tr>
+<tr><th id="79">79</th><td><i>     //   argument_type maybe any unsigned type with at least n_zero + 1</i></td></tr>
+<tr><th id="80">80</th><td><i>     //   value bits. (Note: If larger types will be standardized -e.g.</i></td></tr>
+<tr><th id="81">81</th><td><i>     //   unsigned long long- then the argument_type typedef can be</i></td></tr>
+<tr><th id="82">82</th><td><i>     //   changed without affecting the rest of the code.)</i></td></tr>
+<tr><th id="83">83</th><td><i>     //</i></td></tr>
+<tr><th id="84">84</th><td></td></tr>
+<tr><th id="85">85</th><td>     <b>template</b> &lt;<a class="typedef" href="#boost::detail::static_log2_impl::argument_type" title='boost::detail::static_log2_impl::argument_type' data-type='boost::static_log2_argument_type' data-ref="boost::detail::static_log2_impl::argument_type">argument_type</a> x, <a class="typedef" href="#boost::detail::static_log2_impl::result_type" title='boost::detail::static_log2_impl::result_type' data-type='boost::static_log2_result_type' data-ref="boost::detail::static_log2_impl::result_type">result_type</a> n = <a class="ref" href="#boost::detail::static_log2_impl::initial_n" title='boost::detail::static_log2_impl::initial_n' data-ref="boost::detail::static_log2_impl::initial_n">initial_n</a>&gt;</td></tr>
+<tr><th id="86">86</th><td>     <b>struct</b> <dfn class="type def" id="boost::detail::static_log2_impl::static_log2_impl" title='boost::detail::static_log2_impl::static_log2_impl' data-ref="boost::detail::static_log2_impl::static_log2_impl">static_log2_impl</dfn> {</td></tr>
+<tr><th id="87">87</th><td></td></tr>
+<tr><th id="88">88</th><td>         <a class="macro" href="../../../../config/include/boost/config/detail/suffix.hpp.html#410" title="static const bool c = (x &gt;&gt; n) &gt; 0" data-ref="_M/BOOST_STATIC_CONSTANT">BOOST_STATIC_CONSTANT</a>(<em>bool</em>, <dfn class="decl" id="boost::detail::static_log2_impl::static_log2_impl::c" title='boost::detail::static_log2_impl::static_log2_impl::c' data-ref="boost::detail::static_log2_impl::static_log2_impl::c">c</dfn> = (<a class="tu ref" href="#boost::detail::static_log2_impl::static_log2_impl::x" title='boost::detail::static_log2_impl::static_log2_impl::x' data-use='r' data-ref="boost::detail::static_log2_impl::static_log2_impl::x">x</a> &gt;&gt; <a class="tu ref" href="#boost::detail::static_log2_impl::static_log2_impl::n" title='boost::detail::static_log2_impl::static_log2_impl::n' data-use='r' data-ref="boost::detail::static_log2_impl::static_log2_impl::n">n</a>) &gt; <var>0</var>); <i>// x &gt;= 2**n ?</i></td></tr>
+<tr><th id="89">89</th><td>         <a class="macro" href="../../../../config/include/boost/config/detail/suffix.hpp.html#410" title="static const result_type value = c*n + (static_log2_impl&lt; (x&gt;&gt;c*n), n/2 &gt;::value)" data-ref="_M/BOOST_STATIC_CONSTANT">BOOST_STATIC_CONSTANT</a>(</td></tr>
+<tr><th id="90">90</th><td>             <a class="typedef" href="#boost::detail::static_log2_impl::result_type" title='boost::detail::static_log2_impl::result_type' data-type='boost::static_log2_result_type' data-ref="boost::detail::static_log2_impl::result_type">result_type</a>,</td></tr>
+<tr><th id="91">91</th><td>             <dfn class="decl" id="boost::detail::static_log2_impl::static_log2_impl::value" title='boost::detail::static_log2_impl::static_log2_impl::value' data-ref="boost::detail::static_log2_impl::static_log2_impl::value">value</dfn> = <a class="ref" href="#88" title='boost::detail::static_log2_impl::static_log2_impl::c' data-ref="boost::detail::static_log2_impl::static_log2_impl::c">c</a>*<a class="tu ref" href="#boost::detail::static_log2_impl::static_log2_impl::n" title='boost::detail::static_log2_impl::static_log2_impl::n' data-use='r' data-ref="boost::detail::static_log2_impl::static_log2_impl::n">n</a> + (<a class="type" href="#boost::detail::static_log2_impl::static_log2_impl" title='boost::detail::static_log2_impl::static_log2_impl' data-ref="boost::detail::static_log2_impl::static_log2_impl">static_log2_impl</a>&lt; (<a class="tu ref" href="#boost::detail::static_log2_impl::static_log2_impl::x" title='boost::detail::static_log2_impl::static_log2_impl::x' data-use='r' data-ref="boost::detail::static_log2_impl::static_log2_impl::x">x</a>&gt;&gt;<a class="ref" href="#88" title='boost::detail::static_log2_impl::static_log2_impl::c' data-ref="boost::detail::static_log2_impl::static_log2_impl::c">c</a>*<a class="tu ref" href="#boost::detail::static_log2_impl::static_log2_impl::n" title='boost::detail::static_log2_impl::static_log2_impl::n' data-use='r' data-ref="boost::detail::static_log2_impl::static_log2_impl::n">n</a>), <a class="tu ref" href="#boost::detail::static_log2_impl::static_log2_impl::n" title='boost::detail::static_log2_impl::static_log2_impl::n' data-use='r' data-ref="boost::detail::static_log2_impl::static_log2_impl::n">n</a>/<var>2</var> &gt;::value)</td></tr>
+<tr><th id="92">92</th><td>         );</td></tr>
+<tr><th id="93">93</th><td></td></tr>
+<tr><th id="94">94</th><td>     };</td></tr>
+<tr><th id="95">95</th><td></td></tr>
+<tr><th id="96">96</th><td>     <b>template</b> &lt;&gt;</td></tr>
+<tr><th id="97">97</th><td>     <b>struct</b> <dfn class="type def" id="boost::detail::static_log2_impl::static_log2_impl" title='boost::detail::static_log2_impl::static_log2_impl' data-ref="boost::detail::static_log2_impl::static_log2_impl"><a class="type" href="#boost::detail::static_log2_impl::static_log2_impl" title='boost::detail::static_log2_impl::static_log2_impl' data-ref="boost::detail::static_log2_impl::static_log2_impl">static_log2_impl</a></dfn>&lt;<var>1</var>, <var>0</var>&gt; {</td></tr>
+<tr><th id="98">98</th><td>        <a class="macro" href="../../../../config/include/boost/config/detail/suffix.hpp.html#410" title="static const result_type value = 0" data-ref="_M/BOOST_STATIC_CONSTANT">BOOST_STATIC_CONSTANT</a>(<a class="typedef" href="#boost::detail::static_log2_impl::result_type" title='boost::detail::static_log2_impl::result_type' data-type='boost::static_log2_result_type' data-ref="boost::detail::static_log2_impl::result_type">result_type</a>, <dfn class="decl" id="boost::detail::static_log2_impl::static_log2_impl{1,0}::value" title='boost::detail::static_log2_impl::static_log2_impl&lt;1, 0&gt;::value' data-ref="boost::detail::static_log2_impl::static_log2_impl{1,0}::value">value</dfn> = <var>0</var>);</td></tr>
+<tr><th id="99">99</th><td>     };</td></tr>
+<tr><th id="100">100</th><td></td></tr>
+<tr><th id="101">101</th><td>     }</td></tr>
+<tr><th id="102">102</th><td> } <i>// detail</i></td></tr>
+<tr><th id="103">103</th><td></td></tr>
+<tr><th id="104">104</th><td></td></tr>
+<tr><th id="105">105</th><td></td></tr>
+<tr><th id="106">106</th><td> <i>// --------------------------------------</i></td></tr>
+<tr><th id="107">107</th><td><i> // static_log2&lt;x&gt;</i></td></tr>
+<tr><th id="108">108</th><td><i> // ----------------------------------------</i></td></tr>
+<tr><th id="109">109</th><td></td></tr>
+<tr><th id="110">110</th><td> <b>template</b> &lt;<a class="typedef" href="../integer_fwd.hpp.html#boost::static_log2_argument_type" title='boost::static_log2_argument_type' data-type='boost::uintmax_t' data-ref="boost::static_log2_argument_type">static_log2_argument_type</a> x&gt;</td></tr>
+<tr><th id="111">111</th><td> <b>struct</b> <dfn class="type def" id="boost::static_log2" title='boost::static_log2' data-ref="boost::static_log2">static_log2</dfn> {</td></tr>
+<tr><th id="112">112</th><td></td></tr>
+<tr><th id="113">113</th><td>     <a class="macro" href="../../../../config/include/boost/config/detail/suffix.hpp.html#410" title="static const static_log2_result_type value = detail::static_log2_impl::static_log2_impl&lt;x&gt;::value" data-ref="_M/BOOST_STATIC_CONSTANT">BOOST_STATIC_CONSTANT</a>(</td></tr>
+<tr><th id="114">114</th><td>         <a class="typedef" href="../integer_fwd.hpp.html#boost::static_log2_result_type" title='boost::static_log2_result_type' data-type='int' data-ref="boost::static_log2_result_type">static_log2_result_type</a>,</td></tr>
+<tr><th id="115">115</th><td>         <dfn class="decl" id="boost::static_log2::value" title='boost::static_log2::value' data-ref="boost::static_log2::value">value</dfn> = detail::static_log2_impl::<a class="type" href="#boost::detail::static_log2_impl::static_log2_impl" title='boost::detail::static_log2_impl::static_log2_impl' data-ref="boost::detail::static_log2_impl::static_log2_impl">static_log2_impl</a>&lt;<a class="tu ref" href="#boost::static_log2::x" title='boost::static_log2::x' data-ref="boost::static_log2::x">x</a>&gt;::value</td></tr>
+<tr><th id="116">116</th><td>     );</td></tr>
+<tr><th id="117">117</th><td></td></tr>
+<tr><th id="118">118</th><td> };</td></tr>
+<tr><th id="119">119</th><td></td></tr>
+<tr><th id="120">120</th><td></td></tr>
+<tr><th id="121">121</th><td> <b>template</b> &lt;&gt;</td></tr>
+<tr><th id="122">122</th><td> <b>struct</b> <dfn class="type def" id="boost::static_log2" title='boost::static_log2' data-ref="boost::static_log2"><a class="type" href="../integer_fwd.hpp.html#boost::static_log2" title='boost::static_log2' data-ref="boost::static_log2">static_log2</a></dfn>&lt;<var>0</var>&gt; { };</td></tr>
+<tr><th id="123">123</th><td></td></tr>
+<tr><th id="124">124</th><td>}</td></tr>
+<tr><th id="125">125</th><td></td></tr>
+<tr><th id="126">126</th><td><u>#<span data-ppcond="16">endif</span> // include guard</u></td></tr>
+<tr><th id="127">127</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../../../../log/src/core.cpp.html'>boost-1.85.0/libs/log/src/core.cpp</a><br/>Generated on <em>2024-Jun-14</em> from project boost-1.85.0 revision <em>1.85.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

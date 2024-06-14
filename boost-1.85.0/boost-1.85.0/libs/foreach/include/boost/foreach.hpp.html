@@ -1,0 +1,1153 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>foreach.hpp source code [boost-1.85.0/libs/foreach/include/boost/foreach.hpp] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="boost::foreach::is_lightweight_proxy,boost::foreach::is_noncopyable,boost::foreach_detail_::auto_any,boost::foreach_detail_::auto_any_base,boost::foreach_detail_::foreach_iterator,boost::foreach_detail_::foreach_reference,boost::foreach_detail_::foreach_reverse_iterator,boost::foreach_detail_::is_char_array,boost::foreach_detail_::type2type,boost::foreach_detail_::wrap_cstr "/>
+<link rel="stylesheet" href="../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'boost-1.85.0/libs/foreach/include/boost/foreach.hpp'; var root_path = '../../../../..'; var data_path = '../../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../..'>boost-1.85.0</a>/<a href='../../..'>libs</a>/<a href='../..'>foreach</a>/<a href='..'>include</a>/<a href='./'>boost</a>/<a href='foreach.hpp.html'>foreach.hpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="2">2</th><td><i>// foreach.hpp header file</i></td></tr>
+<tr><th id="3">3</th><td><i>//</i></td></tr>
+<tr><th id="4">4</th><td><i>// Copyright 2004 Eric Niebler.</i></td></tr>
+<tr><th id="5">5</th><td><i>// Distributed under the Boost Software License, Version 1.0. (See</i></td></tr>
+<tr><th id="6">6</th><td><i>// accompanying file LICENSE_1_0.txt or copy at</i></td></tr>
+<tr><th id="7">7</th><td><i>// <a href="http://www.boost.org/LICENSE_1_0.txt">http://www.boost.org/LICENSE_1_0.txt</a>)</i></td></tr>
+<tr><th id="8">8</th><td><i>// See <a href="http://www.boost.org/libs/foreach">http://www.boost.org/libs/foreach</a> for documentation</i></td></tr>
+<tr><th id="9">9</th><td><i>//</i></td></tr>
+<tr><th id="10">10</th><td><i>// Credits:</i></td></tr>
+<tr><th id="11">11</th><td><i>//  Anson Tsao        - for the initial inspiration and several good suggestions.</i></td></tr>
+<tr><th id="12">12</th><td><i>//  Thorsten Ottosen  - for Boost.Range, and for suggesting a way to detect</i></td></tr>
+<tr><th id="13">13</th><td><i>//                      const-qualified rvalues at compile time on VC7.1+</i></td></tr>
+<tr><th id="14">14</th><td><i>//  Russell Hind      - For help porting to Borland</i></td></tr>
+<tr><th id="15">15</th><td><i>//  Alisdair Meredith - For help porting to Borland</i></td></tr>
+<tr><th id="16">16</th><td><i>//  Stefan Slapeta    - For help porting to Intel</i></td></tr>
+<tr><th id="17">17</th><td><i>//  David Jenkins     - For help finding a Microsoft Code Analysis bug</i></td></tr>
+<tr><th id="18">18</th><td><i>//  mimomorin@...     - For a patch to use rvalue refs on supporting compilers</i></td></tr>
+<tr><th id="19">19</th><td></td></tr>
+<tr><th id="20">20</th><td><u>#<span data-ppcond="20">ifndef</span> <span class="macro" data-ref="_M/BOOST_FOREACH">BOOST_FOREACH</span></u></td></tr>
+<tr><th id="21">21</th><td></td></tr>
+<tr><th id="22">22</th><td><i>// MS compatible compilers support #pragma once</i></td></tr>
+<tr><th id="23">23</th><td><u>#<span data-ppcond="23">if</span> defined(<span class="macro" data-ref="_M/_MSC_VER">_MSC_VER</span>)</u></td></tr>
+<tr><th id="24">24</th><td><u># pragma once</u></td></tr>
+<tr><th id="25">25</th><td><u>#<span data-ppcond="23">endif</span></u></td></tr>
+<tr><th id="26">26</th><td></td></tr>
+<tr><th id="27">27</th><td><u>#include <a href="../../../../../include/c++/9/cstddef.html">&lt;cstddef&gt;</a></u></td></tr>
+<tr><th id="28">28</th><td><u>#include <a href="../../../../../include/c++/9/utility.html">&lt;utility&gt;</a>  // for std::pair</u></td></tr>
+<tr><th id="29">29</th><td></td></tr>
+<tr><th id="30">30</th><td><u>#include <a href="../../../config/include/boost/config.hpp.html">&lt;boost/config.hpp&gt;</a></u></td></tr>
+<tr><th id="31">31</th><td><u>#include <a href="../../../config/include/boost/detail/workaround.hpp.html">&lt;boost/detail/workaround.hpp&gt;</a></u></td></tr>
+<tr><th id="32">32</th><td></td></tr>
+<tr><th id="33">33</th><td><i>// Define a compiler generic null pointer value</i></td></tr>
+<tr><th id="34">34</th><td><u>#<span data-ppcond="34">if</span> defined(<span class="macro" data-ref="_M/BOOST_NO_NULLPTR">BOOST_NO_NULLPTR</span>)</u></td></tr>
+<tr><th id="35">35</th><td><u>#define BOOST_FOREACH_NULL 0</u></td></tr>
+<tr><th id="36">36</th><td><u>#<span data-ppcond="34">else</span></u></td></tr>
+<tr><th id="37">37</th><td><u>#define <dfn class="macro" id="_M/BOOST_FOREACH_NULL" data-ref="_M/BOOST_FOREACH_NULL">BOOST_FOREACH_NULL</dfn> nullptr</u></td></tr>
+<tr><th id="38">38</th><td><u>#<span data-ppcond="34">endif</span></u></td></tr>
+<tr><th id="39">39</th><td></td></tr>
+<tr><th id="40">40</th><td><i>// Some compilers let us detect even const-qualified rvalues at compile-time</i></td></tr>
+<tr><th id="41">41</th><td><u>#<span data-ppcond="41">if</span> !defined(<span class="macro" data-ref="_M/BOOST_NO_CXX11_RVALUE_REFERENCES">BOOST_NO_CXX11_RVALUE_REFERENCES</span>)                                                   \</u></td></tr>
+<tr><th id="42">42</th><td><u> || defined(<span class="macro" data-ref="_M/BOOST_MSVC">BOOST_MSVC</span>) &amp;&amp; !defined(<span class="macro" data-ref="_M/_PREFAST_">_PREFAST_</span>)                                 \</u></td></tr>
+<tr><th id="43">43</th><td><u> || (<a class="macro" href="../../../config/include/boost/config/workaround.hpp.html#271" title="((0 + 0 == 0) &amp;&amp; (4 != 0) &amp;&amp; (1 % (( (4 == 4) ) + 1)))" data-ref="_M/BOOST_WORKAROUND">BOOST_WORKAROUND</a>(<span class="macro" title="4" data-ref="_M/__GNUC__">__GNUC__</span>, == 4) &amp;&amp; (<span class="macro" title="2" data-ref="_M/__GNUC_MINOR__">__GNUC_MINOR__</span> &lt;= 5) &amp;&amp; !defined(<span class="macro" data-ref="_M/BOOST_INTEL">BOOST_INTEL</span>) &amp;&amp;       \</u></td></tr>
+<tr><th id="44">44</th><td><u>                                                                  !defined(<a class="macro" href="../../../config/include/boost/config/compiler/clang.hpp.html#367" data-ref="_M/BOOST_CLANG">BOOST_CLANG</a>))         \</u></td></tr>
+<tr><th id="45">45</th><td><u> || (<a class="macro" href="../../../config/include/boost/config/workaround.hpp.html#271" title="((0 + 0 == 0) &amp;&amp; (4 != 0) &amp;&amp; (1 % (( (4 == 3) ) + 1)))" data-ref="_M/BOOST_WORKAROUND">BOOST_WORKAROUND</a>(<span class="macro" title="4" data-ref="_M/__GNUC__">__GNUC__</span>, == 3) &amp;&amp; (<span class="macro" title="2" data-ref="_M/__GNUC_MINOR__">__GNUC_MINOR__</span> &gt;= 4) &amp;&amp; !defined(<span class="macro" data-ref="_M/BOOST_INTEL">BOOST_INTEL</span>) &amp;&amp;       \</u></td></tr>
+<tr><th id="46">46</th><td><u>                                                                  !defined(<a class="macro" href="../../../config/include/boost/config/compiler/clang.hpp.html#367" data-ref="_M/BOOST_CLANG">BOOST_CLANG</a>))</u></td></tr>
+<tr><th id="47">47</th><td><u># define <dfn class="macro" id="_M/BOOST_FOREACH_COMPILE_TIME_CONST_RVALUE_DETECTION" data-ref="_M/BOOST_FOREACH_COMPILE_TIME_CONST_RVALUE_DETECTION">BOOST_FOREACH_COMPILE_TIME_CONST_RVALUE_DETECTION</dfn></u></td></tr>
+<tr><th id="48">48</th><td><u>#<span data-ppcond="41">else</span></u></td></tr>
+<tr><th id="49">49</th><td><i>// Some compilers allow temporaries to be bound to non-const references.</i></td></tr>
+<tr><th id="50">50</th><td><i>// These compilers make it impossible to for BOOST_FOREACH to detect</i></td></tr>
+<tr><th id="51">51</th><td><i>// temporaries and avoid reevaluation of the collection expression.</i></td></tr>
+<tr><th id="52">52</th><td><u># if BOOST_WORKAROUND(BOOST_BORLANDC, &lt; 0x593)                                                    \</u></td></tr>
+<tr><th id="53">53</th><td><u>  || (BOOST_WORKAROUND(BOOST_INTEL_CXX_VERSION, &lt;= 700) &amp;&amp; defined(_MSC_VER))                   \</u></td></tr>
+<tr><th id="54">54</th><td><u>  || BOOST_WORKAROUND(__SUNPRO_CC, &lt; 0x5100)                                                    \</u></td></tr>
+<tr><th id="55">55</th><td><u>  || BOOST_WORKAROUND(__DECCXX_VER, &lt;= 60590042)</u></td></tr>
+<tr><th id="56">56</th><td><u>#  define BOOST_FOREACH_NO_RVALUE_DETECTION</u></td></tr>
+<tr><th id="57">57</th><td><u># endif</u></td></tr>
+<tr><th id="58">58</th><td><i>// Some compilers do not correctly implement the lvalue/rvalue conversion</i></td></tr>
+<tr><th id="59">59</th><td><i>// rules of the ternary conditional operator.</i></td></tr>
+<tr><th id="60">60</th><td><u># if defined(BOOST_FOREACH_NO_RVALUE_DETECTION)                                                 \</u></td></tr>
+<tr><th id="61">61</th><td><u>  || defined(BOOST_NO_SFINAE)                                                                   \</u></td></tr>
+<tr><th id="62">62</th><td><u>  || BOOST_WORKAROUND(BOOST_MSVC, BOOST_TESTED_AT(1400))                                        \</u></td></tr>
+<tr><th id="63">63</th><td><u>  || BOOST_WORKAROUND(BOOST_INTEL_WIN, BOOST_TESTED_AT(1400))                                   \</u></td></tr>
+<tr><th id="64">64</th><td><u>  || (BOOST_WORKAROUND(__GNUC__, == 3) &amp;&amp; (__GNUC_MINOR__ &lt;= 3) &amp;&amp; defined(__APPLE_CC__))       \</u></td></tr>
+<tr><th id="65">65</th><td><u>  || BOOST_WORKAROUND(__IBMCPP__, BOOST_TESTED_AT(600))                                         \</u></td></tr>
+<tr><th id="66">66</th><td><u>  || BOOST_WORKAROUND(__MWERKS__, BOOST_TESTED_AT(0x3206))                                      \</u></td></tr>
+<tr><th id="67">67</th><td><u>  || BOOST_WORKAROUND(__SUNPRO_CC, &gt;= 0x5100)                                                   \</u></td></tr>
+<tr><th id="68">68</th><td><u>  || BOOST_WORKAROUND(BOOST_BORLANDC, BOOST_TESTED_AT(0x590))</u></td></tr>
+<tr><th id="69">69</th><td><u>#  define BOOST_FOREACH_NO_CONST_RVALUE_DETECTION</u></td></tr>
+<tr><th id="70">70</th><td><u># else</u></td></tr>
+<tr><th id="71">71</th><td><u>#  define BOOST_FOREACH_RUN_TIME_CONST_RVALUE_DETECTION</u></td></tr>
+<tr><th id="72">72</th><td><u># endif</u></td></tr>
+<tr><th id="73">73</th><td><u>#<span data-ppcond="41">endif</span></u></td></tr>
+<tr><th id="74">74</th><td></td></tr>
+<tr><th id="75">75</th><td><u>#include <a href="../../../mpl/include/boost/mpl/if.hpp.html">&lt;boost/mpl/if.hpp&gt;</a></u></td></tr>
+<tr><th id="76">76</th><td><u>#include <a href="../../../mpl/include/boost/mpl/assert.hpp.html">&lt;boost/mpl/assert.hpp&gt;</a></u></td></tr>
+<tr><th id="77">77</th><td><u>#include <a href="../../../mpl/include/boost/mpl/logical.hpp.html">&lt;boost/mpl/logical.hpp&gt;</a></u></td></tr>
+<tr><th id="78">78</th><td><u>#include <a href="../../../mpl/include/boost/mpl/eval_if.hpp.html">&lt;boost/mpl/eval_if.hpp&gt;</a></u></td></tr>
+<tr><th id="79">79</th><td><u>#include <a href="../../../core/include/boost/noncopyable.hpp.html">&lt;boost/noncopyable.hpp&gt;</a></u></td></tr>
+<tr><th id="80">80</th><td><u>#include <a href="../../../range/include/boost/range/end.hpp.html">&lt;boost/range/end.hpp&gt;</a></u></td></tr>
+<tr><th id="81">81</th><td><u>#include <a href="../../../range/include/boost/range/begin.hpp.html">&lt;boost/range/begin.hpp&gt;</a></u></td></tr>
+<tr><th id="82">82</th><td><u>#include <a href="../../../range/include/boost/range/rend.hpp.html">&lt;boost/range/rend.hpp&gt;</a></u></td></tr>
+<tr><th id="83">83</th><td><u>#include <a href="../../../range/include/boost/range/rbegin.hpp.html">&lt;boost/range/rbegin.hpp&gt;</a></u></td></tr>
+<tr><th id="84">84</th><td><u>#include <a href="../../../range/include/boost/range/iterator.hpp.html">&lt;boost/range/iterator.hpp&gt;</a></u></td></tr>
+<tr><th id="85">85</th><td><u>#include <a href="../../../range/include/boost/range/reverse_iterator.hpp.html">&lt;boost/range/reverse_iterator.hpp&gt;</a></u></td></tr>
+<tr><th id="86">86</th><td><u>#include <a href="../../../type_traits/include/boost/type_traits/is_array.hpp.html">&lt;boost/type_traits/is_array.hpp&gt;</a></u></td></tr>
+<tr><th id="87">87</th><td><u>#include <a href="../../../type_traits/include/boost/type_traits/is_const.hpp.html">&lt;boost/type_traits/is_const.hpp&gt;</a></u></td></tr>
+<tr><th id="88">88</th><td><u>#include <a href="../../../type_traits/include/boost/type_traits/is_abstract.hpp.html">&lt;boost/type_traits/is_abstract.hpp&gt;</a></u></td></tr>
+<tr><th id="89">89</th><td><u>#include <a href="../../../type_traits/include/boost/type_traits/is_base_and_derived.hpp.html">&lt;boost/type_traits/is_base_and_derived.hpp&gt;</a></u></td></tr>
+<tr><th id="90">90</th><td><u>#include <a href="../../../type_traits/include/boost/type_traits/is_rvalue_reference.hpp.html">&lt;boost/type_traits/is_rvalue_reference.hpp&gt;</a></u></td></tr>
+<tr><th id="91">91</th><td><u>#include <a href="../../../iterator/include/boost/iterator/iterator_traits.hpp.html">&lt;boost/iterator/iterator_traits.hpp&gt;</a></u></td></tr>
+<tr><th id="92">92</th><td><u>#include <a href="../../../core/include/boost/utility/addressof.hpp.html">&lt;boost/utility/addressof.hpp&gt;</a></u></td></tr>
+<tr><th id="93">93</th><td><u>#include <a href="foreach_fwd.hpp.html">&lt;boost/foreach_fwd.hpp&gt;</a></u></td></tr>
+<tr><th id="94">94</th><td></td></tr>
+<tr><th id="95">95</th><td><u>#<span data-ppcond="95">ifdef</span> <span class="macro" data-ref="_M/BOOST_FOREACH_RUN_TIME_CONST_RVALUE_DETECTION">BOOST_FOREACH_RUN_TIME_CONST_RVALUE_DETECTION</span></u></td></tr>
+<tr><th id="96">96</th><td><u># include &lt;new&gt;</u></td></tr>
+<tr><th id="97">97</th><td><u># include &lt;boost/aligned_storage.hpp&gt;</u></td></tr>
+<tr><th id="98">98</th><td><u># include &lt;boost/utility/enable_if.hpp&gt;</u></td></tr>
+<tr><th id="99">99</th><td><u># include &lt;boost/type_traits/remove_const.hpp&gt;</u></td></tr>
+<tr><th id="100">100</th><td><u>#<span data-ppcond="95">endif</span></u></td></tr>
+<tr><th id="101">101</th><td></td></tr>
+<tr><th id="102">102</th><td><b>namespace</b> <span class="namespace">boost</span></td></tr>
+<tr><th id="103">103</th><td>{</td></tr>
+<tr><th id="104">104</th><td></td></tr>
+<tr><th id="105">105</th><td><i>// forward declarations for iterator_range</i></td></tr>
+<tr><th id="106">106</th><td><b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="107">107</th><td><b>class</b> <a class="type" href="../../../range/include/boost/range/iterator_range_core.hpp.html#boost::iterator_range" title='boost::iterator_range' data-ref="boost::iterator_range" id="boost::iterator_range">iterator_range</a>;</td></tr>
+<tr><th id="108">108</th><td></td></tr>
+<tr><th id="109">109</th><td><i>// forward declarations for sub_range</i></td></tr>
+<tr><th id="110">110</th><td><b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="111">111</th><td><b>class</b> <a class="type" href="../../../range/include/boost/range/range_fwd.hpp.html#boost::sub_range" title='boost::sub_range' data-ref="boost::sub_range" id="boost::sub_range">sub_range</a>;</td></tr>
+<tr><th id="112">112</th><td></td></tr>
+<tr><th id="113">113</th><td><b>namespace</b> <span class="namespace">foreach</span></td></tr>
+<tr><th id="114">114</th><td>{</td></tr>
+<tr><th id="115">115</th><td>    <i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="116">116</th><td><i>    // in_range</i></td></tr>
+<tr><th id="117">117</th><td><i>    //</i></td></tr>
+<tr><th id="118">118</th><td>    <b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="119">119</th><td>    <b>inline</b> <span class="namespace">std::</span><a class="type" href="../../../../../include/c++/9/bits/stl_pair.h.html#std::pair" title='std::pair' data-ref="std::pair">pair</a>&lt;T, T&gt; <dfn class="decl def fn" id="_ZN5boost7foreach8in_rangeET_S1_" title='boost::foreach::in_range' data-ref="_ZN5boost7foreach8in_rangeET_S1_">in_range</dfn>(T <dfn class="local col1 decl" id="1begin" title='begin' data-type='T' data-ref="1begin">begin</dfn>, T <dfn class="local col2 decl" id="2end" title='end' data-type='T' data-ref="2end">end</dfn>)</td></tr>
+<tr><th id="120">120</th><td>    {</td></tr>
+<tr><th id="121">121</th><td>        <b>return</b> <span class="namespace">std::</span>make_pair(<a class="local col1 ref" href="#1begin" title='begin' data-ref="1begin">begin</a>, <a class="local col2 ref" href="#2end" title='end' data-ref="2end">end</a>);</td></tr>
+<tr><th id="122">122</th><td>    }</td></tr>
+<tr><th id="123">123</th><td></td></tr>
+<tr><th id="124">124</th><td>    <i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="125">125</th><td><i>    // boost::foreach::is_lightweight_proxy</i></td></tr>
+<tr><th id="126">126</th><td><i>    //   Specialize this for user-defined collection types if they are inexpensive to copy.</i></td></tr>
+<tr><th id="127">127</th><td><i>    //   This tells BOOST_FOREACH it can avoid the rvalue/lvalue detection stuff.</i></td></tr>
+<tr><th id="128">128</th><td>    <b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="129">129</th><td>    <b>struct</b> <dfn class="type def" id="boost::foreach::is_lightweight_proxy" title='boost::foreach::is_lightweight_proxy' data-ref="boost::foreach::is_lightweight_proxy">is_lightweight_proxy</dfn></td></tr>
+<tr><th id="130">130</th><td>      : <span class="namespace">boost::mpl::</span>false_</td></tr>
+<tr><th id="131">131</th><td>    {</td></tr>
+<tr><th id="132">132</th><td>    };</td></tr>
+<tr><th id="133">133</th><td></td></tr>
+<tr><th id="134">134</th><td>    <i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="135">135</th><td><i>    // boost::foreach::is_noncopyable</i></td></tr>
+<tr><th id="136">136</th><td><i>    //   Specialize this for user-defined collection types if they cannot be copied.</i></td></tr>
+<tr><th id="137">137</th><td><i>    //   This also tells BOOST_FOREACH to avoid the rvalue/lvalue detection stuff.</i></td></tr>
+<tr><th id="138">138</th><td>    <b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="139">139</th><td>    <b>struct</b> <dfn class="type def" id="boost::foreach::is_noncopyable" title='boost::foreach::is_noncopyable' data-ref="boost::foreach::is_noncopyable">is_noncopyable</dfn></td></tr>
+<tr><th id="140">140</th><td>    <u>#<span data-ppcond="140">if</span> !defined(<span class="macro" data-ref="_M/BOOST_BROKEN_IS_BASE_AND_DERIVED">BOOST_BROKEN_IS_BASE_AND_DERIVED</span>) &amp;&amp; !defined(<span class="macro" data-ref="_M/BOOST_NO_IS_ABSTRACT">BOOST_NO_IS_ABSTRACT</span>)</u></td></tr>
+<tr><th id="141">141</th><td>      : <span class="namespace">boost::mpl::</span><a class="type" href="../../../mpl/include/boost/mpl/aux_/preprocessed/gcc/or.hpp.html#boost::mpl::or_" title='boost::mpl::or_' data-ref="boost::mpl::or_">or_</a>&lt;</td></tr>
+<tr><th id="142">142</th><td>            <span class="namespace">boost::</span><a class="type" href="../../../type_traits/include/boost/type_traits/is_abstract.hpp.html#boost::is_abstract" title='boost::is_abstract' data-ref="boost::is_abstract">is_abstract</a>&lt;T&gt;</td></tr>
+<tr><th id="143">143</th><td>          , <span class="namespace">boost::</span><a class="type" href="../../../type_traits/include/boost/type_traits/is_base_and_derived.hpp.html#boost::is_base_and_derived" title='boost::is_base_and_derived' data-ref="boost::is_base_and_derived">is_base_and_derived</a>&lt;<span class="namespace">boost::</span><a class="typedef" href="../../../core/include/boost/core/noncopyable.hpp.html#boost::noncopyable" title='boost::noncopyable' data-type='noncopyable_::noncopyable' data-ref="boost::noncopyable">noncopyable</a>, T&gt;</td></tr>
+<tr><th id="144">144</th><td>        &gt;</td></tr>
+<tr><th id="145">145</th><td>    <u>#<span data-ppcond="140">elif</span> !defined(BOOST_BROKEN_IS_BASE_AND_DERIVED)</u></td></tr>
+<tr><th id="146">146</th><td>      : boost::is_base_and_derived&lt;boost::noncopyable, T&gt;</td></tr>
+<tr><th id="147">147</th><td>    <u>#elif !defined(BOOST_NO_IS_ABSTRACT)</u></td></tr>
+<tr><th id="148">148</th><td>      : boost::is_abstract&lt;T&gt;</td></tr>
+<tr><th id="149">149</th><td>    <u>#else</u></td></tr>
+<tr><th id="150">150</th><td>      : boost::mpl::false_</td></tr>
+<tr><th id="151">151</th><td>    <u>#<span data-ppcond="140">endif</span></u></td></tr>
+<tr><th id="152">152</th><td>    {</td></tr>
+<tr><th id="153">153</th><td>    };</td></tr>
+<tr><th id="154">154</th><td></td></tr>
+<tr><th id="155">155</th><td>} <i>// namespace foreach</i></td></tr>
+<tr><th id="156">156</th><td></td></tr>
+<tr><th id="157">157</th><td>} <i>// namespace boost</i></td></tr>
+<tr><th id="158">158</th><td></td></tr>
+<tr><th id="159">159</th><td><i>// vc6/7 needs help ordering the following overloads</i></td></tr>
+<tr><th id="160">160</th><td><u>#<span data-ppcond="160">ifdef</span> <span class="macro" data-ref="_M/BOOST_NO_FUNCTION_TEMPLATE_ORDERING">BOOST_NO_FUNCTION_TEMPLATE_ORDERING</span></u></td></tr>
+<tr><th id="161">161</th><td><u># define BOOST_FOREACH_TAG_DEFAULT ...</u></td></tr>
+<tr><th id="162">162</th><td><u>#<span data-ppcond="160">else</span></u></td></tr>
+<tr><th id="163">163</th><td><u># define <dfn class="macro" id="_M/BOOST_FOREACH_TAG_DEFAULT" data-ref="_M/BOOST_FOREACH_TAG_DEFAULT">BOOST_FOREACH_TAG_DEFAULT</dfn> boost::foreach::<a class="typedef" href="foreach_fwd.hpp.html#boost::foreach::tag" title='boost::foreach::tag' data-type='boost_foreach_argument_dependent_lookup_hack' data-ref="boost::foreach::tag">tag</a></u></td></tr>
+<tr><th id="164">164</th><td><u>#<span data-ppcond="160">endif</span></u></td></tr>
+<tr><th id="165">165</th><td></td></tr>
+<tr><th id="166">166</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="167">167</th><td><i>// boost_foreach_is_lightweight_proxy</i></td></tr>
+<tr><th id="168">168</th><td><i>//   Another customization point for the is_lightweight_proxy optimization,</i></td></tr>
+<tr><th id="169">169</th><td><i>//   this one works on legacy compilers. Overload boost_foreach_is_lightweight_proxy</i></td></tr>
+<tr><th id="170">170</th><td><i>//   at the global namespace for your type.</i></td></tr>
+<tr><th id="171">171</th><td><b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="172">172</th><td><b>inline</b> <span class="namespace">boost::foreach::</span><a class="type" href="foreach_fwd.hpp.html#boost::foreach::is_lightweight_proxy" title='boost::foreach::is_lightweight_proxy' data-ref="boost::foreach::is_lightweight_proxy">is_lightweight_proxy</a>&lt;T&gt; *</td></tr>
+<tr><th id="173">173</th><td><dfn class="decl def fn" id="_Z34boost_foreach_is_lightweight_proxyRPT_44boost_foreach_argument_dependent_lookup_hack" title='boost_foreach_is_lightweight_proxy' data-ref="_Z34boost_foreach_is_lightweight_proxyRPT_44boost_foreach_argument_dependent_lookup_hack">boost_foreach_is_lightweight_proxy</dfn>(T *&amp;, <a class="macro" href="#163" title="boost::foreach::tag" data-ref="_M/BOOST_FOREACH_TAG_DEFAULT">BOOST_FOREACH_TAG_DEFAULT</a>) { <b>return</b> <var>0</var>; }</td></tr>
+<tr><th id="174">174</th><td></td></tr>
+<tr><th id="175">175</th><td><b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="176">176</th><td><b>inline</b> <span class="namespace">boost::mpl::</span>true_ *</td></tr>
+<tr><th id="177">177</th><td><dfn class="decl def fn" id="_Z34boost_foreach_is_lightweight_proxyRPSt4pairIT_S0_E44boost_foreach_argument_dependent_lookup_hack" title='boost_foreach_is_lightweight_proxy' data-ref="_Z34boost_foreach_is_lightweight_proxyRPSt4pairIT_S0_E44boost_foreach_argument_dependent_lookup_hack">boost_foreach_is_lightweight_proxy</dfn>(<span class="namespace">std::</span><a class="type" href="../../../../../include/c++/9/bits/stl_pair.h.html#std::pair" title='std::pair' data-ref="std::pair">pair</a>&lt;T, T&gt; *&amp;, <span class="namespace">boost::foreach::</span><a class="typedef" href="foreach_fwd.hpp.html#boost::foreach::tag" title='boost::foreach::tag' data-type='boost_foreach_argument_dependent_lookup_hack' data-ref="boost::foreach::tag">tag</a>) { <b>return</b> <var>0</var>; }</td></tr>
+<tr><th id="178">178</th><td></td></tr>
+<tr><th id="179">179</th><td><b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="180">180</th><td><b>inline</b> <span class="namespace">boost::mpl::</span>true_ *</td></tr>
+<tr><th id="181">181</th><td><dfn class="decl def fn" id="_Z34boost_foreach_is_lightweight_proxyRPN5boost14iterator_rangeIT_EE44boost_foreach_argument_dependent_lookup_hack" title='boost_foreach_is_lightweight_proxy' data-ref="_Z34boost_foreach_is_lightweight_proxyRPN5boost14iterator_rangeIT_EE44boost_foreach_argument_dependent_lookup_hack">boost_foreach_is_lightweight_proxy</dfn>(<span class="namespace">boost::</span><a class="type" href="../../../range/include/boost/range/range_fwd.hpp.html#boost::iterator_range" title='boost::iterator_range' data-ref="boost::iterator_range">iterator_range</a>&lt;T&gt; *&amp;, <span class="namespace">boost::foreach::</span><a class="typedef" href="foreach_fwd.hpp.html#boost::foreach::tag" title='boost::foreach::tag' data-type='boost_foreach_argument_dependent_lookup_hack' data-ref="boost::foreach::tag">tag</a>) { <b>return</b> <var>0</var>; }</td></tr>
+<tr><th id="182">182</th><td></td></tr>
+<tr><th id="183">183</th><td><b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="184">184</th><td><b>inline</b> <span class="namespace">boost::mpl::</span>true_ *</td></tr>
+<tr><th id="185">185</th><td><dfn class="decl def fn" id="_Z34boost_foreach_is_lightweight_proxyRPN5boost9sub_rangeIT_EE44boost_foreach_argument_dependent_lookup_hack" title='boost_foreach_is_lightweight_proxy' data-ref="_Z34boost_foreach_is_lightweight_proxyRPN5boost9sub_rangeIT_EE44boost_foreach_argument_dependent_lookup_hack">boost_foreach_is_lightweight_proxy</dfn>(<span class="namespace">boost::</span><a class="type" href="../../../range/include/boost/range/range_fwd.hpp.html#boost::sub_range" title='boost::sub_range' data-ref="boost::sub_range">sub_range</a>&lt;T&gt; *&amp;, <span class="namespace">boost::foreach::</span><a class="typedef" href="foreach_fwd.hpp.html#boost::foreach::tag" title='boost::foreach::tag' data-type='boost_foreach_argument_dependent_lookup_hack' data-ref="boost::foreach::tag">tag</a>) { <b>return</b> <var>0</var>; }</td></tr>
+<tr><th id="186">186</th><td></td></tr>
+<tr><th id="187">187</th><td><b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="188">188</th><td><b>inline</b> <span class="namespace">boost::mpl::</span>true_ *</td></tr>
+<tr><th id="189">189</th><td><dfn class="decl def fn" id="_Z34boost_foreach_is_lightweight_proxyRPPT_44boost_foreach_argument_dependent_lookup_hack" title='boost_foreach_is_lightweight_proxy' data-ref="_Z34boost_foreach_is_lightweight_proxyRPPT_44boost_foreach_argument_dependent_lookup_hack">boost_foreach_is_lightweight_proxy</dfn>(T **&amp;, <span class="namespace">boost::foreach::</span><a class="typedef" href="foreach_fwd.hpp.html#boost::foreach::tag" title='boost::foreach::tag' data-type='boost_foreach_argument_dependent_lookup_hack' data-ref="boost::foreach::tag">tag</a>) { <b>return</b> <var>0</var>; }</td></tr>
+<tr><th id="190">190</th><td></td></tr>
+<tr><th id="191">191</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="192">192</th><td><i>// boost_foreach_is_noncopyable</i></td></tr>
+<tr><th id="193">193</th><td><i>//   Another customization point for the is_noncopyable trait,</i></td></tr>
+<tr><th id="194">194</th><td><i>//   this one works on legacy compilers. Overload boost_foreach_is_noncopyable</i></td></tr>
+<tr><th id="195">195</th><td><i>//   at the global namespace for your type.</i></td></tr>
+<tr><th id="196">196</th><td><b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="197">197</th><td><b>inline</b> <span class="namespace">boost::foreach::</span><a class="type" href="foreach_fwd.hpp.html#boost::foreach::is_noncopyable" title='boost::foreach::is_noncopyable' data-ref="boost::foreach::is_noncopyable">is_noncopyable</a>&lt;T&gt; *</td></tr>
+<tr><th id="198">198</th><td><dfn class="decl def fn" id="_Z28boost_foreach_is_noncopyableRPT_44boost_foreach_argument_dependent_lookup_hack" title='boost_foreach_is_noncopyable' data-ref="_Z28boost_foreach_is_noncopyableRPT_44boost_foreach_argument_dependent_lookup_hack">boost_foreach_is_noncopyable</dfn>(T *&amp;, <a class="macro" href="#163" title="boost::foreach::tag" data-ref="_M/BOOST_FOREACH_TAG_DEFAULT">BOOST_FOREACH_TAG_DEFAULT</a>) { <b>return</b> <var>0</var>; }</td></tr>
+<tr><th id="199">199</th><td></td></tr>
+<tr><th id="200">200</th><td><b>namespace</b> <span class="namespace">boost</span></td></tr>
+<tr><th id="201">201</th><td>{</td></tr>
+<tr><th id="202">202</th><td></td></tr>
+<tr><th id="203">203</th><td><b>namespace</b> <span class="namespace">foreach_detail_</span></td></tr>
+<tr><th id="204">204</th><td>{</td></tr>
+<tr><th id="205">205</th><td></td></tr>
+<tr><th id="206">206</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="207">207</th><td><i>// Define some utilities for assessing the properties of expressions</i></td></tr>
+<tr><th id="208">208</th><td><i>//</i></td></tr>
+<tr><th id="209">209</th><td><b>template</b>&lt;<b>typename</b> Bool1, <b>typename</b> Bool2&gt;</td></tr>
+<tr><th id="210">210</th><td><b>inline</b> <span class="namespace">boost::mpl::</span><a class="type" href="../../../mpl/include/boost/mpl/aux_/preprocessed/gcc/and.hpp.html#boost::mpl::and_" title='boost::mpl::and_' data-ref="boost::mpl::and_">and_</a>&lt;Bool1, Bool2&gt; *<dfn class="decl def fn" id="_ZN5boost15foreach_detail_4and_EPT_PT0_" title='boost::foreach_detail_::and_' data-ref="_ZN5boost15foreach_detail_4and_EPT_PT0_">and_</dfn>(Bool1 *, Bool2 *) { <b>return</b> <var>0</var>; }</td></tr>
+<tr><th id="211">211</th><td></td></tr>
+<tr><th id="212">212</th><td><b>template</b>&lt;<b>typename</b> Bool1, <b>typename</b> Bool2, <b>typename</b> Bool3&gt;</td></tr>
+<tr><th id="213">213</th><td><b>inline</b> <span class="namespace">boost::mpl::</span><a class="type" href="../../../mpl/include/boost/mpl/aux_/preprocessed/gcc/and.hpp.html#boost::mpl::and_" title='boost::mpl::and_' data-ref="boost::mpl::and_">and_</a>&lt;Bool1, Bool2, Bool3&gt; *<dfn class="decl def fn" id="_ZN5boost15foreach_detail_4and_EPT_PT0_PT1_" title='boost::foreach_detail_::and_' data-ref="_ZN5boost15foreach_detail_4and_EPT_PT0_PT1_">and_</dfn>(Bool1 *, Bool2 *, Bool3 *) { <b>return</b> <var>0</var>; }</td></tr>
+<tr><th id="214">214</th><td></td></tr>
+<tr><th id="215">215</th><td><b>template</b>&lt;<b>typename</b> Bool1, <b>typename</b> Bool2&gt;</td></tr>
+<tr><th id="216">216</th><td><b>inline</b> <span class="namespace">boost::mpl::</span><a class="type" href="../../../mpl/include/boost/mpl/aux_/preprocessed/gcc/or.hpp.html#boost::mpl::or_" title='boost::mpl::or_' data-ref="boost::mpl::or_">or_</a>&lt;Bool1, Bool2&gt; *<dfn class="decl def fn" id="_ZN5boost15foreach_detail_3or_EPT_PT0_" title='boost::foreach_detail_::or_' data-ref="_ZN5boost15foreach_detail_3or_EPT_PT0_">or_</dfn>(Bool1 *, Bool2 *) { <b>return</b> <var>0</var>; }</td></tr>
+<tr><th id="217">217</th><td></td></tr>
+<tr><th id="218">218</th><td><b>template</b>&lt;<b>typename</b> Bool1, <b>typename</b> Bool2, <b>typename</b> Bool3&gt;</td></tr>
+<tr><th id="219">219</th><td><b>inline</b> <span class="namespace">boost::mpl::</span><a class="type" href="../../../mpl/include/boost/mpl/aux_/preprocessed/gcc/or.hpp.html#boost::mpl::or_" title='boost::mpl::or_' data-ref="boost::mpl::or_">or_</a>&lt;Bool1, Bool2, Bool3&gt; *<dfn class="decl def fn" id="_ZN5boost15foreach_detail_3or_EPT_PT0_PT1_" title='boost::foreach_detail_::or_' data-ref="_ZN5boost15foreach_detail_3or_EPT_PT0_PT1_">or_</dfn>(Bool1 *, Bool2 *, Bool3 *) { <b>return</b> <var>0</var>; }</td></tr>
+<tr><th id="220">220</th><td></td></tr>
+<tr><th id="221">221</th><td><b>template</b>&lt;<b>typename</b> Bool1&gt;</td></tr>
+<tr><th id="222">222</th><td><b>inline</b> <span class="namespace">boost::mpl::</span><a class="type" href="../../../mpl/include/boost/mpl/not.hpp.html#boost::mpl::not_" title='boost::mpl::not_' data-ref="boost::mpl::not_">not_</a>&lt;Bool1&gt; *<dfn class="decl def fn" id="_ZN5boost15foreach_detail_4not_EPT_" title='boost::foreach_detail_::not_' data-ref="_ZN5boost15foreach_detail_4not_EPT_">not_</dfn>(Bool1 *) { <b>return</b> <var>0</var>; }</td></tr>
+<tr><th id="223">223</th><td></td></tr>
+<tr><th id="224">224</th><td><b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="225">225</th><td><b>inline</b> <span class="namespace">boost::</span><a class="type" href="../../../type_traits/include/boost/type_traits/is_array.hpp.html#boost::is_array" title='boost::is_array' data-ref="boost::is_array">is_array</a>&lt;T&gt; *<dfn class="decl def fn" id="_ZN5boost15foreach_detail_9is_array_ERKT_" title='boost::foreach_detail_::is_array_' data-ref="_ZN5boost15foreach_detail_9is_array_ERKT_">is_array_</dfn>(T <em>const</em> &amp;) { <b>return</b> <var>0</var>; }</td></tr>
+<tr><th id="226">226</th><td></td></tr>
+<tr><th id="227">227</th><td><b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="228">228</th><td><b>inline</b> <span class="namespace">boost::</span><a class="type" href="../../../type_traits/include/boost/type_traits/is_const.hpp.html#boost::is_const" title='boost::is_const' data-ref="boost::is_const">is_const</a>&lt;T&gt; *<dfn class="decl def fn" id="_ZN5boost15foreach_detail_9is_const_ERT_" title='boost::foreach_detail_::is_const_' data-ref="_ZN5boost15foreach_detail_9is_const_ERT_">is_const_</dfn>(T &amp;) { <b>return</b> <var>0</var>; }</td></tr>
+<tr><th id="229">229</th><td></td></tr>
+<tr><th id="230">230</th><td><u>#<span data-ppcond="230">ifndef</span> <span class="macro" data-ref="_M/BOOST_FOREACH_NO_RVALUE_DETECTION">BOOST_FOREACH_NO_RVALUE_DETECTION</span></u></td></tr>
+<tr><th id="231">231</th><td><b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="232">232</th><td><b>inline</b> <span class="namespace">boost::mpl::</span>true_ *<dfn class="decl def fn" id="_ZN5boost15foreach_detail_9is_const_ERKT_" title='boost::foreach_detail_::is_const_' data-ref="_ZN5boost15foreach_detail_9is_const_ERKT_">is_const_</dfn>(T <em>const</em> &amp;) { <b>return</b> <var>0</var>; }</td></tr>
+<tr><th id="233">233</th><td><u>#<span data-ppcond="230">endif</span></u></td></tr>
+<tr><th id="234">234</th><td></td></tr>
+<tr><th id="235">235</th><td><u>#<span data-ppcond="235">ifdef</span> <span class="macro" data-ref="_M/BOOST_NO_CXX11_RVALUE_REFERENCES">BOOST_NO_CXX11_RVALUE_REFERENCES</span></u></td></tr>
+<tr><th id="236">236</th><td><b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="237">237</th><td><b>inline</b> boost::mpl::false_ *is_rvalue_(T &amp;, <em>int</em>) { <b>return</b> <var>0</var>; }</td></tr>
+<tr><th id="238">238</th><td></td></tr>
+<tr><th id="239">239</th><td><b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="240">240</th><td><b>inline</b> boost::mpl::true_ *is_rvalue_(T <em>const</em> &amp;, ...) { <b>return</b> <var>0</var>; }</td></tr>
+<tr><th id="241">241</th><td><u>#<span data-ppcond="235">else</span></u></td></tr>
+<tr><th id="242">242</th><td><b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="243">243</th><td><b>inline</b> <span class="namespace">boost::</span><a class="type" href="../../../type_traits/include/boost/type_traits/is_rvalue_reference.hpp.html#boost::is_rvalue_reference" title='boost::is_rvalue_reference' data-ref="boost::is_rvalue_reference">is_rvalue_reference</a>&lt;T &amp;&amp;&gt; *<dfn class="decl def fn" id="_ZN5boost15foreach_detail_10is_rvalue_EOT_i" title='boost::foreach_detail_::is_rvalue_' data-ref="_ZN5boost15foreach_detail_10is_rvalue_EOT_i">is_rvalue_</dfn>(T &amp;&amp;, <em>int</em>) { <b>return</b> <var>0</var>; }</td></tr>
+<tr><th id="244">244</th><td><u>#<span data-ppcond="235">endif</span></u></td></tr>
+<tr><th id="245">245</th><td></td></tr>
+<tr><th id="246">246</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="247">247</th><td><i>// auto_any_t/auto_any</i></td></tr>
+<tr><th id="248">248</th><td><i>//  General utility for putting an object of any type into automatic storage</i></td></tr>
+<tr><th id="249">249</th><td><b>struct</b> <dfn class="type def" id="boost::foreach_detail_::auto_any_base" title='boost::foreach_detail_::auto_any_base' data-ref="boost::foreach_detail_::auto_any_base">auto_any_base</dfn></td></tr>
+<tr><th id="250">250</th><td>{</td></tr>
+<tr><th id="251">251</th><td>    <i>// auto_any_base must evaluate to false in boolean context so that</i></td></tr>
+<tr><th id="252">252</th><td><i>    // they can be declared in if() statements.</i></td></tr>
+<tr><th id="253">253</th><td>    <dfn class="decl def fn" id="_ZNK5boost15foreach_detail_13auto_any_basecvbEv" title='boost::foreach_detail_::auto_any_base::operator bool' data-ref="_ZNK5boost15foreach_detail_13auto_any_basecvbEv"><b>operator</b> <em>bool</em></dfn>() <em>const</em></td></tr>
+<tr><th id="254">254</th><td>    {</td></tr>
+<tr><th id="255">255</th><td>        <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="256">256</th><td>    }</td></tr>
+<tr><th id="257">257</th><td>};</td></tr>
+<tr><th id="258">258</th><td></td></tr>
+<tr><th id="259">259</th><td><b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="260">260</th><td><b>struct</b> <dfn class="type def" id="boost::foreach_detail_::auto_any" title='boost::foreach_detail_::auto_any' data-ref="boost::foreach_detail_::auto_any">auto_any</dfn> : <a class="type" href="#boost::foreach_detail_::auto_any_base" title='boost::foreach_detail_::auto_any_base' data-ref="boost::foreach_detail_::auto_any_base">auto_any_base</a></td></tr>
+<tr><th id="261">261</th><td>{</td></tr>
+<tr><th id="262">262</th><td>    <b>explicit</b> <dfn class="decl def fn" id="_ZN5boost15foreach_detail_8auto_anyC1ERKT_" title='boost::foreach_detail_::auto_any::auto_any&lt;T&gt;' data-ref="_ZN5boost15foreach_detail_8auto_anyC1ERKT_">auto_any</dfn>(T <em>const</em> &amp;<dfn class="local col3 decl" id="3t" title='t' data-type='const T &amp;' data-ref="3t">t</dfn>)</td></tr>
+<tr><th id="263">263</th><td>      : <a class="member field" href="#boost::foreach_detail_::auto_any::item" title='boost::foreach_detail_::auto_any::item' data-ref="boost::foreach_detail_::auto_any::item">item</a>(<a class="local col3 ref" href="#3t" title='t' data-ref="3t">t</a>)</td></tr>
+<tr><th id="264">264</th><td>    {</td></tr>
+<tr><th id="265">265</th><td>    }</td></tr>
+<tr><th id="266">266</th><td></td></tr>
+<tr><th id="267">267</th><td>    <i>// temporaries of type auto_any will be bound to const auto_any_base</i></td></tr>
+<tr><th id="268">268</th><td><i>    // references, but we still want to be able to mutate the stored</i></td></tr>
+<tr><th id="269">269</th><td><i>    // data, so declare it as mutable.</i></td></tr>
+<tr><th id="270">270</th><td>    <em>mutable</em> T <dfn class="decl field" id="boost::foreach_detail_::auto_any::item" title='boost::foreach_detail_::auto_any::item' data-ref="boost::foreach_detail_::auto_any::item">item</dfn>;</td></tr>
+<tr><th id="271">271</th><td>};</td></tr>
+<tr><th id="272">272</th><td></td></tr>
+<tr><th id="273">273</th><td><b>typedef</b> <a class="type" href="#boost::foreach_detail_::auto_any_base" title='boost::foreach_detail_::auto_any_base' data-ref="boost::foreach_detail_::auto_any_base">auto_any_base</a> <em>const</em> &amp;<dfn class="typedef" id="boost::foreach_detail_::auto_any_t" title='boost::foreach_detail_::auto_any_t' data-type='const boost::foreach_detail_::auto_any_base &amp;' data-ref="boost::foreach_detail_::auto_any_t">auto_any_t</dfn>;</td></tr>
+<tr><th id="274">274</th><td></td></tr>
+<tr><th id="275">275</th><td><b>template</b>&lt;<b>typename</b> T, <b>typename</b> C&gt;</td></tr>
+<tr><th id="276">276</th><td><b>inline</b> <a class="macro" href="../../../config/include/boost/config/detail/suffix.hpp.html#483" title="typename" data-ref="_M/BOOST_DEDUCED_TYPENAME">BOOST_DEDUCED_TYPENAME</a> <span class="namespace">boost::mpl::</span><a class="type" href="../../../mpl/include/boost/mpl/if.hpp.html#boost::mpl::if_" title='boost::mpl::if_' data-ref="boost::mpl::if_">if_</a>&lt;C, T <em>const</em>, T&gt;::type &amp;<dfn class="decl def fn" id="_ZN5boost15foreach_detail_13auto_any_castERKNS0_13auto_any_baseE" title='boost::foreach_detail_::auto_any_cast' data-ref="_ZN5boost15foreach_detail_13auto_any_castERKNS0_13auto_any_baseE">auto_any_cast</dfn>(<a class="typedef" href="#boost::foreach_detail_::auto_any_t" title='boost::foreach_detail_::auto_any_t' data-type='const boost::foreach_detail_::auto_any_base &amp;' data-ref="boost::foreach_detail_::auto_any_t">auto_any_t</a> <dfn class="local col4 decl" id="4a" title='a' data-type='boost::foreach_detail_::auto_any_t' data-ref="4a">a</dfn>)</td></tr>
+<tr><th id="277">277</th><td>{</td></tr>
+<tr><th id="278">278</th><td>    <b>return</b> <b>static_cast</b>&lt;<a class="type" href="#boost::foreach_detail_::auto_any" title='boost::foreach_detail_::auto_any' data-ref="boost::foreach_detail_::auto_any">auto_any</a>&lt;T&gt; <em>const</em> &amp;&gt;(<a class="local col4 ref" href="#4a" title='a' data-ref="4a">a</a>).item;</td></tr>
+<tr><th id="279">279</th><td>}</td></tr>
+<tr><th id="280">280</th><td></td></tr>
+<tr><th id="281">281</th><td><b>typedef</b> <span class="namespace">boost::mpl::</span>true_ <dfn class="typedef" id="boost::foreach_detail_::const_" title='boost::foreach_detail_::const_' data-type='boost::mpl::true_' data-ref="boost::foreach_detail_::const_">const_</dfn>;</td></tr>
+<tr><th id="282">282</th><td></td></tr>
+<tr><th id="283">283</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="284">284</th><td><i>// type2type</i></td></tr>
+<tr><th id="285">285</th><td><i>//</i></td></tr>
+<tr><th id="286">286</th><td><b>template</b>&lt;<b>typename</b> T, <b>typename</b> C = <span class="namespace">boost::mpl::</span>false_&gt;</td></tr>
+<tr><th id="287">287</th><td><b>struct</b> <dfn class="type def" id="boost::foreach_detail_::type2type" title='boost::foreach_detail_::type2type' data-ref="boost::foreach_detail_::type2type">type2type</dfn></td></tr>
+<tr><th id="288">288</th><td>  : <span class="namespace">boost::mpl::</span><a class="type" href="../../../mpl/include/boost/mpl/if.hpp.html#boost::mpl::if_" title='boost::mpl::if_' data-ref="boost::mpl::if_">if_</a>&lt;C, T <em>const</em>, T&gt;</td></tr>
+<tr><th id="289">289</th><td>{</td></tr>
+<tr><th id="290">290</th><td>};</td></tr>
+<tr><th id="291">291</th><td></td></tr>
+<tr><th id="292">292</th><td><b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="293">293</th><td><b>struct</b> <dfn class="type def" id="boost::foreach_detail_::wrap_cstr" title='boost::foreach_detail_::wrap_cstr' data-ref="boost::foreach_detail_::wrap_cstr">wrap_cstr</dfn></td></tr>
+<tr><th id="294">294</th><td>{</td></tr>
+<tr><th id="295">295</th><td>    <b>typedef</b> T <dfn class="typedef" id="boost::foreach_detail_::wrap_cstr::type" title='boost::foreach_detail_::wrap_cstr::type' data-type='T' data-ref="boost::foreach_detail_::wrap_cstr::type">type</dfn>;</td></tr>
+<tr><th id="296">296</th><td>};</td></tr>
+<tr><th id="297">297</th><td></td></tr>
+<tr><th id="298">298</th><td><b>template</b>&lt;&gt;</td></tr>
+<tr><th id="299">299</th><td><b>struct</b> <dfn class="type def" id="boost::foreach_detail_::wrap_cstr" title='boost::foreach_detail_::wrap_cstr' data-ref="boost::foreach_detail_::wrap_cstr"><a class="type" href="#boost::foreach_detail_::wrap_cstr" title='boost::foreach_detail_::wrap_cstr' data-ref="boost::foreach_detail_::wrap_cstr">wrap_cstr</a></dfn>&lt;<em>char</em> *&gt;</td></tr>
+<tr><th id="300">300</th><td>{</td></tr>
+<tr><th id="301">301</th><td>    <b>typedef</b> <a class="type" href="#boost::foreach_detail_::wrap_cstr" title='boost::foreach_detail_::wrap_cstr' data-ref="boost::foreach_detail_::wrap_cstr">wrap_cstr</a>&lt;<em>char</em> *&gt; <dfn class="typedef" id="boost::foreach_detail_::wrap_cstr{char*}::type" title='boost::foreach_detail_::wrap_cstr&lt;char *&gt;::type' data-type='wrap_cstr&lt;char *&gt;' data-ref="boost::foreach_detail_::wrap_cstr{char*}::type">type</dfn>;</td></tr>
+<tr><th id="302">302</th><td>    <b>typedef</b> <em>char</em> *<dfn class="typedef" id="boost::foreach_detail_::wrap_cstr{char*}::iterator" title='boost::foreach_detail_::wrap_cstr&lt;char *&gt;::iterator' data-type='char *' data-ref="boost::foreach_detail_::wrap_cstr{char*}::iterator">iterator</dfn>;</td></tr>
+<tr><th id="303">303</th><td>    <b>typedef</b> <em>char</em> *<dfn class="typedef" id="boost::foreach_detail_::wrap_cstr{char*}::const_iterator" title='boost::foreach_detail_::wrap_cstr&lt;char *&gt;::const_iterator' data-type='char *' data-ref="boost::foreach_detail_::wrap_cstr{char*}::const_iterator">const_iterator</dfn>;</td></tr>
+<tr><th id="304">304</th><td>};</td></tr>
+<tr><th id="305">305</th><td></td></tr>
+<tr><th id="306">306</th><td><b>template</b>&lt;&gt;</td></tr>
+<tr><th id="307">307</th><td><b>struct</b> <dfn class="type def" id="boost::foreach_detail_::wrap_cstr" title='boost::foreach_detail_::wrap_cstr' data-ref="boost::foreach_detail_::wrap_cstr"><a class="type" href="#boost::foreach_detail_::wrap_cstr" title='boost::foreach_detail_::wrap_cstr' data-ref="boost::foreach_detail_::wrap_cstr">wrap_cstr</a></dfn>&lt;<em>char</em> <em>const</em> *&gt;</td></tr>
+<tr><th id="308">308</th><td>{</td></tr>
+<tr><th id="309">309</th><td>    <b>typedef</b> <a class="type" href="#boost::foreach_detail_::wrap_cstr" title='boost::foreach_detail_::wrap_cstr' data-ref="boost::foreach_detail_::wrap_cstr">wrap_cstr</a>&lt;<em>char</em> <em>const</em> *&gt; <dfn class="typedef" id="boost::foreach_detail_::wrap_cstr{constchar*}::type" title='boost::foreach_detail_::wrap_cstr&lt;const char *&gt;::type' data-type='wrap_cstr&lt;const char *&gt;' data-ref="boost::foreach_detail_::wrap_cstr{constchar*}::type">type</dfn>;</td></tr>
+<tr><th id="310">310</th><td>    <b>typedef</b> <em>char</em> <em>const</em> *<dfn class="typedef" id="boost::foreach_detail_::wrap_cstr{constchar*}::iterator" title='boost::foreach_detail_::wrap_cstr&lt;const char *&gt;::iterator' data-type='const char *' data-ref="boost::foreach_detail_::wrap_cstr{constchar*}::iterator">iterator</dfn>;</td></tr>
+<tr><th id="311">311</th><td>    <b>typedef</b> <em>char</em> <em>const</em> *<dfn class="typedef" id="boost::foreach_detail_::wrap_cstr{constchar*}::const_iterator" title='boost::foreach_detail_::wrap_cstr&lt;const char *&gt;::const_iterator' data-type='const char *' data-ref="boost::foreach_detail_::wrap_cstr{constchar*}::const_iterator">const_iterator</dfn>;</td></tr>
+<tr><th id="312">312</th><td>};</td></tr>
+<tr><th id="313">313</th><td></td></tr>
+<tr><th id="314">314</th><td><b>template</b>&lt;&gt;</td></tr>
+<tr><th id="315">315</th><td><b>struct</b> <dfn class="type def" id="boost::foreach_detail_::wrap_cstr" title='boost::foreach_detail_::wrap_cstr' data-ref="boost::foreach_detail_::wrap_cstr"><a class="type" href="#boost::foreach_detail_::wrap_cstr" title='boost::foreach_detail_::wrap_cstr' data-ref="boost::foreach_detail_::wrap_cstr">wrap_cstr</a></dfn>&lt;<em>wchar_t</em> *&gt;</td></tr>
+<tr><th id="316">316</th><td>{</td></tr>
+<tr><th id="317">317</th><td>    <b>typedef</b> <a class="type" href="#boost::foreach_detail_::wrap_cstr" title='boost::foreach_detail_::wrap_cstr' data-ref="boost::foreach_detail_::wrap_cstr">wrap_cstr</a>&lt;<em>wchar_t</em> *&gt; <dfn class="typedef" id="boost::foreach_detail_::wrap_cstr{wchar_t*}::type" title='boost::foreach_detail_::wrap_cstr&lt;wchar_t *&gt;::type' data-type='wrap_cstr&lt;wchar_t *&gt;' data-ref="boost::foreach_detail_::wrap_cstr{wchar_t*}::type">type</dfn>;</td></tr>
+<tr><th id="318">318</th><td>    <b>typedef</b> <em>wchar_t</em> *<dfn class="typedef" id="boost::foreach_detail_::wrap_cstr{wchar_t*}::iterator" title='boost::foreach_detail_::wrap_cstr&lt;wchar_t *&gt;::iterator' data-type='wchar_t *' data-ref="boost::foreach_detail_::wrap_cstr{wchar_t*}::iterator">iterator</dfn>;</td></tr>
+<tr><th id="319">319</th><td>    <b>typedef</b> <em>wchar_t</em> *<dfn class="typedef" id="boost::foreach_detail_::wrap_cstr{wchar_t*}::const_iterator" title='boost::foreach_detail_::wrap_cstr&lt;wchar_t *&gt;::const_iterator' data-type='wchar_t *' data-ref="boost::foreach_detail_::wrap_cstr{wchar_t*}::const_iterator">const_iterator</dfn>;</td></tr>
+<tr><th id="320">320</th><td>};</td></tr>
+<tr><th id="321">321</th><td></td></tr>
+<tr><th id="322">322</th><td><b>template</b>&lt;&gt;</td></tr>
+<tr><th id="323">323</th><td><b>struct</b> <dfn class="type def" id="boost::foreach_detail_::wrap_cstr" title='boost::foreach_detail_::wrap_cstr' data-ref="boost::foreach_detail_::wrap_cstr"><a class="type" href="#boost::foreach_detail_::wrap_cstr" title='boost::foreach_detail_::wrap_cstr' data-ref="boost::foreach_detail_::wrap_cstr">wrap_cstr</a></dfn>&lt;<em>wchar_t</em> <em>const</em> *&gt;</td></tr>
+<tr><th id="324">324</th><td>{</td></tr>
+<tr><th id="325">325</th><td>    <b>typedef</b> <a class="type" href="#boost::foreach_detail_::wrap_cstr" title='boost::foreach_detail_::wrap_cstr' data-ref="boost::foreach_detail_::wrap_cstr">wrap_cstr</a>&lt;<em>wchar_t</em> <em>const</em> *&gt; <dfn class="typedef" id="boost::foreach_detail_::wrap_cstr{constwchar_t*}::type" title='boost::foreach_detail_::wrap_cstr&lt;const wchar_t *&gt;::type' data-type='wrap_cstr&lt;const wchar_t *&gt;' data-ref="boost::foreach_detail_::wrap_cstr{constwchar_t*}::type">type</dfn>;</td></tr>
+<tr><th id="326">326</th><td>    <b>typedef</b> <em>wchar_t</em> <em>const</em> *<dfn class="typedef" id="boost::foreach_detail_::wrap_cstr{constwchar_t*}::iterator" title='boost::foreach_detail_::wrap_cstr&lt;const wchar_t *&gt;::iterator' data-type='const wchar_t *' data-ref="boost::foreach_detail_::wrap_cstr{constwchar_t*}::iterator">iterator</dfn>;</td></tr>
+<tr><th id="327">327</th><td>    <b>typedef</b> <em>wchar_t</em> <em>const</em> *<dfn class="typedef" id="boost::foreach_detail_::wrap_cstr{constwchar_t*}::const_iterator" title='boost::foreach_detail_::wrap_cstr&lt;const wchar_t *&gt;::const_iterator' data-type='const wchar_t *' data-ref="boost::foreach_detail_::wrap_cstr{constwchar_t*}::const_iterator">const_iterator</dfn>;</td></tr>
+<tr><th id="328">328</th><td>};</td></tr>
+<tr><th id="329">329</th><td></td></tr>
+<tr><th id="330">330</th><td><b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="331">331</th><td><b>struct</b> <dfn class="type def" id="boost::foreach_detail_::is_char_array" title='boost::foreach_detail_::is_char_array' data-ref="boost::foreach_detail_::is_char_array">is_char_array</dfn></td></tr>
+<tr><th id="332">332</th><td>  : <span class="namespace">mpl::</span><a class="type" href="../../../mpl/include/boost/mpl/aux_/preprocessed/gcc/and.hpp.html#boost::mpl::and_" title='boost::mpl::and_' data-ref="boost::mpl::and_">and_</a>&lt;</td></tr>
+<tr><th id="333">333</th><td>        <a class="type" href="../../../type_traits/include/boost/type_traits/is_array.hpp.html#boost::is_array" title='boost::is_array' data-ref="boost::is_array">is_array</a>&lt;T&gt;</td></tr>
+<tr><th id="334">334</th><td>      , <span class="namespace">mpl::</span><a class="type" href="../../../mpl/include/boost/mpl/aux_/preprocessed/gcc/or.hpp.html#boost::mpl::or_" title='boost::mpl::or_' data-ref="boost::mpl::or_">or_</a>&lt;</td></tr>
+<tr><th id="335">335</th><td>            <a class="type" href="../../../type_traits/include/boost/type_traits/is_convertible.hpp.html#boost::is_convertible" title='boost::is_convertible' data-ref="boost::is_convertible">is_convertible</a>&lt;T, <em>char</em> <em>const</em> *&gt;</td></tr>
+<tr><th id="336">336</th><td>          , <a class="type" href="../../../type_traits/include/boost/type_traits/is_convertible.hpp.html#boost::is_convertible" title='boost::is_convertible' data-ref="boost::is_convertible">is_convertible</a>&lt;T, <em>wchar_t</em> <em>const</em> *&gt;</td></tr>
+<tr><th id="337">337</th><td>        &gt;</td></tr>
+<tr><th id="338">338</th><td>    &gt;</td></tr>
+<tr><th id="339">339</th><td>{};</td></tr>
+<tr><th id="340">340</th><td></td></tr>
+<tr><th id="341">341</th><td><b>template</b>&lt;<b>typename</b> T, <b>typename</b> C = <span class="namespace">boost::mpl::</span>false_&gt;</td></tr>
+<tr><th id="342">342</th><td><b>struct</b> <dfn class="type def" id="boost::foreach_detail_::foreach_iterator" title='boost::foreach_detail_::foreach_iterator' data-ref="boost::foreach_detail_::foreach_iterator">foreach_iterator</dfn></td></tr>
+<tr><th id="343">343</th><td>{</td></tr>
+<tr><th id="344">344</th><td>    <i>// **** READ THIS IF YOUR COMPILE BREAKS HERE ****</i></td></tr>
+<tr><th id="345">345</th><td><i>    //</i></td></tr>
+<tr><th id="346">346</th><td><i>    // There is an ambiguity about how to iterate over arrays of char and wchar_t. </i></td></tr>
+<tr><th id="347">347</th><td><i>    // Should the last array element be treated as a null terminator to be skipped, or</i></td></tr>
+<tr><th id="348">348</th><td><i>    // is it just like any other element in the array? To fix the problem, you must</i></td></tr>
+<tr><th id="349">349</th><td><i>    // say which behavior you want.</i></td></tr>
+<tr><th id="350">350</th><td><i>    //</i></td></tr>
+<tr><th id="351">351</th><td><i>    // To treat the container as a null-terminated string, merely cast it to a</i></td></tr>
+<tr><th id="352">352</th><td><i>    // char const *, as in BOOST_FOREACH( char ch, (char const *)"hello" ) ...</i></td></tr>
+<tr><th id="353">353</th><td><i>    //</i></td></tr>
+<tr><th id="354">354</th><td><i>    // To treat the container as an array, use boost::as_array() in &lt;boost/range/as_array.hpp&gt;,</i></td></tr>
+<tr><th id="355">355</th><td><i>    // as in BOOST_FOREACH( char ch, boost::as_array("hello") ) ...</i></td></tr>
+<tr><th id="356">356</th><td>    <a class="macro" href="../../../mpl/include/boost/mpl/assert.hpp.html#454" title="struct IS_THIS_AN_ARRAY_OR_A_NULL_TERMINATED_STRING; typedef struct IS_THIS_AN_ARRAY_OR_A_NULL_TERMINATED_STRING356 : boost::mpl::assert_ { static boost::mpl::failed ************ (IS_THIS_AN_ARRAY_OR_A_NULL_TERMINATED_STRING::************ assert_arg()) (T&amp;) { return 0; } } mpl_assert_arg356; enum { mpl_assertion_in_line_356 = sizeof( boost::mpl::assertion_failed&lt;((!is_char_array&lt;T&gt;::value))&gt;( mpl_assert_arg356::assert_arg() ) ) }" data-ref="_M/BOOST_MPL_ASSERT_MSG">BOOST_MPL_ASSERT_MSG</a>( (!<a class="type" href="#boost::foreach_detail_::is_char_array" title='boost::foreach_detail_::is_char_array' data-ref="boost::foreach_detail_::is_char_array">is_char_array</a>&lt;T&gt;::value), <dfn class="type" id="boost::foreach_detail_::foreach_iterator::IS_THIS_AN_ARRAY_OR_A_NULL_TERMINATED_STRING" title='boost::foreach_detail_::foreach_iterator::IS_THIS_AN_ARRAY_OR_A_NULL_TERMINATED_STRING' data-ref="boost::foreach_detail_::foreach_iterator::IS_THIS_AN_ARRAY_OR_A_NULL_TERMINATED_STRING"><a class="type" href="#356" title='boost::foreach_detail_::foreach_iterator::IS_THIS_AN_ARRAY_OR_A_NULL_TERMINATED_STRING' data-ref="boost::foreach_detail_::foreach_iterator::IS_THIS_AN_ARRAY_OR_A_NULL_TERMINATED_STRING">IS_THIS_AN_ARRAY_OR_A_NULL_TERMINATED_STRING</a></dfn>, (T&amp;) );</td></tr>
+<tr><th id="357">357</th><td></td></tr>
+<tr><th id="358">358</th><td>    <i>// If the type is a pointer to a null terminated string (as opposed </i></td></tr>
+<tr><th id="359">359</th><td><i>    // to an array type), there is no ambiguity.</i></td></tr>
+<tr><th id="360">360</th><td>    <b>typedef</b> <a class="macro" href="../../../config/include/boost/config/detail/suffix.hpp.html#483" title="typename" data-ref="_M/BOOST_DEDUCED_TYPENAME">BOOST_DEDUCED_TYPENAME</a> <a class="type" href="#boost::foreach_detail_::wrap_cstr" title='boost::foreach_detail_::wrap_cstr' data-ref="boost::foreach_detail_::wrap_cstr">wrap_cstr</a>&lt;T&gt;::type <dfn class="typedef" id="boost::foreach_detail_::foreach_iterator::container" title='boost::foreach_detail_::foreach_iterator::container' data-type='typename wrap_cstr&lt;T&gt;::type' data-ref="boost::foreach_detail_::foreach_iterator::container">container</dfn>;</td></tr>
+<tr><th id="361">361</th><td></td></tr>
+<tr><th id="362">362</th><td>    <b>typedef</b> <a class="macro" href="../../../config/include/boost/config/detail/suffix.hpp.html#483" title="typename" data-ref="_M/BOOST_DEDUCED_TYPENAME">BOOST_DEDUCED_TYPENAME</a> <span class="namespace">boost::mpl::</span><a class="type" href="../../../mpl/include/boost/mpl/eval_if.hpp.html#boost::mpl::eval_if" title='boost::mpl::eval_if' data-ref="boost::mpl::eval_if">eval_if</a>&lt;</td></tr>
+<tr><th id="363">363</th><td>        C</td></tr>
+<tr><th id="364">364</th><td>      , <a class="type" href="../../../range/include/boost/range/range_fwd.hpp.html#boost::range_const_iterator" title='boost::range_const_iterator' data-ref="boost::range_const_iterator">range_const_iterator</a>&lt;<a class="typedef" href="#boost::foreach_detail_::foreach_iterator::container" title='boost::foreach_detail_::foreach_iterator::container' data-type='typename wrap_cstr&lt;T&gt;::type' data-ref="boost::foreach_detail_::foreach_iterator::container">container</a>&gt;</td></tr>
+<tr><th id="365">365</th><td>      , <a class="type" href="../../../range/include/boost/range/range_fwd.hpp.html#boost::range_mutable_iterator" title='boost::range_mutable_iterator' data-ref="boost::range_mutable_iterator">range_mutable_iterator</a>&lt;<a class="typedef" href="#boost::foreach_detail_::foreach_iterator::container" title='boost::foreach_detail_::foreach_iterator::container' data-type='typename wrap_cstr&lt;T&gt;::type' data-ref="boost::foreach_detail_::foreach_iterator::container">container</a>&gt;</td></tr>
+<tr><th id="366">366</th><td>    &gt;::type <dfn class="typedef" id="boost::foreach_detail_::foreach_iterator::type" title='boost::foreach_detail_::foreach_iterator::type' data-type='typename boost::mpl::eval_if&lt;C, range_const_iterator&lt;container&gt;, range_mutable_iterator&lt;container&gt;&gt;::type' data-ref="boost::foreach_detail_::foreach_iterator::type">type</dfn>;</td></tr>
+<tr><th id="367">367</th><td>};</td></tr>
+<tr><th id="368">368</th><td></td></tr>
+<tr><th id="369">369</th><td></td></tr>
+<tr><th id="370">370</th><td><b>template</b>&lt;<b>typename</b> T, <b>typename</b> C = <span class="namespace">boost::mpl::</span>false_&gt;</td></tr>
+<tr><th id="371">371</th><td><b>struct</b> <dfn class="type def" id="boost::foreach_detail_::foreach_reverse_iterator" title='boost::foreach_detail_::foreach_reverse_iterator' data-ref="boost::foreach_detail_::foreach_reverse_iterator">foreach_reverse_iterator</dfn></td></tr>
+<tr><th id="372">372</th><td>{</td></tr>
+<tr><th id="373">373</th><td>    <i>// **** READ THIS IF YOUR COMPILE BREAKS HERE ****</i></td></tr>
+<tr><th id="374">374</th><td><i>    //</i></td></tr>
+<tr><th id="375">375</th><td><i>    // There is an ambiguity about how to iterate over arrays of char and wchar_t. </i></td></tr>
+<tr><th id="376">376</th><td><i>    // Should the last array element be treated as a null terminator to be skipped, or</i></td></tr>
+<tr><th id="377">377</th><td><i>    // is it just like any other element in the array? To fix the problem, you must</i></td></tr>
+<tr><th id="378">378</th><td><i>    // say which behavior you want.</i></td></tr>
+<tr><th id="379">379</th><td><i>    //</i></td></tr>
+<tr><th id="380">380</th><td><i>    // To treat the container as a null-terminated string, merely cast it to a</i></td></tr>
+<tr><th id="381">381</th><td><i>    // char const *, as in BOOST_FOREACH( char ch, (char const *)"hello" ) ...</i></td></tr>
+<tr><th id="382">382</th><td><i>    //</i></td></tr>
+<tr><th id="383">383</th><td><i>    // To treat the container as an array, use boost::as_array() in &lt;boost/range/as_array.hpp&gt;,</i></td></tr>
+<tr><th id="384">384</th><td><i>    // as in BOOST_FOREACH( char ch, boost::as_array("hello") ) ...</i></td></tr>
+<tr><th id="385">385</th><td>    <a class="macro" href="../../../mpl/include/boost/mpl/assert.hpp.html#454" title="struct IS_THIS_AN_ARRAY_OR_A_NULL_TERMINATED_STRING; typedef struct IS_THIS_AN_ARRAY_OR_A_NULL_TERMINATED_STRING385 : boost::mpl::assert_ { static boost::mpl::failed ************ (IS_THIS_AN_ARRAY_OR_A_NULL_TERMINATED_STRING::************ assert_arg()) (T&amp;) { return 0; } } mpl_assert_arg385; enum { mpl_assertion_in_line_385 = sizeof( boost::mpl::assertion_failed&lt;((!is_char_array&lt;T&gt;::value))&gt;( mpl_assert_arg385::assert_arg() ) ) }" data-ref="_M/BOOST_MPL_ASSERT_MSG">BOOST_MPL_ASSERT_MSG</a>( (!<a class="type" href="#boost::foreach_detail_::is_char_array" title='boost::foreach_detail_::is_char_array' data-ref="boost::foreach_detail_::is_char_array">is_char_array</a>&lt;T&gt;::value), <dfn class="type" id="boost::foreach_detail_::foreach_reverse_iterator::IS_THIS_AN_ARRAY_OR_A_NULL_TERMINATED_STRING" title='boost::foreach_detail_::foreach_reverse_iterator::IS_THIS_AN_ARRAY_OR_A_NULL_TERMINATED_STRING' data-ref="boost::foreach_detail_::foreach_reverse_iterator::IS_THIS_AN_ARRAY_OR_A_NULL_TERMINATED_STRING"><a class="type" href="#385" title='boost::foreach_detail_::foreach_reverse_iterator::IS_THIS_AN_ARRAY_OR_A_NULL_TERMINATED_STRING' data-ref="boost::foreach_detail_::foreach_reverse_iterator::IS_THIS_AN_ARRAY_OR_A_NULL_TERMINATED_STRING">IS_THIS_AN_ARRAY_OR_A_NULL_TERMINATED_STRING</a></dfn>, (T&amp;) );</td></tr>
+<tr><th id="386">386</th><td></td></tr>
+<tr><th id="387">387</th><td>    <i>// If the type is a pointer to a null terminated string (as opposed </i></td></tr>
+<tr><th id="388">388</th><td><i>    // to an array type), there is no ambiguity.</i></td></tr>
+<tr><th id="389">389</th><td>    <b>typedef</b> <a class="macro" href="../../../config/include/boost/config/detail/suffix.hpp.html#483" title="typename" data-ref="_M/BOOST_DEDUCED_TYPENAME">BOOST_DEDUCED_TYPENAME</a> <a class="type" href="#boost::foreach_detail_::wrap_cstr" title='boost::foreach_detail_::wrap_cstr' data-ref="boost::foreach_detail_::wrap_cstr">wrap_cstr</a>&lt;T&gt;::type <dfn class="typedef" id="boost::foreach_detail_::foreach_reverse_iterator::container" title='boost::foreach_detail_::foreach_reverse_iterator::container' data-type='typename wrap_cstr&lt;T&gt;::type' data-ref="boost::foreach_detail_::foreach_reverse_iterator::container">container</dfn>;</td></tr>
+<tr><th id="390">390</th><td></td></tr>
+<tr><th id="391">391</th><td>    <b>typedef</b> <a class="macro" href="../../../config/include/boost/config/detail/suffix.hpp.html#483" title="typename" data-ref="_M/BOOST_DEDUCED_TYPENAME">BOOST_DEDUCED_TYPENAME</a> <span class="namespace">boost::mpl::</span><a class="type" href="../../../mpl/include/boost/mpl/eval_if.hpp.html#boost::mpl::eval_if" title='boost::mpl::eval_if' data-ref="boost::mpl::eval_if">eval_if</a>&lt;</td></tr>
+<tr><th id="392">392</th><td>        C</td></tr>
+<tr><th id="393">393</th><td>      , <a class="type" href="../../../range/include/boost/range/range_fwd.hpp.html#boost::range_reverse_iterator" title='boost::range_reverse_iterator' data-ref="boost::range_reverse_iterator">range_reverse_iterator</a>&lt;<a class="typedef" href="#boost::foreach_detail_::foreach_reverse_iterator::container" title='boost::foreach_detail_::foreach_reverse_iterator::container' data-type='typename wrap_cstr&lt;T&gt;::type' data-ref="boost::foreach_detail_::foreach_reverse_iterator::container">container</a> <em>const</em>&gt;</td></tr>
+<tr><th id="394">394</th><td>      , <a class="type" href="../../../range/include/boost/range/range_fwd.hpp.html#boost::range_reverse_iterator" title='boost::range_reverse_iterator' data-ref="boost::range_reverse_iterator">range_reverse_iterator</a>&lt;<a class="typedef" href="#boost::foreach_detail_::foreach_reverse_iterator::container" title='boost::foreach_detail_::foreach_reverse_iterator::container' data-type='typename wrap_cstr&lt;T&gt;::type' data-ref="boost::foreach_detail_::foreach_reverse_iterator::container">container</a>&gt;</td></tr>
+<tr><th id="395">395</th><td>    &gt;::type <dfn class="typedef" id="boost::foreach_detail_::foreach_reverse_iterator::type" title='boost::foreach_detail_::foreach_reverse_iterator::type' data-type='typename boost::mpl::eval_if&lt;C, range_reverse_iterator&lt;const container&gt;, range_reverse_iterator&lt;container&gt;&gt;::type' data-ref="boost::foreach_detail_::foreach_reverse_iterator::type">type</dfn>;</td></tr>
+<tr><th id="396">396</th><td>};</td></tr>
+<tr><th id="397">397</th><td></td></tr>
+<tr><th id="398">398</th><td><b>template</b>&lt;<b>typename</b> T, <b>typename</b> C = <span class="namespace">boost::mpl::</span>false_&gt;</td></tr>
+<tr><th id="399">399</th><td><b>struct</b> <dfn class="type def" id="boost::foreach_detail_::foreach_reference" title='boost::foreach_detail_::foreach_reference' data-ref="boost::foreach_detail_::foreach_reference">foreach_reference</dfn></td></tr>
+<tr><th id="400">400</th><td>  : <a class="type" href="../../../iterator/include/boost/iterator/iterator_traits.hpp.html#boost::iterators::iterator_reference" title='boost::iterators::iterator_reference' data-ref="boost::iterators::iterator_reference">iterator_reference</a>&lt;<a class="macro" href="../../../config/include/boost/config/detail/suffix.hpp.html#483" title="typename" data-ref="_M/BOOST_DEDUCED_TYPENAME">BOOST_DEDUCED_TYPENAME</a> <a class="type" href="#boost::foreach_detail_::foreach_iterator" title='boost::foreach_detail_::foreach_iterator' data-ref="boost::foreach_detail_::foreach_iterator">foreach_iterator</a>&lt;T, C&gt;::type&gt;</td></tr>
+<tr><th id="401">401</th><td>{</td></tr>
+<tr><th id="402">402</th><td>};</td></tr>
+<tr><th id="403">403</th><td></td></tr>
+<tr><th id="404">404</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="405">405</th><td><i>// encode_type</i></td></tr>
+<tr><th id="406">406</th><td><i>//</i></td></tr>
+<tr><th id="407">407</th><td><b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="408">408</th><td><b>inline</b> <a class="type" href="#boost::foreach_detail_::type2type" title='boost::foreach_detail_::type2type' data-ref="boost::foreach_detail_::type2type">type2type</a>&lt;T&gt; *<dfn class="decl def fn" id="_ZN5boost15foreach_detail_11encode_typeERT_PNS_17integral_constantIbLb0EEE" title='boost::foreach_detail_::encode_type' data-ref="_ZN5boost15foreach_detail_11encode_typeERT_PNS_17integral_constantIbLb0EEE">encode_type</dfn>(T &amp;, <span class="namespace">boost::</span><a class="typedef" href="../../../type_traits/include/boost/type_traits/integral_constant.hpp.html#boost::false_type" title='boost::false_type' data-type='integral_constant&lt;bool, false&gt;' data-ref="boost::false_type">false_type</a>*) { <b>return</b> <var>0</var>; }</td></tr>
+<tr><th id="409">409</th><td></td></tr>
+<tr><th id="410">410</th><td><b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="411">411</th><td><b>inline</b> <a class="type" href="#boost::foreach_detail_::type2type" title='boost::foreach_detail_::type2type' data-ref="boost::foreach_detail_::type2type">type2type</a>&lt;T, <a class="typedef" href="#boost::foreach_detail_::const_" title='boost::foreach_detail_::const_' data-type='boost::mpl::true_' data-ref="boost::foreach_detail_::const_">const_</a>&gt; *<dfn class="decl def fn" id="_ZN5boost15foreach_detail_11encode_typeERKT_PNS_17integral_constantIbLb1EEE" title='boost::foreach_detail_::encode_type' data-ref="_ZN5boost15foreach_detail_11encode_typeERKT_PNS_17integral_constantIbLb1EEE">encode_type</dfn>(T <em>const</em> &amp;, <span class="namespace">boost::</span><a class="typedef" href="../../../type_traits/include/boost/type_traits/integral_constant.hpp.html#boost::true_type" title='boost::true_type' data-type='integral_constant&lt;bool, true&gt;' data-ref="boost::true_type">true_type</a>*) { <b>return</b> <var>0</var>; }</td></tr>
+<tr><th id="412">412</th><td></td></tr>
+<tr><th id="413">413</th><td><b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="414">414</th><td><b>inline</b> <a class="type" href="#boost::foreach_detail_::type2type" title='boost::foreach_detail_::type2type' data-ref="boost::foreach_detail_::type2type">type2type</a>&lt;T&gt; *<dfn class="decl def fn" id="_ZN5boost15foreach_detail_11encode_typeERT_PN4mpl_5bool_ILb0EEE" title='boost::foreach_detail_::encode_type' data-ref="_ZN5boost15foreach_detail_11encode_typeERT_PN4mpl_5bool_ILb0EEE">encode_type</dfn>(T &amp;, <span class="namespace">boost::mpl::</span>false_*) { <b>return</b> <var>0</var>; }</td></tr>
+<tr><th id="415">415</th><td></td></tr>
+<tr><th id="416">416</th><td><b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="417">417</th><td><b>inline</b> <a class="type" href="#boost::foreach_detail_::type2type" title='boost::foreach_detail_::type2type' data-ref="boost::foreach_detail_::type2type">type2type</a>&lt;T, <a class="typedef" href="#boost::foreach_detail_::const_" title='boost::foreach_detail_::const_' data-type='boost::mpl::true_' data-ref="boost::foreach_detail_::const_">const_</a>&gt; *<dfn class="decl def fn" id="_ZN5boost15foreach_detail_11encode_typeERKT_PN4mpl_5bool_ILb1EEE" title='boost::foreach_detail_::encode_type' data-ref="_ZN5boost15foreach_detail_11encode_typeERKT_PN4mpl_5bool_ILb1EEE">encode_type</dfn>(T <em>const</em> &amp;, <span class="namespace">boost::mpl::</span>true_*) { <b>return</b> <var>0</var>; }</td></tr>
+<tr><th id="418">418</th><td></td></tr>
+<tr><th id="419">419</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="420">420</th><td><i>// set_false</i></td></tr>
+<tr><th id="421">421</th><td><i>//</i></td></tr>
+<tr><th id="422">422</th><td><b>inline</b> <em>bool</em> <dfn class="decl def fn" id="_ZN5boost15foreach_detail_9set_falseERb" title='boost::foreach_detail_::set_false' data-ref="_ZN5boost15foreach_detail_9set_falseERb">set_false</dfn>(<em>bool</em> &amp;<dfn class="local col5 decl" id="5b" title='b' data-type='bool &amp;' data-ref="5b">b</dfn>)</td></tr>
+<tr><th id="423">423</th><td>{</td></tr>
+<tr><th id="424">424</th><td>    <a class="local col5 ref" href="#5b" title='b' data-ref="5b">b</a> = <b>false</b>;</td></tr>
+<tr><th id="425">425</th><td>    <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="426">426</th><td>}</td></tr>
+<tr><th id="427">427</th><td></td></tr>
+<tr><th id="428">428</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="429">429</th><td><i>// to_ptr</i></td></tr>
+<tr><th id="430">430</th><td><i>//</i></td></tr>
+<tr><th id="431">431</th><td><b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="432">432</th><td><b>inline</b> T *&amp;<dfn class="decl def fn" id="_ZN5boost15foreach_detail_6to_ptrERKT_" title='boost::foreach_detail_::to_ptr' data-ref="_ZN5boost15foreach_detail_6to_ptrERKT_">to_ptr</dfn>(T <em>const</em> &amp;)</td></tr>
+<tr><th id="433">433</th><td>{</td></tr>
+<tr><th id="434">434</th><td>    <em>static</em> T *<dfn class="local col6 decl" id="6t" title='t' data-type='T *' data-ref="6t">t</dfn> = <var>0</var>;</td></tr>
+<tr><th id="435">435</th><td>    <b>return</b> <a class="local col6 ref" href="#6t" title='t' data-ref="6t">t</a>;</td></tr>
+<tr><th id="436">436</th><td>}</td></tr>
+<tr><th id="437">437</th><td></td></tr>
+<tr><th id="438">438</th><td><i>// Borland needs a little extra help with arrays</i></td></tr>
+<tr><th id="439">439</th><td><u>#<span data-ppcond="439">if</span> <a class="macro" href="../../../config/include/boost/config/workaround.hpp.html#271" title="((1 + 0 == 0) &amp;&amp; (BOOST_BORLANDC != 0) &amp;&amp; (1 % (( (BOOST_BORLANDC != ((0x564)-(0x564))) ) + 1)))" data-ref="_M/BOOST_WORKAROUND">BOOST_WORKAROUND</a>(BOOST_BORLANDC, <a class="macro" href="../../../config/include/boost/config/workaround.hpp.html#296" title="!= ((0x564)-(0x564))" data-ref="_M/BOOST_TESTED_AT">BOOST_TESTED_AT</a>(0x564))</u></td></tr>
+<tr><th id="440">440</th><td><b>template</b>&lt;<b>typename</b> T,std::size_t N&gt;</td></tr>
+<tr><th id="441">441</th><td><b>inline</b> T (*&amp;to_ptr(T (&amp;)[N]))[N]</td></tr>
+<tr><th id="442">442</th><td>{</td></tr>
+<tr><th id="443">443</th><td>    <em>static</em> T (*t)[N] = <var>0</var>;</td></tr>
+<tr><th id="444">444</th><td>    <b>return</b> t;</td></tr>
+<tr><th id="445">445</th><td>}</td></tr>
+<tr><th id="446">446</th><td></td></tr>
+<tr><th id="447">447</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="448">448</th><td><i>// derefof</i></td></tr>
+<tr><th id="449">449</th><td><i>//</i></td></tr>
+<tr><th id="450">450</th><td><b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="451">451</th><td><b>inline</b> T &amp;derefof(T *t)</td></tr>
+<tr><th id="452">452</th><td>{</td></tr>
+<tr><th id="453">453</th><td>    <i>// This is a work-around for a compiler bug in Borland. If T* is a pointer to array type U(*)[N],</i></td></tr>
+<tr><th id="454">454</th><td><i>    // then dereferencing it results in a U* instead of U(&amp;)[N]. The cast forces the issue.</i></td></tr>
+<tr><th id="455">455</th><td>    <b>return</b> <b>reinterpret_cast</b>&lt;T &amp;&gt;(</td></tr>
+<tr><th id="456">456</th><td>        *<b>const_cast</b>&lt;<em>char</em> *&gt;(</td></tr>
+<tr><th id="457">457</th><td>            <b>reinterpret_cast</b>&lt;<em>char</em> <em>const</em> <em>volatile</em> *&gt;(t)</td></tr>
+<tr><th id="458">458</th><td>        )</td></tr>
+<tr><th id="459">459</th><td>    );</td></tr>
+<tr><th id="460">460</th><td>}</td></tr>
+<tr><th id="461">461</th><td></td></tr>
+<tr><th id="462">462</th><td><u># define BOOST_FOREACH_DEREFOF(T) boost::foreach_detail_::derefof(*T)</u></td></tr>
+<tr><th id="463">463</th><td><u>#<span data-ppcond="439">else</span></u></td></tr>
+<tr><th id="464">464</th><td><u># define <dfn class="macro" id="_M/BOOST_FOREACH_DEREFOF" data-ref="_M/BOOST_FOREACH_DEREFOF">BOOST_FOREACH_DEREFOF</dfn>(T) (*T)</u></td></tr>
+<tr><th id="465">465</th><td><u>#<span data-ppcond="439">endif</span></u></td></tr>
+<tr><th id="466">466</th><td></td></tr>
+<tr><th id="467">467</th><td><u>#<span data-ppcond="467">if</span> defined(<a class="macro" href="#47" data-ref="_M/BOOST_FOREACH_COMPILE_TIME_CONST_RVALUE_DETECTION">BOOST_FOREACH_COMPILE_TIME_CONST_RVALUE_DETECTION</a>)                                  \</u></td></tr>
+<tr><th id="468">468</th><td><u> &amp;&amp; !defined(<span class="macro" data-ref="_M/BOOST_NO_CXX11_RVALUE_REFERENCES">BOOST_NO_CXX11_RVALUE_REFERENCES</span>)</u></td></tr>
+<tr><th id="469">469</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="470">470</th><td><i>// Rvalue references makes it drop-dead simple to detect at compile time</i></td></tr>
+<tr><th id="471">471</th><td><i>// whether an expression is an rvalue.</i></td></tr>
+<tr><th id="472">472</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="473">473</th><td></td></tr>
+<tr><th id="474">474</th><td><u># define <dfn class="macro" id="_M/BOOST_FOREACH_IS_RVALUE" data-ref="_M/BOOST_FOREACH_IS_RVALUE">BOOST_FOREACH_IS_RVALUE</dfn>(COL)                                                           \</u></td></tr>
+<tr><th id="475">475</th><td><u>    boost::foreach_detail_::is_rvalue_(<span class='refarg'>(</span>COL), 0)</u></td></tr>
+<tr><th id="476">476</th><td></td></tr>
+<tr><th id="477">477</th><td><u>#<span data-ppcond="467">elif</span> defined(BOOST_FOREACH_COMPILE_TIME_CONST_RVALUE_DETECTION)                                \</u></td></tr>
+<tr><th id="478">478</th><td><u> &amp;&amp; defined(BOOST_NO_CXX11_RVALUE_REFERENCES)</u></td></tr>
+<tr><th id="479">479</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="480">480</th><td><i>// Detect at compile-time whether an expression yields an rvalue or</i></td></tr>
+<tr><th id="481">481</th><td><i>// an lvalue. This is rather non-standard, but some popular compilers</i></td></tr>
+<tr><th id="482">482</th><td><i>// accept it.</i></td></tr>
+<tr><th id="483">483</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="484">484</th><td><i></i></td></tr>
+<tr><th id="485">485</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="486">486</th><td><i>// rvalue_probe</i></td></tr>
+<tr><th id="487">487</th><td><i>//</i></td></tr>
+<tr><th id="488">488</th><td><b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="489">489</th><td><b>struct</b> rvalue_probe</td></tr>
+<tr><th id="490">490</th><td>{</td></tr>
+<tr><th id="491">491</th><td>    <b>struct</b> private_type_ {};</td></tr>
+<tr><th id="492">492</th><td>    <i>// can't ever return an array by value</i></td></tr>
+<tr><th id="493">493</th><td>    <b>typedef</b> BOOST_DEDUCED_TYPENAME boost::mpl::if_&lt;</td></tr>
+<tr><th id="494">494</th><td>        boost::mpl::or_&lt;boost::is_abstract&lt;T&gt;, boost::is_array&lt;T&gt; &gt;, private_type_, T</td></tr>
+<tr><th id="495">495</th><td>    &gt;::type value_type;</td></tr>
+<tr><th id="496">496</th><td>    <b>operator</b> value_type() { <b>return</b> *<b>reinterpret_cast</b>&lt;value_type *&gt;(<b>this</b>); } <i>// never called</i></td></tr>
+<tr><th id="497">497</th><td>    <b>operator</b> T &amp;() <em>const</em> { <b>return</b> *<b>reinterpret_cast</b>&lt;T *&gt;(<b>const_cast</b>&lt;rvalue_probe *&gt;(<b>this</b>)); } <i>// never called</i></td></tr>
+<tr><th id="498">498</th><td>};</td></tr>
+<tr><th id="499">499</th><td></td></tr>
+<tr><th id="500">500</th><td><b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="501">501</th><td>rvalue_probe&lt;T&gt; <em>const</em> make_probe(T <em>const</em> &amp;)</td></tr>
+<tr><th id="502">502</th><td>{</td></tr>
+<tr><th id="503">503</th><td>    <b>return</b> rvalue_probe&lt;T&gt;();</td></tr>
+<tr><th id="504">504</th><td>}</td></tr>
+<tr><th id="505">505</th><td></td></tr>
+<tr><th id="506">506</th><td><u># define BOOST_FOREACH_IS_RVALUE(COL)                                                           \</u></td></tr>
+<tr><th id="507">507</th><td><u>    boost::foreach_detail_::and_(                                                               \</u></td></tr>
+<tr><th id="508">508</th><td><u>        boost::foreach_detail_::not_(boost::foreach_detail_::is_array_(COL))                    \</u></td></tr>
+<tr><th id="509">509</th><td><u>      , (true ? 0 : boost::foreach_detail_::is_rvalue_(                                         \</u></td></tr>
+<tr><th id="510">510</th><td><u>            (true ? boost::foreach_detail_::make_probe(COL) : (COL)), 0)))</u></td></tr>
+<tr><th id="511">511</th><td></td></tr>
+<tr><th id="512">512</th><td><u>#elif defined(BOOST_FOREACH_RUN_TIME_CONST_RVALUE_DETECTION)</u></td></tr>
+<tr><th id="513">513</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="514">514</th><td><i>// Detect at run-time whether an expression yields an rvalue</i></td></tr>
+<tr><th id="515">515</th><td><i>// or an lvalue. This is 100% standard C++, but not all compilers</i></td></tr>
+<tr><th id="516">516</th><td><i>// accept it. Also, it causes FOREACH to break when used with non-</i></td></tr>
+<tr><th id="517">517</th><td><i>// copyable collection types.</i></td></tr>
+<tr><th id="518">518</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="519">519</th><td><i></i></td></tr>
+<tr><th id="520">520</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="521">521</th><td><i>// rvalue_probe</i></td></tr>
+<tr><th id="522">522</th><td><i>//</i></td></tr>
+<tr><th id="523">523</th><td><b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="524">524</th><td><b>struct</b> rvalue_probe</td></tr>
+<tr><th id="525">525</th><td>{</td></tr>
+<tr><th id="526">526</th><td>    rvalue_probe(T &amp;t, <em>bool</em> &amp;b)</td></tr>
+<tr><th id="527">527</th><td>      : value(t)</td></tr>
+<tr><th id="528">528</th><td>      , is_rvalue(b)</td></tr>
+<tr><th id="529">529</th><td>    {</td></tr>
+<tr><th id="530">530</th><td>    }</td></tr>
+<tr><th id="531">531</th><td></td></tr>
+<tr><th id="532">532</th><td>    <b>struct</b> private_type_ {};</td></tr>
+<tr><th id="533">533</th><td>    <i>// can't ever return an array or an abstract type by value</i></td></tr>
+<tr><th id="534">534</th><td>    <u>#ifdef BOOST_NO_IS_ABSTRACT</u></td></tr>
+<tr><th id="535">535</th><td>    <b>typedef</b> BOOST_DEDUCED_TYPENAME boost::mpl::if_&lt;</td></tr>
+<tr><th id="536">536</th><td>        boost::is_array&lt;T&gt;, private_type_, T</td></tr>
+<tr><th id="537">537</th><td>    &gt;::type value_type;</td></tr>
+<tr><th id="538">538</th><td>    <u>#else</u></td></tr>
+<tr><th id="539">539</th><td>    <b>typedef</b> BOOST_DEDUCED_TYPENAME boost::mpl::if_&lt;</td></tr>
+<tr><th id="540">540</th><td>        boost::mpl::or_&lt;boost::is_abstract&lt;T&gt;, boost::is_array&lt;T&gt; &gt;, private_type_, T</td></tr>
+<tr><th id="541">541</th><td>    &gt;::type value_type;</td></tr>
+<tr><th id="542">542</th><td>    <u>#endif</u></td></tr>
+<tr><th id="543">543</th><td>    </td></tr>
+<tr><th id="544">544</th><td>    <b>operator</b> value_type()</td></tr>
+<tr><th id="545">545</th><td>    {</td></tr>
+<tr><th id="546">546</th><td>        <b>this</b>-&gt;is_rvalue = <b>true</b>;</td></tr>
+<tr><th id="547">547</th><td>        <b>return</b> <b>this</b>-&gt;value;</td></tr>
+<tr><th id="548">548</th><td>    }</td></tr>
+<tr><th id="549">549</th><td></td></tr>
+<tr><th id="550">550</th><td>    <b>operator</b> T &amp;() <em>const</em></td></tr>
+<tr><th id="551">551</th><td>    {</td></tr>
+<tr><th id="552">552</th><td>        <b>return</b> <b>this</b>-&gt;value;</td></tr>
+<tr><th id="553">553</th><td>    }</td></tr>
+<tr><th id="554">554</th><td></td></tr>
+<tr><th id="555">555</th><td><b>private</b>:</td></tr>
+<tr><th id="556">556</th><td>    T &amp;value;</td></tr>
+<tr><th id="557">557</th><td>    <em>bool</em> &amp;is_rvalue;</td></tr>
+<tr><th id="558">558</th><td>};</td></tr>
+<tr><th id="559">559</th><td></td></tr>
+<tr><th id="560">560</th><td><b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="561">561</th><td>rvalue_probe&lt;T&gt; make_probe(T &amp;t, <em>bool</em> &amp;b) { <b>return</b> rvalue_probe&lt;T&gt;(t, b); }</td></tr>
+<tr><th id="562">562</th><td></td></tr>
+<tr><th id="563">563</th><td><b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="564">564</th><td>rvalue_probe&lt;T <em>const</em>&gt; make_probe(T <em>const</em> &amp;t, <em>bool</em> &amp;b)  { <b>return</b> rvalue_probe&lt;T <em>const</em>&gt;(t, b); }</td></tr>
+<tr><th id="565">565</th><td></td></tr>
+<tr><th id="566">566</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="567">567</th><td><i>// simple_variant</i></td></tr>
+<tr><th id="568">568</th><td><i>//  holds either a T or a T const*</i></td></tr>
+<tr><th id="569">569</th><td><b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="570">570</th><td><b>struct</b> simple_variant</td></tr>
+<tr><th id="571">571</th><td>{</td></tr>
+<tr><th id="572">572</th><td>    simple_variant(T <em>const</em> *t)</td></tr>
+<tr><th id="573">573</th><td>      : is_rvalue(<b>false</b>)</td></tr>
+<tr><th id="574">574</th><td>    {</td></tr>
+<tr><th id="575">575</th><td>        *<b>static_cast</b>&lt;T <em>const</em> **&gt;(<b>this</b>-&gt;data.address()) = t;</td></tr>
+<tr><th id="576">576</th><td>    }</td></tr>
+<tr><th id="577">577</th><td></td></tr>
+<tr><th id="578">578</th><td>    simple_variant(T <em>const</em> &amp;t)</td></tr>
+<tr><th id="579">579</th><td>      : is_rvalue(<b>true</b>)</td></tr>
+<tr><th id="580">580</th><td>    {</td></tr>
+<tr><th id="581">581</th><td>        ::<b>new</b>(<b>this</b>-&gt;data.address()) T(t);</td></tr>
+<tr><th id="582">582</th><td>    }</td></tr>
+<tr><th id="583">583</th><td></td></tr>
+<tr><th id="584">584</th><td>    simple_variant(simple_variant <em>const</em> &amp;that)</td></tr>
+<tr><th id="585">585</th><td>      : is_rvalue(that.is_rvalue)</td></tr>
+<tr><th id="586">586</th><td>    {</td></tr>
+<tr><th id="587">587</th><td>        <b>if</b>(<b>this</b>-&gt;is_rvalue)</td></tr>
+<tr><th id="588">588</th><td>            ::<b>new</b>(<b>this</b>-&gt;data.address()) T(*that.get());</td></tr>
+<tr><th id="589">589</th><td>        <b>else</b></td></tr>
+<tr><th id="590">590</th><td>            *<b>static_cast</b>&lt;T <em>const</em> **&gt;(<b>this</b>-&gt;data.address()) = that.get();</td></tr>
+<tr><th id="591">591</th><td>    }</td></tr>
+<tr><th id="592">592</th><td></td></tr>
+<tr><th id="593">593</th><td>    ~simple_variant()</td></tr>
+<tr><th id="594">594</th><td>    {</td></tr>
+<tr><th id="595">595</th><td>        <b>if</b>(<b>this</b>-&gt;is_rvalue)</td></tr>
+<tr><th id="596">596</th><td>            <b>this</b>-&gt;get()-&gt;~T();</td></tr>
+<tr><th id="597">597</th><td>    }</td></tr>
+<tr><th id="598">598</th><td></td></tr>
+<tr><th id="599">599</th><td>    T <em>const</em> *get() <em>const</em></td></tr>
+<tr><th id="600">600</th><td>    {</td></tr>
+<tr><th id="601">601</th><td>        <b>if</b>(<b>this</b>-&gt;is_rvalue)</td></tr>
+<tr><th id="602">602</th><td>            <b>return</b> <b>static_cast</b>&lt;T <em>const</em> *&gt;(<b>this</b>-&gt;data.address());</td></tr>
+<tr><th id="603">603</th><td>        <b>else</b></td></tr>
+<tr><th id="604">604</th><td>            <b>return</b> *<b>static_cast</b>&lt;T <em>const</em> * <em>const</em> *&gt;(<b>this</b>-&gt;data.address());</td></tr>
+<tr><th id="605">605</th><td>    }</td></tr>
+<tr><th id="606">606</th><td></td></tr>
+<tr><th id="607">607</th><td><b>private</b>:</td></tr>
+<tr><th id="608">608</th><td>    <b>enum</b> size_type { size = <b>sizeof</b>(T) &gt; <b>sizeof</b>(T*) ? <b>sizeof</b>(T) : <b>sizeof</b>(T*) };</td></tr>
+<tr><th id="609">609</th><td>    simple_variant &amp;<b>operator</b> =(simple_variant <em>const</em> &amp;); </td></tr>
+<tr><th id="610">610</th><td>    <em>bool</em> <em>const</em> is_rvalue;</td></tr>
+<tr><th id="611">611</th><td>    aligned_storage&lt;size&gt; data;</td></tr>
+<tr><th id="612">612</th><td>};</td></tr>
+<tr><th id="613">613</th><td></td></tr>
+<tr><th id="614">614</th><td><i>// If the collection is an array or is noncopyable, it must be an lvalue.</i></td></tr>
+<tr><th id="615">615</th><td><i>// If the collection is a lightweight proxy, treat it as an rvalue</i></td></tr>
+<tr><th id="616">616</th><td><i>// BUGBUG what about a noncopyable proxy?</i></td></tr>
+<tr><th id="617">617</th><td><b>template</b>&lt;<b>typename</b> LValue, <b>typename</b> IsProxy&gt;</td></tr>
+<tr><th id="618">618</th><td><b>inline</b> BOOST_DEDUCED_TYPENAME boost::enable_if&lt;boost::mpl::or_&lt;LValue, IsProxy&gt;, IsProxy&gt;::type *</td></tr>
+<tr><th id="619">619</th><td>should_copy_impl(LValue *, IsProxy *, <em>bool</em> *)</td></tr>
+<tr><th id="620">620</th><td>{</td></tr>
+<tr><th id="621">621</th><td>    <b>return</b> <var>0</var>;</td></tr>
+<tr><th id="622">622</th><td>}</td></tr>
+<tr><th id="623">623</th><td></td></tr>
+<tr><th id="624">624</th><td><i>// Otherwise, we must determine at runtime whether it's an lvalue or rvalue</i></td></tr>
+<tr><th id="625">625</th><td><b>inline</b> <em>bool</em> *</td></tr>
+<tr><th id="626">626</th><td>should_copy_impl(boost::mpl::false_ *, boost::mpl::false_ *, <em>bool</em> *is_rvalue)</td></tr>
+<tr><th id="627">627</th><td>{</td></tr>
+<tr><th id="628">628</th><td>    <b>return</b> is_rvalue;</td></tr>
+<tr><th id="629">629</th><td>}</td></tr>
+<tr><th id="630">630</th><td></td></tr>
+<tr><th id="631">631</th><td><u>#<span data-ppcond="467">endif</span></u></td></tr>
+<tr><th id="632">632</th><td></td></tr>
+<tr><th id="633">633</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="634">634</th><td><i>// contain</i></td></tr>
+<tr><th id="635">635</th><td><i>//</i></td></tr>
+<tr><th id="636">636</th><td><b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="637">637</th><td><b>inline</b> <a class="type" href="#boost::foreach_detail_::auto_any" title='boost::foreach_detail_::auto_any' data-ref="boost::foreach_detail_::auto_any">auto_any</a>&lt;T&gt; <dfn class="decl def fn" id="_ZN5boost15foreach_detail_7containERKT_PN4mpl_5bool_ILb1EEE" title='boost::foreach_detail_::contain' data-ref="_ZN5boost15foreach_detail_7containERKT_PN4mpl_5bool_ILb1EEE">contain</dfn>(T <em>const</em> &amp;<dfn class="local col7 decl" id="7t" title='t' data-type='const T &amp;' data-ref="7t">t</dfn>, <span class="namespace">boost::mpl::</span>true_ *) <i>// rvalue</i></td></tr>
+<tr><th id="638">638</th><td>{</td></tr>
+<tr><th id="639">639</th><td>    <b>return</b> <a class="type" href="#boost::foreach_detail_::auto_any" title='boost::foreach_detail_::auto_any' data-ref="boost::foreach_detail_::auto_any">auto_any</a>&lt;T&gt;(<a class="local col7 ref" href="#7t" title='t' data-ref="7t">t</a>);</td></tr>
+<tr><th id="640">640</th><td>}</td></tr>
+<tr><th id="641">641</th><td></td></tr>
+<tr><th id="642">642</th><td><b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="643">643</th><td><b>inline</b> <a class="type" href="#boost::foreach_detail_::auto_any" title='boost::foreach_detail_::auto_any' data-ref="boost::foreach_detail_::auto_any">auto_any</a>&lt;T *&gt; <dfn class="decl def fn" id="_ZN5boost15foreach_detail_7containERT_PN4mpl_5bool_ILb0EEE" title='boost::foreach_detail_::contain' data-ref="_ZN5boost15foreach_detail_7containERT_PN4mpl_5bool_ILb0EEE">contain</dfn>(T &amp;<dfn class="local col8 decl" id="8t" title='t' data-type='T &amp;' data-ref="8t">t</dfn>, <span class="namespace">boost::mpl::</span>false_ *) <i>// lvalue</i></td></tr>
+<tr><th id="644">644</th><td>{</td></tr>
+<tr><th id="645">645</th><td>    <i>// Cannot seem to get sunpro to handle addressof() with array types.</i></td></tr>
+<tr><th id="646">646</th><td>    <u>#<span data-ppcond="646">if</span> <a class="macro" href="../../../config/include/boost/config/workaround.hpp.html#271" title="((1 + 0 == 0) &amp;&amp; (__SUNPRO_CC != 0) &amp;&amp; (1 % (( (__SUNPRO_CC != ((0x570)-(0x570))) ) + 1)))" data-ref="_M/BOOST_WORKAROUND">BOOST_WORKAROUND</a>(__SUNPRO_CC, <a class="macro" href="../../../config/include/boost/config/workaround.hpp.html#296" title="!= ((0x570)-(0x570))" data-ref="_M/BOOST_TESTED_AT">BOOST_TESTED_AT</a>(0x570))</u></td></tr>
+<tr><th id="647">647</th><td>    <b>return</b> auto_any&lt;T *&gt;(&amp;t);</td></tr>
+<tr><th id="648">648</th><td>    <u>#<span data-ppcond="646">else</span></u></td></tr>
+<tr><th id="649">649</th><td>    <b>return</b> <a class="type" href="#boost::foreach_detail_::auto_any" title='boost::foreach_detail_::auto_any' data-ref="boost::foreach_detail_::auto_any">auto_any</a>&lt;T *&gt;(<span class="namespace">boost::</span>addressof(<a class="local col8 ref" href="#8t" title='t' data-ref="8t">t</a>));</td></tr>
+<tr><th id="650">650</th><td>    <u>#<span data-ppcond="646">endif</span></u></td></tr>
+<tr><th id="651">651</th><td>}</td></tr>
+<tr><th id="652">652</th><td></td></tr>
+<tr><th id="653">653</th><td><u>#<span data-ppcond="653">ifdef</span> <span class="macro" data-ref="_M/BOOST_FOREACH_RUN_TIME_CONST_RVALUE_DETECTION">BOOST_FOREACH_RUN_TIME_CONST_RVALUE_DETECTION</span></u></td></tr>
+<tr><th id="654">654</th><td><b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="655">655</th><td><b>inline</b> auto_any&lt;simple_variant&lt;T&gt; &gt;</td></tr>
+<tr><th id="656">656</th><td>contain(T <em>const</em> &amp;t, <em>bool</em> *rvalue)</td></tr>
+<tr><th id="657">657</th><td>{</td></tr>
+<tr><th id="658">658</th><td>    <b>return</b> auto_any&lt;simple_variant&lt;T&gt; &gt;(*rvalue ? simple_variant&lt;T&gt;(t) : simple_variant&lt;T&gt;(&amp;t));</td></tr>
+<tr><th id="659">659</th><td>}</td></tr>
+<tr><th id="660">660</th><td><u>#<span data-ppcond="653">endif</span></u></td></tr>
+<tr><th id="661">661</th><td></td></tr>
+<tr><th id="662">662</th><td><i>/////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="663">663</th><td><i>// begin</i></td></tr>
+<tr><th id="664">664</th><td><i>//</i></td></tr>
+<tr><th id="665">665</th><td><b>template</b>&lt;<b>typename</b> T, <b>typename</b> C&gt;</td></tr>
+<tr><th id="666">666</th><td><b>inline</b> <a class="type" href="#boost::foreach_detail_::auto_any" title='boost::foreach_detail_::auto_any' data-ref="boost::foreach_detail_::auto_any">auto_any</a>&lt;<a class="macro" href="../../../config/include/boost/config/detail/suffix.hpp.html#483" title="typename" data-ref="_M/BOOST_DEDUCED_TYPENAME">BOOST_DEDUCED_TYPENAME</a> <a class="type" href="#boost::foreach_detail_::foreach_iterator" title='boost::foreach_detail_::foreach_iterator' data-ref="boost::foreach_detail_::foreach_iterator">foreach_iterator</a>&lt;T, C&gt;::type&gt;</td></tr>
+<tr><th id="667">667</th><td><dfn class="decl def fn" id="_ZN5boost15foreach_detail_5beginERKNS0_13auto_any_baseEPNS0_9type2typeIT_T0_EEPN4mpl_5bool_ILb1EEE" title='boost::foreach_detail_::begin' data-ref="_ZN5boost15foreach_detail_5beginERKNS0_13auto_any_baseEPNS0_9type2typeIT_T0_EEPN4mpl_5bool_ILb1EEE">begin</dfn>(<a class="typedef" href="#boost::foreach_detail_::auto_any_t" title='boost::foreach_detail_::auto_any_t' data-type='const boost::foreach_detail_::auto_any_base &amp;' data-ref="boost::foreach_detail_::auto_any_t">auto_any_t</a> <dfn class="local col9 decl" id="9col" title='col' data-type='boost::foreach_detail_::auto_any_t' data-ref="9col">col</dfn>, <a class="type" href="#boost::foreach_detail_::type2type" title='boost::foreach_detail_::type2type' data-ref="boost::foreach_detail_::type2type">type2type</a>&lt;T, C&gt; *, <span class="namespace">boost::mpl::</span>true_ *) <i>// rvalue</i></td></tr>
+<tr><th id="668">668</th><td>{</td></tr>
+<tr><th id="669">669</th><td>    <b>return</b> <a class="type" href="#boost::foreach_detail_::auto_any" title='boost::foreach_detail_::auto_any' data-ref="boost::foreach_detail_::auto_any">auto_any</a>&lt;<a class="macro" href="../../../config/include/boost/config/detail/suffix.hpp.html#483" title="typename" data-ref="_M/BOOST_DEDUCED_TYPENAME">BOOST_DEDUCED_TYPENAME</a> <a class="type" href="#boost::foreach_detail_::foreach_iterator" title='boost::foreach_detail_::foreach_iterator' data-ref="boost::foreach_detail_::foreach_iterator">foreach_iterator</a>&lt;T, C&gt;::type&gt;(</td></tr>
+<tr><th id="670">670</th><td>        <span class="namespace">boost::</span>begin(auto_any_cast&lt;T, C&gt;(<a class="local col9 ref" href="#9col" title='col' data-ref="9col">col</a>)));</td></tr>
+<tr><th id="671">671</th><td>}</td></tr>
+<tr><th id="672">672</th><td></td></tr>
+<tr><th id="673">673</th><td><b>template</b>&lt;<b>typename</b> T, <b>typename</b> C&gt;</td></tr>
+<tr><th id="674">674</th><td><b>inline</b> <a class="type" href="#boost::foreach_detail_::auto_any" title='boost::foreach_detail_::auto_any' data-ref="boost::foreach_detail_::auto_any">auto_any</a>&lt;<a class="macro" href="../../../config/include/boost/config/detail/suffix.hpp.html#483" title="typename" data-ref="_M/BOOST_DEDUCED_TYPENAME">BOOST_DEDUCED_TYPENAME</a> <a class="type" href="#boost::foreach_detail_::foreach_iterator" title='boost::foreach_detail_::foreach_iterator' data-ref="boost::foreach_detail_::foreach_iterator">foreach_iterator</a>&lt;T, C&gt;::type&gt;</td></tr>
+<tr><th id="675">675</th><td><dfn class="decl def fn" id="_ZN5boost15foreach_detail_5beginERKNS0_13auto_any_baseEPNS0_9type2typeIT_T0_EEPN4mpl_5bool_ILb0EEE" title='boost::foreach_detail_::begin' data-ref="_ZN5boost15foreach_detail_5beginERKNS0_13auto_any_baseEPNS0_9type2typeIT_T0_EEPN4mpl_5bool_ILb0EEE">begin</dfn>(<a class="typedef" href="#boost::foreach_detail_::auto_any_t" title='boost::foreach_detail_::auto_any_t' data-type='const boost::foreach_detail_::auto_any_base &amp;' data-ref="boost::foreach_detail_::auto_any_t">auto_any_t</a> <dfn class="local col0 decl" id="10col" title='col' data-type='boost::foreach_detail_::auto_any_t' data-ref="10col">col</dfn>, <a class="type" href="#boost::foreach_detail_::type2type" title='boost::foreach_detail_::type2type' data-ref="boost::foreach_detail_::type2type">type2type</a>&lt;T, C&gt; *, <span class="namespace">boost::mpl::</span>false_ *) <i>// lvalue</i></td></tr>
+<tr><th id="676">676</th><td>{</td></tr>
+<tr><th id="677">677</th><td>    <b>typedef</b> <a class="macro" href="../../../config/include/boost/config/detail/suffix.hpp.html#483" title="typename" data-ref="_M/BOOST_DEDUCED_TYPENAME">BOOST_DEDUCED_TYPENAME</a> <a class="type" href="#boost::foreach_detail_::type2type" title='boost::foreach_detail_::type2type' data-ref="boost::foreach_detail_::type2type">type2type</a>&lt;T, C&gt;::type <dfn class="local col1 typedef" id="11type" title='type' data-type='typename type2type&lt;T, C&gt;::type' data-ref="11type">type</dfn>;</td></tr>
+<tr><th id="678">678</th><td>    <b>typedef</b> <a class="macro" href="../../../config/include/boost/config/detail/suffix.hpp.html#483" title="typename" data-ref="_M/BOOST_DEDUCED_TYPENAME">BOOST_DEDUCED_TYPENAME</a> <a class="type" href="#boost::foreach_detail_::foreach_iterator" title='boost::foreach_detail_::foreach_iterator' data-ref="boost::foreach_detail_::foreach_iterator">foreach_iterator</a>&lt;T, C&gt;::type <dfn class="local col2 typedef" id="12iterator" title='iterator' data-type='typename foreach_iterator&lt;T, C&gt;::type' data-ref="12iterator">iterator</dfn>;</td></tr>
+<tr><th id="679">679</th><td>    <b>return</b> <a class="type" href="#boost::foreach_detail_::auto_any" title='boost::foreach_detail_::auto_any' data-ref="boost::foreach_detail_::auto_any">auto_any</a>&lt;<a class="macro" href="../../../config/include/boost/config/detail/suffix.hpp.html#483" title="typename" data-ref="_M/BOOST_DEDUCED_TYPENAME">BOOST_DEDUCED_TYPENAME</a> <a class="type" href="#boost::foreach_detail_::foreach_iterator" title='boost::foreach_detail_::foreach_iterator' data-ref="boost::foreach_detail_::foreach_iterator">foreach_iterator</a>&lt;T, C&gt;::type&gt;(</td></tr>
+<tr><th id="680">680</th><td>        <a class="local col2 typedef" href="#12iterator" title='iterator' data-type='typename foreach_iterator&lt;T, C&gt;::type' data-ref="12iterator">iterator</a>(<span class="namespace">boost::</span>begin(<a class="macro" href="#464" title="(*(auto_any_cast&lt;type *, boost::mpl::false_&gt;(col)))" data-ref="_M/BOOST_FOREACH_DEREFOF">BOOST_FOREACH_DEREFOF</a>((auto_any_cast&lt;<a class="local col1 typedef" href="#11type" title='type' data-type='typename type2type&lt;T, C&gt;::type' data-ref="11type">type</a> *, boost::mpl::false_&gt;(<a class="local col0 ref" href="#10col" title='col' data-ref="10col">col</a>))))));</td></tr>
+<tr><th id="681">681</th><td>}</td></tr>
+<tr><th id="682">682</th><td></td></tr>
+<tr><th id="683">683</th><td><u>#<span data-ppcond="683">ifdef</span> <span class="macro" data-ref="_M/BOOST_FOREACH_RUN_TIME_CONST_RVALUE_DETECTION">BOOST_FOREACH_RUN_TIME_CONST_RVALUE_DETECTION</span></u></td></tr>
+<tr><th id="684">684</th><td><b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="685">685</th><td><b>inline</b> auto_any&lt;BOOST_DEDUCED_TYPENAME foreach_iterator&lt;T, const_&gt;::type&gt;</td></tr>
+<tr><th id="686">686</th><td>begin(auto_any_t col, type2type&lt;T, const_&gt; *, <em>bool</em> *)</td></tr>
+<tr><th id="687">687</th><td>{</td></tr>
+<tr><th id="688">688</th><td>    <b>return</b> auto_any&lt;BOOST_DEDUCED_TYPENAME foreach_iterator&lt;T, const_&gt;::type&gt;(</td></tr>
+<tr><th id="689">689</th><td>        boost::begin(*auto_any_cast&lt;simple_variant&lt;T&gt;, boost::mpl::false_&gt;(col).get()));</td></tr>
+<tr><th id="690">690</th><td>}</td></tr>
+<tr><th id="691">691</th><td><u>#<span data-ppcond="683">endif</span></u></td></tr>
+<tr><th id="692">692</th><td></td></tr>
+<tr><th id="693">693</th><td><u>#<span data-ppcond="693">ifndef</span> <span class="macro" data-ref="_M/BOOST_NO_FUNCTION_TEMPLATE_ORDERING">BOOST_NO_FUNCTION_TEMPLATE_ORDERING</span></u></td></tr>
+<tr><th id="694">694</th><td><b>template</b>&lt;<b>typename</b> T, <b>typename</b> C&gt;</td></tr>
+<tr><th id="695">695</th><td><b>inline</b> <a class="type" href="#boost::foreach_detail_::auto_any" title='boost::foreach_detail_::auto_any' data-ref="boost::foreach_detail_::auto_any">auto_any</a>&lt;T *&gt;</td></tr>
+<tr><th id="696">696</th><td><dfn class="decl def fn" id="_ZN5boost15foreach_detail_5beginERKNS0_13auto_any_baseEPNS0_9type2typeIPT_T0_EEPN4mpl_5bool_ILb1EEE" title='boost::foreach_detail_::begin' data-ref="_ZN5boost15foreach_detail_5beginERKNS0_13auto_any_baseEPNS0_9type2typeIPT_T0_EEPN4mpl_5bool_ILb1EEE">begin</dfn>(<a class="typedef" href="#boost::foreach_detail_::auto_any_t" title='boost::foreach_detail_::auto_any_t' data-type='const boost::foreach_detail_::auto_any_base &amp;' data-ref="boost::foreach_detail_::auto_any_t">auto_any_t</a> <dfn class="local col3 decl" id="13col" title='col' data-type='boost::foreach_detail_::auto_any_t' data-ref="13col">col</dfn>, <a class="type" href="#boost::foreach_detail_::type2type" title='boost::foreach_detail_::type2type' data-ref="boost::foreach_detail_::type2type">type2type</a>&lt;T *, C&gt; *, <span class="namespace">boost::mpl::</span>true_ *) <i>// null-terminated C-style strings</i></td></tr>
+<tr><th id="697">697</th><td>{</td></tr>
+<tr><th id="698">698</th><td>    <b>return</b> <a class="type" href="#boost::foreach_detail_::auto_any" title='boost::foreach_detail_::auto_any' data-ref="boost::foreach_detail_::auto_any">auto_any</a>&lt;T *&gt;(auto_any_cast&lt;T *, <span class="namespace">boost::mpl::</span>false_&gt;(<a class="local col3 ref" href="#13col" title='col' data-ref="13col">col</a>));</td></tr>
+<tr><th id="699">699</th><td>}</td></tr>
+<tr><th id="700">700</th><td><u>#<span data-ppcond="693">endif</span></u></td></tr>
+<tr><th id="701">701</th><td></td></tr>
+<tr><th id="702">702</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="703">703</th><td><i>// end</i></td></tr>
+<tr><th id="704">704</th><td><i>//</i></td></tr>
+<tr><th id="705">705</th><td><b>template</b>&lt;<b>typename</b> T, <b>typename</b> C&gt;</td></tr>
+<tr><th id="706">706</th><td><b>inline</b> <a class="type" href="#boost::foreach_detail_::auto_any" title='boost::foreach_detail_::auto_any' data-ref="boost::foreach_detail_::auto_any">auto_any</a>&lt;<a class="macro" href="../../../config/include/boost/config/detail/suffix.hpp.html#483" title="typename" data-ref="_M/BOOST_DEDUCED_TYPENAME">BOOST_DEDUCED_TYPENAME</a> <a class="type" href="#boost::foreach_detail_::foreach_iterator" title='boost::foreach_detail_::foreach_iterator' data-ref="boost::foreach_detail_::foreach_iterator">foreach_iterator</a>&lt;T, C&gt;::type&gt;</td></tr>
+<tr><th id="707">707</th><td><dfn class="decl def fn" id="_ZN5boost15foreach_detail_3endERKNS0_13auto_any_baseEPNS0_9type2typeIT_T0_EEPN4mpl_5bool_ILb1EEE" title='boost::foreach_detail_::end' data-ref="_ZN5boost15foreach_detail_3endERKNS0_13auto_any_baseEPNS0_9type2typeIT_T0_EEPN4mpl_5bool_ILb1EEE">end</dfn>(<a class="typedef" href="#boost::foreach_detail_::auto_any_t" title='boost::foreach_detail_::auto_any_t' data-type='const boost::foreach_detail_::auto_any_base &amp;' data-ref="boost::foreach_detail_::auto_any_t">auto_any_t</a> <dfn class="local col4 decl" id="14col" title='col' data-type='boost::foreach_detail_::auto_any_t' data-ref="14col">col</dfn>, <a class="type" href="#boost::foreach_detail_::type2type" title='boost::foreach_detail_::type2type' data-ref="boost::foreach_detail_::type2type">type2type</a>&lt;T, C&gt; *, <span class="namespace">boost::mpl::</span>true_ *) <i>// rvalue</i></td></tr>
+<tr><th id="708">708</th><td>{</td></tr>
+<tr><th id="709">709</th><td>    <b>return</b> <a class="type" href="#boost::foreach_detail_::auto_any" title='boost::foreach_detail_::auto_any' data-ref="boost::foreach_detail_::auto_any">auto_any</a>&lt;<a class="macro" href="../../../config/include/boost/config/detail/suffix.hpp.html#483" title="typename" data-ref="_M/BOOST_DEDUCED_TYPENAME">BOOST_DEDUCED_TYPENAME</a> <a class="type" href="#boost::foreach_detail_::foreach_iterator" title='boost::foreach_detail_::foreach_iterator' data-ref="boost::foreach_detail_::foreach_iterator">foreach_iterator</a>&lt;T, C&gt;::type&gt;(</td></tr>
+<tr><th id="710">710</th><td>        <span class="namespace">boost::</span>end(auto_any_cast&lt;T, C&gt;(<a class="local col4 ref" href="#14col" title='col' data-ref="14col">col</a>)));</td></tr>
+<tr><th id="711">711</th><td>}</td></tr>
+<tr><th id="712">712</th><td></td></tr>
+<tr><th id="713">713</th><td><b>template</b>&lt;<b>typename</b> T, <b>typename</b> C&gt;</td></tr>
+<tr><th id="714">714</th><td><b>inline</b> <a class="type" href="#boost::foreach_detail_::auto_any" title='boost::foreach_detail_::auto_any' data-ref="boost::foreach_detail_::auto_any">auto_any</a>&lt;<a class="macro" href="../../../config/include/boost/config/detail/suffix.hpp.html#483" title="typename" data-ref="_M/BOOST_DEDUCED_TYPENAME">BOOST_DEDUCED_TYPENAME</a> <a class="type" href="#boost::foreach_detail_::foreach_iterator" title='boost::foreach_detail_::foreach_iterator' data-ref="boost::foreach_detail_::foreach_iterator">foreach_iterator</a>&lt;T, C&gt;::type&gt;</td></tr>
+<tr><th id="715">715</th><td><dfn class="decl def fn" id="_ZN5boost15foreach_detail_3endERKNS0_13auto_any_baseEPNS0_9type2typeIT_T0_EEPN4mpl_5bool_ILb0EEE" title='boost::foreach_detail_::end' data-ref="_ZN5boost15foreach_detail_3endERKNS0_13auto_any_baseEPNS0_9type2typeIT_T0_EEPN4mpl_5bool_ILb0EEE">end</dfn>(<a class="typedef" href="#boost::foreach_detail_::auto_any_t" title='boost::foreach_detail_::auto_any_t' data-type='const boost::foreach_detail_::auto_any_base &amp;' data-ref="boost::foreach_detail_::auto_any_t">auto_any_t</a> <dfn class="local col5 decl" id="15col" title='col' data-type='boost::foreach_detail_::auto_any_t' data-ref="15col">col</dfn>, <a class="type" href="#boost::foreach_detail_::type2type" title='boost::foreach_detail_::type2type' data-ref="boost::foreach_detail_::type2type">type2type</a>&lt;T, C&gt; *, <span class="namespace">boost::mpl::</span>false_ *) <i>// lvalue</i></td></tr>
+<tr><th id="716">716</th><td>{</td></tr>
+<tr><th id="717">717</th><td>    <b>typedef</b> <a class="macro" href="../../../config/include/boost/config/detail/suffix.hpp.html#483" title="typename" data-ref="_M/BOOST_DEDUCED_TYPENAME">BOOST_DEDUCED_TYPENAME</a> <a class="type" href="#boost::foreach_detail_::type2type" title='boost::foreach_detail_::type2type' data-ref="boost::foreach_detail_::type2type">type2type</a>&lt;T, C&gt;::type <dfn class="local col6 typedef" id="16type" title='type' data-type='typename type2type&lt;T, C&gt;::type' data-ref="16type">type</dfn>;</td></tr>
+<tr><th id="718">718</th><td>    <b>typedef</b> <a class="macro" href="../../../config/include/boost/config/detail/suffix.hpp.html#483" title="typename" data-ref="_M/BOOST_DEDUCED_TYPENAME">BOOST_DEDUCED_TYPENAME</a> <a class="type" href="#boost::foreach_detail_::foreach_iterator" title='boost::foreach_detail_::foreach_iterator' data-ref="boost::foreach_detail_::foreach_iterator">foreach_iterator</a>&lt;T, C&gt;::type <dfn class="local col7 typedef" id="17iterator" title='iterator' data-type='typename foreach_iterator&lt;T, C&gt;::type' data-ref="17iterator">iterator</dfn>;</td></tr>
+<tr><th id="719">719</th><td>    <b>return</b> <a class="type" href="#boost::foreach_detail_::auto_any" title='boost::foreach_detail_::auto_any' data-ref="boost::foreach_detail_::auto_any">auto_any</a>&lt;<a class="macro" href="../../../config/include/boost/config/detail/suffix.hpp.html#483" title="typename" data-ref="_M/BOOST_DEDUCED_TYPENAME">BOOST_DEDUCED_TYPENAME</a> <a class="type" href="#boost::foreach_detail_::foreach_iterator" title='boost::foreach_detail_::foreach_iterator' data-ref="boost::foreach_detail_::foreach_iterator">foreach_iterator</a>&lt;T, C&gt;::type&gt;(</td></tr>
+<tr><th id="720">720</th><td>        <a class="local col7 typedef" href="#17iterator" title='iterator' data-type='typename foreach_iterator&lt;T, C&gt;::type' data-ref="17iterator">iterator</a>(<span class="namespace">boost::</span>end(<a class="macro" href="#464" title="(*(auto_any_cast&lt;type *, boost::mpl::false_&gt;(col)))" data-ref="_M/BOOST_FOREACH_DEREFOF">BOOST_FOREACH_DEREFOF</a>((auto_any_cast&lt;<a class="local col6 typedef" href="#16type" title='type' data-type='typename type2type&lt;T, C&gt;::type' data-ref="16type">type</a> *, boost::mpl::false_&gt;(<a class="local col5 ref" href="#15col" title='col' data-ref="15col">col</a>))))));</td></tr>
+<tr><th id="721">721</th><td>}</td></tr>
+<tr><th id="722">722</th><td></td></tr>
+<tr><th id="723">723</th><td><u>#<span data-ppcond="723">ifdef</span> <span class="macro" data-ref="_M/BOOST_FOREACH_RUN_TIME_CONST_RVALUE_DETECTION">BOOST_FOREACH_RUN_TIME_CONST_RVALUE_DETECTION</span></u></td></tr>
+<tr><th id="724">724</th><td><b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="725">725</th><td><b>inline</b> auto_any&lt;BOOST_DEDUCED_TYPENAME foreach_iterator&lt;T, const_&gt;::type&gt;</td></tr>
+<tr><th id="726">726</th><td>end(auto_any_t col, type2type&lt;T, const_&gt; *, <em>bool</em> *)</td></tr>
+<tr><th id="727">727</th><td>{</td></tr>
+<tr><th id="728">728</th><td>    <b>return</b> auto_any&lt;BOOST_DEDUCED_TYPENAME foreach_iterator&lt;T, const_&gt;::type&gt;(</td></tr>
+<tr><th id="729">729</th><td>        boost::end(*auto_any_cast&lt;simple_variant&lt;T&gt;, boost::mpl::false_&gt;(col).get()));</td></tr>
+<tr><th id="730">730</th><td>}</td></tr>
+<tr><th id="731">731</th><td><u>#<span data-ppcond="723">endif</span></u></td></tr>
+<tr><th id="732">732</th><td></td></tr>
+<tr><th id="733">733</th><td><u>#<span data-ppcond="733">ifndef</span> <span class="macro" data-ref="_M/BOOST_NO_FUNCTION_TEMPLATE_ORDERING">BOOST_NO_FUNCTION_TEMPLATE_ORDERING</span></u></td></tr>
+<tr><th id="734">734</th><td><b>template</b>&lt;<b>typename</b> T, <b>typename</b> C&gt;</td></tr>
+<tr><th id="735">735</th><td><b>inline</b> <a class="type" href="#boost::foreach_detail_::auto_any" title='boost::foreach_detail_::auto_any' data-ref="boost::foreach_detail_::auto_any">auto_any</a>&lt;<em>int</em>&gt;</td></tr>
+<tr><th id="736">736</th><td><dfn class="decl def fn" id="_ZN5boost15foreach_detail_3endERKNS0_13auto_any_baseEPNS0_9type2typeIPT_T0_EEPN4mpl_5bool_ILb1EEE" title='boost::foreach_detail_::end' data-ref="_ZN5boost15foreach_detail_3endERKNS0_13auto_any_baseEPNS0_9type2typeIPT_T0_EEPN4mpl_5bool_ILb1EEE">end</dfn>(<a class="typedef" href="#boost::foreach_detail_::auto_any_t" title='boost::foreach_detail_::auto_any_t' data-type='const boost::foreach_detail_::auto_any_base &amp;' data-ref="boost::foreach_detail_::auto_any_t">auto_any_t</a>, <a class="type" href="#boost::foreach_detail_::type2type" title='boost::foreach_detail_::type2type' data-ref="boost::foreach_detail_::type2type">type2type</a>&lt;T *, C&gt; *, <span class="namespace">boost::mpl::</span>true_ *) <i>// null-terminated C-style strings</i></td></tr>
+<tr><th id="737">737</th><td>{</td></tr>
+<tr><th id="738">738</th><td>    <b>return</b> <a class="type" href="#boost::foreach_detail_::auto_any" title='boost::foreach_detail_::auto_any' data-ref="boost::foreach_detail_::auto_any">auto_any</a>&lt;<em>int</em>&gt;<a class="ref fn" href="#_ZN5boost15foreach_detail_8auto_anyC1ERKT_" title='boost::foreach_detail_::auto_any::auto_any&lt;T&gt;' data-ref="_ZN5boost15foreach_detail_8auto_anyC1ERKT_">(</a><var>0</var>); <i>// not used</i></td></tr>
+<tr><th id="739">739</th><td>}</td></tr>
+<tr><th id="740">740</th><td><u>#<span data-ppcond="733">endif</span></u></td></tr>
+<tr><th id="741">741</th><td></td></tr>
+<tr><th id="742">742</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="743">743</th><td><i>// done</i></td></tr>
+<tr><th id="744">744</th><td><i>//</i></td></tr>
+<tr><th id="745">745</th><td><b>template</b>&lt;<b>typename</b> T, <b>typename</b> C&gt;</td></tr>
+<tr><th id="746">746</th><td><b>inline</b> <em>bool</em> <dfn class="decl def fn" id="_ZN5boost15foreach_detail_4doneERKNS0_13auto_any_baseES3_PNS0_9type2typeIT_T0_EE" title='boost::foreach_detail_::done' data-ref="_ZN5boost15foreach_detail_4doneERKNS0_13auto_any_baseES3_PNS0_9type2typeIT_T0_EE">done</dfn>(<a class="typedef" href="#boost::foreach_detail_::auto_any_t" title='boost::foreach_detail_::auto_any_t' data-type='const boost::foreach_detail_::auto_any_base &amp;' data-ref="boost::foreach_detail_::auto_any_t">auto_any_t</a> <dfn class="local col8 decl" id="18cur" title='cur' data-type='boost::foreach_detail_::auto_any_t' data-ref="18cur">cur</dfn>, <a class="typedef" href="#boost::foreach_detail_::auto_any_t" title='boost::foreach_detail_::auto_any_t' data-type='const boost::foreach_detail_::auto_any_base &amp;' data-ref="boost::foreach_detail_::auto_any_t">auto_any_t</a> <dfn class="local col9 decl" id="19end" title='end' data-type='boost::foreach_detail_::auto_any_t' data-ref="19end">end</dfn>, <a class="type" href="#boost::foreach_detail_::type2type" title='boost::foreach_detail_::type2type' data-ref="boost::foreach_detail_::type2type">type2type</a>&lt;T, C&gt; *)</td></tr>
+<tr><th id="747">747</th><td>{</td></tr>
+<tr><th id="748">748</th><td>    <b>typedef</b> <a class="macro" href="../../../config/include/boost/config/detail/suffix.hpp.html#483" title="typename" data-ref="_M/BOOST_DEDUCED_TYPENAME">BOOST_DEDUCED_TYPENAME</a> <a class="type" href="#boost::foreach_detail_::foreach_iterator" title='boost::foreach_detail_::foreach_iterator' data-ref="boost::foreach_detail_::foreach_iterator">foreach_iterator</a>&lt;T, C&gt;::type <dfn class="local col0 typedef" id="20iter_t" title='iter_t' data-type='typename foreach_iterator&lt;T, C&gt;::type' data-ref="20iter_t">iter_t</dfn>;</td></tr>
+<tr><th id="749">749</th><td>    <b>return</b> auto_any_cast&lt;<a class="local col0 typedef" href="#20iter_t" title='iter_t' data-type='typename foreach_iterator&lt;T, C&gt;::type' data-ref="20iter_t">iter_t</a>, <span class="namespace">boost::mpl::</span>false_&gt;(<a class="local col8 ref" href="#18cur" title='cur' data-ref="18cur">cur</a>) == auto_any_cast&lt;<a class="local col0 typedef" href="#20iter_t" title='iter_t' data-type='typename foreach_iterator&lt;T, C&gt;::type' data-ref="20iter_t">iter_t</a>, <span class="namespace">boost::mpl::</span>false_&gt;(<a class="local col9 ref" href="#19end" title='end' data-ref="19end">end</a>);</td></tr>
+<tr><th id="750">750</th><td>}</td></tr>
+<tr><th id="751">751</th><td></td></tr>
+<tr><th id="752">752</th><td><u>#<span data-ppcond="752">ifndef</span> <span class="macro" data-ref="_M/BOOST_NO_FUNCTION_TEMPLATE_ORDERING">BOOST_NO_FUNCTION_TEMPLATE_ORDERING</span></u></td></tr>
+<tr><th id="753">753</th><td><b>template</b>&lt;<b>typename</b> T, <b>typename</b> C&gt;</td></tr>
+<tr><th id="754">754</th><td><b>inline</b> <em>bool</em> <dfn class="decl def fn" id="_ZN5boost15foreach_detail_4doneERKNS0_13auto_any_baseES3_PNS0_9type2typeIPT_T0_EE" title='boost::foreach_detail_::done' data-ref="_ZN5boost15foreach_detail_4doneERKNS0_13auto_any_baseES3_PNS0_9type2typeIPT_T0_EE">done</dfn>(<a class="typedef" href="#boost::foreach_detail_::auto_any_t" title='boost::foreach_detail_::auto_any_t' data-type='const boost::foreach_detail_::auto_any_base &amp;' data-ref="boost::foreach_detail_::auto_any_t">auto_any_t</a> <dfn class="local col1 decl" id="21cur" title='cur' data-type='boost::foreach_detail_::auto_any_t' data-ref="21cur">cur</dfn>, <a class="typedef" href="#boost::foreach_detail_::auto_any_t" title='boost::foreach_detail_::auto_any_t' data-type='const boost::foreach_detail_::auto_any_base &amp;' data-ref="boost::foreach_detail_::auto_any_t">auto_any_t</a>, <a class="type" href="#boost::foreach_detail_::type2type" title='boost::foreach_detail_::type2type' data-ref="boost::foreach_detail_::type2type">type2type</a>&lt;T *, C&gt; *) <i>// null-terminated C-style strings</i></td></tr>
+<tr><th id="755">755</th><td>{</td></tr>
+<tr><th id="756">756</th><td>    <b>return</b> ! *auto_any_cast&lt;T *, <span class="namespace">boost::mpl::</span>false_&gt;(<a class="local col1 ref" href="#21cur" title='cur' data-ref="21cur">cur</a>);</td></tr>
+<tr><th id="757">757</th><td>}</td></tr>
+<tr><th id="758">758</th><td><u>#<span data-ppcond="752">endif</span></u></td></tr>
+<tr><th id="759">759</th><td></td></tr>
+<tr><th id="760">760</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="761">761</th><td><i>// next</i></td></tr>
+<tr><th id="762">762</th><td><i>//</i></td></tr>
+<tr><th id="763">763</th><td><b>template</b>&lt;<b>typename</b> T, <b>typename</b> C&gt;</td></tr>
+<tr><th id="764">764</th><td><b>inline</b> <em>void</em> <dfn class="decl def fn" id="_ZN5boost15foreach_detail_4nextERKNS0_13auto_any_baseEPNS0_9type2typeIT_T0_EE" title='boost::foreach_detail_::next' data-ref="_ZN5boost15foreach_detail_4nextERKNS0_13auto_any_baseEPNS0_9type2typeIT_T0_EE">next</dfn>(<a class="typedef" href="#boost::foreach_detail_::auto_any_t" title='boost::foreach_detail_::auto_any_t' data-type='const boost::foreach_detail_::auto_any_base &amp;' data-ref="boost::foreach_detail_::auto_any_t">auto_any_t</a> <dfn class="local col2 decl" id="22cur" title='cur' data-type='boost::foreach_detail_::auto_any_t' data-ref="22cur">cur</dfn>, <a class="type" href="#boost::foreach_detail_::type2type" title='boost::foreach_detail_::type2type' data-ref="boost::foreach_detail_::type2type">type2type</a>&lt;T, C&gt; *)</td></tr>
+<tr><th id="765">765</th><td>{</td></tr>
+<tr><th id="766">766</th><td>    <b>typedef</b> <a class="macro" href="../../../config/include/boost/config/detail/suffix.hpp.html#483" title="typename" data-ref="_M/BOOST_DEDUCED_TYPENAME">BOOST_DEDUCED_TYPENAME</a> <a class="type" href="#boost::foreach_detail_::foreach_iterator" title='boost::foreach_detail_::foreach_iterator' data-ref="boost::foreach_detail_::foreach_iterator">foreach_iterator</a>&lt;T, C&gt;::type <dfn class="local col3 typedef" id="23iter_t" title='iter_t' data-type='typename foreach_iterator&lt;T, C&gt;::type' data-ref="23iter_t">iter_t</dfn>;</td></tr>
+<tr><th id="767">767</th><td>    ++auto_any_cast&lt;<a class="local col3 typedef" href="#23iter_t" title='iter_t' data-type='typename foreach_iterator&lt;T, C&gt;::type' data-ref="23iter_t">iter_t</a>, <span class="namespace">boost::mpl::</span>false_&gt;(<a class="local col2 ref" href="#22cur" title='cur' data-ref="22cur">cur</a>);</td></tr>
+<tr><th id="768">768</th><td>}</td></tr>
+<tr><th id="769">769</th><td></td></tr>
+<tr><th id="770">770</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="771">771</th><td><i>// deref</i></td></tr>
+<tr><th id="772">772</th><td><i>//</i></td></tr>
+<tr><th id="773">773</th><td><b>template</b>&lt;<b>typename</b> T, <b>typename</b> C&gt;</td></tr>
+<tr><th id="774">774</th><td><b>inline</b> <a class="macro" href="../../../config/include/boost/config/detail/suffix.hpp.html#483" title="typename" data-ref="_M/BOOST_DEDUCED_TYPENAME">BOOST_DEDUCED_TYPENAME</a> <a class="type" href="#boost::foreach_detail_::foreach_reference" title='boost::foreach_detail_::foreach_reference' data-ref="boost::foreach_detail_::foreach_reference">foreach_reference</a>&lt;T, C&gt;::type</td></tr>
+<tr><th id="775">775</th><td><dfn class="decl def fn" id="_ZN5boost15foreach_detail_5derefERKNS0_13auto_any_baseEPNS0_9type2typeIT_T0_EE" title='boost::foreach_detail_::deref' data-ref="_ZN5boost15foreach_detail_5derefERKNS0_13auto_any_baseEPNS0_9type2typeIT_T0_EE">deref</dfn>(<a class="typedef" href="#boost::foreach_detail_::auto_any_t" title='boost::foreach_detail_::auto_any_t' data-type='const boost::foreach_detail_::auto_any_base &amp;' data-ref="boost::foreach_detail_::auto_any_t">auto_any_t</a> <dfn class="local col4 decl" id="24cur" title='cur' data-type='boost::foreach_detail_::auto_any_t' data-ref="24cur">cur</dfn>, <a class="type" href="#boost::foreach_detail_::type2type" title='boost::foreach_detail_::type2type' data-ref="boost::foreach_detail_::type2type">type2type</a>&lt;T, C&gt; *)</td></tr>
+<tr><th id="776">776</th><td>{</td></tr>
+<tr><th id="777">777</th><td>    <b>typedef</b> <a class="macro" href="../../../config/include/boost/config/detail/suffix.hpp.html#483" title="typename" data-ref="_M/BOOST_DEDUCED_TYPENAME">BOOST_DEDUCED_TYPENAME</a> <a class="type" href="#boost::foreach_detail_::foreach_iterator" title='boost::foreach_detail_::foreach_iterator' data-ref="boost::foreach_detail_::foreach_iterator">foreach_iterator</a>&lt;T, C&gt;::type <dfn class="local col5 typedef" id="25iter_t" title='iter_t' data-type='typename foreach_iterator&lt;T, C&gt;::type' data-ref="25iter_t">iter_t</dfn>;</td></tr>
+<tr><th id="778">778</th><td>    <b>return</b> *auto_any_cast&lt;<a class="local col5 typedef" href="#25iter_t" title='iter_t' data-type='typename foreach_iterator&lt;T, C&gt;::type' data-ref="25iter_t">iter_t</a>, <span class="namespace">boost::mpl::</span>false_&gt;(<a class="local col4 ref" href="#24cur" title='cur' data-ref="24cur">cur</a>);</td></tr>
+<tr><th id="779">779</th><td>}</td></tr>
+<tr><th id="780">780</th><td></td></tr>
+<tr><th id="781">781</th><td><i>/////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="782">782</th><td><i>// rbegin</i></td></tr>
+<tr><th id="783">783</th><td><i>//</i></td></tr>
+<tr><th id="784">784</th><td><b>template</b>&lt;<b>typename</b> T, <b>typename</b> C&gt;</td></tr>
+<tr><th id="785">785</th><td><b>inline</b> <a class="type" href="#boost::foreach_detail_::auto_any" title='boost::foreach_detail_::auto_any' data-ref="boost::foreach_detail_::auto_any">auto_any</a>&lt;<a class="macro" href="../../../config/include/boost/config/detail/suffix.hpp.html#483" title="typename" data-ref="_M/BOOST_DEDUCED_TYPENAME">BOOST_DEDUCED_TYPENAME</a> <a class="type" href="#boost::foreach_detail_::foreach_reverse_iterator" title='boost::foreach_detail_::foreach_reverse_iterator' data-ref="boost::foreach_detail_::foreach_reverse_iterator">foreach_reverse_iterator</a>&lt;T, C&gt;::type&gt;</td></tr>
+<tr><th id="786">786</th><td><dfn class="decl def fn" id="_ZN5boost15foreach_detail_6rbeginERKNS0_13auto_any_baseEPNS0_9type2typeIT_T0_EEPN4mpl_5bool_ILb1EEE" title='boost::foreach_detail_::rbegin' data-ref="_ZN5boost15foreach_detail_6rbeginERKNS0_13auto_any_baseEPNS0_9type2typeIT_T0_EEPN4mpl_5bool_ILb1EEE">rbegin</dfn>(<a class="typedef" href="#boost::foreach_detail_::auto_any_t" title='boost::foreach_detail_::auto_any_t' data-type='const boost::foreach_detail_::auto_any_base &amp;' data-ref="boost::foreach_detail_::auto_any_t">auto_any_t</a> <dfn class="local col6 decl" id="26col" title='col' data-type='boost::foreach_detail_::auto_any_t' data-ref="26col">col</dfn>, <a class="type" href="#boost::foreach_detail_::type2type" title='boost::foreach_detail_::type2type' data-ref="boost::foreach_detail_::type2type">type2type</a>&lt;T, C&gt; *, <span class="namespace">boost::mpl::</span>true_ *) <i>// rvalue</i></td></tr>
+<tr><th id="787">787</th><td>{</td></tr>
+<tr><th id="788">788</th><td>    <b>return</b> <a class="type" href="#boost::foreach_detail_::auto_any" title='boost::foreach_detail_::auto_any' data-ref="boost::foreach_detail_::auto_any">auto_any</a>&lt;<a class="macro" href="../../../config/include/boost/config/detail/suffix.hpp.html#483" title="typename" data-ref="_M/BOOST_DEDUCED_TYPENAME">BOOST_DEDUCED_TYPENAME</a> <a class="type" href="#boost::foreach_detail_::foreach_reverse_iterator" title='boost::foreach_detail_::foreach_reverse_iterator' data-ref="boost::foreach_detail_::foreach_reverse_iterator">foreach_reverse_iterator</a>&lt;T, C&gt;::type&gt;(</td></tr>
+<tr><th id="789">789</th><td>        <span class="namespace">boost::</span>rbegin(auto_any_cast&lt;T, C&gt;(<a class="local col6 ref" href="#26col" title='col' data-ref="26col">col</a>)));</td></tr>
+<tr><th id="790">790</th><td>}</td></tr>
+<tr><th id="791">791</th><td></td></tr>
+<tr><th id="792">792</th><td><b>template</b>&lt;<b>typename</b> T, <b>typename</b> C&gt;</td></tr>
+<tr><th id="793">793</th><td><b>inline</b> <a class="type" href="#boost::foreach_detail_::auto_any" title='boost::foreach_detail_::auto_any' data-ref="boost::foreach_detail_::auto_any">auto_any</a>&lt;<a class="macro" href="../../../config/include/boost/config/detail/suffix.hpp.html#483" title="typename" data-ref="_M/BOOST_DEDUCED_TYPENAME">BOOST_DEDUCED_TYPENAME</a> <a class="type" href="#boost::foreach_detail_::foreach_reverse_iterator" title='boost::foreach_detail_::foreach_reverse_iterator' data-ref="boost::foreach_detail_::foreach_reverse_iterator">foreach_reverse_iterator</a>&lt;T, C&gt;::type&gt;</td></tr>
+<tr><th id="794">794</th><td><dfn class="decl def fn" id="_ZN5boost15foreach_detail_6rbeginERKNS0_13auto_any_baseEPNS0_9type2typeIT_T0_EEPN4mpl_5bool_ILb0EEE" title='boost::foreach_detail_::rbegin' data-ref="_ZN5boost15foreach_detail_6rbeginERKNS0_13auto_any_baseEPNS0_9type2typeIT_T0_EEPN4mpl_5bool_ILb0EEE">rbegin</dfn>(<a class="typedef" href="#boost::foreach_detail_::auto_any_t" title='boost::foreach_detail_::auto_any_t' data-type='const boost::foreach_detail_::auto_any_base &amp;' data-ref="boost::foreach_detail_::auto_any_t">auto_any_t</a> <dfn class="local col7 decl" id="27col" title='col' data-type='boost::foreach_detail_::auto_any_t' data-ref="27col">col</dfn>, <a class="type" href="#boost::foreach_detail_::type2type" title='boost::foreach_detail_::type2type' data-ref="boost::foreach_detail_::type2type">type2type</a>&lt;T, C&gt; *, <span class="namespace">boost::mpl::</span>false_ *) <i>// lvalue</i></td></tr>
+<tr><th id="795">795</th><td>{</td></tr>
+<tr><th id="796">796</th><td>    <b>typedef</b> <a class="macro" href="../../../config/include/boost/config/detail/suffix.hpp.html#483" title="typename" data-ref="_M/BOOST_DEDUCED_TYPENAME">BOOST_DEDUCED_TYPENAME</a> <a class="type" href="#boost::foreach_detail_::type2type" title='boost::foreach_detail_::type2type' data-ref="boost::foreach_detail_::type2type">type2type</a>&lt;T, C&gt;::type <dfn class="local col8 typedef" id="28type" title='type' data-type='typename type2type&lt;T, C&gt;::type' data-ref="28type">type</dfn>;</td></tr>
+<tr><th id="797">797</th><td>    <b>typedef</b> <a class="macro" href="../../../config/include/boost/config/detail/suffix.hpp.html#483" title="typename" data-ref="_M/BOOST_DEDUCED_TYPENAME">BOOST_DEDUCED_TYPENAME</a> <a class="type" href="#boost::foreach_detail_::foreach_reverse_iterator" title='boost::foreach_detail_::foreach_reverse_iterator' data-ref="boost::foreach_detail_::foreach_reverse_iterator">foreach_reverse_iterator</a>&lt;T, C&gt;::type <dfn class="local col9 typedef" id="29iterator" title='iterator' data-type='typename foreach_reverse_iterator&lt;T, C&gt;::type' data-ref="29iterator">iterator</dfn>;</td></tr>
+<tr><th id="798">798</th><td>    <b>return</b> <a class="type" href="#boost::foreach_detail_::auto_any" title='boost::foreach_detail_::auto_any' data-ref="boost::foreach_detail_::auto_any">auto_any</a>&lt;<a class="macro" href="../../../config/include/boost/config/detail/suffix.hpp.html#483" title="typename" data-ref="_M/BOOST_DEDUCED_TYPENAME">BOOST_DEDUCED_TYPENAME</a> <a class="type" href="#boost::foreach_detail_::foreach_reverse_iterator" title='boost::foreach_detail_::foreach_reverse_iterator' data-ref="boost::foreach_detail_::foreach_reverse_iterator">foreach_reverse_iterator</a>&lt;T, C&gt;::type&gt;(</td></tr>
+<tr><th id="799">799</th><td>        <a class="local col9 typedef" href="#29iterator" title='iterator' data-type='typename foreach_reverse_iterator&lt;T, C&gt;::type' data-ref="29iterator">iterator</a>(<span class="namespace">boost::</span>rbegin(<a class="macro" href="#464" title="(*(auto_any_cast&lt;type *, boost::mpl::false_&gt;(col)))" data-ref="_M/BOOST_FOREACH_DEREFOF">BOOST_FOREACH_DEREFOF</a>((auto_any_cast&lt;<a class="local col8 typedef" href="#28type" title='type' data-type='typename type2type&lt;T, C&gt;::type' data-ref="28type">type</a> *, boost::mpl::false_&gt;(<a class="local col7 ref" href="#27col" title='col' data-ref="27col">col</a>))))));</td></tr>
+<tr><th id="800">800</th><td>}</td></tr>
+<tr><th id="801">801</th><td></td></tr>
+<tr><th id="802">802</th><td><u>#<span data-ppcond="802">ifdef</span> <span class="macro" data-ref="_M/BOOST_FOREACH_RUN_TIME_CONST_RVALUE_DETECTION">BOOST_FOREACH_RUN_TIME_CONST_RVALUE_DETECTION</span></u></td></tr>
+<tr><th id="803">803</th><td><b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="804">804</th><td><b>inline</b> auto_any&lt;BOOST_DEDUCED_TYPENAME foreach_reverse_iterator&lt;T, const_&gt;::type&gt;</td></tr>
+<tr><th id="805">805</th><td>rbegin(auto_any_t col, type2type&lt;T, const_&gt; *, <em>bool</em> *)</td></tr>
+<tr><th id="806">806</th><td>{</td></tr>
+<tr><th id="807">807</th><td>    <b>return</b> auto_any&lt;BOOST_DEDUCED_TYPENAME foreach_reverse_iterator&lt;T, const_&gt;::type&gt;(</td></tr>
+<tr><th id="808">808</th><td>        boost::rbegin(*auto_any_cast&lt;simple_variant&lt;T&gt;, boost::mpl::false_&gt;(col).get()));</td></tr>
+<tr><th id="809">809</th><td>}</td></tr>
+<tr><th id="810">810</th><td><u>#<span data-ppcond="802">endif</span></u></td></tr>
+<tr><th id="811">811</th><td></td></tr>
+<tr><th id="812">812</th><td><u>#<span data-ppcond="812">ifndef</span> <span class="macro" data-ref="_M/BOOST_NO_FUNCTION_TEMPLATE_ORDERING">BOOST_NO_FUNCTION_TEMPLATE_ORDERING</span></u></td></tr>
+<tr><th id="813">813</th><td><b>template</b>&lt;<b>typename</b> T, <b>typename</b> C&gt;</td></tr>
+<tr><th id="814">814</th><td><b>inline</b> <a class="type" href="#boost::foreach_detail_::auto_any" title='boost::foreach_detail_::auto_any' data-ref="boost::foreach_detail_::auto_any">auto_any</a>&lt;<a class="type" href="../../../iterator/include/boost/iterator/reverse_iterator.hpp.html#boost::iterators::reverse_iterator" title='boost::iterators::reverse_iterator' data-ref="boost::iterators::reverse_iterator">reverse_iterator</a>&lt;T *&gt; &gt;</td></tr>
+<tr><th id="815">815</th><td><dfn class="decl def fn" id="_ZN5boost15foreach_detail_6rbeginERKNS0_13auto_any_baseEPNS0_9type2typeIPT_T0_EEPN4mpl_5bool_ILb1EEE" title='boost::foreach_detail_::rbegin' data-ref="_ZN5boost15foreach_detail_6rbeginERKNS0_13auto_any_baseEPNS0_9type2typeIPT_T0_EEPN4mpl_5bool_ILb1EEE">rbegin</dfn>(<a class="typedef" href="#boost::foreach_detail_::auto_any_t" title='boost::foreach_detail_::auto_any_t' data-type='const boost::foreach_detail_::auto_any_base &amp;' data-ref="boost::foreach_detail_::auto_any_t">auto_any_t</a> <dfn class="local col0 decl" id="30col" title='col' data-type='boost::foreach_detail_::auto_any_t' data-ref="30col">col</dfn>, <a class="type" href="#boost::foreach_detail_::type2type" title='boost::foreach_detail_::type2type' data-ref="boost::foreach_detail_::type2type">type2type</a>&lt;T *, C&gt; *, <span class="namespace">boost::mpl::</span>true_ *) <i>// null-terminated C-style strings</i></td></tr>
+<tr><th id="816">816</th><td>{</td></tr>
+<tr><th id="817">817</th><td>    T *<dfn class="local col1 decl" id="31p" title='p' data-type='T *' data-ref="31p">p</dfn> = auto_any_cast&lt;T *, <span class="namespace">boost::mpl::</span>false_&gt;(<a class="local col0 ref" href="#30col" title='col' data-ref="30col">col</a>);</td></tr>
+<tr><th id="818">818</th><td>    <b>while</b>(<var>0</var> != *<a class="local col1 ref" href="#31p" title='p' data-ref="31p">p</a>)</td></tr>
+<tr><th id="819">819</th><td>        ++<a class="local col1 ref" href="#31p" title='p' data-ref="31p">p</a>;</td></tr>
+<tr><th id="820">820</th><td>    <b>return</b> <a class="type" href="#boost::foreach_detail_::auto_any" title='boost::foreach_detail_::auto_any' data-ref="boost::foreach_detail_::auto_any">auto_any</a>&lt;<a class="type" href="../../../iterator/include/boost/iterator/reverse_iterator.hpp.html#boost::iterators::reverse_iterator" title='boost::iterators::reverse_iterator' data-ref="boost::iterators::reverse_iterator">reverse_iterator</a>&lt;T *&gt; &gt;(<a class="type" href="../../../iterator/include/boost/iterator/reverse_iterator.hpp.html#boost::iterators::reverse_iterator" title='boost::iterators::reverse_iterator' data-ref="boost::iterators::reverse_iterator">reverse_iterator</a>&lt;T *&gt;(<a class="local col1 ref" href="#31p" title='p' data-ref="31p">p</a>));</td></tr>
+<tr><th id="821">821</th><td>}</td></tr>
+<tr><th id="822">822</th><td><u>#<span data-ppcond="812">endif</span></u></td></tr>
+<tr><th id="823">823</th><td></td></tr>
+<tr><th id="824">824</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="825">825</th><td><i>// rend</i></td></tr>
+<tr><th id="826">826</th><td><i>//</i></td></tr>
+<tr><th id="827">827</th><td><b>template</b>&lt;<b>typename</b> T, <b>typename</b> C&gt;</td></tr>
+<tr><th id="828">828</th><td><b>inline</b> <a class="type" href="#boost::foreach_detail_::auto_any" title='boost::foreach_detail_::auto_any' data-ref="boost::foreach_detail_::auto_any">auto_any</a>&lt;<a class="macro" href="../../../config/include/boost/config/detail/suffix.hpp.html#483" title="typename" data-ref="_M/BOOST_DEDUCED_TYPENAME">BOOST_DEDUCED_TYPENAME</a> <a class="type" href="#boost::foreach_detail_::foreach_reverse_iterator" title='boost::foreach_detail_::foreach_reverse_iterator' data-ref="boost::foreach_detail_::foreach_reverse_iterator">foreach_reverse_iterator</a>&lt;T, C&gt;::type&gt;</td></tr>
+<tr><th id="829">829</th><td><dfn class="decl def fn" id="_ZN5boost15foreach_detail_4rendERKNS0_13auto_any_baseEPNS0_9type2typeIT_T0_EEPN4mpl_5bool_ILb1EEE" title='boost::foreach_detail_::rend' data-ref="_ZN5boost15foreach_detail_4rendERKNS0_13auto_any_baseEPNS0_9type2typeIT_T0_EEPN4mpl_5bool_ILb1EEE">rend</dfn>(<a class="typedef" href="#boost::foreach_detail_::auto_any_t" title='boost::foreach_detail_::auto_any_t' data-type='const boost::foreach_detail_::auto_any_base &amp;' data-ref="boost::foreach_detail_::auto_any_t">auto_any_t</a> <dfn class="local col2 decl" id="32col" title='col' data-type='boost::foreach_detail_::auto_any_t' data-ref="32col">col</dfn>, <a class="type" href="#boost::foreach_detail_::type2type" title='boost::foreach_detail_::type2type' data-ref="boost::foreach_detail_::type2type">type2type</a>&lt;T, C&gt; *, <span class="namespace">boost::mpl::</span>true_ *) <i>// rvalue</i></td></tr>
+<tr><th id="830">830</th><td>{</td></tr>
+<tr><th id="831">831</th><td>    <b>return</b> <a class="type" href="#boost::foreach_detail_::auto_any" title='boost::foreach_detail_::auto_any' data-ref="boost::foreach_detail_::auto_any">auto_any</a>&lt;<a class="macro" href="../../../config/include/boost/config/detail/suffix.hpp.html#483" title="typename" data-ref="_M/BOOST_DEDUCED_TYPENAME">BOOST_DEDUCED_TYPENAME</a> <a class="type" href="#boost::foreach_detail_::foreach_reverse_iterator" title='boost::foreach_detail_::foreach_reverse_iterator' data-ref="boost::foreach_detail_::foreach_reverse_iterator">foreach_reverse_iterator</a>&lt;T, C&gt;::type&gt;(</td></tr>
+<tr><th id="832">832</th><td>        <span class="namespace">boost::</span>rend(auto_any_cast&lt;T, C&gt;(<a class="local col2 ref" href="#32col" title='col' data-ref="32col">col</a>)));</td></tr>
+<tr><th id="833">833</th><td>}</td></tr>
+<tr><th id="834">834</th><td></td></tr>
+<tr><th id="835">835</th><td><b>template</b>&lt;<b>typename</b> T, <b>typename</b> C&gt;</td></tr>
+<tr><th id="836">836</th><td><b>inline</b> <a class="type" href="#boost::foreach_detail_::auto_any" title='boost::foreach_detail_::auto_any' data-ref="boost::foreach_detail_::auto_any">auto_any</a>&lt;<a class="macro" href="../../../config/include/boost/config/detail/suffix.hpp.html#483" title="typename" data-ref="_M/BOOST_DEDUCED_TYPENAME">BOOST_DEDUCED_TYPENAME</a> <a class="type" href="#boost::foreach_detail_::foreach_reverse_iterator" title='boost::foreach_detail_::foreach_reverse_iterator' data-ref="boost::foreach_detail_::foreach_reverse_iterator">foreach_reverse_iterator</a>&lt;T, C&gt;::type&gt;</td></tr>
+<tr><th id="837">837</th><td><dfn class="decl def fn" id="_ZN5boost15foreach_detail_4rendERKNS0_13auto_any_baseEPNS0_9type2typeIT_T0_EEPN4mpl_5bool_ILb0EEE" title='boost::foreach_detail_::rend' data-ref="_ZN5boost15foreach_detail_4rendERKNS0_13auto_any_baseEPNS0_9type2typeIT_T0_EEPN4mpl_5bool_ILb0EEE">rend</dfn>(<a class="typedef" href="#boost::foreach_detail_::auto_any_t" title='boost::foreach_detail_::auto_any_t' data-type='const boost::foreach_detail_::auto_any_base &amp;' data-ref="boost::foreach_detail_::auto_any_t">auto_any_t</a> <dfn class="local col3 decl" id="33col" title='col' data-type='boost::foreach_detail_::auto_any_t' data-ref="33col">col</dfn>, <a class="type" href="#boost::foreach_detail_::type2type" title='boost::foreach_detail_::type2type' data-ref="boost::foreach_detail_::type2type">type2type</a>&lt;T, C&gt; *, <span class="namespace">boost::mpl::</span>false_ *) <i>// lvalue</i></td></tr>
+<tr><th id="838">838</th><td>{</td></tr>
+<tr><th id="839">839</th><td>    <b>typedef</b> <a class="macro" href="../../../config/include/boost/config/detail/suffix.hpp.html#483" title="typename" data-ref="_M/BOOST_DEDUCED_TYPENAME">BOOST_DEDUCED_TYPENAME</a> <a class="type" href="#boost::foreach_detail_::type2type" title='boost::foreach_detail_::type2type' data-ref="boost::foreach_detail_::type2type">type2type</a>&lt;T, C&gt;::type <dfn class="local col4 typedef" id="34type" title='type' data-type='typename type2type&lt;T, C&gt;::type' data-ref="34type">type</dfn>;</td></tr>
+<tr><th id="840">840</th><td>    <b>typedef</b> <a class="macro" href="../../../config/include/boost/config/detail/suffix.hpp.html#483" title="typename" data-ref="_M/BOOST_DEDUCED_TYPENAME">BOOST_DEDUCED_TYPENAME</a> <a class="type" href="#boost::foreach_detail_::foreach_reverse_iterator" title='boost::foreach_detail_::foreach_reverse_iterator' data-ref="boost::foreach_detail_::foreach_reverse_iterator">foreach_reverse_iterator</a>&lt;T, C&gt;::type <dfn class="local col5 typedef" id="35iterator" title='iterator' data-type='typename foreach_reverse_iterator&lt;T, C&gt;::type' data-ref="35iterator">iterator</dfn>;</td></tr>
+<tr><th id="841">841</th><td>    <b>return</b> <a class="type" href="#boost::foreach_detail_::auto_any" title='boost::foreach_detail_::auto_any' data-ref="boost::foreach_detail_::auto_any">auto_any</a>&lt;<a class="macro" href="../../../config/include/boost/config/detail/suffix.hpp.html#483" title="typename" data-ref="_M/BOOST_DEDUCED_TYPENAME">BOOST_DEDUCED_TYPENAME</a> <a class="type" href="#boost::foreach_detail_::foreach_reverse_iterator" title='boost::foreach_detail_::foreach_reverse_iterator' data-ref="boost::foreach_detail_::foreach_reverse_iterator">foreach_reverse_iterator</a>&lt;T, C&gt;::type&gt;(</td></tr>
+<tr><th id="842">842</th><td>        <a class="local col5 typedef" href="#35iterator" title='iterator' data-type='typename foreach_reverse_iterator&lt;T, C&gt;::type' data-ref="35iterator">iterator</a>(<span class="namespace">boost::</span>rend(<a class="macro" href="#464" title="(*(auto_any_cast&lt;type *, boost::mpl::false_&gt;(col)))" data-ref="_M/BOOST_FOREACH_DEREFOF">BOOST_FOREACH_DEREFOF</a>((auto_any_cast&lt;<a class="local col4 typedef" href="#34type" title='type' data-type='typename type2type&lt;T, C&gt;::type' data-ref="34type">type</a> *, boost::mpl::false_&gt;(<a class="local col3 ref" href="#33col" title='col' data-ref="33col">col</a>))))));</td></tr>
+<tr><th id="843">843</th><td>}</td></tr>
+<tr><th id="844">844</th><td></td></tr>
+<tr><th id="845">845</th><td><u>#<span data-ppcond="845">ifdef</span> <span class="macro" data-ref="_M/BOOST_FOREACH_RUN_TIME_CONST_RVALUE_DETECTION">BOOST_FOREACH_RUN_TIME_CONST_RVALUE_DETECTION</span></u></td></tr>
+<tr><th id="846">846</th><td><b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="847">847</th><td><b>inline</b> auto_any&lt;BOOST_DEDUCED_TYPENAME foreach_reverse_iterator&lt;T, const_&gt;::type&gt;</td></tr>
+<tr><th id="848">848</th><td>rend(auto_any_t col, type2type&lt;T, const_&gt; *, <em>bool</em> *)</td></tr>
+<tr><th id="849">849</th><td>{</td></tr>
+<tr><th id="850">850</th><td>    <b>return</b> auto_any&lt;BOOST_DEDUCED_TYPENAME foreach_reverse_iterator&lt;T, const_&gt;::type&gt;(</td></tr>
+<tr><th id="851">851</th><td>        boost::rend(*auto_any_cast&lt;simple_variant&lt;T&gt;, boost::mpl::false_&gt;(col).get()));</td></tr>
+<tr><th id="852">852</th><td>}</td></tr>
+<tr><th id="853">853</th><td><u>#<span data-ppcond="845">endif</span></u></td></tr>
+<tr><th id="854">854</th><td></td></tr>
+<tr><th id="855">855</th><td><u>#<span data-ppcond="855">ifndef</span> <span class="macro" data-ref="_M/BOOST_NO_FUNCTION_TEMPLATE_ORDERING">BOOST_NO_FUNCTION_TEMPLATE_ORDERING</span></u></td></tr>
+<tr><th id="856">856</th><td><b>template</b>&lt;<b>typename</b> T, <b>typename</b> C&gt;</td></tr>
+<tr><th id="857">857</th><td><b>inline</b> <a class="type" href="#boost::foreach_detail_::auto_any" title='boost::foreach_detail_::auto_any' data-ref="boost::foreach_detail_::auto_any">auto_any</a>&lt;<a class="type" href="../../../iterator/include/boost/iterator/reverse_iterator.hpp.html#boost::iterators::reverse_iterator" title='boost::iterators::reverse_iterator' data-ref="boost::iterators::reverse_iterator">reverse_iterator</a>&lt;T *&gt; &gt;</td></tr>
+<tr><th id="858">858</th><td><dfn class="decl def fn" id="_ZN5boost15foreach_detail_4rendERKNS0_13auto_any_baseEPNS0_9type2typeIPT_T0_EEPN4mpl_5bool_ILb1EEE" title='boost::foreach_detail_::rend' data-ref="_ZN5boost15foreach_detail_4rendERKNS0_13auto_any_baseEPNS0_9type2typeIPT_T0_EEPN4mpl_5bool_ILb1EEE">rend</dfn>(<a class="typedef" href="#boost::foreach_detail_::auto_any_t" title='boost::foreach_detail_::auto_any_t' data-type='const boost::foreach_detail_::auto_any_base &amp;' data-ref="boost::foreach_detail_::auto_any_t">auto_any_t</a> <dfn class="local col6 decl" id="36col" title='col' data-type='boost::foreach_detail_::auto_any_t' data-ref="36col">col</dfn>, <a class="type" href="#boost::foreach_detail_::type2type" title='boost::foreach_detail_::type2type' data-ref="boost::foreach_detail_::type2type">type2type</a>&lt;T *, C&gt; *, <span class="namespace">boost::mpl::</span>true_ *) <i>// null-terminated C-style strings</i></td></tr>
+<tr><th id="859">859</th><td>{</td></tr>
+<tr><th id="860">860</th><td>    <b>return</b> <a class="type" href="#boost::foreach_detail_::auto_any" title='boost::foreach_detail_::auto_any' data-ref="boost::foreach_detail_::auto_any">auto_any</a>&lt;<a class="type" href="../../../iterator/include/boost/iterator/reverse_iterator.hpp.html#boost::iterators::reverse_iterator" title='boost::iterators::reverse_iterator' data-ref="boost::iterators::reverse_iterator">reverse_iterator</a>&lt;T *&gt; &gt;(</td></tr>
+<tr><th id="861">861</th><td>        <a class="type" href="../../../iterator/include/boost/iterator/reverse_iterator.hpp.html#boost::iterators::reverse_iterator" title='boost::iterators::reverse_iterator' data-ref="boost::iterators::reverse_iterator">reverse_iterator</a>&lt;T *&gt;(auto_any_cast&lt;T *, <span class="namespace">boost::mpl::</span>false_&gt;(<a class="local col6 ref" href="#36col" title='col' data-ref="36col">col</a>)));</td></tr>
+<tr><th id="862">862</th><td>}</td></tr>
+<tr><th id="863">863</th><td><u>#<span data-ppcond="855">endif</span></u></td></tr>
+<tr><th id="864">864</th><td></td></tr>
+<tr><th id="865">865</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="866">866</th><td><i>// rdone</i></td></tr>
+<tr><th id="867">867</th><td><i>//</i></td></tr>
+<tr><th id="868">868</th><td><b>template</b>&lt;<b>typename</b> T, <b>typename</b> C&gt;</td></tr>
+<tr><th id="869">869</th><td><b>inline</b> <em>bool</em> <dfn class="decl def fn" id="_ZN5boost15foreach_detail_5rdoneERKNS0_13auto_any_baseES3_PNS0_9type2typeIT_T0_EE" title='boost::foreach_detail_::rdone' data-ref="_ZN5boost15foreach_detail_5rdoneERKNS0_13auto_any_baseES3_PNS0_9type2typeIT_T0_EE">rdone</dfn>(<a class="typedef" href="#boost::foreach_detail_::auto_any_t" title='boost::foreach_detail_::auto_any_t' data-type='const boost::foreach_detail_::auto_any_base &amp;' data-ref="boost::foreach_detail_::auto_any_t">auto_any_t</a> <dfn class="local col7 decl" id="37cur" title='cur' data-type='boost::foreach_detail_::auto_any_t' data-ref="37cur">cur</dfn>, <a class="typedef" href="#boost::foreach_detail_::auto_any_t" title='boost::foreach_detail_::auto_any_t' data-type='const boost::foreach_detail_::auto_any_base &amp;' data-ref="boost::foreach_detail_::auto_any_t">auto_any_t</a> <dfn class="local col8 decl" id="38end" title='end' data-type='boost::foreach_detail_::auto_any_t' data-ref="38end">end</dfn>, <a class="type" href="#boost::foreach_detail_::type2type" title='boost::foreach_detail_::type2type' data-ref="boost::foreach_detail_::type2type">type2type</a>&lt;T, C&gt; *)</td></tr>
+<tr><th id="870">870</th><td>{</td></tr>
+<tr><th id="871">871</th><td>    <b>typedef</b> <a class="macro" href="../../../config/include/boost/config/detail/suffix.hpp.html#483" title="typename" data-ref="_M/BOOST_DEDUCED_TYPENAME">BOOST_DEDUCED_TYPENAME</a> <a class="type" href="#boost::foreach_detail_::foreach_reverse_iterator" title='boost::foreach_detail_::foreach_reverse_iterator' data-ref="boost::foreach_detail_::foreach_reverse_iterator">foreach_reverse_iterator</a>&lt;T, C&gt;::type <dfn class="local col9 typedef" id="39iter_t" title='iter_t' data-type='typename foreach_reverse_iterator&lt;T, C&gt;::type' data-ref="39iter_t">iter_t</dfn>;</td></tr>
+<tr><th id="872">872</th><td>    <b>return</b> auto_any_cast&lt;<a class="local col9 typedef" href="#39iter_t" title='iter_t' data-type='typename foreach_reverse_iterator&lt;T, C&gt;::type' data-ref="39iter_t">iter_t</a>, <span class="namespace">boost::mpl::</span>false_&gt;(<a class="local col7 ref" href="#37cur" title='cur' data-ref="37cur">cur</a>) == auto_any_cast&lt;<a class="local col9 typedef" href="#39iter_t" title='iter_t' data-type='typename foreach_reverse_iterator&lt;T, C&gt;::type' data-ref="39iter_t">iter_t</a>, <span class="namespace">boost::mpl::</span>false_&gt;(<a class="local col8 ref" href="#38end" title='end' data-ref="38end">end</a>);</td></tr>
+<tr><th id="873">873</th><td>}</td></tr>
+<tr><th id="874">874</th><td></td></tr>
+<tr><th id="875">875</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="876">876</th><td><i>// rnext</i></td></tr>
+<tr><th id="877">877</th><td><i>//</i></td></tr>
+<tr><th id="878">878</th><td><b>template</b>&lt;<b>typename</b> T, <b>typename</b> C&gt;</td></tr>
+<tr><th id="879">879</th><td><b>inline</b> <em>void</em> <dfn class="decl def fn" id="_ZN5boost15foreach_detail_5rnextERKNS0_13auto_any_baseEPNS0_9type2typeIT_T0_EE" title='boost::foreach_detail_::rnext' data-ref="_ZN5boost15foreach_detail_5rnextERKNS0_13auto_any_baseEPNS0_9type2typeIT_T0_EE">rnext</dfn>(<a class="typedef" href="#boost::foreach_detail_::auto_any_t" title='boost::foreach_detail_::auto_any_t' data-type='const boost::foreach_detail_::auto_any_base &amp;' data-ref="boost::foreach_detail_::auto_any_t">auto_any_t</a> <dfn class="local col0 decl" id="40cur" title='cur' data-type='boost::foreach_detail_::auto_any_t' data-ref="40cur">cur</dfn>, <a class="type" href="#boost::foreach_detail_::type2type" title='boost::foreach_detail_::type2type' data-ref="boost::foreach_detail_::type2type">type2type</a>&lt;T, C&gt; *)</td></tr>
+<tr><th id="880">880</th><td>{</td></tr>
+<tr><th id="881">881</th><td>    <b>typedef</b> <a class="macro" href="../../../config/include/boost/config/detail/suffix.hpp.html#483" title="typename" data-ref="_M/BOOST_DEDUCED_TYPENAME">BOOST_DEDUCED_TYPENAME</a> <a class="type" href="#boost::foreach_detail_::foreach_reverse_iterator" title='boost::foreach_detail_::foreach_reverse_iterator' data-ref="boost::foreach_detail_::foreach_reverse_iterator">foreach_reverse_iterator</a>&lt;T, C&gt;::type <dfn class="local col1 typedef" id="41iter_t" title='iter_t' data-type='typename foreach_reverse_iterator&lt;T, C&gt;::type' data-ref="41iter_t">iter_t</dfn>;</td></tr>
+<tr><th id="882">882</th><td>    ++auto_any_cast&lt;<a class="local col1 typedef" href="#41iter_t" title='iter_t' data-type='typename foreach_reverse_iterator&lt;T, C&gt;::type' data-ref="41iter_t">iter_t</a>, <span class="namespace">boost::mpl::</span>false_&gt;(<a class="local col0 ref" href="#40cur" title='cur' data-ref="40cur">cur</a>);</td></tr>
+<tr><th id="883">883</th><td>}</td></tr>
+<tr><th id="884">884</th><td></td></tr>
+<tr><th id="885">885</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="886">886</th><td><i>// rderef</i></td></tr>
+<tr><th id="887">887</th><td><i>//</i></td></tr>
+<tr><th id="888">888</th><td><b>template</b>&lt;<b>typename</b> T, <b>typename</b> C&gt;</td></tr>
+<tr><th id="889">889</th><td><b>inline</b> <a class="macro" href="../../../config/include/boost/config/detail/suffix.hpp.html#483" title="typename" data-ref="_M/BOOST_DEDUCED_TYPENAME">BOOST_DEDUCED_TYPENAME</a> <a class="type" href="#boost::foreach_detail_::foreach_reference" title='boost::foreach_detail_::foreach_reference' data-ref="boost::foreach_detail_::foreach_reference">foreach_reference</a>&lt;T, C&gt;::type</td></tr>
+<tr><th id="890">890</th><td><dfn class="decl def fn" id="_ZN5boost15foreach_detail_6rderefERKNS0_13auto_any_baseEPNS0_9type2typeIT_T0_EE" title='boost::foreach_detail_::rderef' data-ref="_ZN5boost15foreach_detail_6rderefERKNS0_13auto_any_baseEPNS0_9type2typeIT_T0_EE">rderef</dfn>(<a class="typedef" href="#boost::foreach_detail_::auto_any_t" title='boost::foreach_detail_::auto_any_t' data-type='const boost::foreach_detail_::auto_any_base &amp;' data-ref="boost::foreach_detail_::auto_any_t">auto_any_t</a> <dfn class="local col2 decl" id="42cur" title='cur' data-type='boost::foreach_detail_::auto_any_t' data-ref="42cur">cur</dfn>, <a class="type" href="#boost::foreach_detail_::type2type" title='boost::foreach_detail_::type2type' data-ref="boost::foreach_detail_::type2type">type2type</a>&lt;T, C&gt; *)</td></tr>
+<tr><th id="891">891</th><td>{</td></tr>
+<tr><th id="892">892</th><td>    <b>typedef</b> <a class="macro" href="../../../config/include/boost/config/detail/suffix.hpp.html#483" title="typename" data-ref="_M/BOOST_DEDUCED_TYPENAME">BOOST_DEDUCED_TYPENAME</a> <a class="type" href="#boost::foreach_detail_::foreach_reverse_iterator" title='boost::foreach_detail_::foreach_reverse_iterator' data-ref="boost::foreach_detail_::foreach_reverse_iterator">foreach_reverse_iterator</a>&lt;T, C&gt;::type <dfn class="local col3 typedef" id="43iter_t" title='iter_t' data-type='typename foreach_reverse_iterator&lt;T, C&gt;::type' data-ref="43iter_t">iter_t</dfn>;</td></tr>
+<tr><th id="893">893</th><td>    <b>return</b> *auto_any_cast&lt;<a class="local col3 typedef" href="#43iter_t" title='iter_t' data-type='typename foreach_reverse_iterator&lt;T, C&gt;::type' data-ref="43iter_t">iter_t</a>, <span class="namespace">boost::mpl::</span>false_&gt;(<a class="local col2 ref" href="#42cur" title='cur' data-ref="42cur">cur</a>);</td></tr>
+<tr><th id="894">894</th><td>}</td></tr>
+<tr><th id="895">895</th><td></td></tr>
+<tr><th id="896">896</th><td>} <i>// namespace foreach_detail_</i></td></tr>
+<tr><th id="897">897</th><td>} <i>// namespace boost</i></td></tr>
+<tr><th id="898">898</th><td></td></tr>
+<tr><th id="899">899</th><td><i>// Suppress a bogus code analysis warning on vc8+</i></td></tr>
+<tr><th id="900">900</th><td><u>#<span data-ppcond="900">if</span> <a class="macro" href="../../../config/include/boost/config/workaround.hpp.html#271" title="((1 + 0 == 0) &amp;&amp; (BOOST_MSVC != 0) &amp;&amp; (1 % (( (BOOST_MSVC &gt;= 1400) ) + 1)))" data-ref="_M/BOOST_WORKAROUND">BOOST_WORKAROUND</a>(BOOST_MSVC, &gt;= 1400)</u></td></tr>
+<tr><th id="901">901</th><td><u># define BOOST_FOREACH_SUPPRESS_WARNINGS() __pragma(warning(suppress:6001))</u></td></tr>
+<tr><th id="902">902</th><td><u>#<span data-ppcond="900">else</span></u></td></tr>
+<tr><th id="903">903</th><td><u># define <dfn class="macro" id="_M/BOOST_FOREACH_SUPPRESS_WARNINGS" data-ref="_M/BOOST_FOREACH_SUPPRESS_WARNINGS">BOOST_FOREACH_SUPPRESS_WARNINGS</dfn>()</u></td></tr>
+<tr><th id="904">904</th><td><u>#<span data-ppcond="900">endif</span></u></td></tr>
+<tr><th id="905">905</th><td></td></tr>
+<tr><th id="906">906</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="907">907</th><td><i>// Define a macro for giving hidden variables a unique name. Not strictly</i></td></tr>
+<tr><th id="908">908</th><td><i>// needed, but eliminates some warnings on some compilers.</i></td></tr>
+<tr><th id="909">909</th><td><u>#<span data-ppcond="909">if</span> <a class="macro" href="../../../config/include/boost/config/workaround.hpp.html#271" title="((1 + 0 == 0) &amp;&amp; (BOOST_MSVC != 0) &amp;&amp; (1 % (( (BOOST_MSVC != ((1500)-(1500))) ) + 1)))" data-ref="_M/BOOST_WORKAROUND">BOOST_WORKAROUND</a>(BOOST_MSVC, <a class="macro" href="../../../config/include/boost/config/workaround.hpp.html#296" title="!= ((1500)-(1500))" data-ref="_M/BOOST_TESTED_AT">BOOST_TESTED_AT</a>(1500))</u></td></tr>
+<tr><th id="910">910</th><td><i>// With some versions of MSVC, use of __LINE__ to create unique identifiers</i></td></tr>
+<tr><th id="911">911</th><td><i>// can fail when the Edit-and-Continue debug flag is used.</i></td></tr>
+<tr><th id="912">912</th><td><u># define BOOST_FOREACH_ID(x) x</u></td></tr>
+<tr><th id="913">913</th><td><u>#<span data-ppcond="909">else</span></u></td></tr>
+<tr><th id="914">914</th><td><u># define <dfn class="macro" id="_M/BOOST_FOREACH_ID" data-ref="_M/BOOST_FOREACH_ID">BOOST_FOREACH_ID</dfn>(x) BOOST_PP_CAT(x, __LINE__)</u></td></tr>
+<tr><th id="915">915</th><td><u>#<span data-ppcond="909">endif</span></u></td></tr>
+<tr><th id="916">916</th><td></td></tr>
+<tr><th id="917">917</th><td><i>// A sneaky way to get the type of the collection without evaluating the expression</i></td></tr>
+<tr><th id="918">918</th><td><u>#define <dfn class="macro" id="_M/BOOST_FOREACH_TYPEOF" data-ref="_M/BOOST_FOREACH_TYPEOF">BOOST_FOREACH_TYPEOF</dfn>(COL)                                                               \</u></td></tr>
+<tr><th id="919">919</th><td><u>    (true ? BOOST_FOREACH_NULL : boost::foreach_detail_::encode_type(COL, boost::foreach_detail_::is_const_(COL)))</u></td></tr>
+<tr><th id="920">920</th><td></td></tr>
+<tr><th id="921">921</th><td><i>// returns true_* if the type is noncopyable</i></td></tr>
+<tr><th id="922">922</th><td><u>#define <dfn class="macro" id="_M/BOOST_FOREACH_IS_NONCOPYABLE" data-ref="_M/BOOST_FOREACH_IS_NONCOPYABLE">BOOST_FOREACH_IS_NONCOPYABLE</dfn>(COL)                                                       \</u></td></tr>
+<tr><th id="923">923</th><td><u>    boost_foreach_is_noncopyable(                                                               \</u></td></tr>
+<tr><th id="924">924</th><td><u>        <span class='refarg'>boost</span>::foreach_detail_::to_ptr(COL)                                                     \</u></td></tr>
+<tr><th id="925">925</th><td><u>      , boost_foreach_argument_dependent_lookup_hack_value)</u></td></tr>
+<tr><th id="926">926</th><td></td></tr>
+<tr><th id="927">927</th><td><i>// returns true_* if the type is a lightweight proxy (and is not noncopyable)</i></td></tr>
+<tr><th id="928">928</th><td><u>#define <dfn class="macro" id="_M/BOOST_FOREACH_IS_LIGHTWEIGHT_PROXY" data-ref="_M/BOOST_FOREACH_IS_LIGHTWEIGHT_PROXY">BOOST_FOREACH_IS_LIGHTWEIGHT_PROXY</dfn>(COL)                                                 \</u></td></tr>
+<tr><th id="929">929</th><td><u>    boost::foreach_detail_::and_(                                                               \</u></td></tr>
+<tr><th id="930">930</th><td><u>        boost::foreach_detail_::not_(BOOST_FOREACH_IS_NONCOPYABLE(COL))                         \</u></td></tr>
+<tr><th id="931">931</th><td><u>      , boost_foreach_is_lightweight_proxy(                                                     \</u></td></tr>
+<tr><th id="932">932</th><td><u>            <span class='refarg'>boost</span>::foreach_detail_::to_ptr(COL)                                                 \</u></td></tr>
+<tr><th id="933">933</th><td><u>          , boost_foreach_argument_dependent_lookup_hack_value))</u></td></tr>
+<tr><th id="934">934</th><td></td></tr>
+<tr><th id="935">935</th><td><u>#<span data-ppcond="935">if</span> defined(<a class="macro" href="#47" data-ref="_M/BOOST_FOREACH_COMPILE_TIME_CONST_RVALUE_DETECTION">BOOST_FOREACH_COMPILE_TIME_CONST_RVALUE_DETECTION</a>)</u></td></tr>
+<tr><th id="936">936</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="937">937</th><td><i>// R-values and const R-values supported here with zero runtime overhead</i></td></tr>
+<tr><th id="938">938</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="939">939</th><td><i></i></td></tr>
+<tr><th id="940">940</th><td><i>// No variable is needed to track the rvalue-ness of the collection expression</i></td></tr>
+<tr><th id="941">941</th><td><u># define <dfn class="macro" id="_M/BOOST_FOREACH_PREAMBLE" data-ref="_M/BOOST_FOREACH_PREAMBLE">BOOST_FOREACH_PREAMBLE</dfn>()                                                               \</u></td></tr>
+<tr><th id="942">942</th><td><u>    BOOST_FOREACH_SUPPRESS_WARNINGS()</u></td></tr>
+<tr><th id="943">943</th><td></td></tr>
+<tr><th id="944">944</th><td><i>// Evaluate the collection expression</i></td></tr>
+<tr><th id="945">945</th><td><u># define <dfn class="macro" id="_M/BOOST_FOREACH_EVALUATE" data-ref="_M/BOOST_FOREACH_EVALUATE">BOOST_FOREACH_EVALUATE</dfn>(COL)                                                            \</u></td></tr>
+<tr><th id="946">946</th><td><u>    <span class='refarg'>(</span>COL)</u></td></tr>
+<tr><th id="947">947</th><td></td></tr>
+<tr><th id="948">948</th><td><u># define <dfn class="macro" id="_M/BOOST_FOREACH_SHOULD_COPY" data-ref="_M/BOOST_FOREACH_SHOULD_COPY">BOOST_FOREACH_SHOULD_COPY</dfn>(COL)                                                         \</u></td></tr>
+<tr><th id="949">949</th><td><u>    (true ? BOOST_FOREACH_NULL : boost::foreach_detail_::or_(                                                    \</u></td></tr>
+<tr><th id="950">950</th><td><u>        BOOST_FOREACH_IS_RVALUE(COL)                                                            \</u></td></tr>
+<tr><th id="951">951</th><td><u>      , BOOST_FOREACH_IS_LIGHTWEIGHT_PROXY(COL)))</u></td></tr>
+<tr><th id="952">952</th><td></td></tr>
+<tr><th id="953">953</th><td><u>#<span data-ppcond="935">elif</span> defined(BOOST_FOREACH_RUN_TIME_CONST_RVALUE_DETECTION)</u></td></tr>
+<tr><th id="954">954</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="955">955</th><td><i>// R-values and const R-values supported here</i></td></tr>
+<tr><th id="956">956</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="957">957</th><td><i></i></td></tr>
+<tr><th id="958">958</th><td><i>// Declare a variable to track the rvalue-ness of the collection expression</i></td></tr>
+<tr><th id="959">959</th><td><u># define BOOST_FOREACH_PREAMBLE()                                                               \</u></td></tr>
+<tr><th id="960">960</th><td><u>    BOOST_FOREACH_SUPPRESS_WARNINGS()                                                           \</u></td></tr>
+<tr><th id="961">961</th><td><u>    if (bool BOOST_FOREACH_ID(_foreach_is_rvalue) = false) {} else</u></td></tr>
+<tr><th id="962">962</th><td></td></tr>
+<tr><th id="963">963</th><td><i>// Evaluate the collection expression, and detect if it is an lvalue or and rvalue</i></td></tr>
+<tr><th id="964">964</th><td><u># define BOOST_FOREACH_EVALUATE(COL)                                                            \</u></td></tr>
+<tr><th id="965">965</th><td><u>    (true ? boost::foreach_detail_::make_probe((COL), BOOST_FOREACH_ID(_foreach_is_rvalue)) : (COL))</u></td></tr>
+<tr><th id="966">966</th><td></td></tr>
+<tr><th id="967">967</th><td><i>// The rvalue/lvalue-ness of the collection expression is determined dynamically, unless</i></td></tr>
+<tr><th id="968">968</th><td><i>// the type is an array or is noncopyable or is non-const, in which case we know it's an lvalue.</i></td></tr>
+<tr><th id="969">969</th><td><i>// If the type happens to be a lightweight proxy, always make a copy.</i></td></tr>
+<tr><th id="970">970</th><td><u># define BOOST_FOREACH_SHOULD_COPY(COL)                                                         \</u></td></tr>
+<tr><th id="971">971</th><td><u>    (boost::foreach_detail_::should_copy_impl(                                                  \</u></td></tr>
+<tr><th id="972">972</th><td><u>        true ? BOOST_FOREACH_NULL : boost::foreach_detail_::or_(                                                 \</u></td></tr>
+<tr><th id="973">973</th><td><u>            boost::foreach_detail_::is_array_(COL)                                              \</u></td></tr>
+<tr><th id="974">974</th><td><u>          , BOOST_FOREACH_IS_NONCOPYABLE(COL)                                                   \</u></td></tr>
+<tr><th id="975">975</th><td><u>          , boost::foreach_detail_::not_(boost::foreach_detail_::is_const_(COL)))               \</u></td></tr>
+<tr><th id="976">976</th><td><u>      , true ? BOOST_FOREACH_NULL : BOOST_FOREACH_IS_LIGHTWEIGHT_PROXY(COL)                                      \</u></td></tr>
+<tr><th id="977">977</th><td><u>      , &amp;BOOST_FOREACH_ID(_foreach_is_rvalue)))</u></td></tr>
+<tr><th id="978">978</th><td></td></tr>
+<tr><th id="979">979</th><td><u>#elif !defined(BOOST_FOREACH_NO_RVALUE_DETECTION)</u></td></tr>
+<tr><th id="980">980</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="981">981</th><td><i>// R-values supported here, const R-values NOT supported here</i></td></tr>
+<tr><th id="982">982</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="983">983</th><td><i></i></td></tr>
+<tr><th id="984">984</th><td><i>// No variable is needed to track the rvalue-ness of the collection expression</i></td></tr>
+<tr><th id="985">985</th><td><u># define BOOST_FOREACH_PREAMBLE()                                                               \</u></td></tr>
+<tr><th id="986">986</th><td><u>    BOOST_FOREACH_SUPPRESS_WARNINGS()</u></td></tr>
+<tr><th id="987">987</th><td></td></tr>
+<tr><th id="988">988</th><td><i>// Evaluate the collection expression</i></td></tr>
+<tr><th id="989">989</th><td><u># define BOOST_FOREACH_EVALUATE(COL)                                                            \</u></td></tr>
+<tr><th id="990">990</th><td><u>    (COL)</u></td></tr>
+<tr><th id="991">991</th><td></td></tr>
+<tr><th id="992">992</th><td><i>// Determine whether the collection expression is an lvalue or an rvalue.</i></td></tr>
+<tr><th id="993">993</th><td><i>// NOTE: this gets the answer wrong for const rvalues.</i></td></tr>
+<tr><th id="994">994</th><td><u># define BOOST_FOREACH_SHOULD_COPY(COL)                                                         \</u></td></tr>
+<tr><th id="995">995</th><td><u>    (true ? BOOST_FOREACH_NULL : boost::foreach_detail_::or_(                                                    \</u></td></tr>
+<tr><th id="996">996</th><td><u>        boost::foreach_detail_::is_rvalue_((COL), 0)                                            \</u></td></tr>
+<tr><th id="997">997</th><td><u>      , BOOST_FOREACH_IS_LIGHTWEIGHT_PROXY(COL)))</u></td></tr>
+<tr><th id="998">998</th><td></td></tr>
+<tr><th id="999">999</th><td><u>#else</u></td></tr>
+<tr><th id="1000">1000</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="1001">1001</th><td><i>// R-values NOT supported here</i></td></tr>
+<tr><th id="1002">1002</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="1003">1003</th><td><i></i></td></tr>
+<tr><th id="1004">1004</th><td><i>// No variable is needed to track the rvalue-ness of the collection expression</i></td></tr>
+<tr><th id="1005">1005</th><td><u># define BOOST_FOREACH_PREAMBLE()                                                               \</u></td></tr>
+<tr><th id="1006">1006</th><td><u>    BOOST_FOREACH_SUPPRESS_WARNINGS()</u></td></tr>
+<tr><th id="1007">1007</th><td></td></tr>
+<tr><th id="1008">1008</th><td><i>// Evaluate the collection expression</i></td></tr>
+<tr><th id="1009">1009</th><td><u># define BOOST_FOREACH_EVALUATE(COL)                                                            \</u></td></tr>
+<tr><th id="1010">1010</th><td><u>    (COL)</u></td></tr>
+<tr><th id="1011">1011</th><td></td></tr>
+<tr><th id="1012">1012</th><td><i>// Can't use rvalues with BOOST_FOREACH (unless they are lightweight proxies)</i></td></tr>
+<tr><th id="1013">1013</th><td><u># define BOOST_FOREACH_SHOULD_COPY(COL)                                                         \</u></td></tr>
+<tr><th id="1014">1014</th><td><u>    (true ? BOOST_FOREACH_NULL : BOOST_FOREACH_IS_LIGHTWEIGHT_PROXY(COL))</u></td></tr>
+<tr><th id="1015">1015</th><td></td></tr>
+<tr><th id="1016">1016</th><td><u>#<span data-ppcond="935">endif</span></u></td></tr>
+<tr><th id="1017">1017</th><td></td></tr>
+<tr><th id="1018">1018</th><td><u>#define <dfn class="macro" id="_M/BOOST_FOREACH_CONTAIN" data-ref="_M/BOOST_FOREACH_CONTAIN">BOOST_FOREACH_CONTAIN</dfn>(COL)                                                              \</u></td></tr>
+<tr><th id="1019">1019</th><td><u>    boost::foreach_detail_::contain(                                                            \</u></td></tr>
+<tr><th id="1020">1020</th><td><u>        BOOST_FOREACH_EVALUATE(COL)                                                             \</u></td></tr>
+<tr><th id="1021">1021</th><td><u>      , BOOST_FOREACH_SHOULD_COPY(COL))</u></td></tr>
+<tr><th id="1022">1022</th><td></td></tr>
+<tr><th id="1023">1023</th><td><u>#define <dfn class="macro" id="_M/BOOST_FOREACH_BEGIN" data-ref="_M/BOOST_FOREACH_BEGIN">BOOST_FOREACH_BEGIN</dfn>(COL)                                                                \</u></td></tr>
+<tr><th id="1024">1024</th><td><u>    boost::foreach_detail_::begin(                                                              \</u></td></tr>
+<tr><th id="1025">1025</th><td><u>        BOOST_FOREACH_ID(_foreach_col)                                                          \</u></td></tr>
+<tr><th id="1026">1026</th><td><u>      , BOOST_FOREACH_TYPEOF(COL)                                                               \</u></td></tr>
+<tr><th id="1027">1027</th><td><u>      , BOOST_FOREACH_SHOULD_COPY(COL))</u></td></tr>
+<tr><th id="1028">1028</th><td></td></tr>
+<tr><th id="1029">1029</th><td><u>#define <dfn class="macro" id="_M/BOOST_FOREACH_END" data-ref="_M/BOOST_FOREACH_END">BOOST_FOREACH_END</dfn>(COL)                                                                  \</u></td></tr>
+<tr><th id="1030">1030</th><td><u>    boost::foreach_detail_::end(                                                                \</u></td></tr>
+<tr><th id="1031">1031</th><td><u>        BOOST_FOREACH_ID(_foreach_col)                                                          \</u></td></tr>
+<tr><th id="1032">1032</th><td><u>      , BOOST_FOREACH_TYPEOF(COL)                                                               \</u></td></tr>
+<tr><th id="1033">1033</th><td><u>      , BOOST_FOREACH_SHOULD_COPY(COL))</u></td></tr>
+<tr><th id="1034">1034</th><td></td></tr>
+<tr><th id="1035">1035</th><td><u>#define <dfn class="macro" id="_M/BOOST_FOREACH_DONE" data-ref="_M/BOOST_FOREACH_DONE">BOOST_FOREACH_DONE</dfn>(COL)                                                                 \</u></td></tr>
+<tr><th id="1036">1036</th><td><u>    boost::foreach_detail_::done(                                                               \</u></td></tr>
+<tr><th id="1037">1037</th><td><u>        BOOST_FOREACH_ID(_foreach_cur)                                                          \</u></td></tr>
+<tr><th id="1038">1038</th><td><u>      , BOOST_FOREACH_ID(_foreach_end)                                                          \</u></td></tr>
+<tr><th id="1039">1039</th><td><u>      , BOOST_FOREACH_TYPEOF(COL))</u></td></tr>
+<tr><th id="1040">1040</th><td></td></tr>
+<tr><th id="1041">1041</th><td><u>#define <dfn class="macro" id="_M/BOOST_FOREACH_NEXT" data-ref="_M/BOOST_FOREACH_NEXT">BOOST_FOREACH_NEXT</dfn>(COL)                                                                 \</u></td></tr>
+<tr><th id="1042">1042</th><td><u>    boost::foreach_detail_::next(                                                               \</u></td></tr>
+<tr><th id="1043">1043</th><td><u>        BOOST_FOREACH_ID(_foreach_cur)                                                          \</u></td></tr>
+<tr><th id="1044">1044</th><td><u>      , BOOST_FOREACH_TYPEOF(COL))</u></td></tr>
+<tr><th id="1045">1045</th><td></td></tr>
+<tr><th id="1046">1046</th><td><u>#define <dfn class="macro" id="_M/BOOST_FOREACH_DEREF" data-ref="_M/BOOST_FOREACH_DEREF">BOOST_FOREACH_DEREF</dfn>(COL)                                                                \</u></td></tr>
+<tr><th id="1047">1047</th><td><u>    boost::foreach_detail_::deref(                                                              \</u></td></tr>
+<tr><th id="1048">1048</th><td><u>        BOOST_FOREACH_ID(_foreach_cur)                                                          \</u></td></tr>
+<tr><th id="1049">1049</th><td><u>      , BOOST_FOREACH_TYPEOF(COL))</u></td></tr>
+<tr><th id="1050">1050</th><td></td></tr>
+<tr><th id="1051">1051</th><td><u>#define <dfn class="macro" id="_M/BOOST_FOREACH_RBEGIN" data-ref="_M/BOOST_FOREACH_RBEGIN">BOOST_FOREACH_RBEGIN</dfn>(COL)                                                               \</u></td></tr>
+<tr><th id="1052">1052</th><td><u>    boost::foreach_detail_::rbegin(                                                             \</u></td></tr>
+<tr><th id="1053">1053</th><td><u>        BOOST_FOREACH_ID(_foreach_col)                                                          \</u></td></tr>
+<tr><th id="1054">1054</th><td><u>      , BOOST_FOREACH_TYPEOF(COL)                                                               \</u></td></tr>
+<tr><th id="1055">1055</th><td><u>      , BOOST_FOREACH_SHOULD_COPY(COL))</u></td></tr>
+<tr><th id="1056">1056</th><td></td></tr>
+<tr><th id="1057">1057</th><td><u>#define <dfn class="macro" id="_M/BOOST_FOREACH_REND" data-ref="_M/BOOST_FOREACH_REND">BOOST_FOREACH_REND</dfn>(COL)                                                                 \</u></td></tr>
+<tr><th id="1058">1058</th><td><u>    boost::foreach_detail_::rend(                                                               \</u></td></tr>
+<tr><th id="1059">1059</th><td><u>        BOOST_FOREACH_ID(_foreach_col)                                                          \</u></td></tr>
+<tr><th id="1060">1060</th><td><u>      , BOOST_FOREACH_TYPEOF(COL)                                                               \</u></td></tr>
+<tr><th id="1061">1061</th><td><u>      , BOOST_FOREACH_SHOULD_COPY(COL))</u></td></tr>
+<tr><th id="1062">1062</th><td></td></tr>
+<tr><th id="1063">1063</th><td><u>#define <dfn class="macro" id="_M/BOOST_FOREACH_RDONE" data-ref="_M/BOOST_FOREACH_RDONE">BOOST_FOREACH_RDONE</dfn>(COL)                                                                \</u></td></tr>
+<tr><th id="1064">1064</th><td><u>    boost::foreach_detail_::rdone(                                                              \</u></td></tr>
+<tr><th id="1065">1065</th><td><u>        BOOST_FOREACH_ID(_foreach_cur)                                                          \</u></td></tr>
+<tr><th id="1066">1066</th><td><u>      , BOOST_FOREACH_ID(_foreach_end)                                                          \</u></td></tr>
+<tr><th id="1067">1067</th><td><u>      , BOOST_FOREACH_TYPEOF(COL))</u></td></tr>
+<tr><th id="1068">1068</th><td></td></tr>
+<tr><th id="1069">1069</th><td><u>#define <dfn class="macro" id="_M/BOOST_FOREACH_RNEXT" data-ref="_M/BOOST_FOREACH_RNEXT">BOOST_FOREACH_RNEXT</dfn>(COL)                                                                \</u></td></tr>
+<tr><th id="1070">1070</th><td><u>    boost::foreach_detail_::rnext(                                                              \</u></td></tr>
+<tr><th id="1071">1071</th><td><u>        BOOST_FOREACH_ID(_foreach_cur)                                                          \</u></td></tr>
+<tr><th id="1072">1072</th><td><u>      , BOOST_FOREACH_TYPEOF(COL))</u></td></tr>
+<tr><th id="1073">1073</th><td></td></tr>
+<tr><th id="1074">1074</th><td><u>#define <dfn class="macro" id="_M/BOOST_FOREACH_RDEREF" data-ref="_M/BOOST_FOREACH_RDEREF">BOOST_FOREACH_RDEREF</dfn>(COL)                                                               \</u></td></tr>
+<tr><th id="1075">1075</th><td><u>    boost::foreach_detail_::rderef(                                                             \</u></td></tr>
+<tr><th id="1076">1076</th><td><u>        BOOST_FOREACH_ID(_foreach_cur)                                                          \</u></td></tr>
+<tr><th id="1077">1077</th><td><u>      , BOOST_FOREACH_TYPEOF(COL))</u></td></tr>
+<tr><th id="1078">1078</th><td></td></tr>
+<tr><th id="1079">1079</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="1080">1080</th><td><i>// BOOST_FOREACH</i></td></tr>
+<tr><th id="1081">1081</th><td><i>//</i></td></tr>
+<tr><th id="1082">1082</th><td><i>//   For iterating over collections. Collections can be</i></td></tr>
+<tr><th id="1083">1083</th><td><i>//   arrays, null-terminated strings, or STL containers.</i></td></tr>
+<tr><th id="1084">1084</th><td><i>//   The loop variable can be a value or reference. For</i></td></tr>
+<tr><th id="1085">1085</th><td><i>//   example:</i></td></tr>
+<tr><th id="1086">1086</th><td><i>//</i></td></tr>
+<tr><th id="1087">1087</th><td><i>//   std::list&lt;int&gt; int_list(/*stuff*/);</i></td></tr>
+<tr><th id="1088">1088</th><td><i>//   BOOST_FOREACH(int &amp;i, int_list)</i></td></tr>
+<tr><th id="1089">1089</th><td><i>//   {</i></td></tr>
+<tr><th id="1090">1090</th><td><i>//       /* </i></td></tr>
+<tr><th id="1091">1091</th><td><i>//        * loop body goes here.</i></td></tr>
+<tr><th id="1092">1092</th><td><i>//        * i is a reference to the int in int_list.</i></td></tr>
+<tr><th id="1093">1093</th><td><i>//        */</i></td></tr>
+<tr><th id="1094">1094</th><td><i>//   }</i></td></tr>
+<tr><th id="1095">1095</th><td><i>//</i></td></tr>
+<tr><th id="1096">1096</th><td><i>//   Alternately, you can declare the loop variable first,</i></td></tr>
+<tr><th id="1097">1097</th><td><i>//   so you can access it after the loop finishes. Obviously,</i></td></tr>
+<tr><th id="1098">1098</th><td><i>//   if you do it this way, then the loop variable cannot be</i></td></tr>
+<tr><th id="1099">1099</th><td><i>//   a reference.</i></td></tr>
+<tr><th id="1100">1100</th><td><i>//</i></td></tr>
+<tr><th id="1101">1101</th><td><i>//   int i;</i></td></tr>
+<tr><th id="1102">1102</th><td><i>//   BOOST_FOREACH(i, int_list)</i></td></tr>
+<tr><th id="1103">1103</th><td><i>//       { ... }</i></td></tr>
+<tr><th id="1104">1104</th><td><i>//</i></td></tr>
+<tr><th id="1105">1105</th><td><u>#define <dfn class="macro" id="_M/BOOST_FOREACH" data-ref="_M/BOOST_FOREACH">BOOST_FOREACH</dfn>(VAR, COL)                                                                                   \</u></td></tr>
+<tr><th id="1106">1106</th><td><u>    BOOST_FOREACH_PREAMBLE()                                                                                      \</u></td></tr>
+<tr><th id="1107">1107</th><td><u>    if (boost::foreach_detail_::auto_any_t BOOST_FOREACH_ID(_foreach_col) = BOOST_FOREACH_CONTAIN(COL)) {} else   \</u></td></tr>
+<tr><th id="1108">1108</th><td><u>    if (boost::foreach_detail_::auto_any_t BOOST_FOREACH_ID(_foreach_cur) = BOOST_FOREACH_BEGIN(COL)) {} else     \</u></td></tr>
+<tr><th id="1109">1109</th><td><u>    if (boost::foreach_detail_::auto_any_t BOOST_FOREACH_ID(_foreach_end) = BOOST_FOREACH_END(COL)) {} else       \</u></td></tr>
+<tr><th id="1110">1110</th><td><u>    for (bool BOOST_FOREACH_ID(_foreach_continue) = true;                                                         \</u></td></tr>
+<tr><th id="1111">1111</th><td><u>              BOOST_FOREACH_ID(_foreach_continue) &amp;&amp; !BOOST_FOREACH_DONE(COL);                                    \</u></td></tr>
+<tr><th id="1112">1112</th><td><u>              BOOST_FOREACH_ID(_foreach_continue) ? BOOST_FOREACH_NEXT(COL) : (void)0)                            \</u></td></tr>
+<tr><th id="1113">1113</th><td><u>        if  (boost::foreach_detail_::set_false(BOOST_FOREACH_ID(_foreach_continue))) {} else                      \</u></td></tr>
+<tr><th id="1114">1114</th><td><u>        for (VAR = BOOST_FOREACH_DEREF(COL); !BOOST_FOREACH_ID(_foreach_continue); BOOST_FOREACH_ID(_foreach_continue) = true)</u></td></tr>
+<tr><th id="1115">1115</th><td></td></tr>
+<tr><th id="1116">1116</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="1117">1117</th><td><i>// BOOST_REVERSE_FOREACH</i></td></tr>
+<tr><th id="1118">1118</th><td><i>//</i></td></tr>
+<tr><th id="1119">1119</th><td><i>//   For iterating over collections in reverse order. In</i></td></tr>
+<tr><th id="1120">1120</th><td><i>//   all other respects, BOOST_REVERSE_FOREACH is like</i></td></tr>
+<tr><th id="1121">1121</th><td><i>//   BOOST_FOREACH.</i></td></tr>
+<tr><th id="1122">1122</th><td><i>//</i></td></tr>
+<tr><th id="1123">1123</th><td><u>#define <dfn class="macro" id="_M/BOOST_REVERSE_FOREACH" data-ref="_M/BOOST_REVERSE_FOREACH">BOOST_REVERSE_FOREACH</dfn>(VAR, COL)                                                                           \</u></td></tr>
+<tr><th id="1124">1124</th><td><u>    BOOST_FOREACH_PREAMBLE()                                                                                      \</u></td></tr>
+<tr><th id="1125">1125</th><td><u>    if (boost::foreach_detail_::auto_any_t BOOST_FOREACH_ID(_foreach_col) = BOOST_FOREACH_CONTAIN(COL)) {} else   \</u></td></tr>
+<tr><th id="1126">1126</th><td><u>    if (boost::foreach_detail_::auto_any_t BOOST_FOREACH_ID(_foreach_cur) = BOOST_FOREACH_RBEGIN(COL)) {} else    \</u></td></tr>
+<tr><th id="1127">1127</th><td><u>    if (boost::foreach_detail_::auto_any_t BOOST_FOREACH_ID(_foreach_end) = BOOST_FOREACH_REND(COL)) {} else      \</u></td></tr>
+<tr><th id="1128">1128</th><td><u>    for (bool BOOST_FOREACH_ID(_foreach_continue) = true;                                                         \</u></td></tr>
+<tr><th id="1129">1129</th><td><u>              BOOST_FOREACH_ID(_foreach_continue) &amp;&amp; !BOOST_FOREACH_RDONE(COL);                                   \</u></td></tr>
+<tr><th id="1130">1130</th><td><u>              BOOST_FOREACH_ID(_foreach_continue) ? BOOST_FOREACH_RNEXT(COL) : (void)0)                           \</u></td></tr>
+<tr><th id="1131">1131</th><td><u>        if  (boost::foreach_detail_::set_false(BOOST_FOREACH_ID(_foreach_continue))) {} else                      \</u></td></tr>
+<tr><th id="1132">1132</th><td><u>        for (VAR = BOOST_FOREACH_RDEREF(COL); !BOOST_FOREACH_ID(_foreach_continue); BOOST_FOREACH_ID(_foreach_continue) = true)</u></td></tr>
+<tr><th id="1133">1133</th><td></td></tr>
+<tr><th id="1134">1134</th><td><u>#<span data-ppcond="20">endif</span></u></td></tr>
+<tr><th id="1135">1135</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../../../graph/src/graphml.cpp.html'>boost-1.85.0/libs/graph/src/graphml.cpp</a><br/>Generated on <em>2024-Jun-14</em> from project boost-1.85.0 revision <em>1.85.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

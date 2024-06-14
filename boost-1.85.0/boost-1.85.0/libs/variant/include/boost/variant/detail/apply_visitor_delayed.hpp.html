@@ -1,0 +1,141 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>apply_visitor_delayed.hpp source code [boost-1.85.0/libs/variant/include/boost/variant/detail/apply_visitor_delayed.hpp] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="boost::apply_visitor_delayed_cpp14_t,boost::apply_visitor_delayed_t "/>
+<link rel="stylesheet" href="../../../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'boost-1.85.0/libs/variant/include/boost/variant/detail/apply_visitor_delayed.hpp'; var root_path = '../../../../../../..'; var data_path = '../../../../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../../../..'>boost-1.85.0</a>/<a href='../../../../..'>libs</a>/<a href='../../../..'>variant</a>/<a href='../../..'>include</a>/<a href='../..'>boost</a>/<a href='..'>variant</a>/<a href='./'>detail</a>/<a href='apply_visitor_delayed.hpp.html'>apply_visitor_delayed.hpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>//-----------------------------------------------------------------------------</i></td></tr>
+<tr><th id="2">2</th><td><i>// boost variant/detail/apply_visitor_delayed.hpp header file</i></td></tr>
+<tr><th id="3">3</th><td><i>// See <a href="http://www.boost.org">http://www.boost.org</a> for updates, documentation, and revision history.</i></td></tr>
+<tr><th id="4">4</th><td><i>//-----------------------------------------------------------------------------</i></td></tr>
+<tr><th id="5">5</th><td><i>//</i></td></tr>
+<tr><th id="6">6</th><td><i>// Copyright (c) 2002-2003</i></td></tr>
+<tr><th id="7">7</th><td><i>// Eric Friedman</i></td></tr>
+<tr><th id="8">8</th><td><i>//</i></td></tr>
+<tr><th id="9">9</th><td><i>// Distributed under the Boost Software License, Version 1.0. (See</i></td></tr>
+<tr><th id="10">10</th><td><i>// accompanying file LICENSE_1_0.txt or copy at</i></td></tr>
+<tr><th id="11">11</th><td><i>// <a href="http://www.boost.org/LICENSE_1_0.txt">http://www.boost.org/LICENSE_1_0.txt</a>)</i></td></tr>
+<tr><th id="12">12</th><td></td></tr>
+<tr><th id="13">13</th><td><u>#<span data-ppcond="13">ifndef</span> <span class="macro" data-ref="_M/BOOST_VARIANT_DETAIL_APPLY_VISITOR_DELAYED_HPP">BOOST_VARIANT_DETAIL_APPLY_VISITOR_DELAYED_HPP</span></u></td></tr>
+<tr><th id="14">14</th><td><u>#define <dfn class="macro" id="_M/BOOST_VARIANT_DETAIL_APPLY_VISITOR_DELAYED_HPP" data-ref="_M/BOOST_VARIANT_DETAIL_APPLY_VISITOR_DELAYED_HPP">BOOST_VARIANT_DETAIL_APPLY_VISITOR_DELAYED_HPP</dfn></u></td></tr>
+<tr><th id="15">15</th><td></td></tr>
+<tr><th id="16">16</th><td><u>#include <a href="apply_visitor_unary.hpp.html">&lt;boost/variant/detail/apply_visitor_unary.hpp&gt;</a></u></td></tr>
+<tr><th id="17">17</th><td><u>#include <a href="apply_visitor_binary.hpp.html">&lt;boost/variant/detail/apply_visitor_binary.hpp&gt;</a></u></td></tr>
+<tr><th id="18">18</th><td><u>#include <a href="../variant_fwd.hpp.html">&lt;boost/variant/variant_fwd.hpp&gt;</a></u></td></tr>
+<tr><th id="19">19</th><td></td></tr>
+<tr><th id="20">20</th><td></td></tr>
+<tr><th id="21">21</th><td><u>#include <a href="has_result_type.hpp.html">&lt;boost/variant/detail/has_result_type.hpp&gt;</a></u></td></tr>
+<tr><th id="22">22</th><td><u>#include <a href="../../../../../core/include/boost/core/enable_if.hpp.html">&lt;boost/core/enable_if.hpp&gt;</a></u></td></tr>
+<tr><th id="23">23</th><td></td></tr>
+<tr><th id="24">24</th><td><b>namespace</b> <span class="namespace">boost</span> {</td></tr>
+<tr><th id="25">25</th><td></td></tr>
+<tr><th id="26">26</th><td><i>//////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="27">27</th><td><i>// function template apply_visitor(visitor)</i></td></tr>
+<tr><th id="28">28</th><td><i>//</i></td></tr>
+<tr><th id="29">29</th><td><i>// Returns a function object, overloaded for unary and binary usage, that</i></td></tr>
+<tr><th id="30">30</th><td><i>// visits its arguments using visitor (or a copy of visitor) via</i></td></tr>
+<tr><th id="31">31</th><td><i>//  * apply_visitor( visitor, [argument] )</i></td></tr>
+<tr><th id="32">32</th><td><i>// under unary invocation, or</i></td></tr>
+<tr><th id="33">33</th><td><i>//  * apply_visitor( visitor, [argument1], [argument2] )</i></td></tr>
+<tr><th id="34">34</th><td><i>// under binary invocation.</i></td></tr>
+<tr><th id="35">35</th><td><i>//</i></td></tr>
+<tr><th id="36">36</th><td><i>// NOTE: Unlike other apply_visitor forms, the visitor object must be</i></td></tr>
+<tr><th id="37">37</th><td><i>//   non-const; this prevents user from giving temporary, to disastrous</i></td></tr>
+<tr><th id="38">38</th><td><i>//   effect (i.e., returned function object would have dead reference).</i></td></tr>
+<tr><th id="39">39</th><td><i>//</i></td></tr>
+<tr><th id="40">40</th><td></td></tr>
+<tr><th id="41">41</th><td><b>template</b> &lt;<b>typename</b> Visitor&gt;</td></tr>
+<tr><th id="42">42</th><td><b>class</b> <dfn class="type def" id="boost::apply_visitor_delayed_t" title='boost::apply_visitor_delayed_t' data-ref="boost::apply_visitor_delayed_t">apply_visitor_delayed_t</dfn></td></tr>
+<tr><th id="43">43</th><td>{</td></tr>
+<tr><th id="44">44</th><td><b>public</b>: <i>// visitor typedefs</i></td></tr>
+<tr><th id="45">45</th><td></td></tr>
+<tr><th id="46">46</th><td>    <b>typedef</b> <b>typename</b> Visitor::result_type</td></tr>
+<tr><th id="47">47</th><td>        <dfn class="typedef" id="boost::apply_visitor_delayed_t::result_type" title='boost::apply_visitor_delayed_t::result_type' data-type='typename Visitor::result_type' data-ref="boost::apply_visitor_delayed_t::result_type">result_type</dfn>;</td></tr>
+<tr><th id="48">48</th><td></td></tr>
+<tr><th id="49">49</th><td><b>private</b>: <i>// representation</i></td></tr>
+<tr><th id="50">50</th><td></td></tr>
+<tr><th id="51">51</th><td>    Visitor&amp; <dfn class="decl field" id="boost::apply_visitor_delayed_t::visitor_" title='boost::apply_visitor_delayed_t::visitor_' data-ref="boost::apply_visitor_delayed_t::visitor_">visitor_</dfn>;</td></tr>
+<tr><th id="52">52</th><td></td></tr>
+<tr><th id="53">53</th><td><b>public</b>: <i>// structors</i></td></tr>
+<tr><th id="54">54</th><td></td></tr>
+<tr><th id="55">55</th><td>    <b>explicit</b> <dfn class="decl def fn" id="_ZN5boost23apply_visitor_delayed_tC1ERT_" title='boost::apply_visitor_delayed_t::apply_visitor_delayed_t&lt;Visitor&gt;' data-ref="_ZN5boost23apply_visitor_delayed_tC1ERT_">apply_visitor_delayed_t</dfn>(Visitor&amp; <dfn class="local col3 decl" id="383visitor" title='visitor' data-type='Visitor &amp;' data-ref="383visitor">visitor</dfn>) <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1020" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="56">56</th><td>      : <a class="member field" href="#boost::apply_visitor_delayed_t::visitor_" title='boost::apply_visitor_delayed_t::visitor_' data-ref="boost::apply_visitor_delayed_t::visitor_">visitor_</a>(<a class="local col3 ref" href="#383visitor" title='visitor' data-ref="383visitor">visitor</a>)</td></tr>
+<tr><th id="57">57</th><td>    {</td></tr>
+<tr><th id="58">58</th><td>    }</td></tr>
+<tr><th id="59">59</th><td></td></tr>
+<tr><th id="60">60</th><td><b>public</b>: <i>// N-ary visitor interface</i></td></tr>
+<tr><th id="61">61</th><td>    <b>template</b> &lt;<b>typename</b>... Visitables&gt;</td></tr>
+<tr><th id="62">62</th><td>    <a class="typedef" href="#boost::apply_visitor_delayed_t::result_type" title='boost::apply_visitor_delayed_t::result_type' data-type='typename Visitor::result_type' data-ref="boost::apply_visitor_delayed_t::result_type">result_type</a> <dfn class="decl def fn" id="_ZNK5boost23apply_visitor_delayed_tclEDpRTL0__" title='boost::apply_visitor_delayed_t::operator()' data-ref="_ZNK5boost23apply_visitor_delayed_tclEDpRTL0__"><b>operator</b>()</dfn>(Visitables&amp;... <dfn class="local col4 decl" id="384visitables" title='visitables' data-type='Visitables &amp;...' data-ref="384visitables">visitables</dfn>) <em>const</em></td></tr>
+<tr><th id="63">63</th><td>    {</td></tr>
+<tr><th id="64">64</th><td>        <b>return</b> apply_visitor(<a class="member field" href="#boost::apply_visitor_delayed_t::visitor_" title='boost::apply_visitor_delayed_t::visitor_' data-ref="boost::apply_visitor_delayed_t::visitor_">visitor_</a>, <a class="local col4 ref" href="#384visitables" title='visitables' data-ref="384visitables">visitables</a>...);</td></tr>
+<tr><th id="65">65</th><td>    }</td></tr>
+<tr><th id="66">66</th><td></td></tr>
+<tr><th id="67">67</th><td><b>private</b>:</td></tr>
+<tr><th id="68">68</th><td>    apply_visitor_delayed_t&amp; <dfn class="decl fn" id="_ZN5boost23apply_visitor_delayed_taSERKNS_23apply_visitor_delayed_tIT_EE" title='boost::apply_visitor_delayed_t::operator=' data-ref="_ZN5boost23apply_visitor_delayed_taSERKNS_23apply_visitor_delayed_tIT_EE"><b>operator</b>=</dfn>(<em>const</em> apply_visitor_delayed_t&amp;);</td></tr>
+<tr><th id="69">69</th><td></td></tr>
+<tr><th id="70">70</th><td>};</td></tr>
+<tr><th id="71">71</th><td></td></tr>
+<tr><th id="72">72</th><td><b>template</b> &lt;<b>typename</b> Visitor&gt;</td></tr>
+<tr><th id="73">73</th><td><b>inline</b> <b>typename</b> <span class="namespace">boost::</span><a class="type" href="../../../../../core/include/boost/core/enable_if.hpp.html#boost::enable_if" title='boost::enable_if' data-ref="boost::enable_if">enable_if</a>&lt;</td></tr>
+<tr><th id="74">74</th><td>        <span class="namespace">boost::detail::variant::</span><a class="type" href="has_result_type.hpp.html#boost::detail::variant::has_result_type" title='boost::detail::variant::has_result_type' data-ref="boost::detail::variant::has_result_type">has_result_type</a>&lt;Visitor&gt;,</td></tr>
+<tr><th id="75">75</th><td>        <a class="type" href="#boost::apply_visitor_delayed_t" title='boost::apply_visitor_delayed_t' data-ref="boost::apply_visitor_delayed_t">apply_visitor_delayed_t</a>&lt;Visitor&gt;</td></tr>
+<tr><th id="76">76</th><td>    &gt;::type <dfn class="decl def fn" id="_ZN5boost13apply_visitorERT_" title='boost::apply_visitor' data-ref="_ZN5boost13apply_visitorERT_">apply_visitor</dfn>(Visitor&amp; <dfn class="local col5 decl" id="385visitor" title='visitor' data-type='Visitor &amp;' data-ref="385visitor">visitor</dfn>)</td></tr>
+<tr><th id="77">77</th><td>{</td></tr>
+<tr><th id="78">78</th><td>    <b>return</b> <a class="type" href="#boost::apply_visitor_delayed_t" title='boost::apply_visitor_delayed_t' data-ref="boost::apply_visitor_delayed_t">apply_visitor_delayed_t</a>&lt;Visitor&gt;(<a class="local col5 ref" href="#385visitor" title='visitor' data-ref="385visitor">visitor</a>);</td></tr>
+<tr><th id="79">79</th><td>}</td></tr>
+<tr><th id="80">80</th><td></td></tr>
+<tr><th id="81">81</th><td><u>#<span data-ppcond="81">if</span> !defined(<span class="macro" data-ref="_M/BOOST_NO_CXX14_DECLTYPE_AUTO">BOOST_NO_CXX14_DECLTYPE_AUTO</span>)</u></td></tr>
+<tr><th id="82">82</th><td></td></tr>
+<tr><th id="83">83</th><td><b>template</b> &lt;<b>typename</b> Visitor&gt;</td></tr>
+<tr><th id="84">84</th><td><b>class</b> <dfn class="type def" id="boost::apply_visitor_delayed_cpp14_t" title='boost::apply_visitor_delayed_cpp14_t' data-ref="boost::apply_visitor_delayed_cpp14_t">apply_visitor_delayed_cpp14_t</dfn></td></tr>
+<tr><th id="85">85</th><td>{</td></tr>
+<tr><th id="86">86</th><td><b>private</b>: <i>// representation</i></td></tr>
+<tr><th id="87">87</th><td>    Visitor&amp; <dfn class="decl field" id="boost::apply_visitor_delayed_cpp14_t::visitor_" title='boost::apply_visitor_delayed_cpp14_t::visitor_' data-ref="boost::apply_visitor_delayed_cpp14_t::visitor_">visitor_</dfn>;</td></tr>
+<tr><th id="88">88</th><td></td></tr>
+<tr><th id="89">89</th><td><b>public</b>: <i>// structors</i></td></tr>
+<tr><th id="90">90</th><td></td></tr>
+<tr><th id="91">91</th><td>    <b>explicit</b> <dfn class="decl def fn" id="_ZN5boost29apply_visitor_delayed_cpp14_tC1ERT_" title='boost::apply_visitor_delayed_cpp14_t::apply_visitor_delayed_cpp14_t&lt;Visitor&gt;' data-ref="_ZN5boost29apply_visitor_delayed_cpp14_tC1ERT_">apply_visitor_delayed_cpp14_t</dfn>(Visitor&amp; <dfn class="local col6 decl" id="386visitor" title='visitor' data-type='Visitor &amp;' data-ref="386visitor">visitor</dfn>) <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1020" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a></td></tr>
+<tr><th id="92">92</th><td>      : <a class="member field" href="#boost::apply_visitor_delayed_cpp14_t::visitor_" title='boost::apply_visitor_delayed_cpp14_t::visitor_' data-ref="boost::apply_visitor_delayed_cpp14_t::visitor_">visitor_</a>(<a class="local col6 ref" href="#386visitor" title='visitor' data-ref="386visitor">visitor</a>)</td></tr>
+<tr><th id="93">93</th><td>    {</td></tr>
+<tr><th id="94">94</th><td>    }</td></tr>
+<tr><th id="95">95</th><td></td></tr>
+<tr><th id="96">96</th><td><b>public</b>: <i>// N-ary visitor interface</i></td></tr>
+<tr><th id="97">97</th><td>    <b>template</b> &lt;<b>typename</b>... Visitables&gt;</td></tr>
+<tr><th id="98">98</th><td>    <b>decltype</b>(<em>auto</em>) <dfn class="decl def fn" id="_ZNK5boost29apply_visitor_delayed_cpp14_tclEDpRTL0__" title='boost::apply_visitor_delayed_cpp14_t::operator()' data-ref="_ZNK5boost29apply_visitor_delayed_cpp14_tclEDpRTL0__"><b>operator</b>()</dfn>(Visitables&amp;... <dfn class="local col7 decl" id="387visitables" title='visitables' data-type='Visitables &amp;...' data-ref="387visitables">visitables</dfn>) <em>const</em></td></tr>
+<tr><th id="99">99</th><td>    {</td></tr>
+<tr><th id="100">100</th><td>        <b>return</b> apply_visitor(<a class="member field" href="#boost::apply_visitor_delayed_cpp14_t::visitor_" title='boost::apply_visitor_delayed_cpp14_t::visitor_' data-ref="boost::apply_visitor_delayed_cpp14_t::visitor_">visitor_</a>, <a class="local col7 ref" href="#387visitables" title='visitables' data-ref="387visitables">visitables</a>...);</td></tr>
+<tr><th id="101">101</th><td>    }</td></tr>
+<tr><th id="102">102</th><td></td></tr>
+<tr><th id="103">103</th><td><b>private</b>:</td></tr>
+<tr><th id="104">104</th><td>    apply_visitor_delayed_cpp14_t&amp; <dfn class="decl fn" id="_ZN5boost29apply_visitor_delayed_cpp14_taSERKNS_29apply_visitor_delayed_cpp14_tIT_EE" title='boost::apply_visitor_delayed_cpp14_t::operator=' data-ref="_ZN5boost29apply_visitor_delayed_cpp14_taSERKNS_29apply_visitor_delayed_cpp14_tIT_EE"><b>operator</b>=</dfn>(<em>const</em> apply_visitor_delayed_cpp14_t&amp;);</td></tr>
+<tr><th id="105">105</th><td></td></tr>
+<tr><th id="106">106</th><td>};</td></tr>
+<tr><th id="107">107</th><td></td></tr>
+<tr><th id="108">108</th><td><b>template</b> &lt;<b>typename</b> Visitor&gt;</td></tr>
+<tr><th id="109">109</th><td><b>inline</b>  <b>typename</b> <span class="namespace">boost::</span><a class="type" href="../../../../../core/include/boost/core/enable_if.hpp.html#boost::disable_if" title='boost::disable_if' data-ref="boost::disable_if">disable_if</a>&lt;</td></tr>
+<tr><th id="110">110</th><td>        <span class="namespace">boost::detail::variant::</span><a class="type" href="has_result_type.hpp.html#boost::detail::variant::has_result_type" title='boost::detail::variant::has_result_type' data-ref="boost::detail::variant::has_result_type">has_result_type</a>&lt;Visitor&gt;,</td></tr>
+<tr><th id="111">111</th><td>        <a class="type" href="#boost::apply_visitor_delayed_cpp14_t" title='boost::apply_visitor_delayed_cpp14_t' data-ref="boost::apply_visitor_delayed_cpp14_t">apply_visitor_delayed_cpp14_t</a>&lt;Visitor&gt;</td></tr>
+<tr><th id="112">112</th><td>    &gt;::type <dfn class="decl def fn" id="_ZN5boost13apply_visitorERT_" title='boost::apply_visitor' data-ref="_ZN5boost13apply_visitorERT_">apply_visitor</dfn>(Visitor&amp; <dfn class="local col8 decl" id="388visitor" title='visitor' data-type='Visitor &amp;' data-ref="388visitor">visitor</dfn>)</td></tr>
+<tr><th id="113">113</th><td>{</td></tr>
+<tr><th id="114">114</th><td>    <b>return</b> <a class="type" href="#boost::apply_visitor_delayed_cpp14_t" title='boost::apply_visitor_delayed_cpp14_t' data-ref="boost::apply_visitor_delayed_cpp14_t">apply_visitor_delayed_cpp14_t</a>&lt;Visitor&gt;(<a class="local col8 ref" href="#388visitor" title='visitor' data-ref="388visitor">visitor</a>);</td></tr>
+<tr><th id="115">115</th><td>}</td></tr>
+<tr><th id="116">116</th><td></td></tr>
+<tr><th id="117">117</th><td><u>#<span data-ppcond="81">endif</span> // !defined(BOOST_NO_CXX14_DECLTYPE_AUTO)</u></td></tr>
+<tr><th id="118">118</th><td></td></tr>
+<tr><th id="119">119</th><td></td></tr>
+<tr><th id="120">120</th><td>} <i>// namespace boost</i></td></tr>
+<tr><th id="121">121</th><td></td></tr>
+<tr><th id="122">122</th><td><u>#<span data-ppcond="13">endif</span> // BOOST_VARIANT_DETAIL_APPLY_VISITOR_DELAYED_HPP</u></td></tr>
+<tr><th id="123">123</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../../../../../log/src/date_time_format_parser.cpp.html'>boost-1.85.0/libs/log/src/date_time_format_parser.cpp</a><br/>Generated on <em>2024-Jun-14</em> from project boost-1.85.0 revision <em>1.85.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

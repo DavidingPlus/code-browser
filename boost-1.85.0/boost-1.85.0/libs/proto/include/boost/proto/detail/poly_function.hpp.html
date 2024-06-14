@@ -1,0 +1,253 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>poly_function.hpp source code [boost-1.85.0/libs/proto/include/boost/proto/detail/poly_function.hpp] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="boost::proto::detail::arg,boost::proto::detail::is_poly_function,boost::proto::detail::normalize_arg,boost::proto::detail::poly_function,boost::proto::detail::poly_function_base,boost::proto::detail::poly_function_traits "/>
+<link rel="stylesheet" href="../../../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'boost-1.85.0/libs/proto/include/boost/proto/detail/poly_function.hpp'; var root_path = '../../../../../../..'; var data_path = '../../../../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../../../..'>boost-1.85.0</a>/<a href='../../../../..'>libs</a>/<a href='../../../..'>proto</a>/<a href='../../..'>include</a>/<a href='../..'>boost</a>/<a href='..'>proto</a>/<a href='./'>detail</a>/<a href='poly_function.hpp.html'>poly_function.hpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="2">2</th><td><i>/// \file poly_function.hpp</i></td></tr>
+<tr><th id="3">3</th><td><i>/// A wrapper that makes a tr1-style function object that handles const</i></td></tr>
+<tr><th id="4">4</th><td><i>/// and non-const refs and reference_wrapper arguments, too, and forwards</i></td></tr>
+<tr><th id="5">5</th><td><i>/// the arguments on to the specified implementation.</i></td></tr>
+<tr><th id="6">6</th><td><i>//</i></td></tr>
+<tr><th id="7">7</th><td><i>//  Copyright 2008 Eric Niebler. Distributed under the Boost</i></td></tr>
+<tr><th id="8">8</th><td><i>//  Software License, Version 1.0. (See accompanying file</i></td></tr>
+<tr><th id="9">9</th><td><i>//  LICENSE_1_0.txt or copy at <a href="http://www.boost.org/LICENSE_1_0.txt">http://www.boost.org/LICENSE_1_0.txt</a>)</i></td></tr>
+<tr><th id="10">10</th><td></td></tr>
+<tr><th id="11">11</th><td><u>#<span data-ppcond="11">ifndef</span> <span class="macro" data-ref="_M/BOOST_PROTO_DETAIL_POLY_FUNCTION_EAN_2008_05_02">BOOST_PROTO_DETAIL_POLY_FUNCTION_EAN_2008_05_02</span></u></td></tr>
+<tr><th id="12">12</th><td><u>#define <dfn class="macro" id="_M/BOOST_PROTO_DETAIL_POLY_FUNCTION_EAN_2008_05_02" data-ref="_M/BOOST_PROTO_DETAIL_POLY_FUNCTION_EAN_2008_05_02">BOOST_PROTO_DETAIL_POLY_FUNCTION_EAN_2008_05_02</dfn></u></td></tr>
+<tr><th id="13">13</th><td></td></tr>
+<tr><th id="14">14</th><td><u>#include <a href="../../../../../core/include/boost/ref.hpp.html">&lt;boost/ref.hpp&gt;</a></u></td></tr>
+<tr><th id="15">15</th><td><u>#include <a href="../../../../../mpl/include/boost/mpl/bool.hpp.html">&lt;boost/mpl/bool.hpp&gt;</a></u></td></tr>
+<tr><th id="16">16</th><td><u>#include <a href="../../../../../mpl/include/boost/mpl/void.hpp.html">&lt;boost/mpl/void.hpp&gt;</a></u></td></tr>
+<tr><th id="17">17</th><td><u>#include <a href="../../../../../mpl/include/boost/mpl/size_t.hpp.html">&lt;boost/mpl/size_t.hpp&gt;</a></u></td></tr>
+<tr><th id="18">18</th><td><u>#include <a href="../../../../../mpl/include/boost/mpl/eval_if.hpp.html">&lt;boost/mpl/eval_if.hpp&gt;</a></u></td></tr>
+<tr><th id="19">19</th><td><u>#include <a href="../../../../../preprocessor/include/boost/preprocessor/cat.hpp.html">&lt;boost/preprocessor/cat.hpp&gt;</a></u></td></tr>
+<tr><th id="20">20</th><td><u>#include <a href="../../../../../preprocessor/include/boost/preprocessor/facilities/intercept.hpp.html">&lt;boost/preprocessor/facilities/intercept.hpp&gt;</a></u></td></tr>
+<tr><th id="21">21</th><td><u>#include <a href="../../../../../preprocessor/include/boost/preprocessor/iteration/iterate.hpp.html">&lt;boost/preprocessor/iteration/iterate.hpp&gt;</a></u></td></tr>
+<tr><th id="22">22</th><td><u>#include <a href="../../../../../preprocessor/include/boost/preprocessor/repetition/enum.hpp.html">&lt;boost/preprocessor/repetition/enum.hpp&gt;</a></u></td></tr>
+<tr><th id="23">23</th><td><u>#include <a href="../../../../../preprocessor/include/boost/preprocessor/repetition/enum_params.hpp.html">&lt;boost/preprocessor/repetition/enum_params.hpp&gt;</a></u></td></tr>
+<tr><th id="24">24</th><td><u>#include <a href="../../../../../preprocessor/include/boost/preprocessor/repetition/enum_trailing_params.hpp.html">&lt;boost/preprocessor/repetition/enum_trailing_params.hpp&gt;</a></u></td></tr>
+<tr><th id="25">25</th><td><u>#include <a href="../../../../../preprocessor/include/boost/preprocessor/repetition/enum_binary_params.hpp.html">&lt;boost/preprocessor/repetition/enum_binary_params.hpp&gt;</a></u></td></tr>
+<tr><th id="26">26</th><td><u>#include <a href="../proto_fwd.hpp.html">&lt;boost/proto/proto_fwd.hpp&gt;</a></u></td></tr>
+<tr><th id="27">27</th><td><u>#include <a href="is_noncopyable.hpp.html">&lt;boost/proto/detail/is_noncopyable.hpp&gt;</a></u></td></tr>
+<tr><th id="28">28</th><td></td></tr>
+<tr><th id="29">29</th><td><u>#<span data-ppcond="29">ifdef</span> <span class="macro" data-ref="_M/_MSC_VER">_MSC_VER</span></u></td></tr>
+<tr><th id="30">30</th><td><u># pragma warning(push)</u></td></tr>
+<tr><th id="31">31</th><td><u># pragma warning(disable: 4181) // const applied to reference type</u></td></tr>
+<tr><th id="32">32</th><td><u>#<span data-ppcond="29">endif</span></u></td></tr>
+<tr><th id="33">33</th><td></td></tr>
+<tr><th id="34">34</th><td><b>namespace</b> <span class="namespace">boost</span> { <b>namespace</b> <span class="namespace">proto</span> { <b>namespace</b> <span class="namespace">detail</span></td></tr>
+<tr><th id="35">35</th><td>{</td></tr>
+<tr><th id="36">36</th><td></td></tr>
+<tr><th id="37">37</th><td>    <i>////////////////////////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="38">38</th><td>    <b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="39">39</th><td>    <b>struct</b> <dfn class="type def" id="boost::proto::detail::normalize_arg" title='boost::proto::detail::normalize_arg' data-ref="boost::proto::detail::normalize_arg">normalize_arg</dfn></td></tr>
+<tr><th id="40">40</th><td>    {</td></tr>
+<tr><th id="41">41</th><td>        <b>typedef</b> <b>typename</b> <span class="namespace">mpl::</span><a class="type" href="../../../../../mpl/include/boost/mpl/if.hpp.html#boost::mpl::if_c" title='boost::mpl::if_c' data-ref="boost::mpl::if_c">if_c</a>&lt;<a class="type" href="is_noncopyable.hpp.html#boost::proto::detail::is_noncopyable" title='boost::proto::detail::is_noncopyable' data-ref="boost::proto::detail::is_noncopyable">is_noncopyable</a>&lt;T&gt;::value, T &amp;, T&gt;::type <dfn class="typedef" id="boost::proto::detail::normalize_arg::type" title='boost::proto::detail::normalize_arg::type' data-type='typename mpl::if_c&lt;is_noncopyable&lt;T&gt;::value, T &amp;, T&gt;::type' data-ref="boost::proto::detail::normalize_arg::type">type</dfn>;</td></tr>
+<tr><th id="42">42</th><td>        <b>typedef</b> T &amp;<dfn class="typedef" id="boost::proto::detail::normalize_arg::reference" title='boost::proto::detail::normalize_arg::reference' data-type='T &amp;' data-ref="boost::proto::detail::normalize_arg::reference">reference</dfn>;</td></tr>
+<tr><th id="43">43</th><td>    };</td></tr>
+<tr><th id="44">44</th><td></td></tr>
+<tr><th id="45">45</th><td>    <b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="46">46</th><td>    <b>struct</b> <dfn class="type def" id="boost::proto::detail::normalize_arg" title='boost::proto::detail::normalize_arg' data-ref="boost::proto::detail::normalize_arg">normalize_arg</dfn>&lt;T <em>const</em>&gt;</td></tr>
+<tr><th id="47">47</th><td>    {</td></tr>
+<tr><th id="48">48</th><td>        <b>typedef</b> <b>typename</b> <span class="namespace">mpl::</span><a class="type" href="../../../../../mpl/include/boost/mpl/if.hpp.html#boost::mpl::if_c" title='boost::mpl::if_c' data-ref="boost::mpl::if_c">if_c</a>&lt;<a class="type" href="is_noncopyable.hpp.html#boost::proto::detail::is_noncopyable" title='boost::proto::detail::is_noncopyable' data-ref="boost::proto::detail::is_noncopyable">is_noncopyable</a>&lt;T&gt;::value, T <em>const</em> &amp;, T&gt;::type <dfn class="typedef" id="boost::proto::detail::normalize_arg{consttype-parameter-0-0}::type" title='boost::proto::detail::normalize_arg&lt;const type-parameter-0-0&gt;::type' data-type='typename mpl::if_c&lt;is_noncopyable&lt;T&gt;::value, const T &amp;, T&gt;::type' data-ref="boost::proto::detail::normalize_arg{consttype-parameter-0-0}::type">type</dfn>;</td></tr>
+<tr><th id="49">49</th><td>        <b>typedef</b> T <em>const</em> &amp;<dfn class="typedef" id="boost::proto::detail::normalize_arg{consttype-parameter-0-0}::reference" title='boost::proto::detail::normalize_arg&lt;const type-parameter-0-0&gt;::reference' data-type='const T &amp;' data-ref="boost::proto::detail::normalize_arg{consttype-parameter-0-0}::reference">reference</dfn>;</td></tr>
+<tr><th id="50">50</th><td>    };</td></tr>
+<tr><th id="51">51</th><td></td></tr>
+<tr><th id="52">52</th><td>    <b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="53">53</th><td>    <b>struct</b> <dfn class="type def" id="boost::proto::detail::normalize_arg" title='boost::proto::detail::normalize_arg' data-ref="boost::proto::detail::normalize_arg">normalize_arg</dfn>&lt;T &amp;&gt;</td></tr>
+<tr><th id="54">54</th><td>    {</td></tr>
+<tr><th id="55">55</th><td>        <b>typedef</b> <b>typename</b> <span class="namespace">mpl::</span><a class="type" href="../../../../../mpl/include/boost/mpl/if.hpp.html#boost::mpl::if_c" title='boost::mpl::if_c' data-ref="boost::mpl::if_c">if_c</a>&lt;<a class="type" href="is_noncopyable.hpp.html#boost::proto::detail::is_noncopyable" title='boost::proto::detail::is_noncopyable' data-ref="boost::proto::detail::is_noncopyable">is_noncopyable</a>&lt;T&gt;::value, T &amp;, T&gt;::type <dfn class="typedef" id="boost::proto::detail::normalize_arg{type-parameter-0-0&amp;}::type" title='boost::proto::detail::normalize_arg&lt;type-parameter-0-0 &amp;&gt;::type' data-type='typename mpl::if_c&lt;is_noncopyable&lt;T&gt;::value, T &amp;, T&gt;::type' data-ref="boost::proto::detail::normalize_arg{type-parameter-0-0&amp;}::type">type</dfn>;</td></tr>
+<tr><th id="56">56</th><td>        <b>typedef</b> T &amp;<dfn class="typedef" id="boost::proto::detail::normalize_arg{type-parameter-0-0&amp;}::reference" title='boost::proto::detail::normalize_arg&lt;type-parameter-0-0 &amp;&gt;::reference' data-type='T &amp;' data-ref="boost::proto::detail::normalize_arg{type-parameter-0-0&amp;}::reference">reference</dfn>;</td></tr>
+<tr><th id="57">57</th><td>    };</td></tr>
+<tr><th id="58">58</th><td></td></tr>
+<tr><th id="59">59</th><td>    <b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="60">60</th><td>    <b>struct</b> <dfn class="type def" id="boost::proto::detail::normalize_arg" title='boost::proto::detail::normalize_arg' data-ref="boost::proto::detail::normalize_arg">normalize_arg</dfn>&lt;T <em>const</em> &amp;&gt;</td></tr>
+<tr><th id="61">61</th><td>    {</td></tr>
+<tr><th id="62">62</th><td>        <b>typedef</b> <b>typename</b> <span class="namespace">mpl::</span><a class="type" href="../../../../../mpl/include/boost/mpl/if.hpp.html#boost::mpl::if_c" title='boost::mpl::if_c' data-ref="boost::mpl::if_c">if_c</a>&lt;<a class="type" href="is_noncopyable.hpp.html#boost::proto::detail::is_noncopyable" title='boost::proto::detail::is_noncopyable' data-ref="boost::proto::detail::is_noncopyable">is_noncopyable</a>&lt;T&gt;::value, T <em>const</em> &amp;, T&gt;::type <dfn class="typedef" id="boost::proto::detail::normalize_arg{consttype-parameter-0-0&amp;}::type" title='boost::proto::detail::normalize_arg&lt;const type-parameter-0-0 &amp;&gt;::type' data-type='typename mpl::if_c&lt;is_noncopyable&lt;T&gt;::value, const T &amp;, T&gt;::type' data-ref="boost::proto::detail::normalize_arg{consttype-parameter-0-0&amp;}::type">type</dfn>;</td></tr>
+<tr><th id="63">63</th><td>        <b>typedef</b> T <em>const</em> &amp;<dfn class="typedef" id="boost::proto::detail::normalize_arg{consttype-parameter-0-0&amp;}::reference" title='boost::proto::detail::normalize_arg&lt;const type-parameter-0-0 &amp;&gt;::reference' data-type='const T &amp;' data-ref="boost::proto::detail::normalize_arg{consttype-parameter-0-0&amp;}::reference">reference</dfn>;</td></tr>
+<tr><th id="64">64</th><td>    };</td></tr>
+<tr><th id="65">65</th><td></td></tr>
+<tr><th id="66">66</th><td>    <b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="67">67</th><td>    <b>struct</b> <dfn class="type def" id="boost::proto::detail::normalize_arg" title='boost::proto::detail::normalize_arg' data-ref="boost::proto::detail::normalize_arg">normalize_arg</dfn>&lt;<span class="namespace">boost::</span><a class="type" href="../../../../../core/include/boost/core/ref.hpp.html#boost::reference_wrapper" title='boost::reference_wrapper' data-ref="boost::reference_wrapper">reference_wrapper</a>&lt;T&gt; &gt;</td></tr>
+<tr><th id="68">68</th><td>    {</td></tr>
+<tr><th id="69">69</th><td>        <b>typedef</b> T &amp;<dfn class="typedef" id="boost::proto::detail::normalize_arg{reference_wrapper{type-parameter-0-0}}::type" title='boost::proto::detail::normalize_arg&lt;reference_wrapper&lt;type-parameter-0-0&gt;&gt;::type' data-type='T &amp;' data-ref="boost::proto::detail::normalize_arg{reference_wrapper{type-parameter-0-0}}::type">type</dfn>;</td></tr>
+<tr><th id="70">70</th><td>        <b>typedef</b> T &amp;<dfn class="typedef" id="boost::proto::detail::normalize_arg{reference_wrapper{type-parameter-0-0}}::reference" title='boost::proto::detail::normalize_arg&lt;reference_wrapper&lt;type-parameter-0-0&gt;&gt;::reference' data-type='T &amp;' data-ref="boost::proto::detail::normalize_arg{reference_wrapper{type-parameter-0-0}}::reference">reference</dfn>;</td></tr>
+<tr><th id="71">71</th><td>    };</td></tr>
+<tr><th id="72">72</th><td></td></tr>
+<tr><th id="73">73</th><td>    <b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="74">74</th><td>    <b>struct</b> <dfn class="type def" id="boost::proto::detail::normalize_arg" title='boost::proto::detail::normalize_arg' data-ref="boost::proto::detail::normalize_arg">normalize_arg</dfn>&lt;<span class="namespace">boost::</span><a class="type" href="../../../../../core/include/boost/core/ref.hpp.html#boost::reference_wrapper" title='boost::reference_wrapper' data-ref="boost::reference_wrapper">reference_wrapper</a>&lt;T&gt; <em>const</em>&gt;</td></tr>
+<tr><th id="75">75</th><td>    {</td></tr>
+<tr><th id="76">76</th><td>        <b>typedef</b> T &amp;<dfn class="typedef" id="boost::proto::detail::normalize_arg{constreference_wrapper{type-parameter-0-0}}::type" title='boost::proto::detail::normalize_arg&lt;const reference_wrapper&lt;type-parameter-0-0&gt;&gt;::type' data-type='T &amp;' data-ref="boost::proto::detail::normalize_arg{constreference_wrapper{type-parameter-0-0}}::type">type</dfn>;</td></tr>
+<tr><th id="77">77</th><td>        <b>typedef</b> T &amp;<dfn class="typedef" id="boost::proto::detail::normalize_arg{constreference_wrapper{type-parameter-0-0}}::reference" title='boost::proto::detail::normalize_arg&lt;const reference_wrapper&lt;type-parameter-0-0&gt;&gt;::reference' data-type='T &amp;' data-ref="boost::proto::detail::normalize_arg{constreference_wrapper{type-parameter-0-0}}::reference">reference</dfn>;</td></tr>
+<tr><th id="78">78</th><td>    };</td></tr>
+<tr><th id="79">79</th><td></td></tr>
+<tr><th id="80">80</th><td>    <b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="81">81</th><td>    <b>struct</b> <dfn class="type def" id="boost::proto::detail::normalize_arg" title='boost::proto::detail::normalize_arg' data-ref="boost::proto::detail::normalize_arg">normalize_arg</dfn>&lt;<span class="namespace">boost::</span><a class="type" href="../../../../../core/include/boost/core/ref.hpp.html#boost::reference_wrapper" title='boost::reference_wrapper' data-ref="boost::reference_wrapper">reference_wrapper</a>&lt;T&gt; &amp;&gt;</td></tr>
+<tr><th id="82">82</th><td>    {</td></tr>
+<tr><th id="83">83</th><td>        <b>typedef</b> T &amp;<dfn class="typedef" id="boost::proto::detail::normalize_arg{reference_wrapper{type-parameter-0-0}&amp;}::type" title='boost::proto::detail::normalize_arg&lt;reference_wrapper&lt;type-parameter-0-0&gt; &amp;&gt;::type' data-type='T &amp;' data-ref="boost::proto::detail::normalize_arg{reference_wrapper{type-parameter-0-0}&amp;}::type">type</dfn>;</td></tr>
+<tr><th id="84">84</th><td>        <b>typedef</b> T &amp;<dfn class="typedef" id="boost::proto::detail::normalize_arg{reference_wrapper{type-parameter-0-0}&amp;}::reference" title='boost::proto::detail::normalize_arg&lt;reference_wrapper&lt;type-parameter-0-0&gt; &amp;&gt;::reference' data-type='T &amp;' data-ref="boost::proto::detail::normalize_arg{reference_wrapper{type-parameter-0-0}&amp;}::reference">reference</dfn>;</td></tr>
+<tr><th id="85">85</th><td>    };</td></tr>
+<tr><th id="86">86</th><td></td></tr>
+<tr><th id="87">87</th><td>    <b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="88">88</th><td>    <b>struct</b> <dfn class="type def" id="boost::proto::detail::normalize_arg" title='boost::proto::detail::normalize_arg' data-ref="boost::proto::detail::normalize_arg">normalize_arg</dfn>&lt;<span class="namespace">boost::</span><a class="type" href="../../../../../core/include/boost/core/ref.hpp.html#boost::reference_wrapper" title='boost::reference_wrapper' data-ref="boost::reference_wrapper">reference_wrapper</a>&lt;T&gt; <em>const</em> &amp;&gt;</td></tr>
+<tr><th id="89">89</th><td>    {</td></tr>
+<tr><th id="90">90</th><td>        <b>typedef</b> T &amp;<dfn class="typedef" id="boost::proto::detail::normalize_arg{constreference_wrapper{type-parameter-0-0}&amp;}::type" title='boost::proto::detail::normalize_arg&lt;const reference_wrapper&lt;type-parameter-0-0&gt; &amp;&gt;::type' data-type='T &amp;' data-ref="boost::proto::detail::normalize_arg{constreference_wrapper{type-parameter-0-0}&amp;}::type">type</dfn>;</td></tr>
+<tr><th id="91">91</th><td>        <b>typedef</b> T &amp;<dfn class="typedef" id="boost::proto::detail::normalize_arg{constreference_wrapper{type-parameter-0-0}&amp;}::reference" title='boost::proto::detail::normalize_arg&lt;const reference_wrapper&lt;type-parameter-0-0&gt; &amp;&gt;::reference' data-type='T &amp;' data-ref="boost::proto::detail::normalize_arg{constreference_wrapper{type-parameter-0-0}&amp;}::reference">reference</dfn>;</td></tr>
+<tr><th id="92">92</th><td>    };</td></tr>
+<tr><th id="93">93</th><td></td></tr>
+<tr><th id="94">94</th><td>    <i>////////////////////////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="95">95</th><td>    <b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="96">96</th><td>    <b>struct</b> <dfn class="type def" id="boost::proto::detail::arg" title='boost::proto::detail::arg' data-ref="boost::proto::detail::arg">arg</dfn></td></tr>
+<tr><th id="97">97</th><td>    {</td></tr>
+<tr><th id="98">98</th><td>        <b>typedef</b> T <em>const</em> &amp;<dfn class="typedef" id="boost::proto::detail::arg::type" title='boost::proto::detail::arg::type' data-type='const T &amp;' data-ref="boost::proto::detail::arg::type">type</dfn>;</td></tr>
+<tr><th id="99">99</th><td></td></tr>
+<tr><th id="100">100</th><td>        <dfn class="decl def fn" id="_ZN5boost5proto6detail3argC1ERKT_" title='boost::proto::detail::arg::arg&lt;T&gt;' data-ref="_ZN5boost5proto6detail3argC1ERKT_">arg</dfn>(<a class="typedef" href="#boost::proto::detail::arg::type" title='boost::proto::detail::arg::type' data-type='const T &amp;' data-ref="boost::proto::detail::arg::type">type</a> <dfn class="local col9 decl" id="8759t" title='t' data-type='boost::proto::detail::arg::type' data-ref="8759t">t</dfn>)</td></tr>
+<tr><th id="101">101</th><td>          : <a class="member field" href="#boost::proto::detail::arg::value" title='boost::proto::detail::arg::value' data-ref="boost::proto::detail::arg::value">value</a>(<a class="local col9 ref" href="#8759t" title='t' data-ref="8759t">t</a>)</td></tr>
+<tr><th id="102">102</th><td>        {}</td></tr>
+<tr><th id="103">103</th><td></td></tr>
+<tr><th id="104">104</th><td>        <dfn class="decl def fn" id="_ZNK5boost5proto6detail3argcvRKT_Ev" title='boost::proto::detail::arg::operator const type-parameter-0-0 &amp;' data-ref="_ZNK5boost5proto6detail3argcvRKT_Ev"><b>operator</b> <a class="typedef" href="#boost::proto::detail::arg::type" title='boost::proto::detail::arg::type' data-type='const T &amp;' data-ref="boost::proto::detail::arg::type">type</a></dfn>() <em>const</em></td></tr>
+<tr><th id="105">105</th><td>        {</td></tr>
+<tr><th id="106">106</th><td>            <b>return</b> <b>this</b>-&gt;value;</td></tr>
+<tr><th id="107">107</th><td>        }</td></tr>
+<tr><th id="108">108</th><td></td></tr>
+<tr><th id="109">109</th><td>        <a class="typedef" href="#boost::proto::detail::arg::type" title='boost::proto::detail::arg::type' data-type='const T &amp;' data-ref="boost::proto::detail::arg::type">type</a> <dfn class="decl def fn" id="_ZNK5boost5proto6detail3argclEv" title='boost::proto::detail::arg::operator()' data-ref="_ZNK5boost5proto6detail3argclEv"><b>operator</b>()</dfn>() <em>const</em></td></tr>
+<tr><th id="110">110</th><td>        {</td></tr>
+<tr><th id="111">111</th><td>            <b>return</b> <b>this</b>-&gt;value;</td></tr>
+<tr><th id="112">112</th><td>        }</td></tr>
+<tr><th id="113">113</th><td></td></tr>
+<tr><th id="114">114</th><td>        <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#776" title="arg &amp;operator =(arg const &amp;) = delete;" data-ref="_M/BOOST_DELETED_FUNCTION">BOOST_DELETED_FUNCTION</a>(arg &amp;<b>operator</b> =(arg <em>const</em> &amp;))</td></tr>
+<tr><th id="115">115</th><td>    <b>private</b>:</td></tr>
+<tr><th id="116">116</th><td>        <a class="typedef" href="#boost::proto::detail::arg::type" title='boost::proto::detail::arg::type' data-type='const T &amp;' data-ref="boost::proto::detail::arg::type">type</a> <dfn class="decl field" id="boost::proto::detail::arg::value" title='boost::proto::detail::arg::value' data-ref="boost::proto::detail::arg::value">value</dfn>;</td></tr>
+<tr><th id="117">117</th><td>    };</td></tr>
+<tr><th id="118">118</th><td></td></tr>
+<tr><th id="119">119</th><td>    <b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="120">120</th><td>    <b>struct</b> <dfn class="type def" id="boost::proto::detail::arg" title='boost::proto::detail::arg' data-ref="boost::proto::detail::arg">arg</dfn>&lt;T &amp;&gt;</td></tr>
+<tr><th id="121">121</th><td>    {</td></tr>
+<tr><th id="122">122</th><td>        <b>typedef</b> T &amp;<dfn class="typedef" id="boost::proto::detail::arg{type-parameter-0-0&amp;}::type" title='boost::proto::detail::arg&lt;type-parameter-0-0 &amp;&gt;::type' data-type='T &amp;' data-ref="boost::proto::detail::arg{type-parameter-0-0&amp;}::type">type</dfn>;</td></tr>
+<tr><th id="123">123</th><td></td></tr>
+<tr><th id="124">124</th><td>        <dfn class="decl def fn" id="_ZN5boost5proto6detail3argIRT_EC1ES4_" title='boost::proto::detail::arg&lt;type-parameter-0-0 &amp;&gt;::arg&lt;type-parameter-0-0 &amp;&gt;' data-ref="_ZN5boost5proto6detail3argIRT_EC1ES4_">arg</dfn>(<a class="typedef" href="#boost::proto::detail::arg{type-parameter-0-0&amp;}::type" title='boost::proto::detail::arg&lt;type-parameter-0-0 &amp;&gt;::type' data-type='T &amp;' data-ref="boost::proto::detail::arg{type-parameter-0-0&amp;}::type">type</a> <dfn class="local col0 decl" id="8760t" title='t' data-type='boost::proto::detail::arg&lt;type-parameter-0-0 &amp;&gt;::type' data-ref="8760t">t</dfn>)</td></tr>
+<tr><th id="125">125</th><td>          : <a class="member field" href="#boost::proto::detail::arg::value" title='boost::proto::detail::arg&lt;type-parameter-0-0 &amp;&gt;::value' data-ref="boost::proto::detail::arg::value">value</a>(<a class="local col0 ref" href="#8760t" title='t' data-ref="8760t">t</a>)</td></tr>
+<tr><th id="126">126</th><td>        {}</td></tr>
+<tr><th id="127">127</th><td></td></tr>
+<tr><th id="128">128</th><td>        <dfn class="decl def fn" id="_ZNK5boost5proto6detail3argIRT_EcvS4_Ev" title='boost::proto::detail::arg&lt;type-parameter-0-0 &amp;&gt;::operator type-parameter-0-0 &amp;' data-ref="_ZNK5boost5proto6detail3argIRT_EcvS4_Ev"><b>operator</b> <a class="typedef" href="#boost::proto::detail::arg{type-parameter-0-0&amp;}::type" title='boost::proto::detail::arg&lt;type-parameter-0-0 &amp;&gt;::type' data-type='T &amp;' data-ref="boost::proto::detail::arg{type-parameter-0-0&amp;}::type">type</a></dfn>() <em>const</em></td></tr>
+<tr><th id="129">129</th><td>        {</td></tr>
+<tr><th id="130">130</th><td>            <b>return</b> <b>this</b>-&gt;value;</td></tr>
+<tr><th id="131">131</th><td>        }</td></tr>
+<tr><th id="132">132</th><td></td></tr>
+<tr><th id="133">133</th><td>        <a class="typedef" href="#boost::proto::detail::arg{type-parameter-0-0&amp;}::type" title='boost::proto::detail::arg&lt;type-parameter-0-0 &amp;&gt;::type' data-type='T &amp;' data-ref="boost::proto::detail::arg{type-parameter-0-0&amp;}::type">type</a> <dfn class="decl def fn" id="_ZNK5boost5proto6detail3argIRT_EclEv" title='boost::proto::detail::arg&lt;type-parameter-0-0 &amp;&gt;::operator()' data-ref="_ZNK5boost5proto6detail3argIRT_EclEv"><b>operator</b>()</dfn>() <em>const</em></td></tr>
+<tr><th id="134">134</th><td>        {</td></tr>
+<tr><th id="135">135</th><td>            <b>return</b> <b>this</b>-&gt;value;</td></tr>
+<tr><th id="136">136</th><td>        }</td></tr>
+<tr><th id="137">137</th><td></td></tr>
+<tr><th id="138">138</th><td>        <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#776" title="arg &amp;operator =(arg const &amp;) = delete;" data-ref="_M/BOOST_DELETED_FUNCTION">BOOST_DELETED_FUNCTION</a>(arg &amp;<b>operator</b> =(arg <em>const</em> &amp;))</td></tr>
+<tr><th id="139">139</th><td>    <b>private</b>:</td></tr>
+<tr><th id="140">140</th><td>        <a class="typedef" href="#boost::proto::detail::arg{type-parameter-0-0&amp;}::type" title='boost::proto::detail::arg&lt;type-parameter-0-0 &amp;&gt;::type' data-type='T &amp;' data-ref="boost::proto::detail::arg{type-parameter-0-0&amp;}::type">type</a> <dfn class="decl field" id="boost::proto::detail::arg::value" title='boost::proto::detail::arg&lt;type-parameter-0-0 &amp;&gt;::value' data-ref="boost::proto::detail::arg::value">value</dfn>;</td></tr>
+<tr><th id="141">141</th><td>    };</td></tr>
+<tr><th id="142">142</th><td></td></tr>
+<tr><th id="143">143</th><td>    <i>////////////////////////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="144">144</th><td>    <b>template</b>&lt;<b>typename</b> T, <b>typename</b> Void = <em>void</em>&gt;</td></tr>
+<tr><th id="145">145</th><td>    <b>struct</b> <dfn class="type def" id="boost::proto::detail::is_poly_function" title='boost::proto::detail::is_poly_function' data-ref="boost::proto::detail::is_poly_function">is_poly_function</dfn></td></tr>
+<tr><th id="146">146</th><td>      : <span class="namespace">mpl::</span>false_</td></tr>
+<tr><th id="147">147</th><td>    {};</td></tr>
+<tr><th id="148">148</th><td></td></tr>
+<tr><th id="149">149</th><td>    <b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="150">150</th><td>    <b>struct</b> <dfn class="type def" id="boost::proto::detail::is_poly_function" title='boost::proto::detail::is_poly_function' data-ref="boost::proto::detail::is_poly_function">is_poly_function</dfn>&lt;T, <b>typename</b> T::is_poly_function_base_&gt;</td></tr>
+<tr><th id="151">151</th><td>      : <span class="namespace">mpl::</span>true_</td></tr>
+<tr><th id="152">152</th><td>    {};</td></tr>
+<tr><th id="153">153</th><td></td></tr>
+<tr><th id="154">154</th><td>    <i>////////////////////////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="155">155</th><td>    <u>#define <dfn class="macro" id="_M/BOOST_PROTO_POLY_FUNCTION" data-ref="_M/BOOST_PROTO_POLY_FUNCTION">BOOST_PROTO_POLY_FUNCTION</dfn>()                                                             \</u></td></tr>
+<tr><th id="156">156</th><td><u>        typedef void <dfn class="typedef" id="boost::proto::detail::poly_function_base::is_poly_function_base_" title='boost::proto::detail::poly_function_base::is_poly_function_base_' data-type='void' data-ref="boost::proto::detail::poly_function_base::is_poly_function_base_">is_poly_function_base_</dfn>;                                                        \</u></td></tr>
+<tr><th id="157">157</th><td><u>        /**/</u></td></tr>
+<tr><th id="158">158</th><td></td></tr>
+<tr><th id="159">159</th><td>    <i>////////////////////////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="160">160</th><td>    <b>struct</b> <dfn class="type def" id="boost::proto::detail::poly_function_base" title='boost::proto::detail::poly_function_base' data-ref="boost::proto::detail::poly_function_base">poly_function_base</dfn></td></tr>
+<tr><th id="161">161</th><td>    {</td></tr>
+<tr><th id="162">162</th><td>        <i class="doc">/// INTERNAL ONLY</i></td></tr>
+<tr><th id="163">163</th><td>        <a class="macro" href="#155" title="typedef void is_poly_function_base_;" data-ref="_M/BOOST_PROTO_POLY_FUNCTION">BOOST_PROTO_POLY_FUNCTION</a>()</td></tr>
+<tr><th id="164">164</th><td>    };</td></tr>
+<tr><th id="165">165</th><td></td></tr>
+<tr><th id="166">166</th><td>    <i>////////////////////////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="167">167</th><td>    <b>template</b>&lt;<b>typename</b> Derived, <b>typename</b> NullaryResult = <em>void</em>&gt;</td></tr>
+<tr><th id="168">168</th><td>    <b>struct</b> <dfn class="type def" id="boost::proto::detail::poly_function" title='boost::proto::detail::poly_function' data-ref="boost::proto::detail::poly_function">poly_function</dfn></td></tr>
+<tr><th id="169">169</th><td>      : <a class="type" href="#boost::proto::detail::poly_function_base" title='boost::proto::detail::poly_function_base' data-ref="boost::proto::detail::poly_function_base">poly_function_base</a></td></tr>
+<tr><th id="170">170</th><td>    {</td></tr>
+<tr><th id="171">171</th><td>        <b>template</b>&lt;<b>typename</b> Sig&gt;</td></tr>
+<tr><th id="172">172</th><td>        <b>struct</b> <dfn class="type" id="boost::proto::detail::poly_function::result" title='boost::proto::detail::poly_function::result' data-ref="boost::proto::detail::poly_function::result">result</dfn>;</td></tr>
+<tr><th id="173">173</th><td></td></tr>
+<tr><th id="174">174</th><td>        <b>template</b>&lt;<b>typename</b> This&gt;</td></tr>
+<tr><th id="175">175</th><td>        <b>struct</b> <dfn class="type def" id="boost::proto::detail::poly_function::result" title='boost::proto::detail::poly_function::result' data-ref="boost::proto::detail::poly_function::result">result</dfn>&lt;This()&gt;</td></tr>
+<tr><th id="176">176</th><td>          : Derived::<b>template</b> impl&lt;&gt;</td></tr>
+<tr><th id="177">177</th><td>        {</td></tr>
+<tr><th id="178">178</th><td>            <b>typedef</b> <b>typename</b> result::result_type <dfn class="typedef" id="boost::proto::detail::poly_function::result{type-parameter-1-0()}::type" title='boost::proto::detail::poly_function::result&lt;type-parameter-1-0 ()&gt;::type' data-type='typename result&lt;type-parameter-1-0 ()&gt;::result_type' data-ref="boost::proto::detail::poly_function::result{type-parameter-1-0()}::type">type</dfn>;</td></tr>
+<tr><th id="179">179</th><td>        };</td></tr>
+<tr><th id="180">180</th><td></td></tr>
+<tr><th id="181">181</th><td>        NullaryResult <dfn class="decl def fn" id="_ZNK5boost5proto6detail13poly_functionclEv" title='boost::proto::detail::poly_function::operator()' data-ref="_ZNK5boost5proto6detail13poly_functionclEv"><b>operator</b>()</dfn>() <em>const</em></td></tr>
+<tr><th id="182">182</th><td>        {</td></tr>
+<tr><th id="183">183</th><td>            <a class="type" href="#boost::proto::detail::poly_function::result" title='boost::proto::detail::poly_function::result' data-ref="boost::proto::detail::poly_function::result">result</a>&lt;Derived <em>const</em>()&gt; <dfn class="local col1 decl" id="8761impl" title='impl' data-type='result&lt;const Derived ()&gt;' data-ref="8761impl">impl</dfn>;</td></tr>
+<tr><th id="184">184</th><td>            <b>return</b> <a class="local col1 ref" href="#8761impl" title='impl' data-ref="8761impl">impl</a>();</td></tr>
+<tr><th id="185">185</th><td>        }</td></tr>
+<tr><th id="186">186</th><td></td></tr>
+<tr><th id="187">187</th><td>        <u>#include <a href="poly_function_funop.hpp.html">&lt;boost/proto/detail/poly_function_funop.hpp&gt;</a></u></td></tr>
+<tr><th id="188">188</th><td>    };</td></tr>
+<tr><th id="189">189</th><td></td></tr>
+<tr><th id="190">190</th><td>    <b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="191">191</th><td>    <b>struct</b> <dfn class="type" id="boost::proto::detail::wrap_t" title='boost::proto::detail::wrap_t' data-ref="boost::proto::detail::wrap_t">wrap_t</dfn>;</td></tr>
+<tr><th id="192">192</th><td></td></tr>
+<tr><th id="193">193</th><td>    <b>typedef</b> <em>char</em> <dfn class="typedef" id="boost::proto::detail::poly_function_t" title='boost::proto::detail::poly_function_t' data-type='char' data-ref="boost::proto::detail::poly_function_t">poly_function_t</dfn>;</td></tr>
+<tr><th id="194">194</th><td>    <b>typedef</b> <em>char</em> (&amp;<dfn class="typedef" id="boost::proto::detail::mono_function_t" title='boost::proto::detail::mono_function_t' data-type='char (&amp;)[2]' data-ref="boost::proto::detail::mono_function_t">mono_function_t</dfn>)[<var>2</var>];</td></tr>
+<tr><th id="195">195</th><td>    <b>typedef</b> <em>char</em> (&amp;<dfn class="typedef" id="boost::proto::detail::unknown_function_t" title='boost::proto::detail::unknown_function_t' data-type='char (&amp;)[3]' data-ref="boost::proto::detail::unknown_function_t">unknown_function_t</dfn>)[<var>3</var>];</td></tr>
+<tr><th id="196">196</th><td></td></tr>
+<tr><th id="197">197</th><td>    <b>template</b>&lt;<b>typename</b> T&gt; <a class="typedef" href="#boost::proto::detail::poly_function_t" title='boost::proto::detail::poly_function_t' data-type='char' data-ref="boost::proto::detail::poly_function_t">poly_function_t</a> <dfn class="decl fn" id="_ZN5boost5proto6detail18test_poly_functionEPT_PNS1_6wrap_tINS2_22is_poly_function_base_EEE" title='boost::proto::detail::test_poly_function' data-ref="_ZN5boost5proto6detail18test_poly_functionEPT_PNS1_6wrap_tINS2_22is_poly_function_base_EEE">test_poly_function</dfn>(T *, <a class="type" href="#boost::proto::detail::wrap_t" title='boost::proto::detail::wrap_t' data-ref="boost::proto::detail::wrap_t">wrap_t</a>&lt;<b>typename</b> T::is_poly_function_base_&gt; * = <var>0</var>);</td></tr>
+<tr><th id="198">198</th><td>    <b>template</b>&lt;<b>typename</b> T&gt; <a class="typedef" href="#boost::proto::detail::mono_function_t" title='boost::proto::detail::mono_function_t' data-type='char (&amp;)[2]' data-ref="boost::proto::detail::mono_function_t">mono_function_t</a> <dfn class="decl fn" id="_ZN5boost5proto6detail18test_poly_functionEPT_PNS1_6wrap_tINS2_11result_typeEEE" title='boost::proto::detail::test_poly_function' data-ref="_ZN5boost5proto6detail18test_poly_functionEPT_PNS1_6wrap_tINS2_11result_typeEEE">test_poly_function</dfn>(T *, <a class="type" href="#boost::proto::detail::wrap_t" title='boost::proto::detail::wrap_t' data-ref="boost::proto::detail::wrap_t">wrap_t</a>&lt;<b>typename</b> T::result_type&gt; * = <var>0</var>);</td></tr>
+<tr><th id="199">199</th><td>    <b>template</b>&lt;<b>typename</b> T&gt; <a class="typedef" href="#boost::proto::detail::unknown_function_t" title='boost::proto::detail::unknown_function_t' data-type='char (&amp;)[3]' data-ref="boost::proto::detail::unknown_function_t">unknown_function_t</a> <dfn class="decl fn" id="_ZN5boost5proto6detail18test_poly_functionEPT_z" title='boost::proto::detail::test_poly_function' data-ref="_ZN5boost5proto6detail18test_poly_functionEPT_z">test_poly_function</dfn>(T *, ...);</td></tr>
+<tr><th id="200">200</th><td></td></tr>
+<tr><th id="201">201</th><td>    <i>////////////////////////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="202">202</th><td>    <b>template</b>&lt;<b>typename</b> Fun, <b>typename</b> Sig, <b>typename</b> Switch = <span class="namespace">mpl::</span><a class="type" href="../../../../../mpl/include/boost/mpl/size_t_fwd.hpp.html#mpl_::size_t" title='mpl_::size_t' data-ref="mpl_::size_t">size_t</a>&lt;<b>sizeof</b>(test_poly_function&lt;Fun&gt;(<var>0</var>,<var>0</var>))&gt; &gt;</td></tr>
+<tr><th id="203">203</th><td>    <b>struct</b> <dfn class="type def" id="boost::proto::detail::poly_function_traits" title='boost::proto::detail::poly_function_traits' data-ref="boost::proto::detail::poly_function_traits">poly_function_traits</dfn></td></tr>
+<tr><th id="204">204</th><td>    {</td></tr>
+<tr><th id="205">205</th><td>        <b>typedef</b> <b>typename</b> Fun::<b>template</b> result&lt;Sig&gt;::type <dfn class="typedef" id="boost::proto::detail::poly_function_traits::result_type" title='boost::proto::detail::poly_function_traits::result_type' data-type='typename Fun::template result&lt;Sig&gt;::type' data-ref="boost::proto::detail::poly_function_traits::result_type">result_type</dfn>;</td></tr>
+<tr><th id="206">206</th><td>        <b>typedef</b> Fun <dfn class="typedef" id="boost::proto::detail::poly_function_traits::function_type" title='boost::proto::detail::poly_function_traits::function_type' data-type='Fun' data-ref="boost::proto::detail::poly_function_traits::function_type">function_type</dfn>;</td></tr>
+<tr><th id="207">207</th><td>    };</td></tr>
+<tr><th id="208">208</th><td></td></tr>
+<tr><th id="209">209</th><td>    <i>////////////////////////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="210">210</th><td>    <b>template</b>&lt;<b>typename</b> Fun, <b>typename</b> Sig&gt;</td></tr>
+<tr><th id="211">211</th><td>    <b>struct</b> <dfn class="type def" id="boost::proto::detail::poly_function_traits" title='boost::proto::detail::poly_function_traits' data-ref="boost::proto::detail::poly_function_traits">poly_function_traits</dfn>&lt;Fun, Sig, <span class="namespace">mpl::</span><a class="type" href="../../../../../mpl/include/boost/mpl/size_t_fwd.hpp.html#mpl_::size_t" title='mpl_::size_t' data-ref="mpl_::size_t">size_t</a>&lt;<b>sizeof</b>(<a class="typedef" href="#boost::proto::detail::mono_function_t" title='boost::proto::detail::mono_function_t' data-type='char (&amp;)[2]' data-ref="boost::proto::detail::mono_function_t">mono_function_t</a>)&gt; &gt;</td></tr>
+<tr><th id="212">212</th><td>    {</td></tr>
+<tr><th id="213">213</th><td>        <b>typedef</b> <b>typename</b> Fun::result_type <dfn class="typedef" id="boost::proto::detail::poly_function_traits{type-parameter-0-0,type-parameter-0-1,mpl_::size_t{2}}::result_type" title='boost::proto::detail::poly_function_traits&lt;type-parameter-0-0, type-parameter-0-1, mpl_::size_t&lt;2&gt;&gt;::result_type' data-type='typename Fun::result_type' data-ref="boost::proto::detail::poly_function_traits{type-parameter-0-0,type-parameter-0-1,mpl_::size_t{2}}::result_type">result_type</dfn>;</td></tr>
+<tr><th id="214">214</th><td>        <b>typedef</b> Fun <dfn class="typedef" id="boost::proto::detail::poly_function_traits{type-parameter-0-0,type-parameter-0-1,mpl_::size_t{2}}::function_type" title='boost::proto::detail::poly_function_traits&lt;type-parameter-0-0, type-parameter-0-1, mpl_::size_t&lt;2&gt;&gt;::function_type' data-type='Fun' data-ref="boost::proto::detail::poly_function_traits{type-parameter-0-0,type-parameter-0-1,mpl_::size_t{2}}::function_type">function_type</dfn>;</td></tr>
+<tr><th id="215">215</th><td>    };</td></tr>
+<tr><th id="216">216</th><td></td></tr>
+<tr><th id="217">217</th><td>    <i>////////////////////////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="218">218</th><td>    <b>template</b>&lt;<b>typename</b> PolyFunSig, <em>bool</em> IsPolyFunction&gt;</td></tr>
+<tr><th id="219">219</th><td>    <b>struct</b> <dfn class="type" id="boost::proto::detail::as_mono_function_impl" title='boost::proto::detail::as_mono_function_impl' data-ref="boost::proto::detail::as_mono_function_impl">as_mono_function_impl</dfn>;</td></tr>
+<tr><th id="220">220</th><td></td></tr>
+<tr><th id="221">221</th><td>    <i>////////////////////////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="222">222</th><td>    <b>template</b>&lt;<b>typename</b> PolyFunSig&gt;</td></tr>
+<tr><th id="223">223</th><td>    <b>struct</b> <dfn class="type" id="boost::proto::detail::as_mono_function" title='boost::proto::detail::as_mono_function' data-ref="boost::proto::detail::as_mono_function">as_mono_function</dfn>;</td></tr>
+<tr><th id="224">224</th><td></td></tr>
+<tr><th id="225">225</th><td>    <u>#include <a href="poly_function_traits.hpp.html">&lt;boost/proto/detail/poly_function_traits.hpp&gt;</a></u></td></tr>
+<tr><th id="226">226</th><td></td></tr>
+<tr><th id="227">227</th><td>}}} <i>// namespace boost::proto::detail</i></td></tr>
+<tr><th id="228">228</th><td></td></tr>
+<tr><th id="229">229</th><td><u>#<span data-ppcond="229">ifdef</span> <span class="macro" data-ref="_M/_MSC_VER">_MSC_VER</span></u></td></tr>
+<tr><th id="230">230</th><td><u># pragma warning(pop)</u></td></tr>
+<tr><th id="231">231</th><td><u>#<span data-ppcond="229">endif</span></u></td></tr>
+<tr><th id="232">232</th><td></td></tr>
+<tr><th id="233">233</th><td><u>#<span data-ppcond="11">endif</span></u></td></tr>
+<tr><th id="234">234</th><td></td></tr>
+<tr><th id="235">235</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../../../../../graph/src/graphml.cpp.html'>boost-1.85.0/libs/graph/src/graphml.cpp</a><br/>Generated on <em>2024-Jun-14</em> from project boost-1.85.0 revision <em>1.85.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

@@ -1,0 +1,197 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>std_mutex.h source code [include/c++/9/bits/std_mutex.h] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="std::__mutex_base,std::adopt_lock_t,std::defer_lock_t,std::lock_guard,std::mutex,std::try_to_lock_t "/>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'include/c++/9/bits/std_mutex.h'; var root_path = '../../../..'; var data_path = '../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>include</a>/<a href='../..'>c++</a>/<a href='..'>9</a>/<a href='./'>bits</a>/<a href='std_mutex.h.html'>std_mutex.h</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>// std::mutex implementation -*- C++ -*-</i></td></tr>
+<tr><th id="2">2</th><td><i></i></td></tr>
+<tr><th id="3">3</th><td><i>// Copyright (C) 2003-2019 Free Software Foundation, Inc.</i></td></tr>
+<tr><th id="4">4</th><td><i>//</i></td></tr>
+<tr><th id="5">5</th><td><i>// This file is part of the GNU ISO C++ Library.  This library is free</i></td></tr>
+<tr><th id="6">6</th><td><i>// software; you can redistribute it and/or modify it under the</i></td></tr>
+<tr><th id="7">7</th><td><i>// terms of the GNU General Public License as published by the</i></td></tr>
+<tr><th id="8">8</th><td><i>// Free Software Foundation; either version 3, or (at your option)</i></td></tr>
+<tr><th id="9">9</th><td><i>// any later version.</i></td></tr>
+<tr><th id="10">10</th><td><i></i></td></tr>
+<tr><th id="11">11</th><td><i>// This library is distributed in the hope that it will be useful,</i></td></tr>
+<tr><th id="12">12</th><td><i>// but WITHOUT ANY WARRANTY; without even the implied warranty of</i></td></tr>
+<tr><th id="13">13</th><td><i>// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</i></td></tr>
+<tr><th id="14">14</th><td><i>// GNU General Public License for more details.</i></td></tr>
+<tr><th id="15">15</th><td><i></i></td></tr>
+<tr><th id="16">16</th><td><i>// Under Section 7 of GPL version 3, you are granted additional</i></td></tr>
+<tr><th id="17">17</th><td><i>// permissions described in the GCC Runtime Library Exception, version</i></td></tr>
+<tr><th id="18">18</th><td><i>// 3.1, as published by the Free Software Foundation.</i></td></tr>
+<tr><th id="19">19</th><td><i></i></td></tr>
+<tr><th id="20">20</th><td><i>// You should have received a copy of the GNU General Public License and</i></td></tr>
+<tr><th id="21">21</th><td><i>// a copy of the GCC Runtime Library Exception along with this program;</i></td></tr>
+<tr><th id="22">22</th><td><i>// see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see</i></td></tr>
+<tr><th id="23">23</th><td><i>// &lt;<a href="http://www.gnu.org/licenses/">http://www.gnu.org/licenses/</a>&gt;.</i></td></tr>
+<tr><th id="24">24</th><td></td></tr>
+<tr><th id="25">25</th><td><i class="doc">/** <span class="command">@file</span> <span class="verb">bits/std_mutex.h</span></i></td></tr>
+<tr><th id="26">26</th><td><i class="doc"> *  This is an internal header file, included by other library headers.</i></td></tr>
+<tr><th id="27">27</th><td><i class="doc"> *  Do not attempt to use it directly.<span class="command"> @headername</span>{mutex}</i></td></tr>
+<tr><th id="28">28</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="29">29</th><td></td></tr>
+<tr><th id="30">30</th><td><u>#<span data-ppcond="30">ifndef</span> <span class="macro" data-ref="_M/_GLIBCXX_MUTEX_H">_GLIBCXX_MUTEX_H</span></u></td></tr>
+<tr><th id="31">31</th><td><u>#define <dfn class="macro" id="_M/_GLIBCXX_MUTEX_H" data-ref="_M/_GLIBCXX_MUTEX_H">_GLIBCXX_MUTEX_H</dfn> 1</u></td></tr>
+<tr><th id="32">32</th><td></td></tr>
+<tr><th id="33">33</th><td><u>#pragma GCC system_header</u></td></tr>
+<tr><th id="34">34</th><td></td></tr>
+<tr><th id="35">35</th><td><u>#<span data-ppcond="35">if</span> <span class="macro" title="201402L" data-ref="_M/__cplusplus">__cplusplus</span> &lt; 201103L</u></td></tr>
+<tr><th id="36">36</th><td><u># include &lt;bits/c++0x_warning.h&gt;</u></td></tr>
+<tr><th id="37">37</th><td><u>#<span data-ppcond="35">else</span></u></td></tr>
+<tr><th id="38">38</th><td></td></tr>
+<tr><th id="39">39</th><td><u>#include <a href="../system_error.html">&lt;system_error&gt;</a></u></td></tr>
+<tr><th id="40">40</th><td><u>#include <a href="functexcept.h.html">&lt;bits/functexcept.h&gt;</a></u></td></tr>
+<tr><th id="41">41</th><td><u>#include <a href="../../../x86_64-linux-gnu/c++/9/bits/gthr.h.html">&lt;bits/gthr.h&gt;</a></u></td></tr>
+<tr><th id="42">42</th><td></td></tr>
+<tr><th id="43">43</th><td><b>namespace</b> <span class="namespace">std</span> <a class="macro" href="../../../x86_64-linux-gnu/c++/9/bits/c++config.h.html#70" title="__attribute__ ((__visibility__ (&quot;default&quot;)))" data-ref="_M/_GLIBCXX_VISIBILITY">_GLIBCXX_VISIBILITY</a>(<b>default</b>)</td></tr>
+<tr><th id="44">44</th><td>{</td></tr>
+<tr><th id="45">45</th><td><a class="macro" href="../../../x86_64-linux-gnu/c++/9/bits/c++config.h.html#328" title="" data-ref="_M/_GLIBCXX_BEGIN_NAMESPACE_VERSION">_GLIBCXX_BEGIN_NAMESPACE_VERSION</a></td></tr>
+<tr><th id="46">46</th><td></td></tr>
+<tr><th id="47">47</th><td>  <i class="doc">/**</i></td></tr>
+<tr><th id="48">48</th><td><i class="doc">   * <span class="command">@defgroup</span> <span class="verb">mutexes Mutexes</span></i></td></tr>
+<tr><th id="49">49</th><td><i class="doc">   * <span class="command">@ingroup</span> <span class="verb">concurrency</span></i></td></tr>
+<tr><th id="50">50</th><td><i class="doc">   *</i></td></tr>
+<tr><th id="51">51</th><td><i class="doc">   * Classes for mutex support.</i></td></tr>
+<tr><th id="52">52</th><td><i class="doc">   * @{</i></td></tr>
+<tr><th id="53">53</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="54">54</th><td></td></tr>
+<tr><th id="55">55</th><td><u>#<span data-ppcond="55">ifdef</span> <a class="macro" href="../../../x86_64-linux-gnu/c++/9/bits/c++config.h.html#1566" data-ref="_M/_GLIBCXX_HAS_GTHREADS">_GLIBCXX_HAS_GTHREADS</a></u></td></tr>
+<tr><th id="56">56</th><td>  <i>// Common base class for std::mutex and std::timed_mutex</i></td></tr>
+<tr><th id="57">57</th><td>  <b>class</b> <dfn class="type def" id="std::__mutex_base" title='std::__mutex_base' data-ref="std::__mutex_base">__mutex_base</dfn></td></tr>
+<tr><th id="58">58</th><td>  {</td></tr>
+<tr><th id="59">59</th><td>  <b>protected</b>:</td></tr>
+<tr><th id="60">60</th><td>    <b>typedef</b> <a class="typedef" href="../../../x86_64-linux-gnu/c++/9/bits/gthr-default.h.html#__gthread_mutex_t" title='__gthread_mutex_t' data-type='pthread_mutex_t' data-ref="__gthread_mutex_t">__gthread_mutex_t</a>			<dfn class="typedef" id="std::__mutex_base::__native_type" title='std::__mutex_base::__native_type' data-type='__gthread_mutex_t' data-ref="std::__mutex_base::__native_type">__native_type</dfn>;</td></tr>
+<tr><th id="61">61</th><td></td></tr>
+<tr><th id="62">62</th><td><u>#<span data-ppcond="62">ifdef</span> <a class="macro" href="../../../x86_64-linux-gnu/c++/9/bits/gthr-default.h.html#59" data-ref="_M/__GTHREAD_MUTEX_INIT">__GTHREAD_MUTEX_INIT</a></u></td></tr>
+<tr><th id="63">63</th><td>    <a class="typedef" href="#std::__mutex_base::__native_type" title='std::__mutex_base::__native_type' data-type='__gthread_mutex_t' data-ref="std::__mutex_base::__native_type">__native_type</a>  <dfn class="decl field" id="std::__mutex_base::_M_mutex" title='std::__mutex_base::_M_mutex' data-ref="std::__mutex_base::_M_mutex">_M_mutex</dfn> = <a class="macro" href="../../../x86_64-linux-gnu/c++/9/bits/gthr-default.h.html#59" title="{ { 0, 0, 0, 0, PTHREAD_MUTEX_TIMED_NP, 0, 0, { 0, 0 } } }" data-ref="_M/__GTHREAD_MUTEX_INIT">__GTHREAD_MUTEX_INIT</a>;</td></tr>
+<tr><th id="64">64</th><td></td></tr>
+<tr><th id="65">65</th><td>    <b>constexpr</b> <dfn class="decl def fn" id="_ZNSt12__mutex_baseC1Ev" title='std::__mutex_base::__mutex_base' data-ref="_ZNSt12__mutex_baseC1Ev">__mutex_base</dfn>() <b>noexcept</b> = <b>default</b>;</td></tr>
+<tr><th id="66">66</th><td><u>#<span data-ppcond="62">else</span></u></td></tr>
+<tr><th id="67">67</th><td>    __native_type  _M_mutex;</td></tr>
+<tr><th id="68">68</th><td></td></tr>
+<tr><th id="69">69</th><td>    __mutex_base() <b>noexcept</b></td></tr>
+<tr><th id="70">70</th><td>    {</td></tr>
+<tr><th id="71">71</th><td>      <i>// XXX EAGAIN, ENOMEM, EPERM, EBUSY(may), EINVAL(may)</i></td></tr>
+<tr><th id="72">72</th><td>      __GTHREAD_MUTEX_INIT_FUNCTION(&amp;_M_mutex);</td></tr>
+<tr><th id="73">73</th><td>    }</td></tr>
+<tr><th id="74">74</th><td></td></tr>
+<tr><th id="75">75</th><td>    ~__mutex_base() <b>noexcept</b> { __gthread_mutex_destroy(&amp;_M_mutex); }</td></tr>
+<tr><th id="76">76</th><td><u>#<span data-ppcond="62">endif</span></u></td></tr>
+<tr><th id="77">77</th><td></td></tr>
+<tr><th id="78">78</th><td>    <dfn class="decl def fn" id="_ZNSt12__mutex_baseC1ERKS_" title='std::__mutex_base::__mutex_base' data-ref="_ZNSt12__mutex_baseC1ERKS_">__mutex_base</dfn>(<em>const</em> <a class="type" href="#std::__mutex_base" title='std::__mutex_base' data-ref="std::__mutex_base">__mutex_base</a>&amp;) = <b>delete</b>;</td></tr>
+<tr><th id="79">79</th><td>    <a class="type" href="#std::__mutex_base" title='std::__mutex_base' data-ref="std::__mutex_base">__mutex_base</a>&amp; <dfn class="decl def fn" id="_ZNSt12__mutex_baseaSERKS_" title='std::__mutex_base::operator=' data-ref="_ZNSt12__mutex_baseaSERKS_"><b>operator</b>=</dfn>(<em>const</em> <a class="type" href="#std::__mutex_base" title='std::__mutex_base' data-ref="std::__mutex_base">__mutex_base</a>&amp;) = <b>delete</b>;</td></tr>
+<tr><th id="80">80</th><td>  };</td></tr>
+<tr><th id="81">81</th><td></td></tr>
+<tr><th id="82">82</th><td>  <i class="doc">/// The standard mutex type.</i></td></tr>
+<tr><th id="83">83</th><td>  <b>class</b> <dfn class="type def" id="std::mutex" title='std::mutex' data-ref="std::mutex">mutex</dfn> : <b>private</b> <a class="type" href="#std::__mutex_base" title='std::__mutex_base' data-ref="std::__mutex_base">__mutex_base</a></td></tr>
+<tr><th id="84">84</th><td>  {</td></tr>
+<tr><th id="85">85</th><td>  <b>public</b>:</td></tr>
+<tr><th id="86">86</th><td>    <b>typedef</b> <a class="typedef" href="#std::__mutex_base::__native_type" title='std::__mutex_base::__native_type' data-type='__gthread_mutex_t' data-ref="std::__mutex_base::__native_type">__native_type</a>* 			<dfn class="typedef" id="std::mutex::native_handle_type" title='std::mutex::native_handle_type' data-type='std::__mutex_base::__native_type *' data-ref="std::mutex::native_handle_type">native_handle_type</dfn>;</td></tr>
+<tr><th id="87">87</th><td></td></tr>
+<tr><th id="88">88</th><td><u>#<span data-ppcond="88">ifdef</span> <a class="macro" href="../../../x86_64-linux-gnu/c++/9/bits/gthr-default.h.html#59" data-ref="_M/__GTHREAD_MUTEX_INIT">__GTHREAD_MUTEX_INIT</a></u></td></tr>
+<tr><th id="89">89</th><td>    <b>constexpr</b></td></tr>
+<tr><th id="90">90</th><td><u>#<span data-ppcond="88">endif</span></u></td></tr>
+<tr><th id="91">91</th><td>    <dfn class="decl def fn" id="_ZNSt5mutexC1Ev" title='std::mutex::mutex' data-ref="_ZNSt5mutexC1Ev">mutex</dfn>() <b>noexcept</b> = <b>default</b>;</td></tr>
+<tr><th id="92">92</th><td>    <dfn class="decl def fn" id="_ZNSt5mutexD1Ev" title='std::mutex::~mutex' data-ref="_ZNSt5mutexD1Ev">~mutex</dfn>() = <b>default</b>;</td></tr>
+<tr><th id="93">93</th><td></td></tr>
+<tr><th id="94">94</th><td>    <dfn class="decl def fn" id="_ZNSt5mutexC1ERKS_" title='std::mutex::mutex' data-ref="_ZNSt5mutexC1ERKS_">mutex</dfn>(<em>const</em> <a class="type" href="#std::mutex" title='std::mutex' data-ref="std::mutex">mutex</a>&amp;) = <b>delete</b>;</td></tr>
+<tr><th id="95">95</th><td>    <a class="type" href="#std::mutex" title='std::mutex' data-ref="std::mutex">mutex</a>&amp; <dfn class="decl def fn" id="_ZNSt5mutexaSERKS_" title='std::mutex::operator=' data-ref="_ZNSt5mutexaSERKS_"><b>operator</b>=</dfn>(<em>const</em> <a class="type" href="#std::mutex" title='std::mutex' data-ref="std::mutex">mutex</a>&amp;) = <b>delete</b>;</td></tr>
+<tr><th id="96">96</th><td></td></tr>
+<tr><th id="97">97</th><td>    <em>void</em></td></tr>
+<tr><th id="98">98</th><td>    <dfn class="decl def fn" id="_ZNSt5mutex4lockEv" title='std::mutex::lock' data-ref="_ZNSt5mutex4lockEv">lock</dfn>()</td></tr>
+<tr><th id="99">99</th><td>    {</td></tr>
+<tr><th id="100">100</th><td>      <em>int</em> <dfn class="local col2 decl" id="1012__e" title='__e' data-type='int' data-ref="1012__e">__e</dfn> = <a class="ref fn" href="../../../x86_64-linux-gnu/c++/9/bits/gthr-default.h.html#__gthread_mutex_lock" title='__gthread_mutex_lock' data-ref="__gthread_mutex_lock">__gthread_mutex_lock</a>(<span class='inlayHint'>mutex:&nbsp;</span>&amp;<a class="member field" href="#std::__mutex_base::_M_mutex" title='std::__mutex_base::_M_mutex' data-ref="std::__mutex_base::_M_mutex">_M_mutex</a>);</td></tr>
+<tr><th id="101">101</th><td></td></tr>
+<tr><th id="102">102</th><td>      <i>// EINVAL, EAGAIN, EBUSY, EINVAL, EDEADLK(may)</i></td></tr>
+<tr><th id="103">103</th><td>      <b>if</b> (<a class="local col2 ref" href="#1012__e" title='__e' data-ref="1012__e">__e</a>)</td></tr>
+<tr><th id="104">104</th><td>	<a class="ref fn" href="functexcept.h.html#_ZSt20__throw_system_errori" title='std::__throw_system_error' data-ref="_ZSt20__throw_system_errori">__throw_system_error</a>(<a class="local col2 ref" href="#1012__e" title='__e' data-ref="1012__e">__e</a>);</td></tr>
+<tr><th id="105">105</th><td>    }</td></tr>
+<tr><th id="106">106</th><td></td></tr>
+<tr><th id="107">107</th><td>    <em>bool</em></td></tr>
+<tr><th id="108">108</th><td>    <dfn class="decl def fn" id="_ZNSt5mutex8try_lockEv" title='std::mutex::try_lock' data-ref="_ZNSt5mutex8try_lockEv">try_lock</dfn>() <b>noexcept</b></td></tr>
+<tr><th id="109">109</th><td>    {</td></tr>
+<tr><th id="110">110</th><td>      <i>// XXX EINVAL, EAGAIN, EBUSY</i></td></tr>
+<tr><th id="111">111</th><td>      <b>return</b> !<a class="ref fn" href="../../../x86_64-linux-gnu/c++/9/bits/gthr-default.h.html#__gthread_mutex_trylock" title='__gthread_mutex_trylock' data-ref="__gthread_mutex_trylock">__gthread_mutex_trylock</a>(<span class='inlayHint'>mutex:&nbsp;</span>&amp;<a class="member field" href="#std::__mutex_base::_M_mutex" title='std::__mutex_base::_M_mutex' data-ref="std::__mutex_base::_M_mutex">_M_mutex</a>);</td></tr>
+<tr><th id="112">112</th><td>    }</td></tr>
+<tr><th id="113">113</th><td></td></tr>
+<tr><th id="114">114</th><td>    <em>void</em></td></tr>
+<tr><th id="115">115</th><td>    <dfn class="decl def fn" id="_ZNSt5mutex6unlockEv" title='std::mutex::unlock' data-ref="_ZNSt5mutex6unlockEv">unlock</dfn>()</td></tr>
+<tr><th id="116">116</th><td>    {</td></tr>
+<tr><th id="117">117</th><td>      <i>// XXX EINVAL, EAGAIN, EPERM</i></td></tr>
+<tr><th id="118">118</th><td>      <a class="ref fn" href="../../../x86_64-linux-gnu/c++/9/bits/gthr-default.h.html#__gthread_mutex_unlock" title='__gthread_mutex_unlock' data-ref="__gthread_mutex_unlock">__gthread_mutex_unlock</a>(<span class='inlayHint'>mutex:&nbsp;</span>&amp;<a class="member field" href="#std::__mutex_base::_M_mutex" title='std::__mutex_base::_M_mutex' data-ref="std::__mutex_base::_M_mutex">_M_mutex</a>);</td></tr>
+<tr><th id="119">119</th><td>    }</td></tr>
+<tr><th id="120">120</th><td></td></tr>
+<tr><th id="121">121</th><td>    <a class="typedef" href="#std::mutex::native_handle_type" title='std::mutex::native_handle_type' data-type='std::__mutex_base::__native_type *' data-ref="std::mutex::native_handle_type">native_handle_type</a></td></tr>
+<tr><th id="122">122</th><td>    <dfn class="decl def fn" id="_ZNSt5mutex13native_handleEv" title='std::mutex::native_handle' data-ref="_ZNSt5mutex13native_handleEv">native_handle</dfn>() <b>noexcept</b></td></tr>
+<tr><th id="123">123</th><td>    { <b>return</b> &amp;<a class="member field" href="#std::__mutex_base::_M_mutex" title='std::__mutex_base::_M_mutex' data-ref="std::__mutex_base::_M_mutex">_M_mutex</a>; }</td></tr>
+<tr><th id="124">124</th><td>  };</td></tr>
+<tr><th id="125">125</th><td></td></tr>
+<tr><th id="126">126</th><td><u>#<span data-ppcond="55">endif</span> // _GLIBCXX_HAS_GTHREADS</u></td></tr>
+<tr><th id="127">127</th><td></td></tr>
+<tr><th id="128">128</th><td>  <i class="doc">/// Do not acquire ownership of the mutex.</i></td></tr>
+<tr><th id="129">129</th><td>  <b>struct</b> <dfn class="type def" id="std::defer_lock_t" title='std::defer_lock_t' data-ref="std::defer_lock_t">defer_lock_t</dfn> { <b>explicit</b> <dfn class="decl def fn" id="_ZNSt12defer_lock_tC1Ev" title='std::defer_lock_t::defer_lock_t' data-ref="_ZNSt12defer_lock_tC1Ev">defer_lock_t</dfn>() = <b>default</b>; };</td></tr>
+<tr><th id="130">130</th><td></td></tr>
+<tr><th id="131">131</th><td>  <i class="doc">/// Try to acquire ownership of the mutex without blocking.</i></td></tr>
+<tr><th id="132">132</th><td>  <b>struct</b> <dfn class="type def" id="std::try_to_lock_t" title='std::try_to_lock_t' data-ref="std::try_to_lock_t">try_to_lock_t</dfn> { <b>explicit</b> <dfn class="decl def fn" id="_ZNSt13try_to_lock_tC1Ev" title='std::try_to_lock_t::try_to_lock_t' data-ref="_ZNSt13try_to_lock_tC1Ev">try_to_lock_t</dfn>() = <b>default</b>; };</td></tr>
+<tr><th id="133">133</th><td></td></tr>
+<tr><th id="134">134</th><td>  <i class="doc">/// Assume the calling thread has already obtained mutex ownership</i></td></tr>
+<tr><th id="135">135</th><td><i class="doc">  /// and manage it.</i></td></tr>
+<tr><th id="136">136</th><td>  <b>struct</b> <dfn class="type def" id="std::adopt_lock_t" title='std::adopt_lock_t' data-ref="std::adopt_lock_t">adopt_lock_t</dfn> { <b>explicit</b> <dfn class="decl def fn" id="_ZNSt12adopt_lock_tC1Ev" title='std::adopt_lock_t::adopt_lock_t' data-ref="_ZNSt12adopt_lock_tC1Ev">adopt_lock_t</dfn>() = <b>default</b>; };</td></tr>
+<tr><th id="137">137</th><td></td></tr>
+<tr><th id="138">138</th><td>  <i class="doc">/// Tag used to prevent a scoped lock from acquiring ownership of a mutex.</i></td></tr>
+<tr><th id="139">139</th><td>  <a class="macro" href="../../../x86_64-linux-gnu/c++/9/bits/c++config.h.html#156" title="" data-ref="_M/_GLIBCXX17_INLINE">_GLIBCXX17_INLINE</a> <b>constexpr</b> <a class="type" href="#std::defer_lock_t" title='std::defer_lock_t' data-ref="std::defer_lock_t">defer_lock_t</a>	<dfn class="decl def" id="std::defer_lock" title='std::defer_lock' data-ref="std::defer_lock">defer_lock</dfn> <a class="ref fn" href="#_ZNSt12defer_lock_tC1Ev" title='std::defer_lock_t::defer_lock_t' data-ref="_ZNSt12defer_lock_tC1Ev">{</a> };</td></tr>
+<tr><th id="140">140</th><td></td></tr>
+<tr><th id="141">141</th><td>  <i class="doc">/// Tag used to prevent a scoped lock from blocking if a mutex is locked.</i></td></tr>
+<tr><th id="142">142</th><td>  <a class="macro" href="../../../x86_64-linux-gnu/c++/9/bits/c++config.h.html#156" title="" data-ref="_M/_GLIBCXX17_INLINE">_GLIBCXX17_INLINE</a> <b>constexpr</b> <a class="type" href="#std::try_to_lock_t" title='std::try_to_lock_t' data-ref="std::try_to_lock_t">try_to_lock_t</a>	<dfn class="decl def" id="std::try_to_lock" title='std::try_to_lock' data-ref="std::try_to_lock">try_to_lock</dfn> <a class="ref fn" href="#_ZNSt13try_to_lock_tC1Ev" title='std::try_to_lock_t::try_to_lock_t' data-ref="_ZNSt13try_to_lock_tC1Ev">{</a> };</td></tr>
+<tr><th id="143">143</th><td></td></tr>
+<tr><th id="144">144</th><td>  <i class="doc">/// Tag used to make a scoped lock take ownership of a locked mutex.</i></td></tr>
+<tr><th id="145">145</th><td>  <a class="macro" href="../../../x86_64-linux-gnu/c++/9/bits/c++config.h.html#156" title="" data-ref="_M/_GLIBCXX17_INLINE">_GLIBCXX17_INLINE</a> <b>constexpr</b> <a class="type" href="#std::adopt_lock_t" title='std::adopt_lock_t' data-ref="std::adopt_lock_t">adopt_lock_t</a>	<dfn class="decl def" id="std::adopt_lock" title='std::adopt_lock' data-ref="std::adopt_lock">adopt_lock</dfn> <a class="ref fn" href="#_ZNSt12adopt_lock_tC1Ev" title='std::adopt_lock_t::adopt_lock_t' data-ref="_ZNSt12adopt_lock_tC1Ev">{</a> };</td></tr>
+<tr><th id="146">146</th><td></td></tr>
+<tr><th id="147">147</th><td>  <i class="doc">/** <span class="command">@brief</span> A simple scoped lock type.</i></td></tr>
+<tr><th id="148">148</th><td><i class="doc">   *</i></td></tr>
+<tr><th id="149">149</th><td><i class="doc">   * A lock_guard controls mutex ownership within a scope, releasing</i></td></tr>
+<tr><th id="150">150</th><td><i class="doc">   * ownership in the destructor.</i></td></tr>
+<tr><th id="151">151</th><td><i class="doc">   */</i></td></tr>
+<tr><th id="152">152</th><td>  <b>template</b>&lt;<b>typename</b> _Mutex&gt;</td></tr>
+<tr><th id="153">153</th><td>    <b>class</b> <dfn class="type def" id="std::lock_guard" title='std::lock_guard' data-ref="std::lock_guard">lock_guard</dfn></td></tr>
+<tr><th id="154">154</th><td>    {</td></tr>
+<tr><th id="155">155</th><td>    <b>public</b>:</td></tr>
+<tr><th id="156">156</th><td>      <b>typedef</b> _Mutex <dfn class="typedef" id="std::lock_guard::mutex_type" title='std::lock_guard::mutex_type' data-type='_Mutex' data-ref="std::lock_guard::mutex_type">mutex_type</dfn>;</td></tr>
+<tr><th id="157">157</th><td></td></tr>
+<tr><th id="158">158</th><td>      <b>explicit</b> <dfn class="decl def fn" id="_ZNSt10lock_guardC1ERT_" title='std::lock_guard::lock_guard&lt;_Mutex&gt;' data-ref="_ZNSt10lock_guardC1ERT_">lock_guard</dfn>(<a class="typedef" href="#std::lock_guard::mutex_type" title='std::lock_guard::mutex_type' data-type='_Mutex' data-ref="std::lock_guard::mutex_type">mutex_type</a>&amp; <dfn class="local col3 decl" id="1013__m" title='__m' data-type='std::lock_guard::mutex_type &amp;' data-ref="1013__m">__m</dfn>) : <a class="member field" href="#std::lock_guard::_M_device" title='std::lock_guard::_M_device' data-ref="std::lock_guard::_M_device">_M_device</a>(<a class="local col3 ref" href="#1013__m" title='__m' data-ref="1013__m">__m</a>)</td></tr>
+<tr><th id="159">159</th><td>      { <a class="member field" href="#std::lock_guard::_M_device" title='std::lock_guard::_M_device' data-ref="std::lock_guard::_M_device">_M_device</a>.lock(); }</td></tr>
+<tr><th id="160">160</th><td></td></tr>
+<tr><th id="161">161</th><td>      <dfn class="decl def fn" id="_ZNSt10lock_guardC1ERT_St12adopt_lock_t" title='std::lock_guard::lock_guard&lt;_Mutex&gt;' data-ref="_ZNSt10lock_guardC1ERT_St12adopt_lock_t">lock_guard</dfn>(<a class="typedef" href="#std::lock_guard::mutex_type" title='std::lock_guard::mutex_type' data-type='_Mutex' data-ref="std::lock_guard::mutex_type">mutex_type</a>&amp; <dfn class="local col4 decl" id="1014__m" title='__m' data-type='std::lock_guard::mutex_type &amp;' data-ref="1014__m">__m</dfn>, <a class="type" href="#std::adopt_lock_t" title='std::adopt_lock_t' data-ref="std::adopt_lock_t">adopt_lock_t</a>) <b>noexcept</b> : <a class="member field" href="#std::lock_guard::_M_device" title='std::lock_guard::_M_device' data-ref="std::lock_guard::_M_device">_M_device</a>(<a class="local col4 ref" href="#1014__m" title='__m' data-ref="1014__m">__m</a>)</td></tr>
+<tr><th id="162">162</th><td>      { } <i>// calling thread owns mutex</i></td></tr>
+<tr><th id="163">163</th><td></td></tr>
+<tr><th id="164">164</th><td>      <dfn class="decl def fn" id="_ZNSt10lock_guardD1Ev" title='std::lock_guard::~lock_guard&lt;_Mutex&gt;' data-ref="_ZNSt10lock_guardD1Ev">~lock_guard</dfn>()</td></tr>
+<tr><th id="165">165</th><td>      { <a class="member field" href="#std::lock_guard::_M_device" title='std::lock_guard::_M_device' data-ref="std::lock_guard::_M_device">_M_device</a>.unlock(); }</td></tr>
+<tr><th id="166">166</th><td></td></tr>
+<tr><th id="167">167</th><td>      <dfn class="decl def fn" id="_ZNSt10lock_guardC1ERKSt10lock_guardIT_E" title='std::lock_guard::lock_guard&lt;_Mutex&gt;' data-ref="_ZNSt10lock_guardC1ERKSt10lock_guardIT_E">lock_guard</dfn>(<em>const</em> lock_guard&amp;) = <b>delete</b>;</td></tr>
+<tr><th id="168">168</th><td>      lock_guard&amp; <dfn class="decl def fn" id="_ZNSt10lock_guardaSERKSt10lock_guardIT_E" title='std::lock_guard::operator=' data-ref="_ZNSt10lock_guardaSERKSt10lock_guardIT_E"><b>operator</b>=</dfn>(<em>const</em> lock_guard&amp;) = <b>delete</b>;</td></tr>
+<tr><th id="169">169</th><td></td></tr>
+<tr><th id="170">170</th><td>    <b>private</b>:</td></tr>
+<tr><th id="171">171</th><td>      <a class="typedef" href="#std::lock_guard::mutex_type" title='std::lock_guard::mutex_type' data-type='_Mutex' data-ref="std::lock_guard::mutex_type">mutex_type</a>&amp;  <dfn class="decl field" id="std::lock_guard::_M_device" title='std::lock_guard::_M_device' data-ref="std::lock_guard::_M_device">_M_device</dfn>;</td></tr>
+<tr><th id="172">172</th><td>    };</td></tr>
+<tr><th id="173">173</th><td></td></tr>
+<tr><th id="174">174</th><td>  <i class="doc">/// @} group mutexes</i></td></tr>
+<tr><th id="175">175</th><td><a class="macro" href="../../../x86_64-linux-gnu/c++/9/bits/c++config.h.html#329" title="" data-ref="_M/_GLIBCXX_END_NAMESPACE_VERSION">_GLIBCXX_END_NAMESPACE_VERSION</a></td></tr>
+<tr><th id="176">176</th><td>} <i>// namespace</i></td></tr>
+<tr><th id="177">177</th><td><u>#<span data-ppcond="35">endif</span> // C++11</u></td></tr>
+<tr><th id="178">178</th><td><u>#<span data-ppcond="30">endif</span> // _GLIBCXX_MUTEX_H</u></td></tr>
+<tr><th id="179">179</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../../../../boost-1.85.0/libs/chrono/src/chrono.cpp.html'>boost-1.85.0/libs/chrono/src/chrono.cpp</a><br/>Generated on <em>2024-Jun-14</em> from project include<br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

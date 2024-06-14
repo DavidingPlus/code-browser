@@ -1,0 +1,6 @@
+<dec f='boost-1.85.0/libs/url/include/boost/url/grammar/impl/tuple_rule.hpp' l='177' type='boost::urls::grammar::detail::parse_sequence&lt;false, type-parameter-0-0, type-parameter-0-1...&gt;::V'/>
+<use f='boost-1.85.0/libs/url/include/boost/url/grammar/impl/tuple_rule.hpp' l='183' u='w' c='_ZN5boost4urls7grammar6detail14parse_sequenceILb0ET_JDpT0_EEC1ERKNS2_5tupleIJS4_S6_EEE'/>
+<use f='boost-1.85.0/libs/url/include/boost/url/grammar/impl/tuple_rule.hpp' l='213' u='w' c='_ZN5boost4urls7grammar6detail14parse_sequenceILb0ET_JDpT0_EE5applyERPKcS9_RKSt17integral_constantImXTL0__EERKSB_ImXTL0_0_EERKSB_IbLb1EE'/>
+<use f='boost-1.85.0/libs/url/include/boost/url/grammar/impl/tuple_rule.hpp' l='232' u='w' c='_ZN5boost4urls7grammar6detail14parse_sequenceILb0ET_JDpT0_EE5applyERPKcS9_RKSt17integral_constantImXTL0__EERKSB_ImXTL0_0_EERKSB_IbLb0EE'/>
+<use f='boost-1.85.0/libs/url/include/boost/url/grammar/impl/tuple_rule.hpp' l='234' u='r' c='_ZN5boost4urls7grammar6detail14parse_sequenceILb0ET_JDpT0_EE5applyERPKcS9_RKSt17integral_constantImXTL0__EERKSB_ImXTL0_0_EERKSB_IbLb0EE'/>
+<use f='boost-1.85.0/libs/url/include/boost/url/grammar/impl/tuple_rule.hpp' l='259' u='r' c='_ZN5boost4urls7grammar6detail14parse_sequenceILb0ET_JDpT0_EE11make_resultEv'/>

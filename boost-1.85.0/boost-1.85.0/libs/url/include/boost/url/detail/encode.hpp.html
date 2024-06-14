@@ -1,0 +1,224 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>encode.hpp source code [boost-1.85.0/libs/url/include/boost/url/detail/encode.hpp] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'boost-1.85.0/libs/url/include/boost/url/detail/encode.hpp'; var root_path = '../../../../../../..'; var data_path = '../../../../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../../../..'>boost-1.85.0</a>/<a href='../../../../..'>libs</a>/<a href='../../../..'>url</a>/<a href='../../..'>include</a>/<a href='../..'>boost</a>/<a href='..'>url</a>/<a href='./'>detail</a>/<a href='encode.hpp.html'>encode.hpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>//</i></td></tr>
+<tr><th id="2">2</th><td><i>// Copyright (c) 2019 Vinnie Falco (vinnie.falco@gmail.com)</i></td></tr>
+<tr><th id="3">3</th><td><i>// Copyright (c) 2022 Alan de Freitas (alandefreitas@gmail.com)</i></td></tr>
+<tr><th id="4">4</th><td><i>//</i></td></tr>
+<tr><th id="5">5</th><td><i>// Distributed under the Boost Software License, Version 1.0. (See accompanying</i></td></tr>
+<tr><th id="6">6</th><td><i>// file LICENSE_1_0.txt or copy at <a href="http://www.boost.org/LICENSE_1_0.txt">http://www.boost.org/LICENSE_1_0.txt</a>)</i></td></tr>
+<tr><th id="7">7</th><td><i>//</i></td></tr>
+<tr><th id="8">8</th><td><i>// Official repository: <a href="https://github.com/boostorg/url">https://github.com/boostorg/url</a></i></td></tr>
+<tr><th id="9">9</th><td><i>//</i></td></tr>
+<tr><th id="10">10</th><td></td></tr>
+<tr><th id="11">11</th><td><u>#<span data-ppcond="11">ifndef</span> <span class="macro" data-ref="_M/BOOST_URL_DETAIL_ENCODE_HPP">BOOST_URL_DETAIL_ENCODE_HPP</span></u></td></tr>
+<tr><th id="12">12</th><td><u>#define <dfn class="macro" id="_M/BOOST_URL_DETAIL_ENCODE_HPP" data-ref="_M/BOOST_URL_DETAIL_ENCODE_HPP">BOOST_URL_DETAIL_ENCODE_HPP</dfn></u></td></tr>
+<tr><th id="13">13</th><td></td></tr>
+<tr><th id="14">14</th><td><u>#include <a href="../encoding_opts.hpp.html">&lt;boost/url/encoding_opts.hpp&gt;</a></u></td></tr>
+<tr><th id="15">15</th><td><u>#include <a href="../pct_string_view.hpp.html">&lt;boost/url/pct_string_view.hpp&gt;</a></u></td></tr>
+<tr><th id="16">16</th><td><u>#include <a href="../grammar/hexdig_chars.hpp.html">&lt;boost/url/grammar/hexdig_chars.hpp&gt;</a></u></td></tr>
+<tr><th id="17">17</th><td><u>#include <a href="../../../../../core/include/boost/core/ignore_unused.hpp.html">&lt;boost/core/ignore_unused.hpp&gt;</a></u></td></tr>
+<tr><th id="18">18</th><td><u>#include <a href="../../../../../../../include/c++/9/cstdlib.html">&lt;cstdlib&gt;</a></u></td></tr>
+<tr><th id="19">19</th><td></td></tr>
+<tr><th id="20">20</th><td><b>namespace</b> <span class="namespace">boost</span> {</td></tr>
+<tr><th id="21">21</th><td><b>namespace</b> <span class="namespace">urls</span> {</td></tr>
+<tr><th id="22">22</th><td><b>namespace</b> <span class="namespace">detail</span> {</td></tr>
+<tr><th id="23">23</th><td></td></tr>
+<tr><th id="24">24</th><td><b>constexpr</b></td></tr>
+<tr><th id="25">25</th><td><em>char</em> <em>const</em>* <em>const</em> <dfn class="decl def" id="boost::urls::detail::hexdigs" title='boost::urls::detail::hexdigs' data-ref="boost::urls::detail::hexdigs">hexdigs</dfn>[] = {</td></tr>
+<tr><th id="26">26</th><td>    <q>"0123456789ABCDEF"</q>,</td></tr>
+<tr><th id="27">27</th><td>    <q>"0123456789abcdef"</q> };</td></tr>
+<tr><th id="28">28</th><td></td></tr>
+<tr><th id="29">29</th><td><i>//------------------------------------------------</i></td></tr>
+<tr><th id="30">30</th><td><i></i></td></tr>
+<tr><th id="31">31</th><td><i>// re-encode is to percent-encode a</i></td></tr>
+<tr><th id="32">32</th><td><i>// string that can already contain</i></td></tr>
+<tr><th id="33">33</th><td><i>// escapes. Characters not in the</i></td></tr>
+<tr><th id="34">34</th><td><i>// unreserved set are escaped, and</i></td></tr>
+<tr><th id="35">35</th><td><i>// escapes are passed through unchanged.</i></td></tr>
+<tr><th id="36">36</th><td><i>//</i></td></tr>
+<tr><th id="37">37</th><td><b>template</b>&lt;<b>class</b> CharSet&gt;</td></tr>
+<tr><th id="38">38</th><td><span class="namespace">std::</span><a class="typedef" href="../../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a></td></tr>
+<tr><th id="39">39</th><td><dfn class="decl def fn" id="_ZN5boost4urls6detail22re_encoded_size_unsafeENS_4core17basic_string_viewIcEERKT_NS0_13encoding_optsE" title='boost::urls::detail::re_encoded_size_unsafe' data-ref="_ZN5boost4urls6detail22re_encoded_size_unsafeENS_4core17basic_string_viewIcEERKT_NS0_13encoding_optsE">re_encoded_size_unsafe</dfn>(</td></tr>
+<tr><th id="40">40</th><td>    <span class="namespace">core::</span><a class="typedef" href="../../../../../core/include/boost/core/detail/string_view.hpp.html#boost::core::string_view" title='boost::core::string_view' data-type='basic_string_view&lt;char&gt;' data-ref="boost::core::string_view">string_view</a> <dfn class="local col5 decl" id="95s" title='s' data-type='core::string_view' data-ref="95s">s</dfn>,</td></tr>
+<tr><th id="41">41</th><td>    CharSet <em>const</em>&amp; <dfn class="local col6 decl" id="96unreserved" title='unreserved' data-type='const CharSet &amp;' data-ref="96unreserved">unreserved</dfn>,</td></tr>
+<tr><th id="42">42</th><td>    <a class="type" href="../encoding_opts.hpp.html#boost::urls::encoding_opts" title='boost::urls::encoding_opts' data-ref="boost::urls::encoding_opts">encoding_opts</a> <dfn class="local col7 decl" id="97opt" title='opt' data-type='boost::urls::encoding_opts' data-ref="97opt">opt</dfn>) <b>noexcept</b></td></tr>
+<tr><th id="43">43</th><td>{</td></tr>
+<tr><th id="44">44</th><td>    <span class="namespace">std::</span><a class="typedef" href="../../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> <dfn class="local col8 decl" id="98n" title='n' data-type='std::size_t' data-ref="98n">n</dfn> = <var>0</var>;</td></tr>
+<tr><th id="45">45</th><td>    <em>auto</em> <em>const</em> <dfn class="local col9 decl" id="99end" title='end' data-type='const boost::core::basic_string_view&lt;char&gt;::const_iterator' data-ref="99end">end</dfn> = <a class="local col5 ref" href="#95s" title='s' data-ref="95s">s</a>.<a class="ref fn" href="../../../../../core/include/boost/core/detail/string_view.hpp.html#_ZNK5boost4core17basic_string_view3endEv" title='boost::core::basic_string_view::end' data-ref="_ZNK5boost4core17basic_string_view3endEv">end</a>();</td></tr>
+<tr><th id="46">46</th><td>    <em>auto</em> <dfn class="local col0 decl" id="100it" title='it' data-type='boost::core::basic_string_view&lt;char&gt;::const_iterator' data-ref="100it">it</dfn> = <a class="local col5 ref" href="#95s" title='s' data-ref="95s">s</a>.<a class="ref fn" href="../../../../../core/include/boost/core/detail/string_view.hpp.html#_ZNK5boost4core17basic_string_view5beginEv" title='boost::core::basic_string_view::begin' data-ref="_ZNK5boost4core17basic_string_view5beginEv">begin</a>();</td></tr>
+<tr><th id="47">47</th><td>    <b>if</b>(<a class="local col7 ref" href="#97opt" title='opt' data-ref="97opt">opt</a>.<a class="ref field" href="../encoding_opts.hpp.html#boost::urls::encoding_opts::space_as_plus" title='boost::urls::encoding_opts::space_as_plus' data-ref="boost::urls::encoding_opts::space_as_plus">space_as_plus</a>)</td></tr>
+<tr><th id="48">48</th><td>    {</td></tr>
+<tr><th id="49">49</th><td>        <b>while</b>(<a class="local col0 ref" href="#100it" title='it' data-ref="100it">it</a> != <a class="local col9 ref" href="#99end" title='end' data-ref="99end">end</a>)</td></tr>
+<tr><th id="50">50</th><td>        {</td></tr>
+<tr><th id="51">51</th><td>            <b>if</b>(*<a class="local col0 ref" href="#100it" title='it' data-ref="100it">it</a> != <kbd>'%'</kbd>)</td></tr>
+<tr><th id="52">52</th><td>            {</td></tr>
+<tr><th id="53">53</th><td>                <b>if</b>( <a class="local col6 ref" href="#96unreserved" title='unreserved' data-ref="96unreserved">unreserved</a>(*<a class="local col0 ref" href="#100it" title='it' data-ref="100it">it</a>)</td></tr>
+<tr><th id="54">54</th><td>                    || *<a class="local col0 ref" href="#100it" title='it' data-ref="100it">it</a> == <kbd>' '</kbd>)</td></tr>
+<tr><th id="55">55</th><td>                    <a class="local col8 ref" href="#98n" title='n' data-ref="98n">n</a> += <var>1</var>; </td></tr>
+<tr><th id="56">56</th><td>                <b>else</b></td></tr>
+<tr><th id="57">57</th><td>                    <a class="local col8 ref" href="#98n" title='n' data-ref="98n">n</a> += <var>3</var>;</td></tr>
+<tr><th id="58">58</th><td>                ++<a class="local col0 ref" href="#100it" title='it' data-ref="100it">it</a>;</td></tr>
+<tr><th id="59">59</th><td>            }</td></tr>
+<tr><th id="60">60</th><td>            <b>else</b></td></tr>
+<tr><th id="61">61</th><td>            {</td></tr>
+<tr><th id="62">62</th><td>                <a class="macro" href="../../../../../assert/include/boost/assert.hpp.html#60" title="(static_cast&lt;void&gt; (0))" data-ref="_M/BOOST_ASSERT">BOOST_ASSERT</a>(end - it &gt;= <var>3</var>);</td></tr>
+<tr><th id="63">63</th><td>                <a class="macro" href="../../../../../assert/include/boost/assert.hpp.html#60" title="(static_cast&lt;void&gt; (0))" data-ref="_M/BOOST_ASSERT">BOOST_ASSERT</a>(</td></tr>
+<tr><th id="64">64</th><td>                    grammar::hexdig_value(</td></tr>
+<tr><th id="65">65</th><td>                        it[<var>1</var>]) &gt;= <var>0</var>);</td></tr>
+<tr><th id="66">66</th><td>                <a class="macro" href="../../../../../assert/include/boost/assert.hpp.html#60" title="(static_cast&lt;void&gt; (0))" data-ref="_M/BOOST_ASSERT">BOOST_ASSERT</a>(</td></tr>
+<tr><th id="67">67</th><td>                    grammar::hexdig_value(</td></tr>
+<tr><th id="68">68</th><td>                        it[<var>2</var>]) &gt;= <var>0</var>);</td></tr>
+<tr><th id="69">69</th><td>                <a class="local col8 ref" href="#98n" title='n' data-ref="98n">n</a> += <var>3</var>;</td></tr>
+<tr><th id="70">70</th><td>                <a class="local col0 ref" href="#100it" title='it' data-ref="100it">it</a> += <var>3</var>;</td></tr>
+<tr><th id="71">71</th><td>            }</td></tr>
+<tr><th id="72">72</th><td>        }</td></tr>
+<tr><th id="73">73</th><td>    }</td></tr>
+<tr><th id="74">74</th><td>    <b>else</b></td></tr>
+<tr><th id="75">75</th><td>    {</td></tr>
+<tr><th id="76">76</th><td>        <b>while</b>(<a class="local col0 ref" href="#100it" title='it' data-ref="100it">it</a> != <a class="local col9 ref" href="#99end" title='end' data-ref="99end">end</a>)</td></tr>
+<tr><th id="77">77</th><td>        {</td></tr>
+<tr><th id="78">78</th><td>            <b>if</b>(*<a class="local col0 ref" href="#100it" title='it' data-ref="100it">it</a> != <kbd>'%'</kbd>)</td></tr>
+<tr><th id="79">79</th><td>            {</td></tr>
+<tr><th id="80">80</th><td>                <b>if</b>(<a class="local col6 ref" href="#96unreserved" title='unreserved' data-ref="96unreserved">unreserved</a>(*<a class="local col0 ref" href="#100it" title='it' data-ref="100it">it</a>))</td></tr>
+<tr><th id="81">81</th><td>                    <a class="local col8 ref" href="#98n" title='n' data-ref="98n">n</a> += <var>1</var>; </td></tr>
+<tr><th id="82">82</th><td>                <b>else</b></td></tr>
+<tr><th id="83">83</th><td>                    <a class="local col8 ref" href="#98n" title='n' data-ref="98n">n</a> += <var>3</var>;</td></tr>
+<tr><th id="84">84</th><td>                ++<a class="local col0 ref" href="#100it" title='it' data-ref="100it">it</a>;</td></tr>
+<tr><th id="85">85</th><td>            }</td></tr>
+<tr><th id="86">86</th><td>            <b>else</b></td></tr>
+<tr><th id="87">87</th><td>            {</td></tr>
+<tr><th id="88">88</th><td>                <a class="macro" href="../../../../../assert/include/boost/assert.hpp.html#60" title="(static_cast&lt;void&gt; (0))" data-ref="_M/BOOST_ASSERT">BOOST_ASSERT</a>(end - it &gt;= <var>3</var>);</td></tr>
+<tr><th id="89">89</th><td>                <a class="macro" href="../../../../../assert/include/boost/assert.hpp.html#60" title="(static_cast&lt;void&gt; (0))" data-ref="_M/BOOST_ASSERT">BOOST_ASSERT</a>(</td></tr>
+<tr><th id="90">90</th><td>                    grammar::hexdig_value(</td></tr>
+<tr><th id="91">91</th><td>                        it[<var>1</var>]) &gt;= <var>0</var>);</td></tr>
+<tr><th id="92">92</th><td>                <a class="macro" href="../../../../../assert/include/boost/assert.hpp.html#60" title="(static_cast&lt;void&gt; (0))" data-ref="_M/BOOST_ASSERT">BOOST_ASSERT</a>(</td></tr>
+<tr><th id="93">93</th><td>                    grammar::hexdig_value(</td></tr>
+<tr><th id="94">94</th><td>                        it[<var>2</var>]) &gt;= <var>0</var>);</td></tr>
+<tr><th id="95">95</th><td>                <a class="local col8 ref" href="#98n" title='n' data-ref="98n">n</a> += <var>3</var>;</td></tr>
+<tr><th id="96">96</th><td>                <a class="local col0 ref" href="#100it" title='it' data-ref="100it">it</a> += <var>3</var>;</td></tr>
+<tr><th id="97">97</th><td>            }</td></tr>
+<tr><th id="98">98</th><td>        }</td></tr>
+<tr><th id="99">99</th><td>    }</td></tr>
+<tr><th id="100">100</th><td>    <b>return</b> <a class="local col8 ref" href="#98n" title='n' data-ref="98n">n</a>;</td></tr>
+<tr><th id="101">101</th><td>}</td></tr>
+<tr><th id="102">102</th><td></td></tr>
+<tr><th id="103">103</th><td><i>// unchecked</i></td></tr>
+<tr><th id="104">104</th><td><i>// returns decoded size</i></td></tr>
+<tr><th id="105">105</th><td><b>template</b>&lt;<b>class</b> CharSet&gt;</td></tr>
+<tr><th id="106">106</th><td><span class="namespace">std::</span><a class="typedef" href="../../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a></td></tr>
+<tr><th id="107">107</th><td><dfn class="decl def fn" id="_ZN5boost4urls6detail16re_encode_unsafeERPcPKcNS_4core17basic_string_viewIcEERKT_NS0_13encoding_optsE" title='boost::urls::detail::re_encode_unsafe' data-ref="_ZN5boost4urls6detail16re_encode_unsafeERPcPKcNS_4core17basic_string_viewIcEERKT_NS0_13encoding_optsE">re_encode_unsafe</dfn>(</td></tr>
+<tr><th id="108">108</th><td>    <em>char</em>*&amp; <dfn class="local col1 decl" id="101dest_" title='dest_' data-type='char *&amp;' data-ref="101dest_">dest_</dfn>,</td></tr>
+<tr><th id="109">109</th><td>    <em>char</em> <em>const</em>* <em>const</em> <dfn class="local col2 decl" id="102end" title='end' data-type='const char *const' data-ref="102end">end</dfn>,</td></tr>
+<tr><th id="110">110</th><td>    <span class="namespace">core::</span><a class="typedef" href="../../../../../core/include/boost/core/detail/string_view.hpp.html#boost::core::string_view" title='boost::core::string_view' data-type='basic_string_view&lt;char&gt;' data-ref="boost::core::string_view">string_view</a> <dfn class="local col3 decl" id="103s" title='s' data-type='core::string_view' data-ref="103s">s</dfn>,</td></tr>
+<tr><th id="111">111</th><td>    CharSet <em>const</em>&amp; <dfn class="local col4 decl" id="104unreserved" title='unreserved' data-type='const CharSet &amp;' data-ref="104unreserved">unreserved</dfn>,</td></tr>
+<tr><th id="112">112</th><td>    <a class="type" href="../encoding_opts.hpp.html#boost::urls::encoding_opts" title='boost::urls::encoding_opts' data-ref="boost::urls::encoding_opts">encoding_opts</a> <dfn class="local col5 decl" id="105opt" title='opt' data-type='boost::urls::encoding_opts' data-ref="105opt">opt</dfn>) <b>noexcept</b></td></tr>
+<tr><th id="113">113</th><td>{</td></tr>
+<tr><th id="114">114</th><td>    <em>char</em> <em>const</em>* <em>const</em> <dfn class="local col6 decl" id="106hex" title='hex' data-type='const char *const' data-ref="106hex">hex</dfn> =</td></tr>
+<tr><th id="115">115</th><td>        <span class="namespace">detail::</span><a class="ref" href="#boost::urls::detail::hexdigs" title='boost::urls::detail::hexdigs' data-ref="boost::urls::detail::hexdigs">hexdigs</a>[<a class="local col5 ref" href="#105opt" title='opt' data-ref="105opt">opt</a>.<a class="ref field" href="../encoding_opts.hpp.html#boost::urls::encoding_opts::lower_case" title='boost::urls::encoding_opts::lower_case' data-ref="boost::urls::encoding_opts::lower_case">lower_case</a>];</td></tr>
+<tr><th id="116">116</th><td>    <em>auto</em> <em>const</em> <dfn class="local col7 decl" id="107encode" title='encode' data-type='const auto' data-ref="107encode">encode</dfn> = [<a class="local col2 ref" href="#102end" title='end' data-ref="102end">end</a>, <a class="local col6 ref" href="#106hex" title='hex' data-ref="106hex">hex</a>](</td></tr>
+<tr><th id="117">117</th><td>        <em>char</em>*&amp; <dfn class="local col8 decl" id="108dest" title='dest' data-type='char *&amp;' data-ref="108dest">dest</dfn>,</td></tr>
+<tr><th id="118">118</th><td>        <em>char</em> <dfn class="local col9 decl" id="109c0" title='c0' data-type='char' data-ref="109c0">c0</dfn>) <b>noexcept</b></td></tr>
+<tr><th id="119">119</th><td>    {</td></tr>
+<tr><th id="120">120</th><td>        <em>auto</em> <dfn class="local col0 decl" id="110c" title='c' data-type='unsigned char' data-ref="110c">c</dfn> = <b>static_cast</b>&lt;<em>unsigned</em> <em>char</em>&gt;(<a class="local col9 ref" href="#109c0" title='c0' data-ref="109c0">c0</a>);</td></tr>
+<tr><th id="121">121</th><td>        <a class="ref fn" href="../../../../../core/include/boost/core/ignore_unused.hpp.html#_ZN5boost13ignore_unusedEDpOT_" title='boost::ignore_unused' data-ref="_ZN5boost13ignore_unusedEDpOT_">ignore_unused</a>(<a class="local col2 ref" href="#102end" title='end' data-ref="102end">end</a>);</td></tr>
+<tr><th id="122">122</th><td>        *<a class="local col8 ref" href="#108dest" title='dest' data-ref="108dest">dest</a>++ = <kbd>'%'</kbd>;</td></tr>
+<tr><th id="123">123</th><td>        <a class="macro" href="../../../../../assert/include/boost/assert.hpp.html#60" title="(static_cast&lt;void&gt; (0))" data-ref="_M/BOOST_ASSERT">BOOST_ASSERT</a>(dest != end);</td></tr>
+<tr><th id="124">124</th><td>        *<a class="local col8 ref" href="#108dest" title='dest' data-ref="108dest">dest</a>++ = <a class="local col6 ref" href="#106hex" title='hex' data-ref="106hex">hex</a>[<a class="local col0 ref" href="#110c" title='c' data-ref="110c">c</a>&gt;&gt;<var>4</var>];</td></tr>
+<tr><th id="125">125</th><td>        <a class="macro" href="../../../../../assert/include/boost/assert.hpp.html#60" title="(static_cast&lt;void&gt; (0))" data-ref="_M/BOOST_ASSERT">BOOST_ASSERT</a>(dest != end);</td></tr>
+<tr><th id="126">126</th><td>        *<a class="local col8 ref" href="#108dest" title='dest' data-ref="108dest">dest</a>++ = <a class="local col6 ref" href="#106hex" title='hex' data-ref="106hex">hex</a>[<a class="local col0 ref" href="#110c" title='c' data-ref="110c">c</a>&amp;<var>0xf</var>];</td></tr>
+<tr><th id="127">127</th><td>    };</td></tr>
+<tr><th id="128">128</th><td>    <a class="ref fn" href="../../../../../core/include/boost/core/ignore_unused.hpp.html#_ZN5boost13ignore_unusedEDpOT_" title='boost::ignore_unused' data-ref="_ZN5boost13ignore_unusedEDpOT_">ignore_unused</a>(<a class="local col2 ref" href="#102end" title='end' data-ref="102end">end</a>);</td></tr>
+<tr><th id="129">129</th><td></td></tr>
+<tr><th id="130">130</th><td>    <em>auto</em> <dfn class="local col1 decl" id="111dest" title='dest' data-type='char *' data-ref="111dest">dest</dfn> = <a class="local col1 ref" href="#101dest_" title='dest_' data-ref="101dest_">dest_</a>;</td></tr>
+<tr><th id="131">131</th><td>    <em>auto</em> <em>const</em> <dfn class="local col2 decl" id="112dest0" title='dest0' data-type='const char *' data-ref="112dest0">dest0</dfn> = <a class="local col1 ref" href="#111dest" title='dest' data-ref="111dest">dest</a>;</td></tr>
+<tr><th id="132">132</th><td>    <em>auto</em> <em>const</em> <dfn class="local col3 decl" id="113last" title='last' data-type='const boost::core::basic_string_view&lt;char&gt;::const_iterator' data-ref="113last">last</dfn> = <a class="local col3 ref" href="#103s" title='s' data-ref="103s">s</a>.<a class="ref fn" href="../../../../../core/include/boost/core/detail/string_view.hpp.html#_ZNK5boost4core17basic_string_view3endEv" title='boost::core::basic_string_view::end' data-ref="_ZNK5boost4core17basic_string_view3endEv">end</a>();</td></tr>
+<tr><th id="133">133</th><td>    <span class="namespace">std::</span><a class="typedef" href="../../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> <dfn class="local col4 decl" id="114dn" title='dn' data-type='std::size_t' data-ref="114dn">dn</dfn> = <var>0</var>;</td></tr>
+<tr><th id="134">134</th><td>    <em>auto</em> <dfn class="local col5 decl" id="115it" title='it' data-type='boost::core::basic_string_view&lt;char&gt;::const_iterator' data-ref="115it">it</dfn> = <a class="local col3 ref" href="#103s" title='s' data-ref="103s">s</a>.<a class="ref fn" href="../../../../../core/include/boost/core/detail/string_view.hpp.html#_ZNK5boost4core17basic_string_view5beginEv" title='boost::core::basic_string_view::begin' data-ref="_ZNK5boost4core17basic_string_view5beginEv">begin</a>();</td></tr>
+<tr><th id="135">135</th><td></td></tr>
+<tr><th id="136">136</th><td>    <b>if</b>(<a class="local col5 ref" href="#105opt" title='opt' data-ref="105opt">opt</a>.<a class="ref field" href="../encoding_opts.hpp.html#boost::urls::encoding_opts::space_as_plus" title='boost::urls::encoding_opts::space_as_plus' data-ref="boost::urls::encoding_opts::space_as_plus">space_as_plus</a>)</td></tr>
+<tr><th id="137">137</th><td>    {</td></tr>
+<tr><th id="138">138</th><td>        <b>while</b>(<a class="local col5 ref" href="#115it" title='it' data-ref="115it">it</a> != <a class="local col3 ref" href="#113last" title='last' data-ref="113last">last</a>)</td></tr>
+<tr><th id="139">139</th><td>        {</td></tr>
+<tr><th id="140">140</th><td>            <a class="macro" href="../../../../../assert/include/boost/assert.hpp.html#60" title="(static_cast&lt;void&gt; (0))" data-ref="_M/BOOST_ASSERT">BOOST_ASSERT</a>(dest != end);</td></tr>
+<tr><th id="141">141</th><td>            <b>if</b>(*<a class="local col5 ref" href="#115it" title='it' data-ref="115it">it</a> != <kbd>'%'</kbd>)</td></tr>
+<tr><th id="142">142</th><td>            {</td></tr>
+<tr><th id="143">143</th><td>                <b>if</b>(*<a class="local col5 ref" href="#115it" title='it' data-ref="115it">it</a> == <kbd>' '</kbd>)</td></tr>
+<tr><th id="144">144</th><td>                {</td></tr>
+<tr><th id="145">145</th><td>                    *<a class="local col1 ref" href="#111dest" title='dest' data-ref="111dest">dest</a>++ = <kbd>'+'</kbd>;</td></tr>
+<tr><th id="146">146</th><td>                }</td></tr>
+<tr><th id="147">147</th><td>                <b>else</b> <b>if</b>(<a class="local col4 ref" href="#104unreserved" title='unreserved' data-ref="104unreserved">unreserved</a>(*<a class="local col5 ref" href="#115it" title='it' data-ref="115it">it</a>))</td></tr>
+<tr><th id="148">148</th><td>                {</td></tr>
+<tr><th id="149">149</th><td>                    *<a class="local col1 ref" href="#111dest" title='dest' data-ref="111dest">dest</a>++ = *<a class="local col5 ref" href="#115it" title='it' data-ref="115it">it</a>;</td></tr>
+<tr><th id="150">150</th><td>                }</td></tr>
+<tr><th id="151">151</th><td>                <b>else</b></td></tr>
+<tr><th id="152">152</th><td>                {</td></tr>
+<tr><th id="153">153</th><td>                    <a class="local col7 ref" href="#107encode" title='encode' data-ref="107encode">encode</a>(<a class="local col1 ref" href="#111dest" title='dest' data-ref="111dest">dest</a>, *<a class="local col5 ref" href="#115it" title='it' data-ref="115it">it</a>);</td></tr>
+<tr><th id="154">154</th><td>                    <a class="local col4 ref" href="#114dn" title='dn' data-ref="114dn">dn</a> += <var>2</var>;</td></tr>
+<tr><th id="155">155</th><td>                }</td></tr>
+<tr><th id="156">156</th><td>                ++<a class="local col5 ref" href="#115it" title='it' data-ref="115it">it</a>;</td></tr>
+<tr><th id="157">157</th><td>            }</td></tr>
+<tr><th id="158">158</th><td>            <b>else</b></td></tr>
+<tr><th id="159">159</th><td>            {</td></tr>
+<tr><th id="160">160</th><td>                *<a class="local col1 ref" href="#111dest" title='dest' data-ref="111dest">dest</a>++ = *<a class="local col5 ref" href="#115it" title='it' data-ref="115it">it</a>++;</td></tr>
+<tr><th id="161">161</th><td>                <a class="macro" href="../../../../../assert/include/boost/assert.hpp.html#60" title="(static_cast&lt;void&gt; (0))" data-ref="_M/BOOST_ASSERT">BOOST_ASSERT</a>(dest != end);</td></tr>
+<tr><th id="162">162</th><td>                *<a class="local col1 ref" href="#111dest" title='dest' data-ref="111dest">dest</a>++ = *<a class="local col5 ref" href="#115it" title='it' data-ref="115it">it</a>++;</td></tr>
+<tr><th id="163">163</th><td>                <a class="macro" href="../../../../../assert/include/boost/assert.hpp.html#60" title="(static_cast&lt;void&gt; (0))" data-ref="_M/BOOST_ASSERT">BOOST_ASSERT</a>(dest != end);</td></tr>
+<tr><th id="164">164</th><td>                *<a class="local col1 ref" href="#111dest" title='dest' data-ref="111dest">dest</a>++ = *<a class="local col5 ref" href="#115it" title='it' data-ref="115it">it</a>++;</td></tr>
+<tr><th id="165">165</th><td>                <a class="local col4 ref" href="#114dn" title='dn' data-ref="114dn">dn</a> += <var>2</var>;</td></tr>
+<tr><th id="166">166</th><td>            }</td></tr>
+<tr><th id="167">167</th><td>        }</td></tr>
+<tr><th id="168">168</th><td>    }</td></tr>
+<tr><th id="169">169</th><td>    <b>else</b></td></tr>
+<tr><th id="170">170</th><td>    {</td></tr>
+<tr><th id="171">171</th><td>        <b>while</b>(<a class="local col5 ref" href="#115it" title='it' data-ref="115it">it</a> != <a class="local col3 ref" href="#113last" title='last' data-ref="113last">last</a>)</td></tr>
+<tr><th id="172">172</th><td>        {</td></tr>
+<tr><th id="173">173</th><td>            <a class="macro" href="../../../../../assert/include/boost/assert.hpp.html#60" title="(static_cast&lt;void&gt; (0))" data-ref="_M/BOOST_ASSERT">BOOST_ASSERT</a>(dest != end);</td></tr>
+<tr><th id="174">174</th><td>            <b>if</b>(*<a class="local col5 ref" href="#115it" title='it' data-ref="115it">it</a> != <kbd>'%'</kbd>)</td></tr>
+<tr><th id="175">175</th><td>            {</td></tr>
+<tr><th id="176">176</th><td>                <b>if</b>(<a class="local col4 ref" href="#104unreserved" title='unreserved' data-ref="104unreserved">unreserved</a>(*<a class="local col5 ref" href="#115it" title='it' data-ref="115it">it</a>))</td></tr>
+<tr><th id="177">177</th><td>                {</td></tr>
+<tr><th id="178">178</th><td>                    *<a class="local col1 ref" href="#111dest" title='dest' data-ref="111dest">dest</a>++ = *<a class="local col5 ref" href="#115it" title='it' data-ref="115it">it</a>;</td></tr>
+<tr><th id="179">179</th><td>                }</td></tr>
+<tr><th id="180">180</th><td>                <b>else</b></td></tr>
+<tr><th id="181">181</th><td>                {</td></tr>
+<tr><th id="182">182</th><td>                    <a class="local col7 ref" href="#107encode" title='encode' data-ref="107encode">encode</a>(<a class="local col1 ref" href="#111dest" title='dest' data-ref="111dest">dest</a>, *<a class="local col5 ref" href="#115it" title='it' data-ref="115it">it</a>);</td></tr>
+<tr><th id="183">183</th><td>                    <a class="local col4 ref" href="#114dn" title='dn' data-ref="114dn">dn</a> += <var>2</var>;</td></tr>
+<tr><th id="184">184</th><td>                }</td></tr>
+<tr><th id="185">185</th><td>                ++<a class="local col5 ref" href="#115it" title='it' data-ref="115it">it</a>;</td></tr>
+<tr><th id="186">186</th><td>            }</td></tr>
+<tr><th id="187">187</th><td>            <b>else</b></td></tr>
+<tr><th id="188">188</th><td>            {</td></tr>
+<tr><th id="189">189</th><td>                *<a class="local col1 ref" href="#111dest" title='dest' data-ref="111dest">dest</a>++ = *<a class="local col5 ref" href="#115it" title='it' data-ref="115it">it</a>++;</td></tr>
+<tr><th id="190">190</th><td>                <a class="macro" href="../../../../../assert/include/boost/assert.hpp.html#60" title="(static_cast&lt;void&gt; (0))" data-ref="_M/BOOST_ASSERT">BOOST_ASSERT</a>(dest != end);</td></tr>
+<tr><th id="191">191</th><td>                *<a class="local col1 ref" href="#111dest" title='dest' data-ref="111dest">dest</a>++ = *<a class="local col5 ref" href="#115it" title='it' data-ref="115it">it</a>++;</td></tr>
+<tr><th id="192">192</th><td>                <a class="macro" href="../../../../../assert/include/boost/assert.hpp.html#60" title="(static_cast&lt;void&gt; (0))" data-ref="_M/BOOST_ASSERT">BOOST_ASSERT</a>(dest != end);</td></tr>
+<tr><th id="193">193</th><td>                *<a class="local col1 ref" href="#111dest" title='dest' data-ref="111dest">dest</a>++ = *<a class="local col5 ref" href="#115it" title='it' data-ref="115it">it</a>++;</td></tr>
+<tr><th id="194">194</th><td>                <a class="local col4 ref" href="#114dn" title='dn' data-ref="114dn">dn</a> += <var>2</var>;</td></tr>
+<tr><th id="195">195</th><td>            }</td></tr>
+<tr><th id="196">196</th><td>        }</td></tr>
+<tr><th id="197">197</th><td>    }</td></tr>
+<tr><th id="198">198</th><td>    <a class="local col1 ref" href="#101dest_" title='dest_' data-ref="101dest_">dest_</a> = <a class="local col1 ref" href="#111dest" title='dest' data-ref="111dest">dest</a>;</td></tr>
+<tr><th id="199">199</th><td>    <b>return</b> <a class="local col1 ref" href="#111dest" title='dest' data-ref="111dest">dest</a> - <a class="local col2 ref" href="#112dest0" title='dest0' data-ref="112dest0">dest0</a> - <a class="local col4 ref" href="#114dn" title='dn' data-ref="114dn">dn</a>;</td></tr>
+<tr><th id="200">200</th><td>}</td></tr>
+<tr><th id="201">201</th><td></td></tr>
+<tr><th id="202">202</th><td>} <i>// detail</i></td></tr>
+<tr><th id="203">203</th><td>} <i>// urls</i></td></tr>
+<tr><th id="204">204</th><td>} <i>// boost</i></td></tr>
+<tr><th id="205">205</th><td></td></tr>
+<tr><th id="206">206</th><td><u>#<span data-ppcond="11">endif</span></u></td></tr>
+<tr><th id="207">207</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../../../../src/detail/any_params_iter.cpp.html'>boost-1.85.0/libs/url/src/detail/any_params_iter.cpp</a><br/>Generated on <em>2024-Jun-14</em> from project boost-1.85.0 revision <em>1.85.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

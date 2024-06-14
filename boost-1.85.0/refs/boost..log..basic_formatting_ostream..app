@@ -1,0 +1,2 @@
+<dec f='boost-1.85.0/libs/log/include/boost/log/utility/formatting_ostream.hpp' l='202' type='const boost::log::basic_formatting_ostream::openmode'/>
+<def f='boost-1.85.0/libs/log/include/boost/log/utility/formatting_ostream.hpp' l='827' ll='828' type='const typename basic_formatting_ostream&lt;CharT, TraitsT, AllocatorT&gt;::openmode'/>

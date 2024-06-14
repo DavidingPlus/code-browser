@@ -1,0 +1,352 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>serializer.hpp source code [boost-1.85.0/libs/json/include/boost/json/serializer.hpp] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="boost::json::serializer "/>
+<link rel="stylesheet" href="../../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'boost-1.85.0/libs/json/include/boost/json/serializer.hpp'; var root_path = '../../../../../..'; var data_path = '../../../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../../..'>boost-1.85.0</a>/<a href='../../../..'>libs</a>/<a href='../../..'>json</a>/<a href='../..'>include</a>/<a href='..'>boost</a>/<a href='./'>json</a>/<a href='serializer.hpp.html'>serializer.hpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>//</i></td></tr>
+<tr><th id="2">2</th><td><i>// Copyright (c) 2019 Vinnie Falco (vinnie.falco@gmail.com)</i></td></tr>
+<tr><th id="3">3</th><td><i>//</i></td></tr>
+<tr><th id="4">4</th><td><i>// Distributed under the Boost Software License, Version 1.0. (See accompanying</i></td></tr>
+<tr><th id="5">5</th><td><i>// file LICENSE_1_0.txt or copy at <a href="http://www.boost.org/LICENSE_1_0.txt">http://www.boost.org/LICENSE_1_0.txt</a>)</i></td></tr>
+<tr><th id="6">6</th><td><i>//</i></td></tr>
+<tr><th id="7">7</th><td><i>// Official repository: <a href="https://github.com/boostorg/json">https://github.com/boostorg/json</a></i></td></tr>
+<tr><th id="8">8</th><td><i>//</i></td></tr>
+<tr><th id="9">9</th><td></td></tr>
+<tr><th id="10">10</th><td><u>#<span data-ppcond="10">ifndef</span> <span class="macro" data-ref="_M/BOOST_JSON_SERIALIZER_HPP">BOOST_JSON_SERIALIZER_HPP</span></u></td></tr>
+<tr><th id="11">11</th><td><u>#define <dfn class="macro" id="_M/BOOST_JSON_SERIALIZER_HPP" data-ref="_M/BOOST_JSON_SERIALIZER_HPP">BOOST_JSON_SERIALIZER_HPP</dfn></u></td></tr>
+<tr><th id="12">12</th><td></td></tr>
+<tr><th id="13">13</th><td><u>#include <a href="detail/config.hpp.html">&lt;boost/json/detail/config.hpp&gt;</a></u></td></tr>
+<tr><th id="14">14</th><td><u>#include <a href="detail/format.hpp.html">&lt;boost/json/detail/format.hpp&gt;</a></u></td></tr>
+<tr><th id="15">15</th><td><u>#include <a href="detail/stack.hpp.html">&lt;boost/json/detail/stack.hpp&gt;</a></u></td></tr>
+<tr><th id="16">16</th><td><u>#include <a href="detail/stream.hpp.html">&lt;boost/json/detail/stream.hpp&gt;</a></u></td></tr>
+<tr><th id="17">17</th><td><u>#include <a href="serialize_options.hpp.html">&lt;boost/json/serialize_options.hpp&gt;</a></u></td></tr>
+<tr><th id="18">18</th><td><u>#include <a href="value.hpp.html">&lt;boost/json/value.hpp&gt;</a></u></td></tr>
+<tr><th id="19">19</th><td></td></tr>
+<tr><th id="20">20</th><td><b>namespace</b> <span class="namespace">boost</span> {</td></tr>
+<tr><th id="21">21</th><td><b>namespace</b> <span class="namespace">json</span> {</td></tr>
+<tr><th id="22">22</th><td></td></tr>
+<tr><th id="23">23</th><td><i class="doc">/** A serializer for JSON.</i></td></tr>
+<tr><th id="24">24</th><td><i class="doc"></i></td></tr>
+<tr><th id="25">25</th><td><i class="doc">    This class traverses an instance of a library</i></td></tr>
+<tr><th id="26">26</th><td><i class="doc">    type and emits serialized JSON text by filling</i></td></tr>
+<tr><th id="27">27</th><td><i class="doc">    in one or more caller-provided buffers. To use,</i></td></tr>
+<tr><th id="28">28</th><td><i class="doc">    declare a variable and call<span class="command"> @ref</span> <span class="arg">reset</span> with</i></td></tr>
+<tr><th id="29">29</th><td><i class="doc">    a pointer to the variable you want to serialize.</i></td></tr>
+<tr><th id="30">30</th><td><i class="doc">    Then call<span class="command"> @ref</span> <span class="arg">read</span> over and over until</i></td></tr>
+<tr><th id="31">31</th><td><i class="doc">   <span class="command"> @ref</span> <span class="arg">done</span> returns `true`.</i></td></tr>
+<tr><th id="32">32</th><td><i class="doc"></i></td></tr>
+<tr><th id="33">33</th><td><i class="doc">    <span class="command">@par</span> Example</i></td></tr>
+<tr><th id="34">34</th><td><i class="doc"></i></td></tr>
+<tr><th id="35">35</th><td><i class="doc">    This demonstrates how the serializer may</i></td></tr>
+<tr><th id="36">36</th><td><i class="doc">    be used to print a JSON value to an output</i></td></tr>
+<tr><th id="37">37</th><td><i class="doc">    stream.</i></td></tr>
+<tr><th id="38">38</th><td><i class="doc"></i></td></tr>
+<tr><th id="39">39</th><td><i class="doc">    <span class="command">@code</span></i></td></tr>
+<tr><th id="40">40</th><td><i class="doc"><span class="verb"></span></i></td></tr>
+<tr><th id="41">41</th><td><i class="doc"><span class="verb"></span><span class="verb">    void print( std::ostream&amp; os, value const&amp; jv)</span></i></td></tr>
+<tr><th id="42">42</th><td><i class="doc"><span class="verb"></span><span class="verb">    {</span></i></td></tr>
+<tr><th id="43">43</th><td><i class="doc"><span class="verb"></span><span class="verb">        serializer sr;</span></i></td></tr>
+<tr><th id="44">44</th><td><i class="doc"><span class="verb"></span><span class="verb">        sr.reset( &amp;jv );</span></i></td></tr>
+<tr><th id="45">45</th><td><i class="doc"><span class="verb"></span><span class="verb">        while( ! sr.done() )</span></i></td></tr>
+<tr><th id="46">46</th><td><i class="doc"><span class="verb"></span><span class="verb">        {</span></i></td></tr>
+<tr><th id="47">47</th><td><i class="doc"><span class="verb"></span><span class="verb">            char buf[ 4000 ];</span></i></td></tr>
+<tr><th id="48">48</th><td><i class="doc"><span class="verb"></span><span class="verb">            os &lt;&lt; sr.read( buf );</span></i></td></tr>
+<tr><th id="49">49</th><td><i class="doc"><span class="verb"></span><span class="verb">        }</span></i></td></tr>
+<tr><th id="50">50</th><td><i class="doc"><span class="verb"></span><span class="verb">    }</span></i></td></tr>
+<tr><th id="51">51</th><td><i class="doc"><span class="verb"></span><span class="verb"></span></i></td></tr>
+<tr><th id="52">52</th><td><i class="doc"><span class="verb"></span>    @endcode</i></td></tr>
+<tr><th id="53">53</th><td><i class="doc"></i></td></tr>
+<tr><th id="54">54</th><td><i class="doc">    <span class="command">@par</span> Thread Safety</i></td></tr>
+<tr><th id="55">55</th><td><i class="doc"></i></td></tr>
+<tr><th id="56">56</th><td><i class="doc">    The same instance may not be accessed concurrently.</i></td></tr>
+<tr><th id="57">57</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="58">58</th><td><b>class</b> <dfn class="type def" id="boost::json::serializer" title='boost::json::serializer' data-ref="boost::json::serializer">serializer</dfn></td></tr>
+<tr><th id="59">59</th><td>{</td></tr>
+<tr><th id="60">60</th><td>    <b>enum</b> <b>class</b> <dfn class="type" id="boost::json::serializer::state" title='boost::json::serializer::state' data-ref="boost::json::serializer::state">state</dfn> : <em>char</em>;</td></tr>
+<tr><th id="61">61</th><td>    <i>// VFALCO Too many streams</i></td></tr>
+<tr><th id="62">62</th><td>    <b>using</b> <dfn class="typedef" id="boost::json::serializer::stream" title='boost::json::serializer::stream' data-type='detail::stream' data-ref="boost::json::serializer::stream">stream</dfn> = <span class="namespace">detail::</span><a class="type" href="detail/stream.hpp.html#boost::json::detail::stream" title='boost::json::detail::stream' data-ref="boost::json::detail::stream">stream</a>;</td></tr>
+<tr><th id="63">63</th><td>    <b>using</b> <dfn class="typedef" id="boost::json::serializer::const_stream" title='boost::json::serializer::const_stream' data-type='detail::const_stream' data-ref="boost::json::serializer::const_stream">const_stream</dfn> = <span class="namespace">detail::</span><a class="type" href="detail/stream.hpp.html#boost::json::detail::const_stream" title='boost::json::detail::const_stream' data-ref="boost::json::detail::const_stream">const_stream</a>;</td></tr>
+<tr><th id="64">64</th><td>    <b>using</b> <dfn class="typedef" id="boost::json::serializer::local_stream" title='boost::json::serializer::local_stream' data-type='detail::local_stream' data-ref="boost::json::serializer::local_stream">local_stream</dfn> = <span class="namespace">detail::</span><a class="type" href="detail/stream.hpp.html#boost::json::detail::local_stream" title='boost::json::detail::local_stream' data-ref="boost::json::detail::local_stream">local_stream</a>;</td></tr>
+<tr><th id="65">65</th><td>    <b>using</b> <dfn class="typedef" id="boost::json::serializer::local_const_stream" title='boost::json::serializer::local_const_stream' data-type='detail::local_const_stream' data-ref="boost::json::serializer::local_const_stream">local_const_stream</dfn> =</td></tr>
+<tr><th id="66">66</th><td>        <span class="namespace">detail::</span><a class="type" href="detail/stream.hpp.html#boost::json::detail::local_const_stream" title='boost::json::detail::local_const_stream' data-ref="boost::json::detail::local_const_stream">local_const_stream</a>;</td></tr>
+<tr><th id="67">67</th><td></td></tr>
+<tr><th id="68">68</th><td>    <b>using</b> <dfn class="typedef" id="boost::json::serializer::fn_t" title='boost::json::serializer::fn_t' data-type='bool (boost::json::serializer::*)(boost::json::serializer::stream &amp;)' data-ref="boost::json::serializer::fn_t">fn_t</dfn> = <em>bool</em> (<a class="type" href="#boost::json::serializer" title='boost::json::serializer' data-ref="boost::json::serializer">serializer</a>::*)(<a class="typedef" href="#boost::json::serializer::stream" title='boost::json::serializer::stream' data-type='detail::stream' data-ref="boost::json::serializer::stream">stream</a>&amp;);</td></tr>
+<tr><th id="69">69</th><td></td></tr>
+<tr><th id="70">70</th><td><u>#<span data-ppcond="70">ifndef</span> <span class="macro" data-ref="_M/BOOST_JSON_DOCS">BOOST_JSON_DOCS</span></u></td></tr>
+<tr><th id="71">71</th><td>    <b>union</b></td></tr>
+<tr><th id="72">72</th><td>    {</td></tr>
+<tr><th id="73">73</th><td>        <a class="type" href="value.hpp.html#boost::json::value" title='boost::json::value' data-ref="boost::json::value">value</a> <em>const</em>* <dfn class="decl field" id="boost::json::serializer::(anonymous)::pv_" title='boost::json::serializer::(anonymous union)::pv_' data-ref="boost::json::serializer::(anonymous)::pv_">pv_</dfn>;</td></tr>
+<tr><th id="74">74</th><td>        <a class="type" href="array.hpp.html#boost::json::array" title='boost::json::array' data-ref="boost::json::array">array</a> <em>const</em>* <dfn class="decl field" id="boost::json::serializer::(anonymous)::pa_" title='boost::json::serializer::(anonymous union)::pa_' data-ref="boost::json::serializer::(anonymous)::pa_">pa_</dfn>;</td></tr>
+<tr><th id="75">75</th><td>        <a class="type" href="object.hpp.html#boost::json::object" title='boost::json::object' data-ref="boost::json::object">object</a> <em>const</em>* <dfn class="decl field" id="boost::json::serializer::(anonymous)::po_" title='boost::json::serializer::(anonymous union)::po_' data-ref="boost::json::serializer::(anonymous)::po_">po_</dfn>;</td></tr>
+<tr><th id="76">76</th><td>    };</td></tr>
+<tr><th id="77">77</th><td><u>#<span data-ppcond="70">endif</span></u></td></tr>
+<tr><th id="78">78</th><td>    <a class="typedef" href="#boost::json::serializer::fn_t" title='boost::json::serializer::fn_t' data-type='bool (boost::json::serializer::*)(boost::json::serializer::stream &amp;)' data-ref="boost::json::serializer::fn_t">fn_t</a> <dfn class="decl field" id="boost::json::serializer::fn0_" title='boost::json::serializer::fn0_' data-ref="boost::json::serializer::fn0_">fn0_</dfn> = &amp;<a class="type" href="#boost::json::serializer" title='boost::json::serializer' data-ref="boost::json::serializer">serializer</a>::<a class="ref fn" href="#_ZN5boost4json10serializer10write_nullERNS0_6detail6streamE" title='boost::json::serializer::write_null' data-ref="_ZN5boost4json10serializer10write_nullERNS0_6detail6streamE">write_null</a>&lt;<b>true</b>&gt;;</td></tr>
+<tr><th id="79">79</th><td>    <a class="typedef" href="#boost::json::serializer::fn_t" title='boost::json::serializer::fn_t' data-type='bool (boost::json::serializer::*)(boost::json::serializer::stream &amp;)' data-ref="boost::json::serializer::fn_t">fn_t</a> <dfn class="decl field" id="boost::json::serializer::fn1_" title='boost::json::serializer::fn1_' data-ref="boost::json::serializer::fn1_">fn1_</dfn> = &amp;<a class="type" href="#boost::json::serializer" title='boost::json::serializer' data-ref="boost::json::serializer">serializer</a>::<a class="ref fn" href="#_ZN5boost4json10serializer10write_nullERNS0_6detail6streamE" title='boost::json::serializer::write_null' data-ref="_ZN5boost4json10serializer10write_nullERNS0_6detail6streamE">write_null</a>&lt;<b>false</b>&gt;;</td></tr>
+<tr><th id="80">80</th><td>    <a class="type" href="value.hpp.html#boost::json::value" title='boost::json::value' data-ref="boost::json::value">value</a> <em>const</em>* <dfn class="decl field" id="boost::json::serializer::jv_" title='boost::json::serializer::jv_' data-ref="boost::json::serializer::jv_">jv_</dfn> = <b>nullptr</b>;</td></tr>
+<tr><th id="81">81</th><td>    <span class="namespace">detail::</span><a class="type" href="detail/stack.hpp.html#boost::json::detail::stack" title='boost::json::detail::stack' data-ref="boost::json::detail::stack">stack</a> <dfn class="decl field" id="boost::json::serializer::st_" title='boost::json::serializer::st_' data-ref="boost::json::serializer::st_">st_</dfn>;</td></tr>
+<tr><th id="82">82</th><td>    <a class="typedef" href="#boost::json::serializer::const_stream" title='boost::json::serializer::const_stream' data-type='detail::const_stream' data-ref="boost::json::serializer::const_stream">const_stream</a> <dfn class="decl field" id="boost::json::serializer::cs0_" title='boost::json::serializer::cs0_' data-ref="boost::json::serializer::cs0_">cs0_</dfn>;</td></tr>
+<tr><th id="83">83</th><td>    <a class="type" href="serialize_options.hpp.html#boost::json::serialize_options" title='boost::json::serialize_options' data-ref="boost::json::serialize_options">serialize_options</a> <dfn class="decl field" id="boost::json::serializer::opts_" title='boost::json::serializer::opts_' data-ref="boost::json::serializer::opts_">opts_</dfn>;</td></tr>
+<tr><th id="84">84</th><td>    <em>char</em> <dfn class="decl field" id="boost::json::serializer::buf_" title='boost::json::serializer::buf_' data-ref="boost::json::serializer::buf_">buf_</dfn>[<span class="namespace">detail::</span><a class="ref" href="detail/format.hpp.html#boost::json::detail::max_number_chars" title='boost::json::detail::max_number_chars' data-ref="boost::json::detail::max_number_chars">max_number_chars</a> + <var>1</var>];</td></tr>
+<tr><th id="85">85</th><td>    <em>bool</em> <dfn class="decl field" id="boost::json::serializer::done_" title='boost::json::serializer::done_' data-ref="boost::json::serializer::done_">done_</dfn> = <b>false</b>;</td></tr>
+<tr><th id="86">86</th><td></td></tr>
+<tr><th id="87">87</th><td>    <b>inline</b> <em>bool</em> <a class="decl fn" href="impl/serializer.ipp.html#_ZN5boost4json10serializer7suspendENS1_5stateE" title='boost::json::serializer::suspend' data-ref="_ZN5boost4json10serializer7suspendENS1_5stateE" id="_ZN5boost4json10serializer7suspendENS1_5stateE">suspend</a>(<a class="type" href="#boost::json::serializer::state" title='boost::json::serializer::state' data-ref="boost::json::serializer::state">state</a> <dfn class="local col7 decl" id="3207st" title='st' data-type='boost::json::serializer::state' data-ref="3207st">st</dfn>);</td></tr>
+<tr><th id="88">88</th><td>    <b>inline</b> <em>bool</em> <a class="decl fn" href="impl/serializer.ipp.html#_ZN5boost4json10serializer7suspendENS1_5stateEPKNS0_5valueEPKNS0_5arrayE" title='boost::json::serializer::suspend' data-ref="_ZN5boost4json10serializer7suspendENS1_5stateEPKNS0_5valueEPKNS0_5arrayE" id="_ZN5boost4json10serializer7suspendENS1_5stateEPKNS0_5valueEPKNS0_5arrayE">suspend</a>(</td></tr>
+<tr><th id="89">89</th><td>        <a class="type" href="#boost::json::serializer::state" title='boost::json::serializer::state' data-ref="boost::json::serializer::state">state</a> <dfn class="local col8 decl" id="3208st" title='st' data-type='boost::json::serializer::state' data-ref="3208st">st</dfn>, <a class="type" href="array.hpp.html#boost::json::array" title='boost::json::array' data-ref="boost::json::array">array</a>::<a class="typedef" href="array.hpp.html#boost::json::array::const_iterator" title='boost::json::array::const_iterator' data-type='const boost::json::value *' data-ref="boost::json::array::const_iterator">const_iterator</a> <dfn class="local col9 decl" id="3209it" title='it' data-type='array::const_iterator' data-ref="3209it">it</dfn>, <a class="type" href="array.hpp.html#boost::json::array" title='boost::json::array' data-ref="boost::json::array">array</a> <em>const</em>* <dfn class="local col0 decl" id="3210pa" title='pa' data-type='const boost::json::array *' data-ref="3210pa">pa</dfn>);</td></tr>
+<tr><th id="90">90</th><td>    <b>inline</b> <em>bool</em> <a class="decl fn" href="impl/serializer.ipp.html#_ZN5boost4json10serializer7suspendENS1_5stateEPKNS0_14key_value_pairEPKNS0_6objectE" title='boost::json::serializer::suspend' data-ref="_ZN5boost4json10serializer7suspendENS1_5stateEPKNS0_14key_value_pairEPKNS0_6objectE" id="_ZN5boost4json10serializer7suspendENS1_5stateEPKNS0_14key_value_pairEPKNS0_6objectE">suspend</a>(</td></tr>
+<tr><th id="91">91</th><td>        <a class="type" href="#boost::json::serializer::state" title='boost::json::serializer::state' data-ref="boost::json::serializer::state">state</a> <dfn class="local col1 decl" id="3211st" title='st' data-type='boost::json::serializer::state' data-ref="3211st">st</dfn>, <a class="type" href="object.hpp.html#boost::json::object" title='boost::json::object' data-ref="boost::json::object">object</a>::<a class="typedef" href="object.hpp.html#boost::json::object::const_iterator" title='boost::json::object::const_iterator' data-type='const boost::json::object::value_type *' data-ref="boost::json::object::const_iterator">const_iterator</a> <dfn class="local col2 decl" id="3212it" title='it' data-type='object::const_iterator' data-ref="3212it">it</dfn>, <a class="type" href="object.hpp.html#boost::json::object" title='boost::json::object' data-ref="boost::json::object">object</a> <em>const</em>* <dfn class="local col3 decl" id="3213po" title='po' data-type='const boost::json::object *' data-ref="3213po">po</dfn>);</td></tr>
+<tr><th id="92">92</th><td>    <b>template</b>&lt;<em>bool</em> StackEmpty&gt; <em>bool</em> <a class="decl fn" href="impl/serializer.ipp.html#_ZN5boost4json10serializer10write_nullERNS0_6detail6streamE" title='boost::json::serializer::write_null' data-ref="_ZN5boost4json10serializer10write_nullERNS0_6detail6streamE" id="_ZN5boost4json10serializer10write_nullERNS0_6detail6streamE">write_null</a>   (<a class="typedef" href="#boost::json::serializer::stream" title='boost::json::serializer::stream' data-type='detail::stream' data-ref="boost::json::serializer::stream">stream</a>&amp; <dfn class="local col4 decl" id="3214ss" title='ss' data-type='boost::json::serializer::stream &amp;' data-ref="3214ss">ss</dfn>);</td></tr>
+<tr><th id="93">93</th><td>    <b>template</b>&lt;<em>bool</em> StackEmpty&gt; <em>bool</em> <a class="decl fn" href="impl/serializer.ipp.html#_ZN5boost4json10serializer10write_trueERNS0_6detail6streamE" title='boost::json::serializer::write_true' data-ref="_ZN5boost4json10serializer10write_trueERNS0_6detail6streamE" id="_ZN5boost4json10serializer10write_trueERNS0_6detail6streamE">write_true</a>   (<a class="typedef" href="#boost::json::serializer::stream" title='boost::json::serializer::stream' data-type='detail::stream' data-ref="boost::json::serializer::stream">stream</a>&amp; <dfn class="local col5 decl" id="3215ss" title='ss' data-type='boost::json::serializer::stream &amp;' data-ref="3215ss">ss</dfn>);</td></tr>
+<tr><th id="94">94</th><td>    <b>template</b>&lt;<em>bool</em> StackEmpty&gt; <em>bool</em> <a class="decl fn" href="impl/serializer.ipp.html#_ZN5boost4json10serializer11write_falseERNS0_6detail6streamE" title='boost::json::serializer::write_false' data-ref="_ZN5boost4json10serializer11write_falseERNS0_6detail6streamE" id="_ZN5boost4json10serializer11write_falseERNS0_6detail6streamE">write_false</a>  (<a class="typedef" href="#boost::json::serializer::stream" title='boost::json::serializer::stream' data-type='detail::stream' data-ref="boost::json::serializer::stream">stream</a>&amp; <dfn class="local col6 decl" id="3216ss" title='ss' data-type='boost::json::serializer::stream &amp;' data-ref="3216ss">ss</dfn>);</td></tr>
+<tr><th id="95">95</th><td>    <b>template</b>&lt;<em>bool</em> StackEmpty&gt; <em>bool</em> <a class="decl fn" href="impl/serializer.ipp.html#_ZN5boost4json10serializer12write_stringERNS0_6detail6streamE" title='boost::json::serializer::write_string' data-ref="_ZN5boost4json10serializer12write_stringERNS0_6detail6streamE" id="_ZN5boost4json10serializer12write_stringERNS0_6detail6streamE">write_string</a> (<a class="typedef" href="#boost::json::serializer::stream" title='boost::json::serializer::stream' data-type='detail::stream' data-ref="boost::json::serializer::stream">stream</a>&amp; <dfn class="local col7 decl" id="3217ss" title='ss' data-type='boost::json::serializer::stream &amp;' data-ref="3217ss">ss</dfn>);</td></tr>
+<tr><th id="96">96</th><td>    <b>template</b>&lt;<em>bool</em> StackEmpty&gt; <em>bool</em> <a class="decl fn" href="impl/serializer.ipp.html#_ZN5boost4json10serializer12write_numberERNS0_6detail6streamE" title='boost::json::serializer::write_number' data-ref="_ZN5boost4json10serializer12write_numberERNS0_6detail6streamE" id="_ZN5boost4json10serializer12write_numberERNS0_6detail6streamE">write_number</a> (<a class="typedef" href="#boost::json::serializer::stream" title='boost::json::serializer::stream' data-type='detail::stream' data-ref="boost::json::serializer::stream">stream</a>&amp; <dfn class="local col8 decl" id="3218ss" title='ss' data-type='boost::json::serializer::stream &amp;' data-ref="3218ss">ss</dfn>);</td></tr>
+<tr><th id="97">97</th><td>    <b>template</b>&lt;<em>bool</em> StackEmpty&gt; <em>bool</em> <a class="decl fn" href="impl/serializer.ipp.html#_ZN5boost4json10serializer11write_arrayERNS0_6detail6streamE" title='boost::json::serializer::write_array' data-ref="_ZN5boost4json10serializer11write_arrayERNS0_6detail6streamE" id="_ZN5boost4json10serializer11write_arrayERNS0_6detail6streamE">write_array</a>  (<a class="typedef" href="#boost::json::serializer::stream" title='boost::json::serializer::stream' data-type='detail::stream' data-ref="boost::json::serializer::stream">stream</a>&amp; <dfn class="local col9 decl" id="3219ss" title='ss' data-type='boost::json::serializer::stream &amp;' data-ref="3219ss">ss</dfn>);</td></tr>
+<tr><th id="98">98</th><td>    <b>template</b>&lt;<em>bool</em> StackEmpty&gt; <em>bool</em> <a class="decl fn" href="impl/serializer.ipp.html#_ZN5boost4json10serializer12write_objectERNS0_6detail6streamE" title='boost::json::serializer::write_object' data-ref="_ZN5boost4json10serializer12write_objectERNS0_6detail6streamE" id="_ZN5boost4json10serializer12write_objectERNS0_6detail6streamE">write_object</a> (<a class="typedef" href="#boost::json::serializer::stream" title='boost::json::serializer::stream' data-type='detail::stream' data-ref="boost::json::serializer::stream">stream</a>&amp; <dfn class="local col0 decl" id="3220ss" title='ss' data-type='boost::json::serializer::stream &amp;' data-ref="3220ss">ss</dfn>);</td></tr>
+<tr><th id="99">99</th><td>    <b>template</b>&lt;<em>bool</em> StackEmpty&gt; <em>bool</em> <a class="decl fn" href="impl/serializer.ipp.html#_ZN5boost4json10serializer11write_valueERNS0_6detail6streamE" title='boost::json::serializer::write_value' data-ref="_ZN5boost4json10serializer11write_valueERNS0_6detail6streamE" id="_ZN5boost4json10serializer11write_valueERNS0_6detail6streamE">write_value</a>  (<a class="typedef" href="#boost::json::serializer::stream" title='boost::json::serializer::stream' data-type='detail::stream' data-ref="boost::json::serializer::stream">stream</a>&amp; <dfn class="local col1 decl" id="3221ss" title='ss' data-type='boost::json::serializer::stream &amp;' data-ref="3221ss">ss</dfn>);</td></tr>
+<tr><th id="100">100</th><td>    <b>inline</b> <a class="typedef" href="string_view.hpp.html#boost::json::string_view" title='boost::json::string_view' data-type='boost::core::string_view' data-ref="boost::json::string_view">string_view</a> <a class="decl fn" href="impl/serializer.ipp.html#_ZN5boost4json10serializer9read_someEPcm" title='boost::json::serializer::read_some' data-ref="_ZN5boost4json10serializer9read_someEPcm" id="_ZN5boost4json10serializer9read_someEPcm">read_some</a>(<em>char</em>* <dfn class="local col2 decl" id="3222dest" title='dest' data-type='char *' data-ref="3222dest">dest</dfn>, <span class="namespace">std::</span><a class="typedef" href="../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> <dfn class="local col3 decl" id="3223size" title='size' data-type='std::size_t' data-ref="3223size">size</dfn>);</td></tr>
+<tr><th id="101">101</th><td></td></tr>
+<tr><th id="102">102</th><td><b>public</b>:</td></tr>
+<tr><th id="103">103</th><td>    <i class="doc">/// Move constructor (deleted)</i></td></tr>
+<tr><th id="104">104</th><td>    <dfn class="decl def fn" id="_ZN5boost4json10serializerC1EOS1_" title='boost::json::serializer::serializer' data-ref="_ZN5boost4json10serializerC1EOS1_">serializer</dfn>(<a class="type" href="#boost::json::serializer" title='boost::json::serializer' data-ref="boost::json::serializer">serializer</a>&amp;&amp;) = <b>delete</b>;</td></tr>
+<tr><th id="105">105</th><td></td></tr>
+<tr><th id="106">106</th><td>    <i class="doc">/** Destructor</i></td></tr>
+<tr><th id="107">107</th><td><i class="doc"></i></td></tr>
+<tr><th id="108">108</th><td><i class="doc">        All temporary storage is deallocated.</i></td></tr>
+<tr><th id="109">109</th><td><i class="doc"></i></td></tr>
+<tr><th id="110">110</th><td><i class="doc">        <span class="command">@par</span> Complexity</i></td></tr>
+<tr><th id="111">111</th><td><i class="doc">        Constant</i></td></tr>
+<tr><th id="112">112</th><td><i class="doc"></i></td></tr>
+<tr><th id="113">113</th><td><i class="doc">        <span class="command">@par</span> Exception Safety</i></td></tr>
+<tr><th id="114">114</th><td><i class="doc">        No-throw guarantee.</i></td></tr>
+<tr><th id="115">115</th><td><i class="doc">    */</i></td></tr>
+<tr><th id="116">116</th><td><u>#<span data-ppcond="116">ifdef</span> <span class="macro" data-ref="_M/BOOST_JSON_DOCS">BOOST_JSON_DOCS</span></u></td></tr>
+<tr><th id="117">117</th><td>    BOOST_JSON_DECL</td></tr>
+<tr><th id="118">118</th><td>    ~serializer() <b>noexcept</b>;</td></tr>
+<tr><th id="119">119</th><td><u>#<span data-ppcond="116">endif</span> // BOOST_JSON_DOCS</u></td></tr>
+<tr><th id="120">120</th><td></td></tr>
+<tr><th id="121">121</th><td>    <i class="doc">/** Constructor</i></td></tr>
+<tr><th id="122">122</th><td><i class="doc"></i></td></tr>
+<tr><th id="123">123</th><td><i class="doc">        This constructs a serializer with no value.</i></td></tr>
+<tr><th id="124">124</th><td><i class="doc">        The value may be set later by calling<span class="command"> @ref</span> <span class="arg">reset.</span></i></td></tr>
+<tr><th id="125">125</th><td><i class="doc">        If serialization is attempted with no value,</i></td></tr>
+<tr><th id="126">126</th><td><i class="doc">        the output is as if a null value is serialized.</i></td></tr>
+<tr><th id="127">127</th><td><i class="doc"></i></td></tr>
+<tr><th id="128">128</th><td><i class="doc">        <span class="command">@par</span> Complexity</i></td></tr>
+<tr><th id="129">129</th><td><i class="doc">        Constant.</i></td></tr>
+<tr><th id="130">130</th><td><i class="doc"></i></td></tr>
+<tr><th id="131">131</th><td><i class="doc">        <span class="command">@par</span> Exception Safety</i></td></tr>
+<tr><th id="132">132</th><td><i class="doc">        No-throw guarantee.</i></td></tr>
+<tr><th id="133">133</th><td><i class="doc"></i></td></tr>
+<tr><th id="134">134</th><td><i class="doc">        <span class="command">@param</span> <span class="arg">opts</span> The options for the serializer. If this parameter</i></td></tr>
+<tr><th id="135">135</th><td><i class="doc">        is omitted, the serializer will output only standard JSON.</i></td></tr>
+<tr><th id="136">136</th><td><i class="doc">    */</i></td></tr>
+<tr><th id="137">137</th><td>    <a class="macro" href="detail/config.hpp.html#70" title="" data-ref="_M/BOOST_JSON_DECL">BOOST_JSON_DECL</a></td></tr>
+<tr><th id="138">138</th><td>    <a class="decl fn" href="impl/serializer.ipp.html#_ZN5boost4json10serializerC1ERKNS0_17serialize_optionsE" title='boost::json::serializer::serializer' data-ref="_ZN5boost4json10serializerC1ERKNS0_17serialize_optionsE" id="_ZN5boost4json10serializerC1ERKNS0_17serialize_optionsE">serializer</a>( <a class="type" href="serialize_options.hpp.html#boost::json::serialize_options" title='boost::json::serialize_options' data-ref="boost::json::serialize_options">serialize_options</a> <em>const</em>&amp; <dfn class="local col4 decl" id="3224opts" title='opts' data-type='const boost::json::serialize_options &amp;' data-ref="3224opts">opts</dfn> = {} ) <b>noexcept</b>;</td></tr>
+<tr><th id="139">139</th><td></td></tr>
+<tr><th id="140">140</th><td>    <i class="doc">/** Constructor</i></td></tr>
+<tr><th id="141">141</th><td><i class="doc"></i></td></tr>
+<tr><th id="142">142</th><td><i class="doc">        This constructs a serializer with no value.</i></td></tr>
+<tr><th id="143">143</th><td><i class="doc">        The value may be set later by calling<span class="command"> @ref</span> <span class="arg">reset.</span></i></td></tr>
+<tr><th id="144">144</th><td><i class="doc">        If serialization is attempted with no value,</i></td></tr>
+<tr><th id="145">145</th><td><i class="doc">        the output is as if a null value is serialized.</i></td></tr>
+<tr><th id="146">146</th><td><i class="doc"></i></td></tr>
+<tr><th id="147">147</th><td><i class="doc">        <span class="command">@par</span> Complexity</i></td></tr>
+<tr><th id="148">148</th><td><i class="doc">        Constant.</i></td></tr>
+<tr><th id="149">149</th><td><i class="doc"></i></td></tr>
+<tr><th id="150">150</th><td><i class="doc">        <span class="command">@par</span> Exception Safety</i></td></tr>
+<tr><th id="151">151</th><td><i class="doc">        No-throw guarantee.</i></td></tr>
+<tr><th id="152">152</th><td><i class="doc"></i></td></tr>
+<tr><th id="153">153</th><td><i class="doc">        <span class="command">@param</span> <span class="arg">sp</span> A pointer to the `boost::container::pmr::memory_resource` to</i></td></tr>
+<tr><th id="154">154</th><td><i class="doc">        use when producing partial output. Shared ownership of the memory</i></td></tr>
+<tr><th id="155">155</th><td><i class="doc">        resource is retained until the serializer is destroyed.</i></td></tr>
+<tr><th id="156">156</th><td><i class="doc"></i></td></tr>
+<tr><th id="157">157</th><td><i class="doc">        <span class="command">@param</span> <span class="arg">buf</span> An optional static buffer to</i></td></tr>
+<tr><th id="158">158</th><td><i class="doc">        use for temporary storage when producing</i></td></tr>
+<tr><th id="159">159</th><td><i class="doc">        partial output.</i></td></tr>
+<tr><th id="160">160</th><td><i class="doc"></i></td></tr>
+<tr><th id="161">161</th><td><i class="doc">        <span class="command">@param</span> <span class="arg">buf_size</span> The number of bytes of</i></td></tr>
+<tr><th id="162">162</th><td><i class="doc">        valid memory pointed to by `buf`.</i></td></tr>
+<tr><th id="163">163</th><td><i class="doc"></i></td></tr>
+<tr><th id="164">164</th><td><i class="doc">        <span class="command">@param</span> <span class="arg">opts</span> The options for the serializer. If this parameter</i></td></tr>
+<tr><th id="165">165</th><td><i class="doc">        is omitted, the serializer will output only standard JSON.</i></td></tr>
+<tr><th id="166">166</th><td><i class="doc">    */</i></td></tr>
+<tr><th id="167">167</th><td>    <a class="macro" href="detail/config.hpp.html#70" title="" data-ref="_M/BOOST_JSON_DECL">BOOST_JSON_DECL</a></td></tr>
+<tr><th id="168">168</th><td>    <a class="decl fn" href="impl/serializer.ipp.html#_ZN5boost4json10serializerC1ENS0_11storage_ptrEPhmRKNS0_17serialize_optionsE" title='boost::json::serializer::serializer' data-ref="_ZN5boost4json10serializerC1ENS0_11storage_ptrEPhmRKNS0_17serialize_optionsE" id="_ZN5boost4json10serializerC1ENS0_11storage_ptrEPhmRKNS0_17serialize_optionsE">serializer</a>(</td></tr>
+<tr><th id="169">169</th><td>        <a class="type" href="storage_ptr.hpp.html#boost::json::storage_ptr" title='boost::json::storage_ptr' data-ref="boost::json::storage_ptr">storage_ptr</a> <dfn class="local col5 decl" id="3225sp" title='sp' data-type='boost::json::storage_ptr' data-ref="3225sp">sp</dfn>,</td></tr>
+<tr><th id="170">170</th><td>        <em>unsigned</em> <em>char</em>* <dfn class="local col6 decl" id="3226buf" title='buf' data-type='unsigned char *' data-ref="3226buf">buf</dfn> = <b>nullptr</b>,</td></tr>
+<tr><th id="171">171</th><td>        <span class="namespace">std::</span><a class="typedef" href="../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> <dfn class="local col7 decl" id="3227buf_size" title='buf_size' data-type='std::size_t' data-ref="3227buf_size">buf_size</dfn> = <var>0</var>,</td></tr>
+<tr><th id="172">172</th><td>        <a class="type" href="serialize_options.hpp.html#boost::json::serialize_options" title='boost::json::serialize_options' data-ref="boost::json::serialize_options">serialize_options</a> <em>const</em>&amp; <dfn class="local col8 decl" id="3228opts" title='opts' data-type='const boost::json::serialize_options &amp;' data-ref="3228opts">opts</dfn> = {}) <b>noexcept</b>;</td></tr>
+<tr><th id="173">173</th><td></td></tr>
+<tr><th id="174">174</th><td>    <i class="doc">/** Returns `true` if the serialization is complete</i></td></tr>
+<tr><th id="175">175</th><td><i class="doc"></i></td></tr>
+<tr><th id="176">176</th><td><i class="doc">        This function returns `true` when all of the</i></td></tr>
+<tr><th id="177">177</th><td><i class="doc">        characters in the serialized representation of</i></td></tr>
+<tr><th id="178">178</th><td><i class="doc">        the value have been read.</i></td></tr>
+<tr><th id="179">179</th><td><i class="doc"></i></td></tr>
+<tr><th id="180">180</th><td><i class="doc">        <span class="command">@par</span> Complexity</i></td></tr>
+<tr><th id="181">181</th><td><i class="doc">        Constant.</i></td></tr>
+<tr><th id="182">182</th><td><i class="doc"></i></td></tr>
+<tr><th id="183">183</th><td><i class="doc">        <span class="command">@par</span> Exception Safety</i></td></tr>
+<tr><th id="184">184</th><td><i class="doc">        No-throw guarantee.</i></td></tr>
+<tr><th id="185">185</th><td><i class="doc">    */</i></td></tr>
+<tr><th id="186">186</th><td>    <em>bool</em></td></tr>
+<tr><th id="187">187</th><td>    <dfn class="decl def fn" id="_ZNK5boost4json10serializer4doneEv" title='boost::json::serializer::done' data-ref="_ZNK5boost4json10serializer4doneEv">done</dfn>() <em>const</em> <b>noexcept</b></td></tr>
+<tr><th id="188">188</th><td>    {</td></tr>
+<tr><th id="189">189</th><td>        <b>return</b> <a class="member field" href="#boost::json::serializer::done_" title='boost::json::serializer::done_' data-ref="boost::json::serializer::done_">done_</a>;</td></tr>
+<tr><th id="190">190</th><td>    }</td></tr>
+<tr><th id="191">191</th><td></td></tr>
+<tr><th id="192">192</th><td>    <i class="doc">/** Reset the serializer for a new element</i></td></tr>
+<tr><th id="193">193</th><td><i class="doc"></i></td></tr>
+<tr><th id="194">194</th><td><i class="doc">        This function prepares the serializer to emit</i></td></tr>
+<tr><th id="195">195</th><td><i class="doc">        a new serialized JSON representing `*p`.</i></td></tr>
+<tr><th id="196">196</th><td><i class="doc">        Any internally allocated memory is</i></td></tr>
+<tr><th id="197">197</th><td><i class="doc">        preserved and re-used for the new output.</i></td></tr>
+<tr><th id="198">198</th><td><i class="doc"></i></td></tr>
+<tr><th id="199">199</th><td><i class="doc">        <span class="command">@param</span> <span class="arg">p</span> A pointer to the element to serialize.</i></td></tr>
+<tr><th id="200">200</th><td><i class="doc">        Ownership is not transferred; The caller is</i></td></tr>
+<tr><th id="201">201</th><td><i class="doc">        responsible for ensuring that the lifetime of</i></td></tr>
+<tr><th id="202">202</th><td><i class="doc">        `*p` extends until it is no longer needed.</i></td></tr>
+<tr><th id="203">203</th><td><i class="doc">    */</i></td></tr>
+<tr><th id="204">204</th><td>    <i class="doc">/** @{ */</i></td></tr>
+<tr><th id="205">205</th><td>    <a class="macro" href="detail/config.hpp.html#70" title="" data-ref="_M/BOOST_JSON_DECL">BOOST_JSON_DECL</a></td></tr>
+<tr><th id="206">206</th><td>    <em>void</em></td></tr>
+<tr><th id="207">207</th><td>    <a class="decl fn" href="impl/serializer.ipp.html#_ZN5boost4json10serializer5resetEPKNS0_5valueE" title='boost::json::serializer::reset' data-ref="_ZN5boost4json10serializer5resetEPKNS0_5valueE" id="_ZN5boost4json10serializer5resetEPKNS0_5valueE">reset</a>(<a class="type" href="value.hpp.html#boost::json::value" title='boost::json::value' data-ref="boost::json::value">value</a> <em>const</em>* <dfn class="local col9 decl" id="3229p" title='p' data-type='const boost::json::value *' data-ref="3229p">p</dfn>) <b>noexcept</b>;</td></tr>
+<tr><th id="208">208</th><td></td></tr>
+<tr><th id="209">209</th><td>    <a class="macro" href="detail/config.hpp.html#70" title="" data-ref="_M/BOOST_JSON_DECL">BOOST_JSON_DECL</a></td></tr>
+<tr><th id="210">210</th><td>    <em>void</em></td></tr>
+<tr><th id="211">211</th><td>    <a class="decl fn" href="impl/serializer.ipp.html#_ZN5boost4json10serializer5resetEPKNS0_5arrayE" title='boost::json::serializer::reset' data-ref="_ZN5boost4json10serializer5resetEPKNS0_5arrayE" id="_ZN5boost4json10serializer5resetEPKNS0_5arrayE">reset</a>(<a class="type" href="array.hpp.html#boost::json::array" title='boost::json::array' data-ref="boost::json::array">array</a> <em>const</em>* <dfn class="local col0 decl" id="3230p" title='p' data-type='const boost::json::array *' data-ref="3230p">p</dfn>) <b>noexcept</b>;</td></tr>
+<tr><th id="212">212</th><td></td></tr>
+<tr><th id="213">213</th><td>    <a class="macro" href="detail/config.hpp.html#70" title="" data-ref="_M/BOOST_JSON_DECL">BOOST_JSON_DECL</a></td></tr>
+<tr><th id="214">214</th><td>    <em>void</em></td></tr>
+<tr><th id="215">215</th><td>    <a class="decl fn" href="impl/serializer.ipp.html#_ZN5boost4json10serializer5resetEPKNS0_6objectE" title='boost::json::serializer::reset' data-ref="_ZN5boost4json10serializer5resetEPKNS0_6objectE" id="_ZN5boost4json10serializer5resetEPKNS0_6objectE">reset</a>(<a class="type" href="object.hpp.html#boost::json::object" title='boost::json::object' data-ref="boost::json::object">object</a> <em>const</em>* <dfn class="local col1 decl" id="3231p" title='p' data-type='const boost::json::object *' data-ref="3231p">p</dfn>) <b>noexcept</b>;</td></tr>
+<tr><th id="216">216</th><td></td></tr>
+<tr><th id="217">217</th><td>    <a class="macro" href="detail/config.hpp.html#70" title="" data-ref="_M/BOOST_JSON_DECL">BOOST_JSON_DECL</a></td></tr>
+<tr><th id="218">218</th><td>    <em>void</em></td></tr>
+<tr><th id="219">219</th><td>    <a class="decl fn" href="impl/serializer.ipp.html#_ZN5boost4json10serializer5resetEPKNS0_6stringE" title='boost::json::serializer::reset' data-ref="_ZN5boost4json10serializer5resetEPKNS0_6stringE" id="_ZN5boost4json10serializer5resetEPKNS0_6stringE">reset</a>(<a class="type" href="string.hpp.html#boost::json::string" title='boost::json::string' data-ref="boost::json::string">string</a> <em>const</em>* <dfn class="local col2 decl" id="3232p" title='p' data-type='const boost::json::string *' data-ref="3232p">p</dfn>) <b>noexcept</b>;</td></tr>
+<tr><th id="220">220</th><td>    <i class="doc">/** @} */</i></td></tr>
+<tr><th id="221">221</th><td></td></tr>
+<tr><th id="222">222</th><td>    <i class="doc">/** Reset the serializer for a new string</i></td></tr>
+<tr><th id="223">223</th><td><i class="doc"></i></td></tr>
+<tr><th id="224">224</th><td><i class="doc">        This function prepares the serializer to emit</i></td></tr>
+<tr><th id="225">225</th><td><i class="doc">        a new serialized JSON representing the string.</i></td></tr>
+<tr><th id="226">226</th><td><i class="doc">        Any internally allocated memory is</i></td></tr>
+<tr><th id="227">227</th><td><i class="doc">        preserved and re-used for the new output.</i></td></tr>
+<tr><th id="228">228</th><td><i class="doc"></i></td></tr>
+<tr><th id="229">229</th><td><i class="doc">        <span class="command">@param</span> <span class="arg">sv</span> The characters representing the string.</i></td></tr>
+<tr><th id="230">230</th><td><i class="doc">        Ownership is not transferred; The caller is</i></td></tr>
+<tr><th id="231">231</th><td><i class="doc">        responsible for ensuring that the lifetime of</i></td></tr>
+<tr><th id="232">232</th><td><i class="doc">        the characters reference by `sv` extends</i></td></tr>
+<tr><th id="233">233</th><td><i class="doc">        until it is no longer needed.</i></td></tr>
+<tr><th id="234">234</th><td><i class="doc">    */</i></td></tr>
+<tr><th id="235">235</th><td>    <a class="macro" href="detail/config.hpp.html#70" title="" data-ref="_M/BOOST_JSON_DECL">BOOST_JSON_DECL</a></td></tr>
+<tr><th id="236">236</th><td>    <em>void</em></td></tr>
+<tr><th id="237">237</th><td>    <a class="decl fn" href="impl/serializer.ipp.html#_ZN5boost4json10serializer5resetENS_4core17basic_string_viewIcEE" title='boost::json::serializer::reset' data-ref="_ZN5boost4json10serializer5resetENS_4core17basic_string_viewIcEE" id="_ZN5boost4json10serializer5resetENS_4core17basic_string_viewIcEE">reset</a>(<a class="typedef" href="string_view.hpp.html#boost::json::string_view" title='boost::json::string_view' data-type='boost::core::string_view' data-ref="boost::json::string_view">string_view</a> <dfn class="local col3 decl" id="3233sv" title='sv' data-type='boost::json::string_view' data-ref="3233sv">sv</dfn>) <b>noexcept</b>;</td></tr>
+<tr><th id="238">238</th><td></td></tr>
+<tr><th id="239">239</th><td>    <i class="doc">/** Read the next buffer of serialized JSON</i></td></tr>
+<tr><th id="240">240</th><td><i class="doc"></i></td></tr>
+<tr><th id="241">241</th><td><i class="doc">        This function attempts to fill the caller</i></td></tr>
+<tr><th id="242">242</th><td><i class="doc">        provided buffer starting at `dest` with</i></td></tr>
+<tr><th id="243">243</th><td><i class="doc">        up to `size` characters of the serialized</i></td></tr>
+<tr><th id="244">244</th><td><i class="doc">        JSON that represents the value. If the</i></td></tr>
+<tr><th id="245">245</th><td><i class="doc">        buffer is not large enough, multiple calls</i></td></tr>
+<tr><th id="246">246</th><td><i class="doc">        may be required.<span class="command"></span></i></td></tr>
+<tr><th id="247">247</th><td><i class="doc"><span class="command">\n</span></i></td></tr>
+<tr><th id="248">248</th><td><i class="doc">        If serialization completes during this call;</i></td></tr>
+<tr><th id="249">249</th><td><i class="doc">        that is, that all of the characters belonging</i></td></tr>
+<tr><th id="250">250</th><td><i class="doc">        to the serialized value have been written to</i></td></tr>
+<tr><th id="251">251</th><td><i class="doc">        caller-provided buffers, the function</i></td></tr>
+<tr><th id="252">252</th><td><i class="doc">       <span class="command"> @ref</span> <span class="arg">done</span> will return `true`.</i></td></tr>
+<tr><th id="253">253</th><td><i class="doc"></i></td></tr>
+<tr><th id="254">254</th><td><i class="doc">        <span class="command">@par</span> Preconditions</i></td></tr>
+<tr><th id="255">255</th><td><i class="doc">        <span class="command">@code</span></i></td></tr>
+<tr><th id="256">256</th><td><i class="doc"><span class="verb">        this-&gt;done() == false</span></i></td></tr>
+<tr><th id="257">257</th><td><i class="doc"><span class="verb"></span>        @endcode</i></td></tr>
+<tr><th id="258">258</th><td><i class="doc"></i></td></tr>
+<tr><th id="259">259</th><td><i class="doc">        <span class="command">@par</span> Complexity</i></td></tr>
+<tr><th id="260">260</th><td><i class="doc">        Linear in `size`.</i></td></tr>
+<tr><th id="261">261</th><td><i class="doc"></i></td></tr>
+<tr><th id="262">262</th><td><i class="doc">        <span class="command">@par</span> Exception Safety</i></td></tr>
+<tr><th id="263">263</th><td><i class="doc">        Basic guarantee.</i></td></tr>
+<tr><th id="264">264</th><td><i class="doc">        Calls to `memory_resource::allocate` may throw.</i></td></tr>
+<tr><th id="265">265</th><td><i class="doc"></i></td></tr>
+<tr><th id="266">266</th><td><i class="doc">        <span class="command">@return</span> A<span class="command"> @ref</span> <span class="arg">string_view</span> containing the</i></td></tr>
+<tr><th id="267">267</th><td><i class="doc">        characters written, which may be less than</i></td></tr>
+<tr><th id="268">268</th><td><i class="doc">        `size`.</i></td></tr>
+<tr><th id="269">269</th><td><i class="doc"></i></td></tr>
+<tr><th id="270">270</th><td><i class="doc">        <span class="command">@param</span> <span class="arg">dest</span> A pointer to valid memory of at</i></td></tr>
+<tr><th id="271">271</th><td><i class="doc">        least `size` bytes.</i></td></tr>
+<tr><th id="272">272</th><td><i class="doc"></i></td></tr>
+<tr><th id="273">273</th><td><i class="doc">        <span class="command">@param</span> <span class="arg">size</span> The maximum number of characters</i></td></tr>
+<tr><th id="274">274</th><td><i class="doc">        to write to the memory pointed to by `dest`.</i></td></tr>
+<tr><th id="275">275</th><td><i class="doc">    */</i></td></tr>
+<tr><th id="276">276</th><td>    <a class="macro" href="detail/config.hpp.html#70" title="" data-ref="_M/BOOST_JSON_DECL">BOOST_JSON_DECL</a></td></tr>
+<tr><th id="277">277</th><td>    <a class="typedef" href="string_view.hpp.html#boost::json::string_view" title='boost::json::string_view' data-type='boost::core::string_view' data-ref="boost::json::string_view">string_view</a></td></tr>
+<tr><th id="278">278</th><td>    <a class="decl fn" href="impl/serializer.ipp.html#_ZN5boost4json10serializer4readEPcm" title='boost::json::serializer::read' data-ref="_ZN5boost4json10serializer4readEPcm" id="_ZN5boost4json10serializer4readEPcm">read</a>(<em>char</em>* <dfn class="local col4 decl" id="3234dest" title='dest' data-type='char *' data-ref="3234dest">dest</dfn>, <span class="namespace">std::</span><a class="typedef" href="../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> <dfn class="local col5 decl" id="3235size" title='size' data-type='std::size_t' data-ref="3235size">size</dfn>);</td></tr>
+<tr><th id="279">279</th><td></td></tr>
+<tr><th id="280">280</th><td>    <i class="doc">/** Read the next buffer of serialized JSON</i></td></tr>
+<tr><th id="281">281</th><td><i class="doc"></i></td></tr>
+<tr><th id="282">282</th><td><i class="doc">        This function allows reading into a</i></td></tr>
+<tr><th id="283">283</th><td><i class="doc">        character array, with a deduced maximum size.</i></td></tr>
+<tr><th id="284">284</th><td><i class="doc"></i></td></tr>
+<tr><th id="285">285</th><td><i class="doc">        <span class="command">@par</span> Preconditions</i></td></tr>
+<tr><th id="286">286</th><td><i class="doc">        <span class="command">@code</span></i></td></tr>
+<tr><th id="287">287</th><td><i class="doc"><span class="verb">        this-&gt;done() == false</span></i></td></tr>
+<tr><th id="288">288</th><td><i class="doc"><span class="verb"></span>        @endcode</i></td></tr>
+<tr><th id="289">289</th><td><i class="doc"></i></td></tr>
+<tr><th id="290">290</th><td><i class="doc">        <span class="command">@par</span> Effects</i></td></tr>
+<tr><th id="291">291</th><td><i class="doc">        <span class="command">@code</span></i></td></tr>
+<tr><th id="292">292</th><td><i class="doc"><span class="verb">        return this-&gt;read( dest, N );</span></i></td></tr>
+<tr><th id="293">293</th><td><i class="doc"><span class="verb"></span>        @endcode</i></td></tr>
+<tr><th id="294">294</th><td><i class="doc"></i></td></tr>
+<tr><th id="295">295</th><td><i class="doc">        <span class="command">@par</span> Complexity</i></td></tr>
+<tr><th id="296">296</th><td><i class="doc">        Linear in `N`.</i></td></tr>
+<tr><th id="297">297</th><td><i class="doc"></i></td></tr>
+<tr><th id="298">298</th><td><i class="doc">        <span class="command">@par</span> Exception Safety</i></td></tr>
+<tr><th id="299">299</th><td><i class="doc">        Basic guarantee.</i></td></tr>
+<tr><th id="300">300</th><td><i class="doc">        Calls to `memory_resource::allocate` may throw.</i></td></tr>
+<tr><th id="301">301</th><td><i class="doc"></i></td></tr>
+<tr><th id="302">302</th><td><i class="doc">        <span class="command">@return</span> A<span class="command"> @ref</span> <span class="arg">string_view</span> containing the</i></td></tr>
+<tr><th id="303">303</th><td><i class="doc">        characters written, which may be less than</i></td></tr>
+<tr><th id="304">304</th><td><i class="doc">        `size`.</i></td></tr>
+<tr><th id="305">305</th><td><i class="doc"></i></td></tr>
+<tr><th id="306">306</th><td><i class="doc">        <span class="command">@param</span> <span class="arg">dest</span> The character array to write to.</i></td></tr>
+<tr><th id="307">307</th><td><i class="doc">    */</i></td></tr>
+<tr><th id="308">308</th><td>    <b>template</b>&lt;<span class="namespace">std::</span><a class="typedef" href="../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> N&gt;</td></tr>
+<tr><th id="309">309</th><td>    <a class="typedef" href="string_view.hpp.html#boost::json::string_view" title='boost::json::string_view' data-type='boost::core::string_view' data-ref="boost::json::string_view">string_view</a></td></tr>
+<tr><th id="310">310</th><td>    <dfn class="decl def fn" id="_ZN5boost4json10serializer4readERAT__c" title='boost::json::serializer::read' data-ref="_ZN5boost4json10serializer4readERAT__c">read</dfn>(<em>char</em>(&amp;<dfn class="local col6 decl" id="3236dest" title='dest' data-type='char (&amp;)[N]' data-ref="3236dest">dest</dfn>)[<a class="tu ref" href="#N" title='N' data-ref="N">N</a>])</td></tr>
+<tr><th id="311">311</th><td>    {</td></tr>
+<tr><th id="312">312</th><td>        <b>return</b> read(<a class="local col6 ref" href="#3236dest" title='dest' data-ref="3236dest">dest</a>, <a class="tu ref" href="#N" title='N' data-ref="N">N</a>);</td></tr>
+<tr><th id="313">313</th><td>    }</td></tr>
+<tr><th id="314">314</th><td></td></tr>
+<tr><th id="315">315</th><td><u>#<span data-ppcond="315">ifndef</span> <span class="macro" data-ref="_M/BOOST_JSON_DOCS">BOOST_JSON_DOCS</span></u></td></tr>
+<tr><th id="316">316</th><td>    <i>// Safety net for accidental buffer overflows</i></td></tr>
+<tr><th id="317">317</th><td>    <b>template</b>&lt;<span class="namespace">std::</span><a class="typedef" href="../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> N&gt;</td></tr>
+<tr><th id="318">318</th><td>    <a class="typedef" href="string_view.hpp.html#boost::json::string_view" title='boost::json::string_view' data-type='boost::core::string_view' data-ref="boost::json::string_view">string_view</a></td></tr>
+<tr><th id="319">319</th><td>    <dfn class="decl def fn" id="_ZN5boost4json10serializer4readERAT__cm" title='boost::json::serializer::read' data-ref="_ZN5boost4json10serializer4readERAT__cm">read</dfn>(<em>char</em>(&amp;<dfn class="local col7 decl" id="3237dest" title='dest' data-type='char (&amp;)[N]' data-ref="3237dest">dest</dfn>)[<a class="tu ref" href="#N" title='N' data-ref="N">N</a>], <span class="namespace">std::</span><a class="typedef" href="../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> <dfn class="local col8 decl" id="3238n" title='n' data-type='std::size_t' data-ref="3238n">n</dfn>)</td></tr>
+<tr><th id="320">320</th><td>    {</td></tr>
+<tr><th id="321">321</th><td>        <i>// If this goes off, check your parameters</i></td></tr>
+<tr><th id="322">322</th><td><i>        // closely, chances are you passed an array</i></td></tr>
+<tr><th id="323">323</th><td><i>        // thinking it was a pointer.</i></td></tr>
+<tr><th id="324">324</th><td>        <a class="macro" href="../../../../assert/include/boost/assert.hpp.html#60" title="(static_cast&lt;void&gt; (0))" data-ref="_M/BOOST_ASSERT">BOOST_ASSERT</a>(n &lt;= N);</td></tr>
+<tr><th id="325">325</th><td>        <b>return</b> read(<a class="local col7 ref" href="#3237dest" title='dest' data-ref="3237dest">dest</a>, <a class="local col8 ref" href="#3238n" title='n' data-ref="3238n">n</a>);</td></tr>
+<tr><th id="326">326</th><td>    }</td></tr>
+<tr><th id="327">327</th><td><u>#<span data-ppcond="315">endif</span></u></td></tr>
+<tr><th id="328">328</th><td>};</td></tr>
+<tr><th id="329">329</th><td></td></tr>
+<tr><th id="330">330</th><td>} <i>// namespace json</i></td></tr>
+<tr><th id="331">331</th><td>} <i>// namespace boost</i></td></tr>
+<tr><th id="332">332</th><td></td></tr>
+<tr><th id="333">333</th><td><u>#<span data-ppcond="10">endif</span></u></td></tr>
+<tr><th id="334">334</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../../../src/src.cpp.html'>boost-1.85.0/libs/json/src/src.cpp</a><br/>Generated on <em>2024-Jun-14</em> from project boost-1.85.0 revision <em>1.85.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

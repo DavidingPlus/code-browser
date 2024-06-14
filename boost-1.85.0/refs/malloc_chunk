@@ -1,0 +1,145 @@
+<def f='boost-1.85.0/libs/container/src/dlmalloc_2_8_6.c' l='2182' ll='2187'/>
+<use f='boost-1.85.0/libs/container/src/dlmalloc_2_8_6.c' l='2185'/>
+<use f='boost-1.85.0/libs/container/src/dlmalloc_2_8_6.c' l='2186'/>
+<use f='boost-1.85.0/libs/container/src/dlmalloc_2_8_6.c' l='2189'/>
+<use f='boost-1.85.0/libs/container/src/dlmalloc_2_8_6.c' l='2190'/>
+<use f='boost-1.85.0/libs/container/src/dlmalloc_2_8_6.c' l='2191'/>
+<size>32</size>
+<doc f='boost-1.85.0/libs/container/src/dlmalloc_2_8_6.c' l='2047'>/*
+  (The following includes lightly edited explanations by Colin Plumb.)
+
+  The malloc_chunk declaration below is misleading (but accurate and
+  necessary).  It declares a &quot;view&quot; into memory allowing access to
+  necessary fields at known offsets from a given base.
+
+  Chunks of memory are maintained using a `boundary tag&apos; method as
+  originally described by Knuth.  (See the paper by Paul Wilson
+  ftp://ftp.cs.utexas.edu/pub/garbage/allocsrv.ps for a survey of such
+  techniques.)  Sizes of free chunks are stored both in the front of
+  each chunk and at the end.  This makes consolidating fragmented
+  chunks into bigger chunks fast.  The head fields also hold bits
+  representing whether chunks are free or in use.
+
+  Here are some pictures to make it clearer.  They are &quot;exploded&quot; to
+  show that the state of a chunk can be thought of as extending from
+  the high 31 bits of the head field of its header through the
+  prev_foot and PINUSE_BIT bit of the following chunk header.
+
+  A chunk that&apos;s in use looks like:
+
+   chunk-&gt; +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+           | Size of previous chunk (if P = 0)                             |
+           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+         +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ |P|
+         | Size of this chunk                                         1| +-+
+   mem-&gt; +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+         |                                                               |
+         +-                                                             -+
+         |                                                               |
+         +-                                                             -+
+         |                                                               :
+         +-      size - sizeof(size_t) available payload bytes          -+
+         :                                                               |
+ chunk-&gt; +-                                                             -+
+         |                                                               |
+         +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ |1|
+       | Size of next chunk (may or may not be in use)               | +-+
+ mem-&gt; +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+    And if it&apos;s free, it looks like this:
+
+   chunk-&gt; +-                                                             -+
+           | User payload (must be in use, or we would have merged!)       |
+           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+         +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ |P|
+         | Size of this chunk                                         0| +-+
+   mem-&gt; +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+         | Next pointer                                                  |
+         +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+         | Prev pointer                                                  |
+         +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+         |                                                               :
+         +-      size - sizeof(struct chunk) unused bytes               -+
+         :                                                               |
+ chunk-&gt; +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+         | Size of this chunk                                            |
+         +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ |0|
+       | Size of next chunk (must be in use, or we would have merged)| +-+
+ mem-&gt; +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+       |                                                               :
+       +- User payload                                                -+
+       :                                                               |
+       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+                                                                     |0|
+                                                                     +-+
+  Note that since we always merge adjacent free chunks, the chunks
+  adjacent to a free chunk must be in use.
+
+  Given a pointer to a chunk (which can be derived trivially from the
+  payload pointer) we can, in O(1) time, find out whether the adjacent
+  chunks are free, and if so, unlink them from the lists that they
+  are on and merge them with the current chunk.
+
+  Chunks always begin on even word boundaries, so the mem portion
+  (which is returned to the user) is also on an even word boundary, and
+  thus at least double-word aligned.
+
+  The P (PINUSE_BIT) bit, stored in the unused low-order bit of the
+  chunk size (which is always a multiple of two words), is an in-use
+  bit for the *previous* chunk.  If that bit is *clear*, then the
+  word before the current chunk size contains the previous chunk
+  size, and can be used to find the front of the previous chunk.
+  The very first chunk allocated always has this bit set, preventing
+  access to non-existent (or non-owned) memory. If pinuse is set for
+  any given chunk, then you CANNOT determine the size of the
+  previous chunk, and might even get a memory addressing fault when
+  trying to do so.
+
+  The C (CINUSE_BIT) bit, stored in the unused second-lowest bit of
+  the chunk size redundantly records whether the current chunk is
+  inuse (unless the chunk is mmapped). This redundancy enables usage
+  checks within free and realloc, and reduces indirection when freeing
+  and consolidating chunks.
+
+  Each freshly allocated chunk must have both cinuse and pinuse set.
+  That is, each allocated chunk borders either a previously allocated
+  and still in-use chunk, or the base of its memory arena. This is
+  ensured by making all allocations from the `lowest&apos; part of any
+  found chunk.  Further, no free chunk physically borders another one,
+  so each free chunk is known to be preceded and followed by either
+  inuse chunks or the ends of memory.
+
+  Note that the `foot&apos; of the current chunk is actually represented
+  as the prev_foot of the NEXT chunk. This makes it easier to
+  deal with alignments etc but can be very confusing when trying
+  to extend or adapt this code.
+
+  The exceptions to all this are
+
+     1. The special chunk `top&apos; is the top-most available chunk (i.e.,
+        the one bordering the end of available memory). It is treated
+        specially.  Top is never included in any bin, is used only if
+        no other chunk is available, and is released back to the
+        system if it is very large (see M_TRIM_THRESHOLD).  In effect,
+        the top chunk is treated as larger (and thus less well
+        fitting) than any other available chunk.  The top chunk
+        doesn&apos;t update its trailing size field since there is no next
+        contiguous chunk that would have to index off it. However,
+        space is still allocated for it (TOP_FOOT_SIZE) to enable
+        separation or merging when space is extended.
+
+     3. Chunks allocated via mmap, have both cinuse and pinuse bits
+        cleared in their head fields.  Because they are allocated
+        one-by-one, each must carry its own prev_foot field, which is
+        also used to hold the offset this chunk has within its mmapped
+        region, which is needed to preserve alignment. Each mmapped
+        chunk is trailed by the first two fields of a fake next-chunk
+        for sake of usage checks.
+
+*/</doc>
+<mbr r='malloc_chunk::prev_foot' o='0' t='size_t'/>
+<mbr r='malloc_chunk::head' o='64' t='size_t'/>
+<mbr r='malloc_chunk::fd' o='128' t='struct malloc_chunk *'/>
+<mbr r='malloc_chunk::bk' o='192' t='struct malloc_chunk *'/>

@@ -1,0 +1,231 @@
+<use f='include/unicode/uiter.h' l='678' c='uiter_setCharacterIterator_66'/>
+<inh f='include/unicode/chariter.h' l='94' c='icu_66::ForwardCharacterIterator'/>
+<def f='include/unicode/chariter.h' l='361' ll='693'/>
+<use f='include/unicode/chariter.h' l='383' c='_ZNK6icu_6617CharacterIterator5cloneEv'/>
+<use f='include/unicode/chariter.h' l='658' c='_ZN6icu_6617CharacterIteratorC1ERKS0_'/>
+<use f='include/unicode/chariter.h' l='667' c='_ZN6icu_6617CharacterIteratoraSERKS0_'/>
+<use f='include/unicode/chariter.h' l='667' c='_ZN6icu_6617CharacterIteratoraSERKS0_'/>
+<use f='include/unicode/utext.h' l='309' c='utext_openCharacterIterator_66'/>
+<use f='include/unicode/brkiter.h' l='155' c='_ZNK6icu_6613BreakIterator7getTextEv'/>
+<use f='include/unicode/brkiter.h' l='215' c='_ZN6icu_6613BreakIterator9adoptTextEPNS_17CharacterIteratorE'/>
+<ovr f='include/unicode/uchriter.h' l='38' c='icu_66::UCharCharacterIterator'/>
+<use f='include/unicode/uchriter.h' l='38'/>
+<use f='include/unicode/rbbi.h' l='129'/>
+<use f='include/unicode/rbbi.h' l='322' c='_ZNK6icu_6622RuleBasedBreakIterator7getTextEv'/>
+<use f='include/unicode/rbbi.h' l='348' c='_ZN6icu_6622RuleBasedBreakIterator9adoptTextEPNS_17CharacterIteratorE'/>
+<size>24</size>
+<doc f='include/unicode/chariter.h' l='192'>/**
+ * Abstract class that defines an API for iteration
+ * on text objects.
+ * This is an interface for forward and backward iteration
+ * and random access into a text object.
+ *
+ * &lt;p&gt;The API provides backward compatibility to the Java and older ICU
+ * CharacterIterator classes but extends them significantly:
+ * &lt;ol&gt;
+ * &lt;li&gt;CharacterIterator is now a subclass of ForwardCharacterIterator.&lt;/li&gt;
+ * &lt;li&gt;While the old API functions provided forward iteration with
+ *     &quot;pre-increment&quot; semantics, the new one also provides functions
+ *     with &quot;post-increment&quot; semantics. They are more efficient and should
+ *     be the preferred iterator functions for new implementations.
+ *     The backward iteration always had &quot;pre-decrement&quot; semantics, which
+ *     are efficient.&lt;/li&gt;
+ * &lt;li&gt;Just like ForwardCharacterIterator, it provides access to
+ *     both code units and code points. Code point access versions are available
+ *     for the old and the new iteration semantics.&lt;/li&gt;
+ * &lt;li&gt;There are new functions for setting and moving the current position
+ *     without returning a character, for efficiency.&lt;/li&gt;
+ * &lt;/ol&gt;
+ *
+ * See ForwardCharacterIterator for examples for using the new forward iteration
+ * functions. For backward iteration, there is also a hasPrevious() function
+ * that can be used analogously to hasNext().
+ * The old functions work as before and are shown below.&lt;/p&gt;
+ *
+ * &lt;p&gt;Examples for some of the new functions:&lt;/p&gt;
+ *
+ * Forward iteration with hasNext():
+ * \code
+ * void forward1(CharacterIterator &amp;it) {
+ *     UChar32 c;
+ *     for(it.setToStart(); it.hasNext();) {
+ *         c=it.next32PostInc();
+ *         // use c
+ *     }
+ *  }
+ * \endcode
+ * Forward iteration more similar to loops with the old forward iteration,
+ * showing a way to convert simple for() loops:
+ * \code
+ * void forward2(CharacterIterator &amp;it) {
+ *     char16_t c;
+ *     for(c=it.firstPostInc(); c!=CharacterIterator::DONE; c=it.nextPostInc()) {
+ *          // use c
+ *      }
+ * }
+ * \endcode
+ * Backward iteration with setToEnd() and hasPrevious():
+ * \code
+ *  void backward1(CharacterIterator &amp;it) {
+ *      UChar32 c;
+ *      for(it.setToEnd(); it.hasPrevious();) {
+ *         c=it.previous32();
+ *          // use c
+ *      }
+ *  }
+ * \endcode
+ * Backward iteration with a more traditional for() loop:
+ * \code
+ * void backward2(CharacterIterator &amp;it) {
+ *     char16_t c;
+ *     for(c=it.last(); c!=CharacterIterator::DONE; c=it.previous()) {
+ *         // use c
+ *      }
+ *  }
+ * \endcode
+ *
+ * Example for random access:
+ * \code
+ *  void random(CharacterIterator &amp;it) {
+ *      // set to the third code point from the beginning
+ *      it.move32(3, CharacterIterator::kStart);
+ *      // get a code point from here without moving the position
+ *      UChar32 c=it.current32();
+ *      // get the position
+ *      int32_t pos=it.getIndex();
+ *      // get the previous code unit
+ *      char16_t u=it.previous();
+ *      // move back one more code unit
+ *      it.move(-1, CharacterIterator::kCurrent);
+ *      // set the position back to where it was
+ *      // and read the same code point c and move beyond it
+ *      it.setIndex(pos);
+ *      if(c!=it.next32PostInc()) {
+ *          exit(1); // CharacterIterator inconsistent
+ *      }
+ *  }
+ * \endcode
+ *
+ * &lt;p&gt;Examples, especially for the old API:&lt;/p&gt;
+ *
+ * Function processing characters, in this example simple output
+ * &lt;pre&gt;
+ * \code
+ *  void processChar( char16_t c )
+ *  {
+ *      cout &lt;&lt; &quot; &quot; &lt;&lt; c;
+ *  }
+ * \endcode
+ * &lt;/pre&gt;
+ * Traverse the text from start to finish
+ * &lt;pre&gt; 
+ * \code
+ *  void traverseForward(CharacterIterator&amp; iter)
+ *  {
+ *      for(char16_t c = iter.first(); c != CharacterIterator.DONE; c = iter.next()) {
+ *          processChar(c);
+ *      }
+ *  }
+ * \endcode
+ * &lt;/pre&gt;
+ * Traverse the text backwards, from end to start
+ * &lt;pre&gt;
+ * \code
+ *  void traverseBackward(CharacterIterator&amp; iter)
+ *  {
+ *      for(char16_t c = iter.last(); c != CharacterIterator.DONE; c = iter.previous()) {
+ *          processChar(c);
+ *      }
+ *  }
+ * \endcode
+ * &lt;/pre&gt;
+ * Traverse both forward and backward from a given position in the text. 
+ * Calls to notBoundary() in this example represents some additional stopping criteria.
+ * &lt;pre&gt;
+ * \code
+ * void traverseOut(CharacterIterator&amp; iter, int32_t pos)
+ * {
+ *      char16_t c;
+ *      for (c = iter.setIndex(pos);
+ *      c != CharacterIterator.DONE &amp;&amp; (Unicode::isLetter(c) || Unicode::isDigit(c));
+ *          c = iter.next()) {}
+ *      int32_t end = iter.getIndex();
+ *      for (c = iter.setIndex(pos);
+ *          c != CharacterIterator.DONE &amp;&amp; (Unicode::isLetter(c) || Unicode::isDigit(c));
+ *          c = iter.previous()) {}
+ *      int32_t start = iter.getIndex() + 1;
+ *  
+ *      cout &lt;&lt; &quot;start: &quot; &lt;&lt; start &lt;&lt; &quot; end: &quot; &lt;&lt; end &lt;&lt; endl;
+ *      for (c = iter.setIndex(start); iter.getIndex() &lt; end; c = iter.next() ) {
+ *          processChar(c);
+ *     }
+ *  }
+ * \endcode
+ * &lt;/pre&gt;
+ * Creating a StringCharacterIterator and calling the test functions
+ * &lt;pre&gt;
+ * \code
+ *  void CharacterIterator_Example( void )
+ *   {
+ *       cout &lt;&lt; endl &lt;&lt; &quot;===== CharacterIterator_Example: =====&quot; &lt;&lt; endl;
+ *       UnicodeString text(&quot;Ein kleiner Satz.&quot;);
+ *       StringCharacterIterator iterator(text);
+ *       cout &lt;&lt; &quot;----- traverseForward: -----------&quot; &lt;&lt; endl;
+ *       traverseForward( iterator );
+ *       cout &lt;&lt; endl &lt;&lt; endl &lt;&lt; &quot;----- traverseBackward: ----------&quot; &lt;&lt; endl;
+ *       traverseBackward( iterator );
+ *       cout &lt;&lt; endl &lt;&lt; endl &lt;&lt; &quot;----- traverseOut: ---------------&quot; &lt;&lt; endl;
+ *       traverseOut( iterator, 7 );
+ *       cout &lt;&lt; endl &lt;&lt; endl &lt;&lt; &quot;-----&quot; &lt;&lt; endl;
+ *   }
+ * \endcode
+ * &lt;/pre&gt;
+ *
+ * @stable ICU 2.0
+ */</doc>
+<fun r='_ZN6icu_6617CharacterIteratorD1Ev'/>
+<fun r='_ZNK6icu_6617CharacterIterator5cloneEv'/>
+<fun r='_ZN6icu_6617CharacterIterator5firstEv'/>
+<fun r='_ZN6icu_6617CharacterIterator12firstPostIncEv'/>
+<fun r='_ZN6icu_6617CharacterIterator7first32Ev'/>
+<fun r='_ZN6icu_6617CharacterIterator14first32PostIncEv'/>
+<fun r='_ZN6icu_6617CharacterIterator10setToStartEv'/>
+<fun r='_ZN6icu_6617CharacterIterator4lastEv'/>
+<fun r='_ZN6icu_6617CharacterIterator6last32Ev'/>
+<fun r='_ZN6icu_6617CharacterIterator8setToEndEv'/>
+<fun r='_ZN6icu_6617CharacterIterator8setIndexEi'/>
+<fun r='_ZN6icu_6617CharacterIterator10setIndex32Ei'/>
+<fun r='_ZNK6icu_6617CharacterIterator7currentEv'/>
+<fun r='_ZNK6icu_6617CharacterIterator9current32Ev'/>
+<fun r='_ZN6icu_6617CharacterIterator4nextEv'/>
+<fun r='_ZN6icu_6617CharacterIterator6next32Ev'/>
+<fun r='_ZN6icu_6617CharacterIterator8previousEv'/>
+<fun r='_ZN6icu_6617CharacterIterator10previous32Ev'/>
+<fun r='_ZN6icu_6617CharacterIterator11hasPreviousEv'/>
+<fun r='_ZNK6icu_6617CharacterIterator10startIndexEv'/>
+<fun r='_ZNK6icu_6617CharacterIterator8endIndexEv'/>
+<fun r='_ZNK6icu_6617CharacterIterator8getIndexEv'/>
+<fun r='_ZNK6icu_6617CharacterIterator9getLengthEv'/>
+<fun r='_ZN6icu_6617CharacterIterator4moveEiNS0_7EOriginE'/>
+<fun r='_ZN6icu_6617CharacterIterator6move32EiNS0_7EOriginE'/>
+<fun r='_ZN6icu_6617CharacterIterator7getTextERNS_13UnicodeStringE'/>
+<fun r='_ZN6icu_6617CharacterIteratorC1Ev'/>
+<fun r='_ZN6icu_6617CharacterIteratorC1Ei'/>
+<fun r='_ZN6icu_6617CharacterIteratorC1Eii'/>
+<fun r='_ZN6icu_6617CharacterIteratorC1Eiiii'/>
+<fun r='_ZN6icu_6617CharacterIteratorC1ERKS0_'/>
+<fun r='_ZN6icu_6617CharacterIteratoraSERKS0_'/>
+<mbr r='icu_66::CharacterIterator::textLength' o='64' t='int32_t'/>
+<mbr r='icu_66::CharacterIterator::pos' o='96' t='int32_t'/>
+<mbr r='icu_66::CharacterIterator::begin' o='128' t='int32_t'/>
+<mbr r='icu_66::CharacterIterator::end' o='160' t='int32_t'/>
+<fun r='_ZN6icu_6617CharacterIterator10setToStartEv'/>
+<fun r='_ZN6icu_6617CharacterIterator8setToEndEv'/>
+<fun r='_ZNK6icu_6617CharacterIterator10startIndexEv'/>
+<fun r='_ZNK6icu_6617CharacterIterator8endIndexEv'/>
+<fun r='_ZNK6icu_6617CharacterIterator8getIndexEv'/>
+<fun r='_ZNK6icu_6617CharacterIterator9getLengthEv'/>
+<use f='include/unicode/normlzr.h' l='185' c='_ZN6icu_6610NormalizerC1ERKNS_17CharacterIteratorE18UNormalizationMode'/>
+<use f='include/unicode/normlzr.h' l='698' c='_ZN6icu_6610Normalizer7setTextERKNS_17CharacterIteratorER10UErrorCode'/>
+<use f='include/unicode/normlzr.h' l='764'/>
+<size>24</size>

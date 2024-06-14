@@ -1,0 +1,219 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>compute_float64.hpp source code [boost-1.85.0/libs/charconv/include/boost/charconv/detail/compute_float64.hpp] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'boost-1.85.0/libs/charconv/include/boost/charconv/detail/compute_float64.hpp'; var root_path = '../../../../../../..'; var data_path = '../../../../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../../../..'>boost-1.85.0</a>/<a href='../../../../..'>libs</a>/<a href='../../../..'>charconv</a>/<a href='../../..'>include</a>/<a href='../..'>boost</a>/<a href='..'>charconv</a>/<a href='./'>detail</a>/<a href='compute_float64.hpp.html'>compute_float64.hpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>// Copyright 2020-2023 Daniel Lemire</i></td></tr>
+<tr><th id="2">2</th><td><i>// Copyright 2023 Matt Borland</i></td></tr>
+<tr><th id="3">3</th><td><i>// Distributed under the Boost Software License, Version 1.0.</i></td></tr>
+<tr><th id="4">4</th><td><i>// <a href="https://www.boost.org/LICENSE_1_0.txt">https://www.boost.org/LICENSE_1_0.txt</a></i></td></tr>
+<tr><th id="5">5</th><td></td></tr>
+<tr><th id="6">6</th><td><u>#<span data-ppcond="6">ifndef</span> <span class="macro" data-ref="_M/BOOST_CHARCONV_DETAIL_COMPUTE_FLOAT64_HPP">BOOST_CHARCONV_DETAIL_COMPUTE_FLOAT64_HPP</span></u></td></tr>
+<tr><th id="7">7</th><td><u>#define <dfn class="macro" id="_M/BOOST_CHARCONV_DETAIL_COMPUTE_FLOAT64_HPP" data-ref="_M/BOOST_CHARCONV_DETAIL_COMPUTE_FLOAT64_HPP">BOOST_CHARCONV_DETAIL_COMPUTE_FLOAT64_HPP</dfn></u></td></tr>
+<tr><th id="8">8</th><td></td></tr>
+<tr><th id="9">9</th><td><u>#include <a href="config.hpp.html">&lt;boost/charconv/detail/config.hpp&gt;</a></u></td></tr>
+<tr><th id="10">10</th><td><u>#include <a href="significand_tables.hpp.html">&lt;boost/charconv/detail/significand_tables.hpp&gt;</a></u></td></tr>
+<tr><th id="11">11</th><td><u>#include <a href="emulated128.hpp.html">&lt;boost/charconv/detail/emulated128.hpp&gt;</a></u></td></tr>
+<tr><th id="12">12</th><td><u>#include <a href="../../../../../core/include/boost/core/bit.hpp.html">&lt;boost/core/bit.hpp&gt;</a></u></td></tr>
+<tr><th id="13">13</th><td><u>#include <a href="../../../../../../../include/c++/9/cstdint.html">&lt;cstdint&gt;</a></u></td></tr>
+<tr><th id="14">14</th><td><u>#include <a href="../../../../../../../include/c++/9/cfloat.html">&lt;cfloat&gt;</a></u></td></tr>
+<tr><th id="15">15</th><td><u>#include <a href="../../../../../../../include/c++/9/cstring.html">&lt;cstring&gt;</a></u></td></tr>
+<tr><th id="16">16</th><td><u>#include <a href="../../../../../../../include/c++/9/cmath.html">&lt;cmath&gt;</a></u></td></tr>
+<tr><th id="17">17</th><td></td></tr>
+<tr><th id="18">18</th><td><b>namespace</b> <span class="namespace">boost</span> { <b>namespace</b> <span class="namespace">charconv</span> { <b>namespace</b> <span class="namespace">detail</span> { </td></tr>
+<tr><th id="19">19</th><td></td></tr>
+<tr><th id="20">20</th><td><em>static</em> <b>constexpr</b> <em>double</em> <dfn class="decl def" id="boost::charconv::detail::powers_of_ten" title='boost::charconv::detail::powers_of_ten' data-ref="boost::charconv::detail::powers_of_ten">powers_of_ten</dfn>[] = {</td></tr>
+<tr><th id="21">21</th><td>    <var>1e0</var>,  <var>1e1</var>,  <var>1e2</var>,  <var>1e3</var>,  <var>1e4</var>,  <var>1e5</var>,  <var>1e6</var>,  <var>1e7</var>,  <var>1e8</var>,  <var>1e9</var>,  <var>1e10</var>, <var>1e11</var>,</td></tr>
+<tr><th id="22">22</th><td>    <var>1e12</var>, <var>1e13</var>, <var>1e14</var>, <var>1e15</var>, <var>1e16</var>, <var>1e17</var>, <var>1e18</var>, <var>1e19</var>, <var>1e20</var>, <var>1e21</var>, <var>1e22</var></td></tr>
+<tr><th id="23">23</th><td>};</td></tr>
+<tr><th id="24">24</th><td></td></tr>
+<tr><th id="25">25</th><td><i>// Attempts to compute i * 10^(power) exactly; and if "negative" is true, negate the result.</i></td></tr>
+<tr><th id="26">26</th><td><i>// </i></td></tr>
+<tr><th id="27">27</th><td><i>// This function will only work in some cases, when it does not work, success is</i></td></tr>
+<tr><th id="28">28</th><td><i>// set to false. This should work *most of the time* (like 99% of the time).</i></td></tr>
+<tr><th id="29">29</th><td><i>// We assume that power is in the [-325, 308] interval.</i></td></tr>
+<tr><th id="30">30</th><td><b>inline</b> <em>double</em> <dfn class="decl def fn" id="_ZN5boost8charconv6detail15compute_float64ElmbRb" title='boost::charconv::detail::compute_float64' data-ref="_ZN5boost8charconv6detail15compute_float64ElmbRb">compute_float64</dfn>(<span class="namespace">std::</span>int64_t <dfn class="local col9 decl" id="5179power" title='power' data-type='std::int64_t' data-ref="5179power">power</dfn>, <span class="namespace">std::</span>uint64_t <dfn class="local col0 decl" id="5180i" title='i' data-type='std::uint64_t' data-ref="5180i">i</dfn>, <em>bool</em> <dfn class="local col1 decl" id="5181negative" title='negative' data-type='bool' data-ref="5181negative">negative</dfn>, <em>bool</em>&amp; <dfn class="local col2 decl" id="5182success" title='success' data-type='bool &amp;' data-ref="5182success">success</dfn>) <b>noexcept</b></td></tr>
+<tr><th id="31">31</th><td>{</td></tr>
+<tr><th id="32">32</th><td>    <em>static</em> <b>constexpr</b> <em>auto</em> <dfn class="local col3 decl" id="5183smallest_power" title='smallest_power' data-type='const int' data-ref="5183smallest_power">smallest_power</dfn> = -<var>325</var>;</td></tr>
+<tr><th id="33">33</th><td>    <em>static</em> <b>constexpr</b> <em>auto</em> <dfn class="local col4 decl" id="5184largest_power" title='largest_power' data-type='const int' data-ref="5184largest_power">largest_power</dfn> = <var>308</var>;</td></tr>
+<tr><th id="34">34</th><td></td></tr>
+<tr><th id="35">35</th><td>    <i>// We start with a fast path</i></td></tr>
+<tr><th id="36">36</th><td><i>    // It was described in Clinger WD. </i></td></tr>
+<tr><th id="37">37</th><td><i>    // How to read floating point numbers accurately.</i></td></tr>
+<tr><th id="38">38</th><td><i>    // ACM SIGPLAN Notices. 1990</i></td></tr>
+<tr><th id="39">39</th><td><u>#<span data-ppcond="39">if</span> (<span class="macro" title="0" data-ref="_M/FLT_EVAL_METHOD">FLT_EVAL_METHOD</span> != 1) &amp;&amp; (<span class="macro" title="0" data-ref="_M/FLT_EVAL_METHOD">FLT_EVAL_METHOD</span> != 0)</u></td></tr>
+<tr><th id="40">40</th><td>    <b>if</b> (<var>0</var> &lt;= power &amp;&amp; power &lt;= <var>22</var> &amp;&amp; i &lt;= UINT64_C(<var>9007199254740991</var>))</td></tr>
+<tr><th id="41">41</th><td><u>#<span data-ppcond="39">else</span></u></td></tr>
+<tr><th id="42">42</th><td>    <b>if</b> (-<var>22</var> &lt;= <a class="local col9 ref" href="#5179power" title='power' data-ref="5179power">power</a> &amp;&amp; <a class="local col9 ref" href="#5179power" title='power' data-ref="5179power">power</a> &lt;= <var>22</var> &amp;&amp; <a class="local col0 ref" href="#5180i" title='i' data-ref="5180i">i</a> &lt;= <a class="macro" href="../../../../../../../include/stdint.h.html#262" title="9007199254740991UL" data-ref="_M/UINT64_C">UINT64_C</a>(<var>9007199254740991</var>))</td></tr>
+<tr><th id="43">43</th><td><u>#<span data-ppcond="39">endif</span></u></td></tr>
+<tr><th id="44">44</th><td>    {</td></tr>
+<tr><th id="45">45</th><td>        <i>// The general idea is as follows.</i></td></tr>
+<tr><th id="46">46</th><td><i>        // If 0 &lt;= s &lt; 2^53 and if 10^0 &lt;= p &lt;= 10^22 then</i></td></tr>
+<tr><th id="47">47</th><td><i>        // 1) Both s and p can be represented exactly as 64-bit floating-point</i></td></tr>
+<tr><th id="48">48</th><td><i>        // values</i></td></tr>
+<tr><th id="49">49</th><td><i>        // (binary64).</i></td></tr>
+<tr><th id="50">50</th><td><i>        // 2) Because s and p can be represented exactly as floating-point values,</i></td></tr>
+<tr><th id="51">51</th><td><i>        // then s * p</i></td></tr>
+<tr><th id="52">52</th><td><i>        // and s / p will produce correctly rounded values.</i></td></tr>
+<tr><th id="53">53</th><td>        </td></tr>
+<tr><th id="54">54</th><td>        <em>auto</em> <dfn class="local col5 decl" id="5185d" title='d' data-type='double' data-ref="5185d">d</dfn> = <b>static_cast</b>&lt;<em>double</em>&gt;(<a class="local col0 ref" href="#5180i" title='i' data-ref="5180i">i</a>);</td></tr>
+<tr><th id="55">55</th><td>        </td></tr>
+<tr><th id="56">56</th><td>        <b>if</b> (<a class="local col9 ref" href="#5179power" title='power' data-ref="5179power">power</a> &lt; <var>0</var>) </td></tr>
+<tr><th id="57">57</th><td>        {</td></tr>
+<tr><th id="58">58</th><td>            <a class="local col5 ref" href="#5185d" title='d' data-ref="5185d">d</a> = <a class="local col5 ref" href="#5185d" title='d' data-ref="5185d">d</a> / <a class="ref" href="#boost::charconv::detail::powers_of_ten" title='boost::charconv::detail::powers_of_ten' data-ref="boost::charconv::detail::powers_of_ten">powers_of_ten</a>[-<a class="local col9 ref" href="#5179power" title='power' data-ref="5179power">power</a>];</td></tr>
+<tr><th id="59">59</th><td>        } </td></tr>
+<tr><th id="60">60</th><td>        <b>else</b> </td></tr>
+<tr><th id="61">61</th><td>        {</td></tr>
+<tr><th id="62">62</th><td>            <a class="local col5 ref" href="#5185d" title='d' data-ref="5185d">d</a> = <a class="local col5 ref" href="#5185d" title='d' data-ref="5185d">d</a> * <a class="ref" href="#boost::charconv::detail::powers_of_ten" title='boost::charconv::detail::powers_of_ten' data-ref="boost::charconv::detail::powers_of_ten">powers_of_ten</a>[<a class="local col9 ref" href="#5179power" title='power' data-ref="5179power">power</a>];</td></tr>
+<tr><th id="63">63</th><td>        }</td></tr>
+<tr><th id="64">64</th><td>        </td></tr>
+<tr><th id="65">65</th><td>        <b>if</b> (<a class="local col1 ref" href="#5181negative" title='negative' data-ref="5181negative">negative</a>) </td></tr>
+<tr><th id="66">66</th><td>        {</td></tr>
+<tr><th id="67">67</th><td>            <a class="local col5 ref" href="#5185d" title='d' data-ref="5185d">d</a> = -<a class="local col5 ref" href="#5185d" title='d' data-ref="5185d">d</a>;</td></tr>
+<tr><th id="68">68</th><td>        }</td></tr>
+<tr><th id="69">69</th><td></td></tr>
+<tr><th id="70">70</th><td>        <a class="local col2 ref" href="#5182success" title='success' data-ref="5182success">success</a> = <b>true</b>;</td></tr>
+<tr><th id="71">71</th><td>        <b>return</b> <a class="local col5 ref" href="#5185d" title='d' data-ref="5185d">d</a>;</td></tr>
+<tr><th id="72">72</th><td>    }</td></tr>
+<tr><th id="73">73</th><td></td></tr>
+<tr><th id="74">74</th><td>    <i>// When 22 &lt; power &amp;&amp; power &lt;  22 + 16, we could</i></td></tr>
+<tr><th id="75">75</th><td><i>    // hope for another, secondary fast path.  It was</i></td></tr>
+<tr><th id="76">76</th><td><i>    // described by David M. Gay in  "Correctly rounded</i></td></tr>
+<tr><th id="77">77</th><td><i>    // binary-decimal and decimal-binary conversions." (1990)</i></td></tr>
+<tr><th id="78">78</th><td><i>    // If you need to compute i * 10^(22 + x) for x &lt; 16,</i></td></tr>
+<tr><th id="79">79</th><td><i>    // first compute i * 10^x, if you know that result is exact</i></td></tr>
+<tr><th id="80">80</th><td><i>    // (e.g., when i * 10^x &lt; 2^53),</i></td></tr>
+<tr><th id="81">81</th><td><i>    // then you can still proceed and do (i * 10^x) * 10^22.</i></td></tr>
+<tr><th id="82">82</th><td><i>    // Is this worth your time?</i></td></tr>
+<tr><th id="83">83</th><td><i>    // You need  22 &lt; power *and* power &lt;  22 + 16 *and* (i * 10^(x-22) &lt; 2^53)</i></td></tr>
+<tr><th id="84">84</th><td><i>    // for this second fast path to work.</i></td></tr>
+<tr><th id="85">85</th><td><i>    // If you have 22 &lt; power *and* power &lt;  22 + 16, and then you</i></td></tr>
+<tr><th id="86">86</th><td><i>    // optimistically compute "i * 10^(x-22)", there is still a chance that you</i></td></tr>
+<tr><th id="87">87</th><td><i>    // have wasted your time if i * 10^(x-22) &gt;= 2^53. It makes the use cases of</i></td></tr>
+<tr><th id="88">88</th><td><i>    // this optimization maybe less common than we would like. Source:</i></td></tr>
+<tr><th id="89">89</th><td><i>    // <a href="http://www.exploringbinary.com/fast-path-decimal-to-floating-point-conversion/">http://www.exploringbinary.com/fast-path-decimal-to-floating-point-conversion/</a></i></td></tr>
+<tr><th id="90">90</th><td><i>    // also used in RapidJSON: <a href="https://rapidjson.org/strtod_8h_source.html">https://rapidjson.org/strtod_8h_source.html</a></i></td></tr>
+<tr><th id="91">91</th><td></td></tr>
+<tr><th id="92">92</th><td>    <b>if</b> (<a class="local col0 ref" href="#5180i" title='i' data-ref="5180i">i</a> == <var>0</var> || <a class="local col9 ref" href="#5179power" title='power' data-ref="5179power">power</a> &lt; <a class="local col3 ref" href="#5183smallest_power" title='smallest_power' data-ref="5183smallest_power">smallest_power</a>)</td></tr>
+<tr><th id="93">93</th><td>    {</td></tr>
+<tr><th id="94">94</th><td>        <b>return</b> <a class="local col1 ref" href="#5181negative" title='negative' data-ref="5181negative">negative</a> ? -<var>0.0</var> : <var>0.0</var>;</td></tr>
+<tr><th id="95">95</th><td>    }</td></tr>
+<tr><th id="96">96</th><td>    <b>else</b> <b>if</b> (<a class="local col9 ref" href="#5179power" title='power' data-ref="5179power">power</a> &gt; <a class="local col4 ref" href="#5184largest_power" title='largest_power' data-ref="5184largest_power">largest_power</a>)</td></tr>
+<tr><th id="97">97</th><td>    {</td></tr>
+<tr><th id="98">98</th><td>        <b>return</b> <a class="local col1 ref" href="#5181negative" title='negative' data-ref="5181negative">negative</a> ? -<a class="macro" href="../../../../../../../include/math.h.html#48" title="(__builtin_huge_val ())" data-ref="_M/HUGE_VAL">HUGE_VAL</a> : <a class="macro" href="../../../../../../../include/math.h.html#48" title="(__builtin_huge_val ())" data-ref="_M/HUGE_VAL">HUGE_VAL</a>;</td></tr>
+<tr><th id="99">99</th><td>    }</td></tr>
+<tr><th id="100">100</th><td></td></tr>
+<tr><th id="101">101</th><td>    <em>const</em> <span class="namespace">std::</span>uint64_t <dfn class="local col6 decl" id="5186factor_significand" title='factor_significand' data-type='const std::uint64_t' data-ref="5186factor_significand">factor_significand</dfn> = <a class="typedef" href="significand_tables.hpp.html#boost::charconv::detail::significands_table" title='boost::charconv::detail::significands_table' data-type='significand_template&lt;true&gt;' data-ref="boost::charconv::detail::significands_table">significands_table</a>::<a class="ref" href="significand_tables.hpp.html#boost::charconv::detail::significand_template::significand_64" title='boost::charconv::detail::significand_template::significand_64' data-ref="boost::charconv::detail::significand_template::significand_64">significand_64</a>[<a class="local col9 ref" href="#5179power" title='power' data-ref="5179power">power</a> - <a class="local col3 ref" href="#5183smallest_power" title='smallest_power' data-ref="5183smallest_power">smallest_power</a>];</td></tr>
+<tr><th id="102">102</th><td>    <em>const</em> <span class="namespace">std::</span>int64_t <dfn class="local col7 decl" id="5187exponent" title='exponent' data-type='const std::int64_t' data-ref="5187exponent">exponent</dfn> = (((<var>152170</var> + <var>65536</var>) * <a class="local col9 ref" href="#5179power" title='power' data-ref="5179power">power</a>) &gt;&gt; <var>16</var>) + <var>1024</var> + <var>63</var>;</td></tr>
+<tr><th id="103">103</th><td>    <em>int</em> <dfn class="local col8 decl" id="5188leading_zeros" title='leading_zeros' data-type='int' data-ref="5188leading_zeros">leading_zeros</dfn> = <span class="namespace">boost::core::</span><a class="ref fn" href="../../../../../core/include/boost/core/bit.hpp.html#_ZN5boost4core11countl_zeroET_" title='boost::core::countl_zero' data-ref="_ZN5boost4core11countl_zeroET_">countl_zero</a>(<span class='inlayHint'>x:&nbsp;</span><a class="local col0 ref" href="#5180i" title='i' data-ref="5180i">i</a>);</td></tr>
+<tr><th id="104">104</th><td>    <a class="local col0 ref" href="#5180i" title='i' data-ref="5180i">i</a> &lt;&lt;= <b>static_cast</b>&lt;<span class="namespace">std::</span>uint64_t&gt;(<a class="local col8 ref" href="#5188leading_zeros" title='leading_zeros' data-ref="5188leading_zeros">leading_zeros</a>);</td></tr>
+<tr><th id="105">105</th><td></td></tr>
+<tr><th id="106">106</th><td>    <a class="type" href="emulated128.hpp.html#boost::charconv::detail::uint128" title='boost::charconv::detail::uint128' data-ref="boost::charconv::detail::uint128">uint128</a> <dfn class="local col9 decl" id="5189product" title='product' data-type='boost::charconv::detail::uint128' data-ref="5189product">product</dfn> = <a class="ref fn" href="emulated128.hpp.html#_ZN5boost8charconv6detail7umul128Emm" title='boost::charconv::detail::umul128' data-ref="_ZN5boost8charconv6detail7umul128Emm">umul128</a>(<span class='inlayHint'>x:&nbsp;</span><a class="local col0 ref" href="#5180i" title='i' data-ref="5180i">i</a>, <span class='inlayHint'>y:&nbsp;</span><a class="local col6 ref" href="#5186factor_significand" title='factor_significand' data-ref="5186factor_significand">factor_significand</a>);</td></tr>
+<tr><th id="107">107</th><td>    <span class="namespace">std::</span>uint64_t <dfn class="local col0 decl" id="5190low" title='low' data-type='std::uint64_t' data-ref="5190low">low</dfn> = <a class="local col9 ref" href="#5189product" title='product' data-ref="5189product">product</a>.<a class="ref field" href="emulated128.hpp.html#boost::charconv::detail::uint128::low" title='boost::charconv::detail::uint128::low' data-ref="boost::charconv::detail::uint128::low">low</a>;</td></tr>
+<tr><th id="108">108</th><td>    <span class="namespace">std::</span>uint64_t <dfn class="local col1 decl" id="5191high" title='high' data-type='std::uint64_t' data-ref="5191high">high</dfn> = <a class="local col9 ref" href="#5189product" title='product' data-ref="5189product">product</a>.<a class="ref field" href="emulated128.hpp.html#boost::charconv::detail::uint128::high" title='boost::charconv::detail::uint128::high' data-ref="boost::charconv::detail::uint128::high">high</a>;</td></tr>
+<tr><th id="109">109</th><td></td></tr>
+<tr><th id="110">110</th><td>    <i>// We know that upper has at most one leading zero because</i></td></tr>
+<tr><th id="111">111</th><td><i>    // both i and  factor_mantissa have a leading one. This means</i></td></tr>
+<tr><th id="112">112</th><td><i>    // that the result is at least as large as ((1&lt;&lt;63)*(1&lt;&lt;63))/(1&lt;&lt;64).</i></td></tr>
+<tr><th id="113">113</th><td><i>    // </i></td></tr>
+<tr><th id="114">114</th><td><i>    // As long as the first 9 bits of "upper" are not "1", then we</i></td></tr>
+<tr><th id="115">115</th><td><i>    // know that we have an exact computed value for the leading</i></td></tr>
+<tr><th id="116">116</th><td><i>    // 55 bits because any imprecision would play out as a +1, in the worst case.</i></td></tr>
+<tr><th id="117">117</th><td><i>    // Having 55 bits is necessary because we need 53 bits for the mantissa,</i></td></tr>
+<tr><th id="118">118</th><td><i>    // but we have to have one rounding bit and, we can waste a bit if the most </i></td></tr>
+<tr><th id="119">119</th><td><i>    // significant bit of the product is zero.</i></td></tr>
+<tr><th id="120">120</th><td><i>    // </i></td></tr>
+<tr><th id="121">121</th><td><i>    // We expect this next branch to be rarely taken (say 1% of the time).</i></td></tr>
+<tr><th id="122">122</th><td><i>    // When (upper &amp; 0x1FF) == 0x1FF, it can be common for</i></td></tr>
+<tr><th id="123">123</th><td><i>    // lower + i &lt; lower to be true (proba. much higher than 1%).</i></td></tr>
+<tr><th id="124">124</th><td>    <b>if</b> (<a class="macro" href="../../../../../config/include/boost/config/compiler/clang.hpp.html#75" title="__builtin_expect((high &amp; 0x1FF) == 0x1FF, 0)" data-ref="_M/BOOST_UNLIKELY">BOOST_UNLIKELY</a>((<a class="local col1 ref" href="#5191high" title='high' data-ref="5191high">high</a> &amp; <var>0x1FF</var>) == <var>0x1FF</var>) &amp;&amp; (<a class="local col0 ref" href="#5190low" title='low' data-ref="5190low">low</a> + <a class="local col0 ref" href="#5180i" title='i' data-ref="5180i">i</a> &lt; <a class="local col0 ref" href="#5190low" title='low' data-ref="5190low">low</a>))</td></tr>
+<tr><th id="125">125</th><td>    {</td></tr>
+<tr><th id="126">126</th><td>        <em>const</em> <span class="namespace">std::</span>uint64_t <dfn class="local col2 decl" id="5192factor_significand_low" title='factor_significand_low' data-type='const std::uint64_t' data-ref="5192factor_significand_low">factor_significand_low</dfn> = <a class="typedef" href="significand_tables.hpp.html#boost::charconv::detail::significands_table" title='boost::charconv::detail::significands_table' data-type='significand_template&lt;true&gt;' data-ref="boost::charconv::detail::significands_table">significands_table</a>::<a class="ref" href="significand_tables.hpp.html#boost::charconv::detail::significand_template::significand_128" title='boost::charconv::detail::significand_template::significand_128' data-ref="boost::charconv::detail::significand_template::significand_128">significand_128</a>[<a class="local col9 ref" href="#5179power" title='power' data-ref="5179power">power</a> - <a class="local col3 ref" href="#5183smallest_power" title='smallest_power' data-ref="5183smallest_power">smallest_power</a>];</td></tr>
+<tr><th id="127">127</th><td>        <a class="local col9 ref" href="#5189product" title='product' data-ref="5189product">product</a> <a class="ref fn" href="emulated128.hpp.html#_ZN5boost8charconv6detail7uint128aSERKS2_" title='boost::charconv::detail::uint128::operator=' data-ref="_ZN5boost8charconv6detail7uint128aSERKS2_">=</a> <a class="ref fn" href="emulated128.hpp.html#_ZN5boost8charconv6detail7umul128Emm" title='boost::charconv::detail::umul128' data-ref="_ZN5boost8charconv6detail7umul128Emm">umul128</a>(<span class='inlayHint'>x:&nbsp;</span><a class="local col0 ref" href="#5180i" title='i' data-ref="5180i">i</a>, <span class='inlayHint'>y:&nbsp;</span><a class="local col2 ref" href="#5192factor_significand_low" title='factor_significand_low' data-ref="5192factor_significand_low">factor_significand_low</a>);</td></tr>
+<tr><th id="128">128</th><td>        <i>//const std::uint64_t product_low = product.low;</i></td></tr>
+<tr><th id="129">129</th><td>        <em>const</em> <span class="namespace">std::</span>uint64_t <dfn class="local col3 decl" id="5193product_middle2" title='product_middle2' data-type='const std::uint64_t' data-ref="5193product_middle2">product_middle2</dfn> = <a class="local col9 ref" href="#5189product" title='product' data-ref="5189product">product</a>.<a class="ref field" href="emulated128.hpp.html#boost::charconv::detail::uint128::high" title='boost::charconv::detail::uint128::high' data-ref="boost::charconv::detail::uint128::high">high</a>;</td></tr>
+<tr><th id="130">130</th><td>        <em>const</em> <span class="namespace">std::</span>uint64_t <dfn class="local col4 decl" id="5194product_middle1" title='product_middle1' data-type='const std::uint64_t' data-ref="5194product_middle1">product_middle1</dfn> = <a class="local col0 ref" href="#5190low" title='low' data-ref="5190low">low</a>;</td></tr>
+<tr><th id="131">131</th><td>        <span class="namespace">std::</span>uint64_t <dfn class="local col5 decl" id="5195product_high" title='product_high' data-type='std::uint64_t' data-ref="5195product_high">product_high</dfn> = <a class="local col1 ref" href="#5191high" title='high' data-ref="5191high">high</a>;</td></tr>
+<tr><th id="132">132</th><td>        <em>const</em> <span class="namespace">std::</span>uint64_t <dfn class="local col6 decl" id="5196product_middle" title='product_middle' data-type='const std::uint64_t' data-ref="5196product_middle">product_middle</dfn> = <a class="local col4 ref" href="#5194product_middle1" title='product_middle1' data-ref="5194product_middle1">product_middle1</a> + <a class="local col3 ref" href="#5193product_middle2" title='product_middle2' data-ref="5193product_middle2">product_middle2</a>;</td></tr>
+<tr><th id="133">133</th><td></td></tr>
+<tr><th id="134">134</th><td>        <b>if</b> (<a class="local col6 ref" href="#5196product_middle" title='product_middle' data-ref="5196product_middle">product_middle</a> &lt; <a class="local col4 ref" href="#5194product_middle1" title='product_middle1' data-ref="5194product_middle1">product_middle1</a>)</td></tr>
+<tr><th id="135">135</th><td>        {</td></tr>
+<tr><th id="136">136</th><td>            <a class="local col5 ref" href="#5195product_high" title='product_high' data-ref="5195product_high">product_high</a>++;</td></tr>
+<tr><th id="137">137</th><td>        }</td></tr>
+<tr><th id="138">138</th><td></td></tr>
+<tr><th id="139">139</th><td>        <i>// Commented out because possibly unneeded</i></td></tr>
+<tr><th id="140">140</th><td><i>        // See: <a href="https://arxiv.org/pdf/2212.06644.pdf">https://arxiv.org/pdf/2212.06644.pdf</a></i></td></tr>
+<tr><th id="141">141</th><td>        <i>/*</i></td></tr>
+<tr><th id="142">142</th><td><i>        // we want to check whether mantissa *i + i would affect our result</i></td></tr>
+<tr><th id="143">143</th><td><i>        // This does happen, e.g. with 7.3177701707893310e+15</i></td></tr>
+<tr><th id="144">144</th><td><i>        if (((product_middle + 1 == 0) &amp;&amp; ((product_high &amp; 0x1FF) == 0x1FF) &amp;&amp; (product_low + i &lt; product_low))) </i></td></tr>
+<tr><th id="145">145</th><td><i>        {</i></td></tr>
+<tr><th id="146">146</th><td><i>            success = false;</i></td></tr>
+<tr><th id="147">147</th><td><i>            return 0;</i></td></tr>
+<tr><th id="148">148</th><td><i>        }</i></td></tr>
+<tr><th id="149">149</th><td><i>        */</i></td></tr>
+<tr><th id="150">150</th><td></td></tr>
+<tr><th id="151">151</th><td>        <a class="local col0 ref" href="#5190low" title='low' data-ref="5190low">low</a> = <a class="local col6 ref" href="#5196product_middle" title='product_middle' data-ref="5196product_middle">product_middle</a>;</td></tr>
+<tr><th id="152">152</th><td>        <a class="local col1 ref" href="#5191high" title='high' data-ref="5191high">high</a> = <a class="local col5 ref" href="#5195product_high" title='product_high' data-ref="5195product_high">product_high</a>;</td></tr>
+<tr><th id="153">153</th><td>    }</td></tr>
+<tr><th id="154">154</th><td></td></tr>
+<tr><th id="155">155</th><td>    <i>// The final significand should be 53 bits with a leading 1</i></td></tr>
+<tr><th id="156">156</th><td><i>    // We shift it so that it occupies 54 bits with a leading 1</i></td></tr>
+<tr><th id="157">157</th><td>    <em>const</em> <span class="namespace">std::</span>uint64_t <dfn class="local col7 decl" id="5197upper_bit" title='upper_bit' data-type='const std::uint64_t' data-ref="5197upper_bit">upper_bit</dfn> = <a class="local col1 ref" href="#5191high" title='high' data-ref="5191high">high</a> &gt;&gt; <var>63</var>;</td></tr>
+<tr><th id="158">158</th><td>    <span class="namespace">std::</span>uint64_t <dfn class="local col8 decl" id="5198significand" title='significand' data-type='std::uint64_t' data-ref="5198significand">significand</dfn> = <a class="local col1 ref" href="#5191high" title='high' data-ref="5191high">high</a> &gt;&gt; (<a class="local col7 ref" href="#5197upper_bit" title='upper_bit' data-ref="5197upper_bit">upper_bit</a> + <var>9</var>);</td></tr>
+<tr><th id="159">159</th><td>    <a class="local col8 ref" href="#5188leading_zeros" title='leading_zeros' data-ref="5188leading_zeros">leading_zeros</a> += <b>static_cast</b>&lt;<em>int</em>&gt;(<var>1</var> ^ <a class="local col7 ref" href="#5197upper_bit" title='upper_bit' data-ref="5197upper_bit">upper_bit</a>);</td></tr>
+<tr><th id="160">160</th><td></td></tr>
+<tr><th id="161">161</th><td>    <i>// If we have lots of trailing zeros we may fall between two values</i></td></tr>
+<tr><th id="162">162</th><td>    <b>if</b> (<a class="macro" href="../../../../../config/include/boost/config/compiler/clang.hpp.html#75" title="__builtin_expect((low == 0) &amp;&amp; ((high &amp; 0x1FF) == 0) &amp;&amp; ((significand &amp; 3) == 1), 0)" data-ref="_M/BOOST_UNLIKELY">BOOST_UNLIKELY</a>((<a class="local col0 ref" href="#5190low" title='low' data-ref="5190low">low</a> == <var>0</var>) &amp;&amp; ((<a class="local col1 ref" href="#5191high" title='high' data-ref="5191high">high</a> &amp; <var>0x1FF</var>) == <var>0</var>) &amp;&amp; ((<a class="local col8 ref" href="#5198significand" title='significand' data-ref="5198significand">significand</a> &amp; <var>3</var>) == <var>1</var>)))</td></tr>
+<tr><th id="163">163</th><td>    {</td></tr>
+<tr><th id="164">164</th><td>        <i>// if significand &amp; 1 == 1 we might need to round up</i></td></tr>
+<tr><th id="165">165</th><td>        <a class="local col2 ref" href="#5182success" title='success' data-ref="5182success">success</a> = <b>false</b>;</td></tr>
+<tr><th id="166">166</th><td>        <b>return</b> <var>0</var>;</td></tr>
+<tr><th id="167">167</th><td>    }</td></tr>
+<tr><th id="168">168</th><td></td></tr>
+<tr><th id="169">169</th><td>    <a class="local col8 ref" href="#5198significand" title='significand' data-ref="5198significand">significand</a> += <a class="local col8 ref" href="#5198significand" title='significand' data-ref="5198significand">significand</a> &amp; <var>1</var>;</td></tr>
+<tr><th id="170">170</th><td>    <a class="local col8 ref" href="#5198significand" title='significand' data-ref="5198significand">significand</a> &gt;&gt;= <var>1</var>;</td></tr>
+<tr><th id="171">171</th><td></td></tr>
+<tr><th id="172">172</th><td>    <i>// Here the significand &lt; (1&lt;&lt;53), unless there is an overflow</i></td></tr>
+<tr><th id="173">173</th><td>    <b>if</b> (<a class="local col8 ref" href="#5198significand" title='significand' data-ref="5198significand">significand</a> &gt;= (<a class="macro" href="../../../../../../../include/stdint.h.html#262" title="1UL" data-ref="_M/UINT64_C">UINT64_C</a>(<var>1</var>) &lt;&lt; <var>53</var>))</td></tr>
+<tr><th id="174">174</th><td>    {</td></tr>
+<tr><th id="175">175</th><td>        <a class="local col8 ref" href="#5198significand" title='significand' data-ref="5198significand">significand</a> = (<a class="macro" href="../../../../../../../include/stdint.h.html#262" title="1UL" data-ref="_M/UINT64_C">UINT64_C</a>(<var>1</var>) &lt;&lt; <var>52</var>);</td></tr>
+<tr><th id="176">176</th><td>        <a class="local col8 ref" href="#5188leading_zeros" title='leading_zeros' data-ref="5188leading_zeros">leading_zeros</a>--;</td></tr>
+<tr><th id="177">177</th><td>    }</td></tr>
+<tr><th id="178">178</th><td></td></tr>
+<tr><th id="179">179</th><td>    <a class="local col8 ref" href="#5198significand" title='significand' data-ref="5198significand">significand</a> &amp;= ~(<a class="macro" href="../../../../../../../include/stdint.h.html#262" title="1UL" data-ref="_M/UINT64_C">UINT64_C</a>(<var>1</var>) &lt;&lt; <var>52</var>);</td></tr>
+<tr><th id="180">180</th><td>    <em>const</em> <em>auto</em> <dfn class="local col9 decl" id="5199real_exponent" title='real_exponent' data-type='const std::uint64_t' data-ref="5199real_exponent">real_exponent</dfn> = <b>static_cast</b>&lt;<span class="namespace">std::</span>uint64_t&gt;(<a class="local col7 ref" href="#5187exponent" title='exponent' data-ref="5187exponent">exponent</a> - <a class="local col8 ref" href="#5188leading_zeros" title='leading_zeros' data-ref="5188leading_zeros">leading_zeros</a>);</td></tr>
+<tr><th id="181">181</th><td></td></tr>
+<tr><th id="182">182</th><td>    <i>// We have to check that real_exponent is in range, otherwise fail</i></td></tr>
+<tr><th id="183">183</th><td>    <b>if</b> (<a class="macro" href="../../../../../config/include/boost/config/compiler/clang.hpp.html#75" title="__builtin_expect((real_exponent &lt; 1) || (real_exponent &gt; 2046), 0)" data-ref="_M/BOOST_UNLIKELY">BOOST_UNLIKELY</a>((<a class="local col9 ref" href="#5199real_exponent" title='real_exponent' data-ref="5199real_exponent">real_exponent</a> &lt; <var>1</var>) || (<a class="local col9 ref" href="#5199real_exponent" title='real_exponent' data-ref="5199real_exponent">real_exponent</a> &gt; <var>2046</var>)))</td></tr>
+<tr><th id="184">184</th><td>    {</td></tr>
+<tr><th id="185">185</th><td>        <a class="local col2 ref" href="#5182success" title='success' data-ref="5182success">success</a> = <b>false</b>;</td></tr>
+<tr><th id="186">186</th><td>        <b>return</b> <var>0</var>;</td></tr>
+<tr><th id="187">187</th><td>    }</td></tr>
+<tr><th id="188">188</th><td></td></tr>
+<tr><th id="189">189</th><td>    <a class="local col8 ref" href="#5198significand" title='significand' data-ref="5198significand">significand</a> |= <a class="local col9 ref" href="#5199real_exponent" title='real_exponent' data-ref="5199real_exponent">real_exponent</a> &lt;&lt; <var>52</var>;</td></tr>
+<tr><th id="190">190</th><td>    <a class="local col8 ref" href="#5198significand" title='significand' data-ref="5198significand">significand</a> |= ((<b>static_cast</b>&lt;<span class="namespace">std::</span>uint64_t&gt;(<a class="local col1 ref" href="#5181negative" title='negative' data-ref="5181negative">negative</a>) &lt;&lt; <var>63</var>));</td></tr>
+<tr><th id="191">191</th><td>    </td></tr>
+<tr><th id="192">192</th><td>    <em>double</em> <dfn class="local col0 decl" id="5200d" title='d' data-type='double' data-ref="5200d">d</dfn>;</td></tr>
+<tr><th id="193">193</th><td>    <span class="namespace">std::</span><a class="ref fn" href="../../../../../../../include/string.h.html#memcpy" title='memcpy' data-ref="memcpy">memcpy</a>(<span class='inlayHint'>dest:&nbsp;</span>&amp;<a class="local col0 ref" href="#5200d" title='d' data-ref="5200d">d</a>, <span class='inlayHint'>src:&nbsp;</span>&amp;<a class="local col8 ref" href="#5198significand" title='significand' data-ref="5198significand">significand</a>, <span class='inlayHint'>n:&nbsp;</span><b>sizeof</b>(<a class="local col0 ref" href="#5200d" title='d' data-ref="5200d">d</a>));</td></tr>
+<tr><th id="194">194</th><td></td></tr>
+<tr><th id="195">195</th><td>    <a class="local col2 ref" href="#5182success" title='success' data-ref="5182success">success</a> = <b>true</b>;</td></tr>
+<tr><th id="196">196</th><td>    <b>return</b> <a class="local col0 ref" href="#5200d" title='d' data-ref="5200d">d</a>;</td></tr>
+<tr><th id="197">197</th><td>}</td></tr>
+<tr><th id="198">198</th><td></td></tr>
+<tr><th id="199">199</th><td>}}} <i>// Namespaces</i></td></tr>
+<tr><th id="200">200</th><td></td></tr>
+<tr><th id="201">201</th><td><u>#<span data-ppcond="6">endif</span> // BOOST_CHARCONV_DETAIL_COMPUTE_FLOAT64_HPP</u></td></tr>
+<tr><th id="202">202</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../../../../src/from_chars.cpp.html'>boost-1.85.0/libs/charconv/src/from_chars.cpp</a><br/>Generated on <em>2024-Jun-14</em> from project boost-1.85.0 revision <em>1.85.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

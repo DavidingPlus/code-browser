@@ -1,0 +1,564 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>sse2.hpp source code [boost-1.85.0/libs/json/include/boost/json/detail/sse2.hpp] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'boost-1.85.0/libs/json/include/boost/json/detail/sse2.hpp'; var root_path = '../../../../../../..'; var data_path = '../../../../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../../../..'>boost-1.85.0</a>/<a href='../../../../..'>libs</a>/<a href='../../../..'>json</a>/<a href='../../..'>include</a>/<a href='../..'>boost</a>/<a href='..'>json</a>/<a href='./'>detail</a>/<a href='sse2.hpp.html'>sse2.hpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>//</i></td></tr>
+<tr><th id="2">2</th><td><i>// Copyright (c) 2019 Peter Dimov (pdimov at gmail dot com),</i></td></tr>
+<tr><th id="3">3</th><td><i>//                    Vinnie Falco (vinnie.falco@gmail.com)</i></td></tr>
+<tr><th id="4">4</th><td><i>// Copyright (c) 2020 Krystian Stasiowski (sdkrystian@gmail.com)</i></td></tr>
+<tr><th id="5">5</th><td><i>//</i></td></tr>
+<tr><th id="6">6</th><td><i>// Distributed under the Boost Software License, Version 1.0. (See accompanying</i></td></tr>
+<tr><th id="7">7</th><td><i>// file LICENSE_1_0.txt or copy at <a href="http://www.boost.org/LICENSE_1_0.txt">http://www.boost.org/LICENSE_1_0.txt</a>)</i></td></tr>
+<tr><th id="8">8</th><td><i>//</i></td></tr>
+<tr><th id="9">9</th><td><i>// Official repository: <a href="https://github.com/boostorg/json">https://github.com/boostorg/json</a></i></td></tr>
+<tr><th id="10">10</th><td><i>//</i></td></tr>
+<tr><th id="11">11</th><td></td></tr>
+<tr><th id="12">12</th><td><u>#<span data-ppcond="12">ifndef</span> <span class="macro" data-ref="_M/BOOST_JSON_DETAIL_SSE2_HPP">BOOST_JSON_DETAIL_SSE2_HPP</span></u></td></tr>
+<tr><th id="13">13</th><td><u>#define <dfn class="macro" id="_M/BOOST_JSON_DETAIL_SSE2_HPP" data-ref="_M/BOOST_JSON_DETAIL_SSE2_HPP">BOOST_JSON_DETAIL_SSE2_HPP</dfn></u></td></tr>
+<tr><th id="14">14</th><td></td></tr>
+<tr><th id="15">15</th><td><u>#include <a href="config.hpp.html">&lt;boost/json/detail/config.hpp&gt;</a></u></td></tr>
+<tr><th id="16">16</th><td><u>#include <a href="utf8.hpp.html">&lt;boost/json/detail/utf8.hpp&gt;</a></u></td></tr>
+<tr><th id="17">17</th><td><u>#include <a href="../../../../../../../include/c++/9/cstddef.html">&lt;cstddef&gt;</a></u></td></tr>
+<tr><th id="18">18</th><td><u>#include <a href="../../../../../../../include/c++/9/cstring.html">&lt;cstring&gt;</a></u></td></tr>
+<tr><th id="19">19</th><td><u>#<span data-ppcond="19">ifdef</span> <a class="macro" href="config.hpp.html#55" data-ref="_M/BOOST_JSON_USE_SSE2">BOOST_JSON_USE_SSE2</a></u></td></tr>
+<tr><th id="20">20</th><td><u># include &lt;emmintrin.h&gt;</u></td></tr>
+<tr><th id="21">21</th><td><u># include &lt;xmmintrin.h&gt;</u></td></tr>
+<tr><th id="22">22</th><td><u># <span data-ppcond="22">ifdef</span> <span class="macro" data-ref="_M/_MSC_VER">_MSC_VER</span></u></td></tr>
+<tr><th id="23">23</th><td><u>#  include &lt;intrin.h&gt;</u></td></tr>
+<tr><th id="24">24</th><td><u># <span data-ppcond="22">endif</span></u></td></tr>
+<tr><th id="25">25</th><td><u>#<span data-ppcond="19">endif</span></u></td></tr>
+<tr><th id="26">26</th><td></td></tr>
+<tr><th id="27">27</th><td><b>namespace</b> <span class="namespace">boost</span> {</td></tr>
+<tr><th id="28">28</th><td><b>namespace</b> <span class="namespace">json</span> {</td></tr>
+<tr><th id="29">29</th><td><b>namespace</b> <span class="namespace">detail</span> {</td></tr>
+<tr><th id="30">30</th><td></td></tr>
+<tr><th id="31">31</th><td><u>#<span data-ppcond="31">ifdef</span> <a class="macro" href="config.hpp.html#55" data-ref="_M/BOOST_JSON_USE_SSE2">BOOST_JSON_USE_SSE2</a></u></td></tr>
+<tr><th id="32">32</th><td></td></tr>
+<tr><th id="33">33</th><td><b>template</b>&lt;<em>bool</em> AllowBadUTF8&gt;</td></tr>
+<tr><th id="34">34</th><td><b>inline</b></td></tr>
+<tr><th id="35">35</th><td><em>const</em> <em>char</em>*</td></tr>
+<tr><th id="36">36</th><td><dfn class="decl def fn" id="_ZN5boost4json6detail11count_validEPKcS3_" title='boost::json::detail::count_valid' data-ref="_ZN5boost4json6detail11count_validEPKcS3_">count_valid</dfn>(</td></tr>
+<tr><th id="37">37</th><td>    <em>char</em> <em>const</em>* <dfn class="local col4 decl" id="2714p" title='p' data-type='const char *' data-ref="2714p">p</dfn>,</td></tr>
+<tr><th id="38">38</th><td>    <em>const</em> <em>char</em>* <dfn class="local col5 decl" id="2715end" title='end' data-type='const char *' data-ref="2715end">end</dfn>) <b>noexcept</b></td></tr>
+<tr><th id="39">39</th><td>{</td></tr>
+<tr><th id="40">40</th><td>    <span class='typedef' title='__m128i' data-type='__attribute__((__vector_size__(2 * sizeof(long long)))) long long' data-ref="__m128i">__m128i</span> <em>const</em> <dfn class="local col6 decl" id="2716q1" title='q1' data-type='const __m128i' data-ref="2716q1">q1</dfn> = <span class='ref fn' title='_mm_set1_epi8' data-ref="_ZL13_mm_set1_epi8c">_mm_set1_epi8</span>( <span class='inlayHint'>b:&nbsp;</span><kbd>'\x22'</kbd> ); <i>// '"'</i></td></tr>
+<tr><th id="41">41</th><td>    <span class='typedef' title='__m128i' data-type='__attribute__((__vector_size__(2 * sizeof(long long)))) long long' data-ref="__m128i">__m128i</span> <em>const</em> <dfn class="local col7 decl" id="2717q2" title='q2' data-type='const __m128i' data-ref="2717q2">q2</dfn> = <span class='ref fn' title='_mm_set1_epi8' data-ref="_ZL13_mm_set1_epi8c">_mm_set1_epi8</span>( <span class='inlayHint'>b:&nbsp;</span><kbd>'\\'</kbd> ); <i>// '\\'</i></td></tr>
+<tr><th id="42">42</th><td>    <span class='typedef' title='__m128i' data-type='__attribute__((__vector_size__(2 * sizeof(long long)))) long long' data-ref="__m128i">__m128i</span> <em>const</em> <dfn class="local col8 decl" id="2718q3" title='q3' data-type='const __m128i' data-ref="2718q3">q3</dfn> = <span class='ref fn' title='_mm_set1_epi8' data-ref="_ZL13_mm_set1_epi8c">_mm_set1_epi8</span>( <span class='inlayHint'>b:&nbsp;</span><var>0x1F</var> );</td></tr>
+<tr><th id="43">43</th><td></td></tr>
+<tr><th id="44">44</th><td>    <b>while</b>(<a class="local col5 ref" href="#2715end" title='end' data-ref="2715end">end</a> - <a class="local col4 ref" href="#2714p" title='p' data-ref="2714p">p</a> &gt;= <var>16</var>)</td></tr>
+<tr><th id="45">45</th><td>    {</td></tr>
+<tr><th id="46">46</th><td>        <span class='typedef' title='__m128i' data-type='__attribute__((__vector_size__(2 * sizeof(long long)))) long long' data-ref="__m128i">__m128i</span> <dfn class="local col9 decl" id="2719v1" title='v1' data-type='__m128i' data-ref="2719v1">v1</dfn> = <span class='ref fn' title='_mm_loadu_si128' data-ref="_ZL15_mm_loadu_si128PKDv2_x">_mm_loadu_si128</span>( <span class='inlayHint'>p:&nbsp;</span>(<span class='typedef' title='__m128i' data-type='__attribute__((__vector_size__(2 * sizeof(long long)))) long long' data-ref="__m128i">__m128i</span> <em>const</em>*)<a class="local col4 ref" href="#2714p" title='p' data-ref="2714p">p</a> );</td></tr>
+<tr><th id="47">47</th><td>        <span class='typedef' title='__m128i' data-type='__attribute__((__vector_size__(2 * sizeof(long long)))) long long' data-ref="__m128i">__m128i</span> <dfn class="local col0 decl" id="2720v2" title='v2' data-type='__m128i' data-ref="2720v2">v2</dfn> = <span class='ref fn' title='_mm_cmpeq_epi8' data-ref="_ZL14_mm_cmpeq_epi8Dv2_xS_">_mm_cmpeq_epi8</span>( <span class='inlayHint'>a:&nbsp;</span><a class="local col9 ref" href="#2719v1" title='v1' data-ref="2719v1">v1</a>, <span class='inlayHint'>b:&nbsp;</span><a class="local col6 ref" href="#2716q1" title='q1' data-ref="2716q1">q1</a> ); <i>// quote</i></td></tr>
+<tr><th id="48">48</th><td>        <span class='typedef' title='__m128i' data-type='__attribute__((__vector_size__(2 * sizeof(long long)))) long long' data-ref="__m128i">__m128i</span> <dfn class="local col1 decl" id="2721v3" title='v3' data-type='__m128i' data-ref="2721v3">v3</dfn> = <span class='ref fn' title='_mm_cmpeq_epi8' data-ref="_ZL14_mm_cmpeq_epi8Dv2_xS_">_mm_cmpeq_epi8</span>( <span class='inlayHint'>a:&nbsp;</span><a class="local col9 ref" href="#2719v1" title='v1' data-ref="2719v1">v1</a>, <span class='inlayHint'>b:&nbsp;</span><a class="local col7 ref" href="#2717q2" title='q2' data-ref="2717q2">q2</a> ); <i>// backslash</i></td></tr>
+<tr><th id="49">49</th><td>        <span class='typedef' title='__m128i' data-type='__attribute__((__vector_size__(2 * sizeof(long long)))) long long' data-ref="__m128i">__m128i</span> <dfn class="local col2 decl" id="2722v4" title='v4' data-type='__m128i' data-ref="2722v4">v4</dfn> = <span class='ref fn' title='_mm_or_si128' data-ref="_ZL12_mm_or_si128Dv2_xS_">_mm_or_si128</span>( <span class='inlayHint'>a:&nbsp;</span><a class="local col0 ref" href="#2720v2" title='v2' data-ref="2720v2">v2</a>, <span class='inlayHint'>b:&nbsp;</span><a class="local col1 ref" href="#2721v3" title='v3' data-ref="2721v3">v3</a> ); <i>// combine quotes and backslash</i></td></tr>
+<tr><th id="50">50</th><td>        <span class='typedef' title='__m128i' data-type='__attribute__((__vector_size__(2 * sizeof(long long)))) long long' data-ref="__m128i">__m128i</span> <dfn class="local col3 decl" id="2723v5" title='v5' data-type='__m128i' data-ref="2723v5">v5</dfn> = <span class='ref fn' title='_mm_min_epu8' data-ref="_ZL12_mm_min_epu8Dv2_xS_">_mm_min_epu8</span>( <span class='inlayHint'>a:&nbsp;</span><a class="local col9 ref" href="#2719v1" title='v1' data-ref="2719v1">v1</a>, <span class='inlayHint'>b:&nbsp;</span><a class="local col8 ref" href="#2718q3" title='q3' data-ref="2718q3">q3</a> );</td></tr>
+<tr><th id="51">51</th><td>        <span class='typedef' title='__m128i' data-type='__attribute__((__vector_size__(2 * sizeof(long long)))) long long' data-ref="__m128i">__m128i</span> <dfn class="local col4 decl" id="2724v6" title='v6' data-type='__m128i' data-ref="2724v6">v6</dfn> = <span class='ref fn' title='_mm_cmpeq_epi8' data-ref="_ZL14_mm_cmpeq_epi8Dv2_xS_">_mm_cmpeq_epi8</span>( <span class='inlayHint'>a:&nbsp;</span><a class="local col3 ref" href="#2723v5" title='v5' data-ref="2723v5">v5</a>, <span class='inlayHint'>b:&nbsp;</span><a class="local col9 ref" href="#2719v1" title='v1' data-ref="2719v1">v1</a> ); <i>// controls</i></td></tr>
+<tr><th id="52">52</th><td>        <span class='typedef' title='__m128i' data-type='__attribute__((__vector_size__(2 * sizeof(long long)))) long long' data-ref="__m128i">__m128i</span> <dfn class="local col5 decl" id="2725v7" title='v7' data-type='__m128i' data-ref="2725v7">v7</dfn> = <span class='ref fn' title='_mm_or_si128' data-ref="_ZL12_mm_or_si128Dv2_xS_">_mm_or_si128</span>( <span class='inlayHint'>a:&nbsp;</span><a class="local col2 ref" href="#2722v4" title='v4' data-ref="2722v4">v4</a>, <span class='inlayHint'>b:&nbsp;</span><a class="local col4 ref" href="#2724v6" title='v6' data-ref="2724v6">v6</a> ); <i>// combine with control</i></td></tr>
+<tr><th id="53">53</th><td></td></tr>
+<tr><th id="54">54</th><td>        <em>int</em> <dfn class="local col6 decl" id="2726w" title='w' data-type='int' data-ref="2726w">w</dfn> = <span class='ref fn' title='_mm_movemask_epi8' data-ref="_ZL17_mm_movemask_epi8Dv2_x">_mm_movemask_epi8</span>( <span class='inlayHint'>a:&nbsp;</span><a class="local col5 ref" href="#2725v7" title='v7' data-ref="2725v7">v7</a> );</td></tr>
+<tr><th id="55">55</th><td></td></tr>
+<tr><th id="56">56</th><td>        <b>if</b>( <a class="local col6 ref" href="#2726w" title='w' data-ref="2726w">w</a> != <var>0</var> )</td></tr>
+<tr><th id="57">57</th><td>        {</td></tr>
+<tr><th id="58">58</th><td>            <em>int</em> <dfn class="local col7 decl" id="2727m" title='m' data-type='int' data-ref="2727m">m</dfn>;</td></tr>
+<tr><th id="59">59</th><td><u>#<span data-ppcond="59">if</span> defined(<span class="macro" data-ref="_M/__GNUC__">__GNUC__</span>) || defined(<span class="macro" data-ref="_M/__clang__">__clang__</span>)</u></td></tr>
+<tr><th id="60">60</th><td>            <a class="local col7 ref" href="#2727m" title='m' data-ref="2727m">m</a> = <a class="ref fn" href="#60" title='__builtin_ffs' data-ref="__builtin_ffs">__builtin_ffs</a>( <a class="local col6 ref" href="#2726w" title='w' data-ref="2726w">w</a> ) - <var>1</var>;</td></tr>
+<tr><th id="61">61</th><td><u>#<span data-ppcond="59">else</span></u></td></tr>
+<tr><th id="62">62</th><td>            <em>unsigned</em> <em>long</em> index;</td></tr>
+<tr><th id="63">63</th><td>            _BitScanForward( &amp;index, w );</td></tr>
+<tr><th id="64">64</th><td>            m = index;</td></tr>
+<tr><th id="65">65</th><td><u>#<span data-ppcond="59">endif</span></u></td></tr>
+<tr><th id="66">66</th><td>            <b>return</b> <a class="local col4 ref" href="#2714p" title='p' data-ref="2714p">p</a> + <a class="local col7 ref" href="#2727m" title='m' data-ref="2727m">m</a>;</td></tr>
+<tr><th id="67">67</th><td>        }</td></tr>
+<tr><th id="68">68</th><td></td></tr>
+<tr><th id="69">69</th><td>        <a class="local col4 ref" href="#2714p" title='p' data-ref="2714p">p</a> += <var>16</var>;</td></tr>
+<tr><th id="70">70</th><td>    }</td></tr>
+<tr><th id="71">71</th><td></td></tr>
+<tr><th id="72">72</th><td>    <b>while</b>(<a class="local col4 ref" href="#2714p" title='p' data-ref="2714p">p</a> != <a class="local col5 ref" href="#2715end" title='end' data-ref="2715end">end</a>)</td></tr>
+<tr><th id="73">73</th><td>    {</td></tr>
+<tr><th id="74">74</th><td>        <em>const</em> <em>unsigned</em> <em>char</em> <dfn class="local col8 decl" id="2728c" title='c' data-type='const unsigned char' data-ref="2728c">c</dfn> = *<a class="local col4 ref" href="#2714p" title='p' data-ref="2714p">p</a>;</td></tr>
+<tr><th id="75">75</th><td>        <b>if</b>(<a class="local col8 ref" href="#2728c" title='c' data-ref="2728c">c</a> == <kbd>'\x22'</kbd> || <a class="local col8 ref" href="#2728c" title='c' data-ref="2728c">c</a> == <kbd>'\\'</kbd> || <a class="local col8 ref" href="#2728c" title='c' data-ref="2728c">c</a> &lt; <var>0x20</var>)</td></tr>
+<tr><th id="76">76</th><td>            <b>break</b>;</td></tr>
+<tr><th id="77">77</th><td>        ++<a class="local col4 ref" href="#2714p" title='p' data-ref="2714p">p</a>;</td></tr>
+<tr><th id="78">78</th><td>    }</td></tr>
+<tr><th id="79">79</th><td></td></tr>
+<tr><th id="80">80</th><td>    <b>return</b> <a class="local col4 ref" href="#2714p" title='p' data-ref="2714p">p</a>;</td></tr>
+<tr><th id="81">81</th><td>}</td></tr>
+<tr><th id="82">82</th><td></td></tr>
+<tr><th id="83">83</th><td><b>template</b>&lt;&gt;</td></tr>
+<tr><th id="84">84</th><td><b>inline</b></td></tr>
+<tr><th id="85">85</th><td><em>const</em> <em>char</em>*</td></tr>
+<tr><th id="86">86</th><td><dfn class="decl def fn" id="_ZN5boost4json6detail11count_validEPKcS3_" title='boost::json::detail::count_valid' data-ref="_ZN5boost4json6detail11count_validEPKcS3_">count_valid</dfn>&lt;<b>false</b>&gt;(</td></tr>
+<tr><th id="87">87</th><td>    <em>char</em> <em>const</em>* <dfn class="local col9 decl" id="2729p" title='p' data-type='const char *' data-ref="2729p">p</dfn>,</td></tr>
+<tr><th id="88">88</th><td>    <em>const</em> <em>char</em>* <dfn class="local col0 decl" id="2730end" title='end' data-type='const char *' data-ref="2730end">end</dfn>) <b>noexcept</b></td></tr>
+<tr><th id="89">89</th><td>{</td></tr>
+<tr><th id="90">90</th><td>    <span class='typedef' title='__m128i' data-type='__attribute__((__vector_size__(2 * sizeof(long long)))) long long' data-ref="__m128i">__m128i</span> <em>const</em> <dfn class="local col1 decl" id="2731q1" title='q1' data-type='const __m128i' data-ref="2731q1">q1</dfn> = <span class='ref fn' title='_mm_set1_epi8' data-ref="_ZL13_mm_set1_epi8c">_mm_set1_epi8</span>( <span class='inlayHint'>b:&nbsp;</span><kbd>'\x22'</kbd> ); <i>// '"'</i></td></tr>
+<tr><th id="91">91</th><td>    <span class='typedef' title='__m128i' data-type='__attribute__((__vector_size__(2 * sizeof(long long)))) long long' data-ref="__m128i">__m128i</span> <em>const</em> <dfn class="local col2 decl" id="2732q2" title='q2' data-type='const __m128i' data-ref="2732q2">q2</dfn> = <span class='ref fn' title='_mm_set1_epi8' data-ref="_ZL13_mm_set1_epi8c">_mm_set1_epi8</span>( <span class='inlayHint'>b:&nbsp;</span><kbd>'\\'</kbd> );</td></tr>
+<tr><th id="92">92</th><td>    <span class='typedef' title='__m128i' data-type='__attribute__((__vector_size__(2 * sizeof(long long)))) long long' data-ref="__m128i">__m128i</span> <em>const</em> <dfn class="local col3 decl" id="2733q3" title='q3' data-type='const __m128i' data-ref="2733q3">q3</dfn> = <span class='ref fn' title='_mm_set1_epi8' data-ref="_ZL13_mm_set1_epi8c">_mm_set1_epi8</span>( <span class='inlayHint'>b:&nbsp;</span><var>0x20</var> );</td></tr>
+<tr><th id="93">93</th><td></td></tr>
+<tr><th id="94">94</th><td>    <b>while</b>(<a class="local col0 ref" href="#2730end" title='end' data-ref="2730end">end</a> - <a class="local col9 ref" href="#2729p" title='p' data-ref="2729p">p</a> &gt;= <var>16</var>)</td></tr>
+<tr><th id="95">95</th><td>    {</td></tr>
+<tr><th id="96">96</th><td>        <span class='typedef' title='__m128i' data-type='__attribute__((__vector_size__(2 * sizeof(long long)))) long long' data-ref="__m128i">__m128i</span> <dfn class="local col4 decl" id="2734v1" title='v1' data-type='__m128i' data-ref="2734v1">v1</dfn> = <span class='ref fn' title='_mm_loadu_si128' data-ref="_ZL15_mm_loadu_si128PKDv2_x">_mm_loadu_si128</span>( <span class='inlayHint'>p:&nbsp;</span>(<span class='typedef' title='__m128i' data-type='__attribute__((__vector_size__(2 * sizeof(long long)))) long long' data-ref="__m128i">__m128i</span> <em>const</em>*)<a class="local col9 ref" href="#2729p" title='p' data-ref="2729p">p</a> );</td></tr>
+<tr><th id="97">97</th><td></td></tr>
+<tr><th id="98">98</th><td>        <span class='typedef' title='__m128i' data-type='__attribute__((__vector_size__(2 * sizeof(long long)))) long long' data-ref="__m128i">__m128i</span> <dfn class="local col5 decl" id="2735v2" title='v2' data-type='__m128i' data-ref="2735v2">v2</dfn> = <span class='ref fn' title='_mm_cmpeq_epi8' data-ref="_ZL14_mm_cmpeq_epi8Dv2_xS_">_mm_cmpeq_epi8</span>( <span class='inlayHint'>a:&nbsp;</span><a class="local col4 ref" href="#2734v1" title='v1' data-ref="2734v1">v1</a>, <span class='inlayHint'>b:&nbsp;</span><a class="local col1 ref" href="#2731q1" title='q1' data-ref="2731q1">q1</a> );</td></tr>
+<tr><th id="99">99</th><td>        <span class='typedef' title='__m128i' data-type='__attribute__((__vector_size__(2 * sizeof(long long)))) long long' data-ref="__m128i">__m128i</span> <dfn class="local col6 decl" id="2736v3" title='v3' data-type='__m128i' data-ref="2736v3">v3</dfn> = <span class='ref fn' title='_mm_cmpeq_epi8' data-ref="_ZL14_mm_cmpeq_epi8Dv2_xS_">_mm_cmpeq_epi8</span>( <span class='inlayHint'>a:&nbsp;</span><a class="local col4 ref" href="#2734v1" title='v1' data-ref="2734v1">v1</a>, <span class='inlayHint'>b:&nbsp;</span><a class="local col2 ref" href="#2732q2" title='q2' data-ref="2732q2">q2</a> );</td></tr>
+<tr><th id="100">100</th><td>        <span class='typedef' title='__m128i' data-type='__attribute__((__vector_size__(2 * sizeof(long long)))) long long' data-ref="__m128i">__m128i</span> <dfn class="local col7 decl" id="2737v4" title='v4' data-type='__m128i' data-ref="2737v4">v4</dfn> = <span class='ref fn' title='_mm_cmplt_epi8' data-ref="_ZL14_mm_cmplt_epi8Dv2_xS_">_mm_cmplt_epi8</span>( <span class='inlayHint'>a:&nbsp;</span><a class="local col4 ref" href="#2734v1" title='v1' data-ref="2734v1">v1</a>, <span class='inlayHint'>b:&nbsp;</span><a class="local col3 ref" href="#2733q3" title='q3' data-ref="2733q3">q3</a> );</td></tr>
+<tr><th id="101">101</th><td></td></tr>
+<tr><th id="102">102</th><td>        <span class='typedef' title='__m128i' data-type='__attribute__((__vector_size__(2 * sizeof(long long)))) long long' data-ref="__m128i">__m128i</span> <dfn class="local col8 decl" id="2738v5" title='v5' data-type='__m128i' data-ref="2738v5">v5</dfn> = <span class='ref fn' title='_mm_or_si128' data-ref="_ZL12_mm_or_si128Dv2_xS_">_mm_or_si128</span>( <span class='inlayHint'>a:&nbsp;</span><a class="local col5 ref" href="#2735v2" title='v2' data-ref="2735v2">v2</a>, <span class='inlayHint'>b:&nbsp;</span><a class="local col6 ref" href="#2736v3" title='v3' data-ref="2736v3">v3</a> );</td></tr>
+<tr><th id="103">103</th><td>        <span class='typedef' title='__m128i' data-type='__attribute__((__vector_size__(2 * sizeof(long long)))) long long' data-ref="__m128i">__m128i</span> <dfn class="local col9 decl" id="2739v6" title='v6' data-type='__m128i' data-ref="2739v6">v6</dfn> = <span class='ref fn' title='_mm_or_si128' data-ref="_ZL12_mm_or_si128Dv2_xS_">_mm_or_si128</span>( <span class='inlayHint'>a:&nbsp;</span><a class="local col8 ref" href="#2738v5" title='v5' data-ref="2738v5">v5</a>, <span class='inlayHint'>b:&nbsp;</span><a class="local col7 ref" href="#2737v4" title='v4' data-ref="2737v4">v4</a> );</td></tr>
+<tr><th id="104">104</th><td></td></tr>
+<tr><th id="105">105</th><td>        <em>int</em> <dfn class="local col0 decl" id="2740w" title='w' data-type='int' data-ref="2740w">w</dfn> = <span class='ref fn' title='_mm_movemask_epi8' data-ref="_ZL17_mm_movemask_epi8Dv2_x">_mm_movemask_epi8</span>( <span class='inlayHint'>a:&nbsp;</span><a class="local col9 ref" href="#2739v6" title='v6' data-ref="2739v6">v6</a> );</td></tr>
+<tr><th id="106">106</th><td></td></tr>
+<tr><th id="107">107</th><td>        <b>if</b>( <a class="local col0 ref" href="#2740w" title='w' data-ref="2740w">w</a> != <var>0</var> )</td></tr>
+<tr><th id="108">108</th><td>        {</td></tr>
+<tr><th id="109">109</th><td>            <em>int</em> <dfn class="local col1 decl" id="2741m" title='m' data-type='int' data-ref="2741m">m</dfn>;</td></tr>
+<tr><th id="110">110</th><td><u>#<span data-ppcond="110">if</span> defined(<span class="macro" data-ref="_M/__GNUC__">__GNUC__</span>) || defined(<span class="macro" data-ref="_M/__clang__">__clang__</span>)</u></td></tr>
+<tr><th id="111">111</th><td>            <a class="local col1 ref" href="#2741m" title='m' data-ref="2741m">m</a> = <a class="ref fn" href="#60" title='__builtin_ffs' data-ref="__builtin_ffs">__builtin_ffs</a>( <a class="local col0 ref" href="#2740w" title='w' data-ref="2740w">w</a> ) - <var>1</var>;</td></tr>
+<tr><th id="112">112</th><td><u>#<span data-ppcond="110">else</span></u></td></tr>
+<tr><th id="113">113</th><td>            <em>unsigned</em> <em>long</em> index;</td></tr>
+<tr><th id="114">114</th><td>            _BitScanForward( &amp;index, w );</td></tr>
+<tr><th id="115">115</th><td>            m = index;</td></tr>
+<tr><th id="116">116</th><td><u>#<span data-ppcond="110">endif</span></u></td></tr>
+<tr><th id="117">117</th><td>            <a class="local col9 ref" href="#2729p" title='p' data-ref="2729p">p</a> += <a class="local col1 ref" href="#2741m" title='m' data-ref="2741m">m</a>;</td></tr>
+<tr><th id="118">118</th><td>            <b>break</b>;</td></tr>
+<tr><th id="119">119</th><td>        }</td></tr>
+<tr><th id="120">120</th><td></td></tr>
+<tr><th id="121">121</th><td>        <a class="local col9 ref" href="#2729p" title='p' data-ref="2729p">p</a> += <var>16</var>;</td></tr>
+<tr><th id="122">122</th><td>    }</td></tr>
+<tr><th id="123">123</th><td></td></tr>
+<tr><th id="124">124</th><td>    <b>while</b>(<a class="local col9 ref" href="#2729p" title='p' data-ref="2729p">p</a> != <a class="local col0 ref" href="#2730end" title='end' data-ref="2730end">end</a>)</td></tr>
+<tr><th id="125">125</th><td>    {</td></tr>
+<tr><th id="126">126</th><td>        <em>const</em> <em>unsigned</em> <em>char</em> <dfn class="local col2 decl" id="2742c" title='c' data-type='const unsigned char' data-ref="2742c">c</dfn> = *<a class="local col9 ref" href="#2729p" title='p' data-ref="2729p">p</a>;</td></tr>
+<tr><th id="127">127</th><td>        <b>if</b>(<a class="local col2 ref" href="#2742c" title='c' data-ref="2742c">c</a> == <kbd>'\x22'</kbd> || <a class="local col2 ref" href="#2742c" title='c' data-ref="2742c">c</a> == <kbd>'\\'</kbd> || <a class="local col2 ref" href="#2742c" title='c' data-ref="2742c">c</a> &lt; <var>0x20</var>)</td></tr>
+<tr><th id="128">128</th><td>            <b>break</b>;</td></tr>
+<tr><th id="129">129</th><td>        <b>if</b>(<a class="local col2 ref" href="#2742c" title='c' data-ref="2742c">c</a> &lt; <var>0x80</var>)</td></tr>
+<tr><th id="130">130</th><td>        {</td></tr>
+<tr><th id="131">131</th><td>            ++<a class="local col9 ref" href="#2729p" title='p' data-ref="2729p">p</a>;</td></tr>
+<tr><th id="132">132</th><td>            <b>continue</b>;</td></tr>
+<tr><th id="133">133</th><td>        }</td></tr>
+<tr><th id="134">134</th><td>        <i>// validate utf-8</i></td></tr>
+<tr><th id="135">135</th><td>        uint16_t <dfn class="local col3 decl" id="2743first" title='first' data-type='uint16_t' data-ref="2743first">first</dfn> = <a class="ref fn" href="utf8.hpp.html#_ZN5boost4json6detail13classify_utf8Ec" title='boost::json::detail::classify_utf8' data-ref="_ZN5boost4json6detail13classify_utf8Ec">classify_utf8</a>(<a class="local col2 ref" href="#2742c" title='c' data-ref="2742c">c</a>);</td></tr>
+<tr><th id="136">136</th><td>        uint8_t <dfn class="local col4 decl" id="2744len" title='len' data-type='uint8_t' data-ref="2744len">len</dfn> = <a class="local col3 ref" href="#2743first" title='first' data-ref="2743first">first</a> &amp; <var>0xFF</var>;</td></tr>
+<tr><th id="137">137</th><td>        <b>if</b>(<a class="macro" href="config.hpp.html#86" title="__builtin_expect(!!(end - p &lt; len), 0)" data-ref="_M/BOOST_JSON_UNLIKELY">BOOST_JSON_UNLIKELY</a>(<a class="local col0 ref" href="#2730end" title='end' data-ref="2730end">end</a> - <a class="local col9 ref" href="#2729p" title='p' data-ref="2729p">p</a> &lt; <a class="local col4 ref" href="#2744len" title='len' data-ref="2744len">len</a>))</td></tr>
+<tr><th id="138">138</th><td>            <b>break</b>;</td></tr>
+<tr><th id="139">139</th><td>        <b>if</b>(<a class="macro" href="config.hpp.html#86" title="__builtin_expect(!!(! is_valid_utf8(p, first)), 0)" data-ref="_M/BOOST_JSON_UNLIKELY">BOOST_JSON_UNLIKELY</a>(! <a class="ref fn" href="utf8.hpp.html#_ZN5boost4json6detail13is_valid_utf8EPKct" title='boost::json::detail::is_valid_utf8' data-ref="_ZN5boost4json6detail13is_valid_utf8EPKct">is_valid_utf8</a>(<a class="local col9 ref" href="#2729p" title='p' data-ref="2729p">p</a>, <a class="local col3 ref" href="#2743first" title='first' data-ref="2743first">first</a>)))</td></tr>
+<tr><th id="140">140</th><td>            <b>break</b>;</td></tr>
+<tr><th id="141">141</th><td>        <a class="local col9 ref" href="#2729p" title='p' data-ref="2729p">p</a> += <a class="local col4 ref" href="#2744len" title='len' data-ref="2744len">len</a>;</td></tr>
+<tr><th id="142">142</th><td>    }</td></tr>
+<tr><th id="143">143</th><td></td></tr>
+<tr><th id="144">144</th><td>    <b>return</b> <a class="local col9 ref" href="#2729p" title='p' data-ref="2729p">p</a>;</td></tr>
+<tr><th id="145">145</th><td>}</td></tr>
+<tr><th id="146">146</th><td></td></tr>
+<tr><th id="147">147</th><td><u>#<span data-ppcond="31">else</span></u></td></tr>
+<tr><th id="148">148</th><td></td></tr>
+<tr><th id="149">149</th><td><b>template</b>&lt;<em>bool</em> AllowBadUTF8&gt;</td></tr>
+<tr><th id="150">150</th><td><em>char</em> <em>const</em>*</td></tr>
+<tr><th id="151">151</th><td>count_valid(</td></tr>
+<tr><th id="152">152</th><td>    <em>char</em> <em>const</em>* p,</td></tr>
+<tr><th id="153">153</th><td>    <em>char</em> <em>const</em>* end) <b>noexcept</b></td></tr>
+<tr><th id="154">154</th><td>{</td></tr>
+<tr><th id="155">155</th><td>    <b>while</b>(p != end)</td></tr>
+<tr><th id="156">156</th><td>    {</td></tr>
+<tr><th id="157">157</th><td>        <em>const</em> <em>unsigned</em> <em>char</em> c = *p;</td></tr>
+<tr><th id="158">158</th><td>        <b>if</b>(c == <kbd>'\x22'</kbd> || c == <kbd>'\\'</kbd> || c &lt; <var>0x20</var>)</td></tr>
+<tr><th id="159">159</th><td>            <b>break</b>;</td></tr>
+<tr><th id="160">160</th><td>        ++p;</td></tr>
+<tr><th id="161">161</th><td>    }</td></tr>
+<tr><th id="162">162</th><td></td></tr>
+<tr><th id="163">163</th><td>    <b>return</b> p;</td></tr>
+<tr><th id="164">164</th><td>}</td></tr>
+<tr><th id="165">165</th><td></td></tr>
+<tr><th id="166">166</th><td><b>template</b>&lt;&gt;</td></tr>
+<tr><th id="167">167</th><td><b>inline</b></td></tr>
+<tr><th id="168">168</th><td><em>char</em> <em>const</em>*</td></tr>
+<tr><th id="169">169</th><td>count_valid&lt;<b>false</b>&gt;(</td></tr>
+<tr><th id="170">170</th><td>    <em>char</em> <em>const</em>* p,</td></tr>
+<tr><th id="171">171</th><td>    <em>char</em> <em>const</em>* end) <b>noexcept</b></td></tr>
+<tr><th id="172">172</th><td>{</td></tr>
+<tr><th id="173">173</th><td>    <b>while</b>(p != end)</td></tr>
+<tr><th id="174">174</th><td>    {</td></tr>
+<tr><th id="175">175</th><td>        <em>const</em> <em>unsigned</em> <em>char</em> c = *p;</td></tr>
+<tr><th id="176">176</th><td>        <b>if</b>(c == <kbd>'\x22'</kbd> || c == <kbd>'\\'</kbd> || c &lt; <var>0x20</var>)</td></tr>
+<tr><th id="177">177</th><td>            <b>break</b>;</td></tr>
+<tr><th id="178">178</th><td>        <b>if</b>(c &lt; <var>0x80</var>)</td></tr>
+<tr><th id="179">179</th><td>        {</td></tr>
+<tr><th id="180">180</th><td>            ++p;</td></tr>
+<tr><th id="181">181</th><td>            <b>continue</b>;</td></tr>
+<tr><th id="182">182</th><td>        }</td></tr>
+<tr><th id="183">183</th><td>        <i>// validate utf-8</i></td></tr>
+<tr><th id="184">184</th><td>        uint16_t first = classify_utf8(c);</td></tr>
+<tr><th id="185">185</th><td>        uint8_t len = first &amp; <var>0xFF</var>;</td></tr>
+<tr><th id="186">186</th><td>        <b>if</b>(BOOST_JSON_UNLIKELY(end - p &lt; len))</td></tr>
+<tr><th id="187">187</th><td>            <b>break</b>;</td></tr>
+<tr><th id="188">188</th><td>        <b>if</b>(BOOST_JSON_UNLIKELY(! is_valid_utf8(p, first)))</td></tr>
+<tr><th id="189">189</th><td>            <b>break</b>;</td></tr>
+<tr><th id="190">190</th><td>        p += len;</td></tr>
+<tr><th id="191">191</th><td>    }</td></tr>
+<tr><th id="192">192</th><td></td></tr>
+<tr><th id="193">193</th><td>    <b>return</b> p;</td></tr>
+<tr><th id="194">194</th><td>}</td></tr>
+<tr><th id="195">195</th><td></td></tr>
+<tr><th id="196">196</th><td><u>#<span data-ppcond="31">endif</span></u></td></tr>
+<tr><th id="197">197</th><td></td></tr>
+<tr><th id="198">198</th><td><i>// KRYSTIAN NOTE: does not stop to validate</i></td></tr>
+<tr><th id="199">199</th><td><i>// count_unescaped</i></td></tr>
+<tr><th id="200">200</th><td></td></tr>
+<tr><th id="201">201</th><td><u>#<span data-ppcond="201">ifdef</span> <a class="macro" href="config.hpp.html#55" data-ref="_M/BOOST_JSON_USE_SSE2">BOOST_JSON_USE_SSE2</a></u></td></tr>
+<tr><th id="202">202</th><td></td></tr>
+<tr><th id="203">203</th><td><b>inline</b></td></tr>
+<tr><th id="204">204</th><td><span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span></td></tr>
+<tr><th id="205">205</th><td><dfn class="decl def fn" id="_ZN5boost4json6detail15count_unescapedEPKcm" title='boost::json::detail::count_unescaped' data-ref="_ZN5boost4json6detail15count_unescapedEPKcm">count_unescaped</dfn>(</td></tr>
+<tr><th id="206">206</th><td>    <em>char</em> <em>const</em>* <dfn class="local col5 decl" id="2745s" title='s' data-type='const char *' data-ref="2745s">s</dfn>,</td></tr>
+<tr><th id="207">207</th><td>    <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col6 decl" id="2746n" title='n' data-type='size_t' data-ref="2746n">n</dfn>) <b>noexcept</b></td></tr>
+<tr><th id="208">208</th><td>{</td></tr>
+<tr><th id="209">209</th><td></td></tr>
+<tr><th id="210">210</th><td>    <span class='typedef' title='__m128i' data-type='__attribute__((__vector_size__(2 * sizeof(long long)))) long long' data-ref="__m128i">__m128i</span> <em>const</em> <dfn class="local col7 decl" id="2747q1" title='q1' data-type='const __m128i' data-ref="2747q1">q1</dfn> = <span class='ref fn' title='_mm_set1_epi8' data-ref="_ZL13_mm_set1_epi8c">_mm_set1_epi8</span>( <span class='inlayHint'>b:&nbsp;</span><kbd>'\x22'</kbd> ); <i>// '"'</i></td></tr>
+<tr><th id="211">211</th><td>    <span class='typedef' title='__m128i' data-type='__attribute__((__vector_size__(2 * sizeof(long long)))) long long' data-ref="__m128i">__m128i</span> <em>const</em> <dfn class="local col8 decl" id="2748q2" title='q2' data-type='const __m128i' data-ref="2748q2">q2</dfn> = <span class='ref fn' title='_mm_set1_epi8' data-ref="_ZL13_mm_set1_epi8c">_mm_set1_epi8</span>( <span class='inlayHint'>b:&nbsp;</span><kbd>'\\'</kbd> ); <i>// '\\'</i></td></tr>
+<tr><th id="212">212</th><td>    <span class='typedef' title='__m128i' data-type='__attribute__((__vector_size__(2 * sizeof(long long)))) long long' data-ref="__m128i">__m128i</span> <em>const</em> <dfn class="local col9 decl" id="2749q3" title='q3' data-type='const __m128i' data-ref="2749q3">q3</dfn> = <span class='ref fn' title='_mm_set1_epi8' data-ref="_ZL13_mm_set1_epi8c">_mm_set1_epi8</span>( <span class='inlayHint'>b:&nbsp;</span><var>0x1F</var> );</td></tr>
+<tr><th id="213">213</th><td></td></tr>
+<tr><th id="214">214</th><td>    <em>char</em> <em>const</em> * <dfn class="local col0 decl" id="2750s0" title='s0' data-type='const char *' data-ref="2750s0">s0</dfn> = <a class="local col5 ref" href="#2745s" title='s' data-ref="2745s">s</a>;</td></tr>
+<tr><th id="215">215</th><td></td></tr>
+<tr><th id="216">216</th><td>    <b>while</b>( <a class="local col6 ref" href="#2746n" title='n' data-ref="2746n">n</a> &gt;= <var>16</var> )</td></tr>
+<tr><th id="217">217</th><td>    {</td></tr>
+<tr><th id="218">218</th><td>        <span class='typedef' title='__m128i' data-type='__attribute__((__vector_size__(2 * sizeof(long long)))) long long' data-ref="__m128i">__m128i</span> <dfn class="local col1 decl" id="2751v1" title='v1' data-type='__m128i' data-ref="2751v1">v1</dfn> = <span class='ref fn' title='_mm_loadu_si128' data-ref="_ZL15_mm_loadu_si128PKDv2_x">_mm_loadu_si128</span>( <span class='inlayHint'>p:&nbsp;</span>(<span class='typedef' title='__m128i' data-type='__attribute__((__vector_size__(2 * sizeof(long long)))) long long' data-ref="__m128i">__m128i</span> <em>const</em>*)<a class="local col5 ref" href="#2745s" title='s' data-ref="2745s">s</a> );</td></tr>
+<tr><th id="219">219</th><td>        <span class='typedef' title='__m128i' data-type='__attribute__((__vector_size__(2 * sizeof(long long)))) long long' data-ref="__m128i">__m128i</span> <dfn class="local col2 decl" id="2752v2" title='v2' data-type='__m128i' data-ref="2752v2">v2</dfn> = <span class='ref fn' title='_mm_cmpeq_epi8' data-ref="_ZL14_mm_cmpeq_epi8Dv2_xS_">_mm_cmpeq_epi8</span>( <span class='inlayHint'>a:&nbsp;</span><a class="local col1 ref" href="#2751v1" title='v1' data-ref="2751v1">v1</a>, <span class='inlayHint'>b:&nbsp;</span><a class="local col7 ref" href="#2747q1" title='q1' data-ref="2747q1">q1</a> ); <i>// quote</i></td></tr>
+<tr><th id="220">220</th><td>        <span class='typedef' title='__m128i' data-type='__attribute__((__vector_size__(2 * sizeof(long long)))) long long' data-ref="__m128i">__m128i</span> <dfn class="local col3 decl" id="2753v3" title='v3' data-type='__m128i' data-ref="2753v3">v3</dfn> = <span class='ref fn' title='_mm_cmpeq_epi8' data-ref="_ZL14_mm_cmpeq_epi8Dv2_xS_">_mm_cmpeq_epi8</span>( <span class='inlayHint'>a:&nbsp;</span><a class="local col1 ref" href="#2751v1" title='v1' data-ref="2751v1">v1</a>, <span class='inlayHint'>b:&nbsp;</span><a class="local col8 ref" href="#2748q2" title='q2' data-ref="2748q2">q2</a> ); <i>// backslash</i></td></tr>
+<tr><th id="221">221</th><td>        <span class='typedef' title='__m128i' data-type='__attribute__((__vector_size__(2 * sizeof(long long)))) long long' data-ref="__m128i">__m128i</span> <dfn class="local col4 decl" id="2754v4" title='v4' data-type='__m128i' data-ref="2754v4">v4</dfn> = <span class='ref fn' title='_mm_or_si128' data-ref="_ZL12_mm_or_si128Dv2_xS_">_mm_or_si128</span>( <span class='inlayHint'>a:&nbsp;</span><a class="local col2 ref" href="#2752v2" title='v2' data-ref="2752v2">v2</a>, <span class='inlayHint'>b:&nbsp;</span><a class="local col3 ref" href="#2753v3" title='v3' data-ref="2753v3">v3</a> ); <i>// combine quotes and backslash</i></td></tr>
+<tr><th id="222">222</th><td>        <span class='typedef' title='__m128i' data-type='__attribute__((__vector_size__(2 * sizeof(long long)))) long long' data-ref="__m128i">__m128i</span> <dfn class="local col5 decl" id="2755v5" title='v5' data-type='__m128i' data-ref="2755v5">v5</dfn> = <span class='ref fn' title='_mm_min_epu8' data-ref="_ZL12_mm_min_epu8Dv2_xS_">_mm_min_epu8</span>( <span class='inlayHint'>a:&nbsp;</span><a class="local col1 ref" href="#2751v1" title='v1' data-ref="2751v1">v1</a>, <span class='inlayHint'>b:&nbsp;</span><a class="local col9 ref" href="#2749q3" title='q3' data-ref="2749q3">q3</a> );</td></tr>
+<tr><th id="223">223</th><td>        <span class='typedef' title='__m128i' data-type='__attribute__((__vector_size__(2 * sizeof(long long)))) long long' data-ref="__m128i">__m128i</span> <dfn class="local col6 decl" id="2756v6" title='v6' data-type='__m128i' data-ref="2756v6">v6</dfn> = <span class='ref fn' title='_mm_cmpeq_epi8' data-ref="_ZL14_mm_cmpeq_epi8Dv2_xS_">_mm_cmpeq_epi8</span>( <span class='inlayHint'>a:&nbsp;</span><a class="local col5 ref" href="#2755v5" title='v5' data-ref="2755v5">v5</a>, <span class='inlayHint'>b:&nbsp;</span><a class="local col1 ref" href="#2751v1" title='v1' data-ref="2751v1">v1</a> ); <i>// controls</i></td></tr>
+<tr><th id="224">224</th><td>        <span class='typedef' title='__m128i' data-type='__attribute__((__vector_size__(2 * sizeof(long long)))) long long' data-ref="__m128i">__m128i</span> <dfn class="local col7 decl" id="2757v7" title='v7' data-type='__m128i' data-ref="2757v7">v7</dfn> = <span class='ref fn' title='_mm_or_si128' data-ref="_ZL12_mm_or_si128Dv2_xS_">_mm_or_si128</span>( <span class='inlayHint'>a:&nbsp;</span><a class="local col4 ref" href="#2754v4" title='v4' data-ref="2754v4">v4</a>, <span class='inlayHint'>b:&nbsp;</span><a class="local col6 ref" href="#2756v6" title='v6' data-ref="2756v6">v6</a> ); <i>// combine with control</i></td></tr>
+<tr><th id="225">225</th><td></td></tr>
+<tr><th id="226">226</th><td>        <em>int</em> <dfn class="local col8 decl" id="2758w" title='w' data-type='int' data-ref="2758w">w</dfn> = <span class='ref fn' title='_mm_movemask_epi8' data-ref="_ZL17_mm_movemask_epi8Dv2_x">_mm_movemask_epi8</span>( <span class='inlayHint'>a:&nbsp;</span><a class="local col7 ref" href="#2757v7" title='v7' data-ref="2757v7">v7</a> );</td></tr>
+<tr><th id="227">227</th><td></td></tr>
+<tr><th id="228">228</th><td>        <b>if</b>( <a class="local col8 ref" href="#2758w" title='w' data-ref="2758w">w</a> != <var>0</var> )</td></tr>
+<tr><th id="229">229</th><td>        {</td></tr>
+<tr><th id="230">230</th><td>            <em>int</em> <dfn class="local col9 decl" id="2759m" title='m' data-type='int' data-ref="2759m">m</dfn>;</td></tr>
+<tr><th id="231">231</th><td><u>#<span data-ppcond="231">if</span> defined(<span class="macro" data-ref="_M/__GNUC__">__GNUC__</span>) || defined(<span class="macro" data-ref="_M/__clang__">__clang__</span>)</u></td></tr>
+<tr><th id="232">232</th><td>            <a class="local col9 ref" href="#2759m" title='m' data-ref="2759m">m</a> = <a class="ref fn" href="#60" title='__builtin_ffs' data-ref="__builtin_ffs">__builtin_ffs</a>( <a class="local col8 ref" href="#2758w" title='w' data-ref="2758w">w</a> ) - <var>1</var>;</td></tr>
+<tr><th id="233">233</th><td><u>#<span data-ppcond="231">else</span></u></td></tr>
+<tr><th id="234">234</th><td>            <em>unsigned</em> <em>long</em> index;</td></tr>
+<tr><th id="235">235</th><td>            _BitScanForward( &amp;index, w );</td></tr>
+<tr><th id="236">236</th><td>            m = index;</td></tr>
+<tr><th id="237">237</th><td><u>#<span data-ppcond="231">endif</span></u></td></tr>
+<tr><th id="238">238</th><td></td></tr>
+<tr><th id="239">239</th><td>            <a class="local col5 ref" href="#2745s" title='s' data-ref="2745s">s</a> += <a class="local col9 ref" href="#2759m" title='m' data-ref="2759m">m</a>;</td></tr>
+<tr><th id="240">240</th><td>            <b>break</b>;</td></tr>
+<tr><th id="241">241</th><td>        }</td></tr>
+<tr><th id="242">242</th><td></td></tr>
+<tr><th id="243">243</th><td>        <a class="local col5 ref" href="#2745s" title='s' data-ref="2745s">s</a> += <var>16</var>;</td></tr>
+<tr><th id="244">244</th><td>        <a class="local col6 ref" href="#2746n" title='n' data-ref="2746n">n</a> -= <var>16</var>;</td></tr>
+<tr><th id="245">245</th><td>    }</td></tr>
+<tr><th id="246">246</th><td></td></tr>
+<tr><th id="247">247</th><td>    <b>return</b> <a class="local col5 ref" href="#2745s" title='s' data-ref="2745s">s</a> - <a class="local col0 ref" href="#2750s0" title='s0' data-ref="2750s0">s0</a>;</td></tr>
+<tr><th id="248">248</th><td>}</td></tr>
+<tr><th id="249">249</th><td></td></tr>
+<tr><th id="250">250</th><td><u>#<span data-ppcond="201">else</span></u></td></tr>
+<tr><th id="251">251</th><td></td></tr>
+<tr><th id="252">252</th><td><b>inline</b></td></tr>
+<tr><th id="253">253</th><td>std::size_t</td></tr>
+<tr><th id="254">254</th><td>count_unescaped(</td></tr>
+<tr><th id="255">255</th><td>    <em>char</em> <em>const</em>*,</td></tr>
+<tr><th id="256">256</th><td>    std::size_t) <b>noexcept</b></td></tr>
+<tr><th id="257">257</th><td>{</td></tr>
+<tr><th id="258">258</th><td>    <b>return</b> <var>0</var>;</td></tr>
+<tr><th id="259">259</th><td>}</td></tr>
+<tr><th id="260">260</th><td></td></tr>
+<tr><th id="261">261</th><td><u>#<span data-ppcond="201">endif</span></u></td></tr>
+<tr><th id="262">262</th><td></td></tr>
+<tr><th id="263">263</th><td><i>// count_digits</i></td></tr>
+<tr><th id="264">264</th><td></td></tr>
+<tr><th id="265">265</th><td><u>#<span data-ppcond="265">ifdef</span> <a class="macro" href="config.hpp.html#55" data-ref="_M/BOOST_JSON_USE_SSE2">BOOST_JSON_USE_SSE2</a></u></td></tr>
+<tr><th id="266">266</th><td></td></tr>
+<tr><th id="267">267</th><td><i>// assumes p..p+15 are valid</i></td></tr>
+<tr><th id="268">268</th><td><b>inline</b> <em>int</em> <dfn class="decl def fn" id="_ZN5boost4json6detail12count_digitsEPKc" title='boost::json::detail::count_digits' data-ref="_ZN5boost4json6detail12count_digitsEPKc">count_digits</dfn>( <em>char</em> <em>const</em>* <dfn class="local col0 decl" id="2760p" title='p' data-type='const char *' data-ref="2760p">p</dfn> ) <b>noexcept</b></td></tr>
+<tr><th id="269">269</th><td>{</td></tr>
+<tr><th id="270">270</th><td>    <span class='typedef' title='__m128i' data-type='__attribute__((__vector_size__(2 * sizeof(long long)))) long long' data-ref="__m128i">__m128i</span> <dfn class="local col1 decl" id="2761v1" title='v1' data-type='__m128i' data-ref="2761v1">v1</dfn> = <span class='ref fn' title='_mm_loadu_si128' data-ref="_ZL15_mm_loadu_si128PKDv2_x">_mm_loadu_si128</span>( <span class='inlayHint'>p:&nbsp;</span>(<span class='typedef' title='__m128i' data-type='__attribute__((__vector_size__(2 * sizeof(long long)))) long long' data-ref="__m128i">__m128i</span> <em>const</em>*)<a class="local col0 ref" href="#2760p" title='p' data-ref="2760p">p</a> );</td></tr>
+<tr><th id="271">271</th><td>    <a class="local col1 ref" href="#2761v1" title='v1' data-ref="2761v1">v1</a> = <span class='ref fn' title='_mm_add_epi8' data-ref="_ZL12_mm_add_epi8Dv2_xS_">_mm_add_epi8</span>(<span class='inlayHint'>a:&nbsp;</span><a class="local col1 ref" href="#2761v1" title='v1' data-ref="2761v1">v1</a>, <span class='inlayHint'>b:&nbsp;</span><span class='ref fn' title='_mm_set1_epi8' data-ref="_ZL13_mm_set1_epi8c">_mm_set1_epi8</span>(<span class='inlayHint'>b:&nbsp;</span><var>70</var>));</td></tr>
+<tr><th id="272">272</th><td>    <a class="local col1 ref" href="#2761v1" title='v1' data-ref="2761v1">v1</a> = <span class='ref fn' title='_mm_cmplt_epi8' data-ref="_ZL14_mm_cmplt_epi8Dv2_xS_">_mm_cmplt_epi8</span>(<span class='inlayHint'>a:&nbsp;</span><a class="local col1 ref" href="#2761v1" title='v1' data-ref="2761v1">v1</a>, <span class='inlayHint'>b:&nbsp;</span><span class='ref fn' title='_mm_set1_epi8' data-ref="_ZL13_mm_set1_epi8c">_mm_set1_epi8</span>(<span class='inlayHint'>b:&nbsp;</span><var>118</var>));</td></tr>
+<tr><th id="273">273</th><td></td></tr>
+<tr><th id="274">274</th><td>    <em>int</em> <dfn class="local col2 decl" id="2762m" title='m' data-type='int' data-ref="2762m">m</dfn> = <span class='ref fn' title='_mm_movemask_epi8' data-ref="_ZL17_mm_movemask_epi8Dv2_x">_mm_movemask_epi8</span>(<span class='inlayHint'>a:&nbsp;</span><a class="local col1 ref" href="#2761v1" title='v1' data-ref="2761v1">v1</a>);</td></tr>
+<tr><th id="275">275</th><td></td></tr>
+<tr><th id="276">276</th><td>    <em>int</em> <dfn class="local col3 decl" id="2763n" title='n' data-type='int' data-ref="2763n">n</dfn>;</td></tr>
+<tr><th id="277">277</th><td></td></tr>
+<tr><th id="278">278</th><td>    <b>if</b>( <a class="local col2 ref" href="#2762m" title='m' data-ref="2762m">m</a> == <var>0</var> )</td></tr>
+<tr><th id="279">279</th><td>    {</td></tr>
+<tr><th id="280">280</th><td>        <a class="local col3 ref" href="#2763n" title='n' data-ref="2763n">n</a> = <var>16</var>;</td></tr>
+<tr><th id="281">281</th><td>    }</td></tr>
+<tr><th id="282">282</th><td>    <b>else</b></td></tr>
+<tr><th id="283">283</th><td>    {</td></tr>
+<tr><th id="284">284</th><td><u>#<span data-ppcond="284">if</span> defined(<span class="macro" data-ref="_M/__GNUC__">__GNUC__</span>) || defined(<span class="macro" data-ref="_M/__clang__">__clang__</span>)</u></td></tr>
+<tr><th id="285">285</th><td>        <a class="local col3 ref" href="#2763n" title='n' data-ref="2763n">n</a> = <a class="ref fn" href="#60" title='__builtin_ffs' data-ref="__builtin_ffs">__builtin_ffs</a>( <a class="local col2 ref" href="#2762m" title='m' data-ref="2762m">m</a> ) - <var>1</var>;</td></tr>
+<tr><th id="286">286</th><td><u>#<span data-ppcond="284">else</span></u></td></tr>
+<tr><th id="287">287</th><td>        <em>unsigned</em> <em>long</em> index;</td></tr>
+<tr><th id="288">288</th><td>        _BitScanForward( &amp;index, m );</td></tr>
+<tr><th id="289">289</th><td>        n = <b>static_cast</b>&lt;<em>int</em>&gt;(index);</td></tr>
+<tr><th id="290">290</th><td><u>#<span data-ppcond="284">endif</span></u></td></tr>
+<tr><th id="291">291</th><td>    }</td></tr>
+<tr><th id="292">292</th><td></td></tr>
+<tr><th id="293">293</th><td>    <b>return</b> <a class="local col3 ref" href="#2763n" title='n' data-ref="2763n">n</a>;</td></tr>
+<tr><th id="294">294</th><td>}</td></tr>
+<tr><th id="295">295</th><td></td></tr>
+<tr><th id="296">296</th><td><u>#<span data-ppcond="265">else</span></u></td></tr>
+<tr><th id="297">297</th><td></td></tr>
+<tr><th id="298">298</th><td><i>// assumes p..p+15 are valid</i></td></tr>
+<tr><th id="299">299</th><td><b>inline</b> <em>int</em> count_digits( <em>char</em> <em>const</em>* p ) <b>noexcept</b></td></tr>
+<tr><th id="300">300</th><td>{</td></tr>
+<tr><th id="301">301</th><td>    <em>int</em> n = <var>0</var>;</td></tr>
+<tr><th id="302">302</th><td></td></tr>
+<tr><th id="303">303</th><td>    <b>for</b>( ; n &lt; <var>16</var>; ++n )</td></tr>
+<tr><th id="304">304</th><td>    {</td></tr>
+<tr><th id="305">305</th><td>        <em>unsigned</em> <em>char</em> <em>const</em> d = *p++ - <kbd>'0'</kbd>;</td></tr>
+<tr><th id="306">306</th><td>        <b>if</b>(d &gt; <var>9</var>) <b>break</b>;</td></tr>
+<tr><th id="307">307</th><td>    }</td></tr>
+<tr><th id="308">308</th><td></td></tr>
+<tr><th id="309">309</th><td>    <b>return</b> n;</td></tr>
+<tr><th id="310">310</th><td>}</td></tr>
+<tr><th id="311">311</th><td></td></tr>
+<tr><th id="312">312</th><td><u>#<span data-ppcond="265">endif</span></u></td></tr>
+<tr><th id="313">313</th><td></td></tr>
+<tr><th id="314">314</th><td><i>// parse_unsigned</i></td></tr>
+<tr><th id="315">315</th><td></td></tr>
+<tr><th id="316">316</th><td><b>inline</b> uint64_t <dfn class="decl def fn" id="_ZN5boost4json6detail14parse_unsignedEmPKcm" title='boost::json::detail::parse_unsigned' data-ref="_ZN5boost4json6detail14parse_unsignedEmPKcm">parse_unsigned</dfn>( uint64_t <dfn class="local col4 decl" id="2764r" title='r' data-type='uint64_t' data-ref="2764r">r</dfn>, <em>char</em> <em>const</em> * <dfn class="local col5 decl" id="2765p" title='p' data-type='const char *' data-ref="2765p">p</dfn>, <span class="namespace">std::</span><a class="typedef" href="../../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> <dfn class="local col6 decl" id="2766n" title='n' data-type='std::size_t' data-ref="2766n">n</dfn> ) <b>noexcept</b></td></tr>
+<tr><th id="317">317</th><td>{</td></tr>
+<tr><th id="318">318</th><td>    <b>while</b>( <a class="local col6 ref" href="#2766n" title='n' data-ref="2766n">n</a> &gt;= <var>4</var> )</td></tr>
+<tr><th id="319">319</th><td>    {</td></tr>
+<tr><th id="320">320</th><td>        <i>// faster on on clang for x86,</i></td></tr>
+<tr><th id="321">321</th><td><i>        // slower on gcc</i></td></tr>
+<tr><th id="322">322</th><td><u>#<span data-ppcond="322">ifdef</span> <span class="macro" data-ref="_M/__clang__">__clang__</span></u></td></tr>
+<tr><th id="323">323</th><td>        <a class="local col4 ref" href="#2764r" title='r' data-ref="2764r">r</a> = <a class="local col4 ref" href="#2764r" title='r' data-ref="2764r">r</a> * <var>10</var> + <a class="local col5 ref" href="#2765p" title='p' data-ref="2765p">p</a>[<var>0</var>] - <kbd>'0'</kbd>;</td></tr>
+<tr><th id="324">324</th><td>        <a class="local col4 ref" href="#2764r" title='r' data-ref="2764r">r</a> = <a class="local col4 ref" href="#2764r" title='r' data-ref="2764r">r</a> * <var>10</var> + <a class="local col5 ref" href="#2765p" title='p' data-ref="2765p">p</a>[<var>1</var>] - <kbd>'0'</kbd>;</td></tr>
+<tr><th id="325">325</th><td>        <a class="local col4 ref" href="#2764r" title='r' data-ref="2764r">r</a> = <a class="local col4 ref" href="#2764r" title='r' data-ref="2764r">r</a> * <var>10</var> + <a class="local col5 ref" href="#2765p" title='p' data-ref="2765p">p</a>[<var>2</var>] - <kbd>'0'</kbd>;</td></tr>
+<tr><th id="326">326</th><td>        <a class="local col4 ref" href="#2764r" title='r' data-ref="2764r">r</a> = <a class="local col4 ref" href="#2764r" title='r' data-ref="2764r">r</a> * <var>10</var> + <a class="local col5 ref" href="#2765p" title='p' data-ref="2765p">p</a>[<var>3</var>] - <kbd>'0'</kbd>;</td></tr>
+<tr><th id="327">327</th><td><u>#<span data-ppcond="322">else</span></u></td></tr>
+<tr><th id="328">328</th><td>        uint32_t v;</td></tr>
+<tr><th id="329">329</th><td>        std::memcpy( &amp;v, p, <var>4</var> );</td></tr>
+<tr><th id="330">330</th><td>        endian::native_to_little_inplace(v);</td></tr>
+<tr><th id="331">331</th><td></td></tr>
+<tr><th id="332">332</th><td>        v -= <var>0x30303030</var>;</td></tr>
+<tr><th id="333">333</th><td></td></tr>
+<tr><th id="334">334</th><td>        <em>unsigned</em> w0 = v &amp; <var>0xFF</var>;</td></tr>
+<tr><th id="335">335</th><td>        <em>unsigned</em> w1 = (v &gt;&gt; <var>8</var>) &amp; <var>0xFF</var>;</td></tr>
+<tr><th id="336">336</th><td>        <em>unsigned</em> w2 = (v &gt;&gt; <var>16</var>) &amp; <var>0xFF</var>;</td></tr>
+<tr><th id="337">337</th><td>        <em>unsigned</em> w3 = (v &gt;&gt; <var>24</var>);</td></tr>
+<tr><th id="338">338</th><td></td></tr>
+<tr><th id="339">339</th><td>        r = (((r * <var>10</var> + w0) * <var>10</var> + w1) * <var>10</var> + w2) * <var>10</var> + w3;</td></tr>
+<tr><th id="340">340</th><td><u>#<span data-ppcond="322">endif</span></u></td></tr>
+<tr><th id="341">341</th><td>        <a class="local col5 ref" href="#2765p" title='p' data-ref="2765p">p</a> += <var>4</var>;</td></tr>
+<tr><th id="342">342</th><td>        <a class="local col6 ref" href="#2766n" title='n' data-ref="2766n">n</a> -= <var>4</var>;</td></tr>
+<tr><th id="343">343</th><td>    }</td></tr>
+<tr><th id="344">344</th><td></td></tr>
+<tr><th id="345">345</th><td>    <b>switch</b>( <a class="local col6 ref" href="#2766n" title='n' data-ref="2766n">n</a> )</td></tr>
+<tr><th id="346">346</th><td>    {</td></tr>
+<tr><th id="347">347</th><td>    <b>case</b> <var>0</var>:</td></tr>
+<tr><th id="348">348</th><td>        <b>break</b>;</td></tr>
+<tr><th id="349">349</th><td>    <b>case</b> <var>1</var>:</td></tr>
+<tr><th id="350">350</th><td>        <a class="local col4 ref" href="#2764r" title='r' data-ref="2764r">r</a> = <a class="local col4 ref" href="#2764r" title='r' data-ref="2764r">r</a> * <var>10</var> + <a class="local col5 ref" href="#2765p" title='p' data-ref="2765p">p</a>[<var>0</var>] - <kbd>'0'</kbd>;</td></tr>
+<tr><th id="351">351</th><td>        <b>break</b>;</td></tr>
+<tr><th id="352">352</th><td>    <b>case</b> <var>2</var>:</td></tr>
+<tr><th id="353">353</th><td>        <a class="local col4 ref" href="#2764r" title='r' data-ref="2764r">r</a> = <a class="local col4 ref" href="#2764r" title='r' data-ref="2764r">r</a> * <var>10</var> + <a class="local col5 ref" href="#2765p" title='p' data-ref="2765p">p</a>[<var>0</var>] - <kbd>'0'</kbd>;</td></tr>
+<tr><th id="354">354</th><td>        <a class="local col4 ref" href="#2764r" title='r' data-ref="2764r">r</a> = <a class="local col4 ref" href="#2764r" title='r' data-ref="2764r">r</a> * <var>10</var> + <a class="local col5 ref" href="#2765p" title='p' data-ref="2765p">p</a>[<var>1</var>] - <kbd>'0'</kbd>;</td></tr>
+<tr><th id="355">355</th><td>        <b>break</b>;</td></tr>
+<tr><th id="356">356</th><td>    <b>case</b> <var>3</var>:</td></tr>
+<tr><th id="357">357</th><td>        <a class="local col4 ref" href="#2764r" title='r' data-ref="2764r">r</a> = <a class="local col4 ref" href="#2764r" title='r' data-ref="2764r">r</a> * <var>10</var> + <a class="local col5 ref" href="#2765p" title='p' data-ref="2765p">p</a>[<var>0</var>] - <kbd>'0'</kbd>;</td></tr>
+<tr><th id="358">358</th><td>        <a class="local col4 ref" href="#2764r" title='r' data-ref="2764r">r</a> = <a class="local col4 ref" href="#2764r" title='r' data-ref="2764r">r</a> * <var>10</var> + <a class="local col5 ref" href="#2765p" title='p' data-ref="2765p">p</a>[<var>1</var>] - <kbd>'0'</kbd>;</td></tr>
+<tr><th id="359">359</th><td>        <a class="local col4 ref" href="#2764r" title='r' data-ref="2764r">r</a> = <a class="local col4 ref" href="#2764r" title='r' data-ref="2764r">r</a> * <var>10</var> + <a class="local col5 ref" href="#2765p" title='p' data-ref="2765p">p</a>[<var>2</var>] - <kbd>'0'</kbd>;</td></tr>
+<tr><th id="360">360</th><td>        <b>break</b>;</td></tr>
+<tr><th id="361">361</th><td>    }</td></tr>
+<tr><th id="362">362</th><td>    <b>return</b> <a class="local col4 ref" href="#2764r" title='r' data-ref="2764r">r</a>;</td></tr>
+<tr><th id="363">363</th><td>}</td></tr>
+<tr><th id="364">364</th><td></td></tr>
+<tr><th id="365">365</th><td><i>// KRYSTIAN: this function is unused</i></td></tr>
+<tr><th id="366">366</th><td><i>// count_leading</i></td></tr>
+<tr><th id="367">367</th><td></td></tr>
+<tr><th id="368">368</th><td><i>/*</i></td></tr>
+<tr><th id="369">369</th><td><i>#ifdef BOOST_JSON_USE_SSE2</i></td></tr>
+<tr><th id="370">370</th><td><i></i></td></tr>
+<tr><th id="371">371</th><td><i>// assumes p..p+15</i></td></tr>
+<tr><th id="372">372</th><td><i>inline std::size_t count_leading( char const * p, char ch ) noexcept</i></td></tr>
+<tr><th id="373">373</th><td><i>{</i></td></tr>
+<tr><th id="374">374</th><td><i>    __m128i const q1 = _mm_set1_epi8( ch );</i></td></tr>
+<tr><th id="375">375</th><td><i></i></td></tr>
+<tr><th id="376">376</th><td><i>    __m128i v = _mm_loadu_si128( (__m128i const*)p );</i></td></tr>
+<tr><th id="377">377</th><td><i></i></td></tr>
+<tr><th id="378">378</th><td><i>    __m128i w = _mm_cmpeq_epi8( v, q1 );</i></td></tr>
+<tr><th id="379">379</th><td><i></i></td></tr>
+<tr><th id="380">380</th><td><i>    int m = _mm_movemask_epi8( w ) ^ 0xFFFF;</i></td></tr>
+<tr><th id="381">381</th><td><i></i></td></tr>
+<tr><th id="382">382</th><td><i>    std::size_t n;</i></td></tr>
+<tr><th id="383">383</th><td><i></i></td></tr>
+<tr><th id="384">384</th><td><i>    if( m == 0 )</i></td></tr>
+<tr><th id="385">385</th><td><i>    {</i></td></tr>
+<tr><th id="386">386</th><td><i>        n = 16;</i></td></tr>
+<tr><th id="387">387</th><td><i>    }</i></td></tr>
+<tr><th id="388">388</th><td><i>    else</i></td></tr>
+<tr><th id="389">389</th><td><i>    {</i></td></tr>
+<tr><th id="390">390</th><td><i>#if defined(__GNUC__) || defined(__clang__)</i></td></tr>
+<tr><th id="391">391</th><td><i>        n = __builtin_ffs( m ) - 1;</i></td></tr>
+<tr><th id="392">392</th><td><i>#else</i></td></tr>
+<tr><th id="393">393</th><td><i>        unsigned long index;</i></td></tr>
+<tr><th id="394">394</th><td><i>        _BitScanForward( &amp;index, m );</i></td></tr>
+<tr><th id="395">395</th><td><i>        n = index;</i></td></tr>
+<tr><th id="396">396</th><td><i>#endif</i></td></tr>
+<tr><th id="397">397</th><td><i>    }</i></td></tr>
+<tr><th id="398">398</th><td><i></i></td></tr>
+<tr><th id="399">399</th><td><i>    return n;</i></td></tr>
+<tr><th id="400">400</th><td><i>}</i></td></tr>
+<tr><th id="401">401</th><td><i></i></td></tr>
+<tr><th id="402">402</th><td><i>#else</i></td></tr>
+<tr><th id="403">403</th><td><i></i></td></tr>
+<tr><th id="404">404</th><td><i>// assumes p..p+15</i></td></tr>
+<tr><th id="405">405</th><td><i>inline std::size_t count_leading( char const * p, char ch ) noexcept</i></td></tr>
+<tr><th id="406">406</th><td><i>{</i></td></tr>
+<tr><th id="407">407</th><td><i>    std::size_t n = 0;</i></td></tr>
+<tr><th id="408">408</th><td><i></i></td></tr>
+<tr><th id="409">409</th><td><i>    for( ; n &lt; 16 &amp;&amp; *p == ch; ++p, ++n );</i></td></tr>
+<tr><th id="410">410</th><td><i></i></td></tr>
+<tr><th id="411">411</th><td><i>    return n;</i></td></tr>
+<tr><th id="412">412</th><td><i>}</i></td></tr>
+<tr><th id="413">413</th><td><i></i></td></tr>
+<tr><th id="414">414</th><td><i>#endif</i></td></tr>
+<tr><th id="415">415</th><td><i>*/</i></td></tr>
+<tr><th id="416">416</th><td><i></i></td></tr>
+<tr><th id="417">417</th><td><i>// count_whitespace</i></td></tr>
+<tr><th id="418">418</th><td></td></tr>
+<tr><th id="419">419</th><td><u>#<span data-ppcond="419">ifdef</span> <a class="macro" href="config.hpp.html#55" data-ref="_M/BOOST_JSON_USE_SSE2">BOOST_JSON_USE_SSE2</a></u></td></tr>
+<tr><th id="420">420</th><td></td></tr>
+<tr><th id="421">421</th><td><b>inline</b> <em>const</em> <em>char</em>* <dfn class="decl def fn" id="_ZN5boost4json6detail16count_whitespaceEPKcS3_" title='boost::json::detail::count_whitespace' data-ref="_ZN5boost4json6detail16count_whitespaceEPKcS3_">count_whitespace</dfn>( <em>char</em> <em>const</em>* <dfn class="local col7 decl" id="2767p" title='p' data-type='const char *' data-ref="2767p">p</dfn>, <em>const</em> <em>char</em>* <dfn class="local col8 decl" id="2768end" title='end' data-type='const char *' data-ref="2768end">end</dfn> ) <b>noexcept</b></td></tr>
+<tr><th id="422">422</th><td>{</td></tr>
+<tr><th id="423">423</th><td>    <b>if</b>( <a class="local col7 ref" href="#2767p" title='p' data-ref="2767p">p</a> == <a class="local col8 ref" href="#2768end" title='end' data-ref="2768end">end</a> )</td></tr>
+<tr><th id="424">424</th><td>    {</td></tr>
+<tr><th id="425">425</th><td>        <b>return</b> <a class="local col7 ref" href="#2767p" title='p' data-ref="2767p">p</a>;</td></tr>
+<tr><th id="426">426</th><td>    }</td></tr>
+<tr><th id="427">427</th><td></td></tr>
+<tr><th id="428">428</th><td>    <b>if</b>( <b>static_cast</b>&lt;<em>unsigned</em> <em>char</em>&gt;( *<a class="local col7 ref" href="#2767p" title='p' data-ref="2767p">p</a> ) &gt; <var>0x20</var> )</td></tr>
+<tr><th id="429">429</th><td>    {</td></tr>
+<tr><th id="430">430</th><td>        <b>return</b> <a class="local col7 ref" href="#2767p" title='p' data-ref="2767p">p</a>;</td></tr>
+<tr><th id="431">431</th><td>    }</td></tr>
+<tr><th id="432">432</th><td></td></tr>
+<tr><th id="433">433</th><td>    <span class='typedef' title='__m128i' data-type='__attribute__((__vector_size__(2 * sizeof(long long)))) long long' data-ref="__m128i">__m128i</span> <em>const</em> <dfn class="local col9 decl" id="2769q1" title='q1' data-type='const __m128i' data-ref="2769q1">q1</dfn> = <span class='ref fn' title='_mm_set1_epi8' data-ref="_ZL13_mm_set1_epi8c">_mm_set1_epi8</span>( <span class='inlayHint'>b:&nbsp;</span><kbd>' '</kbd> );</td></tr>
+<tr><th id="434">434</th><td>    <span class='typedef' title='__m128i' data-type='__attribute__((__vector_size__(2 * sizeof(long long)))) long long' data-ref="__m128i">__m128i</span> <em>const</em> <dfn class="local col0 decl" id="2770q2" title='q2' data-type='const __m128i' data-ref="2770q2">q2</dfn> = <span class='ref fn' title='_mm_set1_epi8' data-ref="_ZL13_mm_set1_epi8c">_mm_set1_epi8</span>( <span class='inlayHint'>b:&nbsp;</span><kbd>'\n'</kbd> );</td></tr>
+<tr><th id="435">435</th><td>    <span class='typedef' title='__m128i' data-type='__attribute__((__vector_size__(2 * sizeof(long long)))) long long' data-ref="__m128i">__m128i</span> <em>const</em> <dfn class="local col1 decl" id="2771q3" title='q3' data-type='const __m128i' data-ref="2771q3">q3</dfn> = <span class='ref fn' title='_mm_set1_epi8' data-ref="_ZL13_mm_set1_epi8c">_mm_set1_epi8</span>( <span class='inlayHint'>b:&nbsp;</span><var>4</var> ); <i>// '\t' | 4 == '\r'</i></td></tr>
+<tr><th id="436">436</th><td>    <span class='typedef' title='__m128i' data-type='__attribute__((__vector_size__(2 * sizeof(long long)))) long long' data-ref="__m128i">__m128i</span> <em>const</em> <dfn class="local col2 decl" id="2772q4" title='q4' data-type='const __m128i' data-ref="2772q4">q4</dfn> = <span class='ref fn' title='_mm_set1_epi8' data-ref="_ZL13_mm_set1_epi8c">_mm_set1_epi8</span>( <span class='inlayHint'>b:&nbsp;</span><kbd>'\r'</kbd> );</td></tr>
+<tr><th id="437">437</th><td></td></tr>
+<tr><th id="438">438</th><td>    <b>while</b>( <a class="local col8 ref" href="#2768end" title='end' data-ref="2768end">end</a> - <a class="local col7 ref" href="#2767p" title='p' data-ref="2767p">p</a> &gt;= <var>16</var> )</td></tr>
+<tr><th id="439">439</th><td>    {</td></tr>
+<tr><th id="440">440</th><td>        <span class='typedef' title='__m128i' data-type='__attribute__((__vector_size__(2 * sizeof(long long)))) long long' data-ref="__m128i">__m128i</span> <dfn class="local col3 decl" id="2773v0" title='v0' data-type='__m128i' data-ref="2773v0">v0</dfn> = <span class='ref fn' title='_mm_loadu_si128' data-ref="_ZL15_mm_loadu_si128PKDv2_x">_mm_loadu_si128</span>( <span class='inlayHint'>p:&nbsp;</span>(<span class='typedef' title='__m128i' data-type='__attribute__((__vector_size__(2 * sizeof(long long)))) long long' data-ref="__m128i">__m128i</span> <em>const</em>*)<a class="local col7 ref" href="#2767p" title='p' data-ref="2767p">p</a> );</td></tr>
+<tr><th id="441">441</th><td></td></tr>
+<tr><th id="442">442</th><td>        <span class='typedef' title='__m128i' data-type='__attribute__((__vector_size__(2 * sizeof(long long)))) long long' data-ref="__m128i">__m128i</span> <dfn class="local col4 decl" id="2774w0" title='w0' data-type='__m128i' data-ref="2774w0">w0</dfn> = <span class='ref fn' title='_mm_or_si128' data-ref="_ZL12_mm_or_si128Dv2_xS_">_mm_or_si128</span>(</td></tr>
+<tr><th id="443">443</th><td>            <span class='inlayHint'>a:&nbsp;</span><span class='ref fn' title='_mm_cmpeq_epi8' data-ref="_ZL14_mm_cmpeq_epi8Dv2_xS_">_mm_cmpeq_epi8</span>( <span class='inlayHint'>a:&nbsp;</span><a class="local col3 ref" href="#2773v0" title='v0' data-ref="2773v0">v0</a>, <span class='inlayHint'>b:&nbsp;</span><a class="local col9 ref" href="#2769q1" title='q1' data-ref="2769q1">q1</a> ),</td></tr>
+<tr><th id="444">444</th><td>            <span class='inlayHint'>b:&nbsp;</span><span class='ref fn' title='_mm_cmpeq_epi8' data-ref="_ZL14_mm_cmpeq_epi8Dv2_xS_">_mm_cmpeq_epi8</span>( <span class='inlayHint'>a:&nbsp;</span><a class="local col3 ref" href="#2773v0" title='v0' data-ref="2773v0">v0</a>, <span class='inlayHint'>b:&nbsp;</span><a class="local col0 ref" href="#2770q2" title='q2' data-ref="2770q2">q2</a> ));</td></tr>
+<tr><th id="445">445</th><td>        <span class='typedef' title='__m128i' data-type='__attribute__((__vector_size__(2 * sizeof(long long)))) long long' data-ref="__m128i">__m128i</span> <dfn class="local col5 decl" id="2775v1" title='v1' data-type='__m128i' data-ref="2775v1">v1</dfn> = <span class='ref fn' title='_mm_or_si128' data-ref="_ZL12_mm_or_si128Dv2_xS_">_mm_or_si128</span>( <span class='inlayHint'>a:&nbsp;</span><a class="local col3 ref" href="#2773v0" title='v0' data-ref="2773v0">v0</a>, <span class='inlayHint'>b:&nbsp;</span><a class="local col1 ref" href="#2771q3" title='q3' data-ref="2771q3">q3</a> );</td></tr>
+<tr><th id="446">446</th><td>        <span class='typedef' title='__m128i' data-type='__attribute__((__vector_size__(2 * sizeof(long long)))) long long' data-ref="__m128i">__m128i</span> <dfn class="local col6 decl" id="2776w1" title='w1' data-type='__m128i' data-ref="2776w1">w1</dfn> = <span class='ref fn' title='_mm_cmpeq_epi8' data-ref="_ZL14_mm_cmpeq_epi8Dv2_xS_">_mm_cmpeq_epi8</span>( <span class='inlayHint'>a:&nbsp;</span><a class="local col5 ref" href="#2775v1" title='v1' data-ref="2775v1">v1</a>, <span class='inlayHint'>b:&nbsp;</span><a class="local col2 ref" href="#2772q4" title='q4' data-ref="2772q4">q4</a> );</td></tr>
+<tr><th id="447">447</th><td>        <span class='typedef' title='__m128i' data-type='__attribute__((__vector_size__(2 * sizeof(long long)))) long long' data-ref="__m128i">__m128i</span> <dfn class="local col7 decl" id="2777w2" title='w2' data-type='__m128i' data-ref="2777w2">w2</dfn> = <span class='ref fn' title='_mm_or_si128' data-ref="_ZL12_mm_or_si128Dv2_xS_">_mm_or_si128</span>( <span class='inlayHint'>a:&nbsp;</span><a class="local col4 ref" href="#2774w0" title='w0' data-ref="2774w0">w0</a>, <span class='inlayHint'>b:&nbsp;</span><a class="local col6 ref" href="#2776w1" title='w1' data-ref="2776w1">w1</a> );</td></tr>
+<tr><th id="448">448</th><td></td></tr>
+<tr><th id="449">449</th><td>        <em>int</em> <dfn class="local col8 decl" id="2778m" title='m' data-type='int' data-ref="2778m">m</dfn> = <span class='ref fn' title='_mm_movemask_epi8' data-ref="_ZL17_mm_movemask_epi8Dv2_x">_mm_movemask_epi8</span>( <span class='inlayHint'>a:&nbsp;</span><a class="local col7 ref" href="#2777w2" title='w2' data-ref="2777w2">w2</a> ) ^ <var>0xFFFF</var>;</td></tr>
+<tr><th id="450">450</th><td></td></tr>
+<tr><th id="451">451</th><td>        <b>if</b>( <a class="local col8 ref" href="#2778m" title='m' data-ref="2778m">m</a> != <var>0</var> )</td></tr>
+<tr><th id="452">452</th><td>        {</td></tr>
+<tr><th id="453">453</th><td><u>#<span data-ppcond="453">if</span> defined(<span class="macro" data-ref="_M/__GNUC__">__GNUC__</span>) || defined(<span class="macro" data-ref="_M/__clang__">__clang__</span>)</u></td></tr>
+<tr><th id="454">454</th><td>            <span class="namespace">std::</span><a class="typedef" href="../../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> <dfn class="local col9 decl" id="2779c" title='c' data-type='std::size_t' data-ref="2779c">c</dfn> = <a class="ref fn" href="#60" title='__builtin_ffs' data-ref="__builtin_ffs">__builtin_ffs</a>( <a class="local col8 ref" href="#2778m" title='m' data-ref="2778m">m</a> ) - <var>1</var>;</td></tr>
+<tr><th id="455">455</th><td><u>#<span data-ppcond="453">else</span></u></td></tr>
+<tr><th id="456">456</th><td>            <em>unsigned</em> <em>long</em> index;</td></tr>
+<tr><th id="457">457</th><td>            _BitScanForward( &amp;index, m );</td></tr>
+<tr><th id="458">458</th><td>            std::size_t c = index;</td></tr>
+<tr><th id="459">459</th><td><u>#<span data-ppcond="453">endif</span></u></td></tr>
+<tr><th id="460">460</th><td></td></tr>
+<tr><th id="461">461</th><td>            <a class="local col7 ref" href="#2767p" title='p' data-ref="2767p">p</a> += <a class="local col9 ref" href="#2779c" title='c' data-ref="2779c">c</a>;</td></tr>
+<tr><th id="462">462</th><td>            <b>return</b> <a class="local col7 ref" href="#2767p" title='p' data-ref="2767p">p</a>;</td></tr>
+<tr><th id="463">463</th><td>        }</td></tr>
+<tr><th id="464">464</th><td></td></tr>
+<tr><th id="465">465</th><td>        <a class="local col7 ref" href="#2767p" title='p' data-ref="2767p">p</a> += <var>16</var>;</td></tr>
+<tr><th id="466">466</th><td>    }</td></tr>
+<tr><th id="467">467</th><td></td></tr>
+<tr><th id="468">468</th><td>    <b>while</b>( <a class="local col7 ref" href="#2767p" title='p' data-ref="2767p">p</a> != <a class="local col8 ref" href="#2768end" title='end' data-ref="2768end">end</a> )</td></tr>
+<tr><th id="469">469</th><td>    {</td></tr>
+<tr><th id="470">470</th><td>        <b>if</b>( *<a class="local col7 ref" href="#2767p" title='p' data-ref="2767p">p</a> != <kbd>' '</kbd> &amp;&amp; *<a class="local col7 ref" href="#2767p" title='p' data-ref="2767p">p</a> != <kbd>'\t'</kbd> &amp;&amp; *<a class="local col7 ref" href="#2767p" title='p' data-ref="2767p">p</a> != <kbd>'\r'</kbd> &amp;&amp; *<a class="local col7 ref" href="#2767p" title='p' data-ref="2767p">p</a> != <kbd>'\n'</kbd> )</td></tr>
+<tr><th id="471">471</th><td>        {</td></tr>
+<tr><th id="472">472</th><td>            <b>return</b> <a class="local col7 ref" href="#2767p" title='p' data-ref="2767p">p</a>;</td></tr>
+<tr><th id="473">473</th><td>        }</td></tr>
+<tr><th id="474">474</th><td></td></tr>
+<tr><th id="475">475</th><td>        ++<a class="local col7 ref" href="#2767p" title='p' data-ref="2767p">p</a>;</td></tr>
+<tr><th id="476">476</th><td>    }</td></tr>
+<tr><th id="477">477</th><td></td></tr>
+<tr><th id="478">478</th><td>    <b>return</b> <a class="local col7 ref" href="#2767p" title='p' data-ref="2767p">p</a>;</td></tr>
+<tr><th id="479">479</th><td>}</td></tr>
+<tr><th id="480">480</th><td></td></tr>
+<tr><th id="481">481</th><td><i>/*</i></td></tr>
+<tr><th id="482">482</th><td><i></i></td></tr>
+<tr><th id="483">483</th><td><i>// slightly faster on msvc-14.2, slightly slower on clang-win</i></td></tr>
+<tr><th id="484">484</th><td><i></i></td></tr>
+<tr><th id="485">485</th><td><i>inline std::size_t count_whitespace( char const * p, std::size_t n ) noexcept</i></td></tr>
+<tr><th id="486">486</th><td><i>{</i></td></tr>
+<tr><th id="487">487</th><td><i>    char const * p0 = p;</i></td></tr>
+<tr><th id="488">488</th><td><i></i></td></tr>
+<tr><th id="489">489</th><td><i>    while( n &gt; 0 )</i></td></tr>
+<tr><th id="490">490</th><td><i>    {</i></td></tr>
+<tr><th id="491">491</th><td><i>        char ch = *p;</i></td></tr>
+<tr><th id="492">492</th><td><i></i></td></tr>
+<tr><th id="493">493</th><td><i>        if( ch == '\n' || ch == '\r' )</i></td></tr>
+<tr><th id="494">494</th><td><i>        {</i></td></tr>
+<tr><th id="495">495</th><td><i>            ++p;</i></td></tr>
+<tr><th id="496">496</th><td><i>            --n;</i></td></tr>
+<tr><th id="497">497</th><td><i>            continue;</i></td></tr>
+<tr><th id="498">498</th><td><i>        }</i></td></tr>
+<tr><th id="499">499</th><td><i></i></td></tr>
+<tr><th id="500">500</th><td><i>        if( ch != ' ' &amp;&amp; ch != '\t' )</i></td></tr>
+<tr><th id="501">501</th><td><i>        {</i></td></tr>
+<tr><th id="502">502</th><td><i>            break;</i></td></tr>
+<tr><th id="503">503</th><td><i>        }</i></td></tr>
+<tr><th id="504">504</th><td><i></i></td></tr>
+<tr><th id="505">505</th><td><i>        ++p;</i></td></tr>
+<tr><th id="506">506</th><td><i>        --n;</i></td></tr>
+<tr><th id="507">507</th><td><i></i></td></tr>
+<tr><th id="508">508</th><td><i>        while( n &gt;= 16 )</i></td></tr>
+<tr><th id="509">509</th><td><i>        {</i></td></tr>
+<tr><th id="510">510</th><td><i>            std::size_t n2 = count_leading( p, ch );</i></td></tr>
+<tr><th id="511">511</th><td><i></i></td></tr>
+<tr><th id="512">512</th><td><i>            p += n2;</i></td></tr>
+<tr><th id="513">513</th><td><i>            n -= n2;</i></td></tr>
+<tr><th id="514">514</th><td><i></i></td></tr>
+<tr><th id="515">515</th><td><i>            if( n2 &lt; 16 )</i></td></tr>
+<tr><th id="516">516</th><td><i>            {</i></td></tr>
+<tr><th id="517">517</th><td><i>                break;</i></td></tr>
+<tr><th id="518">518</th><td><i>            }</i></td></tr>
+<tr><th id="519">519</th><td><i>        }</i></td></tr>
+<tr><th id="520">520</th><td><i>    }</i></td></tr>
+<tr><th id="521">521</th><td><i></i></td></tr>
+<tr><th id="522">522</th><td><i>    return p - p0;</i></td></tr>
+<tr><th id="523">523</th><td><i>}</i></td></tr>
+<tr><th id="524">524</th><td><i>*/</i></td></tr>
+<tr><th id="525">525</th><td></td></tr>
+<tr><th id="526">526</th><td><u>#<span data-ppcond="419">else</span></u></td></tr>
+<tr><th id="527">527</th><td></td></tr>
+<tr><th id="528">528</th><td><b>inline</b> <em>const</em> <em>char</em>* count_whitespace( <em>char</em> <em>const</em>* p, <em>const</em> <em>char</em>* end ) <b>noexcept</b></td></tr>
+<tr><th id="529">529</th><td>{</td></tr>
+<tr><th id="530">530</th><td></td></tr>
+<tr><th id="531">531</th><td>    <b>for</b>(; p != end; ++p)</td></tr>
+<tr><th id="532">532</th><td>    {</td></tr>
+<tr><th id="533">533</th><td>        <em>char</em> <em>const</em> c = *p;</td></tr>
+<tr><th id="534">534</th><td>        <b>if</b>( c != <kbd>' '</kbd> &amp;&amp; c != <kbd>'\n'</kbd> &amp;&amp; c != <kbd>'\r'</kbd> &amp;&amp; c != <kbd>'\t'</kbd> ) <b>break</b>;</td></tr>
+<tr><th id="535">535</th><td>    }</td></tr>
+<tr><th id="536">536</th><td></td></tr>
+<tr><th id="537">537</th><td>    <b>return</b> p;</td></tr>
+<tr><th id="538">538</th><td>}</td></tr>
+<tr><th id="539">539</th><td></td></tr>
+<tr><th id="540">540</th><td><u>#<span data-ppcond="419">endif</span></u></td></tr>
+<tr><th id="541">541</th><td></td></tr>
+<tr><th id="542">542</th><td>} <i>// detail</i></td></tr>
+<tr><th id="543">543</th><td>} <i>// namespace json</i></td></tr>
+<tr><th id="544">544</th><td>} <i>// namespace boost</i></td></tr>
+<tr><th id="545">545</th><td></td></tr>
+<tr><th id="546">546</th><td><u>#<span data-ppcond="12">endif</span></u></td></tr>
+<tr><th id="547">547</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../../../../src/src.cpp.html'>boost-1.85.0/libs/json/src/src.cpp</a><br/>Generated on <em>2024-Jun-14</em> from project boost-1.85.0 revision <em>1.85.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

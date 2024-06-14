@@ -1,0 +1,112 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>basic_archive.cpp source code [boost-1.85.0/libs/serialization/src/basic_archive.cpp] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'boost-1.85.0/libs/serialization/src/basic_archive.cpp'; var root_path = '../../../..'; var data_path = '../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../..'>boost-1.85.0</a>/<a href='../..'>libs</a>/<a href='..'>serialization</a>/<a href='./'>src</a>/<a href='basic_archive.cpp.html'>basic_archive.cpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8</i></td></tr>
+<tr><th id="2">2</th><td><i>// basic_archive.cpp:</i></td></tr>
+<tr><th id="3">3</th><td><i></i></td></tr>
+<tr><th id="4">4</th><td><i>// (C) Copyright 2002 Robert Ramey - <a href="http://www.rrsd.com">http://www.rrsd.com</a> . </i></td></tr>
+<tr><th id="5">5</th><td><i>// Use, modification and distribution is subject to the Boost Software</i></td></tr>
+<tr><th id="6">6</th><td><i>// License, Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at</i></td></tr>
+<tr><th id="7">7</th><td><i>// <a href="http://www.boost.org/LICENSE_1_0.txt">http://www.boost.org/LICENSE_1_0.txt</a>)</i></td></tr>
+<tr><th id="8">8</th><td><i></i></td></tr>
+<tr><th id="9">9</th><td><i>//  See <a href="http://www.boost.org">http://www.boost.org</a> for updates, documentation, and revision history.</i></td></tr>
+<tr><th id="10">10</th><td><i></i></td></tr>
+<tr><th id="11">11</th><td><i>//////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="12">12</th><td><i>//</i></td></tr>
+<tr><th id="13">13</th><td><i>//  objects are stored as</i></td></tr>
+<tr><th id="14">14</th><td><i>//</i></td></tr>
+<tr><th id="15">15</th><td><i>//      class_id*   // -1 for a null pointer</i></td></tr>
+<tr><th id="16">16</th><td><i>//      if a new class id</i></td></tr>
+<tr><th id="17">17</th><td><i>//      [</i></td></tr>
+<tr><th id="18">18</th><td><i>//          exported key - class name*</i></td></tr>
+<tr><th id="19">19</th><td><i>//          tracking level - always/never</i></td></tr>
+<tr><th id="20">20</th><td><i>//          class version</i></td></tr>
+<tr><th id="21">21</th><td><i>//      ]</i></td></tr>
+<tr><th id="22">22</th><td><i>//</i></td></tr>
+<tr><th id="23">23</th><td><i>//      if tracking</i></td></tr>
+<tr><th id="24">24</th><td><i>//      [</i></td></tr>
+<tr><th id="25">25</th><td><i>//          object_id</i></td></tr>
+<tr><th id="26">26</th><td><i>//      ]</i></td></tr>
+<tr><th id="27">27</th><td><i>//          </i></td></tr>
+<tr><th id="28">28</th><td><i>//      [   // if a new object id</i></td></tr>
+<tr><th id="29">29</th><td><i>//          data...</i></td></tr>
+<tr><th id="30">30</th><td><i>//      ]</i></td></tr>
+<tr><th id="31">31</th><td><i>//</i></td></tr>
+<tr><th id="32">32</th><td><i>//  * required only for pointers - optional for objects</i></td></tr>
+<tr><th id="33">33</th><td></td></tr>
+<tr><th id="34">34</th><td><u>#define <dfn class="macro" id="_M/BOOST_ARCHIVE_SOURCE" data-ref="_M/BOOST_ARCHIVE_SOURCE">BOOST_ARCHIVE_SOURCE</dfn></u></td></tr>
+<tr><th id="35">35</th><td><u>#include <a href="../include/boost/serialization/config.hpp.html">&lt;boost/serialization/config.hpp&gt;</a></u></td></tr>
+<tr><th id="36">36</th><td><u>#include <a href="../include/boost/archive/basic_archive.hpp.html">&lt;boost/archive/basic_archive.hpp&gt;</a></u></td></tr>
+<tr><th id="37">37</th><td></td></tr>
+<tr><th id="38">38</th><td><b>namespace</b> <span class="namespace">boost</span> {</td></tr>
+<tr><th id="39">39</th><td><b>namespace</b> <span class="namespace">archive</span> {</td></tr>
+<tr><th id="40">40</th><td></td></tr>
+<tr><th id="41">41</th><td><i>///////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="42">42</th><td><i>// constants used in archive signature</i></td></tr>
+<tr><th id="43">43</th><td><i>//This should never ever change. note that is not an std::string</i></td></tr>
+<tr><th id="44">44</th><td><i>// string.</i></td></tr>
+<tr><th id="45">45</th><td><a class="macro" href="../../config/include/boost/config/compiler/clang.hpp.html#115" title="__attribute__((__visibility__(&quot;default&quot;)))" data-ref="_M/BOOST_SYMBOL_VISIBLE">BOOST_SYMBOL_VISIBLE</a> <em>const</em> <em>char</em> * </td></tr>
+<tr><th id="46">46</th><td><dfn class="decl def fn" id="_ZN5boost7archive23BOOST_ARCHIVE_SIGNATUREEv" title='boost::archive::BOOST_ARCHIVE_SIGNATURE' data-ref="_ZN5boost7archive23BOOST_ARCHIVE_SIGNATUREEv">BOOST_ARCHIVE_SIGNATURE</dfn>(){</td></tr>
+<tr><th id="47">47</th><td>    <b>return</b> <q>"serialization::archive"</q>;</td></tr>
+<tr><th id="48">48</th><td>}</td></tr>
+<tr><th id="49">49</th><td></td></tr>
+<tr><th id="50">50</th><td><i>// this should change if the capabilities are added to the library</i></td></tr>
+<tr><th id="51">51</th><td><i>// such that archives can be created which can't be read by previous</i></td></tr>
+<tr><th id="52">52</th><td><i>// versions of this library</i></td></tr>
+<tr><th id="53">53</th><td><i>// 1 - initial version</i></td></tr>
+<tr><th id="54">54</th><td><i>// 2 - made address tracking optional</i></td></tr>
+<tr><th id="55">55</th><td><i>// 3 - numerous changes - can't guarantee compatibility with previous versions</i></td></tr>
+<tr><th id="56">56</th><td><i>// 4 - Boost 1.34</i></td></tr>
+<tr><th id="57">57</th><td><i>//     added item_version to properly support versioning for collections </i></td></tr>
+<tr><th id="58">58</th><td><i>// 5 - Boost 1.36</i></td></tr>
+<tr><th id="59">59</th><td><i>//     changed serialization of collections: adding version even for primitive</i></td></tr>
+<tr><th id="60">60</th><td><i>//     types caused backwards compatibility breaking change in 1.35</i></td></tr>
+<tr><th id="61">61</th><td><i>// 6 - Boost 1.41 17 Nov 2009</i></td></tr>
+<tr><th id="62">62</th><td><i>//     serializing collection sizes as std::size_t</i></td></tr>
+<tr><th id="63">63</th><td><i>// 7   Boost 1.42 2 Feb 2010</i></td></tr>
+<tr><th id="64">64</th><td><i>//     error - changed binary version to 16 bits w/o changing library version #</i></td></tr>
+<tr><th id="65">65</th><td><i>//     That is - binary archives are recorded with #6 even though they are</i></td></tr>
+<tr><th id="66">66</th><td><i>//     different from the previous versions.  This means that binary archives</i></td></tr>
+<tr><th id="67">67</th><td><i>//     created with versions 1.42 and 1.43 will have to be fixed with a special</i></td></tr>
+<tr><th id="68">68</th><td><i>//     program which fixes the library version # in the header</i></td></tr>
+<tr><th id="69">69</th><td><i>//     Boost 1.43 6 May 2010</i></td></tr>
+<tr><th id="70">70</th><td><i>//     no change</i></td></tr>
+<tr><th id="71">71</th><td><i>// 8 - Boost 1.44</i></td></tr>
+<tr><th id="72">72</th><td><i>//     separated version_type into library_version_type and class_version_type</i></td></tr>
+<tr><th id="73">73</th><td><i>//     changed version_type to be stored as 8 bits.</i></td></tr>
+<tr><th id="74">74</th><td><i>// 10- fixed base64 output/input.</i></td></tr>
+<tr><th id="75">75</th><td><i>// 11- not changes</i></td></tr>
+<tr><th id="76">76</th><td><i>// 12- improved serialization of collections</i></td></tr>
+<tr><th id="77">77</th><td><i>// 13- simplified visibility, removed Borland, removed pfto</i></td></tr>
+<tr><th id="78">78</th><td><i>// 14- improved visibility, refactor map/set</i></td></tr>
+<tr><th id="79">79</th><td><i>// 15- corrections to optional and collection loading</i></td></tr>
+<tr><th id="80">80</th><td><i>// 16- eliminated dependency on &lt;codecvt&gt; which is buggy in some libraries</i></td></tr>
+<tr><th id="81">81</th><td><i>//     and now officially deprecated in the standard</i></td></tr>
+<tr><th id="82">82</th><td><i>// 17- Boost 1.68 August 2018</i></td></tr>
+<tr><th id="83">83</th><td><i>// 18- addressed undefined behavior in archive constructors.</i></td></tr>
+<tr><th id="84">84</th><td><i>//     init() called from base wrote archive header before archive</i></td></tr>
+<tr><th id="85">85</th><td><i>//     was fully constructed.</i></td></tr>
+<tr><th id="86">86</th><td><i>// 19- Boost 1.76 April 2021</i></td></tr>
+<tr><th id="87">87</th><td><i>// 20- Boost 1.84 April 2021</i></td></tr>
+<tr><th id="88">88</th><td><a class="macro" href="../../config/include/boost/config/compiler/clang.hpp.html#115" title="__attribute__((__visibility__(&quot;default&quot;)))" data-ref="_M/BOOST_SYMBOL_VISIBLE">BOOST_SYMBOL_VISIBLE</a> <span class="namespace">boost::serialization::</span><a class="type" href="../include/boost/serialization/library_version_type.hpp.html#boost::serialization::library_version_type" title='boost::serialization::library_version_type' data-ref="boost::serialization::library_version_type">library_version_type</a></td></tr>
+<tr><th id="89">89</th><td><dfn class="decl def fn" id="_ZN5boost7archive21BOOST_ARCHIVE_VERSIONEv" title='boost::archive::BOOST_ARCHIVE_VERSION' data-ref="_ZN5boost7archive21BOOST_ARCHIVE_VERSIONEv">BOOST_ARCHIVE_VERSION</dfn>(){</td></tr>
+<tr><th id="90">90</th><td>    <b>return</b> <span class="namespace">boost::serialization::</span><a class="type" href="../include/boost/serialization/library_version_type.hpp.html#boost::serialization::library_version_type" title='boost::serialization::library_version_type' data-ref="boost::serialization::library_version_type">library_version_type</a><a class="ref fn" href="../include/boost/serialization/library_version_type.hpp.html#_ZN5boost13serialization20library_version_typeC1ERKj" title='boost::serialization::library_version_type::library_version_type' data-ref="_ZN5boost13serialization20library_version_typeC1ERKj">(</a><var>20</var>);</td></tr>
+<tr><th id="91">91</th><td>}</td></tr>
+<tr><th id="92">92</th><td></td></tr>
+<tr><th id="93">93</th><td>} <i>// namespace archive</i></td></tr>
+<tr><th id="94">94</th><td>} <i>// namespace boost</i></td></tr>
+<tr><th id="95">95</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2024-Jun-14</em> from project boost-1.85.0 revision <em>1.85.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

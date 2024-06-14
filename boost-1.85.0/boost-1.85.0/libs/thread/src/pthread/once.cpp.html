@@ -1,0 +1,100 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>once.cpp source code [boost-1.85.0/libs/thread/src/pthread/once.cpp] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'boost-1.85.0/libs/thread/src/pthread/once.cpp'; var root_path = '../../../../..'; var data_path = '../../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../..'>boost-1.85.0</a>/<a href='../../..'>libs</a>/<a href='../..'>thread</a>/<a href='..'>src</a>/<a href='./'>pthread</a>/<a href='once.cpp.html'>once.cpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>// Copyright (C) 2007 Anthony Williams</i></td></tr>
+<tr><th id="2">2</th><td><i>//</i></td></tr>
+<tr><th id="3">3</th><td><i>//  Distributed under the Boost Software License, Version 1.0. (See accompanying</i></td></tr>
+<tr><th id="4">4</th><td><i>//  file LICENSE_1_0.txt or copy at <a href="http://www.boost.org/LICENSE_1_0.txt">http://www.boost.org/LICENSE_1_0.txt</a>)</i></td></tr>
+<tr><th id="5">5</th><td></td></tr>
+<tr><th id="6">6</th><td><u>#include <a href="../../include/boost/thread/detail/config.hpp.html">&lt;boost/thread/detail/config.hpp&gt;</a></u></td></tr>
+<tr><th id="7">7</th><td><u>#<span data-ppcond="7">ifdef</span> <a class="macro" href="../../include/boost/thread/detail/config.hpp.html#154" data-ref="_M/BOOST_THREAD_ONCE_ATOMIC">BOOST_THREAD_ONCE_ATOMIC</a></u></td></tr>
+<tr><th id="8">8</th><td><u>#include <a href="once_atomic.cpp.html">"./once_atomic.cpp"</a></u></td></tr>
+<tr><th id="9">9</th><td><u>#<span data-ppcond="7">else</span></u></td></tr>
+<tr><th id="10">10</th><td><u>#define __STDC_CONSTANT_MACROS</u></td></tr>
+<tr><th id="11">11</th><td><u>#include &lt;boost/thread/once.hpp&gt;</u></td></tr>
+<tr><th id="12">12</th><td><u>#include &lt;boost/assert.hpp&gt;</u></td></tr>
+<tr><th id="13">13</th><td><u>#include &lt;boost/throw_exception.hpp&gt;</u></td></tr>
+<tr><th id="14">14</th><td><u>#include &lt;pthread.h&gt;</u></td></tr>
+<tr><th id="15">15</th><td><u>#include &lt;stdlib.h&gt;</u></td></tr>
+<tr><th id="16">16</th><td><u>#include &lt;memory&gt;</u></td></tr>
+<tr><th id="17">17</th><td><u>#include &lt;string.h&gt; // memcmp.</u></td></tr>
+<tr><th id="18">18</th><td><b>namespace</b> boost</td></tr>
+<tr><th id="19">19</th><td>{</td></tr>
+<tr><th id="20">20</th><td>    <b>namespace</b> thread_detail</td></tr>
+<tr><th id="21">21</th><td>    {</td></tr>
+<tr><th id="22">22</th><td>        BOOST_THREAD_DECL uintmax_atomic_t once_global_epoch=BOOST_THREAD_DETAIL_UINTMAX_ATOMIC_MAX_C;</td></tr>
+<tr><th id="23">23</th><td>        BOOST_THREAD_DECL pthread_mutex_t once_epoch_mutex=PTHREAD_MUTEX_INITIALIZER;</td></tr>
+<tr><th id="24">24</th><td>        BOOST_THREAD_DECL pthread_cond_t once_epoch_cv = PTHREAD_COND_INITIALIZER;</td></tr>
+<tr><th id="25">25</th><td></td></tr>
+<tr><th id="26">26</th><td>        <b>namespace</b></td></tr>
+<tr><th id="27">27</th><td>        {</td></tr>
+<tr><th id="28">28</th><td>            pthread_key_t epoch_tss_key;</td></tr>
+<tr><th id="29">29</th><td>            pthread_once_t epoch_tss_key_flag=PTHREAD_ONCE_INIT;</td></tr>
+<tr><th id="30">30</th><td></td></tr>
+<tr><th id="31">31</th><td>            <b>extern</b> <q>"C"</q></td></tr>
+<tr><th id="32">32</th><td>            {</td></tr>
+<tr><th id="33">33</th><td>                <em>static</em> <em>void</em> delete_epoch_tss_data(<em>void</em>* data)</td></tr>
+<tr><th id="34">34</th><td>                {</td></tr>
+<tr><th id="35">35</th><td>                    free(data);</td></tr>
+<tr><th id="36">36</th><td>                }</td></tr>
+<tr><th id="37">37</th><td></td></tr>
+<tr><th id="38">38</th><td>                <em>static</em> <em>void</em> create_epoch_tss_key()</td></tr>
+<tr><th id="39">39</th><td>                {</td></tr>
+<tr><th id="40">40</th><td>                    BOOST_VERIFY(!pthread_key_create(&amp;epoch_tss_key,delete_epoch_tss_data));</td></tr>
+<tr><th id="41">41</th><td>                }</td></tr>
+<tr><th id="42">42</th><td>            }</td></tr>
+<tr><th id="43">43</th><td></td></tr>
+<tr><th id="44">44</th><td><u>#if defined BOOST_THREAD_PATCH</u></td></tr>
+<tr><th id="45">45</th><td>            <em>const</em> pthread_once_t pthread_once_init_value=PTHREAD_ONCE_INIT;</td></tr>
+<tr><th id="46">46</th><td>            <b>struct</b> BOOST_THREAD_DECL delete_epoch_tss_key_on_dlclose_t</td></tr>
+<tr><th id="47">47</th><td>            {</td></tr>
+<tr><th id="48">48</th><td>                delete_epoch_tss_key_on_dlclose_t()</td></tr>
+<tr><th id="49">49</th><td>                {</td></tr>
+<tr><th id="50">50</th><td>                }</td></tr>
+<tr><th id="51">51</th><td>                ~delete_epoch_tss_key_on_dlclose_t()</td></tr>
+<tr><th id="52">52</th><td>                {</td></tr>
+<tr><th id="53">53</th><td>                    <b>if</b>(memcmp(&amp;epoch_tss_key_flag, &amp;pthread_once_init_value, <b>sizeof</b>(pthread_once_t)))</td></tr>
+<tr><th id="54">54</th><td>                    {</td></tr>
+<tr><th id="55">55</th><td>                        <em>void</em>* data = pthread_getspecific(epoch_tss_key);</td></tr>
+<tr><th id="56">56</th><td>                        <b>if</b> (data)</td></tr>
+<tr><th id="57">57</th><td>                            delete_epoch_tss_data(data);</td></tr>
+<tr><th id="58">58</th><td>                        pthread_key_delete(epoch_tss_key);</td></tr>
+<tr><th id="59">59</th><td>                    }</td></tr>
+<tr><th id="60">60</th><td>                }</td></tr>
+<tr><th id="61">61</th><td>            };</td></tr>
+<tr><th id="62">62</th><td>            delete_epoch_tss_key_on_dlclose_t delete_epoch_tss_key_on_dlclose;</td></tr>
+<tr><th id="63">63</th><td><u>#endif</u></td></tr>
+<tr><th id="64">64</th><td>        }</td></tr>
+<tr><th id="65">65</th><td></td></tr>
+<tr><th id="66">66</th><td>        uintmax_atomic_t&amp; get_once_per_thread_epoch()</td></tr>
+<tr><th id="67">67</th><td>        {</td></tr>
+<tr><th id="68">68</th><td>            BOOST_VERIFY(!pthread_once(&amp;epoch_tss_key_flag,create_epoch_tss_key));</td></tr>
+<tr><th id="69">69</th><td>            <em>void</em>* data=pthread_getspecific(epoch_tss_key);</td></tr>
+<tr><th id="70">70</th><td>            <b>if</b>(!data)</td></tr>
+<tr><th id="71">71</th><td>            {</td></tr>
+<tr><th id="72">72</th><td>                data=malloc(<b>sizeof</b>(thread_detail::uintmax_atomic_t));</td></tr>
+<tr><th id="73">73</th><td>                <b>if</b>(!data) BOOST_THROW_EXCEPTION(std::bad_alloc());</td></tr>
+<tr><th id="74">74</th><td>                BOOST_VERIFY(!pthread_setspecific(epoch_tss_key,data));</td></tr>
+<tr><th id="75">75</th><td>                *<b>static_cast</b>&lt;thread_detail::uintmax_atomic_t*&gt;(data)=BOOST_THREAD_DETAIL_UINTMAX_ATOMIC_MAX_C;</td></tr>
+<tr><th id="76">76</th><td>            }</td></tr>
+<tr><th id="77">77</th><td>            <b>return</b> *<b>static_cast</b>&lt;thread_detail::uintmax_atomic_t*&gt;(data);</td></tr>
+<tr><th id="78">78</th><td>        }</td></tr>
+<tr><th id="79">79</th><td>    }</td></tr>
+<tr><th id="80">80</th><td></td></tr>
+<tr><th id="81">81</th><td>}</td></tr>
+<tr><th id="82">82</th><td><u>#<span data-ppcond="7">endif</span> //</u></td></tr>
+<tr><th id="83">83</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2024-Jun-14</em> from project boost-1.85.0 revision <em>1.85.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

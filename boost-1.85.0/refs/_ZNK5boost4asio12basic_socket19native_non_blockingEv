@@ -1,0 +1,84 @@
+<def f='boost-1.85.0/libs/asio/include/boost/asio/basic_socket.hpp' l='1370' ll='1373' type='bool boost::asio::basic_socket::native_non_blocking() const'/>
+<doc f='boost-1.85.0/libs/asio/include/boost/asio/basic_socket.hpp' l='1287'>/**
+   * This function is used to retrieve the non-blocking mode of the underlying
+   * native socket. This mode has no effect on the behaviour of the socket
+   * object&apos;s synchronous operations.
+   *
+   * @returns @c true if the underlying socket is in non-blocking mode and
+   * direct system calls may fail with boost::asio::error::would_block (or the
+   * equivalent system error).
+   *
+   * @note The current non-blocking mode is cached by the socket object.
+   * Consequently, the return value may be incorrect if the non-blocking mode
+   * was set directly on the native socket.
+   *
+   * @par Example
+   * This function is intended to allow the encapsulation of arbitrary
+   * non-blocking system calls as asynchronous operations, in a way that is
+   * transparent to the user of the socket object. The following example
+   * illustrates how Linux&apos;s @c sendfile system call might be encapsulated:
+   * @code template &lt;typename Handler&gt;
+   * struct sendfile_op
+   * {
+   *   tcp::socket&amp; sock_;
+   *   int fd_;
+   *   Handler handler_;
+   *   off_t offset_;
+   *   std::size_t total_bytes_transferred_;
+   *
+   *   // Function call operator meeting WriteHandler requirements.
+   *   // Used as the handler for the async_write_some operation.
+   *   void operator()(boost::system::error_code ec, std::size_t)
+   *   {
+   *     // Put the underlying socket into non-blocking mode.
+   *     if (!ec)
+   *       if (!sock_.native_non_blocking())
+   *         sock_.native_non_blocking(true, ec);
+   *
+   *     if (!ec)
+   *     {
+   *       for (;;)
+   *       {
+   *         // Try the system call.
+   *         errno = 0;
+   *         int n = ::sendfile(sock_.native_handle(), fd_, &amp;offset_, 65536);
+   *         ec = boost::system::error_code(n &lt; 0 ? errno : 0,
+   *             boost::asio::error::get_system_category());
+   *         total_bytes_transferred_ += ec ? 0 : n;
+   *
+   *         // Retry operation immediately if interrupted by signal.
+   *         if (ec == boost::asio::error::interrupted)
+   *           continue;
+   *
+   *         // Check if we need to run the operation again.
+   *         if (ec == boost::asio::error::would_block
+   *             || ec == boost::asio::error::try_again)
+   *         {
+   *           // We have to wait for the socket to become ready again.
+   *           sock_.async_wait(tcp::socket::wait_write, *this);
+   *           return;
+   *         }
+   *
+   *         if (ec || n == 0)
+   *         {
+   *           // An error occurred, or we have reached the end of the file.
+   *           // Either way we must exit the loop so we can call the handler.
+   *           break;
+   *         }
+   *
+   *         // Loop around to try calling sendfile again.
+   *       }
+   *     }
+   *
+   *     // Pass result back to user&apos;s handler.
+   *     handler_(ec, total_bytes_transferred_);
+   *   }
+   * };
+   *
+   * template &lt;typename Handler&gt;
+   * void async_sendfile(tcp::socket&amp; sock, int fd, Handler h)
+   * {
+   *   sendfile_op&lt;Handler&gt; op = { sock, fd, h, 0, 0 };
+   *   sock.async_wait(tcp::socket::wait_write, op);
+   * } @endcode
+   */</doc>

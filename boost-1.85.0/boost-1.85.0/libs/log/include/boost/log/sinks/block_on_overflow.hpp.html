@@ -1,0 +1,166 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>block_on_overflow.hpp source code [boost-1.85.0/libs/log/include/boost/log/sinks/block_on_overflow.hpp] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="boost::log::sinks::block_on_overflow "/>
+<link rel="stylesheet" href="../../../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'boost-1.85.0/libs/log/include/boost/log/sinks/block_on_overflow.hpp'; var root_path = '../../../../../../..'; var data_path = '../../../../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../../../..'>boost-1.85.0</a>/<a href='../../../../..'>libs</a>/<a href='../../../..'>log</a>/<a href='../../..'>include</a>/<a href='../..'>boost</a>/<a href='..'>log</a>/<a href='./'>sinks</a>/<a href='block_on_overflow.hpp.html'>block_on_overflow.hpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*</i></td></tr>
+<tr><th id="2">2</th><td><i> *          Copyright Andrey Semashev 2007 - 2015.</i></td></tr>
+<tr><th id="3">3</th><td><i> * Distributed under the Boost Software License, Version 1.0.</i></td></tr>
+<tr><th id="4">4</th><td><i> *    (See accompanying file LICENSE_1_0.txt or copy at</i></td></tr>
+<tr><th id="5">5</th><td><i> *          <a href="http://www.boost.org/LICENSE_1_0.txt">http://www.boost.org/LICENSE_1_0.txt</a>)</i></td></tr>
+<tr><th id="6">6</th><td><i> */</i></td></tr>
+<tr><th id="7">7</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="8">8</th><td><i class="doc"> * <span class="command">\file</span> <span class="verb">  block_on_overflow.hpp</span></i></td></tr>
+<tr><th id="9">9</th><td><i class="doc"> * <span class="command">\author</span> Andrey Semashev</i></td></tr>
+<tr><th id="10">10</th><td><i class="doc"> * <span class="command">\date</span>   04.01.2012</i></td></tr>
+<tr><th id="11">11</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="12">12</th><td><i class="doc"> * The header contains implementation of<span class="command"> \c</span> <span class="arg">block_on_overflow</span> strategy for handling</i></td></tr>
+<tr><th id="13">13</th><td><i class="doc"> * queue overflows in bounded queues for the asynchronous sink frontend.</i></td></tr>
+<tr><th id="14">14</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="15">15</th><td></td></tr>
+<tr><th id="16">16</th><td><u>#<span data-ppcond="16">ifndef</span> <span class="macro" data-ref="_M/BOOST_LOG_SINKS_BLOCK_ON_OVERFLOW_HPP_INCLUDED_">BOOST_LOG_SINKS_BLOCK_ON_OVERFLOW_HPP_INCLUDED_</span></u></td></tr>
+<tr><th id="17">17</th><td><u>#define <dfn class="macro" id="_M/BOOST_LOG_SINKS_BLOCK_ON_OVERFLOW_HPP_INCLUDED_" data-ref="_M/BOOST_LOG_SINKS_BLOCK_ON_OVERFLOW_HPP_INCLUDED_">BOOST_LOG_SINKS_BLOCK_ON_OVERFLOW_HPP_INCLUDED_</dfn></u></td></tr>
+<tr><th id="18">18</th><td></td></tr>
+<tr><th id="19">19</th><td><u>#include <a href="../detail/config.hpp.html">&lt;boost/log/detail/config.hpp&gt;</a></u></td></tr>
+<tr><th id="20">20</th><td></td></tr>
+<tr><th id="21">21</th><td><u>#<span data-ppcond="21">ifdef</span> <a class="macro" href="../../../../../config/include/boost/config/compiler/clang.hpp.html#11" data-ref="_M/BOOST_HAS_PRAGMA_ONCE">BOOST_HAS_PRAGMA_ONCE</a></u></td></tr>
+<tr><th id="22">22</th><td><u>#pragma once</u></td></tr>
+<tr><th id="23">23</th><td><u>#<span data-ppcond="21">endif</span></u></td></tr>
+<tr><th id="24">24</th><td></td></tr>
+<tr><th id="25">25</th><td><u>#<span data-ppcond="25">if</span> defined(<span class="macro" data-ref="_M/BOOST_LOG_NO_THREADS">BOOST_LOG_NO_THREADS</span>)</u></td></tr>
+<tr><th id="26">26</th><td><u>#error Boost.Log: This header content is only supported in multithreaded environment</u></td></tr>
+<tr><th id="27">27</th><td><u>#<span data-ppcond="25">endif</span></u></td></tr>
+<tr><th id="28">28</th><td></td></tr>
+<tr><th id="29">29</th><td><u>#include <a href="../../../../../intrusive/include/boost/intrusive/options.hpp.html">&lt;boost/intrusive/options.hpp&gt;</a></u></td></tr>
+<tr><th id="30">30</th><td><u>#include <a href="../../../../../intrusive/include/boost/intrusive/list.hpp.html">&lt;boost/intrusive/list.hpp&gt;</a></u></td></tr>
+<tr><th id="31">31</th><td><u>#include <a href="../../../../../intrusive/include/boost/intrusive/list_hook.hpp.html">&lt;boost/intrusive/list_hook.hpp&gt;</a></u></td></tr>
+<tr><th id="32">32</th><td><u>#include <a href="../../../../../thread/include/boost/thread/condition_variable.hpp.html">&lt;boost/thread/condition_variable.hpp&gt;</a></u></td></tr>
+<tr><th id="33">33</th><td><u>#include <a href="../core/record_view.hpp.html">&lt;boost/log/core/record_view.hpp&gt;</a></u></td></tr>
+<tr><th id="34">34</th><td><u>#include <a href="../detail/header.hpp.html">&lt;boost/log/detail/header.hpp&gt;</a></u></td></tr>
+<tr><th id="35">35</th><td></td></tr>
+<tr><th id="36">36</th><td><b>namespace</b> <span class="namespace">boost</span> {</td></tr>
+<tr><th id="37">37</th><td></td></tr>
+<tr><th id="38">38</th><td><a class="macro" href="../detail/config.hpp.html#375" title="namespace log { inline namespace v2s_mt_posix {" data-ref="_M/BOOST_LOG_OPEN_NAMESPACE">BOOST_LOG_OPEN_NAMESPACE</a></td></tr>
+<tr><th id="39">39</th><td></td></tr>
+<tr><th id="40">40</th><td><b>namespace</b> <span class="namespace">sinks</span> {</td></tr>
+<tr><th id="41">41</th><td></td></tr>
+<tr><th id="42">42</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="43">43</th><td><i class="doc"> * <span class="command">\brief</span> Blocking strategy for handling log record queue overflows</i></td></tr>
+<tr><th id="44">44</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="45">45</th><td><i class="doc"> * This strategy will cause enqueueing threads to block when the</i></td></tr>
+<tr><th id="46">46</th><td><i class="doc"> * log record queue overflows. The blocked threads will be woken as</i></td></tr>
+<tr><th id="47">47</th><td><i class="doc"> * soon as there appears free space in the queue, in the same order</i></td></tr>
+<tr><th id="48">48</th><td><i class="doc"> * they attempted to enqueue records.</i></td></tr>
+<tr><th id="49">49</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="50">50</th><td><b>class</b> <dfn class="type def" id="boost::log::sinks::block_on_overflow" title='boost::log::sinks::block_on_overflow' data-ref="boost::log::sinks::block_on_overflow">block_on_overflow</dfn></td></tr>
+<tr><th id="51">51</th><td>{</td></tr>
+<tr><th id="52">52</th><td><u>#<span data-ppcond="52">ifndef</span> <span class="macro" data-ref="_M/BOOST_LOG_DOXYGEN_PASS">BOOST_LOG_DOXYGEN_PASS</span></u></td></tr>
+<tr><th id="53">53</th><td><b>private</b>:</td></tr>
+<tr><th id="54">54</th><td>    <b>typedef</b> <span class="namespace">intrusive::</span><a class="type" href="../../../../../intrusive/include/boost/intrusive/intrusive_fwd.hpp.html#boost::intrusive::list_base_hook" title='boost::intrusive::list_base_hook' data-ref="boost::intrusive::list_base_hook">list_base_hook</a>&lt;</td></tr>
+<tr><th id="55">55</th><td>        <span class="namespace">intrusive::</span><a class="type" href="../../../../../intrusive/include/boost/intrusive/intrusive_fwd.hpp.html#boost::intrusive::link_mode" title='boost::intrusive::link_mode' data-ref="boost::intrusive::link_mode">link_mode</a>&lt; <span class="namespace">intrusive::</span><a class="enum" href="../../../../../intrusive/include/boost/intrusive/link_mode.hpp.html#boost::intrusive::auto_unlink" title='boost::intrusive::auto_unlink' data-ref="boost::intrusive::auto_unlink">auto_unlink</a> &gt;</td></tr>
+<tr><th id="56">56</th><td>    &gt; <dfn class="typedef" id="boost::log::sinks::block_on_overflow::thread_context_hook_t" title='boost::log::sinks::block_on_overflow::thread_context_hook_t' data-type='intrusive::list_base_hook&lt;intrusive::link_mode&lt;intrusive::auto_unlink&gt;&gt;' data-ref="boost::log::sinks::block_on_overflow::thread_context_hook_t">thread_context_hook_t</dfn>;</td></tr>
+<tr><th id="57">57</th><td></td></tr>
+<tr><th id="58">58</th><td>    <b>struct</b> <dfn class="type def" id="boost::log::sinks::block_on_overflow::thread_context" title='boost::log::sinks::block_on_overflow::thread_context' data-ref="boost::log::sinks::block_on_overflow::thread_context">thread_context</dfn> :</td></tr>
+<tr><th id="59">59</th><td>        <b>public</b> <a class="typedef" href="#boost::log::sinks::block_on_overflow::thread_context_hook_t" title='boost::log::sinks::block_on_overflow::thread_context_hook_t' data-type='intrusive::list_base_hook&lt;intrusive::link_mode&lt;intrusive::auto_unlink&gt;&gt;' data-ref="boost::log::sinks::block_on_overflow::thread_context_hook_t">thread_context_hook_t</a></td></tr>
+<tr><th id="60">60</th><td>    {</td></tr>
+<tr><th id="61">61</th><td>        <a class="type" href="../../../../../thread/include/boost/thread/pthread/condition_variable_fwd.hpp.html#boost::condition_variable" title='boost::condition_variable' data-ref="boost::condition_variable">condition_variable</a> <dfn class="decl field" id="boost::log::sinks::block_on_overflow::thread_context::cond" title='boost::log::sinks::block_on_overflow::thread_context::cond' data-ref="boost::log::sinks::block_on_overflow::thread_context::cond">cond</dfn>;</td></tr>
+<tr><th id="62">62</th><td>        <em>bool</em> <dfn class="decl field" id="boost::log::sinks::block_on_overflow::thread_context::result" title='boost::log::sinks::block_on_overflow::thread_context::result' data-ref="boost::log::sinks::block_on_overflow::thread_context::result">result</dfn>;</td></tr>
+<tr><th id="63">63</th><td></td></tr>
+<tr><th id="64">64</th><td>        <dfn class="decl def fn" id="_ZN5boost3log12v2s_mt_posix5sinks17block_on_overflow14thread_contextC1Ev" title='boost::log::sinks::block_on_overflow::thread_context::thread_context' data-ref="_ZN5boost3log12v2s_mt_posix5sinks17block_on_overflow14thread_contextC1Ev">thread_context</dfn>() : <a class="member field" href="#boost::log::sinks::block_on_overflow::thread_context::result" title='boost::log::sinks::block_on_overflow::thread_context::result' data-ref="boost::log::sinks::block_on_overflow::thread_context::result">result</a>(<b>true</b>) {}</td></tr>
+<tr><th id="65">65</th><td>    };</td></tr>
+<tr><th id="66">66</th><td></td></tr>
+<tr><th id="67">67</th><td>    <b>typedef</b> <span class="namespace">intrusive::</span><a class="type" href="../../../../../intrusive/include/boost/intrusive/intrusive_fwd.hpp.html#boost::intrusive::list" title='boost::intrusive::list' data-ref="boost::intrusive::list">list</a>&lt;</td></tr>
+<tr><th id="68">68</th><td>        <a class="type" href="#boost::log::sinks::block_on_overflow::thread_context" title='boost::log::sinks::block_on_overflow::thread_context' data-ref="boost::log::sinks::block_on_overflow::thread_context">thread_context</a>,</td></tr>
+<tr><th id="69">69</th><td>        <span class="namespace">intrusive::</span><a class="type" href="../../../../../intrusive/include/boost/intrusive/intrusive_fwd.hpp.html#boost::intrusive::base_hook" title='boost::intrusive::base_hook' data-ref="boost::intrusive::base_hook">base_hook</a>&lt; <a class="typedef" href="#boost::log::sinks::block_on_overflow::thread_context_hook_t" title='boost::log::sinks::block_on_overflow::thread_context_hook_t' data-type='intrusive::list_base_hook&lt;intrusive::link_mode&lt;intrusive::auto_unlink&gt;&gt;' data-ref="boost::log::sinks::block_on_overflow::thread_context_hook_t">thread_context_hook_t</a> &gt;,</td></tr>
+<tr><th id="70">70</th><td>        <span class="namespace">intrusive::</span><a class="type" href="../../../../../intrusive/include/boost/intrusive/intrusive_fwd.hpp.html#boost::intrusive::constant_time_size" title='boost::intrusive::constant_time_size' data-ref="boost::intrusive::constant_time_size">constant_time_size</a>&lt; <b>false</b> &gt;</td></tr>
+<tr><th id="71">71</th><td>    &gt; <dfn class="typedef" id="boost::log::sinks::block_on_overflow::thread_contexts" title='boost::log::sinks::block_on_overflow::thread_contexts' data-type='intrusive::list&lt;thread_context, intrusive::base_hook&lt;thread_context_hook_t&gt;, intrusive::constant_time_size&lt;false&gt;&gt;' data-ref="boost::log::sinks::block_on_overflow::thread_contexts">thread_contexts</dfn>;</td></tr>
+<tr><th id="72">72</th><td></td></tr>
+<tr><th id="73">73</th><td><b>private</b>:</td></tr>
+<tr><th id="74">74</th><td>    <i class="doc">//! Blocked threads</i></td></tr>
+<tr><th id="75">75</th><td>    <a class="typedef" href="#boost::log::sinks::block_on_overflow::thread_contexts" title='boost::log::sinks::block_on_overflow::thread_contexts' data-type='intrusive::list&lt;thread_context, intrusive::base_hook&lt;thread_context_hook_t&gt;, intrusive::constant_time_size&lt;false&gt;&gt;' data-ref="boost::log::sinks::block_on_overflow::thread_contexts">thread_contexts</a> <dfn class="decl field" id="boost::log::sinks::block_on_overflow::m_thread_contexts" title='boost::log::sinks::block_on_overflow::m_thread_contexts' data-ref="boost::log::sinks::block_on_overflow::m_thread_contexts">m_thread_contexts</dfn>;</td></tr>
+<tr><th id="76">76</th><td></td></tr>
+<tr><th id="77">77</th><td><b>public</b>:</td></tr>
+<tr><th id="78">78</th><td>    <i class="doc">/*!</i></td></tr>
+<tr><th id="79">79</th><td><i class="doc">     * Default constructor.</i></td></tr>
+<tr><th id="80">80</th><td><i class="doc">     */</i></td></tr>
+<tr><th id="81">81</th><td>    <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#770" title="block_on_overflow() = default;" data-ref="_M/BOOST_DEFAULTED_FUNCTION">BOOST_DEFAULTED_FUNCTION</a>(<dfn class="decl def fn" id="_ZN5boost3log12v2s_mt_posix5sinks17block_on_overflowC1Ev" title='boost::log::sinks::block_on_overflow::block_on_overflow' data-ref="_ZN5boost3log12v2s_mt_posix5sinks17block_on_overflowC1Ev">block_on_overflow</dfn>(), {})</td></tr>
+<tr><th id="82">82</th><td></td></tr>
+<tr><th id="83">83</th><td>    <i class="doc">/*!</i></td></tr>
+<tr><th id="84">84</th><td><i class="doc">     * This method is called by the queue when overflow is detected.</i></td></tr>
+<tr><th id="85">85</th><td><i class="doc">     *</i></td></tr>
+<tr><th id="86">86</th><td><i class="doc">     * <span class="command">\param</span> <span class="arg">lock</span> An internal lock that protects the queue</i></td></tr>
+<tr><th id="87">87</th><td><i class="doc">     *</i></td></tr>
+<tr><th id="88">88</th><td><i class="doc">     * <span class="command">\retval</span> true Attempt to enqueue the record again.</i></td></tr>
+<tr><th id="89">89</th><td><i class="doc">     * <span class="command">\retval</span> false Discard the record.</i></td></tr>
+<tr><th id="90">90</th><td><i class="doc">     */</i></td></tr>
+<tr><th id="91">91</th><td>    <b>template</b>&lt; <b>typename</b> LockT &gt;</td></tr>
+<tr><th id="92">92</th><td>    <em>bool</em> <dfn class="decl def fn" id="_ZN5boost3log12v2s_mt_posix5sinks17block_on_overflow11on_overflowERKNS1_11record_viewERT_" title='boost::log::sinks::block_on_overflow::on_overflow' data-ref="_ZN5boost3log12v2s_mt_posix5sinks17block_on_overflow11on_overflowERKNS1_11record_viewERT_">on_overflow</dfn>(<a class="type" href="../core/record_view.hpp.html#boost::log::record_view" title='boost::log::record_view' data-ref="boost::log::record_view">record_view</a> <em>const</em>&amp;, LockT&amp; <dfn class="local col7 decl" id="217lock" title='lock' data-type='LockT &amp;' data-ref="217lock">lock</dfn>)</td></tr>
+<tr><th id="93">93</th><td>    {</td></tr>
+<tr><th id="94">94</th><td>        <a class="type" href="#boost::log::sinks::block_on_overflow::thread_context" title='boost::log::sinks::block_on_overflow::thread_context' data-ref="boost::log::sinks::block_on_overflow::thread_context">thread_context</a> <a class="ref fn fake" href="#_ZN5boost3log12v2s_mt_posix5sinks17block_on_overflow14thread_contextC1Ev" title='boost::log::sinks::block_on_overflow::thread_context::thread_context' data-ref="_ZN5boost3log12v2s_mt_posix5sinks17block_on_overflow14thread_contextC1Ev"></a><dfn class="local col8 decl" id="218context" title='context' data-type='boost::log::sinks::block_on_overflow::thread_context' data-ref="218context">context</dfn>;</td></tr>
+<tr><th id="95">95</th><td>        <a class="member field" href="#boost::log::sinks::block_on_overflow::m_thread_contexts" title='boost::log::sinks::block_on_overflow::m_thread_contexts' data-ref="boost::log::sinks::block_on_overflow::m_thread_contexts">m_thread_contexts</a>.<a class="ref fn" href="../../../../../intrusive/include/boost/intrusive/list.hpp.html#_ZN5boost9intrusive9list_impl9push_backENS0_14pointer_traitsINT_7pointerEE9referenceE" title='boost::intrusive::list_impl::push_back' data-ref="_ZN5boost9intrusive9list_impl9push_backENS0_14pointer_traitsINT_7pointerEE9referenceE">push_back</a>(<span class='inlayHint'>value&amp;:&nbsp;</span><span class='refarg'><a class="local col8 ref" href="#218context" title='context' data-ref="218context">context</a></span>);</td></tr>
+<tr><th id="96">96</th><td>        <b>do</b></td></tr>
+<tr><th id="97">97</th><td>        {</td></tr>
+<tr><th id="98">98</th><td>            <a class="local col8 ref" href="#218context" title='context' data-ref="218context">context</a>.<a class="ref field" href="#boost::log::sinks::block_on_overflow::thread_context::cond" title='boost::log::sinks::block_on_overflow::thread_context::cond' data-ref="boost::log::sinks::block_on_overflow::thread_context::cond">cond</a>.wait(<a class="local col7 ref" href="#217lock" title='lock' data-ref="217lock">lock</a>);</td></tr>
+<tr><th id="99">99</th><td>        }</td></tr>
+<tr><th id="100">100</th><td>        <b>while</b> (<a class="local col8 ref" href="#218context" title='context' data-ref="218context">context</a>.<a class="ref fn" href="../../../../../intrusive/include/boost/intrusive/detail/generic_hook.hpp.html#_ZNK5boost9intrusive12generic_hook9is_linkedEv" title='boost::intrusive::generic_hook::is_linked' data-ref="_ZNK5boost9intrusive12generic_hook9is_linkedEv">is_linked</a>());</td></tr>
+<tr><th id="101">101</th><td></td></tr>
+<tr><th id="102">102</th><td>        <b>return</b> <a class="local col8 ref" href="#218context" title='context' data-ref="218context">context</a>.<a class="ref field" href="#boost::log::sinks::block_on_overflow::thread_context::result" title='boost::log::sinks::block_on_overflow::thread_context::result' data-ref="boost::log::sinks::block_on_overflow::thread_context::result">result</a>;</td></tr>
+<tr><th id="103">103</th><td>    }</td></tr>
+<tr><th id="104">104</th><td></td></tr>
+<tr><th id="105">105</th><td>    <i class="doc">/*!</i></td></tr>
+<tr><th id="106">106</th><td><i class="doc">     * This method is called by the queue when there appears a free space.</i></td></tr>
+<tr><th id="107">107</th><td><i class="doc">     * The internal lock protecting the queue is locked when calling this method.</i></td></tr>
+<tr><th id="108">108</th><td><i class="doc">     */</i></td></tr>
+<tr><th id="109">109</th><td>    <em>void</em> <dfn class="decl def fn" id="_ZN5boost3log12v2s_mt_posix5sinks17block_on_overflow24on_queue_space_availableEv" title='boost::log::sinks::block_on_overflow::on_queue_space_available' data-ref="_ZN5boost3log12v2s_mt_posix5sinks17block_on_overflow24on_queue_space_availableEv">on_queue_space_available</dfn>()</td></tr>
+<tr><th id="110">110</th><td>    {</td></tr>
+<tr><th id="111">111</th><td>        <b>if</b> (!<a class="member field" href="#boost::log::sinks::block_on_overflow::m_thread_contexts" title='boost::log::sinks::block_on_overflow::m_thread_contexts' data-ref="boost::log::sinks::block_on_overflow::m_thread_contexts">m_thread_contexts</a>.<a class="ref fn" href="../../../../../intrusive/include/boost/intrusive/list.hpp.html#_ZNK5boost9intrusive9list_impl5emptyEv" title='boost::intrusive::list_impl::empty' data-ref="_ZNK5boost9intrusive9list_impl5emptyEv">empty</a>())</td></tr>
+<tr><th id="112">112</th><td>        {</td></tr>
+<tr><th id="113">113</th><td>            <a class="member field" href="#boost::log::sinks::block_on_overflow::m_thread_contexts" title='boost::log::sinks::block_on_overflow::m_thread_contexts' data-ref="boost::log::sinks::block_on_overflow::m_thread_contexts">m_thread_contexts</a>.<a class="ref fn" href="../../../../../intrusive/include/boost/intrusive/list.hpp.html#_ZN5boost9intrusive9list_impl5frontEv" title='boost::intrusive::list_impl::front' data-ref="_ZN5boost9intrusive9list_impl5frontEv">front</a>().<a class="ref field" href="#boost::log::sinks::block_on_overflow::thread_context::cond" title='boost::log::sinks::block_on_overflow::thread_context::cond' data-ref="boost::log::sinks::block_on_overflow::thread_context::cond">cond</a>.<a class="ref fn" href="../../../../../thread/include/boost/thread/pthread/condition_variable_fwd.hpp.html#_ZN5boost18condition_variable10notify_oneEv" title='boost::condition_variable::notify_one' data-ref="_ZN5boost18condition_variable10notify_oneEv">notify_one</a>();</td></tr>
+<tr><th id="114">114</th><td>            <a class="member field" href="#boost::log::sinks::block_on_overflow::m_thread_contexts" title='boost::log::sinks::block_on_overflow::m_thread_contexts' data-ref="boost::log::sinks::block_on_overflow::m_thread_contexts">m_thread_contexts</a>.<a class="ref fn" href="../../../../../intrusive/include/boost/intrusive/list.hpp.html#_ZN5boost9intrusive9list_impl9pop_frontEv" title='boost::intrusive::list_impl::pop_front' data-ref="_ZN5boost9intrusive9list_impl9pop_frontEv">pop_front</a>();</td></tr>
+<tr><th id="115">115</th><td>        }</td></tr>
+<tr><th id="116">116</th><td>    }</td></tr>
+<tr><th id="117">117</th><td></td></tr>
+<tr><th id="118">118</th><td>    <i class="doc">/*!</i></td></tr>
+<tr><th id="119">119</th><td><i class="doc">     * This method is called by the queue to interrupt any possible waits in<span class="command"> \c</span> <span class="arg">on_overflow.</span></i></td></tr>
+<tr><th id="120">120</th><td><i class="doc">     * The internal lock protecting the queue is locked when calling this method.</i></td></tr>
+<tr><th id="121">121</th><td><i class="doc">     */</i></td></tr>
+<tr><th id="122">122</th><td>    <em>void</em> <dfn class="decl def fn" id="_ZN5boost3log12v2s_mt_posix5sinks17block_on_overflow9interruptEv" title='boost::log::sinks::block_on_overflow::interrupt' data-ref="_ZN5boost3log12v2s_mt_posix5sinks17block_on_overflow9interruptEv">interrupt</dfn>()</td></tr>
+<tr><th id="123">123</th><td>    {</td></tr>
+<tr><th id="124">124</th><td>        <b>while</b> (!<a class="member field" href="#boost::log::sinks::block_on_overflow::m_thread_contexts" title='boost::log::sinks::block_on_overflow::m_thread_contexts' data-ref="boost::log::sinks::block_on_overflow::m_thread_contexts">m_thread_contexts</a>.<a class="ref fn" href="../../../../../intrusive/include/boost/intrusive/list.hpp.html#_ZNK5boost9intrusive9list_impl5emptyEv" title='boost::intrusive::list_impl::empty' data-ref="_ZNK5boost9intrusive9list_impl5emptyEv">empty</a>())</td></tr>
+<tr><th id="125">125</th><td>        {</td></tr>
+<tr><th id="126">126</th><td>            <a class="type" href="#boost::log::sinks::block_on_overflow::thread_context" title='boost::log::sinks::block_on_overflow::thread_context' data-ref="boost::log::sinks::block_on_overflow::thread_context">thread_context</a>&amp; <dfn class="local col9 decl" id="219context" title='context' data-type='boost::log::sinks::block_on_overflow::thread_context &amp;' data-ref="219context">context</dfn> = <a class="member field" href="#boost::log::sinks::block_on_overflow::m_thread_contexts" title='boost::log::sinks::block_on_overflow::m_thread_contexts' data-ref="boost::log::sinks::block_on_overflow::m_thread_contexts">m_thread_contexts</a>.<a class="ref fn" href="../../../../../intrusive/include/boost/intrusive/list.hpp.html#_ZN5boost9intrusive9list_impl5frontEv" title='boost::intrusive::list_impl::front' data-ref="_ZN5boost9intrusive9list_impl5frontEv">front</a>();</td></tr>
+<tr><th id="127">127</th><td>            <a class="local col9 ref" href="#219context" title='context' data-ref="219context">context</a>.<a class="ref field" href="#boost::log::sinks::block_on_overflow::thread_context::result" title='boost::log::sinks::block_on_overflow::thread_context::result' data-ref="boost::log::sinks::block_on_overflow::thread_context::result">result</a> = <b>false</b>;</td></tr>
+<tr><th id="128">128</th><td>            <a class="local col9 ref" href="#219context" title='context' data-ref="219context">context</a>.<a class="ref field" href="#boost::log::sinks::block_on_overflow::thread_context::cond" title='boost::log::sinks::block_on_overflow::thread_context::cond' data-ref="boost::log::sinks::block_on_overflow::thread_context::cond">cond</a>.<a class="ref fn" href="../../../../../thread/include/boost/thread/pthread/condition_variable_fwd.hpp.html#_ZN5boost18condition_variable10notify_oneEv" title='boost::condition_variable::notify_one' data-ref="_ZN5boost18condition_variable10notify_oneEv">notify_one</a>();</td></tr>
+<tr><th id="129">129</th><td>            <a class="member field" href="#boost::log::sinks::block_on_overflow::m_thread_contexts" title='boost::log::sinks::block_on_overflow::m_thread_contexts' data-ref="boost::log::sinks::block_on_overflow::m_thread_contexts">m_thread_contexts</a>.<a class="ref fn" href="../../../../../intrusive/include/boost/intrusive/list.hpp.html#_ZN5boost9intrusive9list_impl9pop_frontEv" title='boost::intrusive::list_impl::pop_front' data-ref="_ZN5boost9intrusive9list_impl9pop_frontEv">pop_front</a>();</td></tr>
+<tr><th id="130">130</th><td>        }</td></tr>
+<tr><th id="131">131</th><td>    }</td></tr>
+<tr><th id="132">132</th><td></td></tr>
+<tr><th id="133">133</th><td>    <i>//  Copying prohibited</i></td></tr>
+<tr><th id="134">134</th><td>    <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#776" title="block_on_overflow(block_on_overflow const&amp;) = delete;" data-ref="_M/BOOST_DELETED_FUNCTION">BOOST_DELETED_FUNCTION</a>(<dfn class="decl def fn" id="_ZN5boost3log12v2s_mt_posix5sinks17block_on_overflowC1ERKS3_" title='boost::log::sinks::block_on_overflow::block_on_overflow' data-ref="_ZN5boost3log12v2s_mt_posix5sinks17block_on_overflowC1ERKS3_">block_on_overflow</dfn>(<a class="type" href="#boost::log::sinks::block_on_overflow" title='boost::log::sinks::block_on_overflow' data-ref="boost::log::sinks::block_on_overflow">block_on_overflow</a> <em>const</em>&amp;))</td></tr>
+<tr><th id="135">135</th><td>    <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#776" title="block_on_overflow&amp; operator= (block_on_overflow const&amp;) = delete;" data-ref="_M/BOOST_DELETED_FUNCTION">BOOST_DELETED_FUNCTION</a>(<a class="type" href="#boost::log::sinks::block_on_overflow" title='boost::log::sinks::block_on_overflow' data-ref="boost::log::sinks::block_on_overflow">block_on_overflow</a>&amp; <b>operator</b>= (<a class="type" href="#boost::log::sinks::block_on_overflow" title='boost::log::sinks::block_on_overflow' data-ref="boost::log::sinks::block_on_overflow">block_on_overflow</a> <em>const</em>&amp;))</td></tr>
+<tr><th id="136">136</th><td><u>#<span data-ppcond="52">endif</span> // BOOST_LOG_DOXYGEN_PASS</u></td></tr>
+<tr><th id="137">137</th><td>};</td></tr>
+<tr><th id="138">138</th><td></td></tr>
+<tr><th id="139">139</th><td>} <i>// namespace sinks</i></td></tr>
+<tr><th id="140">140</th><td></td></tr>
+<tr><th id="141">141</th><td><a class="macro" href="../detail/config.hpp.html#376" title="}}" data-ref="_M/BOOST_LOG_CLOSE_NAMESPACE">BOOST_LOG_CLOSE_NAMESPACE</a> <i>// namespace log</i></td></tr>
+<tr><th id="142">142</th><td></td></tr>
+<tr><th id="143">143</th><td>} <i>// namespace boost</i></td></tr>
+<tr><th id="144">144</th><td></td></tr>
+<tr><th id="145">145</th><td><u>#include <a href="../detail/footer.hpp.html">&lt;boost/log/detail/footer.hpp&gt;</a></u></td></tr>
+<tr><th id="146">146</th><td></td></tr>
+<tr><th id="147">147</th><td><u>#<span data-ppcond="16">endif</span> // BOOST_LOG_SINKS_BLOCK_ON_OVERFLOW_HPP_INCLUDED_</u></td></tr>
+<tr><th id="148">148</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../../../../src/setup/init_from_settings.cpp.html'>boost-1.85.0/libs/log/src/setup/init_from_settings.cpp</a><br/>Generated on <em>2024-Jun-14</em> from project boost-1.85.0 revision <em>1.85.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

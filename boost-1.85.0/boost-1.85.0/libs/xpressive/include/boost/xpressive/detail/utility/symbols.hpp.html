@@ -1,0 +1,303 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>symbols.hpp source code [boost-1.85.0/libs/xpressive/include/boost/xpressive/detail/utility/symbols.hpp] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="boost::xpressive::detail::symbols "/>
+<link rel="stylesheet" href="../../../../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'boost-1.85.0/libs/xpressive/include/boost/xpressive/detail/utility/symbols.hpp'; var root_path = '../../../../../../../..'; var data_path = '../../../../../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../../../../..'>boost-1.85.0</a>/<a href='../../../../../..'>libs</a>/<a href='../../../../..'>xpressive</a>/<a href='../../../..'>include</a>/<a href='../../..'>boost</a>/<a href='../..'>xpressive</a>/<a href='..'>detail</a>/<a href='./'>utility</a>/<a href='symbols.hpp.html'>symbols.hpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="2">2</th><td><i>/// \file symbols.hpp</i></td></tr>
+<tr><th id="3">3</th><td><i>///   Contains the Ternary Search Trie implementation.</i></td></tr>
+<tr><th id="4">4</th><td><i>/// Based on the following papers:</i></td></tr>
+<tr><th id="5">5</th><td><i>/// J. Bentley and R. Sedgewick. (1998) Ternary search trees. Dr. Dobbs Journal</i></td></tr>
+<tr><th id="6">6</th><td><i>/// G. Badr and B.J. Oommen. (2005) Self-Adjusting of Ternary Search Tries Using</i></td></tr>
+<tr><th id="7">7</th><td><i>///     Conditional Rotations and Randomized Heuristics</i></td></tr>
+<tr><th id="8">8</th><td><i>//</i></td></tr>
+<tr><th id="9">9</th><td><i>//  Copyright 2007 David Jenkins.</i></td></tr>
+<tr><th id="10">10</th><td><i>//  Copyright 2007 Eric Niebler.</i></td></tr>
+<tr><th id="11">11</th><td><i>//</i></td></tr>
+<tr><th id="12">12</th><td><i>//  Distributed under the Boost Software License, Version 1.0. (See</i></td></tr>
+<tr><th id="13">13</th><td><i>//  accompanying file LICENSE_1_0.txt or copy at</i></td></tr>
+<tr><th id="14">14</th><td><i>//  <a href="http://www.boost.org/LICENSE_1_0.txt">http://www.boost.org/LICENSE_1_0.txt</a>)</i></td></tr>
+<tr><th id="15">15</th><td></td></tr>
+<tr><th id="16">16</th><td><u>#<span data-ppcond="16">ifndef</span> <span class="macro" data-ref="_M/BOOST_XPRESSIVE_DETAIL_SYMBOLS_HPP_DRJ_06_11_2007">BOOST_XPRESSIVE_DETAIL_SYMBOLS_HPP_DRJ_06_11_2007</span></u></td></tr>
+<tr><th id="17">17</th><td><u>#define <dfn class="macro" id="_M/BOOST_XPRESSIVE_DETAIL_SYMBOLS_HPP_DRJ_06_11_2007" data-ref="_M/BOOST_XPRESSIVE_DETAIL_SYMBOLS_HPP_DRJ_06_11_2007">BOOST_XPRESSIVE_DETAIL_SYMBOLS_HPP_DRJ_06_11_2007</dfn></u></td></tr>
+<tr><th id="18">18</th><td></td></tr>
+<tr><th id="19">19</th><td><i>// MS compatible compilers support #pragma once</i></td></tr>
+<tr><th id="20">20</th><td><u>#<span data-ppcond="20">if</span> defined(<span class="macro" data-ref="_M/_MSC_VER">_MSC_VER</span>)</u></td></tr>
+<tr><th id="21">21</th><td><u># pragma once</u></td></tr>
+<tr><th id="22">22</th><td><u>#<span data-ppcond="20">endif</span></u></td></tr>
+<tr><th id="23">23</th><td></td></tr>
+<tr><th id="24">24</th><td><u>#include <a href="../../../../../../core/include/boost/noncopyable.hpp.html">&lt;boost/noncopyable.hpp&gt;</a></u></td></tr>
+<tr><th id="25">25</th><td><u>#include <a href="../../../../../../range/include/boost/range/begin.hpp.html">&lt;boost/range/begin.hpp&gt;</a></u></td></tr>
+<tr><th id="26">26</th><td><u>#include <a href="../../../../../../range/include/boost/range/end.hpp.html">&lt;boost/range/end.hpp&gt;</a></u></td></tr>
+<tr><th id="27">27</th><td><u>#include <a href="../../../../../../range/include/boost/range/value_type.hpp.html">&lt;boost/range/value_type.hpp&gt;</a></u></td></tr>
+<tr><th id="28">28</th><td><u>#include <a href="../../../../../../range/include/boost/range/const_iterator.hpp.html">&lt;boost/range/const_iterator.hpp&gt;</a></u></td></tr>
+<tr><th id="29">29</th><td><u>#include <a href="../../../../../../smart_ptr/include/boost/shared_ptr.hpp.html">&lt;boost/shared_ptr.hpp&gt;</a></u></td></tr>
+<tr><th id="30">30</th><td></td></tr>
+<tr><th id="31">31</th><td><b>namespace</b> <span class="namespace">boost</span> { <b>namespace</b> <span class="namespace">xpressive</span> { <b>namespace</b> <span class="namespace">detail</span></td></tr>
+<tr><th id="32">32</th><td>{</td></tr>
+<tr><th id="33">33</th><td></td></tr>
+<tr><th id="34">34</th><td>    <i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="35">35</th><td><i>    // symbols (using a ternary search trie)</i></td></tr>
+<tr><th id="36">36</th><td><i>    //</i></td></tr>
+<tr><th id="37">37</th><td>    <b>template</b>&lt;<b>typename</b> Map&gt;</td></tr>
+<tr><th id="38">38</th><td>    <b>struct</b> <dfn class="type def" id="boost::xpressive::detail::symbols" title='boost::xpressive::detail::symbols' data-ref="boost::xpressive::detail::symbols">symbols</dfn></td></tr>
+<tr><th id="39">39</th><td>    {</td></tr>
+<tr><th id="40">40</th><td>        <b>typedef</b> <b>typename</b> <a class="type" href="../../../../../../range/include/boost/range/range_fwd.hpp.html#boost::range_value" title='boost::range_value' data-ref="boost::range_value">range_value</a>&lt;Map&gt;::type::first_type <dfn class="typedef" id="boost::xpressive::detail::symbols::key_type" title='boost::xpressive::detail::symbols::key_type' data-type='typename range_value&lt;Map&gt;::type::first_type' data-ref="boost::xpressive::detail::symbols::key_type">key_type</dfn>;</td></tr>
+<tr><th id="41">41</th><td>        <b>typedef</b> <b>typename</b> <a class="type" href="../../../../../../range/include/boost/range/range_fwd.hpp.html#boost::range_value" title='boost::range_value' data-ref="boost::range_value">range_value</a>&lt;Map&gt;::type::second_type <dfn class="typedef" id="boost::xpressive::detail::symbols::value_type" title='boost::xpressive::detail::symbols::value_type' data-type='typename range_value&lt;Map&gt;::type::second_type' data-ref="boost::xpressive::detail::symbols::value_type">value_type</dfn>;</td></tr>
+<tr><th id="42">42</th><td>        <b>typedef</b> <b>typename</b> <a class="type" href="../../../../../../range/include/boost/range/range_fwd.hpp.html#boost::range_value" title='boost::range_value' data-ref="boost::range_value">range_value</a>&lt;<a class="typedef" href="#boost::xpressive::detail::symbols::key_type" title='boost::xpressive::detail::symbols::key_type' data-type='typename range_value&lt;Map&gt;::type::first_type' data-ref="boost::xpressive::detail::symbols::key_type">key_type</a>&gt;::type <dfn class="typedef" id="boost::xpressive::detail::symbols::char_type" title='boost::xpressive::detail::symbols::char_type' data-type='typename range_value&lt;key_type&gt;::type' data-ref="boost::xpressive::detail::symbols::char_type">char_type</dfn>;</td></tr>
+<tr><th id="43">43</th><td>        <b>typedef</b> <b>typename</b> <a class="type" href="../../../../../../range/include/boost/range/range_fwd.hpp.html#boost::range_const_iterator" title='boost::range_const_iterator' data-ref="boost::range_const_iterator">range_const_iterator</a>&lt;Map&gt;::type <dfn class="typedef" id="boost::xpressive::detail::symbols::iterator" title='boost::xpressive::detail::symbols::iterator' data-type='typename range_const_iterator&lt;Map&gt;::type' data-ref="boost::xpressive::detail::symbols::iterator">iterator</dfn>;</td></tr>
+<tr><th id="44">44</th><td>        <b>typedef</b> <b>typename</b> <a class="type" href="../../../../../../range/include/boost/range/range_fwd.hpp.html#boost::range_const_iterator" title='boost::range_const_iterator' data-ref="boost::range_const_iterator">range_const_iterator</a>&lt;<a class="typedef" href="#boost::xpressive::detail::symbols::key_type" title='boost::xpressive::detail::symbols::key_type' data-type='typename range_value&lt;Map&gt;::type::first_type' data-ref="boost::xpressive::detail::symbols::key_type">key_type</a>&gt;::type <dfn class="typedef" id="boost::xpressive::detail::symbols::key_iterator" title='boost::xpressive::detail::symbols::key_iterator' data-type='typename range_const_iterator&lt;key_type&gt;::type' data-ref="boost::xpressive::detail::symbols::key_iterator">key_iterator</dfn>;</td></tr>
+<tr><th id="45">45</th><td>        <b>typedef</b> <a class="typedef" href="#boost::xpressive::detail::symbols::value_type" title='boost::xpressive::detail::symbols::value_type' data-type='typename range_value&lt;Map&gt;::type::second_type' data-ref="boost::xpressive::detail::symbols::value_type">value_type</a> <em>const</em> *<dfn class="typedef" id="boost::xpressive::detail::symbols::result_type" title='boost::xpressive::detail::symbols::result_type' data-type='const boost::xpressive::detail::symbols::value_type *' data-ref="boost::xpressive::detail::symbols::result_type">result_type</dfn>;</td></tr>
+<tr><th id="46">46</th><td></td></tr>
+<tr><th id="47">47</th><td>        <i>// copies of this symbol table share the TST</i></td></tr>
+<tr><th id="48">48</th><td></td></tr>
+<tr><th id="49">49</th><td>        <b>template</b>&lt;<b>typename</b> Trans&gt;</td></tr>
+<tr><th id="50">50</th><td>        <em>void</em> <dfn class="decl def fn" id="_ZN5boost9xpressive6detail7symbols4loadERKT_TL0__" title='boost::xpressive::detail::symbols::load' data-ref="_ZN5boost9xpressive6detail7symbols4loadERKT_TL0__">load</dfn>(Map <em>const</em> &amp;<dfn class="local col4 decl" id="8084map" title='map' data-type='const Map &amp;' data-ref="8084map">map</dfn>, Trans <dfn class="local col5 decl" id="8085trans" title='trans' data-type='Trans' data-ref="8085trans">trans</dfn>)</td></tr>
+<tr><th id="51">51</th><td>        {</td></tr>
+<tr><th id="52">52</th><td>            <a class="typedef" href="#boost::xpressive::detail::symbols::iterator" title='boost::xpressive::detail::symbols::iterator' data-type='typename range_const_iterator&lt;Map&gt;::type' data-ref="boost::xpressive::detail::symbols::iterator">iterator</a> <dfn class="local col6 decl" id="8086begin" title='begin' data-type='boost::xpressive::detail::symbols::iterator' data-ref="8086begin">begin</dfn> = <span class="namespace">boost::</span>begin(<a class="local col4 ref" href="#8084map" title='map' data-ref="8084map">map</a>);</td></tr>
+<tr><th id="53">53</th><td>            <a class="typedef" href="#boost::xpressive::detail::symbols::iterator" title='boost::xpressive::detail::symbols::iterator' data-type='typename range_const_iterator&lt;Map&gt;::type' data-ref="boost::xpressive::detail::symbols::iterator">iterator</a> <dfn class="local col7 decl" id="8087end" title='end' data-type='boost::xpressive::detail::symbols::iterator' data-ref="8087end">end</dfn> = <span class="namespace">boost::</span>end(<a class="local col4 ref" href="#8084map" title='map' data-ref="8084map">map</a>);</td></tr>
+<tr><th id="54">54</th><td>            <a class="type" href="#boost::xpressive::detail::symbols::node" title='boost::xpressive::detail::symbols::node' data-ref="boost::xpressive::detail::symbols::node">node</a>* <dfn class="local col8 decl" id="8088root_p" title='root_p' data-type='boost::xpressive::detail::symbols::node *' data-ref="8088root_p">root_p</dfn> = <b>this</b>-&gt;root.get();</td></tr>
+<tr><th id="55">55</th><td>            <b>for</b>(; <a class="local col6 ref" href="#8086begin" title='begin' data-ref="8086begin">begin</a> != <a class="local col7 ref" href="#8087end" title='end' data-ref="8087end">end</a>; ++<a class="local col6 ref" href="#8086begin" title='begin' data-ref="8086begin">begin</a>)</td></tr>
+<tr><th id="56">56</th><td>            {</td></tr>
+<tr><th id="57">57</th><td>                <a class="typedef" href="#boost::xpressive::detail::symbols::key_iterator" title='boost::xpressive::detail::symbols::key_iterator' data-type='typename range_const_iterator&lt;key_type&gt;::type' data-ref="boost::xpressive::detail::symbols::key_iterator">key_iterator</a> <dfn class="local col9 decl" id="8089kbegin" title='kbegin' data-type='boost::xpressive::detail::symbols::key_iterator' data-ref="8089kbegin">kbegin</dfn> = <span class="namespace">boost::</span>begin(<a class="local col6 ref" href="#8086begin" title='begin' data-ref="8086begin">begin</a>-&gt;first);</td></tr>
+<tr><th id="58">58</th><td>                <a class="typedef" href="#boost::xpressive::detail::symbols::key_iterator" title='boost::xpressive::detail::symbols::key_iterator' data-type='typename range_const_iterator&lt;key_type&gt;::type' data-ref="boost::xpressive::detail::symbols::key_iterator">key_iterator</a> <dfn class="local col0 decl" id="8090kend" title='kend' data-type='boost::xpressive::detail::symbols::key_iterator' data-ref="8090kend">kend</dfn> = <span class="namespace">boost::</span>end(<a class="local col6 ref" href="#8086begin" title='begin' data-ref="8086begin">begin</a>-&gt;first);</td></tr>
+<tr><th id="59">59</th><td>                <a class="local col8 ref" href="#8088root_p" title='root_p' data-ref="8088root_p">root_p</a> = <b>this</b>-&gt;insert(<a class="local col8 ref" href="#8088root_p" title='root_p' data-ref="8088root_p">root_p</a>, <a class="local col9 ref" href="#8089kbegin" title='kbegin' data-ref="8089kbegin">kbegin</a>, <a class="local col0 ref" href="#8090kend" title='kend' data-ref="8090kend">kend</a>, &amp;<a class="local col6 ref" href="#8086begin" title='begin' data-ref="8086begin">begin</a>-&gt;second, <a class="local col5 ref" href="#8085trans" title='trans' data-ref="8085trans">trans</a>);</td></tr>
+<tr><th id="60">60</th><td>            }</td></tr>
+<tr><th id="61">61</th><td>            <b>this</b>-&gt;root.reset(<a class="local col8 ref" href="#8088root_p" title='root_p' data-ref="8088root_p">root_p</a>);</td></tr>
+<tr><th id="62">62</th><td>        }</td></tr>
+<tr><th id="63">63</th><td></td></tr>
+<tr><th id="64">64</th><td>        <b>template</b>&lt;<b>typename</b> BidiIter, <b>typename</b> Trans&gt;</td></tr>
+<tr><th id="65">65</th><td>        <a class="typedef" href="#boost::xpressive::detail::symbols::result_type" title='boost::xpressive::detail::symbols::result_type' data-type='const boost::xpressive::detail::symbols::value_type *' data-ref="boost::xpressive::detail::symbols::result_type">result_type</a> <dfn class="decl def fn" id="_ZNK5boost9xpressive6detail7symbolsclERTL0__S3_TL0_0_" title='boost::xpressive::detail::symbols::operator()' data-ref="_ZNK5boost9xpressive6detail7symbolsclERTL0__S3_TL0_0_"><b>operator</b> ()</dfn>(BidiIter &amp;<dfn class="local col1 decl" id="8091begin" title='begin' data-type='BidiIter &amp;' data-ref="8091begin">begin</dfn>, BidiIter <dfn class="local col2 decl" id="8092end" title='end' data-type='BidiIter' data-ref="8092end">end</dfn>, Trans <dfn class="local col3 decl" id="8093trans" title='trans' data-type='Trans' data-ref="8093trans">trans</dfn>) <em>const</em></td></tr>
+<tr><th id="66">66</th><td>        {</td></tr>
+<tr><th id="67">67</th><td>            <b>return</b> <b>this</b>-&gt;search(<a class="local col1 ref" href="#8091begin" title='begin' data-ref="8091begin">begin</a>, <a class="local col2 ref" href="#8092end" title='end' data-ref="8092end">end</a>, <a class="local col3 ref" href="#8093trans" title='trans' data-ref="8093trans">trans</a>, <b>this</b>-&gt;root.get());</td></tr>
+<tr><th id="68">68</th><td>        }</td></tr>
+<tr><th id="69">69</th><td></td></tr>
+<tr><th id="70">70</th><td>        <b>template</b>&lt;<b>typename</b> Sink&gt;</td></tr>
+<tr><th id="71">71</th><td>        <em>void</em> <dfn class="decl def fn" id="_ZNK5boost9xpressive6detail7symbols4peekERKTL0__" title='boost::xpressive::detail::symbols::peek' data-ref="_ZNK5boost9xpressive6detail7symbols4peekERKTL0__">peek</dfn>(Sink <em>const</em> &amp;<dfn class="local col4 decl" id="8094sink" title='sink' data-type='const Sink &amp;' data-ref="8094sink">sink</dfn>) <em>const</em></td></tr>
+<tr><th id="72">72</th><td>        {</td></tr>
+<tr><th id="73">73</th><td>            <b>this</b>-&gt;peek_(<b>this</b>-&gt;root.get(), <a class="local col4 ref" href="#8094sink" title='sink' data-ref="8094sink">sink</a>);</td></tr>
+<tr><th id="74">74</th><td>        }</td></tr>
+<tr><th id="75">75</th><td></td></tr>
+<tr><th id="76">76</th><td>    <b>private</b>:</td></tr>
+<tr><th id="77">77</th><td>        <i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="78">78</th><td><i>        // struct node : a node in the TST. </i></td></tr>
+<tr><th id="79">79</th><td><i>        //     The "eq" field stores the result pointer when ch is zero.</i></td></tr>
+<tr><th id="80">80</th><td><i>        // </i></td></tr>
+<tr><th id="81">81</th><td>        <b>struct</b> <dfn class="type def" id="boost::xpressive::detail::symbols::node" title='boost::xpressive::detail::symbols::node' data-ref="boost::xpressive::detail::symbols::node">node</dfn></td></tr>
+<tr><th id="82">82</th><td>            : <span class="namespace">boost::</span><a class="typedef" href="../../../../../../core/include/boost/core/noncopyable.hpp.html#boost::noncopyable" title='boost::noncopyable' data-type='noncopyable_::noncopyable' data-ref="boost::noncopyable">noncopyable</a></td></tr>
+<tr><th id="83">83</th><td>        {</td></tr>
+<tr><th id="84">84</th><td>            <dfn class="decl def fn" id="_ZN5boost9xpressive6detail7symbols4nodeC1ENS_11range_valueINS4_IT_E4type10first_typeEE4typeE" title='boost::xpressive::detail::symbols::node::node' data-ref="_ZN5boost9xpressive6detail7symbols4nodeC1ENS_11range_valueINS4_IT_E4type10first_typeEE4typeE">node</dfn>(<a class="typedef" href="#boost::xpressive::detail::symbols::char_type" title='boost::xpressive::detail::symbols::char_type' data-type='typename range_value&lt;key_type&gt;::type' data-ref="boost::xpressive::detail::symbols::char_type">char_type</a> <dfn class="local col5 decl" id="8095c" title='c' data-type='boost::xpressive::detail::symbols::char_type' data-ref="8095c">c</dfn>)</td></tr>
+<tr><th id="85">85</th><td>              : <a class="member field" href="#boost::xpressive::detail::symbols::node::ch" title='boost::xpressive::detail::symbols::node::ch' data-ref="boost::xpressive::detail::symbols::node::ch">ch</a>(<a class="local col5 ref" href="#8095c" title='c' data-ref="8095c">c</a>)</td></tr>
+<tr><th id="86">86</th><td>              , <a class="member field" href="#boost::xpressive::detail::symbols::node::lo" title='boost::xpressive::detail::symbols::node::lo' data-ref="boost::xpressive::detail::symbols::node::lo">lo</a>(<var>0</var>)</td></tr>
+<tr><th id="87">87</th><td>              , <a class="ref field" href="#boost::xpressive::detail::symbols::node::(anonymous)::eq" title='boost::xpressive::detail::symbols::node::(anonymous union)::eq' data-ref="boost::xpressive::detail::symbols::node::(anonymous)::eq">eq</a>(<var>0</var>)</td></tr>
+<tr><th id="88">88</th><td>              , <a class="member field" href="#boost::xpressive::detail::symbols::node::hi" title='boost::xpressive::detail::symbols::node::hi' data-ref="boost::xpressive::detail::symbols::node::hi">hi</a>(<var>0</var>)</td></tr>
+<tr><th id="89">89</th><td>              <u>#<span data-ppcond="89">ifdef</span> <span class="macro" data-ref="_M/BOOST_DISABLE_THREADS">BOOST_DISABLE_THREADS</span></u></td></tr>
+<tr><th id="90">90</th><td>              , tau(<var>0</var>)</td></tr>
+<tr><th id="91">91</th><td>              <u>#<span data-ppcond="89">endif</span></u></td></tr>
+<tr><th id="92">92</th><td>            {}</td></tr>
+<tr><th id="93">93</th><td></td></tr>
+<tr><th id="94">94</th><td>            <dfn class="decl def fn" id="_ZN5boost9xpressive6detail7symbols4nodeD1Ev" title='boost::xpressive::detail::symbols::node::~node' data-ref="_ZN5boost9xpressive6detail7symbols4nodeD1Ev">~node</dfn>()</td></tr>
+<tr><th id="95">95</th><td>            {</td></tr>
+<tr><th id="96">96</th><td>                <b>delete</b> <a class="member field" href="#boost::xpressive::detail::symbols::node::lo" title='boost::xpressive::detail::symbols::node::lo' data-ref="boost::xpressive::detail::symbols::node::lo">lo</a>;</td></tr>
+<tr><th id="97">97</th><td>                <b>if</b> (<a class="member field" href="#boost::xpressive::detail::symbols::node::ch" title='boost::xpressive::detail::symbols::node::ch' data-ref="boost::xpressive::detail::symbols::node::ch">ch</a>)</td></tr>
+<tr><th id="98">98</th><td>                    <b>delete</b> <a class="ref field" href="#boost::xpressive::detail::symbols::node::(anonymous)::eq" title='boost::xpressive::detail::symbols::node::(anonymous union)::eq' data-ref="boost::xpressive::detail::symbols::node::(anonymous)::eq">eq</a>;</td></tr>
+<tr><th id="99">99</th><td>                <b>delete</b> <a class="member field" href="#boost::xpressive::detail::symbols::node::hi" title='boost::xpressive::detail::symbols::node::hi' data-ref="boost::xpressive::detail::symbols::node::hi">hi</a>;</td></tr>
+<tr><th id="100">100</th><td>            }</td></tr>
+<tr><th id="101">101</th><td></td></tr>
+<tr><th id="102">102</th><td>            <em>void</em> <dfn class="decl def fn" id="_ZN5boost9xpressive6detail7symbols4node4swapERS3_" title='boost::xpressive::detail::symbols::node::swap' data-ref="_ZN5boost9xpressive6detail7symbols4node4swapERS3_">swap</dfn>(<a class="type" href="#boost::xpressive::detail::symbols::node" title='boost::xpressive::detail::symbols::node' data-ref="boost::xpressive::detail::symbols::node">node</a>&amp; <dfn class="local col6 decl" id="8096that" title='that' data-type='boost::xpressive::detail::symbols::node &amp;' data-ref="8096that">that</dfn>)</td></tr>
+<tr><th id="103">103</th><td>            {</td></tr>
+<tr><th id="104">104</th><td>                <span class="namespace">std::</span>swap(<a class="member field" href="#boost::xpressive::detail::symbols::node::ch" title='boost::xpressive::detail::symbols::node::ch' data-ref="boost::xpressive::detail::symbols::node::ch">ch</a>, <a class="local col6 ref" href="#8096that" title='that' data-ref="8096that">that</a>.ch);</td></tr>
+<tr><th id="105">105</th><td>                <span class="namespace">std::</span>swap(<a class="member field" href="#boost::xpressive::detail::symbols::node::lo" title='boost::xpressive::detail::symbols::node::lo' data-ref="boost::xpressive::detail::symbols::node::lo">lo</a>, <a class="local col6 ref" href="#8096that" title='that' data-ref="8096that">that</a>.lo);</td></tr>
+<tr><th id="106">106</th><td>                <span class="namespace">std::</span>swap(<a class="ref field" href="#boost::xpressive::detail::symbols::node::(anonymous)::eq" title='boost::xpressive::detail::symbols::node::(anonymous union)::eq' data-ref="boost::xpressive::detail::symbols::node::(anonymous)::eq">eq</a>, <a class="local col6 ref" href="#8096that" title='that' data-ref="8096that">that</a>.eq);</td></tr>
+<tr><th id="107">107</th><td>                <span class="namespace">std::</span>swap(<a class="member field" href="#boost::xpressive::detail::symbols::node::hi" title='boost::xpressive::detail::symbols::node::hi' data-ref="boost::xpressive::detail::symbols::node::hi">hi</a>, <a class="local col6 ref" href="#8096that" title='that' data-ref="8096that">that</a>.hi);</td></tr>
+<tr><th id="108">108</th><td>                <u>#<span data-ppcond="108">ifdef</span> <span class="macro" data-ref="_M/BOOST_DISABLE_THREADS">BOOST_DISABLE_THREADS</span></u></td></tr>
+<tr><th id="109">109</th><td>                std::swap(tau, that.tau);</td></tr>
+<tr><th id="110">110</th><td>                <u>#<span data-ppcond="108">endif</span></u></td></tr>
+<tr><th id="111">111</th><td>            }</td></tr>
+<tr><th id="112">112</th><td></td></tr>
+<tr><th id="113">113</th><td>            <a class="typedef" href="#boost::xpressive::detail::symbols::char_type" title='boost::xpressive::detail::symbols::char_type' data-type='typename range_value&lt;key_type&gt;::type' data-ref="boost::xpressive::detail::symbols::char_type">char_type</a> <dfn class="decl field" id="boost::xpressive::detail::symbols::node::ch" title='boost::xpressive::detail::symbols::node::ch' data-ref="boost::xpressive::detail::symbols::node::ch">ch</dfn>;</td></tr>
+<tr><th id="114">114</th><td>            <a class="type" href="#boost::xpressive::detail::symbols::node" title='boost::xpressive::detail::symbols::node' data-ref="boost::xpressive::detail::symbols::node">node</a>* <dfn class="decl field" id="boost::xpressive::detail::symbols::node::lo" title='boost::xpressive::detail::symbols::node::lo' data-ref="boost::xpressive::detail::symbols::node::lo">lo</dfn>;</td></tr>
+<tr><th id="115">115</th><td>            <b>union</b></td></tr>
+<tr><th id="116">116</th><td>            {</td></tr>
+<tr><th id="117">117</th><td>                <a class="type" href="#boost::xpressive::detail::symbols::node" title='boost::xpressive::detail::symbols::node' data-ref="boost::xpressive::detail::symbols::node">node</a>* <dfn class="decl field" id="boost::xpressive::detail::symbols::node::(anonymous)::eq" title='boost::xpressive::detail::symbols::node::(anonymous union)::eq' data-ref="boost::xpressive::detail::symbols::node::(anonymous)::eq">eq</dfn>;</td></tr>
+<tr><th id="118">118</th><td>                <a class="typedef" href="#boost::xpressive::detail::symbols::result_type" title='boost::xpressive::detail::symbols::result_type' data-type='const boost::xpressive::detail::symbols::value_type *' data-ref="boost::xpressive::detail::symbols::result_type">result_type</a> <dfn class="decl field" id="boost::xpressive::detail::symbols::node::(anonymous)::result" title='boost::xpressive::detail::symbols::node::(anonymous union)::result' data-ref="boost::xpressive::detail::symbols::node::(anonymous)::result">result</dfn>;</td></tr>
+<tr><th id="119">119</th><td>            };</td></tr>
+<tr><th id="120">120</th><td>            <a class="type" href="#boost::xpressive::detail::symbols::node" title='boost::xpressive::detail::symbols::node' data-ref="boost::xpressive::detail::symbols::node">node</a>* <dfn class="decl field" id="boost::xpressive::detail::symbols::node::hi" title='boost::xpressive::detail::symbols::node::hi' data-ref="boost::xpressive::detail::symbols::node::hi">hi</dfn>;</td></tr>
+<tr><th id="121">121</th><td>            <u>#<span data-ppcond="121">ifdef</span> <span class="macro" data-ref="_M/BOOST_DISABLE_THREADS">BOOST_DISABLE_THREADS</span></u></td></tr>
+<tr><th id="122">122</th><td>            <em>long</em> tau;</td></tr>
+<tr><th id="123">123</th><td>            <u>#<span data-ppcond="121">endif</span></u></td></tr>
+<tr><th id="124">124</th><td>        };</td></tr>
+<tr><th id="125">125</th><td></td></tr>
+<tr><th id="126">126</th><td>        <i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="127">127</th><td><i>        // insert : insert a string into the TST</i></td></tr>
+<tr><th id="128">128</th><td><i>        // </i></td></tr>
+<tr><th id="129">129</th><td>        <b>template</b>&lt;<b>typename</b> Trans&gt;</td></tr>
+<tr><th id="130">130</th><td>        <a class="type" href="#boost::xpressive::detail::symbols::node" title='boost::xpressive::detail::symbols::node' data-ref="boost::xpressive::detail::symbols::node">node</a>* <dfn class="decl def fn" id="_ZNK5boost9xpressive6detail7symbols6insertEPNS2_4nodeERNS_20range_const_iteratorINS_11range_valueIT_E4type10first_typeEvE4typeESB_PKNS8_4type11second_typeETL0__" title='boost::xpressive::detail::symbols::insert' data-ref="_ZNK5boost9xpressive6detail7symbols6insertEPNS2_4nodeERNS_20range_const_iteratorINS_11range_valueIT_E4type10first_typeEvE4typeESB_PKNS8_4type11second_typeETL0__">insert</dfn>(<a class="type" href="#boost::xpressive::detail::symbols::node" title='boost::xpressive::detail::symbols::node' data-ref="boost::xpressive::detail::symbols::node">node</a>* <dfn class="local col7 decl" id="8097p" title='p' data-type='boost::xpressive::detail::symbols::node *' data-ref="8097p">p</dfn>, <a class="typedef" href="#boost::xpressive::detail::symbols::key_iterator" title='boost::xpressive::detail::symbols::key_iterator' data-type='typename range_const_iterator&lt;key_type&gt;::type' data-ref="boost::xpressive::detail::symbols::key_iterator">key_iterator</a> &amp;<dfn class="local col8 decl" id="8098begin" title='begin' data-type='boost::xpressive::detail::symbols::key_iterator &amp;' data-ref="8098begin">begin</dfn>, <a class="typedef" href="#boost::xpressive::detail::symbols::key_iterator" title='boost::xpressive::detail::symbols::key_iterator' data-type='typename range_const_iterator&lt;key_type&gt;::type' data-ref="boost::xpressive::detail::symbols::key_iterator">key_iterator</a> <dfn class="local col9 decl" id="8099end" title='end' data-type='boost::xpressive::detail::symbols::key_iterator' data-ref="8099end">end</dfn>, <a class="typedef" href="#boost::xpressive::detail::symbols::result_type" title='boost::xpressive::detail::symbols::result_type' data-type='const boost::xpressive::detail::symbols::value_type *' data-ref="boost::xpressive::detail::symbols::result_type">result_type</a> <dfn class="local col0 decl" id="8100r" title='r' data-type='boost::xpressive::detail::symbols::result_type' data-ref="8100r">r</dfn>, Trans <dfn class="local col1 decl" id="8101trans" title='trans' data-type='Trans' data-ref="8101trans">trans</dfn>) <em>const</em></td></tr>
+<tr><th id="131">131</th><td>        {</td></tr>
+<tr><th id="132">132</th><td>            <a class="typedef" href="#boost::xpressive::detail::symbols::char_type" title='boost::xpressive::detail::symbols::char_type' data-type='typename range_value&lt;key_type&gt;::type' data-ref="boost::xpressive::detail::symbols::char_type">char_type</a> <dfn class="local col2 decl" id="8102c1" title='c1' data-type='boost::xpressive::detail::symbols::char_type' data-ref="8102c1">c1</dfn> = <var>0</var>;</td></tr>
+<tr><th id="133">133</th><td></td></tr>
+<tr><th id="134">134</th><td>            <b>if</b>(<a class="local col8 ref" href="#8098begin" title='begin' data-ref="8098begin">begin</a> != <a class="local col9 ref" href="#8099end" title='end' data-ref="8099end">end</a>)</td></tr>
+<tr><th id="135">135</th><td>            {</td></tr>
+<tr><th id="136">136</th><td>                <a class="local col2 ref" href="#8102c1" title='c1' data-ref="8102c1">c1</a> = <a class="local col1 ref" href="#8101trans" title='trans' data-ref="8101trans">trans</a>(*<a class="local col8 ref" href="#8098begin" title='begin' data-ref="8098begin">begin</a>);</td></tr>
+<tr><th id="137">137</th><td>            }</td></tr>
+<tr><th id="138">138</th><td></td></tr>
+<tr><th id="139">139</th><td>            <b>if</b>(!<a class="local col7 ref" href="#8097p" title='p' data-ref="8097p">p</a>)</td></tr>
+<tr><th id="140">140</th><td>            {</td></tr>
+<tr><th id="141">141</th><td>                <a class="local col7 ref" href="#8097p" title='p' data-ref="8097p">p</a> = <b>new</b> <a class="type" href="#boost::xpressive::detail::symbols::node" title='boost::xpressive::detail::symbols::node' data-ref="boost::xpressive::detail::symbols::node">node</a>(<a class="local col2 ref" href="#8102c1" title='c1' data-ref="8102c1">c1</a>);</td></tr>
+<tr><th id="142">142</th><td>            }</td></tr>
+<tr><th id="143">143</th><td></td></tr>
+<tr><th id="144">144</th><td>            <b>if</b>(<a class="local col2 ref" href="#8102c1" title='c1' data-ref="8102c1">c1</a> &lt; <a class="local col7 ref" href="#8097p" title='p' data-ref="8097p">p</a>-&gt;ch)</td></tr>
+<tr><th id="145">145</th><td>            {</td></tr>
+<tr><th id="146">146</th><td>                <a class="local col7 ref" href="#8097p" title='p' data-ref="8097p">p</a>-&gt;lo = <b>this</b>-&gt;insert(<a class="local col7 ref" href="#8097p" title='p' data-ref="8097p">p</a>-&gt;lo, <a class="local col8 ref" href="#8098begin" title='begin' data-ref="8098begin">begin</a>, <a class="local col9 ref" href="#8099end" title='end' data-ref="8099end">end</a>, <a class="local col0 ref" href="#8100r" title='r' data-ref="8100r">r</a>, <a class="local col1 ref" href="#8101trans" title='trans' data-ref="8101trans">trans</a>);</td></tr>
+<tr><th id="147">147</th><td>            }</td></tr>
+<tr><th id="148">148</th><td>            <b>else</b> <b>if</b>(<a class="local col2 ref" href="#8102c1" title='c1' data-ref="8102c1">c1</a> == <a class="local col7 ref" href="#8097p" title='p' data-ref="8097p">p</a>-&gt;ch)</td></tr>
+<tr><th id="149">149</th><td>            {</td></tr>
+<tr><th id="150">150</th><td>                <b>if</b>(<var>0</var> == <a class="local col2 ref" href="#8102c1" title='c1' data-ref="8102c1">c1</a>)</td></tr>
+<tr><th id="151">151</th><td>                {</td></tr>
+<tr><th id="152">152</th><td>                    <a class="local col7 ref" href="#8097p" title='p' data-ref="8097p">p</a>-&gt;result = <a class="local col0 ref" href="#8100r" title='r' data-ref="8100r">r</a>;</td></tr>
+<tr><th id="153">153</th><td>                }</td></tr>
+<tr><th id="154">154</th><td>                <b>else</b></td></tr>
+<tr><th id="155">155</th><td>                {</td></tr>
+<tr><th id="156">156</th><td>                    <a class="local col7 ref" href="#8097p" title='p' data-ref="8097p">p</a>-&gt;eq = <b>this</b>-&gt;insert(<a class="local col7 ref" href="#8097p" title='p' data-ref="8097p">p</a>-&gt;eq, ++<a class="local col8 ref" href="#8098begin" title='begin' data-ref="8098begin">begin</a>, <a class="local col9 ref" href="#8099end" title='end' data-ref="8099end">end</a>, <a class="local col0 ref" href="#8100r" title='r' data-ref="8100r">r</a>, <a class="local col1 ref" href="#8101trans" title='trans' data-ref="8101trans">trans</a>);</td></tr>
+<tr><th id="157">157</th><td>                }</td></tr>
+<tr><th id="158">158</th><td>            }</td></tr>
+<tr><th id="159">159</th><td>            <b>else</b></td></tr>
+<tr><th id="160">160</th><td>            {</td></tr>
+<tr><th id="161">161</th><td>                <a class="local col7 ref" href="#8097p" title='p' data-ref="8097p">p</a>-&gt;hi = <b>this</b>-&gt;insert(<a class="local col7 ref" href="#8097p" title='p' data-ref="8097p">p</a>-&gt;hi, <a class="local col8 ref" href="#8098begin" title='begin' data-ref="8098begin">begin</a>, <a class="local col9 ref" href="#8099end" title='end' data-ref="8099end">end</a>, <a class="local col0 ref" href="#8100r" title='r' data-ref="8100r">r</a>, <a class="local col1 ref" href="#8101trans" title='trans' data-ref="8101trans">trans</a>);</td></tr>
+<tr><th id="162">162</th><td>            }</td></tr>
+<tr><th id="163">163</th><td></td></tr>
+<tr><th id="164">164</th><td>            <b>return</b> <a class="local col7 ref" href="#8097p" title='p' data-ref="8097p">p</a>;</td></tr>
+<tr><th id="165">165</th><td>        }</td></tr>
+<tr><th id="166">166</th><td></td></tr>
+<tr><th id="167">167</th><td>        <u>#<span data-ppcond="167">ifdef</span> <span class="macro" data-ref="_M/BOOST_DISABLE_THREADS">BOOST_DISABLE_THREADS</span></u></td></tr>
+<tr><th id="168">168</th><td>        <i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="169">169</th><td><i>        // conditional rotation : the goal is to minimize the overall</i></td></tr>
+<tr><th id="170">170</th><td><i>        //     weighted path length of each binary search tree</i></td></tr>
+<tr><th id="171">171</th><td><i>        // </i></td></tr>
+<tr><th id="172">172</th><td>        <em>bool</em> cond_rotation(<em>bool</em> left, node* <em>const</em> i, node* <em>const</em> j) <em>const</em></td></tr>
+<tr><th id="173">173</th><td>        {</td></tr>
+<tr><th id="174">174</th><td>            <i>// don't rotate top node in binary search tree</i></td></tr>
+<tr><th id="175">175</th><td>            <b>if</b> (i == j)</td></tr>
+<tr><th id="176">176</th><td>                <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="177">177</th><td>            <i>// calculate psi (the rotation condition)</i></td></tr>
+<tr><th id="178">178</th><td>            node* <em>const</em> k = (left ? i-&gt;hi : i-&gt;lo);</td></tr>
+<tr><th id="179">179</th><td>            <em>long</em> psi = <var>2</var>*i-&gt;tau - j-&gt;tau - (k ? k-&gt;tau : <var>0</var>);</td></tr>
+<tr><th id="180">180</th><td>            <b>if</b> (psi &lt;= <var>0</var>)</td></tr>
+<tr><th id="181">181</th><td>                <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="182">182</th><td></td></tr>
+<tr><th id="183">183</th><td>            <i>// recalculate the tau values</i></td></tr>
+<tr><th id="184">184</th><td>            j-&gt;tau += -i-&gt;tau + (k ? k-&gt;tau : <var>0</var>);</td></tr>
+<tr><th id="185">185</th><td>            i-&gt;tau +=  j-&gt;tau - (k ? k-&gt;tau : <var>0</var>);</td></tr>
+<tr><th id="186">186</th><td>            <i>// fixup links and swap nodes</i></td></tr>
+<tr><th id="187">187</th><td>            <b>if</b> (left)</td></tr>
+<tr><th id="188">188</th><td>            {</td></tr>
+<tr><th id="189">189</th><td>                j-&gt;lo = k;</td></tr>
+<tr><th id="190">190</th><td>                i-&gt;hi = i;</td></tr>
+<tr><th id="191">191</th><td>            }</td></tr>
+<tr><th id="192">192</th><td>            <b>else</b></td></tr>
+<tr><th id="193">193</th><td>            {</td></tr>
+<tr><th id="194">194</th><td>                j-&gt;hi = k;</td></tr>
+<tr><th id="195">195</th><td>                i-&gt;lo = i;</td></tr>
+<tr><th id="196">196</th><td>            }</td></tr>
+<tr><th id="197">197</th><td>            (*i).swap(*j);</td></tr>
+<tr><th id="198">198</th><td>            <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="199">199</th><td>        }</td></tr>
+<tr><th id="200">200</th><td>        <u>#<span data-ppcond="167">endif</span></u></td></tr>
+<tr><th id="201">201</th><td></td></tr>
+<tr><th id="202">202</th><td>        <i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="203">203</th><td><i>        // search : find a string in the TST</i></td></tr>
+<tr><th id="204">204</th><td><i>        // </i></td></tr>
+<tr><th id="205">205</th><td>        <b>template</b>&lt;<b>typename</b> BidiIter, <b>typename</b> Trans&gt;</td></tr>
+<tr><th id="206">206</th><td>        <a class="typedef" href="#boost::xpressive::detail::symbols::result_type" title='boost::xpressive::detail::symbols::result_type' data-type='const boost::xpressive::detail::symbols::value_type *' data-ref="boost::xpressive::detail::symbols::result_type">result_type</a> <dfn class="decl def fn" id="_ZNK5boost9xpressive6detail7symbols6searchERTL0__S3_TL0_0_PNS2_4nodeE" title='boost::xpressive::detail::symbols::search' data-ref="_ZNK5boost9xpressive6detail7symbols6searchERTL0__S3_TL0_0_PNS2_4nodeE">search</dfn>(BidiIter &amp;<dfn class="local col3 decl" id="8103begin" title='begin' data-type='BidiIter &amp;' data-ref="8103begin">begin</dfn>, BidiIter <dfn class="local col4 decl" id="8104end" title='end' data-type='BidiIter' data-ref="8104end">end</dfn>, Trans <dfn class="local col5 decl" id="8105trans" title='trans' data-type='Trans' data-ref="8105trans">trans</dfn>, <a class="type" href="#boost::xpressive::detail::symbols::node" title='boost::xpressive::detail::symbols::node' data-ref="boost::xpressive::detail::symbols::node">node</a>* <dfn class="local col6 decl" id="8106p" title='p' data-type='boost::xpressive::detail::symbols::node *' data-ref="8106p">p</dfn>) <em>const</em></td></tr>
+<tr><th id="207">207</th><td>        {</td></tr>
+<tr><th id="208">208</th><td>            <a class="typedef" href="#boost::xpressive::detail::symbols::result_type" title='boost::xpressive::detail::symbols::result_type' data-type='const boost::xpressive::detail::symbols::value_type *' data-ref="boost::xpressive::detail::symbols::result_type">result_type</a> <dfn class="local col7 decl" id="8107r" title='r' data-type='boost::xpressive::detail::symbols::result_type' data-ref="8107r">r</dfn> = <var>0</var>;</td></tr>
+<tr><th id="209">209</th><td>            <u>#<span data-ppcond="209">ifdef</span> <span class="macro" data-ref="_M/BOOST_DISABLE_THREADS">BOOST_DISABLE_THREADS</span></u></td></tr>
+<tr><th id="210">210</th><td>            node* p2 = p;</td></tr>
+<tr><th id="211">211</th><td>            <em>bool</em> left = <b>false</b>;</td></tr>
+<tr><th id="212">212</th><td>            <u>#<span data-ppcond="209">endif</span></u></td></tr>
+<tr><th id="213">213</th><td>            <a class="typedef" href="#boost::xpressive::detail::symbols::char_type" title='boost::xpressive::detail::symbols::char_type' data-type='typename range_value&lt;key_type&gt;::type' data-ref="boost::xpressive::detail::symbols::char_type">char_type</a> <dfn class="local col8 decl" id="8108c1" title='c1' data-type='boost::xpressive::detail::symbols::char_type' data-ref="8108c1">c1</dfn> = (<a class="local col3 ref" href="#8103begin" title='begin' data-ref="8103begin">begin</a> != <a class="local col4 ref" href="#8104end" title='end' data-ref="8104end">end</a> ? <a class="local col5 ref" href="#8105trans" title='trans' data-ref="8105trans">trans</a>(*<a class="local col3 ref" href="#8103begin" title='begin' data-ref="8103begin">begin</a>) : <var>0</var>);</td></tr>
+<tr><th id="214">214</th><td>            <b>while</b>(<a class="local col6 ref" href="#8106p" title='p' data-ref="8106p">p</a>)</td></tr>
+<tr><th id="215">215</th><td>            {</td></tr>
+<tr><th id="216">216</th><td>                <u>#<span data-ppcond="216">ifdef</span> <span class="macro" data-ref="_M/BOOST_DISABLE_THREADS">BOOST_DISABLE_THREADS</span></u></td></tr>
+<tr><th id="217">217</th><td>                ++p-&gt;tau;</td></tr>
+<tr><th id="218">218</th><td>                <u>#<span data-ppcond="216">endif</span></u></td></tr>
+<tr><th id="219">219</th><td>                <b>if</b>(<a class="local col8 ref" href="#8108c1" title='c1' data-ref="8108c1">c1</a> == <a class="local col6 ref" href="#8106p" title='p' data-ref="8106p">p</a>-&gt;ch)</td></tr>
+<tr><th id="220">220</th><td>                {</td></tr>
+<tr><th id="221">221</th><td>                    <i>// conditional rotation test</i></td></tr>
+<tr><th id="222">222</th><td>                    <u>#<span data-ppcond="222">ifdef</span> <span class="macro" data-ref="_M/BOOST_DISABLE_THREADS">BOOST_DISABLE_THREADS</span></u></td></tr>
+<tr><th id="223">223</th><td>                    <b>if</b> (<b>this</b>-&gt;cond_rotation(left, p, p2))</td></tr>
+<tr><th id="224">224</th><td>                        p = p2;</td></tr>
+<tr><th id="225">225</th><td>                    <u>#<span data-ppcond="222">endif</span></u></td></tr>
+<tr><th id="226">226</th><td>                    <b>if</b> (<var>0</var> == <a class="local col6 ref" href="#8106p" title='p' data-ref="8106p">p</a>-&gt;ch)</td></tr>
+<tr><th id="227">227</th><td>                    {</td></tr>
+<tr><th id="228">228</th><td>                        <i>// it's a match!</i></td></tr>
+<tr><th id="229">229</th><td>                        <a class="local col7 ref" href="#8107r" title='r' data-ref="8107r">r</a> = <a class="local col6 ref" href="#8106p" title='p' data-ref="8106p">p</a>-&gt;result;</td></tr>
+<tr><th id="230">230</th><td>                    }</td></tr>
+<tr><th id="231">231</th><td>                    <b>if</b>(<a class="local col3 ref" href="#8103begin" title='begin' data-ref="8103begin">begin</a> == <a class="local col4 ref" href="#8104end" title='end' data-ref="8104end">end</a>)</td></tr>
+<tr><th id="232">232</th><td>                        <b>break</b>;</td></tr>
+<tr><th id="233">233</th><td>                    ++<a class="local col3 ref" href="#8103begin" title='begin' data-ref="8103begin">begin</a>;</td></tr>
+<tr><th id="234">234</th><td>                    <a class="local col6 ref" href="#8106p" title='p' data-ref="8106p">p</a> = <a class="local col6 ref" href="#8106p" title='p' data-ref="8106p">p</a>-&gt;eq;</td></tr>
+<tr><th id="235">235</th><td>                    <i>// search for the longest match first</i></td></tr>
+<tr><th id="236">236</th><td>                    <a class="local col7 ref" href="#8107r" title='r' data-ref="8107r">r</a> = search(<a class="local col3 ref" href="#8103begin" title='begin' data-ref="8103begin">begin</a>,<a class="local col4 ref" href="#8104end" title='end' data-ref="8104end">end</a>,<a class="local col5 ref" href="#8105trans" title='trans' data-ref="8105trans">trans</a>,<a class="local col6 ref" href="#8106p" title='p' data-ref="8106p">p</a>);</td></tr>
+<tr><th id="237">237</th><td>                    <b>if</b> (<var>0</var> == <a class="local col7 ref" href="#8107r" title='r' data-ref="8107r">r</a>)</td></tr>
+<tr><th id="238">238</th><td>                    {</td></tr>
+<tr><th id="239">239</th><td>                        <i>// search for a match ending here</i></td></tr>
+<tr><th id="240">240</th><td>                        <a class="local col7 ref" href="#8107r" title='r' data-ref="8107r">r</a> = search(<a class="local col4 ref" href="#8104end" title='end' data-ref="8104end">end</a>,<a class="local col4 ref" href="#8104end" title='end' data-ref="8104end">end</a>,<a class="local col5 ref" href="#8105trans" title='trans' data-ref="8105trans">trans</a>,<a class="local col6 ref" href="#8106p" title='p' data-ref="8106p">p</a>);</td></tr>
+<tr><th id="241">241</th><td>                        <b>if</b> (<var>0</var> == <a class="local col7 ref" href="#8107r" title='r' data-ref="8107r">r</a>)</td></tr>
+<tr><th id="242">242</th><td>                        {</td></tr>
+<tr><th id="243">243</th><td>                            --<a class="local col3 ref" href="#8103begin" title='begin' data-ref="8103begin">begin</a>;</td></tr>
+<tr><th id="244">244</th><td>                        }</td></tr>
+<tr><th id="245">245</th><td>                    }</td></tr>
+<tr><th id="246">246</th><td>                    <b>break</b>;</td></tr>
+<tr><th id="247">247</th><td>                }</td></tr>
+<tr><th id="248">248</th><td>                <b>else</b> <b>if</b>(<a class="local col8 ref" href="#8108c1" title='c1' data-ref="8108c1">c1</a> &lt; <a class="local col6 ref" href="#8106p" title='p' data-ref="8106p">p</a>-&gt;ch)</td></tr>
+<tr><th id="249">249</th><td>                {</td></tr>
+<tr><th id="250">250</th><td>                    <u>#<span data-ppcond="250">ifdef</span> <span class="macro" data-ref="_M/BOOST_DISABLE_THREADS">BOOST_DISABLE_THREADS</span></u></td></tr>
+<tr><th id="251">251</th><td>                    left = <b>true</b>;</td></tr>
+<tr><th id="252">252</th><td>                    p2 = p;</td></tr>
+<tr><th id="253">253</th><td>                    <u>#<span data-ppcond="250">endif</span></u></td></tr>
+<tr><th id="254">254</th><td>                    <a class="local col6 ref" href="#8106p" title='p' data-ref="8106p">p</a> = <a class="local col6 ref" href="#8106p" title='p' data-ref="8106p">p</a>-&gt;lo;</td></tr>
+<tr><th id="255">255</th><td>                }</td></tr>
+<tr><th id="256">256</th><td>                <b>else</b> <i>// (c1 &gt; p-&gt;ch)</i></td></tr>
+<tr><th id="257">257</th><td>                {</td></tr>
+<tr><th id="258">258</th><td>                    <u>#<span data-ppcond="258">ifdef</span> <span class="macro" data-ref="_M/BOOST_DISABLE_THREADS">BOOST_DISABLE_THREADS</span></u></td></tr>
+<tr><th id="259">259</th><td>                    left = <b>false</b>;</td></tr>
+<tr><th id="260">260</th><td>                    p2 = p;</td></tr>
+<tr><th id="261">261</th><td>                    <u>#<span data-ppcond="258">endif</span></u></td></tr>
+<tr><th id="262">262</th><td>                    <a class="local col6 ref" href="#8106p" title='p' data-ref="8106p">p</a> = <a class="local col6 ref" href="#8106p" title='p' data-ref="8106p">p</a>-&gt;hi;</td></tr>
+<tr><th id="263">263</th><td>                }</td></tr>
+<tr><th id="264">264</th><td>            }</td></tr>
+<tr><th id="265">265</th><td>            <b>return</b> <a class="local col7 ref" href="#8107r" title='r' data-ref="8107r">r</a>;</td></tr>
+<tr><th id="266">266</th><td>        }</td></tr>
+<tr><th id="267">267</th><td></td></tr>
+<tr><th id="268">268</th><td>        <b>template</b>&lt;<b>typename</b> Sink&gt;</td></tr>
+<tr><th id="269">269</th><td>        <em>void</em> <dfn class="decl def fn" id="_ZNK5boost9xpressive6detail7symbols5peek_ERKPKNS2_4nodeERKTL0__" title='boost::xpressive::detail::symbols::peek_' data-ref="_ZNK5boost9xpressive6detail7symbols5peek_ERKPKNS2_4nodeERKTL0__">peek_</dfn>(<a class="type" href="#boost::xpressive::detail::symbols::node" title='boost::xpressive::detail::symbols::node' data-ref="boost::xpressive::detail::symbols::node">node</a> <em>const</em> *<em>const</em> &amp;<dfn class="local col9 decl" id="8109p" title='p' data-type='const boost::xpressive::detail::symbols::node *const &amp;' data-ref="8109p">p</dfn>, Sink <em>const</em> &amp;<dfn class="local col0 decl" id="8110sink" title='sink' data-type='const Sink &amp;' data-ref="8110sink">sink</dfn>) <em>const</em></td></tr>
+<tr><th id="270">270</th><td>        {</td></tr>
+<tr><th id="271">271</th><td>            <b>if</b>(<a class="local col9 ref" href="#8109p" title='p' data-ref="8109p">p</a>)</td></tr>
+<tr><th id="272">272</th><td>            {</td></tr>
+<tr><th id="273">273</th><td>                <a class="local col0 ref" href="#8110sink" title='sink' data-ref="8110sink">sink</a>(<a class="local col9 ref" href="#8109p" title='p' data-ref="8109p">p</a>-&gt;ch);</td></tr>
+<tr><th id="274">274</th><td>                <b>this</b>-&gt;peek_(<a class="local col9 ref" href="#8109p" title='p' data-ref="8109p">p</a>-&gt;lo, <a class="local col0 ref" href="#8110sink" title='sink' data-ref="8110sink">sink</a>);</td></tr>
+<tr><th id="275">275</th><td>                <b>this</b>-&gt;peek_(<a class="local col9 ref" href="#8109p" title='p' data-ref="8109p">p</a>-&gt;hi, <a class="local col0 ref" href="#8110sink" title='sink' data-ref="8110sink">sink</a>);</td></tr>
+<tr><th id="276">276</th><td>            }</td></tr>
+<tr><th id="277">277</th><td>        }</td></tr>
+<tr><th id="278">278</th><td></td></tr>
+<tr><th id="279">279</th><td>        <span class="namespace">boost::</span><a class="type" href="../../../../../../throw_exception/include/boost/exception/exception.hpp.html#boost::shared_ptr" title='boost::shared_ptr' data-ref="boost::shared_ptr">shared_ptr</a>&lt;<a class="type" href="#boost::xpressive::detail::symbols::node" title='boost::xpressive::detail::symbols::node' data-ref="boost::xpressive::detail::symbols::node">node</a>&gt; <dfn class="decl field" id="boost::xpressive::detail::symbols::root" title='boost::xpressive::detail::symbols::root' data-ref="boost::xpressive::detail::symbols::root">root</dfn>;</td></tr>
+<tr><th id="280">280</th><td>    };</td></tr>
+<tr><th id="281">281</th><td></td></tr>
+<tr><th id="282">282</th><td>}}} <i>// namespace boost::xpressive::detail</i></td></tr>
+<tr><th id="283">283</th><td></td></tr>
+<tr><th id="284">284</th><td><u>#<span data-ppcond="16">endif</span></u></td></tr>
+<tr><th id="285">285</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../../../../../../graph/src/graphml.cpp.html'>boost-1.85.0/libs/graph/src/graphml.cpp</a><br/>Generated on <em>2024-Jun-14</em> from project boost-1.85.0 revision <em>1.85.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

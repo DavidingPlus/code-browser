@@ -1,0 +1,575 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>segmented_iterator_range.hpp source code [boost-1.85.0/libs/fusion/include/boost/fusion/view/iterator_range/detail/segmented_iterator_range.hpp] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="boost::fusion::detail::make_segment_sequence_back,boost::fusion::detail::make_segment_sequence_front,boost::fusion::detail::make_segmented_range,boost::fusion::detail::make_segmented_range_reduce,boost::fusion::detail::make_segmented_range_reduce2 "/>
+<link rel="stylesheet" href="../../../../../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'boost-1.85.0/libs/fusion/include/boost/fusion/view/iterator_range/detail/segmented_iterator_range.hpp'; var root_path = '../../../../../../../../..'; var data_path = '../../../../../../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../../../../../..'>boost-1.85.0</a>/<a href='../../../../../../..'>libs</a>/<a href='../../../../../..'>fusion</a>/<a href='../../../../..'>include</a>/<a href='../../../..'>boost</a>/<a href='../../..'>fusion</a>/<a href='../..'>view</a>/<a href='..'>iterator_range</a>/<a href='./'>detail</a>/<a href='segmented_iterator_range.hpp.html'>segmented_iterator_range.hpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*=============================================================================</i></td></tr>
+<tr><th id="2">2</th><td><i>    Copyright (c) 2011 Eric Niebler</i></td></tr>
+<tr><th id="3">3</th><td><i></i></td></tr>
+<tr><th id="4">4</th><td><i>    Distributed under the Boost Software License, Version 1.0. (See accompanying</i></td></tr>
+<tr><th id="5">5</th><td><i>    file LICENSE_1_0.txt or copy at <a href="http://www.boost.org/LICENSE_1_0.txt">http://www.boost.org/LICENSE_1_0.txt</a>)</i></td></tr>
+<tr><th id="6">6</th><td><i>==============================================================================*/</i></td></tr>
+<tr><th id="7">7</th><td><u>#<span data-ppcond="7">if</span> !defined(<span class="macro" data-ref="_M/BOOST_FUSION_SEGMENTED_ITERATOR_RANGE_HPP_INCLUDED">BOOST_FUSION_SEGMENTED_ITERATOR_RANGE_HPP_INCLUDED</span>)</u></td></tr>
+<tr><th id="8">8</th><td><u>#define <dfn class="macro" id="_M/BOOST_FUSION_SEGMENTED_ITERATOR_RANGE_HPP_INCLUDED" data-ref="_M/BOOST_FUSION_SEGMENTED_ITERATOR_RANGE_HPP_INCLUDED">BOOST_FUSION_SEGMENTED_ITERATOR_RANGE_HPP_INCLUDED</dfn></u></td></tr>
+<tr><th id="9">9</th><td></td></tr>
+<tr><th id="10">10</th><td><u>#include <a href="../../../support/config.hpp.html">&lt;boost/fusion/support/config.hpp&gt;</a></u></td></tr>
+<tr><th id="11">11</th><td><u>#include <a href="../../../../../../../config/include/boost/detail/workaround.hpp.html">&lt;boost/detail/workaround.hpp&gt;</a></u></td></tr>
+<tr><th id="12">12</th><td><u>#include <a href="../../../../../../../mpl/include/boost/mpl/assert.hpp.html">&lt;boost/mpl/assert.hpp&gt;</a></u></td></tr>
+<tr><th id="13">13</th><td><u>#include <a href="../../../../../../../type_traits/include/boost/type_traits/add_const.hpp.html">&lt;boost/type_traits/add_const.hpp&gt;</a></u></td></tr>
+<tr><th id="14">14</th><td><u>#include <a href="../../../../../../../type_traits/include/boost/type_traits/remove_reference.hpp.html">&lt;boost/type_traits/remove_reference.hpp&gt;</a></u></td></tr>
+<tr><th id="15">15</th><td><u>#include <a href="../../../support/tag_of.hpp.html">&lt;boost/fusion/support/tag_of.hpp&gt;</a></u></td></tr>
+<tr><th id="16">16</th><td><u>#include <a href="../../../sequence/intrinsic/begin.hpp.html">&lt;boost/fusion/sequence/intrinsic/begin.hpp&gt;</a></u></td></tr>
+<tr><th id="17">17</th><td><u>#include <a href="../../../sequence/intrinsic/end.hpp.html">&lt;boost/fusion/sequence/intrinsic/end.hpp&gt;</a></u></td></tr>
+<tr><th id="18">18</th><td><u>#include <a href="../../../iterator/next.hpp.html">&lt;boost/fusion/iterator/next.hpp&gt;</a></u></td></tr>
+<tr><th id="19">19</th><td><u>#include <a href="../../../iterator/deref.hpp.html">&lt;boost/fusion/iterator/deref.hpp&gt;</a></u></td></tr>
+<tr><th id="20">20</th><td><u>#include <a href="../../../sequence/intrinsic/segments.hpp.html">&lt;boost/fusion/sequence/intrinsic/segments.hpp&gt;</a></u></td></tr>
+<tr><th id="21">21</th><td><u>#include <a href="../../../algorithm/transformation/push_back.hpp.html">&lt;boost/fusion/algorithm/transformation/push_back.hpp&gt;</a></u></td></tr>
+<tr><th id="22">22</th><td><u>#include <a href="../../../algorithm/transformation/push_front.hpp.html">&lt;boost/fusion/algorithm/transformation/push_front.hpp&gt;</a></u></td></tr>
+<tr><th id="23">23</th><td><u>#include <a href="../../../iterator/equal_to.hpp.html">&lt;boost/fusion/iterator/equal_to.hpp&gt;</a></u></td></tr>
+<tr><th id="24">24</th><td><u>#include <a href="../../../container/list/detail/reverse_cons.hpp.html">&lt;boost/fusion/container/list/detail/reverse_cons.hpp&gt;</a></u></td></tr>
+<tr><th id="25">25</th><td><u>#include <a href="../../../iterator/detail/segment_sequence.hpp.html">&lt;boost/fusion/iterator/detail/segment_sequence.hpp&gt;</a></u></td></tr>
+<tr><th id="26">26</th><td><u>#include <a href="../../../support/is_sequence.hpp.html">&lt;boost/fusion/support/is_sequence.hpp&gt;</a></u></td></tr>
+<tr><th id="27">27</th><td><u>#include <a href="../../../../../../../core/include/boost/utility/enable_if.hpp.html">&lt;boost/utility/enable_if.hpp&gt;</a></u></td></tr>
+<tr><th id="28">28</th><td></td></tr>
+<tr><th id="29">29</th><td><i>//  Invariants:</i></td></tr>
+<tr><th id="30">30</th><td><i>//  - Each segmented iterator has a stack</i></td></tr>
+<tr><th id="31">31</th><td><i>//  - Each value in the stack is an iterator range</i></td></tr>
+<tr><th id="32">32</th><td><i>//  - The range at the top of the stack points to values</i></td></tr>
+<tr><th id="33">33</th><td><i>//  - All other ranges point to ranges</i></td></tr>
+<tr><th id="34">34</th><td><i>//  - The front of each range in the stack (besides the</i></td></tr>
+<tr><th id="35">35</th><td><i>//    topmost) is the range above it</i></td></tr>
+<tr><th id="36">36</th><td></td></tr>
+<tr><th id="37">37</th><td><b>namespace</b> <span class="namespace">boost</span> { <b>namespace</b> <span class="namespace">fusion</span></td></tr>
+<tr><th id="38">38</th><td>{</td></tr>
+<tr><th id="39">39</th><td>    <b>template</b> &lt;<b>typename</b> First, <b>typename</b> Last&gt;</td></tr>
+<tr><th id="40">40</th><td>    <b>struct</b> <a class="type" href="../iterator_range.hpp.html#boost::fusion::iterator_range" title='boost::fusion::iterator_range' data-ref="boost::fusion::iterator_range" id="boost::fusion::iterator_range">iterator_range</a>;</td></tr>
+<tr><th id="41">41</th><td></td></tr>
+<tr><th id="42">42</th><td>    <b>namespace</b> <span class="namespace">result_of</span></td></tr>
+<tr><th id="43">43</th><td>    {</td></tr>
+<tr><th id="44">44</th><td>        <b>template</b> &lt;<b>typename</b> Sequence, <b>typename</b> T&gt;</td></tr>
+<tr><th id="45">45</th><td>        <b>struct</b> <a class="type" href="../../../algorithm/transformation/push_back.hpp.html#boost::fusion::result_of::push_back" title='boost::fusion::result_of::push_back' data-ref="boost::fusion::result_of::push_back" id="boost::fusion::result_of::push_back">push_back</a>;</td></tr>
+<tr><th id="46">46</th><td></td></tr>
+<tr><th id="47">47</th><td>        <b>template</b> &lt;<b>typename</b> Sequence, <b>typename</b> T&gt;</td></tr>
+<tr><th id="48">48</th><td>        <b>struct</b> <a class="type" href="../../../algorithm/transformation/push_front.hpp.html#boost::fusion::result_of::push_front" title='boost::fusion::result_of::push_front' data-ref="boost::fusion::result_of::push_front" id="boost::fusion::result_of::push_front">push_front</a>;</td></tr>
+<tr><th id="49">49</th><td>    }</td></tr>
+<tr><th id="50">50</th><td></td></tr>
+<tr><th id="51">51</th><td>    <b>template</b> &lt;<b>typename</b> Sequence, <b>typename</b> T&gt;</td></tr>
+<tr><th id="52">52</th><td>    <a class="macro" href="../../../../../../../config/include/boost/config/detail/suffix.hpp.html#1049" title="constexpr" data-ref="_M/BOOST_CXX14_CONSTEXPR">BOOST_CXX14_CONSTEXPR</a> <a class="macro" href="../../../support/config.hpp.html#16" title="" data-ref="_M/BOOST_FUSION_GPU_ENABLED">BOOST_FUSION_GPU_ENABLED</a></td></tr>
+<tr><th id="53">53</th><td>    <b>inline</b> <b>typename</b></td></tr>
+<tr><th id="54">54</th><td>        <a class="type" href="../../../../../../../core/include/boost/core/enable_if.hpp.html#boost::lazy_enable_if" title='boost::lazy_enable_if' data-ref="boost::lazy_enable_if">lazy_enable_if</a>&lt;</td></tr>
+<tr><th id="55">55</th><td>            <span class="namespace">traits::</span><a class="type" href="../../../support/is_sequence.hpp.html#boost::fusion::traits::is_sequence" title='boost::fusion::traits::is_sequence' data-ref="boost::fusion::traits::is_sequence">is_sequence</a>&lt;Sequence&gt;</td></tr>
+<tr><th id="56">56</th><td>          , <span class="namespace">result_of::</span><a class="type" href="../../../algorithm/transformation/push_back.hpp.html#boost::fusion::result_of::push_back" title='boost::fusion::result_of::push_back' data-ref="boost::fusion::result_of::push_back">push_back</a>&lt;Sequence <em>const</em>, T&gt;</td></tr>
+<tr><th id="57">57</th><td>        &gt;::type</td></tr>
+<tr><th id="58">58</th><td>    <a class="decl fn" href="../../../algorithm/transformation/push_back.hpp.html#_ZN5boost6fusion9push_backERKT_RKT0_" title='boost::fusion::push_back' data-ref="_ZN5boost6fusion9push_backERKT_RKT0_" id="_ZN5boost6fusion9push_backERKT_RKT0_">push_back</a>(Sequence <em>const</em>&amp; <dfn class="local col5 decl" id="6135seq" title='seq' data-type='const Sequence &amp;' data-ref="6135seq">seq</dfn>, T <em>const</em>&amp; <dfn class="local col6 decl" id="6136x" title='x' data-type='const T &amp;' data-ref="6136x">x</dfn>);</td></tr>
+<tr><th id="59">59</th><td></td></tr>
+<tr><th id="60">60</th><td>    <b>template</b> &lt;<b>typename</b> Sequence, <b>typename</b> T&gt;</td></tr>
+<tr><th id="61">61</th><td>    <a class="macro" href="../../../../../../../config/include/boost/config/detail/suffix.hpp.html#1049" title="constexpr" data-ref="_M/BOOST_CXX14_CONSTEXPR">BOOST_CXX14_CONSTEXPR</a> <a class="macro" href="../../../support/config.hpp.html#16" title="" data-ref="_M/BOOST_FUSION_GPU_ENABLED">BOOST_FUSION_GPU_ENABLED</a></td></tr>
+<tr><th id="62">62</th><td>    <b>inline</b> <b>typename</b></td></tr>
+<tr><th id="63">63</th><td>        <a class="type" href="../../../../../../../core/include/boost/core/enable_if.hpp.html#boost::lazy_enable_if" title='boost::lazy_enable_if' data-ref="boost::lazy_enable_if">lazy_enable_if</a>&lt;</td></tr>
+<tr><th id="64">64</th><td>            <span class="namespace">traits::</span><a class="type" href="../../../support/is_sequence.hpp.html#boost::fusion::traits::is_sequence" title='boost::fusion::traits::is_sequence' data-ref="boost::fusion::traits::is_sequence">is_sequence</a>&lt;Sequence&gt;</td></tr>
+<tr><th id="65">65</th><td>          , <span class="namespace">result_of::</span><a class="type" href="../../../algorithm/transformation/push_front.hpp.html#boost::fusion::result_of::push_front" title='boost::fusion::result_of::push_front' data-ref="boost::fusion::result_of::push_front">push_front</a>&lt;Sequence <em>const</em>, T&gt;</td></tr>
+<tr><th id="66">66</th><td>        &gt;::type</td></tr>
+<tr><th id="67">67</th><td>    <a class="decl fn" href="../../../algorithm/transformation/push_front.hpp.html#_ZN5boost6fusion10push_frontERKT_RKT0_" title='boost::fusion::push_front' data-ref="_ZN5boost6fusion10push_frontERKT_RKT0_" id="_ZN5boost6fusion10push_frontERKT_RKT0_">push_front</a>(Sequence <em>const</em>&amp; <dfn class="local col7 decl" id="6137seq" title='seq' data-type='const Sequence &amp;' data-ref="6137seq">seq</dfn>, T <em>const</em>&amp; <dfn class="local col8 decl" id="6138x" title='x' data-type='const T &amp;' data-ref="6138x">x</dfn>);</td></tr>
+<tr><th id="68">68</th><td>}}</td></tr>
+<tr><th id="69">69</th><td></td></tr>
+<tr><th id="70">70</th><td><b>namespace</b> <span class="namespace">boost</span> { <b>namespace</b> <span class="namespace">fusion</span> { <b>namespace</b> <span class="namespace">detail</span></td></tr>
+<tr><th id="71">71</th><td>{</td></tr>
+<tr><th id="72">72</th><td>    <i>//auto make_segment_sequence_front(stack_begin)</i></td></tr>
+<tr><th id="73">73</th><td><i>    //{</i></td></tr>
+<tr><th id="74">74</th><td><i>    //  switch (size(stack_begin))</i></td></tr>
+<tr><th id="75">75</th><td><i>    //  {</i></td></tr>
+<tr><th id="76">76</th><td><i>    //  case 1:</i></td></tr>
+<tr><th id="77">77</th><td><i>    //    return nil_;</i></td></tr>
+<tr><th id="78">78</th><td><i>    //  case 2:</i></td></tr>
+<tr><th id="79">79</th><td><i>    //    // car(cdr(stack_begin)) is a range over values.</i></td></tr>
+<tr><th id="80">80</th><td><i>    //    assert(end(front(car(stack_begin))) == end(car(cdr(stack_begin))));</i></td></tr>
+<tr><th id="81">81</th><td><i>    //    return iterator_range(begin(car(cdr(stack_begin))), end(front(car(stack_begin))));</i></td></tr>
+<tr><th id="82">82</th><td><i>    //  default:</i></td></tr>
+<tr><th id="83">83</th><td><i>    //    // car(cdr(stack_begin)) is a range over segments. We replace the</i></td></tr>
+<tr><th id="84">84</th><td><i>    //    // front with a view that is restricted.</i></td></tr>
+<tr><th id="85">85</th><td><i>    //    assert(end(segments(front(car(stack_begin)))) == end(car(cdr(stack_begin))));</i></td></tr>
+<tr><th id="86">86</th><td><i>    //    return segment_sequence(</i></td></tr>
+<tr><th id="87">87</th><td><i>    //      push_front(</i></td></tr>
+<tr><th id="88">88</th><td><i>    //        // The following could be a segment_sequence. It then gets wrapped</i></td></tr>
+<tr><th id="89">89</th><td><i>    //        // in a single_view, and push_front puts it in a join_view with the</i></td></tr>
+<tr><th id="90">90</th><td><i>    //        // following iterator_range.</i></td></tr>
+<tr><th id="91">91</th><td><i>    //        iterator_range(next(begin(car(cdr(stack_begin)))), end(segments(front(car(stack_begin))))),</i></td></tr>
+<tr><th id="92">92</th><td><i>    //        make_segment_sequence_front(cdr(stack_begin))));</i></td></tr>
+<tr><th id="93">93</th><td><i>    //  }</i></td></tr>
+<tr><th id="94">94</th><td><i>    //}</i></td></tr>
+<tr><th id="95">95</th><td></td></tr>
+<tr><th id="96">96</th><td>    <b>template</b> &lt;<b>typename</b> Stack, <span class="namespace">std::</span><a class="typedef" href="../../../../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> Size = Stack::size::value&gt;</td></tr>
+<tr><th id="97">97</th><td>    <b>struct</b> <dfn class="type def" id="boost::fusion::detail::make_segment_sequence_front" title='boost::fusion::detail::make_segment_sequence_front' data-ref="boost::fusion::detail::make_segment_sequence_front">make_segment_sequence_front</dfn></td></tr>
+<tr><th id="98">98</th><td>    {</td></tr>
+<tr><th id="99">99</th><td>        <i>// assert(end(segments(front(car(stack_begin)))) == end(car(cdr(stack_begin))));</i></td></tr>
+<tr><th id="100">100</th><td>        <a class="macro" href="../../../../../../../mpl/include/boost/mpl/assert.hpp.html#295" title="enum { mpl_assertion_in_line_118 = sizeof( boost::mpl::assertion_failed&lt;false&gt;( boost::mpl::assert_arg( (void (*) ( result_of::equal_to&lt; typename result_of::end&lt; typename remove_reference&lt; typename add_const&lt; typename result_of::segments&lt; typename remove_reference&lt; typename add_const&lt; typename result_of::deref&lt; typename Stack::car_type::begin_type &gt;::type &gt;::type &gt;::type &gt;::type &gt;::type &gt;::type &gt;::type , typename Stack::cdr_type::car_type::end_type &gt;))nullptr, 1 ) ) ) }" data-ref="_M/BOOST_MPL_ASSERT">BOOST_MPL_ASSERT</a>((</td></tr>
+<tr><th id="101">101</th><td>            result_of::<a class="type" href="../../../iterator/equal_to.hpp.html#boost::fusion::result_of::equal_to" title='boost::fusion::result_of::equal_to' data-ref="boost::fusion::result_of::equal_to">equal_to</a>&lt;</td></tr>
+<tr><th id="102">102</th><td>                <b>typename</b> result_of::<a class="type" href="../../../sequence/intrinsic_fwd.hpp.html#boost::fusion::result_of::end" title='boost::fusion::result_of::end' data-ref="boost::fusion::result_of::end">end</a>&lt;</td></tr>
+<tr><th id="103">103</th><td>                    <b>typename</b> <a class="type" href="../../../../../../../type_traits/include/boost/type_traits/remove_reference.hpp.html#boost::remove_reference" title='boost::remove_reference' data-ref="boost::remove_reference">remove_reference</a>&lt;</td></tr>
+<tr><th id="104">104</th><td>                        <b>typename</b> <a class="type" href="../../../../../../../type_traits/include/boost/type_traits/add_const.hpp.html#boost::add_const" title='boost::add_const' data-ref="boost::add_const">add_const</a>&lt;</td></tr>
+<tr><th id="105">105</th><td>                            <b>typename</b> result_of::<a class="type" href="../../../sequence/intrinsic_fwd.hpp.html#boost::fusion::result_of::segments" title='boost::fusion::result_of::segments' data-ref="boost::fusion::result_of::segments">segments</a>&lt;</td></tr>
+<tr><th id="106">106</th><td>                                <b>typename</b> <a class="type" href="../../../../../../../type_traits/include/boost/type_traits/remove_reference.hpp.html#boost::remove_reference" title='boost::remove_reference' data-ref="boost::remove_reference">remove_reference</a>&lt;</td></tr>
+<tr><th id="107">107</th><td>                                    <b>typename</b> <a class="type" href="../../../../../../../type_traits/include/boost/type_traits/add_const.hpp.html#boost::add_const" title='boost::add_const' data-ref="boost::add_const">add_const</a>&lt;</td></tr>
+<tr><th id="108">108</th><td>                                        <b>typename</b> result_of::<a class="type" href="../../../iterator/deref.hpp.html#boost::fusion::result_of::deref" title='boost::fusion::result_of::deref' data-ref="boost::fusion::result_of::deref">deref</a>&lt;</td></tr>
+<tr><th id="109">109</th><td>                                            <b>typename</b> Stack::car_type::begin_type</td></tr>
+<tr><th id="110">110</th><td>                                        &gt;::type</td></tr>
+<tr><th id="111">111</th><td>                                    &gt;::type</td></tr>
+<tr><th id="112">112</th><td>                                &gt;::type</td></tr>
+<tr><th id="113">113</th><td>                            &gt;::type</td></tr>
+<tr><th id="114">114</th><td>                        &gt;::type</td></tr>
+<tr><th id="115">115</th><td>                    &gt;::type</td></tr>
+<tr><th id="116">116</th><td>                &gt;::type</td></tr>
+<tr><th id="117">117</th><td>              , <b>typename</b> Stack::cdr_type::car_type::end_type</td></tr>
+<tr><th id="118">118</th><td>            &gt;));</td></tr>
+<tr><th id="119">119</th><td></td></tr>
+<tr><th id="120">120</th><td>        <b>typedef</b></td></tr>
+<tr><th id="121">121</th><td>            <a class="type" href="../../../sequence/intrinsic/detail/segmented_end_impl.hpp.html#boost::fusion::iterator_range" title='boost::fusion::iterator_range' data-ref="boost::fusion::iterator_range">iterator_range</a>&lt;</td></tr>
+<tr><th id="122">122</th><td>                <b>typename</b> <span class="namespace">result_of::</span><a class="type" href="../../../iterator/next.hpp.html#boost::fusion::result_of::next" title='boost::fusion::result_of::next' data-ref="boost::fusion::result_of::next">next</a>&lt;</td></tr>
+<tr><th id="123">123</th><td>                    <b>typename</b> Stack::cdr_type::car_type::begin_type</td></tr>
+<tr><th id="124">124</th><td>                &gt;::type</td></tr>
+<tr><th id="125">125</th><td>              , <b>typename</b> <span class="namespace">result_of::</span><a class="type" href="../../../sequence/intrinsic_fwd.hpp.html#boost::fusion::result_of::end" title='boost::fusion::result_of::end' data-ref="boost::fusion::result_of::end">end</a>&lt;</td></tr>
+<tr><th id="126">126</th><td>                    <b>typename</b> <a class="type" href="../../../../../../../type_traits/include/boost/type_traits/remove_reference.hpp.html#boost::remove_reference" title='boost::remove_reference' data-ref="boost::remove_reference">remove_reference</a>&lt;</td></tr>
+<tr><th id="127">127</th><td>                        <b>typename</b> <a class="type" href="../../../../../../../type_traits/include/boost/type_traits/add_const.hpp.html#boost::add_const" title='boost::add_const' data-ref="boost::add_const">add_const</a>&lt;</td></tr>
+<tr><th id="128">128</th><td>                            <b>typename</b> <span class="namespace">result_of::</span><a class="type" href="../../../sequence/intrinsic_fwd.hpp.html#boost::fusion::result_of::segments" title='boost::fusion::result_of::segments' data-ref="boost::fusion::result_of::segments">segments</a>&lt;</td></tr>
+<tr><th id="129">129</th><td>                                <b>typename</b> <a class="type" href="../../../../../../../type_traits/include/boost/type_traits/remove_reference.hpp.html#boost::remove_reference" title='boost::remove_reference' data-ref="boost::remove_reference">remove_reference</a>&lt;</td></tr>
+<tr><th id="130">130</th><td>                                    <b>typename</b> <a class="type" href="../../../../../../../type_traits/include/boost/type_traits/add_const.hpp.html#boost::add_const" title='boost::add_const' data-ref="boost::add_const">add_const</a>&lt;</td></tr>
+<tr><th id="131">131</th><td>                                        <b>typename</b> <span class="namespace">result_of::</span><a class="type" href="../../../iterator/deref.hpp.html#boost::fusion::result_of::deref" title='boost::fusion::result_of::deref' data-ref="boost::fusion::result_of::deref">deref</a>&lt;</td></tr>
+<tr><th id="132">132</th><td>                                            <b>typename</b> Stack::car_type::begin_type</td></tr>
+<tr><th id="133">133</th><td>                                        &gt;::type</td></tr>
+<tr><th id="134">134</th><td>                                    &gt;::type</td></tr>
+<tr><th id="135">135</th><td>                                &gt;::type</td></tr>
+<tr><th id="136">136</th><td>                            &gt;::type</td></tr>
+<tr><th id="137">137</th><td>                        &gt;::type</td></tr>
+<tr><th id="138">138</th><td>                    &gt;::type</td></tr>
+<tr><th id="139">139</th><td>                &gt;::type</td></tr>
+<tr><th id="140">140</th><td>            &gt;</td></tr>
+<tr><th id="141">141</th><td>        <dfn class="typedef" id="boost::fusion::detail::make_segment_sequence_front::rest_type" title='boost::fusion::detail::make_segment_sequence_front::rest_type' data-type='iterator_range&lt;typename result_of::next&lt;typename Stack::cdr_type::car_type::begin_type&gt;::type, typename result_of::end&lt;typename remove_reference&lt;typename add_const&lt;typename result_of::segments&lt;typename remove_reference&lt;typename add_const&lt;typename result_of::deref&lt;typename Stack::car_type::begin_type&gt;::type&gt;::type&gt;::type&gt;::type&gt;::type&gt;::type&gt;::type&gt;' data-ref="boost::fusion::detail::make_segment_sequence_front::rest_type">rest_type</dfn>;</td></tr>
+<tr><th id="142">142</th><td></td></tr>
+<tr><th id="143">143</th><td>        <b>typedef</b></td></tr>
+<tr><th id="144">144</th><td>            <a class="type" href="#boost::fusion::detail::make_segment_sequence_front" title='boost::fusion::detail::make_segment_sequence_front' data-ref="boost::fusion::detail::make_segment_sequence_front">make_segment_sequence_front</a>&lt;<b>typename</b> Stack::cdr_type&gt;</td></tr>
+<tr><th id="145">145</th><td>        <dfn class="typedef" id="boost::fusion::detail::make_segment_sequence_front::recurse" title='boost::fusion::detail::make_segment_sequence_front::recurse' data-type='make_segment_sequence_front&lt;typename Stack::cdr_type&gt;' data-ref="boost::fusion::detail::make_segment_sequence_front::recurse">recurse</dfn>;</td></tr>
+<tr><th id="146">146</th><td></td></tr>
+<tr><th id="147">147</th><td>        <b>typedef</b></td></tr>
+<tr><th id="148">148</th><td>            <a class="type" href="../../../iterator/detail/segment_sequence.hpp.html#boost::fusion::detail::segment_sequence" title='boost::fusion::detail::segment_sequence' data-ref="boost::fusion::detail::segment_sequence">segment_sequence</a>&lt;</td></tr>
+<tr><th id="149">149</th><td>                <b>typename</b> <span class="namespace">result_of::</span><a class="type" href="../../../algorithm/transformation/push_front.hpp.html#boost::fusion::result_of::push_front" title='boost::fusion::result_of::push_front' data-ref="boost::fusion::result_of::push_front">push_front</a>&lt;</td></tr>
+<tr><th id="150">150</th><td>                    <a class="typedef" href="#boost::fusion::detail::make_segment_sequence_front::rest_type" title='boost::fusion::detail::make_segment_sequence_front::rest_type' data-type='iterator_range&lt;typename result_of::next&lt;typename Stack::cdr_type::car_type::begin_type&gt;::type, typename result_of::end&lt;typename remove_reference&lt;typename add_const&lt;typename result_of::segments&lt;typename remove_reference&lt;typename add_const&lt;typename result_of::deref&lt;typename Stack::car_type::begin_type&gt;::type&gt;::type&gt;::type&gt;::type&gt;::type&gt;::type&gt;::type&gt;' data-ref="boost::fusion::detail::make_segment_sequence_front::rest_type">rest_type</a> <em>const</em></td></tr>
+<tr><th id="151">151</th><td>                  , <b>typename</b> <a class="typedef" href="#boost::fusion::detail::make_segment_sequence_front::recurse" title='boost::fusion::detail::make_segment_sequence_front::recurse' data-type='make_segment_sequence_front&lt;typename Stack::cdr_type&gt;' data-ref="boost::fusion::detail::make_segment_sequence_front::recurse">recurse</a>::type</td></tr>
+<tr><th id="152">152</th><td>                &gt;::type</td></tr>
+<tr><th id="153">153</th><td>            &gt;</td></tr>
+<tr><th id="154">154</th><td>        <dfn class="typedef" id="boost::fusion::detail::make_segment_sequence_front::type" title='boost::fusion::detail::make_segment_sequence_front::type' data-type='segment_sequence&lt;typename result_of::push_front&lt;const rest_type, typename recurse::type&gt;::type&gt;' data-ref="boost::fusion::detail::make_segment_sequence_front::type">type</dfn>;</td></tr>
+<tr><th id="155">155</th><td></td></tr>
+<tr><th id="156">156</th><td>        <a class="macro" href="../../../../../../../config/include/boost/config/detail/suffix.hpp.html#1043" title="constexpr" data-ref="_M/BOOST_CONSTEXPR">BOOST_CONSTEXPR</a> <a class="macro" href="../../../support/config.hpp.html#16" title="" data-ref="_M/BOOST_FUSION_GPU_ENABLED">BOOST_FUSION_GPU_ENABLED</a></td></tr>
+<tr><th id="157">157</th><td>        <em>static</em> <a class="typedef" href="#boost::fusion::detail::make_segment_sequence_front::type" title='boost::fusion::detail::make_segment_sequence_front::type' data-type='segment_sequence&lt;typename result_of::push_front&lt;const rest_type, typename recurse::type&gt;::type&gt;' data-ref="boost::fusion::detail::make_segment_sequence_front::type">type</a> <dfn class="decl def fn" id="_ZN5boost6fusion6detail27make_segment_sequence_front4callERKT_" title='boost::fusion::detail::make_segment_sequence_front::call' data-ref="_ZN5boost6fusion6detail27make_segment_sequence_front4callERKT_">call</dfn>(Stack <em>const</em>&amp; <dfn class="local col9 decl" id="6139stack" title='stack' data-type='const Stack &amp;' data-ref="6139stack">stack</dfn>)</td></tr>
+<tr><th id="158">158</th><td>        {</td></tr>
+<tr><th id="159">159</th><td>            <i>//return segment_sequence(</i></td></tr>
+<tr><th id="160">160</th><td><i>            //  push_front(</i></td></tr>
+<tr><th id="161">161</th><td><i>            //    iterator_range(next(begin(car(cdr(stack_begin)))), end(segments(front(car(stack_begin))))),</i></td></tr>
+<tr><th id="162">162</th><td><i>            //    make_segment_sequence_front(cdr(stack_begin))));</i></td></tr>
+<tr><th id="163">163</th><td>            <b>return</b> <a class="typedef" href="#boost::fusion::detail::make_segment_sequence_front::type" title='boost::fusion::detail::make_segment_sequence_front::type' data-type='segment_sequence&lt;typename result_of::push_front&lt;const rest_type, typename recurse::type&gt;::type&gt;' data-ref="boost::fusion::detail::make_segment_sequence_front::type">type</a>(</td></tr>
+<tr><th id="164">164</th><td>                <span class="namespace">fusion::</span>push_front(</td></tr>
+<tr><th id="165">165</th><td>                    <a class="typedef" href="#boost::fusion::detail::make_segment_sequence_front::rest_type" title='boost::fusion::detail::make_segment_sequence_front::rest_type' data-type='iterator_range&lt;typename result_of::next&lt;typename Stack::cdr_type::car_type::begin_type&gt;::type, typename result_of::end&lt;typename remove_reference&lt;typename add_const&lt;typename result_of::segments&lt;typename remove_reference&lt;typename add_const&lt;typename result_of::deref&lt;typename Stack::car_type::begin_type&gt;::type&gt;::type&gt;::type&gt;::type&gt;::type&gt;::type&gt;::type&gt;' data-ref="boost::fusion::detail::make_segment_sequence_front::rest_type">rest_type</a>(<span class="namespace">fusion::</span>next(<a class="local col9 ref" href="#6139stack" title='stack' data-ref="6139stack">stack</a>.cdr.car.first), <span class="namespace">fusion::</span>end(<span class="namespace">fusion::</span>segments(*<a class="local col9 ref" href="#6139stack" title='stack' data-ref="6139stack">stack</a>.car.first)))</td></tr>
+<tr><th id="166">166</th><td>                  , <a class="typedef" href="#boost::fusion::detail::make_segment_sequence_front::recurse" title='boost::fusion::detail::make_segment_sequence_front::recurse' data-type='make_segment_sequence_front&lt;typename Stack::cdr_type&gt;' data-ref="boost::fusion::detail::make_segment_sequence_front::recurse">recurse</a>::call(<a class="local col9 ref" href="#6139stack" title='stack' data-ref="6139stack">stack</a>.cdr)));</td></tr>
+<tr><th id="167">167</th><td>        }</td></tr>
+<tr><th id="168">168</th><td>    };</td></tr>
+<tr><th id="169">169</th><td></td></tr>
+<tr><th id="170">170</th><td>    <b>template</b> &lt;<b>typename</b> Stack&gt;</td></tr>
+<tr><th id="171">171</th><td>    <b>struct</b> <dfn class="type def" id="boost::fusion::detail::make_segment_sequence_front" title='boost::fusion::detail::make_segment_sequence_front' data-ref="boost::fusion::detail::make_segment_sequence_front">make_segment_sequence_front</dfn>&lt;Stack, <var>2</var>&gt;</td></tr>
+<tr><th id="172">172</th><td>    {</td></tr>
+<tr><th id="173">173</th><td>        <i>// assert(end(front(car(stack_begin))) == end(car(cdr(stack_begin))));</i></td></tr>
+<tr><th id="174">174</th><td>        <a class="macro" href="../../../../../../../mpl/include/boost/mpl/assert.hpp.html#295" title="enum { mpl_assertion_in_line_186 = sizeof( boost::mpl::assertion_failed&lt;false&gt;( boost::mpl::assert_arg( (void (*) ( result_of::equal_to&lt; typename result_of::end&lt; typename remove_reference&lt; typename add_const&lt; typename result_of::deref&lt; typename Stack::car_type::begin_type &gt;::type &gt;::type &gt;::type &gt;::type , typename Stack::cdr_type::car_type::end_type &gt;))nullptr, 1 ) ) ) }" data-ref="_M/BOOST_MPL_ASSERT">BOOST_MPL_ASSERT</a>((</td></tr>
+<tr><th id="175">175</th><td>            result_of::<a class="type" href="../../../iterator/equal_to.hpp.html#boost::fusion::result_of::equal_to" title='boost::fusion::result_of::equal_to' data-ref="boost::fusion::result_of::equal_to">equal_to</a>&lt;</td></tr>
+<tr><th id="176">176</th><td>                <b>typename</b> result_of::<a class="type" href="../../../sequence/intrinsic_fwd.hpp.html#boost::fusion::result_of::end" title='boost::fusion::result_of::end' data-ref="boost::fusion::result_of::end">end</a>&lt;</td></tr>
+<tr><th id="177">177</th><td>                    <b>typename</b> <a class="type" href="../../../../../../../type_traits/include/boost/type_traits/remove_reference.hpp.html#boost::remove_reference" title='boost::remove_reference' data-ref="boost::remove_reference">remove_reference</a>&lt;</td></tr>
+<tr><th id="178">178</th><td>                        <b>typename</b> <a class="type" href="../../../../../../../type_traits/include/boost/type_traits/add_const.hpp.html#boost::add_const" title='boost::add_const' data-ref="boost::add_const">add_const</a>&lt;</td></tr>
+<tr><th id="179">179</th><td>                            <b>typename</b> result_of::<a class="type" href="../../../iterator/deref.hpp.html#boost::fusion::result_of::deref" title='boost::fusion::result_of::deref' data-ref="boost::fusion::result_of::deref">deref</a>&lt;</td></tr>
+<tr><th id="180">180</th><td>                                <b>typename</b> Stack::car_type::begin_type</td></tr>
+<tr><th id="181">181</th><td>                            &gt;::type</td></tr>
+<tr><th id="182">182</th><td>                        &gt;::type</td></tr>
+<tr><th id="183">183</th><td>                    &gt;::type</td></tr>
+<tr><th id="184">184</th><td>                &gt;::type</td></tr>
+<tr><th id="185">185</th><td>              , <b>typename</b> Stack::cdr_type::car_type::end_type</td></tr>
+<tr><th id="186">186</th><td>            &gt;));</td></tr>
+<tr><th id="187">187</th><td></td></tr>
+<tr><th id="188">188</th><td>        <b>typedef</b></td></tr>
+<tr><th id="189">189</th><td>            <a class="type" href="../../../sequence/intrinsic/detail/segmented_end_impl.hpp.html#boost::fusion::iterator_range" title='boost::fusion::iterator_range' data-ref="boost::fusion::iterator_range">iterator_range</a>&lt;</td></tr>
+<tr><th id="190">190</th><td>                <b>typename</b> Stack::cdr_type::car_type::begin_type</td></tr>
+<tr><th id="191">191</th><td>              , <b>typename</b> <span class="namespace">result_of::</span><a class="type" href="../../../sequence/intrinsic_fwd.hpp.html#boost::fusion::result_of::end" title='boost::fusion::result_of::end' data-ref="boost::fusion::result_of::end">end</a>&lt;</td></tr>
+<tr><th id="192">192</th><td>                    <b>typename</b> <a class="type" href="../../../../../../../type_traits/include/boost/type_traits/remove_reference.hpp.html#boost::remove_reference" title='boost::remove_reference' data-ref="boost::remove_reference">remove_reference</a>&lt;</td></tr>
+<tr><th id="193">193</th><td>                        <b>typename</b> <a class="type" href="../../../../../../../type_traits/include/boost/type_traits/add_const.hpp.html#boost::add_const" title='boost::add_const' data-ref="boost::add_const">add_const</a>&lt;</td></tr>
+<tr><th id="194">194</th><td>                            <b>typename</b> <span class="namespace">result_of::</span><a class="type" href="../../../iterator/deref.hpp.html#boost::fusion::result_of::deref" title='boost::fusion::result_of::deref' data-ref="boost::fusion::result_of::deref">deref</a>&lt;</td></tr>
+<tr><th id="195">195</th><td>                                <b>typename</b> Stack::car_type::begin_type</td></tr>
+<tr><th id="196">196</th><td>                            &gt;::type</td></tr>
+<tr><th id="197">197</th><td>                        &gt;::type</td></tr>
+<tr><th id="198">198</th><td>                    &gt;::type</td></tr>
+<tr><th id="199">199</th><td>                &gt;::type</td></tr>
+<tr><th id="200">200</th><td>            &gt;</td></tr>
+<tr><th id="201">201</th><td>        <dfn class="typedef" id="boost::fusion::detail::make_segment_sequence_front{type-parameter-0-0,2}::type" title='boost::fusion::detail::make_segment_sequence_front&lt;type-parameter-0-0, 2&gt;::type' data-type='iterator_range&lt;typename Stack::cdr_type::car_type::begin_type, typename result_of::end&lt;typename remove_reference&lt;typename add_const&lt;typename result_of::deref&lt;typename Stack::car_type::begin_type&gt;::type&gt;::type&gt;::type&gt;::type&gt;' data-ref="boost::fusion::detail::make_segment_sequence_front{type-parameter-0-0,2}::type">type</dfn>;</td></tr>
+<tr><th id="202">202</th><td></td></tr>
+<tr><th id="203">203</th><td>        <a class="macro" href="../../../../../../../config/include/boost/config/detail/suffix.hpp.html#1043" title="constexpr" data-ref="_M/BOOST_CONSTEXPR">BOOST_CONSTEXPR</a> <a class="macro" href="../../../support/config.hpp.html#16" title="" data-ref="_M/BOOST_FUSION_GPU_ENABLED">BOOST_FUSION_GPU_ENABLED</a></td></tr>
+<tr><th id="204">204</th><td>        <em>static</em> <a class="typedef" href="#boost::fusion::detail::make_segment_sequence_front{type-parameter-0-0,2}::type" title='boost::fusion::detail::make_segment_sequence_front&lt;type-parameter-0-0, 2&gt;::type' data-type='iterator_range&lt;typename Stack::cdr_type::car_type::begin_type, typename result_of::end&lt;typename remove_reference&lt;typename add_const&lt;typename result_of::deref&lt;typename Stack::car_type::begin_type&gt;::type&gt;::type&gt;::type&gt;::type&gt;' data-ref="boost::fusion::detail::make_segment_sequence_front{type-parameter-0-0,2}::type">type</a> <dfn class="decl def fn" id="_ZN5boost6fusion6detail27make_segment_sequence_frontIT_Lm2EE4callERKS3_" title='boost::fusion::detail::make_segment_sequence_front&lt;type-parameter-0-0, 2&gt;::call' data-ref="_ZN5boost6fusion6detail27make_segment_sequence_frontIT_Lm2EE4callERKS3_">call</dfn>(Stack <em>const</em>&amp; <dfn class="local col0 decl" id="6140stack" title='stack' data-type='const Stack &amp;' data-ref="6140stack">stack</dfn>)</td></tr>
+<tr><th id="205">205</th><td>        {</td></tr>
+<tr><th id="206">206</th><td>            <i>// return iterator_range(begin(car(cdr(stack_begin))), end(front(car(stack_begin))));</i></td></tr>
+<tr><th id="207">207</th><td>            <b>return</b> <a class="typedef" href="#boost::fusion::detail::make_segment_sequence_front{type-parameter-0-0,2}::type" title='boost::fusion::detail::make_segment_sequence_front&lt;type-parameter-0-0, 2&gt;::type' data-type='iterator_range&lt;typename Stack::cdr_type::car_type::begin_type, typename result_of::end&lt;typename remove_reference&lt;typename add_const&lt;typename result_of::deref&lt;typename Stack::car_type::begin_type&gt;::type&gt;::type&gt;::type&gt;::type&gt;' data-ref="boost::fusion::detail::make_segment_sequence_front{type-parameter-0-0,2}::type">type</a>(<a class="local col0 ref" href="#6140stack" title='stack' data-ref="6140stack">stack</a>.cdr.car.first, <span class="namespace">fusion::</span>end(*<a class="local col0 ref" href="#6140stack" title='stack' data-ref="6140stack">stack</a>.car.first));</td></tr>
+<tr><th id="208">208</th><td>        }</td></tr>
+<tr><th id="209">209</th><td>    };</td></tr>
+<tr><th id="210">210</th><td></td></tr>
+<tr><th id="211">211</th><td>    <b>template</b> &lt;<b>typename</b> Stack&gt;</td></tr>
+<tr><th id="212">212</th><td>    <b>struct</b> <dfn class="type def" id="boost::fusion::detail::make_segment_sequence_front" title='boost::fusion::detail::make_segment_sequence_front' data-ref="boost::fusion::detail::make_segment_sequence_front">make_segment_sequence_front</dfn>&lt;Stack, <var>1</var>&gt;</td></tr>
+<tr><th id="213">213</th><td>    {</td></tr>
+<tr><th id="214">214</th><td>        <b>typedef</b> <b>typename</b> Stack::cdr_type <dfn class="typedef" id="boost::fusion::detail::make_segment_sequence_front{type-parameter-0-0,1}::type" title='boost::fusion::detail::make_segment_sequence_front&lt;type-parameter-0-0, 1&gt;::type' data-type='typename Stack::cdr_type' data-ref="boost::fusion::detail::make_segment_sequence_front{type-parameter-0-0,1}::type">type</dfn>; <i>// nil_</i></td></tr>
+<tr><th id="215">215</th><td></td></tr>
+<tr><th id="216">216</th><td>        <a class="macro" href="../../../../../../../config/include/boost/config/detail/suffix.hpp.html#1043" title="constexpr" data-ref="_M/BOOST_CONSTEXPR">BOOST_CONSTEXPR</a> <a class="macro" href="../../../support/config.hpp.html#16" title="" data-ref="_M/BOOST_FUSION_GPU_ENABLED">BOOST_FUSION_GPU_ENABLED</a></td></tr>
+<tr><th id="217">217</th><td>        <em>static</em> <a class="typedef" href="#boost::fusion::detail::make_segment_sequence_front{type-parameter-0-0,1}::type" title='boost::fusion::detail::make_segment_sequence_front&lt;type-parameter-0-0, 1&gt;::type' data-type='typename Stack::cdr_type' data-ref="boost::fusion::detail::make_segment_sequence_front{type-parameter-0-0,1}::type">type</a> <dfn class="decl def fn" id="_ZN5boost6fusion6detail27make_segment_sequence_frontIT_Lm1EE4callERKS3_" title='boost::fusion::detail::make_segment_sequence_front&lt;type-parameter-0-0, 1&gt;::call' data-ref="_ZN5boost6fusion6detail27make_segment_sequence_frontIT_Lm1EE4callERKS3_">call</dfn>(Stack <em>const</em> &amp;<dfn class="local col1 decl" id="6141stack" title='stack' data-type='const Stack &amp;' data-ref="6141stack">stack</dfn>)</td></tr>
+<tr><th id="218">218</th><td>        {</td></tr>
+<tr><th id="219">219</th><td>            <b>return</b> <a class="local col1 ref" href="#6141stack" title='stack' data-ref="6141stack">stack</a>.cdr;</td></tr>
+<tr><th id="220">220</th><td>        }</td></tr>
+<tr><th id="221">221</th><td>    };</td></tr>
+<tr><th id="222">222</th><td></td></tr>
+<tr><th id="223">223</th><td>    <i>//auto make_segment_sequence_back(stack_end)</i></td></tr>
+<tr><th id="224">224</th><td><i>    //{</i></td></tr>
+<tr><th id="225">225</th><td><i>    //  switch (size(stack_end))</i></td></tr>
+<tr><th id="226">226</th><td><i>    //  {</i></td></tr>
+<tr><th id="227">227</th><td><i>    //  case 1:</i></td></tr>
+<tr><th id="228">228</th><td><i>    //    return nil_;</i></td></tr>
+<tr><th id="229">229</th><td><i>    //  case 2:</i></td></tr>
+<tr><th id="230">230</th><td><i>    //    // car(cdr(stack_back)) is a range over values.</i></td></tr>
+<tr><th id="231">231</th><td><i>    //    assert(end(front(car(stack_end))) == end(car(cdr(stack_end))));</i></td></tr>
+<tr><th id="232">232</th><td><i>    //    return iterator_range(begin(front(car(stack_end))), begin(car(cdr(stack_end))));</i></td></tr>
+<tr><th id="233">233</th><td><i>    //  default:</i></td></tr>
+<tr><th id="234">234</th><td><i>    //    // car(cdr(stack_begin)) is a range over segments. We replace the</i></td></tr>
+<tr><th id="235">235</th><td><i>    //    // back with a view that is restricted.</i></td></tr>
+<tr><th id="236">236</th><td><i>    //    assert(end(segments(front(car(stack_end)))) == end(car(cdr(stack_end))));</i></td></tr>
+<tr><th id="237">237</th><td><i>    //    return segment_sequence(</i></td></tr>
+<tr><th id="238">238</th><td><i>    //      push_back(</i></td></tr>
+<tr><th id="239">239</th><td><i>    //        iterator_range(begin(segments(front(car(stack_end)))), begin(car(cdr(stack_end)))),</i></td></tr>
+<tr><th id="240">240</th><td><i>    //        make_segment_sequence_back(cdr(stack_end))));</i></td></tr>
+<tr><th id="241">241</th><td><i>    //  }</i></td></tr>
+<tr><th id="242">242</th><td><i>    //}</i></td></tr>
+<tr><th id="243">243</th><td></td></tr>
+<tr><th id="244">244</th><td>    <b>template</b> &lt;<b>typename</b> Stack, <span class="namespace">std::</span><a class="typedef" href="../../../../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> Size = Stack::size::value&gt;</td></tr>
+<tr><th id="245">245</th><td>    <b>struct</b> <dfn class="type def" id="boost::fusion::detail::make_segment_sequence_back" title='boost::fusion::detail::make_segment_sequence_back' data-ref="boost::fusion::detail::make_segment_sequence_back">make_segment_sequence_back</dfn></td></tr>
+<tr><th id="246">246</th><td>    {</td></tr>
+<tr><th id="247">247</th><td>        <i>// assert(end(segments(front(car(stack_begin)))) == end(car(cdr(stack_begin))));</i></td></tr>
+<tr><th id="248">248</th><td>        <a class="macro" href="../../../../../../../mpl/include/boost/mpl/assert.hpp.html#295" title="enum { mpl_assertion_in_line_266 = sizeof( boost::mpl::assertion_failed&lt;false&gt;( boost::mpl::assert_arg( (void (*) ( result_of::equal_to&lt; typename result_of::end&lt; typename remove_reference&lt; typename add_const&lt; typename result_of::segments&lt; typename remove_reference&lt; typename add_const&lt; typename result_of::deref&lt; typename Stack::car_type::begin_type &gt;::type &gt;::type &gt;::type &gt;::type &gt;::type &gt;::type &gt;::type , typename Stack::cdr_type::car_type::end_type &gt;))nullptr, 1 ) ) ) }" data-ref="_M/BOOST_MPL_ASSERT">BOOST_MPL_ASSERT</a>((</td></tr>
+<tr><th id="249">249</th><td>            result_of::<a class="type" href="../../../iterator/equal_to.hpp.html#boost::fusion::result_of::equal_to" title='boost::fusion::result_of::equal_to' data-ref="boost::fusion::result_of::equal_to">equal_to</a>&lt;</td></tr>
+<tr><th id="250">250</th><td>                <b>typename</b> result_of::<a class="type" href="../../../sequence/intrinsic_fwd.hpp.html#boost::fusion::result_of::end" title='boost::fusion::result_of::end' data-ref="boost::fusion::result_of::end">end</a>&lt;</td></tr>
+<tr><th id="251">251</th><td>                    <b>typename</b> <a class="type" href="../../../../../../../type_traits/include/boost/type_traits/remove_reference.hpp.html#boost::remove_reference" title='boost::remove_reference' data-ref="boost::remove_reference">remove_reference</a>&lt;</td></tr>
+<tr><th id="252">252</th><td>                        <b>typename</b> <a class="type" href="../../../../../../../type_traits/include/boost/type_traits/add_const.hpp.html#boost::add_const" title='boost::add_const' data-ref="boost::add_const">add_const</a>&lt;</td></tr>
+<tr><th id="253">253</th><td>                            <b>typename</b> result_of::<a class="type" href="../../../sequence/intrinsic_fwd.hpp.html#boost::fusion::result_of::segments" title='boost::fusion::result_of::segments' data-ref="boost::fusion::result_of::segments">segments</a>&lt;</td></tr>
+<tr><th id="254">254</th><td>                                <b>typename</b> <a class="type" href="../../../../../../../type_traits/include/boost/type_traits/remove_reference.hpp.html#boost::remove_reference" title='boost::remove_reference' data-ref="boost::remove_reference">remove_reference</a>&lt;</td></tr>
+<tr><th id="255">255</th><td>                                    <b>typename</b> <a class="type" href="../../../../../../../type_traits/include/boost/type_traits/add_const.hpp.html#boost::add_const" title='boost::add_const' data-ref="boost::add_const">add_const</a>&lt;</td></tr>
+<tr><th id="256">256</th><td>                                        <b>typename</b> result_of::<a class="type" href="../../../iterator/deref.hpp.html#boost::fusion::result_of::deref" title='boost::fusion::result_of::deref' data-ref="boost::fusion::result_of::deref">deref</a>&lt;</td></tr>
+<tr><th id="257">257</th><td>                                            <b>typename</b> Stack::car_type::begin_type</td></tr>
+<tr><th id="258">258</th><td>                                        &gt;::type</td></tr>
+<tr><th id="259">259</th><td>                                    &gt;::type</td></tr>
+<tr><th id="260">260</th><td>                                &gt;::type</td></tr>
+<tr><th id="261">261</th><td>                            &gt;::type</td></tr>
+<tr><th id="262">262</th><td>                        &gt;::type</td></tr>
+<tr><th id="263">263</th><td>                    &gt;::type</td></tr>
+<tr><th id="264">264</th><td>                &gt;::type</td></tr>
+<tr><th id="265">265</th><td>              , <b>typename</b> Stack::cdr_type::car_type::end_type</td></tr>
+<tr><th id="266">266</th><td>            &gt;));</td></tr>
+<tr><th id="267">267</th><td></td></tr>
+<tr><th id="268">268</th><td>        <b>typedef</b></td></tr>
+<tr><th id="269">269</th><td>            <a class="type" href="../../../sequence/intrinsic/detail/segmented_end_impl.hpp.html#boost::fusion::iterator_range" title='boost::fusion::iterator_range' data-ref="boost::fusion::iterator_range">iterator_range</a>&lt;</td></tr>
+<tr><th id="270">270</th><td>                <b>typename</b> <span class="namespace">result_of::</span><a class="type" href="../../../sequence/intrinsic_fwd.hpp.html#boost::fusion::result_of::begin" title='boost::fusion::result_of::begin' data-ref="boost::fusion::result_of::begin">begin</a>&lt;</td></tr>
+<tr><th id="271">271</th><td>                    <b>typename</b> <a class="type" href="../../../../../../../type_traits/include/boost/type_traits/remove_reference.hpp.html#boost::remove_reference" title='boost::remove_reference' data-ref="boost::remove_reference">remove_reference</a>&lt;</td></tr>
+<tr><th id="272">272</th><td>                        <b>typename</b> <a class="type" href="../../../../../../../type_traits/include/boost/type_traits/add_const.hpp.html#boost::add_const" title='boost::add_const' data-ref="boost::add_const">add_const</a>&lt;</td></tr>
+<tr><th id="273">273</th><td>                            <b>typename</b> <span class="namespace">result_of::</span><a class="type" href="../../../sequence/intrinsic_fwd.hpp.html#boost::fusion::result_of::segments" title='boost::fusion::result_of::segments' data-ref="boost::fusion::result_of::segments">segments</a>&lt;</td></tr>
+<tr><th id="274">274</th><td>                                <b>typename</b> <a class="type" href="../../../../../../../type_traits/include/boost/type_traits/remove_reference.hpp.html#boost::remove_reference" title='boost::remove_reference' data-ref="boost::remove_reference">remove_reference</a>&lt;</td></tr>
+<tr><th id="275">275</th><td>                                    <b>typename</b> <a class="type" href="../../../../../../../type_traits/include/boost/type_traits/add_const.hpp.html#boost::add_const" title='boost::add_const' data-ref="boost::add_const">add_const</a>&lt;</td></tr>
+<tr><th id="276">276</th><td>                                        <b>typename</b> <span class="namespace">result_of::</span><a class="type" href="../../../iterator/deref.hpp.html#boost::fusion::result_of::deref" title='boost::fusion::result_of::deref' data-ref="boost::fusion::result_of::deref">deref</a>&lt;</td></tr>
+<tr><th id="277">277</th><td>                                            <b>typename</b> Stack::car_type::begin_type</td></tr>
+<tr><th id="278">278</th><td>                                        &gt;::type</td></tr>
+<tr><th id="279">279</th><td>                                    &gt;::type</td></tr>
+<tr><th id="280">280</th><td>                                &gt;::type</td></tr>
+<tr><th id="281">281</th><td>                            &gt;::type</td></tr>
+<tr><th id="282">282</th><td>                        &gt;::type</td></tr>
+<tr><th id="283">283</th><td>                    &gt;::type</td></tr>
+<tr><th id="284">284</th><td>                &gt;::type</td></tr>
+<tr><th id="285">285</th><td>              , <b>typename</b> Stack::cdr_type::car_type::begin_type</td></tr>
+<tr><th id="286">286</th><td>            &gt;</td></tr>
+<tr><th id="287">287</th><td>        <dfn class="typedef" id="boost::fusion::detail::make_segment_sequence_back::rest_type" title='boost::fusion::detail::make_segment_sequence_back::rest_type' data-type='iterator_range&lt;typename result_of::begin&lt;typename remove_reference&lt;typename add_const&lt;typename result_of::segments&lt;typename remove_reference&lt;typename add_const&lt;typename result_of::deref&lt;typename Stack::car_type::begin_type&gt;::type&gt;::type&gt;::type&gt;::type&gt;::type&gt;::type&gt;::type, typename Stack::cdr_type::car_type::begin_type&gt;' data-ref="boost::fusion::detail::make_segment_sequence_back::rest_type">rest_type</dfn>;</td></tr>
+<tr><th id="288">288</th><td></td></tr>
+<tr><th id="289">289</th><td>        <b>typedef</b></td></tr>
+<tr><th id="290">290</th><td>            <a class="type" href="#boost::fusion::detail::make_segment_sequence_back" title='boost::fusion::detail::make_segment_sequence_back' data-ref="boost::fusion::detail::make_segment_sequence_back">make_segment_sequence_back</a>&lt;<b>typename</b> Stack::cdr_type&gt;</td></tr>
+<tr><th id="291">291</th><td>        <dfn class="typedef" id="boost::fusion::detail::make_segment_sequence_back::recurse" title='boost::fusion::detail::make_segment_sequence_back::recurse' data-type='make_segment_sequence_back&lt;typename Stack::cdr_type&gt;' data-ref="boost::fusion::detail::make_segment_sequence_back::recurse">recurse</dfn>;</td></tr>
+<tr><th id="292">292</th><td></td></tr>
+<tr><th id="293">293</th><td>        <b>typedef</b></td></tr>
+<tr><th id="294">294</th><td>            <a class="type" href="../../../iterator/detail/segment_sequence.hpp.html#boost::fusion::detail::segment_sequence" title='boost::fusion::detail::segment_sequence' data-ref="boost::fusion::detail::segment_sequence">segment_sequence</a>&lt;</td></tr>
+<tr><th id="295">295</th><td>                <b>typename</b> <span class="namespace">result_of::</span><a class="type" href="../../../algorithm/transformation/push_back.hpp.html#boost::fusion::result_of::push_back" title='boost::fusion::result_of::push_back' data-ref="boost::fusion::result_of::push_back">push_back</a>&lt;</td></tr>
+<tr><th id="296">296</th><td>                    <a class="typedef" href="#boost::fusion::detail::make_segment_sequence_back::rest_type" title='boost::fusion::detail::make_segment_sequence_back::rest_type' data-type='iterator_range&lt;typename result_of::begin&lt;typename remove_reference&lt;typename add_const&lt;typename result_of::segments&lt;typename remove_reference&lt;typename add_const&lt;typename result_of::deref&lt;typename Stack::car_type::begin_type&gt;::type&gt;::type&gt;::type&gt;::type&gt;::type&gt;::type&gt;::type, typename Stack::cdr_type::car_type::begin_type&gt;' data-ref="boost::fusion::detail::make_segment_sequence_back::rest_type">rest_type</a> <em>const</em></td></tr>
+<tr><th id="297">297</th><td>                  , <b>typename</b> <a class="typedef" href="#boost::fusion::detail::make_segment_sequence_back::recurse" title='boost::fusion::detail::make_segment_sequence_back::recurse' data-type='make_segment_sequence_back&lt;typename Stack::cdr_type&gt;' data-ref="boost::fusion::detail::make_segment_sequence_back::recurse">recurse</a>::type</td></tr>
+<tr><th id="298">298</th><td>                &gt;::type</td></tr>
+<tr><th id="299">299</th><td>            &gt;</td></tr>
+<tr><th id="300">300</th><td>        <dfn class="typedef" id="boost::fusion::detail::make_segment_sequence_back::type" title='boost::fusion::detail::make_segment_sequence_back::type' data-type='segment_sequence&lt;typename result_of::push_back&lt;const rest_type, typename recurse::type&gt;::type&gt;' data-ref="boost::fusion::detail::make_segment_sequence_back::type">type</dfn>;</td></tr>
+<tr><th id="301">301</th><td></td></tr>
+<tr><th id="302">302</th><td>        <a class="macro" href="../../../../../../../config/include/boost/config/detail/suffix.hpp.html#1043" title="constexpr" data-ref="_M/BOOST_CONSTEXPR">BOOST_CONSTEXPR</a> <a class="macro" href="../../../support/config.hpp.html#16" title="" data-ref="_M/BOOST_FUSION_GPU_ENABLED">BOOST_FUSION_GPU_ENABLED</a></td></tr>
+<tr><th id="303">303</th><td>        <em>static</em> <a class="typedef" href="#boost::fusion::detail::make_segment_sequence_back::type" title='boost::fusion::detail::make_segment_sequence_back::type' data-type='segment_sequence&lt;typename result_of::push_back&lt;const rest_type, typename recurse::type&gt;::type&gt;' data-ref="boost::fusion::detail::make_segment_sequence_back::type">type</a> <dfn class="decl def fn" id="_ZN5boost6fusion6detail26make_segment_sequence_back4callERKT_" title='boost::fusion::detail::make_segment_sequence_back::call' data-ref="_ZN5boost6fusion6detail26make_segment_sequence_back4callERKT_">call</dfn>(Stack <em>const</em>&amp; <dfn class="local col2 decl" id="6142stack" title='stack' data-type='const Stack &amp;' data-ref="6142stack">stack</dfn>)</td></tr>
+<tr><th id="304">304</th><td>        {</td></tr>
+<tr><th id="305">305</th><td>            <i>//  return segment_sequence(</i></td></tr>
+<tr><th id="306">306</th><td><i>            //    push_back(</i></td></tr>
+<tr><th id="307">307</th><td><i>            //      iterator_range(begin(segments(front(car(stack_end)))), begin(car(cdr(stack_end)))),</i></td></tr>
+<tr><th id="308">308</th><td><i>            //      make_segment_sequence_back(cdr(stack_end))));</i></td></tr>
+<tr><th id="309">309</th><td>            <b>return</b> <a class="typedef" href="#boost::fusion::detail::make_segment_sequence_back::type" title='boost::fusion::detail::make_segment_sequence_back::type' data-type='segment_sequence&lt;typename result_of::push_back&lt;const rest_type, typename recurse::type&gt;::type&gt;' data-ref="boost::fusion::detail::make_segment_sequence_back::type">type</a>(</td></tr>
+<tr><th id="310">310</th><td>                <span class="namespace">fusion::</span>push_back(</td></tr>
+<tr><th id="311">311</th><td>                    <a class="typedef" href="#boost::fusion::detail::make_segment_sequence_back::rest_type" title='boost::fusion::detail::make_segment_sequence_back::rest_type' data-type='iterator_range&lt;typename result_of::begin&lt;typename remove_reference&lt;typename add_const&lt;typename result_of::segments&lt;typename remove_reference&lt;typename add_const&lt;typename result_of::deref&lt;typename Stack::car_type::begin_type&gt;::type&gt;::type&gt;::type&gt;::type&gt;::type&gt;::type&gt;::type, typename Stack::cdr_type::car_type::begin_type&gt;' data-ref="boost::fusion::detail::make_segment_sequence_back::rest_type">rest_type</a>(<span class="namespace">fusion::</span>begin(<span class="namespace">fusion::</span>segments(*<a class="local col2 ref" href="#6142stack" title='stack' data-ref="6142stack">stack</a>.car.first)), <a class="local col2 ref" href="#6142stack" title='stack' data-ref="6142stack">stack</a>.cdr.car.first)</td></tr>
+<tr><th id="312">312</th><td>                  , <a class="typedef" href="#boost::fusion::detail::make_segment_sequence_back::recurse" title='boost::fusion::detail::make_segment_sequence_back::recurse' data-type='make_segment_sequence_back&lt;typename Stack::cdr_type&gt;' data-ref="boost::fusion::detail::make_segment_sequence_back::recurse">recurse</a>::call(<a class="local col2 ref" href="#6142stack" title='stack' data-ref="6142stack">stack</a>.cdr)));</td></tr>
+<tr><th id="313">313</th><td>        }</td></tr>
+<tr><th id="314">314</th><td>    };</td></tr>
+<tr><th id="315">315</th><td></td></tr>
+<tr><th id="316">316</th><td>    <b>template</b> &lt;<b>typename</b> Stack&gt;</td></tr>
+<tr><th id="317">317</th><td>    <b>struct</b> <dfn class="type def" id="boost::fusion::detail::make_segment_sequence_back" title='boost::fusion::detail::make_segment_sequence_back' data-ref="boost::fusion::detail::make_segment_sequence_back">make_segment_sequence_back</dfn>&lt;Stack, <var>2</var>&gt;</td></tr>
+<tr><th id="318">318</th><td>    {</td></tr>
+<tr><th id="319">319</th><td>        <i>// assert(end(front(car(stack_end))) == end(car(cdr(stack_end))));</i></td></tr>
+<tr><th id="320">320</th><td>        <a class="macro" href="../../../../../../../mpl/include/boost/mpl/assert.hpp.html#295" title="enum { mpl_assertion_in_line_332 = sizeof( boost::mpl::assertion_failed&lt;false&gt;( boost::mpl::assert_arg( (void (*) ( result_of::equal_to&lt; typename result_of::end&lt; typename remove_reference&lt; typename add_const&lt; typename result_of::deref&lt; typename Stack::car_type::begin_type &gt;::type &gt;::type &gt;::type &gt;::type , typename Stack::cdr_type::car_type::end_type &gt;))nullptr, 1 ) ) ) }" data-ref="_M/BOOST_MPL_ASSERT">BOOST_MPL_ASSERT</a>((</td></tr>
+<tr><th id="321">321</th><td>            result_of::<a class="type" href="../../../iterator/equal_to.hpp.html#boost::fusion::result_of::equal_to" title='boost::fusion::result_of::equal_to' data-ref="boost::fusion::result_of::equal_to">equal_to</a>&lt;</td></tr>
+<tr><th id="322">322</th><td>                <b>typename</b> result_of::<a class="type" href="../../../sequence/intrinsic_fwd.hpp.html#boost::fusion::result_of::end" title='boost::fusion::result_of::end' data-ref="boost::fusion::result_of::end">end</a>&lt;</td></tr>
+<tr><th id="323">323</th><td>                    <b>typename</b> <a class="type" href="../../../../../../../type_traits/include/boost/type_traits/remove_reference.hpp.html#boost::remove_reference" title='boost::remove_reference' data-ref="boost::remove_reference">remove_reference</a>&lt;</td></tr>
+<tr><th id="324">324</th><td>                        <b>typename</b> <a class="type" href="../../../../../../../type_traits/include/boost/type_traits/add_const.hpp.html#boost::add_const" title='boost::add_const' data-ref="boost::add_const">add_const</a>&lt;</td></tr>
+<tr><th id="325">325</th><td>                            <b>typename</b> result_of::<a class="type" href="../../../iterator/deref.hpp.html#boost::fusion::result_of::deref" title='boost::fusion::result_of::deref' data-ref="boost::fusion::result_of::deref">deref</a>&lt;</td></tr>
+<tr><th id="326">326</th><td>                                <b>typename</b> Stack::car_type::begin_type</td></tr>
+<tr><th id="327">327</th><td>                            &gt;::type</td></tr>
+<tr><th id="328">328</th><td>                        &gt;::type</td></tr>
+<tr><th id="329">329</th><td>                    &gt;::type</td></tr>
+<tr><th id="330">330</th><td>                &gt;::type</td></tr>
+<tr><th id="331">331</th><td>              , <b>typename</b> Stack::cdr_type::car_type::end_type</td></tr>
+<tr><th id="332">332</th><td>            &gt;));</td></tr>
+<tr><th id="333">333</th><td></td></tr>
+<tr><th id="334">334</th><td>        <b>typedef</b></td></tr>
+<tr><th id="335">335</th><td>            <a class="type" href="../../../sequence/intrinsic/detail/segmented_end_impl.hpp.html#boost::fusion::iterator_range" title='boost::fusion::iterator_range' data-ref="boost::fusion::iterator_range">iterator_range</a>&lt;</td></tr>
+<tr><th id="336">336</th><td>                <b>typename</b> <span class="namespace">result_of::</span><a class="type" href="../../../sequence/intrinsic_fwd.hpp.html#boost::fusion::result_of::begin" title='boost::fusion::result_of::begin' data-ref="boost::fusion::result_of::begin">begin</a>&lt;</td></tr>
+<tr><th id="337">337</th><td>                    <b>typename</b> <a class="type" href="../../../../../../../type_traits/include/boost/type_traits/remove_reference.hpp.html#boost::remove_reference" title='boost::remove_reference' data-ref="boost::remove_reference">remove_reference</a>&lt;</td></tr>
+<tr><th id="338">338</th><td>                        <b>typename</b> <a class="type" href="../../../../../../../type_traits/include/boost/type_traits/add_const.hpp.html#boost::add_const" title='boost::add_const' data-ref="boost::add_const">add_const</a>&lt;</td></tr>
+<tr><th id="339">339</th><td>                            <b>typename</b> <span class="namespace">result_of::</span><a class="type" href="../../../iterator/deref.hpp.html#boost::fusion::result_of::deref" title='boost::fusion::result_of::deref' data-ref="boost::fusion::result_of::deref">deref</a>&lt;</td></tr>
+<tr><th id="340">340</th><td>                                <b>typename</b> Stack::car_type::begin_type</td></tr>
+<tr><th id="341">341</th><td>                            &gt;::type</td></tr>
+<tr><th id="342">342</th><td>                        &gt;::type</td></tr>
+<tr><th id="343">343</th><td>                    &gt;::type</td></tr>
+<tr><th id="344">344</th><td>                &gt;::type</td></tr>
+<tr><th id="345">345</th><td>              , <b>typename</b> Stack::cdr_type::car_type::begin_type</td></tr>
+<tr><th id="346">346</th><td>            &gt;</td></tr>
+<tr><th id="347">347</th><td>        <dfn class="typedef" id="boost::fusion::detail::make_segment_sequence_back{type-parameter-0-0,2}::type" title='boost::fusion::detail::make_segment_sequence_back&lt;type-parameter-0-0, 2&gt;::type' data-type='iterator_range&lt;typename result_of::begin&lt;typename remove_reference&lt;typename add_const&lt;typename result_of::deref&lt;typename Stack::car_type::begin_type&gt;::type&gt;::type&gt;::type&gt;::type, typename Stack::cdr_type::car_type::begin_type&gt;' data-ref="boost::fusion::detail::make_segment_sequence_back{type-parameter-0-0,2}::type">type</dfn>;</td></tr>
+<tr><th id="348">348</th><td></td></tr>
+<tr><th id="349">349</th><td>        <a class="macro" href="../../../../../../../config/include/boost/config/detail/suffix.hpp.html#1043" title="constexpr" data-ref="_M/BOOST_CONSTEXPR">BOOST_CONSTEXPR</a> <a class="macro" href="../../../support/config.hpp.html#16" title="" data-ref="_M/BOOST_FUSION_GPU_ENABLED">BOOST_FUSION_GPU_ENABLED</a></td></tr>
+<tr><th id="350">350</th><td>        <em>static</em> <a class="typedef" href="#boost::fusion::detail::make_segment_sequence_back{type-parameter-0-0,2}::type" title='boost::fusion::detail::make_segment_sequence_back&lt;type-parameter-0-0, 2&gt;::type' data-type='iterator_range&lt;typename result_of::begin&lt;typename remove_reference&lt;typename add_const&lt;typename result_of::deref&lt;typename Stack::car_type::begin_type&gt;::type&gt;::type&gt;::type&gt;::type, typename Stack::cdr_type::car_type::begin_type&gt;' data-ref="boost::fusion::detail::make_segment_sequence_back{type-parameter-0-0,2}::type">type</a> <dfn class="decl def fn" id="_ZN5boost6fusion6detail26make_segment_sequence_backIT_Lm2EE4callERKS3_" title='boost::fusion::detail::make_segment_sequence_back&lt;type-parameter-0-0, 2&gt;::call' data-ref="_ZN5boost6fusion6detail26make_segment_sequence_backIT_Lm2EE4callERKS3_">call</dfn>(Stack <em>const</em>&amp; <dfn class="local col3 decl" id="6143stack" title='stack' data-type='const Stack &amp;' data-ref="6143stack">stack</dfn>)</td></tr>
+<tr><th id="351">351</th><td>        {</td></tr>
+<tr><th id="352">352</th><td>            <i>// return iterator_range(begin(front(car(stack_end))), begin(car(cdr(stack_end))));</i></td></tr>
+<tr><th id="353">353</th><td>            <b>return</b> <a class="typedef" href="#boost::fusion::detail::make_segment_sequence_back{type-parameter-0-0,2}::type" title='boost::fusion::detail::make_segment_sequence_back&lt;type-parameter-0-0, 2&gt;::type' data-type='iterator_range&lt;typename result_of::begin&lt;typename remove_reference&lt;typename add_const&lt;typename result_of::deref&lt;typename Stack::car_type::begin_type&gt;::type&gt;::type&gt;::type&gt;::type, typename Stack::cdr_type::car_type::begin_type&gt;' data-ref="boost::fusion::detail::make_segment_sequence_back{type-parameter-0-0,2}::type">type</a>(<span class="namespace">fusion::</span>begin(*<a class="local col3 ref" href="#6143stack" title='stack' data-ref="6143stack">stack</a>.car.first), <a class="local col3 ref" href="#6143stack" title='stack' data-ref="6143stack">stack</a>.cdr.car.first);</td></tr>
+<tr><th id="354">354</th><td>        }</td></tr>
+<tr><th id="355">355</th><td>    };</td></tr>
+<tr><th id="356">356</th><td></td></tr>
+<tr><th id="357">357</th><td>    <b>template</b> &lt;<b>typename</b> Stack&gt;</td></tr>
+<tr><th id="358">358</th><td>    <b>struct</b> <dfn class="type def" id="boost::fusion::detail::make_segment_sequence_back" title='boost::fusion::detail::make_segment_sequence_back' data-ref="boost::fusion::detail::make_segment_sequence_back">make_segment_sequence_back</dfn>&lt;Stack, <var>1</var>&gt;</td></tr>
+<tr><th id="359">359</th><td>    {</td></tr>
+<tr><th id="360">360</th><td>        <b>typedef</b> <b>typename</b> Stack::cdr_type <dfn class="typedef" id="boost::fusion::detail::make_segment_sequence_back{type-parameter-0-0,1}::type" title='boost::fusion::detail::make_segment_sequence_back&lt;type-parameter-0-0, 1&gt;::type' data-type='typename Stack::cdr_type' data-ref="boost::fusion::detail::make_segment_sequence_back{type-parameter-0-0,1}::type">type</dfn>; <i>// nil_</i></td></tr>
+<tr><th id="361">361</th><td></td></tr>
+<tr><th id="362">362</th><td>        <a class="macro" href="../../../../../../../config/include/boost/config/detail/suffix.hpp.html#1043" title="constexpr" data-ref="_M/BOOST_CONSTEXPR">BOOST_CONSTEXPR</a> <a class="macro" href="../../../support/config.hpp.html#16" title="" data-ref="_M/BOOST_FUSION_GPU_ENABLED">BOOST_FUSION_GPU_ENABLED</a></td></tr>
+<tr><th id="363">363</th><td>        <em>static</em> <a class="typedef" href="#boost::fusion::detail::make_segment_sequence_back{type-parameter-0-0,1}::type" title='boost::fusion::detail::make_segment_sequence_back&lt;type-parameter-0-0, 1&gt;::type' data-type='typename Stack::cdr_type' data-ref="boost::fusion::detail::make_segment_sequence_back{type-parameter-0-0,1}::type">type</a> <dfn class="decl def fn" id="_ZN5boost6fusion6detail26make_segment_sequence_backIT_Lm1EE4callERKS3_" title='boost::fusion::detail::make_segment_sequence_back&lt;type-parameter-0-0, 1&gt;::call' data-ref="_ZN5boost6fusion6detail26make_segment_sequence_backIT_Lm1EE4callERKS3_">call</dfn>(Stack <em>const</em>&amp; <dfn class="local col4 decl" id="6144stack" title='stack' data-type='const Stack &amp;' data-ref="6144stack">stack</dfn>)</td></tr>
+<tr><th id="364">364</th><td>        {</td></tr>
+<tr><th id="365">365</th><td>            <b>return</b> <a class="local col4 ref" href="#6144stack" title='stack' data-ref="6144stack">stack</a>.cdr;</td></tr>
+<tr><th id="366">366</th><td>        }</td></tr>
+<tr><th id="367">367</th><td>    };</td></tr>
+<tr><th id="368">368</th><td></td></tr>
+<tr><th id="369">369</th><td>    <i>//auto make_segmented_range_reduce(stack_begin, stack_end)</i></td></tr>
+<tr><th id="370">370</th><td><i>    //{</i></td></tr>
+<tr><th id="371">371</th><td><i>    //  if (size(stack_begin) == 1 &amp;&amp; size(stack_end) == 1)</i></td></tr>
+<tr><th id="372">372</th><td><i>    //  {</i></td></tr>
+<tr><th id="373">373</th><td><i>    //    return segment_sequence(</i></td></tr>
+<tr><th id="374">374</th><td><i>    //      single_view(</i></td></tr>
+<tr><th id="375">375</th><td><i>    //        iterator_range(begin(car(stack_begin)), begin(car(stack_end)))));</i></td></tr>
+<tr><th id="376">376</th><td><i>    //  }</i></td></tr>
+<tr><th id="377">377</th><td><i>    //  else</i></td></tr>
+<tr><th id="378">378</th><td><i>    //  {</i></td></tr>
+<tr><th id="379">379</th><td><i>    //    // We are in the case where both begin_stack and/or end_stack have</i></td></tr>
+<tr><th id="380">380</th><td><i>    //    // more than one element. Throw away any part of the tree where</i></td></tr>
+<tr><th id="381">381</th><td><i>    //    // begin and end refer to the same segment.</i></td></tr>
+<tr><th id="382">382</th><td><i>    //    if (begin(car(stack_begin)) == begin(car(stack_end)))</i></td></tr>
+<tr><th id="383">383</th><td><i>    //    {</i></td></tr>
+<tr><th id="384">384</th><td><i>    //      return make_segmented_range_reduce(cdr(stack_begin), cdr(stack_end));</i></td></tr>
+<tr><th id="385">385</th><td><i>    //    }</i></td></tr>
+<tr><th id="386">386</th><td><i>    //    else</i></td></tr>
+<tr><th id="387">387</th><td><i>    //    {</i></td></tr>
+<tr><th id="388">388</th><td><i>    //      // We are in the case where begin_stack and end_stack (a) have</i></td></tr>
+<tr><th id="389">389</th><td><i>    //      // more than one element each, and (b) they point to different</i></td></tr>
+<tr><th id="390">390</th><td><i>    //      // segments. We must construct a segmented sequence.</i></td></tr>
+<tr><th id="391">391</th><td><i>    //      return segment_sequence(</i></td></tr>
+<tr><th id="392">392</th><td><i>    //          push_back(</i></td></tr>
+<tr><th id="393">393</th><td><i>    //            push_front(</i></td></tr>
+<tr><th id="394">394</th><td><i>    //                iterator_range(</i></td></tr>
+<tr><th id="395">395</th><td><i>    //                    fusion::next(begin(car(stack_begin))),</i></td></tr>
+<tr><th id="396">396</th><td><i>    //                    begin(car(stack_end))),                 // a range of (possibly segmented) ranges.</i></td></tr>
+<tr><th id="397">397</th><td><i>    //              make_segment_sequence_front(stack_begin)),    // should be a (possibly segmented) range.</i></td></tr>
+<tr><th id="398">398</th><td><i>    //            make_segment_sequence_back(stack_end)));        // should be a (possibly segmented) range.</i></td></tr>
+<tr><th id="399">399</th><td><i>    //    }</i></td></tr>
+<tr><th id="400">400</th><td><i>    //  }</i></td></tr>
+<tr><th id="401">401</th><td><i>    //}</i></td></tr>
+<tr><th id="402">402</th><td></td></tr>
+<tr><th id="403">403</th><td>    <b>template</b> &lt;</td></tr>
+<tr><th id="404">404</th><td>        <b>typename</b> StackBegin</td></tr>
+<tr><th id="405">405</th><td>      , <b>typename</b> StackEnd</td></tr>
+<tr><th id="406">406</th><td>      , <em>int</em> StackBeginSize = StackBegin::size::value</td></tr>
+<tr><th id="407">407</th><td>      , <em>int</em> StackEndSize   = StackEnd::size::value&gt;</td></tr>
+<tr><th id="408">408</th><td>    <b>struct</b> <a class="type" href="#boost::fusion::detail::make_segmented_range_reduce" title='boost::fusion::detail::make_segmented_range_reduce' data-ref="boost::fusion::detail::make_segmented_range_reduce">make_segmented_range_reduce</a>;</td></tr>
+<tr><th id="409">409</th><td></td></tr>
+<tr><th id="410">410</th><td>    <b>template</b> &lt;</td></tr>
+<tr><th id="411">411</th><td>        <b>typename</b> StackBegin</td></tr>
+<tr><th id="412">412</th><td>      , <b>typename</b> StackEnd</td></tr>
+<tr><th id="413">413</th><td>      , <em>bool</em> SameSegment</td></tr>
+<tr><th id="414">414</th><td><u>#<span data-ppcond="414">if</span> !(<a class="macro" href="../../../../../../../config/include/boost/config/workaround.hpp.html#271" title="((1 + 0 == 0) &amp;&amp; (BOOST_GCC != 0) &amp;&amp; (1 % (( (BOOST_GCC &gt;= 40000) ) + 1)))" data-ref="_M/BOOST_WORKAROUND">BOOST_WORKAROUND</a>(BOOST_GCC, &gt;= 40000) &amp;&amp; <a class="macro" href="../../../../../../../config/include/boost/config/workaround.hpp.html#271" title="((1 + 0 == 0) &amp;&amp; (BOOST_GCC != 0) &amp;&amp; (1 % (( (BOOST_GCC &lt; 40200) ) + 1)))" data-ref="_M/BOOST_WORKAROUND">BOOST_WORKAROUND</a>(BOOST_GCC, &lt; 40200))</u></td></tr>
+<tr><th id="415">415</th><td>          = <span class="namespace">result_of::</span><a class="type" href="../../../iterator/equal_to.hpp.html#boost::fusion::result_of::equal_to" title='boost::fusion::result_of::equal_to' data-ref="boost::fusion::result_of::equal_to">equal_to</a>&lt;</td></tr>
+<tr><th id="416">416</th><td>                <b>typename</b> StackBegin::car_type::begin_type</td></tr>
+<tr><th id="417">417</th><td>              , <b>typename</b> StackEnd::car_type::begin_type</td></tr>
+<tr><th id="418">418</th><td>            &gt;::type::value</td></tr>
+<tr><th id="419">419</th><td><u>#<span data-ppcond="414">endif</span></u></td></tr>
+<tr><th id="420">420</th><td>    &gt;</td></tr>
+<tr><th id="421">421</th><td>    <b>struct</b> <dfn class="type def" id="boost::fusion::detail::make_segmented_range_reduce2" title='boost::fusion::detail::make_segmented_range_reduce2' data-ref="boost::fusion::detail::make_segmented_range_reduce2">make_segmented_range_reduce2</dfn></td></tr>
+<tr><th id="422">422</th><td>    {</td></tr>
+<tr><th id="423">423</th><td>        <b>typedef</b></td></tr>
+<tr><th id="424">424</th><td>            <a class="type" href="../../../sequence/intrinsic/detail/segmented_end_impl.hpp.html#boost::fusion::iterator_range" title='boost::fusion::iterator_range' data-ref="boost::fusion::iterator_range">iterator_range</a>&lt;</td></tr>
+<tr><th id="425">425</th><td>                <b>typename</b> <span class="namespace">result_of::</span><a class="type" href="../../../iterator/next.hpp.html#boost::fusion::result_of::next" title='boost::fusion::result_of::next' data-ref="boost::fusion::result_of::next">next</a>&lt;</td></tr>
+<tr><th id="426">426</th><td>                    <b>typename</b> StackBegin::car_type::begin_type</td></tr>
+<tr><th id="427">427</th><td>                &gt;::type</td></tr>
+<tr><th id="428">428</th><td>              , <b>typename</b> StackEnd::car_type::begin_type</td></tr>
+<tr><th id="429">429</th><td>            &gt;</td></tr>
+<tr><th id="430">430</th><td>        <dfn class="typedef" id="boost::fusion::detail::make_segmented_range_reduce2::rest_type" title='boost::fusion::detail::make_segmented_range_reduce2::rest_type' data-type='iterator_range&lt;typename result_of::next&lt;typename StackBegin::car_type::begin_type&gt;::type, typename StackEnd::car_type::begin_type&gt;' data-ref="boost::fusion::detail::make_segmented_range_reduce2::rest_type">rest_type</dfn>;</td></tr>
+<tr><th id="431">431</th><td></td></tr>
+<tr><th id="432">432</th><td>        <b>typedef</b></td></tr>
+<tr><th id="433">433</th><td>            <a class="type" href="../../../iterator/detail/segment_sequence.hpp.html#boost::fusion::detail::segment_sequence" title='boost::fusion::detail::segment_sequence' data-ref="boost::fusion::detail::segment_sequence">segment_sequence</a>&lt;</td></tr>
+<tr><th id="434">434</th><td>                <b>typename</b> <span class="namespace">result_of::</span><a class="type" href="../../../algorithm/transformation/push_back.hpp.html#boost::fusion::result_of::push_back" title='boost::fusion::result_of::push_back' data-ref="boost::fusion::result_of::push_back">push_back</a>&lt;</td></tr>
+<tr><th id="435">435</th><td>                    <b>typename</b> <span class="namespace">result_of::</span><a class="type" href="../../../algorithm/transformation/push_front.hpp.html#boost::fusion::result_of::push_front" title='boost::fusion::result_of::push_front' data-ref="boost::fusion::result_of::push_front">push_front</a>&lt;</td></tr>
+<tr><th id="436">436</th><td>                        <a class="typedef" href="#boost::fusion::detail::make_segmented_range_reduce2::rest_type" title='boost::fusion::detail::make_segmented_range_reduce2::rest_type' data-type='iterator_range&lt;typename result_of::next&lt;typename StackBegin::car_type::begin_type&gt;::type, typename StackEnd::car_type::begin_type&gt;' data-ref="boost::fusion::detail::make_segmented_range_reduce2::rest_type">rest_type</a> <em>const</em></td></tr>
+<tr><th id="437">437</th><td>                      , <b>typename</b> <a class="type" href="#boost::fusion::detail::make_segment_sequence_front" title='boost::fusion::detail::make_segment_sequence_front' data-ref="boost::fusion::detail::make_segment_sequence_front">make_segment_sequence_front</a>&lt;StackBegin&gt;::type</td></tr>
+<tr><th id="438">438</th><td>                    &gt;::type <em>const</em></td></tr>
+<tr><th id="439">439</th><td>                  , <b>typename</b> <a class="type" href="#boost::fusion::detail::make_segment_sequence_back" title='boost::fusion::detail::make_segment_sequence_back' data-ref="boost::fusion::detail::make_segment_sequence_back">make_segment_sequence_back</a>&lt;StackEnd&gt;::type</td></tr>
+<tr><th id="440">440</th><td>                &gt;::type</td></tr>
+<tr><th id="441">441</th><td>            &gt;</td></tr>
+<tr><th id="442">442</th><td>        <dfn class="typedef" id="boost::fusion::detail::make_segmented_range_reduce2::type" title='boost::fusion::detail::make_segmented_range_reduce2::type' data-type='segment_sequence&lt;typename result_of::push_back&lt;const typename result_of::push_front&lt;const rest_type, typename make_segment_sequence_front&lt;StackBegin&gt;::type&gt;::type, typename make_segment_sequence_back&lt;StackEnd&gt;::type&gt;::type&gt;' data-ref="boost::fusion::detail::make_segmented_range_reduce2::type">type</dfn>;</td></tr>
+<tr><th id="443">443</th><td></td></tr>
+<tr><th id="444">444</th><td>        <a class="macro" href="../../../../../../../config/include/boost/config/detail/suffix.hpp.html#1043" title="constexpr" data-ref="_M/BOOST_CONSTEXPR">BOOST_CONSTEXPR</a> <a class="macro" href="../../../support/config.hpp.html#16" title="" data-ref="_M/BOOST_FUSION_GPU_ENABLED">BOOST_FUSION_GPU_ENABLED</a></td></tr>
+<tr><th id="445">445</th><td>        <em>static</em> <a class="typedef" href="#boost::fusion::detail::make_segmented_range_reduce2::type" title='boost::fusion::detail::make_segmented_range_reduce2::type' data-type='segment_sequence&lt;typename result_of::push_back&lt;const typename result_of::push_front&lt;const rest_type, typename make_segment_sequence_front&lt;StackBegin&gt;::type&gt;::type, typename make_segment_sequence_back&lt;StackEnd&gt;::type&gt;::type&gt;' data-ref="boost::fusion::detail::make_segmented_range_reduce2::type">type</a> <dfn class="decl def fn" id="_ZN5boost6fusion6detail28make_segmented_range_reduce24callET_T0_" title='boost::fusion::detail::make_segmented_range_reduce2::call' data-ref="_ZN5boost6fusion6detail28make_segmented_range_reduce24callET_T0_">call</dfn>(StackBegin <dfn class="local col5 decl" id="6145stack_begin" title='stack_begin' data-type='StackBegin' data-ref="6145stack_begin">stack_begin</dfn>, StackEnd <dfn class="local col6 decl" id="6146stack_end" title='stack_end' data-type='StackEnd' data-ref="6146stack_end">stack_end</dfn>)</td></tr>
+<tr><th id="446">446</th><td>        {</td></tr>
+<tr><th id="447">447</th><td>            <i>//return segment_sequence(</i></td></tr>
+<tr><th id="448">448</th><td><i>            //    push_back(</i></td></tr>
+<tr><th id="449">449</th><td><i>            //      push_front(</i></td></tr>
+<tr><th id="450">450</th><td><i>            //        iterator_range(</i></td></tr>
+<tr><th id="451">451</th><td><i>            //            fusion::next(begin(car(stack_begin))),</i></td></tr>
+<tr><th id="452">452</th><td><i>            //            begin(car(stack_end))),                 // a range of (possibly segmented) ranges.</i></td></tr>
+<tr><th id="453">453</th><td><i>            //        make_segment_sequence_front(stack_begin)),  // should be a (possibly segmented) range.</i></td></tr>
+<tr><th id="454">454</th><td><i>            //      make_segment_sequence_back(stack_end)));      // should be a (possibly segmented) range.</i></td></tr>
+<tr><th id="455">455</th><td>            <b>return</b> <a class="typedef" href="#boost::fusion::detail::make_segmented_range_reduce2::type" title='boost::fusion::detail::make_segmented_range_reduce2::type' data-type='segment_sequence&lt;typename result_of::push_back&lt;const typename result_of::push_front&lt;const rest_type, typename make_segment_sequence_front&lt;StackBegin&gt;::type&gt;::type, typename make_segment_sequence_back&lt;StackEnd&gt;::type&gt;::type&gt;' data-ref="boost::fusion::detail::make_segmented_range_reduce2::type">type</a>(</td></tr>
+<tr><th id="456">456</th><td>                <span class="namespace">fusion::</span>push_back(</td></tr>
+<tr><th id="457">457</th><td>                    <span class="namespace">fusion::</span>push_front(</td></tr>
+<tr><th id="458">458</th><td>                        <a class="typedef" href="#boost::fusion::detail::make_segmented_range_reduce2::rest_type" title='boost::fusion::detail::make_segmented_range_reduce2::rest_type' data-type='iterator_range&lt;typename result_of::next&lt;typename StackBegin::car_type::begin_type&gt;::type, typename StackEnd::car_type::begin_type&gt;' data-ref="boost::fusion::detail::make_segmented_range_reduce2::rest_type">rest_type</a>(<span class="namespace">fusion::</span>next(<a class="local col5 ref" href="#6145stack_begin" title='stack_begin' data-ref="6145stack_begin">stack_begin</a>.car.first), <a class="local col6 ref" href="#6146stack_end" title='stack_end' data-ref="6146stack_end">stack_end</a>.car.first)</td></tr>
+<tr><th id="459">459</th><td>                      , <a class="type" href="#boost::fusion::detail::make_segment_sequence_front" title='boost::fusion::detail::make_segment_sequence_front' data-ref="boost::fusion::detail::make_segment_sequence_front">make_segment_sequence_front</a>&lt;StackBegin&gt;::call(<a class="local col5 ref" href="#6145stack_begin" title='stack_begin' data-ref="6145stack_begin">stack_begin</a>))</td></tr>
+<tr><th id="460">460</th><td>                  , <a class="type" href="#boost::fusion::detail::make_segment_sequence_back" title='boost::fusion::detail::make_segment_sequence_back' data-ref="boost::fusion::detail::make_segment_sequence_back">make_segment_sequence_back</a>&lt;StackEnd&gt;::call(<a class="local col6 ref" href="#6146stack_end" title='stack_end' data-ref="6146stack_end">stack_end</a>)));</td></tr>
+<tr><th id="461">461</th><td>        }</td></tr>
+<tr><th id="462">462</th><td>    };</td></tr>
+<tr><th id="463">463</th><td></td></tr>
+<tr><th id="464">464</th><td>    <b>template</b> &lt;<b>typename</b> StackBegin, <b>typename</b> StackEnd&gt;</td></tr>
+<tr><th id="465">465</th><td>    <b>struct</b> <dfn class="type def" id="boost::fusion::detail::make_segmented_range_reduce2" title='boost::fusion::detail::make_segmented_range_reduce2' data-ref="boost::fusion::detail::make_segmented_range_reduce2">make_segmented_range_reduce2</dfn>&lt;StackBegin, StackEnd, <b>true</b>&gt;</td></tr>
+<tr><th id="466">466</th><td>    {</td></tr>
+<tr><th id="467">467</th><td>        <b>typedef</b></td></tr>
+<tr><th id="468">468</th><td>            <a class="type" href="#boost::fusion::detail::make_segmented_range_reduce" title='boost::fusion::detail::make_segmented_range_reduce' data-ref="boost::fusion::detail::make_segmented_range_reduce">make_segmented_range_reduce</a>&lt;</td></tr>
+<tr><th id="469">469</th><td>                <b>typename</b> StackBegin::cdr_type</td></tr>
+<tr><th id="470">470</th><td>              , <b>typename</b> StackEnd::cdr_type</td></tr>
+<tr><th id="471">471</th><td>            &gt;</td></tr>
+<tr><th id="472">472</th><td>        <dfn class="typedef" id="boost::fusion::detail::make_segmented_range_reduce2{type-parameter-0-0,type-parameter-0-1,true}::impl" title='boost::fusion::detail::make_segmented_range_reduce2&lt;type-parameter-0-0, type-parameter-0-1, true&gt;::impl' data-type='make_segmented_range_reduce&lt;typename StackBegin::cdr_type, typename StackEnd::cdr_type&gt;' data-ref="boost::fusion::detail::make_segmented_range_reduce2{type-parameter-0-0,type-parameter-0-1,true}::impl">impl</dfn>;</td></tr>
+<tr><th id="473">473</th><td></td></tr>
+<tr><th id="474">474</th><td>        <b>typedef</b></td></tr>
+<tr><th id="475">475</th><td>            <b>typename</b> <a class="typedef" href="#boost::fusion::detail::make_segmented_range_reduce2{type-parameter-0-0,type-parameter-0-1,true}::impl" title='boost::fusion::detail::make_segmented_range_reduce2&lt;type-parameter-0-0, type-parameter-0-1, true&gt;::impl' data-type='make_segmented_range_reduce&lt;typename StackBegin::cdr_type, typename StackEnd::cdr_type&gt;' data-ref="boost::fusion::detail::make_segmented_range_reduce2{type-parameter-0-0,type-parameter-0-1,true}::impl">impl</a>::type</td></tr>
+<tr><th id="476">476</th><td>        <dfn class="typedef" id="boost::fusion::detail::make_segmented_range_reduce2{type-parameter-0-0,type-parameter-0-1,true}::type" title='boost::fusion::detail::make_segmented_range_reduce2&lt;type-parameter-0-0, type-parameter-0-1, true&gt;::type' data-type='typename impl::type' data-ref="boost::fusion::detail::make_segmented_range_reduce2{type-parameter-0-0,type-parameter-0-1,true}::type">type</dfn>;</td></tr>
+<tr><th id="477">477</th><td></td></tr>
+<tr><th id="478">478</th><td>        <a class="macro" href="../../../../../../../config/include/boost/config/detail/suffix.hpp.html#1043" title="constexpr" data-ref="_M/BOOST_CONSTEXPR">BOOST_CONSTEXPR</a> <a class="macro" href="../../../support/config.hpp.html#16" title="" data-ref="_M/BOOST_FUSION_GPU_ENABLED">BOOST_FUSION_GPU_ENABLED</a></td></tr>
+<tr><th id="479">479</th><td>        <em>static</em> <a class="typedef" href="#boost::fusion::detail::make_segmented_range_reduce2{type-parameter-0-0,type-parameter-0-1,true}::type" title='boost::fusion::detail::make_segmented_range_reduce2&lt;type-parameter-0-0, type-parameter-0-1, true&gt;::type' data-type='typename impl::type' data-ref="boost::fusion::detail::make_segmented_range_reduce2{type-parameter-0-0,type-parameter-0-1,true}::type">type</a> <dfn class="decl def fn" id="_ZN5boost6fusion6detail28make_segmented_range_reduce2IT_T0_Lb1EE4callES3_S4_" title='boost::fusion::detail::make_segmented_range_reduce2&lt;type-parameter-0-0, type-parameter-0-1, true&gt;::call' data-ref="_ZN5boost6fusion6detail28make_segmented_range_reduce2IT_T0_Lb1EE4callES3_S4_">call</dfn>(StackBegin <dfn class="local col7 decl" id="6147stack_begin" title='stack_begin' data-type='StackBegin' data-ref="6147stack_begin">stack_begin</dfn>, StackEnd <dfn class="local col8 decl" id="6148stack_end" title='stack_end' data-type='StackEnd' data-ref="6148stack_end">stack_end</dfn>)</td></tr>
+<tr><th id="480">480</th><td>        {</td></tr>
+<tr><th id="481">481</th><td>            <b>return</b> <a class="typedef" href="#boost::fusion::detail::make_segmented_range_reduce2{type-parameter-0-0,type-parameter-0-1,true}::impl" title='boost::fusion::detail::make_segmented_range_reduce2&lt;type-parameter-0-0, type-parameter-0-1, true&gt;::impl' data-type='make_segmented_range_reduce&lt;typename StackBegin::cdr_type, typename StackEnd::cdr_type&gt;' data-ref="boost::fusion::detail::make_segmented_range_reduce2{type-parameter-0-0,type-parameter-0-1,true}::impl">impl</a>::call(<a class="local col7 ref" href="#6147stack_begin" title='stack_begin' data-ref="6147stack_begin">stack_begin</a>.cdr, <a class="local col8 ref" href="#6148stack_end" title='stack_end' data-ref="6148stack_end">stack_end</a>.cdr);</td></tr>
+<tr><th id="482">482</th><td>        }</td></tr>
+<tr><th id="483">483</th><td>    };</td></tr>
+<tr><th id="484">484</th><td></td></tr>
+<tr><th id="485">485</th><td>    <b>template</b> &lt;<b>typename</b> StackBegin, <b>typename</b> StackEnd, <em>int</em> StackBeginSize, <em>int</em> StackEndSize&gt;</td></tr>
+<tr><th id="486">486</th><td>    <b>struct</b> <dfn class="type def" id="boost::fusion::detail::make_segmented_range_reduce" title='boost::fusion::detail::make_segmented_range_reduce' data-ref="boost::fusion::detail::make_segmented_range_reduce">make_segmented_range_reduce</dfn></td></tr>
+<tr><th id="487">487</th><td>      : <a class="type" href="#boost::fusion::detail::make_segmented_range_reduce2" title='boost::fusion::detail::make_segmented_range_reduce2' data-ref="boost::fusion::detail::make_segmented_range_reduce2">make_segmented_range_reduce2</a>&lt;StackBegin, StackEnd</td></tr>
+<tr><th id="488">488</th><td><u>#<span data-ppcond="488">if</span> <a class="macro" href="../../../../../../../config/include/boost/config/workaround.hpp.html#271" title="((1 + 0 == 0) &amp;&amp; (BOOST_GCC != 0) &amp;&amp; (1 % (( (BOOST_GCC &gt;= 40000) ) + 1)))" data-ref="_M/BOOST_WORKAROUND">BOOST_WORKAROUND</a>(BOOST_GCC, &gt;= 40000) &amp;&amp; <a class="macro" href="../../../../../../../config/include/boost/config/workaround.hpp.html#271" title="((1 + 0 == 0) &amp;&amp; (BOOST_GCC != 0) &amp;&amp; (1 % (( (BOOST_GCC &lt; 40200) ) + 1)))" data-ref="_M/BOOST_WORKAROUND">BOOST_WORKAROUND</a>(BOOST_GCC, &lt; 40200)</u></td></tr>
+<tr><th id="489">489</th><td>          , result_of::equal_to&lt;</td></tr>
+<tr><th id="490">490</th><td>                <b>typename</b> StackBegin::car_type::begin_type</td></tr>
+<tr><th id="491">491</th><td>              , <b>typename</b> StackEnd::car_type::begin_type</td></tr>
+<tr><th id="492">492</th><td>            &gt;::type::value</td></tr>
+<tr><th id="493">493</th><td><u>#<span data-ppcond="488">endif</span></u></td></tr>
+<tr><th id="494">494</th><td>        &gt;</td></tr>
+<tr><th id="495">495</th><td>    {};</td></tr>
+<tr><th id="496">496</th><td></td></tr>
+<tr><th id="497">497</th><td>    <b>template</b> &lt;<b>typename</b> StackBegin, <b>typename</b> StackEnd&gt;</td></tr>
+<tr><th id="498">498</th><td>    <b>struct</b> <dfn class="type def" id="boost::fusion::detail::make_segmented_range_reduce" title='boost::fusion::detail::make_segmented_range_reduce' data-ref="boost::fusion::detail::make_segmented_range_reduce">make_segmented_range_reduce</dfn>&lt;StackBegin, StackEnd, <var>1</var>, <var>1</var>&gt;</td></tr>
+<tr><th id="499">499</th><td>    {</td></tr>
+<tr><th id="500">500</th><td>        <b>typedef</b></td></tr>
+<tr><th id="501">501</th><td>            <a class="type" href="../../../sequence/intrinsic/detail/segmented_end_impl.hpp.html#boost::fusion::iterator_range" title='boost::fusion::iterator_range' data-ref="boost::fusion::iterator_range">iterator_range</a>&lt;</td></tr>
+<tr><th id="502">502</th><td>                <b>typename</b> StackBegin::car_type::begin_type</td></tr>
+<tr><th id="503">503</th><td>              , <b>typename</b> StackEnd::car_type::begin_type</td></tr>
+<tr><th id="504">504</th><td>            &gt;</td></tr>
+<tr><th id="505">505</th><td>        <dfn class="typedef" id="boost::fusion::detail::make_segmented_range_reduce{type-parameter-0-0,type-parameter-0-1,1,1}::range_type" title='boost::fusion::detail::make_segmented_range_reduce&lt;type-parameter-0-0, type-parameter-0-1, 1, 1&gt;::range_type' data-type='iterator_range&lt;typename StackBegin::car_type::begin_type, typename StackEnd::car_type::begin_type&gt;' data-ref="boost::fusion::detail::make_segmented_range_reduce{type-parameter-0-0,type-parameter-0-1,1,1}::range_type">range_type</dfn>;</td></tr>
+<tr><th id="506">506</th><td></td></tr>
+<tr><th id="507">507</th><td>        <b>typedef</b></td></tr>
+<tr><th id="508">508</th><td>            <a class="type" href="../../single_view/single_view.hpp.html#boost::fusion::single_view" title='boost::fusion::single_view' data-ref="boost::fusion::single_view">single_view</a>&lt;<a class="typedef" href="#boost::fusion::detail::make_segmented_range_reduce{type-parameter-0-0,type-parameter-0-1,1,1}::range_type" title='boost::fusion::detail::make_segmented_range_reduce&lt;type-parameter-0-0, type-parameter-0-1, 1, 1&gt;::range_type' data-type='iterator_range&lt;typename StackBegin::car_type::begin_type, typename StackEnd::car_type::begin_type&gt;' data-ref="boost::fusion::detail::make_segmented_range_reduce{type-parameter-0-0,type-parameter-0-1,1,1}::range_type">range_type</a>&gt;</td></tr>
+<tr><th id="509">509</th><td>        <dfn class="typedef" id="boost::fusion::detail::make_segmented_range_reduce{type-parameter-0-0,type-parameter-0-1,1,1}::segment_type" title='boost::fusion::detail::make_segmented_range_reduce&lt;type-parameter-0-0, type-parameter-0-1, 1, 1&gt;::segment_type' data-type='single_view&lt;boost::fusion::detail::make_segmented_range_reduce&lt;type-parameter-0-0, type-parameter-0-1, 1, 1&gt;::range_type&gt;' data-ref="boost::fusion::detail::make_segmented_range_reduce{type-parameter-0-0,type-parameter-0-1,1,1}::segment_type">segment_type</dfn>;</td></tr>
+<tr><th id="510">510</th><td></td></tr>
+<tr><th id="511">511</th><td>        <b>typedef</b></td></tr>
+<tr><th id="512">512</th><td>            <a class="type" href="../../../iterator/detail/segment_sequence.hpp.html#boost::fusion::detail::segment_sequence" title='boost::fusion::detail::segment_sequence' data-ref="boost::fusion::detail::segment_sequence">segment_sequence</a>&lt;<a class="typedef" href="#boost::fusion::detail::make_segmented_range_reduce{type-parameter-0-0,type-parameter-0-1,1,1}::segment_type" title='boost::fusion::detail::make_segmented_range_reduce&lt;type-parameter-0-0, type-parameter-0-1, 1, 1&gt;::segment_type' data-type='single_view&lt;boost::fusion::detail::make_segmented_range_reduce&lt;type-parameter-0-0, type-parameter-0-1, 1, 1&gt;::range_type&gt;' data-ref="boost::fusion::detail::make_segmented_range_reduce{type-parameter-0-0,type-parameter-0-1,1,1}::segment_type">segment_type</a>&gt;</td></tr>
+<tr><th id="513">513</th><td>        <dfn class="typedef" id="boost::fusion::detail::make_segmented_range_reduce{type-parameter-0-0,type-parameter-0-1,1,1}::type" title='boost::fusion::detail::make_segmented_range_reduce&lt;type-parameter-0-0, type-parameter-0-1, 1, 1&gt;::type' data-type='segment_sequence&lt;boost::fusion::detail::make_segmented_range_reduce&lt;type-parameter-0-0, type-parameter-0-1, 1, 1&gt;::segment_type&gt;' data-ref="boost::fusion::detail::make_segmented_range_reduce{type-parameter-0-0,type-parameter-0-1,1,1}::type">type</dfn>;</td></tr>
+<tr><th id="514">514</th><td></td></tr>
+<tr><th id="515">515</th><td>        <a class="macro" href="../../../../../../../config/include/boost/config/detail/suffix.hpp.html#1043" title="constexpr" data-ref="_M/BOOST_CONSTEXPR">BOOST_CONSTEXPR</a> <a class="macro" href="../../../support/config.hpp.html#16" title="" data-ref="_M/BOOST_FUSION_GPU_ENABLED">BOOST_FUSION_GPU_ENABLED</a></td></tr>
+<tr><th id="516">516</th><td>        <em>static</em> <a class="typedef" href="#boost::fusion::detail::make_segmented_range_reduce{type-parameter-0-0,type-parameter-0-1,1,1}::type" title='boost::fusion::detail::make_segmented_range_reduce&lt;type-parameter-0-0, type-parameter-0-1, 1, 1&gt;::type' data-type='segment_sequence&lt;boost::fusion::detail::make_segmented_range_reduce&lt;type-parameter-0-0, type-parameter-0-1, 1, 1&gt;::segment_type&gt;' data-ref="boost::fusion::detail::make_segmented_range_reduce{type-parameter-0-0,type-parameter-0-1,1,1}::type">type</a> <dfn class="decl def fn" id="_ZN5boost6fusion6detail27make_segmented_range_reduceIT_T0_Li1ELi1EE4callES3_S4_" title='boost::fusion::detail::make_segmented_range_reduce&lt;type-parameter-0-0, type-parameter-0-1, 1, 1&gt;::call' data-ref="_ZN5boost6fusion6detail27make_segmented_range_reduceIT_T0_Li1ELi1EE4callES3_S4_">call</dfn>(StackBegin <dfn class="local col9 decl" id="6149stack_begin" title='stack_begin' data-type='StackBegin' data-ref="6149stack_begin">stack_begin</dfn>, StackEnd <dfn class="local col0 decl" id="6150stack_end" title='stack_end' data-type='StackEnd' data-ref="6150stack_end">stack_end</dfn>)</td></tr>
+<tr><th id="517">517</th><td>        {</td></tr>
+<tr><th id="518">518</th><td>            <i>//return segment_sequence(</i></td></tr>
+<tr><th id="519">519</th><td><i>            //  single_view(</i></td></tr>
+<tr><th id="520">520</th><td><i>            //    iterator_range(begin(car(stack_begin)), begin(car(stack_end)))));</i></td></tr>
+<tr><th id="521">521</th><td>            <b>return</b> <a class="typedef" href="#boost::fusion::detail::make_segmented_range_reduce{type-parameter-0-0,type-parameter-0-1,1,1}::type" title='boost::fusion::detail::make_segmented_range_reduce&lt;type-parameter-0-0, type-parameter-0-1, 1, 1&gt;::type' data-type='segment_sequence&lt;boost::fusion::detail::make_segmented_range_reduce&lt;type-parameter-0-0, type-parameter-0-1, 1, 1&gt;::segment_type&gt;' data-ref="boost::fusion::detail::make_segmented_range_reduce{type-parameter-0-0,type-parameter-0-1,1,1}::type">type</a>(<a class="typedef" href="#boost::fusion::detail::make_segmented_range_reduce{type-parameter-0-0,type-parameter-0-1,1,1}::segment_type" title='boost::fusion::detail::make_segmented_range_reduce&lt;type-parameter-0-0, type-parameter-0-1, 1, 1&gt;::segment_type' data-type='single_view&lt;boost::fusion::detail::make_segmented_range_reduce&lt;type-parameter-0-0, type-parameter-0-1, 1, 1&gt;::range_type&gt;' data-ref="boost::fusion::detail::make_segmented_range_reduce{type-parameter-0-0,type-parameter-0-1,1,1}::segment_type">segment_type</a>(<a class="typedef" href="#boost::fusion::detail::make_segmented_range_reduce{type-parameter-0-0,type-parameter-0-1,1,1}::range_type" title='boost::fusion::detail::make_segmented_range_reduce&lt;type-parameter-0-0, type-parameter-0-1, 1, 1&gt;::range_type' data-type='iterator_range&lt;typename StackBegin::car_type::begin_type, typename StackEnd::car_type::begin_type&gt;' data-ref="boost::fusion::detail::make_segmented_range_reduce{type-parameter-0-0,type-parameter-0-1,1,1}::range_type">range_type</a>(<a class="local col9 ref" href="#6149stack_begin" title='stack_begin' data-ref="6149stack_begin">stack_begin</a>.car.first, <a class="local col0 ref" href="#6150stack_end" title='stack_end' data-ref="6150stack_end">stack_end</a>.car.first)));</td></tr>
+<tr><th id="522">522</th><td>        }</td></tr>
+<tr><th id="523">523</th><td>    };</td></tr>
+<tr><th id="524">524</th><td></td></tr>
+<tr><th id="525">525</th><td>    <i>//auto make_segmented_range(begin, end)</i></td></tr>
+<tr><th id="526">526</th><td><i>    //{</i></td></tr>
+<tr><th id="527">527</th><td><i>    //  return make_segmented_range_reduce(reverse(begin.context), reverse(end.context));</i></td></tr>
+<tr><th id="528">528</th><td><i>    //}</i></td></tr>
+<tr><th id="529">529</th><td></td></tr>
+<tr><th id="530">530</th><td>    <b>template</b> &lt;<b>typename</b> Begin, <b>typename</b> End&gt;</td></tr>
+<tr><th id="531">531</th><td>    <b>struct</b> <dfn class="type def" id="boost::fusion::detail::make_segmented_range" title='boost::fusion::detail::make_segmented_range' data-ref="boost::fusion::detail::make_segmented_range">make_segmented_range</dfn></td></tr>
+<tr><th id="532">532</th><td>    {</td></tr>
+<tr><th id="533">533</th><td>        <b>typedef</b> <a class="type" href="../../../container/list/detail/reverse_cons.hpp.html#boost::fusion::detail::reverse_cons" title='boost::fusion::detail::reverse_cons' data-ref="boost::fusion::detail::reverse_cons">reverse_cons</a>&lt;<b>typename</b> Begin::context_type&gt;   <dfn class="typedef" id="boost::fusion::detail::make_segmented_range::reverse_begin_cons" title='boost::fusion::detail::make_segmented_range::reverse_begin_cons' data-type='reverse_cons&lt;typename Begin::context_type&gt;' data-ref="boost::fusion::detail::make_segmented_range::reverse_begin_cons">reverse_begin_cons</dfn>;</td></tr>
+<tr><th id="534">534</th><td>        <b>typedef</b> <a class="type" href="../../../container/list/detail/reverse_cons.hpp.html#boost::fusion::detail::reverse_cons" title='boost::fusion::detail::reverse_cons' data-ref="boost::fusion::detail::reverse_cons">reverse_cons</a>&lt;<b>typename</b> End::context_type&gt;     <dfn class="typedef" id="boost::fusion::detail::make_segmented_range::reverse_end_cons" title='boost::fusion::detail::make_segmented_range::reverse_end_cons' data-type='reverse_cons&lt;typename End::context_type&gt;' data-ref="boost::fusion::detail::make_segmented_range::reverse_end_cons">reverse_end_cons</dfn>;</td></tr>
+<tr><th id="535">535</th><td></td></tr>
+<tr><th id="536">536</th><td>        <b>typedef</b></td></tr>
+<tr><th id="537">537</th><td>            <a class="type" href="#boost::fusion::detail::make_segmented_range_reduce" title='boost::fusion::detail::make_segmented_range_reduce' data-ref="boost::fusion::detail::make_segmented_range_reduce">make_segmented_range_reduce</a>&lt;</td></tr>
+<tr><th id="538">538</th><td>                <b>typename</b> <a class="typedef" href="#boost::fusion::detail::make_segmented_range::reverse_begin_cons" title='boost::fusion::detail::make_segmented_range::reverse_begin_cons' data-type='reverse_cons&lt;typename Begin::context_type&gt;' data-ref="boost::fusion::detail::make_segmented_range::reverse_begin_cons">reverse_begin_cons</a>::type</td></tr>
+<tr><th id="539">539</th><td>              , <b>typename</b> <a class="typedef" href="#boost::fusion::detail::make_segmented_range::reverse_end_cons" title='boost::fusion::detail::make_segmented_range::reverse_end_cons' data-type='reverse_cons&lt;typename End::context_type&gt;' data-ref="boost::fusion::detail::make_segmented_range::reverse_end_cons">reverse_end_cons</a>::type</td></tr>
+<tr><th id="540">540</th><td>            &gt;</td></tr>
+<tr><th id="541">541</th><td>        <dfn class="typedef" id="boost::fusion::detail::make_segmented_range::impl" title='boost::fusion::detail::make_segmented_range::impl' data-type='make_segmented_range_reduce&lt;typename reverse_begin_cons::type, typename reverse_end_cons::type&gt;' data-ref="boost::fusion::detail::make_segmented_range::impl">impl</dfn>;</td></tr>
+<tr><th id="542">542</th><td></td></tr>
+<tr><th id="543">543</th><td>        <b>typedef</b> <b>typename</b> <a class="typedef" href="#boost::fusion::detail::make_segmented_range::impl" title='boost::fusion::detail::make_segmented_range::impl' data-type='make_segmented_range_reduce&lt;typename reverse_begin_cons::type, typename reverse_end_cons::type&gt;' data-ref="boost::fusion::detail::make_segmented_range::impl">impl</a>::type <dfn class="typedef" id="boost::fusion::detail::make_segmented_range::type" title='boost::fusion::detail::make_segmented_range::type' data-type='typename impl::type' data-ref="boost::fusion::detail::make_segmented_range::type">type</dfn>;</td></tr>
+<tr><th id="544">544</th><td></td></tr>
+<tr><th id="545">545</th><td>        <a class="macro" href="../../../../../../../config/include/boost/config/detail/suffix.hpp.html#1043" title="constexpr" data-ref="_M/BOOST_CONSTEXPR">BOOST_CONSTEXPR</a> <a class="macro" href="../../../support/config.hpp.html#16" title="" data-ref="_M/BOOST_FUSION_GPU_ENABLED">BOOST_FUSION_GPU_ENABLED</a></td></tr>
+<tr><th id="546">546</th><td>        <em>static</em> <a class="typedef" href="#boost::fusion::detail::make_segmented_range::type" title='boost::fusion::detail::make_segmented_range::type' data-type='typename impl::type' data-ref="boost::fusion::detail::make_segmented_range::type">type</a> <dfn class="decl def fn" id="_ZN5boost6fusion6detail20make_segmented_range4callERKT_RKT0_" title='boost::fusion::detail::make_segmented_range::call' data-ref="_ZN5boost6fusion6detail20make_segmented_range4callERKT_RKT0_">call</dfn>(Begin <em>const</em>&amp; <dfn class="local col1 decl" id="6151begin" title='begin' data-type='const Begin &amp;' data-ref="6151begin">begin</dfn>, End <em>const</em>&amp; <dfn class="local col2 decl" id="6152end" title='end' data-type='const End &amp;' data-ref="6152end">end</dfn>)</td></tr>
+<tr><th id="547">547</th><td>        {</td></tr>
+<tr><th id="548">548</th><td>            <b>return</b> <a class="typedef" href="#boost::fusion::detail::make_segmented_range::impl" title='boost::fusion::detail::make_segmented_range::impl' data-type='make_segmented_range_reduce&lt;typename reverse_begin_cons::type, typename reverse_end_cons::type&gt;' data-ref="boost::fusion::detail::make_segmented_range::impl">impl</a>::call(</td></tr>
+<tr><th id="549">549</th><td>                <a class="typedef" href="#boost::fusion::detail::make_segmented_range::reverse_begin_cons" title='boost::fusion::detail::make_segmented_range::reverse_begin_cons' data-type='reverse_cons&lt;typename Begin::context_type&gt;' data-ref="boost::fusion::detail::make_segmented_range::reverse_begin_cons">reverse_begin_cons</a>::call(<a class="local col1 ref" href="#6151begin" title='begin' data-ref="6151begin">begin</a>.context)</td></tr>
+<tr><th id="550">550</th><td>              , <a class="typedef" href="#boost::fusion::detail::make_segmented_range::reverse_end_cons" title='boost::fusion::detail::make_segmented_range::reverse_end_cons' data-type='reverse_cons&lt;typename End::context_type&gt;' data-ref="boost::fusion::detail::make_segmented_range::reverse_end_cons">reverse_end_cons</a>::call(<a class="local col2 ref" href="#6152end" title='end' data-ref="6152end">end</a>.context));</td></tr>
+<tr><th id="551">551</th><td>        }</td></tr>
+<tr><th id="552">552</th><td>    };</td></tr>
+<tr><th id="553">553</th><td></td></tr>
+<tr><th id="554">554</th><td>}}}</td></tr>
+<tr><th id="555">555</th><td></td></tr>
+<tr><th id="556">556</th><td><u>#<span data-ppcond="7">endif</span></u></td></tr>
+<tr><th id="557">557</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../../../../../../../graph/src/graphml.cpp.html'>boost-1.85.0/libs/graph/src/graphml.cpp</a><br/>Generated on <em>2024-Jun-14</em> from project boost-1.85.0 revision <em>1.85.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

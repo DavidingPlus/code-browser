@@ -1,0 +1,262 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>cpp_lex_iterator.hpp source code [boost-1.85.0/libs/wave/include/boost/wave/cpplexer/cpp_lex_iterator.hpp] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="boost::wave::cpplexer::impl::lex_iterator_functor_shim,boost::wave::cpplexer::lex_iterator,boost::wave::cpplexer::make_multi_pass "/>
+<link rel="stylesheet" href="../../../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'boost-1.85.0/libs/wave/include/boost/wave/cpplexer/cpp_lex_iterator.hpp'; var root_path = '../../../../../../..'; var data_path = '../../../../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../../../..'>boost-1.85.0</a>/<a href='../../../../..'>libs</a>/<a href='../../../..'>wave</a>/<a href='../../..'>include</a>/<a href='../..'>boost</a>/<a href='..'>wave</a>/<a href='./'>cpplexer</a>/<a href='cpp_lex_iterator.hpp.html'>cpp_lex_iterator.hpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*=============================================================================</i></td></tr>
+<tr><th id="2">2</th><td><i>    Boost.Wave: A Standard compliant C++ preprocessor library</i></td></tr>
+<tr><th id="3">3</th><td><i></i></td></tr>
+<tr><th id="4">4</th><td><i>    Definition of the lexer iterator</i></td></tr>
+<tr><th id="5">5</th><td><i></i></td></tr>
+<tr><th id="6">6</th><td><i>    <a href="http://www.boost.org/">http://www.boost.org/</a></i></td></tr>
+<tr><th id="7">7</th><td><i></i></td></tr>
+<tr><th id="8">8</th><td><i>    Copyright (c) 2001-2012 Hartmut Kaiser. Distributed under the Boost</i></td></tr>
+<tr><th id="9">9</th><td><i>    Software License, Version 1.0. (See accompanying file</i></td></tr>
+<tr><th id="10">10</th><td><i>    LICENSE_1_0.txt or copy at <a href="http://www.boost.org/LICENSE_1_0.txt">http://www.boost.org/LICENSE_1_0.txt</a>)</i></td></tr>
+<tr><th id="11">11</th><td><i>=============================================================================*/</i></td></tr>
+<tr><th id="12">12</th><td></td></tr>
+<tr><th id="13">13</th><td><u>#<span data-ppcond="13">if</span> !defined(<span class="macro" data-ref="_M/BOOST_CPP_LEX_ITERATOR_HPP_AF0C37E3_CBD8_4F33_A225_51CF576FA61F_INCLUDED">BOOST_CPP_LEX_ITERATOR_HPP_AF0C37E3_CBD8_4F33_A225_51CF576FA61F_INCLUDED</span>)</u></td></tr>
+<tr><th id="14">14</th><td><u>#define <dfn class="macro" id="_M/BOOST_CPP_LEX_ITERATOR_HPP_AF0C37E3_CBD8_4F33_A225_51CF576FA61F_INCLUDED" data-ref="_M/BOOST_CPP_LEX_ITERATOR_HPP_AF0C37E3_CBD8_4F33_A225_51CF576FA61F_INCLUDED">BOOST_CPP_LEX_ITERATOR_HPP_AF0C37E3_CBD8_4F33_A225_51CF576FA61F_INCLUDED</dfn></u></td></tr>
+<tr><th id="15">15</th><td></td></tr>
+<tr><th id="16">16</th><td><u>#include <a href="../../../../../../../include/c++/9/string.html">&lt;string&gt;</a></u></td></tr>
+<tr><th id="17">17</th><td></td></tr>
+<tr><th id="18">18</th><td><u>#include <a href="../../../../../assert/include/boost/assert.hpp.html">&lt;boost/assert.hpp&gt;</a></u></td></tr>
+<tr><th id="19">19</th><td><u>#include <a href="../../../../../smart_ptr/include/boost/intrusive_ptr.hpp.html">&lt;boost/intrusive_ptr.hpp&gt;</a></u></td></tr>
+<tr><th id="20">20</th><td></td></tr>
+<tr><th id="21">21</th><td><u>#include <a href="../wave_config.hpp.html">&lt;boost/wave/wave_config.hpp&gt;</a></u></td></tr>
+<tr><th id="22">22</th><td><u>#include <a href="../../../../../spirit/include/boost/spirit/include/support_multi_pass.hpp.html">&lt;boost/spirit/include/support_multi_pass.hpp&gt;</a></u></td></tr>
+<tr><th id="23">23</th><td></td></tr>
+<tr><th id="24">24</th><td><u>#include <a href="../util/file_position.hpp.html">&lt;boost/wave/util/file_position.hpp&gt;</a></u></td></tr>
+<tr><th id="25">25</th><td><u>#include <a href="../util/functor_input.hpp.html">&lt;boost/wave/util/functor_input.hpp&gt;</a></u></td></tr>
+<tr><th id="26">26</th><td><u>#include <a href="cpp_lex_interface_generator.hpp.html">&lt;boost/wave/cpplexer/cpp_lex_interface_generator.hpp&gt;</a></u></td></tr>
+<tr><th id="27">27</th><td></td></tr>
+<tr><th id="28">28</th><td><u>#include <a href="../language_support.hpp.html">&lt;boost/wave/language_support.hpp&gt;</a></u></td></tr>
+<tr><th id="29">29</th><td></td></tr>
+<tr><th id="30">30</th><td><i>// this must occur after all of the includes and before any code appears</i></td></tr>
+<tr><th id="31">31</th><td><u>#<span data-ppcond="31">ifdef</span> <span class="macro" data-ref="_M/BOOST_HAS_ABI_HEADERS">BOOST_HAS_ABI_HEADERS</span></u></td></tr>
+<tr><th id="32">32</th><td><u>#include BOOST_ABI_PREFIX</u></td></tr>
+<tr><th id="33">33</th><td><u>#<span data-ppcond="31">endif</span></u></td></tr>
+<tr><th id="34">34</th><td></td></tr>
+<tr><th id="35">35</th><td><u>#<span data-ppcond="35">if</span> 0 != __COMO_VERSION__ || !<a class="macro" href="../../../../../config/include/boost/config/workaround.hpp.html#271" title="((1 + 0 == 0) &amp;&amp; (BOOST_MSVC != 0) &amp;&amp; (1 % (( (BOOST_MSVC &lt;= 1310) ) + 1)))" data-ref="_M/BOOST_WORKAROUND">BOOST_WORKAROUND</a>(BOOST_MSVC, &lt;= 1310)</u></td></tr>
+<tr><th id="36">36</th><td><u>#define <dfn class="macro" id="_M/BOOST_WAVE_EOF_PREFIX" data-ref="_M/BOOST_WAVE_EOF_PREFIX">BOOST_WAVE_EOF_PREFIX</dfn> static</u></td></tr>
+<tr><th id="37">37</th><td><u>#<span data-ppcond="35">else</span></u></td></tr>
+<tr><th id="38">38</th><td><u>#define BOOST_WAVE_EOF_PREFIX</u></td></tr>
+<tr><th id="39">39</th><td><u>#<span data-ppcond="35">endif</span></u></td></tr>
+<tr><th id="40">40</th><td></td></tr>
+<tr><th id="41">41</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="42">42</th><td><b>namespace</b> <span class="namespace">boost</span> {</td></tr>
+<tr><th id="43">43</th><td><b>namespace</b> <span class="namespace">wave</span> {</td></tr>
+<tr><th id="44">44</th><td><b>namespace</b> <span class="namespace">cpplexer</span> {</td></tr>
+<tr><th id="45">45</th><td><b>namespace</b> <span class="namespace">impl</span> {</td></tr>
+<tr><th id="46">46</th><td></td></tr>
+<tr><th id="47">47</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="48">48</th><td><i>//</i></td></tr>
+<tr><th id="49">49</th><td><i>//  lex_iterator_functor_shim</i></td></tr>
+<tr><th id="50">50</th><td><i>//</i></td></tr>
+<tr><th id="51">51</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="52">52</th><td></td></tr>
+<tr><th id="53">53</th><td><b>template</b> &lt;<b>typename</b> TokenT&gt;</td></tr>
+<tr><th id="54">54</th><td><b>class</b> <dfn class="type def" id="boost::wave::cpplexer::impl::lex_iterator_functor_shim" title='boost::wave::cpplexer::impl::lex_iterator_functor_shim' data-ref="boost::wave::cpplexer::impl::lex_iterator_functor_shim">lex_iterator_functor_shim</dfn></td></tr>
+<tr><th id="55">55</th><td>{</td></tr>
+<tr><th id="56">56</th><td>    <b>typedef</b> <b>typename</b> TokenT::position_type  <dfn class="typedef" id="boost::wave::cpplexer::impl::lex_iterator_functor_shim::position_type" title='boost::wave::cpplexer::impl::lex_iterator_functor_shim::position_type' data-type='typename TokenT::position_type' data-ref="boost::wave::cpplexer::impl::lex_iterator_functor_shim::position_type">position_type</dfn>;</td></tr>
+<tr><th id="57">57</th><td></td></tr>
+<tr><th id="58">58</th><td><b>public</b>:</td></tr>
+<tr><th id="59">59</th><td>    <dfn class="decl def fn" id="_ZN5boost4wave8cpplexer4impl25lex_iterator_functor_shimC1Ev" title='boost::wave::cpplexer::impl::lex_iterator_functor_shim::lex_iterator_functor_shim&lt;TokenT&gt;' data-ref="_ZN5boost4wave8cpplexer4impl25lex_iterator_functor_shimC1Ev">lex_iterator_functor_shim</dfn>()</td></tr>
+<tr><th id="60">60</th><td><u>#<span data-ppcond="60">if</span> /*0 != __DECCXX_VER || */defined(<span class="macro" data-ref="_M/__PGI">__PGI</span>)</u></td></tr>
+<tr><th id="61">61</th><td>      : eof()</td></tr>
+<tr><th id="62">62</th><td><u>#<span data-ppcond="60">endif</span></u></td></tr>
+<tr><th id="63">63</th><td>    {}</td></tr>
+<tr><th id="64">64</th><td></td></tr>
+<tr><th id="65">65</th><td><u>#<span data-ppcond="65">if</span> <a class="macro" href="../../../../../config/include/boost/config/workaround.hpp.html#271" title="((1 + 0 == 0) &amp;&amp; (BOOST_MSVC != 0) &amp;&amp; (1 % (( (BOOST_MSVC &lt;= 1310) ) + 1)))" data-ref="_M/BOOST_WORKAROUND">BOOST_WORKAROUND</a>(BOOST_MSVC, &lt;= 1310)</u></td></tr>
+<tr><th id="66">66</th><td>    lex_iterator_functor_shim&amp; <b>operator</b>= (lex_iterator_functor_shim <em>const</em>&amp; rhs)</td></tr>
+<tr><th id="67">67</th><td>        { <b>return</b> *<b>this</b>; }   <i>// nothing to do here</i></td></tr>
+<tr><th id="68">68</th><td><u>#<span data-ppcond="65">endif</span></u></td></tr>
+<tr><th id="69">69</th><td></td></tr>
+<tr><th id="70">70</th><td>    <i>// interface to the iterator_policies::split_functor_input policy</i></td></tr>
+<tr><th id="71">71</th><td>    <b>typedef</b> TokenT <dfn class="typedef" id="boost::wave::cpplexer::impl::lex_iterator_functor_shim::result_type" title='boost::wave::cpplexer::impl::lex_iterator_functor_shim::result_type' data-type='TokenT' data-ref="boost::wave::cpplexer::impl::lex_iterator_functor_shim::result_type">result_type</dfn>;</td></tr>
+<tr><th id="72">72</th><td>    <b>typedef</b> lex_iterator_functor_shim <dfn class="typedef" id="boost::wave::cpplexer::impl::lex_iterator_functor_shim::unique" title='boost::wave::cpplexer::impl::lex_iterator_functor_shim::unique' data-type='lex_iterator_functor_shim&lt;TokenT&gt;' data-ref="boost::wave::cpplexer::impl::lex_iterator_functor_shim::unique">unique</dfn>;</td></tr>
+<tr><th id="73">73</th><td>    <b>typedef</b> <a class="type" href="cpp_lex_interface.hpp.html#boost::wave::cpplexer::lex_input_interface" title='boost::wave::cpplexer::lex_input_interface' data-ref="boost::wave::cpplexer::lex_input_interface">lex_input_interface</a>&lt;TokenT&gt;* <dfn class="typedef" id="boost::wave::cpplexer::impl::lex_iterator_functor_shim::shared" title='boost::wave::cpplexer::impl::lex_iterator_functor_shim::shared' data-type='lex_input_interface&lt;TokenT&gt; *' data-ref="boost::wave::cpplexer::impl::lex_iterator_functor_shim::shared">shared</dfn>;</td></tr>
+<tr><th id="74">74</th><td></td></tr>
+<tr><th id="75">75</th><td>    <a class="macro" href="#36" title="static" data-ref="_M/BOOST_WAVE_EOF_PREFIX">BOOST_WAVE_EOF_PREFIX</a> <a class="typedef" href="#boost::wave::cpplexer::impl::lex_iterator_functor_shim::result_type" title='boost::wave::cpplexer::impl::lex_iterator_functor_shim::result_type' data-type='TokenT' data-ref="boost::wave::cpplexer::impl::lex_iterator_functor_shim::result_type">result_type</a> <em>const</em> <dfn class="decl" id="boost::wave::cpplexer::impl::lex_iterator_functor_shim::eof" title='boost::wave::cpplexer::impl::lex_iterator_functor_shim::eof' data-ref="boost::wave::cpplexer::impl::lex_iterator_functor_shim::eof">eof</dfn>;</td></tr>
+<tr><th id="76">76</th><td></td></tr>
+<tr><th id="77">77</th><td>    <b>template</b> &lt;<b>typename</b> MultiPass&gt;</td></tr>
+<tr><th id="78">78</th><td>    <em>static</em> <a class="typedef" href="#boost::wave::cpplexer::impl::lex_iterator_functor_shim::result_type" title='boost::wave::cpplexer::impl::lex_iterator_functor_shim::result_type' data-type='TokenT' data-ref="boost::wave::cpplexer::impl::lex_iterator_functor_shim::result_type">result_type</a>&amp; <dfn class="decl def fn" id="_ZN5boost4wave8cpplexer4impl25lex_iterator_functor_shim8get_nextERTL0__RT_" title='boost::wave::cpplexer::impl::lex_iterator_functor_shim::get_next' data-ref="_ZN5boost4wave8cpplexer4impl25lex_iterator_functor_shim8get_nextERTL0__RT_">get_next</dfn>(MultiPass&amp; <dfn class="local col9 decl" id="539mp" title='mp' data-type='MultiPass &amp;' data-ref="539mp">mp</dfn>, <a class="typedef" href="#boost::wave::cpplexer::impl::lex_iterator_functor_shim::result_type" title='boost::wave::cpplexer::impl::lex_iterator_functor_shim::result_type' data-type='TokenT' data-ref="boost::wave::cpplexer::impl::lex_iterator_functor_shim::result_type">result_type</a>&amp; <dfn class="local col0 decl" id="540result" title='result' data-type='boost::wave::cpplexer::impl::lex_iterator_functor_shim::result_type &amp;' data-ref="540result">result</dfn>)</td></tr>
+<tr><th id="79">79</th><td>    {</td></tr>
+<tr><th id="80">80</th><td>        <b>return</b> <a class="local col9 ref" href="#539mp" title='mp' data-ref="539mp">mp</a>.shared()-&gt;ftor-&gt;get(<a class="local col0 ref" href="#540result" title='result' data-ref="540result">result</a>);</td></tr>
+<tr><th id="81">81</th><td>    }</td></tr>
+<tr><th id="82">82</th><td></td></tr>
+<tr><th id="83">83</th><td>    <i>// this will be called whenever the last reference to a multi_pass will</i></td></tr>
+<tr><th id="84">84</th><td><i>    // be released</i></td></tr>
+<tr><th id="85">85</th><td>    <b>template</b> &lt;<b>typename</b> MultiPass&gt;</td></tr>
+<tr><th id="86">86</th><td>    <em>static</em> <em>void</em> <dfn class="decl def fn" id="_ZN5boost4wave8cpplexer4impl25lex_iterator_functor_shim7destroyERTL0__" title='boost::wave::cpplexer::impl::lex_iterator_functor_shim::destroy' data-ref="_ZN5boost4wave8cpplexer4impl25lex_iterator_functor_shim7destroyERTL0__">destroy</dfn>(MultiPass&amp; <dfn class="local col1 decl" id="541mp" title='mp' data-type='MultiPass &amp;' data-ref="541mp">mp</dfn>)</td></tr>
+<tr><th id="87">87</th><td>    {</td></tr>
+<tr><th id="88">88</th><td>        <b>delete</b> <a class="local col1 ref" href="#541mp" title='mp' data-ref="541mp">mp</a>.shared()-&gt;ftor;</td></tr>
+<tr><th id="89">89</th><td>    }</td></tr>
+<tr><th id="90">90</th><td></td></tr>
+<tr><th id="91">91</th><td>    <b>template</b> &lt;<b>typename</b> MultiPass&gt;</td></tr>
+<tr><th id="92">92</th><td>    <em>static</em> <em>void</em> <dfn class="decl def fn" id="_ZN5boost4wave8cpplexer4impl25lex_iterator_functor_shim12set_positionERTL0__RKNT_13position_typeE" title='boost::wave::cpplexer::impl::lex_iterator_functor_shim::set_position' data-ref="_ZN5boost4wave8cpplexer4impl25lex_iterator_functor_shim12set_positionERTL0__RKNT_13position_typeE">set_position</dfn>(MultiPass&amp; <dfn class="local col2 decl" id="542mp" title='mp' data-type='MultiPass &amp;' data-ref="542mp">mp</dfn>, <a class="typedef" href="#boost::wave::cpplexer::impl::lex_iterator_functor_shim::position_type" title='boost::wave::cpplexer::impl::lex_iterator_functor_shim::position_type' data-type='typename TokenT::position_type' data-ref="boost::wave::cpplexer::impl::lex_iterator_functor_shim::position_type">position_type</a> <em>const</em> &amp;<dfn class="local col3 decl" id="543pos" title='pos' data-type='const boost::wave::cpplexer::impl::lex_iterator_functor_shim::position_type &amp;' data-ref="543pos">pos</dfn>)</td></tr>
+<tr><th id="93">93</th><td>    {</td></tr>
+<tr><th id="94">94</th><td>        <a class="local col2 ref" href="#542mp" title='mp' data-ref="542mp">mp</a>.shared()-&gt;ftor-&gt;set_position(<a class="local col3 ref" href="#543pos" title='pos' data-ref="543pos">pos</a>);</td></tr>
+<tr><th id="95">95</th><td>    }</td></tr>
+<tr><th id="96">96</th><td><u>#<span data-ppcond="96">if</span> <a class="macro" href="../wave_config.hpp.html#70" title="1" data-ref="_M/BOOST_WAVE_SUPPORT_PRAGMA_ONCE">BOOST_WAVE_SUPPORT_PRAGMA_ONCE</a> != 0</u></td></tr>
+<tr><th id="97">97</th><td>    <b>template</b> &lt;<b>typename</b> MultiPass&gt;</td></tr>
+<tr><th id="98">98</th><td>    <em>static</em> <em>bool</em> <dfn class="decl def fn" id="_ZN5boost4wave8cpplexer4impl25lex_iterator_functor_shim18has_include_guardsERTL0__RNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE" title='boost::wave::cpplexer::impl::lex_iterator_functor_shim::has_include_guards' data-ref="_ZN5boost4wave8cpplexer4impl25lex_iterator_functor_shim18has_include_guardsERTL0__RNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE">has_include_guards</dfn>(MultiPass&amp; <dfn class="local col4 decl" id="544mp" title='mp' data-type='MultiPass &amp;' data-ref="544mp">mp</dfn>, <span class="namespace">std::</span><a class="typedef" href="../../../../../../../include/c++/9/bits/stringfwd.h.html#std::string" title='std::string' data-type='basic_string&lt;char&gt;' data-ref="std::string">string</a>&amp; <dfn class="local col5 decl" id="545guard_name" title='guard_name' data-type='std::string &amp;' data-ref="545guard_name">guard_name</dfn>)</td></tr>
+<tr><th id="99">99</th><td>    {</td></tr>
+<tr><th id="100">100</th><td>        <b>return</b> <a class="local col4 ref" href="#544mp" title='mp' data-ref="544mp">mp</a>.shared()-&gt;ftor-&gt;has_include_guards(<a class="local col5 ref" href="#545guard_name" title='guard_name' data-ref="545guard_name">guard_name</a>);</td></tr>
+<tr><th id="101">101</th><td>    }</td></tr>
+<tr><th id="102">102</th><td><u>#<span data-ppcond="96">endif</span></u></td></tr>
+<tr><th id="103">103</th><td>};</td></tr>
+<tr><th id="104">104</th><td></td></tr>
+<tr><th id="105">105</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="106">106</th><td><i>//  eof token</i></td></tr>
+<tr><th id="107">107</th><td><u>#<span data-ppcond="107">if</span> 0 != __COMO_VERSION__ || !<a class="macro" href="../../../../../config/include/boost/config/workaround.hpp.html#271" title="((1 + 0 == 0) &amp;&amp; (BOOST_MSVC != 0) &amp;&amp; (1 % (( (BOOST_MSVC &lt;= 1310) ) + 1)))" data-ref="_M/BOOST_WORKAROUND">BOOST_WORKAROUND</a>(BOOST_MSVC, &lt;= 1310)</u></td></tr>
+<tr><th id="108">108</th><td><b>template</b> &lt;<b>typename</b> TokenT&gt;</td></tr>
+<tr><th id="109">109</th><td><b>typename</b> <a class="type" href="#boost::wave::cpplexer::impl::lex_iterator_functor_shim" title='boost::wave::cpplexer::impl::lex_iterator_functor_shim' data-ref="boost::wave::cpplexer::impl::lex_iterator_functor_shim">lex_iterator_functor_shim</a>&lt;TokenT&gt;::<a class="typedef" href="#boost::wave::cpplexer::impl::lex_iterator_functor_shim::result_type" title='boost::wave::cpplexer::impl::lex_iterator_functor_shim::result_type' data-type='TokenT' data-ref="boost::wave::cpplexer::impl::lex_iterator_functor_shim::result_type">result_type</a> <em>const</em></td></tr>
+<tr><th id="110">110</th><td>    <a class="type" href="#boost::wave::cpplexer::impl::lex_iterator_functor_shim" title='boost::wave::cpplexer::impl::lex_iterator_functor_shim' data-ref="boost::wave::cpplexer::impl::lex_iterator_functor_shim">lex_iterator_functor_shim</a>&lt;TokenT&gt;::<dfn class="decl def" id="boost::wave::cpplexer::impl::lex_iterator_functor_shim::eof" title='boost::wave::cpplexer::impl::lex_iterator_functor_shim::eof' data-ref="boost::wave::cpplexer::impl::lex_iterator_functor_shim::eof">eof</dfn>;</td></tr>
+<tr><th id="111">111</th><td><u>#<span data-ppcond="107">endif</span> // 0 != __COMO_VERSION__</u></td></tr>
+<tr><th id="112">112</th><td></td></tr>
+<tr><th id="113">113</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="114">114</th><td>}   <i>// namespace impl</i></td></tr>
+<tr><th id="115">115</th><td></td></tr>
+<tr><th id="116">116</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="117">117</th><td><i>//</i></td></tr>
+<tr><th id="118">118</th><td><i>//  lex_iterator</i></td></tr>
+<tr><th id="119">119</th><td><i>//</i></td></tr>
+<tr><th id="120">120</th><td><i>//      A generic C++ lexer interface class, which allows to plug in different</i></td></tr>
+<tr><th id="121">121</th><td><i>//      lexer implementations. The interface between the lexer type used and</i></td></tr>
+<tr><th id="122">122</th><td><i>//      the preprocessor component depends on the token type only (template</i></td></tr>
+<tr><th id="123">123</th><td><i>//      parameter TokenT).</i></td></tr>
+<tr><th id="124">124</th><td><i>//      Additionally, the following requirements apply:</i></td></tr>
+<tr><th id="125">125</th><td><i>//</i></td></tr>
+<tr><th id="126">126</th><td><i>//          - the lexer type should have a function implemented, which returnes</i></td></tr>
+<tr><th id="127">127</th><td><i>//            the next lexed token from the input stream:</i></td></tr>
+<tr><th id="128">128</th><td><i>//                typename TokenT get();</i></td></tr>
+<tr><th id="129">129</th><td><i>//          - at the end of the input stream this function should return the</i></td></tr>
+<tr><th id="130">130</th><td><i>//            eof token equivalent</i></td></tr>
+<tr><th id="131">131</th><td><i>//          - the lexer should implement a constructor taking two iterators</i></td></tr>
+<tr><th id="132">132</th><td><i>//            pointing to the beginning and the end of the input stream,</i></td></tr>
+<tr><th id="133">133</th><td><i>//            a third parameter containing the name of the parsed input file</i></td></tr>
+<tr><th id="134">134</th><td><i>//            and a 4th parameter of the type boost::wave::language_support</i></td></tr>
+<tr><th id="135">135</th><td><i>//            which specifies, which language subset should be supported (C++,</i></td></tr>
+<tr><th id="136">136</th><td><i>//            C99, C++11 etc.).</i></td></tr>
+<tr><th id="137">137</th><td><i>//</i></td></tr>
+<tr><th id="138">138</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="139">139</th><td><i></i></td></tr>
+<tr><th id="140">140</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="141">141</th><td><i>//  Divide the given functor type into its components (unique and shared)</i></td></tr>
+<tr><th id="142">142</th><td><i>//  and build a std::pair from these parts</i></td></tr>
+<tr><th id="143">143</th><td><b>template</b> &lt;<b>typename</b> FunctorData&gt;</td></tr>
+<tr><th id="144">144</th><td><b>struct</b> <dfn class="type def" id="boost::wave::cpplexer::make_multi_pass" title='boost::wave::cpplexer::make_multi_pass' data-ref="boost::wave::cpplexer::make_multi_pass">make_multi_pass</dfn></td></tr>
+<tr><th id="145">145</th><td>{</td></tr>
+<tr><th id="146">146</th><td>    <b>typedef</b></td></tr>
+<tr><th id="147">147</th><td>        <span class="namespace">std::</span><a class="type" href="../../../../../../../include/c++/9/bits/stl_pair.h.html#std::pair" title='std::pair' data-ref="std::pair">pair</a>&lt;<b>typename</b> FunctorData::unique, <b>typename</b> FunctorData::shared&gt;</td></tr>
+<tr><th id="148">148</th><td>    <dfn class="typedef" id="boost::wave::cpplexer::make_multi_pass::functor_data_type" title='boost::wave::cpplexer::make_multi_pass::functor_data_type' data-type='std::pair&lt;typename FunctorData::unique, typename FunctorData::shared&gt;' data-ref="boost::wave::cpplexer::make_multi_pass::functor_data_type">functor_data_type</dfn>;</td></tr>
+<tr><th id="149">149</th><td>    <b>typedef</b> <b>typename</b> FunctorData::result_type <dfn class="typedef" id="boost::wave::cpplexer::make_multi_pass::result_type" title='boost::wave::cpplexer::make_multi_pass::result_type' data-type='typename FunctorData::result_type' data-ref="boost::wave::cpplexer::make_multi_pass::result_type">result_type</dfn>;</td></tr>
+<tr><th id="150">150</th><td></td></tr>
+<tr><th id="151">151</th><td>    <b>typedef</b> <span class="namespace">boost::spirit::iterator_policies::</span><a class="type" href="../../../../../spirit/include/boost/spirit/home/support/iterators/detail/split_functor_input_policy.hpp.html#boost::spirit::iterator_policies::split_functor_input" title='boost::spirit::iterator_policies::split_functor_input' data-ref="boost::spirit::iterator_policies::split_functor_input">split_functor_input</a> <dfn class="typedef" id="boost::wave::cpplexer::make_multi_pass::input_policy" title='boost::wave::cpplexer::make_multi_pass::input_policy' data-type='boost::spirit::iterator_policies::split_functor_input' data-ref="boost::wave::cpplexer::make_multi_pass::input_policy">input_policy</dfn>;</td></tr>
+<tr><th id="152">152</th><td>    <b>typedef</b> <span class="namespace">boost::spirit::iterator_policies::</span><a class="type" href="../../../../../spirit/include/boost/spirit/home/support/iterators/detail/ref_counted_policy.hpp.html#boost::spirit::iterator_policies::ref_counted" title='boost::spirit::iterator_policies::ref_counted' data-ref="boost::spirit::iterator_policies::ref_counted">ref_counted</a> <dfn class="typedef" id="boost::wave::cpplexer::make_multi_pass::ownership_policy" title='boost::wave::cpplexer::make_multi_pass::ownership_policy' data-type='boost::spirit::iterator_policies::ref_counted' data-ref="boost::wave::cpplexer::make_multi_pass::ownership_policy">ownership_policy</dfn>;</td></tr>
+<tr><th id="153">153</th><td><u>#<span data-ppcond="153">if</span> defined(<span class="macro" data-ref="_M/BOOST_WAVE_DEBUG">BOOST_WAVE_DEBUG</span>)</u></td></tr>
+<tr><th id="154">154</th><td>    <b>typedef</b> boost::spirit::iterator_policies::buf_id_check check_policy;</td></tr>
+<tr><th id="155">155</th><td><u>#<span data-ppcond="153">else</span></u></td></tr>
+<tr><th id="156">156</th><td>    <b>typedef</b> <span class="namespace">boost::spirit::iterator_policies::</span><a class="type" href="../../../../../spirit/include/boost/spirit/home/support/iterators/detail/no_check_policy.hpp.html#boost::spirit::iterator_policies::no_check" title='boost::spirit::iterator_policies::no_check' data-ref="boost::spirit::iterator_policies::no_check">no_check</a> <dfn class="typedef" id="boost::wave::cpplexer::make_multi_pass::check_policy" title='boost::wave::cpplexer::make_multi_pass::check_policy' data-type='boost::spirit::iterator_policies::no_check' data-ref="boost::wave::cpplexer::make_multi_pass::check_policy">check_policy</dfn>;</td></tr>
+<tr><th id="157">157</th><td><u>#<span data-ppcond="153">endif</span></u></td></tr>
+<tr><th id="158">158</th><td>    <b>typedef</b> <span class="namespace">boost::spirit::iterator_policies::</span><a class="type" href="../../../../../spirit/include/boost/spirit/home/support/iterators/detail/split_std_deque_policy.hpp.html#boost::spirit::iterator_policies::split_std_deque" title='boost::spirit::iterator_policies::split_std_deque' data-ref="boost::spirit::iterator_policies::split_std_deque">split_std_deque</a> <dfn class="typedef" id="boost::wave::cpplexer::make_multi_pass::storage_policy" title='boost::wave::cpplexer::make_multi_pass::storage_policy' data-type='boost::spirit::iterator_policies::split_std_deque' data-ref="boost::wave::cpplexer::make_multi_pass::storage_policy">storage_policy</dfn>;</td></tr>
+<tr><th id="159">159</th><td></td></tr>
+<tr><th id="160">160</th><td>    <b>typedef</b> <span class="namespace">boost::spirit::iterator_policies::</span><a class="type" href="../../../../../spirit/include/boost/spirit/home/support/iterators/multi_pass_fwd.hpp.html#boost::spirit::iterator_policies::default_policy" title='boost::spirit::iterator_policies::default_policy' data-ref="boost::spirit::iterator_policies::default_policy">default_policy</a>&lt;</td></tr>
+<tr><th id="161">161</th><td>            <a class="typedef" href="#boost::wave::cpplexer::make_multi_pass::ownership_policy" title='boost::wave::cpplexer::make_multi_pass::ownership_policy' data-type='boost::spirit::iterator_policies::ref_counted' data-ref="boost::wave::cpplexer::make_multi_pass::ownership_policy">ownership_policy</a>, <a class="typedef" href="#boost::wave::cpplexer::make_multi_pass::check_policy" title='boost::wave::cpplexer::make_multi_pass::check_policy' data-type='boost::spirit::iterator_policies::no_check' data-ref="boost::wave::cpplexer::make_multi_pass::check_policy">check_policy</a>, <a class="typedef" href="#boost::wave::cpplexer::make_multi_pass::input_policy" title='boost::wave::cpplexer::make_multi_pass::input_policy' data-type='boost::spirit::iterator_policies::split_functor_input' data-ref="boost::wave::cpplexer::make_multi_pass::input_policy">input_policy</a>, <a class="typedef" href="#boost::wave::cpplexer::make_multi_pass::storage_policy" title='boost::wave::cpplexer::make_multi_pass::storage_policy' data-type='boost::spirit::iterator_policies::split_std_deque' data-ref="boost::wave::cpplexer::make_multi_pass::storage_policy">storage_policy</a>&gt;</td></tr>
+<tr><th id="162">162</th><td>        <dfn class="typedef" id="boost::wave::cpplexer::make_multi_pass::policy_type" title='boost::wave::cpplexer::make_multi_pass::policy_type' data-type='boost::spirit::iterator_policies::default_policy&lt;ownership_policy, check_policy, input_policy, storage_policy&gt;' data-ref="boost::wave::cpplexer::make_multi_pass::policy_type">policy_type</dfn>;</td></tr>
+<tr><th id="163">163</th><td>    <b>typedef</b> <span class="namespace">boost::spirit::</span><a class="type" href="../../../../../spirit/include/boost/spirit/home/support/iterators/multi_pass_fwd.hpp.html#boost::spirit::multi_pass" title='boost::spirit::multi_pass' data-ref="boost::spirit::multi_pass">multi_pass</a>&lt;<a class="typedef" href="#boost::wave::cpplexer::make_multi_pass::functor_data_type" title='boost::wave::cpplexer::make_multi_pass::functor_data_type' data-type='std::pair&lt;typename FunctorData::unique, typename FunctorData::shared&gt;' data-ref="boost::wave::cpplexer::make_multi_pass::functor_data_type">functor_data_type</a>, <a class="typedef" href="#boost::wave::cpplexer::make_multi_pass::policy_type" title='boost::wave::cpplexer::make_multi_pass::policy_type' data-type='boost::spirit::iterator_policies::default_policy&lt;ownership_policy, check_policy, input_policy, storage_policy&gt;' data-ref="boost::wave::cpplexer::make_multi_pass::policy_type">policy_type</a>&gt; <dfn class="typedef" id="boost::wave::cpplexer::make_multi_pass::type" title='boost::wave::cpplexer::make_multi_pass::type' data-type='boost::spirit::multi_pass&lt;functor_data_type, policy_type&gt;' data-ref="boost::wave::cpplexer::make_multi_pass::type">type</dfn>;</td></tr>
+<tr><th id="164">164</th><td>};</td></tr>
+<tr><th id="165">165</th><td></td></tr>
+<tr><th id="166">166</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="167">167</th><td><b>template</b> &lt;<b>typename</b> TokenT&gt;</td></tr>
+<tr><th id="168">168</th><td><b>class</b> <dfn class="type def" id="boost::wave::cpplexer::lex_iterator" title='boost::wave::cpplexer::lex_iterator' data-ref="boost::wave::cpplexer::lex_iterator">lex_iterator</dfn></td></tr>
+<tr><th id="169">169</th><td>:   <b>public</b> <a class="type" href="#boost::wave::cpplexer::make_multi_pass" title='boost::wave::cpplexer::make_multi_pass' data-ref="boost::wave::cpplexer::make_multi_pass">make_multi_pass</a>&lt;<span class="namespace">impl::</span><a class="type" href="#boost::wave::cpplexer::impl::lex_iterator_functor_shim" title='boost::wave::cpplexer::impl::lex_iterator_functor_shim' data-ref="boost::wave::cpplexer::impl::lex_iterator_functor_shim">lex_iterator_functor_shim</a>&lt;TokenT&gt; &gt;::type</td></tr>
+<tr><th id="170">170</th><td>{</td></tr>
+<tr><th id="171">171</th><td>    <b>typedef</b> <span class="namespace">impl::</span><a class="type" href="#boost::wave::cpplexer::impl::lex_iterator_functor_shim" title='boost::wave::cpplexer::impl::lex_iterator_functor_shim' data-ref="boost::wave::cpplexer::impl::lex_iterator_functor_shim">lex_iterator_functor_shim</a>&lt;TokenT&gt; <dfn class="typedef" id="boost::wave::cpplexer::lex_iterator::input_policy_type" title='boost::wave::cpplexer::lex_iterator::input_policy_type' data-type='impl::lex_iterator_functor_shim&lt;TokenT&gt;' data-ref="boost::wave::cpplexer::lex_iterator::input_policy_type">input_policy_type</dfn>;</td></tr>
+<tr><th id="172">172</th><td></td></tr>
+<tr><th id="173">173</th><td>    <b>typedef</b> <b>typename</b> <a class="type" href="#boost::wave::cpplexer::make_multi_pass" title='boost::wave::cpplexer::make_multi_pass' data-ref="boost::wave::cpplexer::make_multi_pass">make_multi_pass</a>&lt;<a class="typedef" href="#boost::wave::cpplexer::lex_iterator::input_policy_type" title='boost::wave::cpplexer::lex_iterator::input_policy_type' data-type='impl::lex_iterator_functor_shim&lt;TokenT&gt;' data-ref="boost::wave::cpplexer::lex_iterator::input_policy_type">input_policy_type</a>&gt;::type <dfn class="typedef" id="boost::wave::cpplexer::lex_iterator::base_type" title='boost::wave::cpplexer::lex_iterator::base_type' data-type='typename make_multi_pass&lt;input_policy_type&gt;::type' data-ref="boost::wave::cpplexer::lex_iterator::base_type">base_type</dfn>;</td></tr>
+<tr><th id="174">174</th><td>    <b>typedef</b> <b>typename</b> <a class="type" href="#boost::wave::cpplexer::make_multi_pass" title='boost::wave::cpplexer::make_multi_pass' data-ref="boost::wave::cpplexer::make_multi_pass">make_multi_pass</a>&lt;<a class="typedef" href="#boost::wave::cpplexer::lex_iterator::input_policy_type" title='boost::wave::cpplexer::lex_iterator::input_policy_type' data-type='impl::lex_iterator_functor_shim&lt;TokenT&gt;' data-ref="boost::wave::cpplexer::lex_iterator::input_policy_type">input_policy_type</a>&gt;::functor_data_type</td></tr>
+<tr><th id="175">175</th><td>        <dfn class="typedef" id="boost::wave::cpplexer::lex_iterator::functor_data_type" title='boost::wave::cpplexer::lex_iterator::functor_data_type' data-type='typename make_multi_pass&lt;input_policy_type&gt;::functor_data_type' data-ref="boost::wave::cpplexer::lex_iterator::functor_data_type">functor_data_type</dfn>;</td></tr>
+<tr><th id="176">176</th><td></td></tr>
+<tr><th id="177">177</th><td>    <b>typedef</b> <b>typename</b> <a class="typedef" href="#boost::wave::cpplexer::lex_iterator::input_policy_type" title='boost::wave::cpplexer::lex_iterator::input_policy_type' data-type='impl::lex_iterator_functor_shim&lt;TokenT&gt;' data-ref="boost::wave::cpplexer::lex_iterator::input_policy_type">input_policy_type</a>::unique <dfn class="typedef" id="boost::wave::cpplexer::lex_iterator::unique_functor_type" title='boost::wave::cpplexer::lex_iterator::unique_functor_type' data-type='typename input_policy_type::unique' data-ref="boost::wave::cpplexer::lex_iterator::unique_functor_type">unique_functor_type</dfn>;</td></tr>
+<tr><th id="178">178</th><td>    <b>typedef</b> <b>typename</b> <a class="typedef" href="#boost::wave::cpplexer::lex_iterator::input_policy_type" title='boost::wave::cpplexer::lex_iterator::input_policy_type' data-type='impl::lex_iterator_functor_shim&lt;TokenT&gt;' data-ref="boost::wave::cpplexer::lex_iterator::input_policy_type">input_policy_type</a>::shared <dfn class="typedef" id="boost::wave::cpplexer::lex_iterator::shared_functor_type" title='boost::wave::cpplexer::lex_iterator::shared_functor_type' data-type='typename input_policy_type::shared' data-ref="boost::wave::cpplexer::lex_iterator::shared_functor_type">shared_functor_type</dfn>;</td></tr>
+<tr><th id="179">179</th><td></td></tr>
+<tr><th id="180">180</th><td><b>public</b>:</td></tr>
+<tr><th id="181">181</th><td>    <b>typedef</b> TokenT <dfn class="typedef" id="boost::wave::cpplexer::lex_iterator::token_type" title='boost::wave::cpplexer::lex_iterator::token_type' data-type='TokenT' data-ref="boost::wave::cpplexer::lex_iterator::token_type">token_type</dfn>;</td></tr>
+<tr><th id="182">182</th><td></td></tr>
+<tr><th id="183">183</th><td>    <dfn class="decl def fn" id="_ZN5boost4wave8cpplexer12lex_iteratorC1Ev" title='boost::wave::cpplexer::lex_iterator::lex_iterator&lt;TokenT&gt;' data-ref="_ZN5boost4wave8cpplexer12lex_iteratorC1Ev">lex_iterator</dfn>()</td></tr>
+<tr><th id="184">184</th><td>    {}</td></tr>
+<tr><th id="185">185</th><td></td></tr>
+<tr><th id="186">186</th><td>    <b>template</b> &lt;<b>typename</b> IteratorT&gt;</td></tr>
+<tr><th id="187">187</th><td>    <dfn class="decl def fn" id="_ZN5boost4wave8cpplexer12lex_iteratorC1ERKTL0__S5_RKNT_13position_typeENS0_16language_supportE" title='boost::wave::cpplexer::lex_iterator::lex_iterator&lt;TokenT&gt;' data-ref="_ZN5boost4wave8cpplexer12lex_iteratorC1ERKTL0__S5_RKNT_13position_typeENS0_16language_supportE">lex_iterator</dfn>(IteratorT <em>const</em> &amp;<dfn class="local col6 decl" id="546first" title='first' data-type='const IteratorT &amp;' data-ref="546first">first</dfn>, IteratorT <em>const</em> &amp;<dfn class="local col7 decl" id="547last" title='last' data-type='const IteratorT &amp;' data-ref="547last">last</dfn>,</td></tr>
+<tr><th id="188">188</th><td>            <b>typename</b> TokenT::position_type <em>const</em> &amp;<dfn class="local col8 decl" id="548pos" title='pos' data-type='const typename TokenT::position_type &amp;' data-ref="548pos">pos</dfn>,</td></tr>
+<tr><th id="189">189</th><td>            <span class="namespace">boost::wave::</span><a class="type" href="../language_support.hpp.html#boost::wave::language_support" title='boost::wave::language_support' data-ref="boost::wave::language_support">language_support</a> <dfn class="local col9 decl" id="549language" title='language' data-type='boost::wave::language_support' data-ref="549language">language</dfn>)</td></tr>
+<tr><th id="190">190</th><td>    :   <a class="typedef" href="#boost::wave::cpplexer::lex_iterator::base_type" title='boost::wave::cpplexer::lex_iterator::base_type' data-type='typename make_multi_pass&lt;input_policy_type&gt;::type' data-ref="boost::wave::cpplexer::lex_iterator::base_type">base_type</a>(</td></tr>
+<tr><th id="191">191</th><td>            <a class="typedef" href="#boost::wave::cpplexer::lex_iterator::functor_data_type" title='boost::wave::cpplexer::lex_iterator::functor_data_type' data-type='typename make_multi_pass&lt;input_policy_type&gt;::functor_data_type' data-ref="boost::wave::cpplexer::lex_iterator::functor_data_type">functor_data_type</a>(</td></tr>
+<tr><th id="192">192</th><td>                <a class="typedef" href="#boost::wave::cpplexer::lex_iterator::unique_functor_type" title='boost::wave::cpplexer::lex_iterator::unique_functor_type' data-type='typename input_policy_type::unique' data-ref="boost::wave::cpplexer::lex_iterator::unique_functor_type">unique_functor_type</a>(),</td></tr>
+<tr><th id="193">193</th><td>                <a class="type" href="cpp_lex_interface_generator.hpp.html#boost::wave::cpplexer::lex_input_interface_generator" title='boost::wave::cpplexer::lex_input_interface_generator' data-ref="boost::wave::cpplexer::lex_input_interface_generator">lex_input_interface_generator</a>&lt;TokenT&gt;</td></tr>
+<tr><th id="194">194</th><td>                    ::new_lexer(<a class="local col6 ref" href="#546first" title='first' data-ref="546first">first</a>, <a class="local col7 ref" href="#547last" title='last' data-ref="547last">last</a>, <a class="local col8 ref" href="#548pos" title='pos' data-ref="548pos">pos</a>, <a class="local col9 ref" href="#549language" title='language' data-ref="549language">language</a>)</td></tr>
+<tr><th id="195">195</th><td>            )</td></tr>
+<tr><th id="196">196</th><td>        )</td></tr>
+<tr><th id="197">197</th><td>    {}</td></tr>
+<tr><th id="198">198</th><td></td></tr>
+<tr><th id="199">199</th><td>    <em>void</em> <dfn class="decl def fn" id="_ZN5boost4wave8cpplexer12lex_iterator12set_positionERKNT_13position_typeE" title='boost::wave::cpplexer::lex_iterator::set_position' data-ref="_ZN5boost4wave8cpplexer12lex_iterator12set_positionERKNT_13position_typeE">set_position</dfn>(<b>typename</b> TokenT::position_type <em>const</em> &amp;<dfn class="local col0 decl" id="550pos" title='pos' data-type='const typename TokenT::position_type &amp;' data-ref="550pos">pos</dfn>)</td></tr>
+<tr><th id="200">200</th><td>    {</td></tr>
+<tr><th id="201">201</th><td>        <b>typedef</b> <b>typename</b> TokenT::position_type <dfn class="local col1 typedef" id="551position_type" title='position_type' data-type='typename TokenT::position_type' data-ref="551position_type">position_type</dfn>;</td></tr>
+<tr><th id="202">202</th><td></td></tr>
+<tr><th id="203">203</th><td>        <i>// set the new position in the current token</i></td></tr>
+<tr><th id="204">204</th><td>        <a class="typedef" href="#boost::wave::cpplexer::lex_iterator::token_type" title='boost::wave::cpplexer::lex_iterator::token_type' data-type='TokenT' data-ref="boost::wave::cpplexer::lex_iterator::token_type">token_type</a> <em>const</em>&amp; <dfn class="local col2 decl" id="552currtoken" title='currtoken' data-type='const boost::wave::cpplexer::lex_iterator::token_type &amp;' data-ref="552currtoken">currtoken</dfn> = <b>this</b>-&gt;<a class="typedef" href="#boost::wave::cpplexer::lex_iterator::base_type" title='boost::wave::cpplexer::lex_iterator::base_type' data-type='typename make_multi_pass&lt;input_policy_type&gt;::type' data-ref="boost::wave::cpplexer::lex_iterator::base_type">base_type</a>::dereference(*<b>this</b>);</td></tr>
+<tr><th id="205">205</th><td>        <a class="local col1 typedef" href="#551position_type" title='position_type' data-type='typename TokenT::position_type' data-ref="551position_type">position_type</a> <dfn class="local col3 decl" id="553currpos" title='currpos' data-type='position_type' data-ref="553currpos">currpos</dfn> = <a class="local col2 ref" href="#552currtoken" title='currtoken' data-ref="552currtoken">currtoken</a>.get_position();</td></tr>
+<tr><th id="206">206</th><td></td></tr>
+<tr><th id="207">207</th><td>        <a class="local col3 ref" href="#553currpos" title='currpos' data-ref="553currpos">currpos</a>.set_file(<a class="local col0 ref" href="#550pos" title='pos' data-ref="550pos">pos</a>.get_file());</td></tr>
+<tr><th id="208">208</th><td>        <a class="local col3 ref" href="#553currpos" title='currpos' data-ref="553currpos">currpos</a>.set_line(<a class="local col0 ref" href="#550pos" title='pos' data-ref="550pos">pos</a>.get_line());</td></tr>
+<tr><th id="209">209</th><td>        <b>const_cast</b>&lt;<a class="typedef" href="#boost::wave::cpplexer::lex_iterator::token_type" title='boost::wave::cpplexer::lex_iterator::token_type' data-type='TokenT' data-ref="boost::wave::cpplexer::lex_iterator::token_type">token_type</a>&amp;&gt;(<a class="local col2 ref" href="#552currtoken" title='currtoken' data-ref="552currtoken">currtoken</a>).set_position(<a class="local col3 ref" href="#553currpos" title='currpos' data-ref="553currpos">currpos</a>);</td></tr>
+<tr><th id="210">210</th><td></td></tr>
+<tr><th id="211">211</th><td>        <i>// set the new position for future tokens as well</i></td></tr>
+<tr><th id="212">212</th><td>        <b>if</b> (<a class="typedef" href="#boost::wave::cpplexer::lex_iterator::token_type" title='boost::wave::cpplexer::lex_iterator::token_type' data-type='TokenT' data-ref="boost::wave::cpplexer::lex_iterator::token_type">token_type</a>::string_type::npos !=</td></tr>
+<tr><th id="213">213</th><td>            <a class="local col2 ref" href="#552currtoken" title='currtoken' data-ref="552currtoken">currtoken</a>.get_value().find_first_of(<kbd>'\n'</kbd>))</td></tr>
+<tr><th id="214">214</th><td>        {</td></tr>
+<tr><th id="215">215</th><td>            <a class="local col3 ref" href="#553currpos" title='currpos' data-ref="553currpos">currpos</a>.set_line(<a class="local col0 ref" href="#550pos" title='pos' data-ref="550pos">pos</a>.get_line() + <var>1</var>);</td></tr>
+<tr><th id="216">216</th><td>        }</td></tr>
+<tr><th id="217">217</th><td>        <a class="typedef" href="#boost::wave::cpplexer::lex_iterator::unique_functor_type" title='boost::wave::cpplexer::lex_iterator::unique_functor_type' data-type='typename input_policy_type::unique' data-ref="boost::wave::cpplexer::lex_iterator::unique_functor_type">unique_functor_type</a>::set_position(*<b>this</b>, <a class="local col3 ref" href="#553currpos" title='currpos' data-ref="553currpos">currpos</a>);</td></tr>
+<tr><th id="218">218</th><td>    }</td></tr>
+<tr><th id="219">219</th><td></td></tr>
+<tr><th id="220">220</th><td><u>#<span data-ppcond="220">if</span> <a class="macro" href="../wave_config.hpp.html#70" title="1" data-ref="_M/BOOST_WAVE_SUPPORT_PRAGMA_ONCE">BOOST_WAVE_SUPPORT_PRAGMA_ONCE</a> != 0</u></td></tr>
+<tr><th id="221">221</th><td>    <i>// return, whether the current file has include guards</i></td></tr>
+<tr><th id="222">222</th><td><i>    // this function returns meaningful results only if the file was scanned</i></td></tr>
+<tr><th id="223">223</th><td><i>    // completely</i></td></tr>
+<tr><th id="224">224</th><td>    <em>bool</em> <dfn class="decl def fn" id="_ZNK5boost4wave8cpplexer12lex_iterator18has_include_guardsERNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE" title='boost::wave::cpplexer::lex_iterator::has_include_guards' data-ref="_ZNK5boost4wave8cpplexer12lex_iterator18has_include_guardsERNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE">has_include_guards</dfn>(<span class="namespace">std::</span><a class="typedef" href="../../../../../../../include/c++/9/bits/stringfwd.h.html#std::string" title='std::string' data-type='basic_string&lt;char&gt;' data-ref="std::string">string</a>&amp; <dfn class="local col4 decl" id="554guard_name" title='guard_name' data-type='std::string &amp;' data-ref="554guard_name">guard_name</dfn>) <em>const</em></td></tr>
+<tr><th id="225">225</th><td>    {</td></tr>
+<tr><th id="226">226</th><td>        <b>return</b> <a class="typedef" href="#boost::wave::cpplexer::lex_iterator::unique_functor_type" title='boost::wave::cpplexer::lex_iterator::unique_functor_type' data-type='typename input_policy_type::unique' data-ref="boost::wave::cpplexer::lex_iterator::unique_functor_type">unique_functor_type</a>::has_include_guards(*<b>this</b>, <a class="local col4 ref" href="#554guard_name" title='guard_name' data-ref="554guard_name">guard_name</a>);</td></tr>
+<tr><th id="227">227</th><td>    }</td></tr>
+<tr><th id="228">228</th><td><u>#<span data-ppcond="220">endif</span></u></td></tr>
+<tr><th id="229">229</th><td>};</td></tr>
+<tr><th id="230">230</th><td></td></tr>
+<tr><th id="231">231</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="232">232</th><td>}   <i>// namespace cpplexer</i></td></tr>
+<tr><th id="233">233</th><td>}   <i>// namespace wave</i></td></tr>
+<tr><th id="234">234</th><td>}   <i>// namespace boost</i></td></tr>
+<tr><th id="235">235</th><td></td></tr>
+<tr><th id="236">236</th><td><i>// the suffix header occurs after all of the code</i></td></tr>
+<tr><th id="237">237</th><td><u>#<span data-ppcond="237">ifdef</span> <span class="macro" data-ref="_M/BOOST_HAS_ABI_HEADERS">BOOST_HAS_ABI_HEADERS</span></u></td></tr>
+<tr><th id="238">238</th><td><u>#include BOOST_ABI_SUFFIX</u></td></tr>
+<tr><th id="239">239</th><td><u>#<span data-ppcond="237">endif</span></u></td></tr>
+<tr><th id="240">240</th><td></td></tr>
+<tr><th id="241">241</th><td><u>#undef <a class="macro" href="#36" data-ref="_M/BOOST_WAVE_EOF_PREFIX">BOOST_WAVE_EOF_PREFIX</a></u></td></tr>
+<tr><th id="242">242</th><td></td></tr>
+<tr><th id="243">243</th><td><u>#<span data-ppcond="13">endif</span> // !defined(BOOST_CPP_LEX_ITERATOR_HPP_AF0C37E3_CBD8_4F33_A225_51CF576FA61F_INCLUDED)</u></td></tr>
+<tr><th id="244">244</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../../../../src/instantiate_cpp_exprgrammar.cpp.html'>boost-1.85.0/libs/wave/src/instantiate_cpp_exprgrammar.cpp</a><br/>Generated on <em>2024-Jun-14</em> from project boost-1.85.0 revision <em>1.85.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

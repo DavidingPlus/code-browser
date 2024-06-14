@@ -1,0 +1,104 @@
+<def f='boost-1.85.0/libs/container/src/dlmalloc_2_8_6.c' l='2391' ll='2401'/>
+<use f='boost-1.85.0/libs/container/src/dlmalloc_2_8_6.c' l='2395'/>
+<use f='boost-1.85.0/libs/container/src/dlmalloc_2_8_6.c' l='2396'/>
+<use f='boost-1.85.0/libs/container/src/dlmalloc_2_8_6.c' l='2398'/>
+<use f='boost-1.85.0/libs/container/src/dlmalloc_2_8_6.c' l='2399'/>
+<use f='boost-1.85.0/libs/container/src/dlmalloc_2_8_6.c' l='2403'/>
+<use f='boost-1.85.0/libs/container/src/dlmalloc_2_8_6.c' l='2404'/>
+<use f='boost-1.85.0/libs/container/src/dlmalloc_2_8_6.c' l='2405'/>
+<size>64</size>
+<doc f='boost-1.85.0/libs/container/src/dlmalloc_2_8_6.c' l='2302'>/*
+  When chunks are not in use, they are treated as nodes of either
+  lists or trees.
+
+  &quot;Small&quot;  chunks are stored in circular doubly-linked lists, and look
+  like this:
+
+    chunk-&gt; +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+            |             Size of previous chunk                            |
+            +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    `head:&apos; |             Size of chunk, in bytes                         |P|
+      mem-&gt; +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+            |             Forward pointer to next chunk in list             |
+            +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+            |             Back pointer to previous chunk in list            |
+            +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+            |             Unused space (may be 0 bytes long)                .
+            .                                                               .
+            .                                                               |
+nextchunk-&gt; +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    `foot:&apos; |             Size of chunk, in bytes                           |
+            +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+  Larger chunks are kept in a form of bitwise digital trees (aka
+  tries) keyed on chunksizes.  Because malloc_tree_chunks are only for
+  free chunks greater than 256 bytes, their size doesn&apos;t impose any
+  constraints on user chunk sizes.  Each node looks like:
+
+    chunk-&gt; +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+            |             Size of previous chunk                            |
+            +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    `head:&apos; |             Size of chunk, in bytes                         |P|
+      mem-&gt; +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+            |             Forward pointer to next chunk of same size        |
+            +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+            |             Back pointer to previous chunk of same size       |
+            +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+            |             Pointer to left child (child[0])                  |
+            +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+            |             Pointer to right child (child[1])                 |
+            +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+            |             Pointer to parent                                 |
+            +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+            |             bin index of this chunk                           |
+            +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+            |             Unused space                                      .
+            .                                                               |
+nextchunk-&gt; +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    `foot:&apos; |             Size of chunk, in bytes                           |
+            +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+  Each tree holding treenodes is a tree of unique chunk sizes.  Chunks
+  of the same size are arranged in a circularly-linked list, with only
+  the oldest chunk (the next to be used, in our FIFO ordering)
+  actually in the tree.  (Tree members are distinguished by a non-null
+  parent pointer.)  If a chunk with the same size an an existing node
+  is inserted, it is linked off the existing node using pointers that
+  work in the same way as fd/bk pointers of small chunks.
+
+  Each tree contains a power of 2 sized range of chunk sizes (the
+  smallest is 0x100 &lt;= x &lt; 0x180), which is is divided in half at each
+  tree level, with the chunks in the smaller half of the range (0x100
+  &lt;= x &lt; 0x140 for the top nose) in the left subtree and the larger
+  half (0x140 &lt;= x &lt; 0x180) in the right subtree.  This is, of course,
+  done by inspecting individual bits.
+
+  Using these rules, each node&apos;s left subtree contains all smaller
+  sizes than its right subtree.  However, the node at the root of each
+  subtree has no particular ordering relationship to either.  (The
+  dividing line between the subtree sizes is based on trie relation.)
+  If we remove the last chunk of a given size from the interior of the
+  tree, we need to replace it with a leaf node.  The tree ordering
+  rules permit a node to be replaced by any leaf below it.
+
+  The smallest chunk in a tree (a common operation in a best-fit
+  allocator) can be found by walking a path to the leftmost leaf in
+  the tree.  Unlike a usual binary tree, where we follow left child
+  pointers until we reach a null, here we follow the right child
+  pointer any time the left one is null, until we reach a leaf with
+  both child pointers null. The smallest chunk in the tree will be
+  somewhere along that path.
+
+  The worst case number of steps to add, find, or remove a node is
+  bounded by the number of bits differentiating chunks within
+  bins. Under current bin calculations, this ranges from 6 up to 21
+  (for 32 bit sizes) or up to 53 (for 64 bit sizes). The typical case
+  is of course much better.
+*/</doc>
+<mbr r='malloc_tree_chunk::prev_foot' o='0' t='size_t'/>
+<mbr r='malloc_tree_chunk::head' o='64' t='size_t'/>
+<mbr r='malloc_tree_chunk::fd' o='128' t='struct malloc_tree_chunk *'/>
+<mbr r='malloc_tree_chunk::bk' o='192' t='struct malloc_tree_chunk *'/>
+<mbr r='malloc_tree_chunk::child' o='256' t='struct malloc_tree_chunk *[2]'/>
+<mbr r='malloc_tree_chunk::parent' o='384' t='struct malloc_tree_chunk *'/>
+<mbr r='malloc_tree_chunk::index' o='448' t='bindex_t'/>

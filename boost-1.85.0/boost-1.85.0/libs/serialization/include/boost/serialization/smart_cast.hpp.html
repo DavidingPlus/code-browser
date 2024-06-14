@@ -1,0 +1,294 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>smart_cast.hpp source code [boost-1.85.0/libs/serialization/include/boost/serialization/smart_cast.hpp] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="boost::serialization::smart_cast_impl::error,boost::serialization::smart_cast_impl::pointer,boost::serialization::smart_cast_impl::reference,boost::serialization::smart_cast_impl::void_pointer "/>
+<link rel="stylesheet" href="../../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'boost-1.85.0/libs/serialization/include/boost/serialization/smart_cast.hpp'; var root_path = '../../../../../..'; var data_path = '../../../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../../..'>boost-1.85.0</a>/<a href='../../../..'>libs</a>/<a href='../../..'>serialization</a>/<a href='../..'>include</a>/<a href='..'>boost</a>/<a href='./'>serialization</a>/<a href='smart_cast.hpp.html'>smart_cast.hpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><u>#<span data-ppcond="1">ifndef</span> <span class="macro" data-ref="_M/BOOST_SERIALIZATION_SMART_CAST_HPP">BOOST_SERIALIZATION_SMART_CAST_HPP</span></u></td></tr>
+<tr><th id="2">2</th><td><u>#define <dfn class="macro" id="_M/BOOST_SERIALIZATION_SMART_CAST_HPP" data-ref="_M/BOOST_SERIALIZATION_SMART_CAST_HPP">BOOST_SERIALIZATION_SMART_CAST_HPP</dfn></u></td></tr>
+<tr><th id="3">3</th><td></td></tr>
+<tr><th id="4">4</th><td><i>// MS compatible compilers support #pragma once</i></td></tr>
+<tr><th id="5">5</th><td><u>#<span data-ppcond="5">if</span> defined(<span class="macro" data-ref="_M/_MSC_VER">_MSC_VER</span>)</u></td></tr>
+<tr><th id="6">6</th><td><u># pragma once</u></td></tr>
+<tr><th id="7">7</th><td><u>#<span data-ppcond="5">endif</span></u></td></tr>
+<tr><th id="8">8</th><td></td></tr>
+<tr><th id="9">9</th><td><i>/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8</i></td></tr>
+<tr><th id="10">10</th><td><i>// smart_cast.hpp:</i></td></tr>
+<tr><th id="11">11</th><td><i></i></td></tr>
+<tr><th id="12">12</th><td><i>// (C) Copyright 2002 Robert Ramey - <a href="http://www.rrsd.com">http://www.rrsd.com</a> .</i></td></tr>
+<tr><th id="13">13</th><td><i>// Use, modification and distribution is subject to the Boost Software</i></td></tr>
+<tr><th id="14">14</th><td><i>// License, Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at</i></td></tr>
+<tr><th id="15">15</th><td><i>// <a href="http://www.boost.org/LICENSE_1_0.txt">http://www.boost.org/LICENSE_1_0.txt</a>)</i></td></tr>
+<tr><th id="16">16</th><td><i></i></td></tr>
+<tr><th id="17">17</th><td><i>//  See <a href="http://www.boost.org/libs/serialization">http://www.boost.org/libs/serialization</a> for updates, documentation, and revision history.</i></td></tr>
+<tr><th id="18">18</th><td><i></i></td></tr>
+<tr><th id="19">19</th><td><i>// casting of pointers and references.</i></td></tr>
+<tr><th id="20">20</th><td><i></i></td></tr>
+<tr><th id="21">21</th><td><i>// In casting between different C++ classes, there are a number of</i></td></tr>
+<tr><th id="22">22</th><td><i>// rules that have to be kept in mind in deciding whether to use</i></td></tr>
+<tr><th id="23">23</th><td><i>// static_cast or dynamic_cast.</i></td></tr>
+<tr><th id="24">24</th><td><i></i></td></tr>
+<tr><th id="25">25</th><td><i>// a) dynamic casting can only be applied when one of the types is polymorphic</i></td></tr>
+<tr><th id="26">26</th><td><i>// Otherwise static_cast must be used.</i></td></tr>
+<tr><th id="27">27</th><td><i>// b) only dynamic casting can do runtime error checking</i></td></tr>
+<tr><th id="28">28</th><td><i>// use of static_cast is generally un checked even when compiled for debug</i></td></tr>
+<tr><th id="29">29</th><td><i>// c) static_cast would be considered faster than dynamic_cast.</i></td></tr>
+<tr><th id="30">30</th><td><i></i></td></tr>
+<tr><th id="31">31</th><td><i>// If casting is applied to a template parameter, there is no apriori way</i></td></tr>
+<tr><th id="32">32</th><td><i>// to know which of the two casting methods will be permitted or convenient.</i></td></tr>
+<tr><th id="33">33</th><td><i></i></td></tr>
+<tr><th id="34">34</th><td><i>// smart_cast uses C++ type_traits, and program debug mode to select the</i></td></tr>
+<tr><th id="35">35</th><td><i>// most convenient cast to use.</i></td></tr>
+<tr><th id="36">36</th><td></td></tr>
+<tr><th id="37">37</th><td><u>#include <a href="../../../../../../include/c++/9/exception.html">&lt;exception&gt;</a></u></td></tr>
+<tr><th id="38">38</th><td><u>#include <a href="../../../../../../include/c++/9/typeinfo.html">&lt;typeinfo&gt;</a></u></td></tr>
+<tr><th id="39">39</th><td><u>#include <a href="../../../../../../include/c++/9/cstddef.html">&lt;cstddef&gt;</a> // NULL</u></td></tr>
+<tr><th id="40">40</th><td></td></tr>
+<tr><th id="41">41</th><td><u>#include <a href="../../../../config/include/boost/config.hpp.html">&lt;boost/config.hpp&gt;</a></u></td></tr>
+<tr><th id="42">42</th><td><u>#include <a href="../../../../static_assert/include/boost/static_assert.hpp.html">&lt;boost/static_assert.hpp&gt;</a></u></td></tr>
+<tr><th id="43">43</th><td></td></tr>
+<tr><th id="44">44</th><td><u>#include <a href="../../../../type_traits/include/boost/type_traits/is_base_and_derived.hpp.html">&lt;boost/type_traits/is_base_and_derived.hpp&gt;</a></u></td></tr>
+<tr><th id="45">45</th><td><u>#include <a href="../../../../type_traits/include/boost/type_traits/is_polymorphic.hpp.html">&lt;boost/type_traits/is_polymorphic.hpp&gt;</a></u></td></tr>
+<tr><th id="46">46</th><td><u>#include <a href="../../../../type_traits/include/boost/type_traits/is_pointer.hpp.html">&lt;boost/type_traits/is_pointer.hpp&gt;</a></u></td></tr>
+<tr><th id="47">47</th><td><u>#include <a href="../../../../type_traits/include/boost/type_traits/is_reference.hpp.html">&lt;boost/type_traits/is_reference.hpp&gt;</a></u></td></tr>
+<tr><th id="48">48</th><td><u>#include <a href="../../../../type_traits/include/boost/type_traits/is_same.hpp.html">&lt;boost/type_traits/is_same.hpp&gt;</a></u></td></tr>
+<tr><th id="49">49</th><td><u>#include <a href="../../../../type_traits/include/boost/type_traits/remove_pointer.hpp.html">&lt;boost/type_traits/remove_pointer.hpp&gt;</a></u></td></tr>
+<tr><th id="50">50</th><td><u>#include <a href="../../../../type_traits/include/boost/type_traits/remove_reference.hpp.html">&lt;boost/type_traits/remove_reference.hpp&gt;</a></u></td></tr>
+<tr><th id="51">51</th><td></td></tr>
+<tr><th id="52">52</th><td><u>#include <a href="../../../../mpl/include/boost/mpl/eval_if.hpp.html">&lt;boost/mpl/eval_if.hpp&gt;</a></u></td></tr>
+<tr><th id="53">53</th><td><u>#include <a href="../../../../mpl/include/boost/mpl/if.hpp.html">&lt;boost/mpl/if.hpp&gt;</a></u></td></tr>
+<tr><th id="54">54</th><td><u>#include <a href="../../../../mpl/include/boost/mpl/or.hpp.html">&lt;boost/mpl/or.hpp&gt;</a></u></td></tr>
+<tr><th id="55">55</th><td><u>#include <a href="../../../../mpl/include/boost/mpl/and.hpp.html">&lt;boost/mpl/and.hpp&gt;</a></u></td></tr>
+<tr><th id="56">56</th><td><u>#include <a href="../../../../mpl/include/boost/mpl/not.hpp.html">&lt;boost/mpl/not.hpp&gt;</a></u></td></tr>
+<tr><th id="57">57</th><td><u>#include <a href="../../../../mpl/include/boost/mpl/identity.hpp.html">&lt;boost/mpl/identity.hpp&gt;</a></u></td></tr>
+<tr><th id="58">58</th><td></td></tr>
+<tr><th id="59">59</th><td><u>#include <a href="throw_exception.hpp.html">&lt;boost/serialization/throw_exception.hpp&gt;</a></u></td></tr>
+<tr><th id="60">60</th><td></td></tr>
+<tr><th id="61">61</th><td><b>namespace</b> <span class="namespace">boost</span> {</td></tr>
+<tr><th id="62">62</th><td><b>namespace</b> <span class="namespace">serialization</span> {</td></tr>
+<tr><th id="63">63</th><td><b>namespace</b> <span class="namespace">smart_cast_impl</span> {</td></tr>
+<tr><th id="64">64</th><td></td></tr>
+<tr><th id="65">65</th><td>    <b>template</b>&lt;<b>class</b> T&gt;</td></tr>
+<tr><th id="66">66</th><td>    <b>struct</b> <dfn class="type def" id="boost::serialization::smart_cast_impl::reference" title='boost::serialization::smart_cast_impl::reference' data-ref="boost::serialization::smart_cast_impl::reference">reference</dfn> {</td></tr>
+<tr><th id="67">67</th><td></td></tr>
+<tr><th id="68">68</th><td>        <b>struct</b> <dfn class="type def" id="boost::serialization::smart_cast_impl::reference::polymorphic" title='boost::serialization::smart_cast_impl::reference::polymorphic' data-ref="boost::serialization::smart_cast_impl::reference::polymorphic">polymorphic</dfn> {</td></tr>
+<tr><th id="69">69</th><td></td></tr>
+<tr><th id="70">70</th><td>            <b>struct</b> <dfn class="type def" id="boost::serialization::smart_cast_impl::reference::polymorphic::linear" title='boost::serialization::smart_cast_impl::reference::polymorphic::linear' data-ref="boost::serialization::smart_cast_impl::reference::polymorphic::linear">linear</dfn> {</td></tr>
+<tr><th id="71">71</th><td>                <b>template</b>&lt;<b>class</b> U&gt;</td></tr>
+<tr><th id="72">72</th><td>                 <em>static</em> T <dfn class="decl def fn" id="_ZN5boost13serialization15smart_cast_impl9reference11polymorphic6linear4castERTL0__" title='boost::serialization::smart_cast_impl::reference::polymorphic::linear::cast' data-ref="_ZN5boost13serialization15smart_cast_impl9reference11polymorphic6linear4castERTL0__">cast</dfn>(U &amp; <dfn class="local col2 decl" id="132u" title='u' data-type='U &amp;' data-ref="132u">u</dfn>){</td></tr>
+<tr><th id="73">73</th><td>                    <b>return</b> <b>static_cast</b>&lt; T &gt;(<a class="local col2 ref" href="#132u" title='u' data-ref="132u">u</a>);</td></tr>
+<tr><th id="74">74</th><td>                }</td></tr>
+<tr><th id="75">75</th><td>            };</td></tr>
+<tr><th id="76">76</th><td></td></tr>
+<tr><th id="77">77</th><td>            <b>struct</b> <dfn class="type def" id="boost::serialization::smart_cast_impl::reference::polymorphic::cross" title='boost::serialization::smart_cast_impl::reference::polymorphic::cross' data-ref="boost::serialization::smart_cast_impl::reference::polymorphic::cross">cross</dfn> {</td></tr>
+<tr><th id="78">78</th><td>                 <b>template</b>&lt;<b>class</b> U&gt;</td></tr>
+<tr><th id="79">79</th><td>                <em>static</em> T <dfn class="decl def fn" id="_ZN5boost13serialization15smart_cast_impl9reference11polymorphic5cross4castERTL0__" title='boost::serialization::smart_cast_impl::reference::polymorphic::cross::cast' data-ref="_ZN5boost13serialization15smart_cast_impl9reference11polymorphic5cross4castERTL0__">cast</dfn>(U &amp; <dfn class="local col3 decl" id="133u" title='u' data-type='U &amp;' data-ref="133u">u</dfn>){</td></tr>
+<tr><th id="80">80</th><td>                    <b>return</b> <b>dynamic_cast</b>&lt; T &gt;(<a class="local col3 ref" href="#133u" title='u' data-ref="133u">u</a>);</td></tr>
+<tr><th id="81">81</th><td>                }</td></tr>
+<tr><th id="82">82</th><td>            };</td></tr>
+<tr><th id="83">83</th><td></td></tr>
+<tr><th id="84">84</th><td>            <b>template</b>&lt;<b>class</b> U&gt;</td></tr>
+<tr><th id="85">85</th><td>            <em>static</em> T <dfn class="decl def fn" id="_ZN5boost13serialization15smart_cast_impl9reference11polymorphic4castERTL0__" title='boost::serialization::smart_cast_impl::reference::polymorphic::cast' data-ref="_ZN5boost13serialization15smart_cast_impl9reference11polymorphic4castERTL0__">cast</dfn>(U &amp; <dfn class="local col4 decl" id="134u" title='u' data-type='U &amp;' data-ref="134u">u</dfn>){</td></tr>
+<tr><th id="86">86</th><td>                <i>// if we're in debug mode</i></td></tr>
+<tr><th id="87">87</th><td>                <u>#<span data-ppcond="87">if</span> ! defined(<span class="macro" data-ref="_M/NDEBUG">NDEBUG</span>)                               \</u></td></tr>
+<tr><th id="88">88</th><td><u>                || defined(<span class="macro" data-ref="_M/__MWERKS__">__MWERKS__</span>)</u></td></tr>
+<tr><th id="89">89</th><td>                    <i>// do a checked dynamic cast</i></td></tr>
+<tr><th id="90">90</th><td>                    <b>return</b> cross::cast(u);</td></tr>
+<tr><th id="91">91</th><td>                <u>#<span data-ppcond="87">else</span></u></td></tr>
+<tr><th id="92">92</th><td>                    <i>// borland 5.51 chokes here so we can't use it</i></td></tr>
+<tr><th id="93">93</th><td><i>                    // note: if remove_reference isn't function for these types</i></td></tr>
+<tr><th id="94">94</th><td><i>                    // cross casting will be selected this will work but will</i></td></tr>
+<tr><th id="95">95</th><td><i>                    // not be the most efficient method. This will conflict with</i></td></tr>
+<tr><th id="96">96</th><td><i>                    // the original smart_cast motivation.</i></td></tr>
+<tr><th id="97">97</th><td>                    <b>typedef</b> <b>typename</b> <span class="namespace">mpl::</span><a class="type" href="../../../../mpl/include/boost/mpl/eval_if.hpp.html#boost::mpl::eval_if" title='boost::mpl::eval_if' data-ref="boost::mpl::eval_if">eval_if</a>&lt;</td></tr>
+<tr><th id="98">98</th><td>                            <b>typename</b> <span class="namespace">mpl::</span><a class="type" href="../../../../mpl/include/boost/mpl/aux_/preprocessed/gcc/and.hpp.html#boost::mpl::and_" title='boost::mpl::and_' data-ref="boost::mpl::and_">and_</a>&lt;</td></tr>
+<tr><th id="99">99</th><td>                                <span class="namespace">mpl::</span><a class="type" href="../../../../mpl/include/boost/mpl/not.hpp.html#boost::mpl::not_" title='boost::mpl::not_' data-ref="boost::mpl::not_">not_</a>&lt;<a class="type" href="../../../../type_traits/include/boost/type_traits/is_base_and_derived.hpp.html#boost::is_base_and_derived" title='boost::is_base_and_derived' data-ref="boost::is_base_and_derived">is_base_and_derived</a>&lt;</td></tr>
+<tr><th id="100">100</th><td>                                    <b>typename</b> <a class="type" href="../../../../type_traits/include/boost/type_traits/remove_reference.hpp.html#boost::remove_reference" title='boost::remove_reference' data-ref="boost::remove_reference">remove_reference</a>&lt; T &gt;::type,</td></tr>
+<tr><th id="101">101</th><td>                                    U</td></tr>
+<tr><th id="102">102</th><td>                                &gt; &gt;,</td></tr>
+<tr><th id="103">103</th><td>                                <span class="namespace">mpl::</span><a class="type" href="../../../../mpl/include/boost/mpl/not.hpp.html#boost::mpl::not_" title='boost::mpl::not_' data-ref="boost::mpl::not_">not_</a>&lt;<a class="type" href="../../../../type_traits/include/boost/type_traits/is_base_and_derived.hpp.html#boost::is_base_and_derived" title='boost::is_base_and_derived' data-ref="boost::is_base_and_derived">is_base_and_derived</a>&lt;</td></tr>
+<tr><th id="104">104</th><td>                                    U,</td></tr>
+<tr><th id="105">105</th><td>                                    <b>typename</b> <a class="type" href="../../../../type_traits/include/boost/type_traits/remove_reference.hpp.html#boost::remove_reference" title='boost::remove_reference' data-ref="boost::remove_reference">remove_reference</a>&lt; T &gt;::type</td></tr>
+<tr><th id="106">106</th><td>                                &gt; &gt;</td></tr>
+<tr><th id="107">107</th><td>                            &gt;,</td></tr>
+<tr><th id="108">108</th><td>                            <i>// borland chokes w/o full qualification here</i></td></tr>
+<tr><th id="109">109</th><td>                            <span class="namespace">mpl::</span><a class="type" href="../../../../mpl/include/boost/mpl/identity.hpp.html#boost::mpl::identity" title='boost::mpl::identity' data-ref="boost::mpl::identity">identity</a>&lt;<a class="type" href="#boost::serialization::smart_cast_impl::reference::polymorphic::cross" title='boost::serialization::smart_cast_impl::reference::polymorphic::cross' data-ref="boost::serialization::smart_cast_impl::reference::polymorphic::cross">cross</a>&gt;,</td></tr>
+<tr><th id="110">110</th><td>                            <span class="namespace">mpl::</span><a class="type" href="../../../../mpl/include/boost/mpl/identity.hpp.html#boost::mpl::identity" title='boost::mpl::identity' data-ref="boost::mpl::identity">identity</a>&lt;<a class="type" href="#boost::serialization::smart_cast_impl::reference::polymorphic::linear" title='boost::serialization::smart_cast_impl::reference::polymorphic::linear' data-ref="boost::serialization::smart_cast_impl::reference::polymorphic::linear">linear</a>&gt;</td></tr>
+<tr><th id="111">111</th><td>                    &gt;::type <dfn class="local col5 typedef" id="135typex" title='typex' data-type='typename mpl::eval_if&lt;typename mpl::and_&lt;mpl::not_&lt;is_base_and_derived&lt;typename remove_reference&lt;T&gt;::type, U&gt;&gt;, mpl::not_&lt;is_base_and_derived&lt;U, typename remove_reference&lt;T&gt;::type&gt;&gt;&gt;, mpl::identity&lt;cross&gt;, mpl::identity&lt;linear&gt;&gt;::type' data-ref="135typex">typex</dfn>;</td></tr>
+<tr><th id="112">112</th><td>                    <i>// typex works around gcc 2.95 issue</i></td></tr>
+<tr><th id="113">113</th><td>                    <b>return</b> <a class="local col5 typedef" href="#135typex" title='typex' data-type='typename mpl::eval_if&lt;typename mpl::and_&lt;mpl::not_&lt;is_base_and_derived&lt;typename remove_reference&lt;T&gt;::type, U&gt;&gt;, mpl::not_&lt;is_base_and_derived&lt;U, typename remove_reference&lt;T&gt;::type&gt;&gt;&gt;, mpl::identity&lt;cross&gt;, mpl::identity&lt;linear&gt;&gt;::type' data-ref="135typex">typex</a>::cast(<a class="local col4 ref" href="#134u" title='u' data-ref="134u">u</a>);</td></tr>
+<tr><th id="114">114</th><td>                <u>#<span data-ppcond="87">endif</span></u></td></tr>
+<tr><th id="115">115</th><td>            }</td></tr>
+<tr><th id="116">116</th><td>        };</td></tr>
+<tr><th id="117">117</th><td></td></tr>
+<tr><th id="118">118</th><td>        <b>struct</b> <dfn class="type def" id="boost::serialization::smart_cast_impl::reference::non_polymorphic" title='boost::serialization::smart_cast_impl::reference::non_polymorphic' data-ref="boost::serialization::smart_cast_impl::reference::non_polymorphic">non_polymorphic</dfn> {</td></tr>
+<tr><th id="119">119</th><td>            <b>template</b>&lt;<b>class</b> U&gt;</td></tr>
+<tr><th id="120">120</th><td>             <em>static</em> T <dfn class="decl def fn" id="_ZN5boost13serialization15smart_cast_impl9reference15non_polymorphic4castERTL0__" title='boost::serialization::smart_cast_impl::reference::non_polymorphic::cast' data-ref="_ZN5boost13serialization15smart_cast_impl9reference15non_polymorphic4castERTL0__">cast</dfn>(U &amp; <dfn class="local col6 decl" id="136u" title='u' data-type='U &amp;' data-ref="136u">u</dfn>){</td></tr>
+<tr><th id="121">121</th><td>                <b>return</b> <b>static_cast</b>&lt; T &gt;(<a class="local col6 ref" href="#136u" title='u' data-ref="136u">u</a>);</td></tr>
+<tr><th id="122">122</th><td>            }</td></tr>
+<tr><th id="123">123</th><td>        };</td></tr>
+<tr><th id="124">124</th><td>        <b>template</b>&lt;<b>class</b> U&gt;</td></tr>
+<tr><th id="125">125</th><td>        <em>static</em> T <dfn class="decl def fn" id="_ZN5boost13serialization15smart_cast_impl9reference4castERTL0__" title='boost::serialization::smart_cast_impl::reference::cast' data-ref="_ZN5boost13serialization15smart_cast_impl9reference4castERTL0__">cast</dfn>(U &amp; <dfn class="local col7 decl" id="137u" title='u' data-type='U &amp;' data-ref="137u">u</dfn>){</td></tr>
+<tr><th id="126">126</th><td>            <b>typedef</b> <b>typename</b> <span class="namespace">mpl::</span><a class="type" href="../../../../mpl/include/boost/mpl/eval_if.hpp.html#boost::mpl::eval_if" title='boost::mpl::eval_if' data-ref="boost::mpl::eval_if">eval_if</a>&lt;</td></tr>
+<tr><th id="127">127</th><td>                <span class="namespace">boost::</span><a class="type" href="../../../../type_traits/include/boost/type_traits/is_polymorphic.hpp.html#boost::is_polymorphic" title='boost::is_polymorphic' data-ref="boost::is_polymorphic">is_polymorphic</a>&lt;U&gt;,</td></tr>
+<tr><th id="128">128</th><td>                <span class="namespace">mpl::</span><a class="type" href="../../../../mpl/include/boost/mpl/identity.hpp.html#boost::mpl::identity" title='boost::mpl::identity' data-ref="boost::mpl::identity">identity</a>&lt;<a class="type" href="#boost::serialization::smart_cast_impl::reference::polymorphic" title='boost::serialization::smart_cast_impl::reference::polymorphic' data-ref="boost::serialization::smart_cast_impl::reference::polymorphic">polymorphic</a>&gt;,</td></tr>
+<tr><th id="129">129</th><td>                <span class="namespace">mpl::</span><a class="type" href="../../../../mpl/include/boost/mpl/identity.hpp.html#boost::mpl::identity" title='boost::mpl::identity' data-ref="boost::mpl::identity">identity</a>&lt;<a class="type" href="#boost::serialization::smart_cast_impl::reference::non_polymorphic" title='boost::serialization::smart_cast_impl::reference::non_polymorphic' data-ref="boost::serialization::smart_cast_impl::reference::non_polymorphic">non_polymorphic</a>&gt;</td></tr>
+<tr><th id="130">130</th><td>            &gt;::type <dfn class="local col8 typedef" id="138typex" title='typex' data-type='typename mpl::eval_if&lt;boost::is_polymorphic&lt;U&gt;, mpl::identity&lt;polymorphic&gt;, mpl::identity&lt;non_polymorphic&gt;&gt;::type' data-ref="138typex">typex</dfn>;</td></tr>
+<tr><th id="131">131</th><td>            <b>return</b> <a class="local col8 typedef" href="#138typex" title='typex' data-type='typename mpl::eval_if&lt;boost::is_polymorphic&lt;U&gt;, mpl::identity&lt;polymorphic&gt;, mpl::identity&lt;non_polymorphic&gt;&gt;::type' data-ref="138typex">typex</a>::cast(<a class="local col7 ref" href="#137u" title='u' data-ref="137u">u</a>);</td></tr>
+<tr><th id="132">132</th><td>        }</td></tr>
+<tr><th id="133">133</th><td>    };</td></tr>
+<tr><th id="134">134</th><td></td></tr>
+<tr><th id="135">135</th><td>    <b>template</b>&lt;<b>class</b> T&gt;</td></tr>
+<tr><th id="136">136</th><td>    <b>struct</b> <dfn class="type def" id="boost::serialization::smart_cast_impl::pointer" title='boost::serialization::smart_cast_impl::pointer' data-ref="boost::serialization::smart_cast_impl::pointer">pointer</dfn> {</td></tr>
+<tr><th id="137">137</th><td></td></tr>
+<tr><th id="138">138</th><td>        <b>struct</b> <dfn class="type def" id="boost::serialization::smart_cast_impl::pointer::polymorphic" title='boost::serialization::smart_cast_impl::pointer::polymorphic' data-ref="boost::serialization::smart_cast_impl::pointer::polymorphic">polymorphic</dfn> {</td></tr>
+<tr><th id="139">139</th><td>            <i>// unfortunately, this below fails to work for virtual base</i></td></tr>
+<tr><th id="140">140</th><td><i>            // classes.  need has_virtual_base to do this.</i></td></tr>
+<tr><th id="141">141</th><td><i>            // Subject for further study</i></td></tr>
+<tr><th id="142">142</th><td>            <u>#<span data-ppcond="142">if</span> 0</u></td></tr>
+<tr><th id="143">143</th><td>            <b>struct</b> linear {</td></tr>
+<tr><th id="144">144</th><td>                <b>template</b>&lt;<b>class</b> U&gt;</td></tr>
+<tr><th id="145">145</th><td>                 <em>static</em> T cast(U * u){</td></tr>
+<tr><th id="146">146</th><td>                    <b>return</b> <b>static_cast</b>&lt; T &gt;(u);</td></tr>
+<tr><th id="147">147</th><td>                }</td></tr>
+<tr><th id="148">148</th><td>            };</td></tr>
+<tr><th id="149">149</th><td></td></tr>
+<tr><th id="150">150</th><td>            <b>struct</b> cross {</td></tr>
+<tr><th id="151">151</th><td>                <b>template</b>&lt;<b>class</b> U&gt;</td></tr>
+<tr><th id="152">152</th><td>                <em>static</em> T cast(U * u){</td></tr>
+<tr><th id="153">153</th><td>                    T tmp = <b>dynamic_cast</b>&lt; T &gt;(u);</td></tr>
+<tr><th id="154">154</th><td>                    <u>#ifndef NDEBUG</u></td></tr>
+<tr><th id="155">155</th><td>                        <b>if</b> ( tmp == <var>0</var> ) throw_exception(std::bad_cast());</td></tr>
+<tr><th id="156">156</th><td>                    <u>#endif</u></td></tr>
+<tr><th id="157">157</th><td>                    <b>return</b> tmp;</td></tr>
+<tr><th id="158">158</th><td>                }</td></tr>
+<tr><th id="159">159</th><td>            };</td></tr>
+<tr><th id="160">160</th><td></td></tr>
+<tr><th id="161">161</th><td>            <b>template</b>&lt;<b>class</b> U&gt;</td></tr>
+<tr><th id="162">162</th><td>            <em>static</em> T cast(U * u){</td></tr>
+<tr><th id="163">163</th><td>                <b>typedef</b></td></tr>
+<tr><th id="164">164</th><td>                    <b>typename</b> mpl::eval_if&lt;</td></tr>
+<tr><th id="165">165</th><td>                        <b>typename</b> mpl::and_&lt;</td></tr>
+<tr><th id="166">166</th><td>                            mpl::not_&lt;is_base_and_derived&lt;</td></tr>
+<tr><th id="167">167</th><td>                                <b>typename</b> remove_pointer&lt; T &gt;::type,</td></tr>
+<tr><th id="168">168</th><td>                                U</td></tr>
+<tr><th id="169">169</th><td>                            &gt; &gt;,</td></tr>
+<tr><th id="170">170</th><td>                            mpl::not_&lt;is_base_and_derived&lt;</td></tr>
+<tr><th id="171">171</th><td>                                U,</td></tr>
+<tr><th id="172">172</th><td>                                <b>typename</b> remove_pointer&lt; T &gt;::type</td></tr>
+<tr><th id="173">173</th><td>                            &gt; &gt;</td></tr>
+<tr><th id="174">174</th><td>                        &gt;,</td></tr>
+<tr><th id="175">175</th><td>                        <i>// borland chokes w/o full qualification here</i></td></tr>
+<tr><th id="176">176</th><td>                        mpl::identity&lt;cross&gt;,</td></tr>
+<tr><th id="177">177</th><td>                        mpl::identity&lt;linear&gt;</td></tr>
+<tr><th id="178">178</th><td>                    &gt;::type typex;</td></tr>
+<tr><th id="179">179</th><td>                <b>return</b> typex::cast(u);</td></tr>
+<tr><th id="180">180</th><td>            }</td></tr>
+<tr><th id="181">181</th><td>            <u>#<span data-ppcond="142">else</span></u></td></tr>
+<tr><th id="182">182</th><td>            <b>template</b>&lt;<b>class</b> U&gt;</td></tr>
+<tr><th id="183">183</th><td>            <em>static</em> T <dfn class="decl def fn" id="_ZN5boost13serialization15smart_cast_impl7pointer11polymorphic4castEPTL0__" title='boost::serialization::smart_cast_impl::pointer::polymorphic::cast' data-ref="_ZN5boost13serialization15smart_cast_impl7pointer11polymorphic4castEPTL0__">cast</dfn>(U * <dfn class="local col9 decl" id="139u" title='u' data-type='U *' data-ref="139u">u</dfn>){</td></tr>
+<tr><th id="184">184</th><td>                T <dfn class="local col0 decl" id="140tmp" title='tmp' data-type='T' data-ref="140tmp">tmp</dfn> = <b>dynamic_cast</b>&lt; T &gt;(<a class="local col9 ref" href="#139u" title='u' data-ref="139u">u</a>);</td></tr>
+<tr><th id="185">185</th><td>                <u>#<span data-ppcond="185">ifndef</span> <span class="macro" data-ref="_M/NDEBUG">NDEBUG</span></u></td></tr>
+<tr><th id="186">186</th><td>                    <b>if</b> ( tmp == <var>0</var> ) throw_exception(std::bad_cast());</td></tr>
+<tr><th id="187">187</th><td>                <u>#<span data-ppcond="185">endif</span></u></td></tr>
+<tr><th id="188">188</th><td>                <b>return</b> <a class="local col0 ref" href="#140tmp" title='tmp' data-ref="140tmp">tmp</a>;</td></tr>
+<tr><th id="189">189</th><td>            }</td></tr>
+<tr><th id="190">190</th><td>            <u>#<span data-ppcond="142">endif</span></u></td></tr>
+<tr><th id="191">191</th><td>        };</td></tr>
+<tr><th id="192">192</th><td></td></tr>
+<tr><th id="193">193</th><td>        <b>struct</b> <dfn class="type def" id="boost::serialization::smart_cast_impl::pointer::non_polymorphic" title='boost::serialization::smart_cast_impl::pointer::non_polymorphic' data-ref="boost::serialization::smart_cast_impl::pointer::non_polymorphic">non_polymorphic</dfn> {</td></tr>
+<tr><th id="194">194</th><td>            <b>template</b>&lt;<b>class</b> U&gt;</td></tr>
+<tr><th id="195">195</th><td>             <em>static</em> T <dfn class="decl def fn" id="_ZN5boost13serialization15smart_cast_impl7pointer15non_polymorphic4castEPTL0__" title='boost::serialization::smart_cast_impl::pointer::non_polymorphic::cast' data-ref="_ZN5boost13serialization15smart_cast_impl7pointer15non_polymorphic4castEPTL0__">cast</dfn>(U * <dfn class="local col1 decl" id="141u" title='u' data-type='U *' data-ref="141u">u</dfn>){</td></tr>
+<tr><th id="196">196</th><td>                <b>return</b> <b>static_cast</b>&lt; T &gt;(<a class="local col1 ref" href="#141u" title='u' data-ref="141u">u</a>);</td></tr>
+<tr><th id="197">197</th><td>            }</td></tr>
+<tr><th id="198">198</th><td>        };</td></tr>
+<tr><th id="199">199</th><td></td></tr>
+<tr><th id="200">200</th><td>        <b>template</b>&lt;<b>class</b> U&gt;</td></tr>
+<tr><th id="201">201</th><td>        <em>static</em> T <dfn class="decl def fn" id="_ZN5boost13serialization15smart_cast_impl7pointer4castEPTL0__" title='boost::serialization::smart_cast_impl::pointer::cast' data-ref="_ZN5boost13serialization15smart_cast_impl7pointer4castEPTL0__">cast</dfn>(U * <dfn class="local col2 decl" id="142u" title='u' data-type='U *' data-ref="142u">u</dfn>){</td></tr>
+<tr><th id="202">202</th><td>            <b>typedef</b> <b>typename</b> <span class="namespace">mpl::</span><a class="type" href="../../../../mpl/include/boost/mpl/eval_if.hpp.html#boost::mpl::eval_if" title='boost::mpl::eval_if' data-ref="boost::mpl::eval_if">eval_if</a>&lt;</td></tr>
+<tr><th id="203">203</th><td>                <span class="namespace">boost::</span><a class="type" href="../../../../type_traits/include/boost/type_traits/is_polymorphic.hpp.html#boost::is_polymorphic" title='boost::is_polymorphic' data-ref="boost::is_polymorphic">is_polymorphic</a>&lt;U&gt;,</td></tr>
+<tr><th id="204">204</th><td>                <span class="namespace">mpl::</span><a class="type" href="../../../../mpl/include/boost/mpl/identity.hpp.html#boost::mpl::identity" title='boost::mpl::identity' data-ref="boost::mpl::identity">identity</a>&lt;<a class="type" href="#boost::serialization::smart_cast_impl::pointer::polymorphic" title='boost::serialization::smart_cast_impl::pointer::polymorphic' data-ref="boost::serialization::smart_cast_impl::pointer::polymorphic">polymorphic</a>&gt;,</td></tr>
+<tr><th id="205">205</th><td>                <span class="namespace">mpl::</span><a class="type" href="../../../../mpl/include/boost/mpl/identity.hpp.html#boost::mpl::identity" title='boost::mpl::identity' data-ref="boost::mpl::identity">identity</a>&lt;<a class="type" href="#boost::serialization::smart_cast_impl::pointer::non_polymorphic" title='boost::serialization::smart_cast_impl::pointer::non_polymorphic' data-ref="boost::serialization::smart_cast_impl::pointer::non_polymorphic">non_polymorphic</a>&gt;</td></tr>
+<tr><th id="206">206</th><td>            &gt;::type <dfn class="local col3 typedef" id="143typex" title='typex' data-type='typename mpl::eval_if&lt;boost::is_polymorphic&lt;U&gt;, mpl::identity&lt;polymorphic&gt;, mpl::identity&lt;non_polymorphic&gt;&gt;::type' data-ref="143typex">typex</dfn>;</td></tr>
+<tr><th id="207">207</th><td>            <b>return</b> <a class="local col3 typedef" href="#143typex" title='typex' data-type='typename mpl::eval_if&lt;boost::is_polymorphic&lt;U&gt;, mpl::identity&lt;polymorphic&gt;, mpl::identity&lt;non_polymorphic&gt;&gt;::type' data-ref="143typex">typex</a>::cast(<a class="local col2 ref" href="#142u" title='u' data-ref="142u">u</a>);</td></tr>
+<tr><th id="208">208</th><td>        }</td></tr>
+<tr><th id="209">209</th><td></td></tr>
+<tr><th id="210">210</th><td>    };</td></tr>
+<tr><th id="211">211</th><td></td></tr>
+<tr><th id="212">212</th><td>    <b>template</b>&lt;<b>class</b> TPtr&gt;</td></tr>
+<tr><th id="213">213</th><td>    <b>struct</b> <dfn class="type def" id="boost::serialization::smart_cast_impl::void_pointer" title='boost::serialization::smart_cast_impl::void_pointer' data-ref="boost::serialization::smart_cast_impl::void_pointer">void_pointer</dfn> {</td></tr>
+<tr><th id="214">214</th><td>        <b>template</b>&lt;<b>class</b> UPtr&gt;</td></tr>
+<tr><th id="215">215</th><td>        <em>static</em> TPtr <dfn class="decl def fn" id="_ZN5boost13serialization15smart_cast_impl12void_pointer4castETL0__" title='boost::serialization::smart_cast_impl::void_pointer::cast' data-ref="_ZN5boost13serialization15smart_cast_impl12void_pointer4castETL0__">cast</dfn>(UPtr <dfn class="local col4 decl" id="144uptr" title='uptr' data-type='UPtr' data-ref="144uptr">uptr</dfn>){</td></tr>
+<tr><th id="216">216</th><td>            <b>return</b> <b>static_cast</b>&lt;TPtr&gt;(<a class="local col4 ref" href="#144uptr" title='uptr' data-ref="144uptr">uptr</a>);</td></tr>
+<tr><th id="217">217</th><td>        }</td></tr>
+<tr><th id="218">218</th><td>    };</td></tr>
+<tr><th id="219">219</th><td></td></tr>
+<tr><th id="220">220</th><td>    <b>template</b>&lt;<b>class</b> T&gt;</td></tr>
+<tr><th id="221">221</th><td>    <b>struct</b> <dfn class="type def" id="boost::serialization::smart_cast_impl::error" title='boost::serialization::smart_cast_impl::error' data-ref="boost::serialization::smart_cast_impl::error">error</dfn> {</td></tr>
+<tr><th id="222">222</th><td>        <i>// if we get here, its because we are using one argument in the</i></td></tr>
+<tr><th id="223">223</th><td><i>        // cast on a system which doesn't support partial template</i></td></tr>
+<tr><th id="224">224</th><td><i>        // specialization</i></td></tr>
+<tr><th id="225">225</th><td>        <b>template</b>&lt;<b>class</b> U&gt;</td></tr>
+<tr><th id="226">226</th><td>        <em>static</em> T <dfn class="decl def fn" id="_ZN5boost13serialization15smart_cast_impl5error4castETL0__" title='boost::serialization::smart_cast_impl::error::cast' data-ref="_ZN5boost13serialization15smart_cast_impl5error4castETL0__">cast</dfn>(U){</td></tr>
+<tr><th id="227">227</th><td>            <a class="macro" href="../../../../static_assert/include/boost/static_assert.hpp.html#71" title="static_assert(sizeof(T)==0, &quot;sizeof(T)==0&quot;)" data-ref="_M/BOOST_STATIC_ASSERT">BOOST_STATIC_ASSERT</a>(<b>sizeof</b>(T)==<var>0</var>);</td></tr>
+<tr><th id="228">228</th><td>            <b>return</b> * <b>static_cast</b>&lt;T *&gt;(<span class="macro" title="__null" data-ref="_M/NULL">NULL</span>);</td></tr>
+<tr><th id="229">229</th><td>        }</td></tr>
+<tr><th id="230">230</th><td>    };</td></tr>
+<tr><th id="231">231</th><td></td></tr>
+<tr><th id="232">232</th><td>} <i>// smart_cast_impl</i></td></tr>
+<tr><th id="233">233</th><td></td></tr>
+<tr><th id="234">234</th><td><i>// this implements:</i></td></tr>
+<tr><th id="235">235</th><td><i>// smart_cast&lt;Target *, Source *&gt;(Source * s)</i></td></tr>
+<tr><th id="236">236</th><td><i>// smart_cast&lt;Target &amp;, Source &amp;&gt;(s)</i></td></tr>
+<tr><th id="237">237</th><td><i>// note that it will fail with</i></td></tr>
+<tr><th id="238">238</th><td><i>// smart_cast&lt;Target &amp;&gt;(s)</i></td></tr>
+<tr><th id="239">239</th><td><b>template</b>&lt;<b>class</b> T, <b>class</b> U&gt;</td></tr>
+<tr><th id="240">240</th><td>T <dfn class="decl def fn" id="_ZN5boost13serialization10smart_castET0_" title='boost::serialization::smart_cast' data-ref="_ZN5boost13serialization10smart_castET0_">smart_cast</dfn>(U <dfn class="local col5 decl" id="145u" title='u' data-type='U' data-ref="145u">u</dfn>) {</td></tr>
+<tr><th id="241">241</th><td>    <b>typedef</b></td></tr>
+<tr><th id="242">242</th><td>        <b>typename</b> <span class="namespace">mpl::</span><a class="type" href="../../../../mpl/include/boost/mpl/eval_if.hpp.html#boost::mpl::eval_if" title='boost::mpl::eval_if' data-ref="boost::mpl::eval_if">eval_if</a>&lt;</td></tr>
+<tr><th id="243">243</th><td>            <b>typename</b> <span class="namespace">mpl::</span><a class="type" href="../../../../mpl/include/boost/mpl/aux_/preprocessed/gcc/or.hpp.html#boost::mpl::or_" title='boost::mpl::or_' data-ref="boost::mpl::or_">or_</a>&lt;</td></tr>
+<tr><th id="244">244</th><td>                <span class="namespace">boost::</span><a class="type" href="../../../../type_traits/include/boost/type_traits/is_same.hpp.html#boost::is_same" title='boost::is_same' data-ref="boost::is_same">is_same</a>&lt;<em>void</em> *, U&gt;,</td></tr>
+<tr><th id="245">245</th><td>                <span class="namespace">boost::</span><a class="type" href="../../../../type_traits/include/boost/type_traits/is_same.hpp.html#boost::is_same" title='boost::is_same' data-ref="boost::is_same">is_same</a>&lt;<em>void</em> *, T&gt;,</td></tr>
+<tr><th id="246">246</th><td>                <span class="namespace">boost::</span><a class="type" href="../../../../type_traits/include/boost/type_traits/is_same.hpp.html#boost::is_same" title='boost::is_same' data-ref="boost::is_same">is_same</a>&lt;<em>const</em> <em>void</em> *, U&gt;,</td></tr>
+<tr><th id="247">247</th><td>                <span class="namespace">boost::</span><a class="type" href="../../../../type_traits/include/boost/type_traits/is_same.hpp.html#boost::is_same" title='boost::is_same' data-ref="boost::is_same">is_same</a>&lt;<em>const</em> <em>void</em> *, T&gt;</td></tr>
+<tr><th id="248">248</th><td>            &gt;,</td></tr>
+<tr><th id="249">249</th><td>            <span class="namespace">mpl::</span><a class="type" href="../../../../mpl/include/boost/mpl/identity.hpp.html#boost::mpl::identity" title='boost::mpl::identity' data-ref="boost::mpl::identity">identity</a>&lt;<span class="namespace">smart_cast_impl::</span><a class="type" href="#boost::serialization::smart_cast_impl::void_pointer" title='boost::serialization::smart_cast_impl::void_pointer' data-ref="boost::serialization::smart_cast_impl::void_pointer">void_pointer</a>&lt; T &gt; &gt;,</td></tr>
+<tr><th id="250">250</th><td>        <i>// else</i></td></tr>
+<tr><th id="251">251</th><td>        <b>typename</b> <span class="namespace">mpl::</span><a class="type" href="../../../../mpl/include/boost/mpl/eval_if.hpp.html#boost::mpl::eval_if" title='boost::mpl::eval_if' data-ref="boost::mpl::eval_if">eval_if</a>&lt;<span class="namespace">boost::</span><a class="type" href="../../../../type_traits/include/boost/type_traits/is_pointer.hpp.html#boost::is_pointer" title='boost::is_pointer' data-ref="boost::is_pointer">is_pointer</a>&lt;U&gt;,</td></tr>
+<tr><th id="252">252</th><td>            <span class="namespace">mpl::</span><a class="type" href="../../../../mpl/include/boost/mpl/identity.hpp.html#boost::mpl::identity" title='boost::mpl::identity' data-ref="boost::mpl::identity">identity</a>&lt;<span class="namespace">smart_cast_impl::</span><a class="type" href="#boost::serialization::smart_cast_impl::pointer" title='boost::serialization::smart_cast_impl::pointer' data-ref="boost::serialization::smart_cast_impl::pointer">pointer</a>&lt; T &gt; &gt;,</td></tr>
+<tr><th id="253">253</th><td>        <i>// else</i></td></tr>
+<tr><th id="254">254</th><td>        <b>typename</b> <span class="namespace">mpl::</span><a class="type" href="../../../../mpl/include/boost/mpl/eval_if.hpp.html#boost::mpl::eval_if" title='boost::mpl::eval_if' data-ref="boost::mpl::eval_if">eval_if</a>&lt;<span class="namespace">boost::</span><a class="type" href="../../../../type_traits/include/boost/type_traits/is_reference.hpp.html#boost::is_reference" title='boost::is_reference' data-ref="boost::is_reference">is_reference</a>&lt;U&gt;,</td></tr>
+<tr><th id="255">255</th><td>            <span class="namespace">mpl::</span><a class="type" href="../../../../mpl/include/boost/mpl/identity.hpp.html#boost::mpl::identity" title='boost::mpl::identity' data-ref="boost::mpl::identity">identity</a>&lt;<span class="namespace">smart_cast_impl::</span><a class="type" href="#boost::serialization::smart_cast_impl::reference" title='boost::serialization::smart_cast_impl::reference' data-ref="boost::serialization::smart_cast_impl::reference">reference</a>&lt; T &gt; &gt;,</td></tr>
+<tr><th id="256">256</th><td>        <i>// else</i></td></tr>
+<tr><th id="257">257</th><td>            <span class="namespace">mpl::</span><a class="type" href="../../../../mpl/include/boost/mpl/identity.hpp.html#boost::mpl::identity" title='boost::mpl::identity' data-ref="boost::mpl::identity">identity</a>&lt;<span class="namespace">smart_cast_impl::</span><a class="type" href="#boost::serialization::smart_cast_impl::error" title='boost::serialization::smart_cast_impl::error' data-ref="boost::serialization::smart_cast_impl::error">error</a>&lt; T &gt;</td></tr>
+<tr><th id="258">258</th><td>        &gt;</td></tr>
+<tr><th id="259">259</th><td>        &gt;</td></tr>
+<tr><th id="260">260</th><td>        &gt;</td></tr>
+<tr><th id="261">261</th><td>        &gt;::type <dfn class="local col6 typedef" id="146typex" title='typex' data-type='typename mpl::eval_if&lt;typename mpl::or_&lt;boost::is_same&lt;void *, U&gt;, boost::is_same&lt;void *, T&gt;, boost::is_same&lt;const void *, U&gt;, boost::is_same&lt;const void *, T&gt;&gt;, mpl::identity&lt;smart_cast_impl::void_pointer&lt;T&gt;&gt;, typename mpl::eval_if&lt;boost::is_pointer&lt;U&gt;, mpl::identity&lt;smart_cast_impl::pointer&lt;T&gt;&gt;, typename mpl::eval_if&lt;boost::is_reference&lt;U&gt;, mpl::identity&lt;smart_cast_impl::reference&lt;T&gt;&gt;, mpl::identity&lt;smart_cast_impl::error&lt;T&gt;&gt;&gt;&gt;&gt;::type' data-ref="146typex">typex</dfn>;</td></tr>
+<tr><th id="262">262</th><td>    <b>return</b> <a class="local col6 typedef" href="#146typex" title='typex' data-type='typename mpl::eval_if&lt;typename mpl::or_&lt;boost::is_same&lt;void *, U&gt;, boost::is_same&lt;void *, T&gt;, boost::is_same&lt;const void *, U&gt;, boost::is_same&lt;const void *, T&gt;&gt;, mpl::identity&lt;smart_cast_impl::void_pointer&lt;T&gt;&gt;, typename mpl::eval_if&lt;boost::is_pointer&lt;U&gt;, mpl::identity&lt;smart_cast_impl::pointer&lt;T&gt;&gt;, typename mpl::eval_if&lt;boost::is_reference&lt;U&gt;, mpl::identity&lt;smart_cast_impl::reference&lt;T&gt;&gt;, mpl::identity&lt;smart_cast_impl::error&lt;T&gt;&gt;&gt;&gt;&gt;::type' data-ref="146typex">typex</a>::cast(<a class="local col5 ref" href="#145u" title='u' data-ref="145u">u</a>);</td></tr>
+<tr><th id="263">263</th><td>}</td></tr>
+<tr><th id="264">264</th><td></td></tr>
+<tr><th id="265">265</th><td><i>// this implements:</i></td></tr>
+<tr><th id="266">266</th><td><i>// smart_cast_reference&lt;Target &amp;&gt;(Source &amp; s)</i></td></tr>
+<tr><th id="267">267</th><td><b>template</b>&lt;<b>class</b> T, <b>class</b> U&gt;</td></tr>
+<tr><th id="268">268</th><td>T <dfn class="decl def fn" id="_ZN5boost13serialization20smart_cast_referenceERT0_" title='boost::serialization::smart_cast_reference' data-ref="_ZN5boost13serialization20smart_cast_referenceERT0_">smart_cast_reference</dfn>(U &amp; <dfn class="local col7 decl" id="147u" title='u' data-type='U &amp;' data-ref="147u">u</dfn>) {</td></tr>
+<tr><th id="269">269</th><td>    <b>return</b> <span class="namespace">smart_cast_impl::</span><a class="type" href="#boost::serialization::smart_cast_impl::reference" title='boost::serialization::smart_cast_impl::reference' data-ref="boost::serialization::smart_cast_impl::reference">reference</a>&lt; T &gt;::cast(<a class="local col7 ref" href="#147u" title='u' data-ref="147u">u</a>);</td></tr>
+<tr><th id="270">270</th><td>}</td></tr>
+<tr><th id="271">271</th><td></td></tr>
+<tr><th id="272">272</th><td>} <i>// namespace serialization</i></td></tr>
+<tr><th id="273">273</th><td>} <i>// namespace boost</i></td></tr>
+<tr><th id="274">274</th><td></td></tr>
+<tr><th id="275">275</th><td><u>#<span data-ppcond="1">endif</span> // BOOST_SERIALIZATION_SMART_CAST_HPP</u></td></tr>
+<tr><th id="276">276</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../../../src/binary_iarchive.cpp.html'>boost-1.85.0/libs/serialization/src/binary_iarchive.cpp</a><br/>Generated on <em>2024-Jun-14</em> from project boost-1.85.0 revision <em>1.85.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

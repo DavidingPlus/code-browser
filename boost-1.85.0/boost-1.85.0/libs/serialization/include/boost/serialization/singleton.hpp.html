@@ -1,0 +1,237 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>singleton.hpp source code [boost-1.85.0/libs/serialization/include/boost/serialization/singleton.hpp] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="boost::serialization::detail::singleton_wrapper,boost::serialization::singleton,boost::serialization::singleton_module "/>
+<link rel="stylesheet" href="../../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'boost-1.85.0/libs/serialization/include/boost/serialization/singleton.hpp'; var root_path = '../../../../../..'; var data_path = '../../../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../../..'>boost-1.85.0</a>/<a href='../../../..'>libs</a>/<a href='../../..'>serialization</a>/<a href='../..'>include</a>/<a href='..'>boost</a>/<a href='./'>serialization</a>/<a href='singleton.hpp.html'>singleton.hpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><u>#<span data-ppcond="1">ifndef</span> <span class="macro" data-ref="_M/BOOST_SERIALIZATION_SINGLETON_HPP">BOOST_SERIALIZATION_SINGLETON_HPP</span></u></td></tr>
+<tr><th id="2">2</th><td><u>#define <dfn class="macro" id="_M/BOOST_SERIALIZATION_SINGLETON_HPP" data-ref="_M/BOOST_SERIALIZATION_SINGLETON_HPP">BOOST_SERIALIZATION_SINGLETON_HPP</dfn></u></td></tr>
+<tr><th id="3">3</th><td></td></tr>
+<tr><th id="4">4</th><td><i>/////////1/////////2///////// 3/////////4/////////5/////////6/////////7/////////8</i></td></tr>
+<tr><th id="5">5</th><td><i>//  singleton.hpp</i></td></tr>
+<tr><th id="6">6</th><td><i>//</i></td></tr>
+<tr><th id="7">7</th><td><i>// Copyright David Abrahams 2006. Original version</i></td></tr>
+<tr><th id="8">8</th><td><i>//</i></td></tr>
+<tr><th id="9">9</th><td><i>// Copyright Robert Ramey 2007.  Changes made to permit</i></td></tr>
+<tr><th id="10">10</th><td><i>// application throughout the serialization library.</i></td></tr>
+<tr><th id="11">11</th><td><i>//</i></td></tr>
+<tr><th id="12">12</th><td><i>// Copyright Alexander Grund 2018. Corrections to singleton lifetime</i></td></tr>
+<tr><th id="13">13</th><td><i>//</i></td></tr>
+<tr><th id="14">14</th><td><i>// Distributed under the Boost</i></td></tr>
+<tr><th id="15">15</th><td><i>// Software License, Version 1.0. (See accompanying</i></td></tr>
+<tr><th id="16">16</th><td><i>// file LICENSE_1_0.txt or copy at <a href="http://www.boost.org/LICENSE_1_0.txt">http://www.boost.org/LICENSE_1_0.txt</a>)</i></td></tr>
+<tr><th id="17">17</th><td><i>//</i></td></tr>
+<tr><th id="18">18</th><td><i>// The intention here is to define a template which will convert</i></td></tr>
+<tr><th id="19">19</th><td><i>// any class into a singleton with the following features:</i></td></tr>
+<tr><th id="20">20</th><td><i>//</i></td></tr>
+<tr><th id="21">21</th><td><i>// a) initialized before first use.</i></td></tr>
+<tr><th id="22">22</th><td><i>// b) thread-safe for const access to the class</i></td></tr>
+<tr><th id="23">23</th><td><i>// c) non-locking</i></td></tr>
+<tr><th id="24">24</th><td><i>//</i></td></tr>
+<tr><th id="25">25</th><td><i>// In order to do this,</i></td></tr>
+<tr><th id="26">26</th><td><i>// a) Initialize dynamically when used.</i></td></tr>
+<tr><th id="27">27</th><td><i>// b) Require that all singletons be initialized before main</i></td></tr>
+<tr><th id="28">28</th><td><i>// is called or any entry point into the shared library is invoked.</i></td></tr>
+<tr><th id="29">29</th><td><i>// This guarantees no race condition for initialization.</i></td></tr>
+<tr><th id="30">30</th><td><i>// In debug mode, we assert that no non-const functions are called</i></td></tr>
+<tr><th id="31">31</th><td><i>// after main is invoked.</i></td></tr>
+<tr><th id="32">32</th><td><i>//</i></td></tr>
+<tr><th id="33">33</th><td><i></i></td></tr>
+<tr><th id="34">34</th><td><i>// MS compatible compilers support #pragma once</i></td></tr>
+<tr><th id="35">35</th><td><u>#<span data-ppcond="35">if</span> defined(<span class="macro" data-ref="_M/_MSC_VER">_MSC_VER</span>)</u></td></tr>
+<tr><th id="36">36</th><td><u># pragma once</u></td></tr>
+<tr><th id="37">37</th><td><u>#<span data-ppcond="35">endif</span></u></td></tr>
+<tr><th id="38">38</th><td></td></tr>
+<tr><th id="39">39</th><td><u>#include <a href="../../../../assert/include/boost/assert.hpp.html">&lt;boost/assert.hpp&gt;</a></u></td></tr>
+<tr><th id="40">40</th><td><u>#include <a href="../../../../config/include/boost/config.hpp.html">&lt;boost/config.hpp&gt;</a></u></td></tr>
+<tr><th id="41">41</th><td><u>#include <a href="../../../../core/include/boost/noncopyable.hpp.html">&lt;boost/noncopyable.hpp&gt;</a></u></td></tr>
+<tr><th id="42">42</th><td><u>#include <a href="force_include.hpp.html">&lt;boost/serialization/force_include.hpp&gt;</a></u></td></tr>
+<tr><th id="43">43</th><td><u>#include <a href="config.hpp.html">&lt;boost/serialization/config.hpp&gt;</a></u></td></tr>
+<tr><th id="44">44</th><td></td></tr>
+<tr><th id="45">45</th><td><u>#include <a href="../archive/detail/auto_link_archive.hpp.html">&lt;boost/archive/detail/auto_link_archive.hpp&gt;</a></u></td></tr>
+<tr><th id="46">46</th><td><u>#include <a href="../archive/detail/abi_prefix.hpp.html">&lt;boost/archive/detail/abi_prefix.hpp&gt;</a> // must be the last header</u></td></tr>
+<tr><th id="47">47</th><td></td></tr>
+<tr><th id="48">48</th><td><u>#<span data-ppcond="48">ifdef</span> <span class="macro" data-ref="_M/BOOST_MSVC">BOOST_MSVC</span></u></td></tr>
+<tr><th id="49">49</th><td><u>#  pragma warning(push)</u></td></tr>
+<tr><th id="50">50</th><td><u>#  pragma warning(disable : 4511 4512)</u></td></tr>
+<tr><th id="51">51</th><td><u>#<span data-ppcond="48">endif</span></u></td></tr>
+<tr><th id="52">52</th><td></td></tr>
+<tr><th id="53">53</th><td><b>namespace</b> <span class="namespace">boost</span> {</td></tr>
+<tr><th id="54">54</th><td><b>namespace</b> <span class="namespace">serialization</span> {</td></tr>
+<tr><th id="55">55</th><td></td></tr>
+<tr><th id="56">56</th><td><i>//////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="57">57</th><td><i>// Provides a dynamically-initialized (singleton) instance of T in a</i></td></tr>
+<tr><th id="58">58</th><td><i>// way that avoids LNK1179 on vc6.  See <a href="http://tinyurl.com/ljdp8">http://tinyurl.com/ljdp8</a> or</i></td></tr>
+<tr><th id="59">59</th><td><i>// <a href="http://lists.boost.org/Archives/boost/2006/05/105286.php">http://lists.boost.org/Archives/boost/2006/05/105286.php</a> for</i></td></tr>
+<tr><th id="60">60</th><td><i>// details.</i></td></tr>
+<tr><th id="61">61</th><td><i>//</i></td></tr>
+<tr><th id="62">62</th><td><i></i></td></tr>
+<tr><th id="63">63</th><td><i>// Singletons created by this code are guaranteed to be unique</i></td></tr>
+<tr><th id="64">64</th><td><i>// within the executable or shared library which creates them.</i></td></tr>
+<tr><th id="65">65</th><td><i>// This is sufficient and in fact ideal for the serialization library.</i></td></tr>
+<tr><th id="66">66</th><td><i>// The singleton is created when the module is loaded and destroyed</i></td></tr>
+<tr><th id="67">67</th><td><i>// when the module is unloaded.</i></td></tr>
+<tr><th id="68">68</th><td><i></i></td></tr>
+<tr><th id="69">69</th><td><i>// This base class has two functions.</i></td></tr>
+<tr><th id="70">70</th><td><i></i></td></tr>
+<tr><th id="71">71</th><td><i>// First it provides a module handle for each singleton indicating</i></td></tr>
+<tr><th id="72">72</th><td><i>// the executable or shared library in which it was created. This</i></td></tr>
+<tr><th id="73">73</th><td><i>// turns out to be necessary and sufficient to implement the tables</i></td></tr>
+<tr><th id="74">74</th><td><i>// used by serialization library.</i></td></tr>
+<tr><th id="75">75</th><td><i></i></td></tr>
+<tr><th id="76">76</th><td><i>// Second, it provides a mechanism to detect when a non-const function</i></td></tr>
+<tr><th id="77">77</th><td><i>// is called after initialization.</i></td></tr>
+<tr><th id="78">78</th><td><i></i></td></tr>
+<tr><th id="79">79</th><td><i>// Make a singleton to lock/unlock all singletons for alteration.</i></td></tr>
+<tr><th id="80">80</th><td><i>// The intent is that all singletons created/used by this code</i></td></tr>
+<tr><th id="81">81</th><td><i>// are to be initialized before main is called. A test program</i></td></tr>
+<tr><th id="82">82</th><td><i>// can lock all the singletons when main is entered.  Thus any</i></td></tr>
+<tr><th id="83">83</th><td><i>// attempt to retrieve a mutable instance while locked will</i></td></tr>
+<tr><th id="84">84</th><td><i>// generate an assertion if compiled for debug.</i></td></tr>
+<tr><th id="85">85</th><td><i></i></td></tr>
+<tr><th id="86">86</th><td><i>// The singleton template can be used in 2 ways:</i></td></tr>
+<tr><th id="87">87</th><td><i>// 1 (Recommended): Publicly inherit your type T from singleton&lt;T&gt;,</i></td></tr>
+<tr><th id="88">88</th><td><i>// make its ctor protected and access it via T::get_const_instance()</i></td></tr>
+<tr><th id="89">89</th><td><i>// 2: Simply access singleton&lt;T&gt; without changing T. Note that this only</i></td></tr>
+<tr><th id="90">90</th><td><i>// provides a global instance accessible by singleton&lt;T&gt;::get_const_instance()</i></td></tr>
+<tr><th id="91">91</th><td><i>// or singleton&lt;T&gt;::get_mutable_instance() to prevent using multiple instances</i></td></tr>
+<tr><th id="92">92</th><td><i>// of T make its ctor protected</i></td></tr>
+<tr><th id="93">93</th><td><i></i></td></tr>
+<tr><th id="94">94</th><td><i>// Note on usage of BOOST_DLLEXPORT: These functions are in danger of</i></td></tr>
+<tr><th id="95">95</th><td><i>// being eliminated by the optimizer when building an application in</i></td></tr>
+<tr><th id="96">96</th><td><i>// release mode. Usage of the macro is meant to signal the compiler/linker</i></td></tr>
+<tr><th id="97">97</th><td><i>// to avoid dropping these functions which seem to be unreferenced.</i></td></tr>
+<tr><th id="98">98</th><td><i>// This usage is not related to autolinking.</i></td></tr>
+<tr><th id="99">99</th><td></td></tr>
+<tr><th id="100">100</th><td><b>class</b> <a class="macro" href="../../../../config/include/boost/config/compiler/clang.hpp.html#115" title="__attribute__((__visibility__(&quot;default&quot;)))" data-ref="_M/BOOST_SYMBOL_VISIBLE">BOOST_SYMBOL_VISIBLE</a> <dfn class="type def" id="boost::serialization::singleton_module" title='boost::serialization::singleton_module' data-ref="boost::serialization::singleton_module">singleton_module</dfn> :</td></tr>
+<tr><th id="101">101</th><td>    <b>public</b> <span class="namespace">boost::</span><a class="typedef" href="../../../../core/include/boost/core/noncopyable.hpp.html#boost::noncopyable" title='boost::noncopyable' data-type='noncopyable_::noncopyable' data-ref="boost::noncopyable">noncopyable</a></td></tr>
+<tr><th id="102">102</th><td>{</td></tr>
+<tr><th id="103">103</th><td><b>private</b>:</td></tr>
+<tr><th id="104">104</th><td>    <a class="macro" href="force_include.hpp.html#52" title="" data-ref="_M/BOOST_DLLEXPORT">BOOST_DLLEXPORT</a> <em>bool</em> &amp; <dfn class="decl def fn" id="_ZN5boost13serialization16singleton_module8get_lockEv" title='boost::serialization::singleton_module::get_lock' data-ref="_ZN5boost13serialization16singleton_module8get_lockEv">get_lock</dfn>() <a class="macro" href="force_include.hpp.html#39" title="__attribute__ ((__used__))" data-ref="_M/BOOST_USED">BOOST_USED</a> {</td></tr>
+<tr><th id="105">105</th><td>        <em>static</em> <em>bool</em> <dfn class="local col9 decl" id="119lock" title='lock' data-type='bool' data-ref="119lock">lock</dfn> = <b>false</b>;</td></tr>
+<tr><th id="106">106</th><td>        <b>return</b> <a class="local col9 ref" href="#119lock" title='lock' data-ref="119lock">lock</a>;</td></tr>
+<tr><th id="107">107</th><td>    }</td></tr>
+<tr><th id="108">108</th><td></td></tr>
+<tr><th id="109">109</th><td><b>public</b>:</td></tr>
+<tr><th id="110">110</th><td>    <a class="macro" href="force_include.hpp.html#52" title="" data-ref="_M/BOOST_DLLEXPORT">BOOST_DLLEXPORT</a> <em>void</em> <dfn class="decl def fn" id="_ZN5boost13serialization16singleton_module4lockEv" title='boost::serialization::singleton_module::lock' data-ref="_ZN5boost13serialization16singleton_module4lockEv">lock</dfn>(){</td></tr>
+<tr><th id="111">111</th><td>        <a class="member fn" href="#_ZN5boost13serialization16singleton_module8get_lockEv" title='boost::serialization::singleton_module::get_lock' data-ref="_ZN5boost13serialization16singleton_module8get_lockEv">get_lock</a>() = <b>true</b>;</td></tr>
+<tr><th id="112">112</th><td>    }</td></tr>
+<tr><th id="113">113</th><td>    <a class="macro" href="force_include.hpp.html#52" title="" data-ref="_M/BOOST_DLLEXPORT">BOOST_DLLEXPORT</a> <em>void</em> <dfn class="decl def fn" id="_ZN5boost13serialization16singleton_module6unlockEv" title='boost::serialization::singleton_module::unlock' data-ref="_ZN5boost13serialization16singleton_module6unlockEv">unlock</dfn>(){</td></tr>
+<tr><th id="114">114</th><td>        <a class="member fn" href="#_ZN5boost13serialization16singleton_module8get_lockEv" title='boost::serialization::singleton_module::get_lock' data-ref="_ZN5boost13serialization16singleton_module8get_lockEv">get_lock</a>() = <b>false</b>;</td></tr>
+<tr><th id="115">115</th><td>    }</td></tr>
+<tr><th id="116">116</th><td>    <a class="macro" href="force_include.hpp.html#52" title="" data-ref="_M/BOOST_DLLEXPORT">BOOST_DLLEXPORT</a> <em>bool</em> <dfn class="decl def fn" id="_ZN5boost13serialization16singleton_module9is_lockedEv" title='boost::serialization::singleton_module::is_locked' data-ref="_ZN5boost13serialization16singleton_module9is_lockedEv">is_locked</dfn>(){</td></tr>
+<tr><th id="117">117</th><td>        <b>return</b> <a class="member fn" href="#_ZN5boost13serialization16singleton_module8get_lockEv" title='boost::serialization::singleton_module::get_lock' data-ref="_ZN5boost13serialization16singleton_module8get_lockEv">get_lock</a>();</td></tr>
+<tr><th id="118">118</th><td>    }</td></tr>
+<tr><th id="119">119</th><td>};</td></tr>
+<tr><th id="120">120</th><td></td></tr>
+<tr><th id="121">121</th><td><em>static</em> <b>inline</b> <a class="type" href="#boost::serialization::singleton_module" title='boost::serialization::singleton_module' data-ref="boost::serialization::singleton_module">singleton_module</a> &amp; <dfn class="decl def fn" id="_ZN5boost13serializationL20get_singleton_moduleEv" title='boost::serialization::get_singleton_module' data-ref="_ZN5boost13serializationL20get_singleton_moduleEv">get_singleton_module</dfn>(){</td></tr>
+<tr><th id="122">122</th><td>    <em>static</em> <a class="type" href="#boost::serialization::singleton_module" title='boost::serialization::singleton_module' data-ref="boost::serialization::singleton_module">singleton_module</a> <a class="ref fn fake" href="#100" title='boost::serialization::singleton_module::singleton_module' data-ref="_ZN5boost13serialization16singleton_moduleC1Ev"></a><dfn class="local col0 decl" id="120m" title='m' data-type='boost::serialization::singleton_module' data-ref="120m">m</dfn>;</td></tr>
+<tr><th id="123">123</th><td>    <b>return</b> <a class="local col0 ref" href="#120m" title='m' data-ref="120m">m</a>;</td></tr>
+<tr><th id="124">124</th><td>}</td></tr>
+<tr><th id="125">125</th><td></td></tr>
+<tr><th id="126">126</th><td><b>namespace</b> <span class="namespace">detail</span> {</td></tr>
+<tr><th id="127">127</th><td></td></tr>
+<tr><th id="128">128</th><td><i>// This is the class actually instantiated and hence the real singleton.</i></td></tr>
+<tr><th id="129">129</th><td><i>// So there will only be one instance of this class. This does not hold</i></td></tr>
+<tr><th id="130">130</th><td><i>// for singleton&lt;T&gt; as a class derived from singleton&lt;T&gt; could be</i></td></tr>
+<tr><th id="131">131</th><td><i>// instantiated multiple times.</i></td></tr>
+<tr><th id="132">132</th><td><i>// It also provides a flag `is_destroyed` which returns true, when the</i></td></tr>
+<tr><th id="133">133</th><td><i>// class was destructed. It is static and hence accessible even after</i></td></tr>
+<tr><th id="134">134</th><td><i>// destruction. This can be used to check, if the singleton is still</i></td></tr>
+<tr><th id="135">135</th><td><i>// accessible e.g. in destructors of other singletons.</i></td></tr>
+<tr><th id="136">136</th><td><b>template</b>&lt;<b>class</b> T&gt;</td></tr>
+<tr><th id="137">137</th><td><b>class</b> <dfn class="type def" id="boost::serialization::detail::singleton_wrapper" title='boost::serialization::detail::singleton_wrapper' data-ref="boost::serialization::detail::singleton_wrapper">singleton_wrapper</dfn> : <b>public</b> T</td></tr>
+<tr><th id="138">138</th><td>{</td></tr>
+<tr><th id="139">139</th><td>    <em>static</em> <em>bool</em> &amp; <dfn class="decl def fn" id="_ZN5boost13serialization6detail17singleton_wrapper16get_is_destroyedEv" title='boost::serialization::detail::singleton_wrapper::get_is_destroyed' data-ref="_ZN5boost13serialization6detail17singleton_wrapper16get_is_destroyedEv">get_is_destroyed</dfn>(){</td></tr>
+<tr><th id="140">140</th><td>        <i>// Prefer a static function member to avoid LNK1179.</i></td></tr>
+<tr><th id="141">141</th><td><i>        // Note: As this is for a singleton (1 instance only) it must be set</i></td></tr>
+<tr><th id="142">142</th><td><i>        // never be reset (to false)!</i></td></tr>
+<tr><th id="143">143</th><td>        <em>static</em> <em>bool</em> <dfn class="local col1 decl" id="121is_destroyed_flag" title='is_destroyed_flag' data-type='bool' data-ref="121is_destroyed_flag">is_destroyed_flag</dfn> = <b>false</b>;</td></tr>
+<tr><th id="144">144</th><td>        <b>return</b> <a class="local col1 ref" href="#121is_destroyed_flag" title='is_destroyed_flag' data-ref="121is_destroyed_flag">is_destroyed_flag</a>;</td></tr>
+<tr><th id="145">145</th><td>    }</td></tr>
+<tr><th id="146">146</th><td><b>public</b>:</td></tr>
+<tr><th id="147">147</th><td>    <dfn class="decl def fn" id="_ZN5boost13serialization6detail17singleton_wrapperC1Ev" title='boost::serialization::detail::singleton_wrapper::singleton_wrapper&lt;T&gt;' data-ref="_ZN5boost13serialization6detail17singleton_wrapperC1Ev">singleton_wrapper</dfn>(){</td></tr>
+<tr><th id="148">148</th><td>        <a class="macro" href="../../../../assert/include/boost/assert.hpp.html#60" title="(static_cast&lt;void&gt; (0))" data-ref="_M/BOOST_ASSERT">BOOST_ASSERT</a>(! is_destroyed());</td></tr>
+<tr><th id="149">149</th><td>    }</td></tr>
+<tr><th id="150">150</th><td>    <dfn class="decl def fn" id="_ZN5boost13serialization6detail17singleton_wrapperD1Ev" title='boost::serialization::detail::singleton_wrapper::~singleton_wrapper&lt;T&gt;' data-ref="_ZN5boost13serialization6detail17singleton_wrapperD1Ev">~singleton_wrapper</dfn>(){</td></tr>
+<tr><th id="151">151</th><td>        <a class="member fn" href="#_ZN5boost13serialization6detail17singleton_wrapper16get_is_destroyedEv" title='boost::serialization::detail::singleton_wrapper::get_is_destroyed' data-ref="_ZN5boost13serialization6detail17singleton_wrapper16get_is_destroyedEv">get_is_destroyed</a>() = <b>true</b>;</td></tr>
+<tr><th id="152">152</th><td>    }</td></tr>
+<tr><th id="153">153</th><td>    <em>static</em> <em>bool</em> <dfn class="decl def fn" id="_ZN5boost13serialization6detail17singleton_wrapper12is_destroyedEv" title='boost::serialization::detail::singleton_wrapper::is_destroyed' data-ref="_ZN5boost13serialization6detail17singleton_wrapper12is_destroyedEv">is_destroyed</dfn>(){</td></tr>
+<tr><th id="154">154</th><td>        <b>return</b> <a class="member fn" href="#_ZN5boost13serialization6detail17singleton_wrapper16get_is_destroyedEv" title='boost::serialization::detail::singleton_wrapper::get_is_destroyed' data-ref="_ZN5boost13serialization6detail17singleton_wrapper16get_is_destroyedEv">get_is_destroyed</a>();</td></tr>
+<tr><th id="155">155</th><td>    }</td></tr>
+<tr><th id="156">156</th><td>};</td></tr>
+<tr><th id="157">157</th><td></td></tr>
+<tr><th id="158">158</th><td>} <i>// detail</i></td></tr>
+<tr><th id="159">159</th><td></td></tr>
+<tr><th id="160">160</th><td><b>template</b> &lt;<b>class</b> T&gt;</td></tr>
+<tr><th id="161">161</th><td><b>class</b> <dfn class="type def" id="boost::serialization::singleton" title='boost::serialization::singleton' data-ref="boost::serialization::singleton">singleton</dfn> {</td></tr>
+<tr><th id="162">162</th><td><b>private</b>:</td></tr>
+<tr><th id="163">163</th><td>    <em>static</em> T * <dfn class="decl" id="boost::serialization::singleton::m_instance" title='boost::serialization::singleton::m_instance' data-ref="boost::serialization::singleton::m_instance">m_instance</dfn>;</td></tr>
+<tr><th id="164">164</th><td>    <i>// include this to provoke instantiation at pre-execution time</i></td></tr>
+<tr><th id="165">165</th><td>    <em>static</em> <em>void</em> <dfn class="decl def fn" id="_ZN5boost13serialization9singleton3useERKT_" title='boost::serialization::singleton::use' data-ref="_ZN5boost13serialization9singleton3useERKT_">use</dfn>(T <em>const</em> &amp;) {}</td></tr>
+<tr><th id="166">166</th><td>    <em>static</em> T &amp; <dfn class="decl def fn" id="_ZN5boost13serialization9singleton12get_instanceEv" title='boost::serialization::singleton::get_instance' data-ref="_ZN5boost13serialization9singleton12get_instanceEv">get_instance</dfn>() {</td></tr>
+<tr><th id="167">167</th><td>        <a class="macro" href="../../../../assert/include/boost/assert.hpp.html#60" title="(static_cast&lt;void&gt; (0))" data-ref="_M/BOOST_ASSERT">BOOST_ASSERT</a>(! is_destroyed());</td></tr>
+<tr><th id="168">168</th><td></td></tr>
+<tr><th id="169">169</th><td>        <i>// use a wrapper so that types T with protected constructors can be used</i></td></tr>
+<tr><th id="170">170</th><td><i>        // Using a static function member avoids LNK1179</i></td></tr>
+<tr><th id="171">171</th><td>        <em>static</em> <span class="namespace">detail::</span><a class="type" href="#boost::serialization::detail::singleton_wrapper" title='boost::serialization::detail::singleton_wrapper' data-ref="boost::serialization::detail::singleton_wrapper">singleton_wrapper</a>&lt; T &gt; <dfn class="local col2 decl" id="122t" title='t' data-type='detail::singleton_wrapper&lt;T&gt;' data-ref="122t">t</dfn>;</td></tr>
+<tr><th id="172">172</th><td></td></tr>
+<tr><th id="173">173</th><td>        <i>// note that the following is absolutely essential.</i></td></tr>
+<tr><th id="174">174</th><td><i>        // commenting out this statement will cause compilers to fail to</i></td></tr>
+<tr><th id="175">175</th><td><i>        // construct the instance at pre-execution time.  This would prevent</i></td></tr>
+<tr><th id="176">176</th><td><i>        // our usage/implementation of "locking" and introduce uncertainty into</i></td></tr>
+<tr><th id="177">177</th><td><i>        // the sequence of object initialization.</i></td></tr>
+<tr><th id="178">178</th><td><i>        // Unfortunately, this triggers detectors of undefined behavior</i></td></tr>
+<tr><th id="179">179</th><td><i>        // and reports an error.  But I've been unable to find a different way</i></td></tr>
+<tr><th id="180">180</th><td><i>        // of guaranteeing that the the singleton is created at pre-main time.</i></td></tr>
+<tr><th id="181">181</th><td>        <b>if</b> (<a class="member" href="#boost::serialization::singleton::m_instance" title='boost::serialization::singleton::m_instance' data-ref="boost::serialization::singleton::m_instance">m_instance</a>) <a class="member fn" href="#_ZN5boost13serialization9singleton3useERKT_" title='boost::serialization::singleton::use' data-ref="_ZN5boost13serialization9singleton3useERKT_">use</a>(* <a class="member" href="#boost::serialization::singleton::m_instance" title='boost::serialization::singleton::m_instance' data-ref="boost::serialization::singleton::m_instance">m_instance</a>);</td></tr>
+<tr><th id="182">182</th><td></td></tr>
+<tr><th id="183">183</th><td>        <b>return</b> <b>static_cast</b>&lt;T &amp;&gt;(<a class="local col2 ref" href="#122t" title='t' data-ref="122t">t</a>);</td></tr>
+<tr><th id="184">184</th><td>    }</td></tr>
+<tr><th id="185">185</th><td><b>protected</b>:</td></tr>
+<tr><th id="186">186</th><td>    <i>// Do not allow instantiation of a singleton&lt;T&gt;. But we want to allow</i></td></tr>
+<tr><th id="187">187</th><td><i>    // `class T: public singleton&lt;T&gt;` so we can't delete this ctor</i></td></tr>
+<tr><th id="188">188</th><td>    <a class="macro" href="force_include.hpp.html#52" title="" data-ref="_M/BOOST_DLLEXPORT">BOOST_DLLEXPORT</a> <dfn class="decl def fn" id="_ZN5boost13serialization9singletonC1Ev" title='boost::serialization::singleton::singleton&lt;T&gt;' data-ref="_ZN5boost13serialization9singletonC1Ev">singleton</dfn>(){}</td></tr>
+<tr><th id="189">189</th><td></td></tr>
+<tr><th id="190">190</th><td><b>public</b>:</td></tr>
+<tr><th id="191">191</th><td>    <a class="macro" href="force_include.hpp.html#52" title="" data-ref="_M/BOOST_DLLEXPORT">BOOST_DLLEXPORT</a> <em>static</em> T &amp; <dfn class="decl def fn" id="_ZN5boost13serialization9singleton20get_mutable_instanceEv" title='boost::serialization::singleton::get_mutable_instance' data-ref="_ZN5boost13serialization9singleton20get_mutable_instanceEv">get_mutable_instance</dfn>(){</td></tr>
+<tr><th id="192">192</th><td>        <a class="macro" href="../../../../assert/include/boost/assert.hpp.html#60" title="(static_cast&lt;void&gt; (0))" data-ref="_M/BOOST_ASSERT">BOOST_ASSERT</a>(! get_singleton_module().is_locked());</td></tr>
+<tr><th id="193">193</th><td>        <b>return</b> <a class="member fn" href="#_ZN5boost13serialization9singleton12get_instanceEv" title='boost::serialization::singleton::get_instance' data-ref="_ZN5boost13serialization9singleton12get_instanceEv">get_instance</a>();</td></tr>
+<tr><th id="194">194</th><td>    }</td></tr>
+<tr><th id="195">195</th><td>    <a class="macro" href="force_include.hpp.html#52" title="" data-ref="_M/BOOST_DLLEXPORT">BOOST_DLLEXPORT</a> <em>static</em> <em>const</em> T &amp; <dfn class="decl def fn" id="_ZN5boost13serialization9singleton18get_const_instanceEv" title='boost::serialization::singleton::get_const_instance' data-ref="_ZN5boost13serialization9singleton18get_const_instanceEv">get_const_instance</dfn>(){</td></tr>
+<tr><th id="196">196</th><td>        <b>return</b> <a class="member fn" href="#_ZN5boost13serialization9singleton12get_instanceEv" title='boost::serialization::singleton::get_instance' data-ref="_ZN5boost13serialization9singleton12get_instanceEv">get_instance</a>();</td></tr>
+<tr><th id="197">197</th><td>    }</td></tr>
+<tr><th id="198">198</th><td>    <a class="macro" href="force_include.hpp.html#52" title="" data-ref="_M/BOOST_DLLEXPORT">BOOST_DLLEXPORT</a> <em>static</em> <em>bool</em> <dfn class="decl def fn" id="_ZN5boost13serialization9singleton12is_destroyedEv" title='boost::serialization::singleton::is_destroyed' data-ref="_ZN5boost13serialization9singleton12is_destroyedEv">is_destroyed</dfn>(){</td></tr>
+<tr><th id="199">199</th><td>        <b>return</b> <span class="namespace">detail::</span><a class="type" href="#boost::serialization::detail::singleton_wrapper" title='boost::serialization::detail::singleton_wrapper' data-ref="boost::serialization::detail::singleton_wrapper">singleton_wrapper</a>&lt; T &gt;::is_destroyed();</td></tr>
+<tr><th id="200">200</th><td>    }</td></tr>
+<tr><th id="201">201</th><td>};</td></tr>
+<tr><th id="202">202</th><td></td></tr>
+<tr><th id="203">203</th><td><i>// Assigning the instance reference to a static member forces initialization</i></td></tr>
+<tr><th id="204">204</th><td><i>// at startup time as described in</i></td></tr>
+<tr><th id="205">205</th><td><i>// <a href="https://groups.google.com/forum/#!topic/microsoft.public.vc.language/kDVNLnIsfZk">https://groups.google.com/forum/#!topic/microsoft.public.vc.language/kDVNLnIsfZk</a></i></td></tr>
+<tr><th id="206">206</th><td><b>template</b>&lt;<b>class</b> T&gt;</td></tr>
+<tr><th id="207">207</th><td>T * <a class="type" href="#boost::serialization::singleton" title='boost::serialization::singleton' data-ref="boost::serialization::singleton">singleton</a>&lt; T &gt;::<dfn class="decl def" id="boost::serialization::singleton::m_instance" title='boost::serialization::singleton::m_instance' data-ref="boost::serialization::singleton::m_instance">m_instance</dfn> = &amp; <a class="type" href="#boost::serialization::singleton" title='boost::serialization::singleton' data-ref="boost::serialization::singleton">singleton</a>&lt; T &gt;::<a class="ref fn" href="#_ZN5boost13serialization9singleton12get_instanceEv" title='boost::serialization::singleton::get_instance' data-ref="_ZN5boost13serialization9singleton12get_instanceEv">get_instance</a>();</td></tr>
+<tr><th id="208">208</th><td></td></tr>
+<tr><th id="209">209</th><td>} <i>// namespace serialization</i></td></tr>
+<tr><th id="210">210</th><td>} <i>// namespace boost</i></td></tr>
+<tr><th id="211">211</th><td></td></tr>
+<tr><th id="212">212</th><td><u>#include <a href="../archive/detail/abi_suffix.hpp.html">&lt;boost/archive/detail/abi_suffix.hpp&gt;</a> // pops abi_suffix.hpp pragmas</u></td></tr>
+<tr><th id="213">213</th><td></td></tr>
+<tr><th id="214">214</th><td><u>#<span data-ppcond="214">ifdef</span> <span class="macro" data-ref="_M/BOOST_MSVC">BOOST_MSVC</span></u></td></tr>
+<tr><th id="215">215</th><td><u>#pragma warning(pop)</u></td></tr>
+<tr><th id="216">216</th><td><u>#<span data-ppcond="214">endif</span></u></td></tr>
+<tr><th id="217">217</th><td></td></tr>
+<tr><th id="218">218</th><td><u>#<span data-ppcond="1">endif</span> // BOOST_SERIALIZATION_SINGLETON_HPP</u></td></tr>
+<tr><th id="219">219</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../../../src/binary_iarchive.cpp.html'>boost-1.85.0/libs/serialization/src/binary_iarchive.cpp</a><br/>Generated on <em>2024-Jun-14</em> from project boost-1.85.0 revision <em>1.85.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

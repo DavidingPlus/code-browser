@@ -1,0 +1,253 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>simple_repeat_matcher.hpp source code [boost-1.85.0/libs/xpressive/include/boost/xpressive/detail/core/matcher/simple_repeat_matcher.hpp] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="boost::xpressive::detail::greedy_fast_tag,boost::xpressive::detail::greedy_slow_tag,boost::xpressive::detail::non_greedy_tag,boost::xpressive::detail::simple_repeat_matcher,boost::xpressive::detail::simple_repeat_traits "/>
+<link rel="stylesheet" href="../../../../../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'boost-1.85.0/libs/xpressive/include/boost/xpressive/detail/core/matcher/simple_repeat_matcher.hpp'; var root_path = '../../../../../../../../..'; var data_path = '../../../../../../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../../../../../..'>boost-1.85.0</a>/<a href='../../../../../../..'>libs</a>/<a href='../../../../../..'>xpressive</a>/<a href='../../../../..'>include</a>/<a href='../../../..'>boost</a>/<a href='../../..'>xpressive</a>/<a href='../..'>detail</a>/<a href='..'>core</a>/<a href='./'>matcher</a>/<a href='simple_repeat_matcher.hpp.html'>simple_repeat_matcher.hpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="2">2</th><td><i>// simple_repeat_matcher.hpp</i></td></tr>
+<tr><th id="3">3</th><td><i>//</i></td></tr>
+<tr><th id="4">4</th><td><i>//  Copyright 2008 Eric Niebler. Distributed under the Boost</i></td></tr>
+<tr><th id="5">5</th><td><i>//  Software License, Version 1.0. (See accompanying file</i></td></tr>
+<tr><th id="6">6</th><td><i>//  LICENSE_1_0.txt or copy at <a href="http://www.boost.org/LICENSE_1_0.txt">http://www.boost.org/LICENSE_1_0.txt</a>)</i></td></tr>
+<tr><th id="7">7</th><td></td></tr>
+<tr><th id="8">8</th><td><u>#<span data-ppcond="8">ifndef</span> <span class="macro" data-ref="_M/BOOST_XPRESSIVE_DETAIL_CORE_MATCHER_SIMPLE_REPEAT_MATCHER_HPP_EAN_10_04_2005">BOOST_XPRESSIVE_DETAIL_CORE_MATCHER_SIMPLE_REPEAT_MATCHER_HPP_EAN_10_04_2005</span></u></td></tr>
+<tr><th id="9">9</th><td><u>#define <dfn class="macro" id="_M/BOOST_XPRESSIVE_DETAIL_CORE_MATCHER_SIMPLE_REPEAT_MATCHER_HPP_EAN_10_04_2005" data-ref="_M/BOOST_XPRESSIVE_DETAIL_CORE_MATCHER_SIMPLE_REPEAT_MATCHER_HPP_EAN_10_04_2005">BOOST_XPRESSIVE_DETAIL_CORE_MATCHER_SIMPLE_REPEAT_MATCHER_HPP_EAN_10_04_2005</dfn></u></td></tr>
+<tr><th id="10">10</th><td></td></tr>
+<tr><th id="11">11</th><td><i>// MS compatible compilers support #pragma once</i></td></tr>
+<tr><th id="12">12</th><td><u>#<span data-ppcond="12">if</span> defined(<span class="macro" data-ref="_M/_MSC_VER">_MSC_VER</span>)</u></td></tr>
+<tr><th id="13">13</th><td><u># pragma once</u></td></tr>
+<tr><th id="14">14</th><td><u>#<span data-ppcond="12">endif</span></u></td></tr>
+<tr><th id="15">15</th><td></td></tr>
+<tr><th id="16">16</th><td><u>#include <a href="../../../../../../../assert/include/boost/assert.hpp.html">&lt;boost/assert.hpp&gt;</a></u></td></tr>
+<tr><th id="17">17</th><td><u>#include <a href="../../../../../../../mpl/include/boost/mpl/if.hpp.html">&lt;boost/mpl/if.hpp&gt;</a></u></td></tr>
+<tr><th id="18">18</th><td><u>#include <a href="../../../../../../../mpl/include/boost/mpl/bool.hpp.html">&lt;boost/mpl/bool.hpp&gt;</a></u></td></tr>
+<tr><th id="19">19</th><td><u>#include <a href="../../../../../../../iterator/include/boost/next_prior.hpp.html">&lt;boost/next_prior.hpp&gt;</a></u></td></tr>
+<tr><th id="20">20</th><td><u>#include <a href="../../detail_fwd.hpp.html">&lt;boost/xpressive/detail/detail_fwd.hpp&gt;</a></u></td></tr>
+<tr><th id="21">21</th><td><u>#include <a href="../quant_style.hpp.html">&lt;boost/xpressive/detail/core/quant_style.hpp&gt;</a></u></td></tr>
+<tr><th id="22">22</th><td><u>#include <a href="../state.hpp.html">&lt;boost/xpressive/detail/core/state.hpp&gt;</a></u></td></tr>
+<tr><th id="23">23</th><td><u>#include <a href="../../static/type_traits.hpp.html">&lt;boost/xpressive/detail/static/type_traits.hpp&gt;</a></u></td></tr>
+<tr><th id="24">24</th><td></td></tr>
+<tr><th id="25">25</th><td><b>namespace</b> <span class="namespace">boost</span> { <b>namespace</b> <span class="namespace">xpressive</span> { <b>namespace</b> <span class="namespace">detail</span></td></tr>
+<tr><th id="26">26</th><td>{</td></tr>
+<tr><th id="27">27</th><td></td></tr>
+<tr><th id="28">28</th><td>    <i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="29">29</th><td><i>    // simple_repeat_traits</i></td></tr>
+<tr><th id="30">30</th><td><i>    //</i></td></tr>
+<tr><th id="31">31</th><td>    <b>struct</b> <dfn class="type def" id="boost::xpressive::detail::greedy_slow_tag" title='boost::xpressive::detail::greedy_slow_tag' data-ref="boost::xpressive::detail::greedy_slow_tag">greedy_slow_tag</dfn> {};</td></tr>
+<tr><th id="32">32</th><td>    <b>struct</b> <dfn class="type def" id="boost::xpressive::detail::greedy_fast_tag" title='boost::xpressive::detail::greedy_fast_tag' data-ref="boost::xpressive::detail::greedy_fast_tag">greedy_fast_tag</dfn> {};</td></tr>
+<tr><th id="33">33</th><td>    <b>struct</b> <dfn class="type def" id="boost::xpressive::detail::non_greedy_tag" title='boost::xpressive::detail::non_greedy_tag' data-ref="boost::xpressive::detail::non_greedy_tag">non_greedy_tag</dfn> {};</td></tr>
+<tr><th id="34">34</th><td></td></tr>
+<tr><th id="35">35</th><td>    <b>typedef</b> <a class="type" href="../../detail_fwd.hpp.html#boost::xpressive::detail::static_xpression" title='boost::xpressive::detail::static_xpression' data-ref="boost::xpressive::detail::static_xpression">static_xpression</a>&lt;<a class="type" href="any_matcher.hpp.html#boost::xpressive::detail::any_matcher" title='boost::xpressive::detail::any_matcher' data-ref="boost::xpressive::detail::any_matcher">any_matcher</a>, <a class="typedef" href="../../detail_fwd.hpp.html#boost::xpressive::detail::true_xpression" title='boost::xpressive::detail::true_xpression' data-type='static_xpression&lt;boost::xpressive::detail::true_matcher, boost::xpressive::detail::no_next&gt;' data-ref="boost::xpressive::detail::true_xpression">true_xpression</a>&gt; <dfn class="typedef" id="boost::xpressive::detail::any_sxpr" title='boost::xpressive::detail::any_sxpr' data-type='static_xpression&lt;boost::xpressive::detail::any_matcher, boost::xpressive::detail::true_xpression&gt;' data-ref="boost::xpressive::detail::any_sxpr">any_sxpr</dfn>;</td></tr>
+<tr><th id="36">36</th><td>    <b>typedef</b> <a class="type" href="../../detail_fwd.hpp.html#boost::xpressive::detail::matcher_wrapper" title='boost::xpressive::detail::matcher_wrapper' data-ref="boost::xpressive::detail::matcher_wrapper">matcher_wrapper</a>&lt;<a class="type" href="any_matcher.hpp.html#boost::xpressive::detail::any_matcher" title='boost::xpressive::detail::any_matcher' data-ref="boost::xpressive::detail::any_matcher">any_matcher</a>&gt; <dfn class="typedef" id="boost::xpressive::detail::any_dxpr" title='boost::xpressive::detail::any_dxpr' data-type='matcher_wrapper&lt;boost::xpressive::detail::any_matcher&gt;' data-ref="boost::xpressive::detail::any_dxpr">any_dxpr</dfn>;</td></tr>
+<tr><th id="37">37</th><td></td></tr>
+<tr><th id="38">38</th><td>    <b>template</b>&lt;<b>typename</b> Xpr, <b>typename</b> Greedy, <b>typename</b> Random&gt;</td></tr>
+<tr><th id="39">39</th><td>    <b>struct</b> <dfn class="type def" id="boost::xpressive::detail::simple_repeat_traits" title='boost::xpressive::detail::simple_repeat_traits' data-ref="boost::xpressive::detail::simple_repeat_traits">simple_repeat_traits</dfn></td></tr>
+<tr><th id="40">40</th><td>    {</td></tr>
+<tr><th id="41">41</th><td>        <b>typedef</b> <b>typename</b> <span class="namespace">mpl::</span><a class="type" href="../../../../../../../mpl/include/boost/mpl/if.hpp.html#boost::mpl::if_c" title='boost::mpl::if_c' data-ref="boost::mpl::if_c">if_c</a>&lt;Greedy::value, <a class="type" href="#boost::xpressive::detail::greedy_slow_tag" title='boost::xpressive::detail::greedy_slow_tag' data-ref="boost::xpressive::detail::greedy_slow_tag">greedy_slow_tag</a>, <a class="type" href="#boost::xpressive::detail::non_greedy_tag" title='boost::xpressive::detail::non_greedy_tag' data-ref="boost::xpressive::detail::non_greedy_tag">non_greedy_tag</a>&gt;::type <dfn class="typedef" id="boost::xpressive::detail::simple_repeat_traits::tag_type" title='boost::xpressive::detail::simple_repeat_traits::tag_type' data-type='typename mpl::if_c&lt;Greedy::value, greedy_slow_tag, non_greedy_tag&gt;::type' data-ref="boost::xpressive::detail::simple_repeat_traits::tag_type">tag_type</dfn>;</td></tr>
+<tr><th id="42">42</th><td>    };</td></tr>
+<tr><th id="43">43</th><td></td></tr>
+<tr><th id="44">44</th><td>    <b>template</b>&lt;&gt;</td></tr>
+<tr><th id="45">45</th><td>    <b>struct</b> <dfn class="type def" id="boost::xpressive::detail::simple_repeat_traits" title='boost::xpressive::detail::simple_repeat_traits' data-ref="boost::xpressive::detail::simple_repeat_traits"><a class="type" href="#boost::xpressive::detail::simple_repeat_traits" title='boost::xpressive::detail::simple_repeat_traits' data-ref="boost::xpressive::detail::simple_repeat_traits">simple_repeat_traits</a></dfn>&lt;<a class="typedef" href="#boost::xpressive::detail::any_sxpr" title='boost::xpressive::detail::any_sxpr' data-type='static_xpression&lt;boost::xpressive::detail::any_matcher, boost::xpressive::detail::true_xpression&gt;' data-ref="boost::xpressive::detail::any_sxpr">any_sxpr</a>, <span class="namespace">mpl::</span>true_, <span class="namespace">mpl::</span>true_&gt;</td></tr>
+<tr><th id="46">46</th><td>    {</td></tr>
+<tr><th id="47">47</th><td>        <b>typedef</b> <a class="type" href="#boost::xpressive::detail::greedy_fast_tag" title='boost::xpressive::detail::greedy_fast_tag' data-ref="boost::xpressive::detail::greedy_fast_tag">greedy_fast_tag</a> <dfn class="typedef" id="boost::xpressive::detail::simple_repeat_traits{boost::xpressive::detail::static_xpression{boost::xpressive::detail::any_matcher,boost::xpressive::deta5955189" title='boost::xpressive::detail::simple_repeat_traits&lt;boost::xpressive::detail::static_xpression&lt;boost::xpressive::detail::any_matcher, boost::xpressive::detail::static_xpression&lt;boost::xpressive::detail::true_matcher, boost::xpressive::detail::no_next&gt;&gt;, mpl_::bool_&lt;true&gt;, mpl_::bool_&lt;true&gt;&gt;::tag_type' data-type='boost::xpressive::detail::greedy_fast_tag' data-ref="boost::xpressive::detail::simple_repeat_traits{boost::xpressive::detail::static_xpression{boost::xpressive::detail::any_matcher,boost::xpressive::deta5955189">tag_type</dfn>;</td></tr>
+<tr><th id="48">48</th><td>    };</td></tr>
+<tr><th id="49">49</th><td></td></tr>
+<tr><th id="50">50</th><td>    <b>template</b>&lt;&gt;</td></tr>
+<tr><th id="51">51</th><td>    <b>struct</b> <dfn class="type def" id="boost::xpressive::detail::simple_repeat_traits" title='boost::xpressive::detail::simple_repeat_traits' data-ref="boost::xpressive::detail::simple_repeat_traits"><a class="type" href="#boost::xpressive::detail::simple_repeat_traits" title='boost::xpressive::detail::simple_repeat_traits' data-ref="boost::xpressive::detail::simple_repeat_traits">simple_repeat_traits</a></dfn>&lt;<a class="typedef" href="#boost::xpressive::detail::any_dxpr" title='boost::xpressive::detail::any_dxpr' data-type='matcher_wrapper&lt;boost::xpressive::detail::any_matcher&gt;' data-ref="boost::xpressive::detail::any_dxpr">any_dxpr</a>, <span class="namespace">mpl::</span>true_, <span class="namespace">mpl::</span>true_&gt;</td></tr>
+<tr><th id="52">52</th><td>    {</td></tr>
+<tr><th id="53">53</th><td>        <b>typedef</b> <a class="type" href="#boost::xpressive::detail::greedy_fast_tag" title='boost::xpressive::detail::greedy_fast_tag' data-ref="boost::xpressive::detail::greedy_fast_tag">greedy_fast_tag</a> <dfn class="typedef" id="boost::xpressive::detail::simple_repeat_traits{boost::xpressive::detail::matcher_wrapper{boost::xpressive::detail::any_matcher},mpl_::bool_{true},mpl_14956461" title='boost::xpressive::detail::simple_repeat_traits&lt;boost::xpressive::detail::matcher_wrapper&lt;boost::xpressive::detail::any_matcher&gt;, mpl_::bool_&lt;true&gt;, mpl_::bool_&lt;true&gt;&gt;::tag_type' data-type='boost::xpressive::detail::greedy_fast_tag' data-ref="boost::xpressive::detail::simple_repeat_traits{boost::xpressive::detail::matcher_wrapper{boost::xpressive::detail::any_matcher},mpl_::bool_{true},mpl_14956461">tag_type</dfn>;</td></tr>
+<tr><th id="54">54</th><td>    };</td></tr>
+<tr><th id="55">55</th><td></td></tr>
+<tr><th id="56">56</th><td>    <i>///////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="57">57</th><td><i>    // simple_repeat_matcher</i></td></tr>
+<tr><th id="58">58</th><td><i>    //</i></td></tr>
+<tr><th id="59">59</th><td>    <b>template</b>&lt;<b>typename</b> Xpr, <b>typename</b> Greedy&gt;</td></tr>
+<tr><th id="60">60</th><td>    <b>struct</b> <dfn class="type def" id="boost::xpressive::detail::simple_repeat_matcher" title='boost::xpressive::detail::simple_repeat_matcher' data-ref="boost::xpressive::detail::simple_repeat_matcher">simple_repeat_matcher</dfn></td></tr>
+<tr><th id="61">61</th><td>      : <a class="typedef" href="../quant_style.hpp.html#boost::xpressive::detail::quant_style_variable_width" title='boost::xpressive::detail::quant_style_variable_width' data-type='quant_style&lt;quant_variable_width&gt;' data-ref="boost::xpressive::detail::quant_style_variable_width">quant_style_variable_width</a></td></tr>
+<tr><th id="62">62</th><td>    {</td></tr>
+<tr><th id="63">63</th><td>        <b>typedef</b> Xpr <dfn class="typedef" id="boost::xpressive::detail::simple_repeat_matcher::xpr_type" title='boost::xpressive::detail::simple_repeat_matcher::xpr_type' data-type='Xpr' data-ref="boost::xpressive::detail::simple_repeat_matcher::xpr_type">xpr_type</dfn>;</td></tr>
+<tr><th id="64">64</th><td>        <b>typedef</b> Greedy <dfn class="typedef" id="boost::xpressive::detail::simple_repeat_matcher::greedy_type" title='boost::xpressive::detail::simple_repeat_matcher::greedy_type' data-type='Greedy' data-ref="boost::xpressive::detail::simple_repeat_matcher::greedy_type">greedy_type</dfn>;</td></tr>
+<tr><th id="65">65</th><td></td></tr>
+<tr><th id="66">66</th><td>        Xpr <dfn class="decl field" id="boost::xpressive::detail::simple_repeat_matcher::xpr_" title='boost::xpressive::detail::simple_repeat_matcher::xpr_' data-ref="boost::xpressive::detail::simple_repeat_matcher::xpr_">xpr_</dfn>;</td></tr>
+<tr><th id="67">67</th><td>        <em>unsigned</em> <em>int</em> <dfn class="decl field" id="boost::xpressive::detail::simple_repeat_matcher::min_" title='boost::xpressive::detail::simple_repeat_matcher::min_' data-ref="boost::xpressive::detail::simple_repeat_matcher::min_">min_</dfn>, <dfn class="decl field" id="boost::xpressive::detail::simple_repeat_matcher::max_" title='boost::xpressive::detail::simple_repeat_matcher::max_' data-ref="boost::xpressive::detail::simple_repeat_matcher::max_">max_</dfn>;</td></tr>
+<tr><th id="68">68</th><td>        <span class="namespace">std::</span><a class="typedef" href="../../../../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> <dfn class="decl field" id="boost::xpressive::detail::simple_repeat_matcher::width_" title='boost::xpressive::detail::simple_repeat_matcher::width_' data-ref="boost::xpressive::detail::simple_repeat_matcher::width_">width_</dfn>;</td></tr>
+<tr><th id="69">69</th><td>        <em>mutable</em> <em>bool</em> <dfn class="decl field" id="boost::xpressive::detail::simple_repeat_matcher::leading_" title='boost::xpressive::detail::simple_repeat_matcher::leading_' data-ref="boost::xpressive::detail::simple_repeat_matcher::leading_">leading_</dfn>;</td></tr>
+<tr><th id="70">70</th><td></td></tr>
+<tr><th id="71">71</th><td>        <dfn class="decl def fn" id="_ZN5boost9xpressive6detail21simple_repeat_matcherC1ERKT_jjm" title='boost::xpressive::detail::simple_repeat_matcher::simple_repeat_matcher&lt;Xpr, Greedy&gt;' data-ref="_ZN5boost9xpressive6detail21simple_repeat_matcherC1ERKT_jjm">simple_repeat_matcher</dfn>(Xpr <em>const</em> &amp;<dfn class="local col9 decl" id="8309xpr" title='xpr' data-type='const Xpr &amp;' data-ref="8309xpr">xpr</dfn>, <em>unsigned</em> <em>int</em> <dfn class="local col0 decl" id="8310min" title='min' data-type='unsigned int' data-ref="8310min">min</dfn>, <em>unsigned</em> <em>int</em> <dfn class="local col1 decl" id="8311max" title='max' data-type='unsigned int' data-ref="8311max">max</dfn>, <span class="namespace">std::</span><a class="typedef" href="../../../../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> <dfn class="local col2 decl" id="8312width" title='width' data-type='std::size_t' data-ref="8312width">width</dfn>)</td></tr>
+<tr><th id="72">72</th><td>          : <a class="member field" href="#boost::xpressive::detail::simple_repeat_matcher::xpr_" title='boost::xpressive::detail::simple_repeat_matcher::xpr_' data-ref="boost::xpressive::detail::simple_repeat_matcher::xpr_">xpr_</a>(<a class="local col9 ref" href="#8309xpr" title='xpr' data-ref="8309xpr">xpr</a>)</td></tr>
+<tr><th id="73">73</th><td>          , <a class="member field" href="#boost::xpressive::detail::simple_repeat_matcher::min_" title='boost::xpressive::detail::simple_repeat_matcher::min_' data-ref="boost::xpressive::detail::simple_repeat_matcher::min_">min_</a>(<a class="local col0 ref" href="#8310min" title='min' data-ref="8310min">min</a>)</td></tr>
+<tr><th id="74">74</th><td>          , <a class="member field" href="#boost::xpressive::detail::simple_repeat_matcher::max_" title='boost::xpressive::detail::simple_repeat_matcher::max_' data-ref="boost::xpressive::detail::simple_repeat_matcher::max_">max_</a>(<a class="local col1 ref" href="#8311max" title='max' data-ref="8311max">max</a>)</td></tr>
+<tr><th id="75">75</th><td>          , <a class="member field" href="#boost::xpressive::detail::simple_repeat_matcher::width_" title='boost::xpressive::detail::simple_repeat_matcher::width_' data-ref="boost::xpressive::detail::simple_repeat_matcher::width_">width_</a>(<a class="local col2 ref" href="#8312width" title='width' data-ref="8312width">width</a>)</td></tr>
+<tr><th id="76">76</th><td>          , <a class="member field" href="#boost::xpressive::detail::simple_repeat_matcher::leading_" title='boost::xpressive::detail::simple_repeat_matcher::leading_' data-ref="boost::xpressive::detail::simple_repeat_matcher::leading_">leading_</a>(<b>false</b>)</td></tr>
+<tr><th id="77">77</th><td>        {</td></tr>
+<tr><th id="78">78</th><td>            <i>// it is the job of the parser to make sure this never happens</i></td></tr>
+<tr><th id="79">79</th><td>            <a class="macro" href="../../../../../../../assert/include/boost/assert.hpp.html#60" title="(static_cast&lt;void&gt; (0))" data-ref="_M/BOOST_ASSERT">BOOST_ASSERT</a>(min &lt;= max);</td></tr>
+<tr><th id="80">80</th><td>            <a class="macro" href="../../../../../../../assert/include/boost/assert.hpp.html#60" title="(static_cast&lt;void&gt; (0))" data-ref="_M/BOOST_ASSERT">BOOST_ASSERT</a>(<var>0</var> != max);</td></tr>
+<tr><th id="81">81</th><td>            <a class="macro" href="../../../../../../../assert/include/boost/assert.hpp.html#60" title="(static_cast&lt;void&gt; (0))" data-ref="_M/BOOST_ASSERT">BOOST_ASSERT</a>(<var>0</var> != width &amp;&amp; unknown_width() != width);</td></tr>
+<tr><th id="82">82</th><td>            <a class="macro" href="../../../../../../../assert/include/boost/assert.hpp.html#60" title="(static_cast&lt;void&gt; (0))" data-ref="_M/BOOST_ASSERT">BOOST_ASSERT</a>(Xpr::width == unknown_width() || Xpr::width == width);</td></tr>
+<tr><th id="83">83</th><td>        }</td></tr>
+<tr><th id="84">84</th><td></td></tr>
+<tr><th id="85">85</th><td>        <b>template</b>&lt;<b>typename</b> BidiIter, <b>typename</b> Next&gt;</td></tr>
+<tr><th id="86">86</th><td>        <em>bool</em> <dfn class="decl def fn" id="_ZNK5boost9xpressive6detail21simple_repeat_matcher5matchERNS1_11match_stateITL0__EERKTL0_0_" title='boost::xpressive::detail::simple_repeat_matcher::match' data-ref="_ZNK5boost9xpressive6detail21simple_repeat_matcher5matchERNS1_11match_stateITL0__EERKTL0_0_">match</dfn>(<a class="type" href="../../detail_fwd.hpp.html#boost::xpressive::detail::match_state" title='boost::xpressive::detail::match_state' data-ref="boost::xpressive::detail::match_state">match_state</a>&lt;BidiIter&gt; &amp;<dfn class="local col3 decl" id="8313state" title='state' data-type='match_state&lt;BidiIter&gt; &amp;' data-ref="8313state">state</dfn>, Next <em>const</em> &amp;<dfn class="local col4 decl" id="8314next" title='next' data-type='const Next &amp;' data-ref="8314next">next</dfn>) <em>const</em></td></tr>
+<tr><th id="87">87</th><td>        {</td></tr>
+<tr><th id="88">88</th><td>            <b>typedef</b> <span class="namespace">mpl::</span><a class="type" href="../../../../../../../mpl/include/boost/mpl/bool_fwd.hpp.html#mpl_::bool_" title='mpl_::bool_' data-ref="mpl_::bool_">bool_</a>&lt;<a class="type" href="../../static/type_traits.hpp.html#boost::xpressive::detail::is_random" title='boost::xpressive::detail::is_random' data-ref="boost::xpressive::detail::is_random">is_random</a>&lt;BidiIter&gt;::value&gt; <dfn class="local col5 typedef" id="8315is_rand" title='is_rand' data-type='mpl::bool_&lt;is_random&lt;BidiIter&gt;::value&gt;' data-ref="8315is_rand">is_rand</dfn>;</td></tr>
+<tr><th id="89">89</th><td>            <b>typedef</b> <b>typename</b> <a class="type" href="#boost::xpressive::detail::simple_repeat_traits" title='boost::xpressive::detail::simple_repeat_traits' data-ref="boost::xpressive::detail::simple_repeat_traits">simple_repeat_traits</a>&lt;Xpr, <a class="typedef" href="#boost::xpressive::detail::simple_repeat_matcher::greedy_type" title='boost::xpressive::detail::simple_repeat_matcher::greedy_type' data-type='Greedy' data-ref="boost::xpressive::detail::simple_repeat_matcher::greedy_type">greedy_type</a>, <a class="local col5 typedef" href="#8315is_rand" title='is_rand' data-type='mpl::bool_&lt;is_random&lt;BidiIter&gt;::value&gt;' data-ref="8315is_rand">is_rand</a>&gt;::tag_type <dfn class="local col6 typedef" id="8316tag_type" title='tag_type' data-type='typename simple_repeat_traits&lt;Xpr, greedy_type, is_rand&gt;::tag_type' data-ref="8316tag_type">tag_type</dfn>;</td></tr>
+<tr><th id="90">90</th><td>            <b>return</b> <b>this</b>-&gt;match_(<a class="local col3 ref" href="#8313state" title='state' data-ref="8313state">state</a>, <a class="local col4 ref" href="#8314next" title='next' data-ref="8314next">next</a>, <a class="local col6 typedef" href="#8316tag_type" title='tag_type' data-type='typename simple_repeat_traits&lt;Xpr, greedy_type, is_rand&gt;::tag_type' data-ref="8316tag_type">tag_type</a>());</td></tr>
+<tr><th id="91">91</th><td>        }</td></tr>
+<tr><th id="92">92</th><td></td></tr>
+<tr><th id="93">93</th><td>        <i>// greedy, fixed-width quantifier</i></td></tr>
+<tr><th id="94">94</th><td>        <b>template</b>&lt;<b>typename</b> BidiIter, <b>typename</b> Next&gt;</td></tr>
+<tr><th id="95">95</th><td>        <em>bool</em> <dfn class="decl def fn" id="_ZNK5boost9xpressive6detail21simple_repeat_matcher6match_ERNS1_11match_stateITL0__EERKTL0_0_NS1_15greedy_slow_tagE" title='boost::xpressive::detail::simple_repeat_matcher::match_' data-ref="_ZNK5boost9xpressive6detail21simple_repeat_matcher6match_ERNS1_11match_stateITL0__EERKTL0_0_NS1_15greedy_slow_tagE">match_</dfn>(<a class="type" href="../../detail_fwd.hpp.html#boost::xpressive::detail::match_state" title='boost::xpressive::detail::match_state' data-ref="boost::xpressive::detail::match_state">match_state</a>&lt;BidiIter&gt; &amp;<dfn class="local col7 decl" id="8317state" title='state' data-type='match_state&lt;BidiIter&gt; &amp;' data-ref="8317state">state</dfn>, Next <em>const</em> &amp;<dfn class="local col8 decl" id="8318next" title='next' data-type='const Next &amp;' data-ref="8318next">next</dfn>, <a class="type" href="#boost::xpressive::detail::greedy_slow_tag" title='boost::xpressive::detail::greedy_slow_tag' data-ref="boost::xpressive::detail::greedy_slow_tag">greedy_slow_tag</a>) <em>const</em></td></tr>
+<tr><th id="96">96</th><td>        {</td></tr>
+<tr><th id="97">97</th><td>            <em>int</em> <em>const</em> <dfn class="local col9 decl" id="8319diff" title='diff' data-type='const int' data-ref="8319diff">diff</dfn> = -<b>static_cast</b>&lt;<em>int</em>&gt;(Xpr::width == <a class="typedef" href="../../detail_fwd.hpp.html#boost::xpressive::detail::unknown_width" title='boost::xpressive::detail::unknown_width' data-type='mpl::size_t&lt;2147483647 / 2 - 1&gt;' data-ref="boost::xpressive::detail::unknown_width">unknown_width</a>::<a class="ref" href="../../../../../../../mpl/include/boost/mpl/aux_/integral_wrapper.hpp.html#45" title='mpl_::size_t::value' data-ref="mpl_::size_t::value">value</a> ? <b>this</b>-&gt;width_ : Xpr::width);</td></tr>
+<tr><th id="98">98</th><td>            <em>unsigned</em> <em>int</em> <dfn class="local col0 decl" id="8320matches" title='matches' data-type='unsigned int' data-ref="8320matches">matches</dfn> = <var>0</var>;</td></tr>
+<tr><th id="99">99</th><td>            BidiIter <em>const</em> <dfn class="local col1 decl" id="8321tmp" title='tmp' data-type='const BidiIter' data-ref="8321tmp">tmp</dfn> = <a class="local col7 ref" href="#8317state" title='state' data-ref="8317state">state</a>.cur_;</td></tr>
+<tr><th id="100">100</th><td></td></tr>
+<tr><th id="101">101</th><td>            <i>// greedily match as much as we can</i></td></tr>
+<tr><th id="102">102</th><td>            <b>while</b>(<a class="local col0 ref" href="#8320matches" title='matches' data-ref="8320matches">matches</a> &lt; <b>this</b>-&gt;max_ &amp;&amp; <b>this</b>-&gt;xpr_.match(<a class="local col7 ref" href="#8317state" title='state' data-ref="8317state">state</a>))</td></tr>
+<tr><th id="103">103</th><td>            {</td></tr>
+<tr><th id="104">104</th><td>                ++<a class="local col0 ref" href="#8320matches" title='matches' data-ref="8320matches">matches</a>;</td></tr>
+<tr><th id="105">105</th><td>            }</td></tr>
+<tr><th id="106">106</th><td></td></tr>
+<tr><th id="107">107</th><td>            <i>// If this repeater is at the front of the pattern, note</i></td></tr>
+<tr><th id="108">108</th><td><i>            // how much of the input we consumed so that a repeated search</i></td></tr>
+<tr><th id="109">109</th><td><i>            // doesn't have to cover the same ground again.</i></td></tr>
+<tr><th id="110">110</th><td>            <b>if</b>(<b>this</b>-&gt;leading_)</td></tr>
+<tr><th id="111">111</th><td>            {</td></tr>
+<tr><th id="112">112</th><td>                <a class="local col7 ref" href="#8317state" title='state' data-ref="8317state">state</a>.next_search_ = (<a class="local col0 ref" href="#8320matches" title='matches' data-ref="8320matches">matches</a> &amp;&amp; <a class="local col0 ref" href="#8320matches" title='matches' data-ref="8320matches">matches</a> &lt; <b>this</b>-&gt;max_)</td></tr>
+<tr><th id="113">113</th><td>                                   ? <a class="local col7 ref" href="#8317state" title='state' data-ref="8317state">state</a>.cur_</td></tr>
+<tr><th id="114">114</th><td>                                   : (<a class="local col1 ref" href="#8321tmp" title='tmp' data-ref="8321tmp">tmp</a> == <a class="local col7 ref" href="#8317state" title='state' data-ref="8317state">state</a>.end_) ? <a class="local col1 ref" href="#8321tmp" title='tmp' data-ref="8321tmp">tmp</a> : <span class="namespace">boost::</span>next(<a class="local col1 ref" href="#8321tmp" title='tmp' data-ref="8321tmp">tmp</a>);</td></tr>
+<tr><th id="115">115</th><td>            }</td></tr>
+<tr><th id="116">116</th><td></td></tr>
+<tr><th id="117">117</th><td>            <b>if</b>(<b>this</b>-&gt;min_ &gt; <a class="local col0 ref" href="#8320matches" title='matches' data-ref="8320matches">matches</a>)</td></tr>
+<tr><th id="118">118</th><td>            {</td></tr>
+<tr><th id="119">119</th><td>                <a class="local col7 ref" href="#8317state" title='state' data-ref="8317state">state</a>.cur_ = <a class="local col1 ref" href="#8321tmp" title='tmp' data-ref="8321tmp">tmp</a>;</td></tr>
+<tr><th id="120">120</th><td>                <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="121">121</th><td>            }</td></tr>
+<tr><th id="122">122</th><td></td></tr>
+<tr><th id="123">123</th><td>            <i>// try matching the rest of the pattern, and back off if necessary</i></td></tr>
+<tr><th id="124">124</th><td>            <b>for</b>(; ; --<a class="local col0 ref" href="#8320matches" title='matches' data-ref="8320matches">matches</a>, <span class="namespace">std::</span>advance(<a class="local col7 ref" href="#8317state" title='state' data-ref="8317state">state</a>.cur_, <a class="local col9 ref" href="#8319diff" title='diff' data-ref="8319diff">diff</a>))</td></tr>
+<tr><th id="125">125</th><td>            {</td></tr>
+<tr><th id="126">126</th><td>                <b>if</b>(<a class="local col8 ref" href="#8318next" title='next' data-ref="8318next">next</a>.match(<a class="local col7 ref" href="#8317state" title='state' data-ref="8317state">state</a>))</td></tr>
+<tr><th id="127">127</th><td>                {</td></tr>
+<tr><th id="128">128</th><td>                    <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="129">129</th><td>                }</td></tr>
+<tr><th id="130">130</th><td>                <b>else</b> <b>if</b>(<b>this</b>-&gt;min_ == <a class="local col0 ref" href="#8320matches" title='matches' data-ref="8320matches">matches</a>)</td></tr>
+<tr><th id="131">131</th><td>                {</td></tr>
+<tr><th id="132">132</th><td>                    <a class="local col7 ref" href="#8317state" title='state' data-ref="8317state">state</a>.cur_ = <a class="local col1 ref" href="#8321tmp" title='tmp' data-ref="8321tmp">tmp</a>;</td></tr>
+<tr><th id="133">133</th><td>                    <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="134">134</th><td>                }</td></tr>
+<tr><th id="135">135</th><td>            }</td></tr>
+<tr><th id="136">136</th><td>        }</td></tr>
+<tr><th id="137">137</th><td></td></tr>
+<tr><th id="138">138</th><td>        <i>// non-greedy fixed-width quantification</i></td></tr>
+<tr><th id="139">139</th><td>        <b>template</b>&lt;<b>typename</b> BidiIter, <b>typename</b> Next&gt;</td></tr>
+<tr><th id="140">140</th><td>        <em>bool</em> <dfn class="decl def fn" id="_ZNK5boost9xpressive6detail21simple_repeat_matcher6match_ERNS1_11match_stateITL0__EERKTL0_0_NS1_14non_greedy_tagE" title='boost::xpressive::detail::simple_repeat_matcher::match_' data-ref="_ZNK5boost9xpressive6detail21simple_repeat_matcher6match_ERNS1_11match_stateITL0__EERKTL0_0_NS1_14non_greedy_tagE">match_</dfn>(<a class="type" href="../../detail_fwd.hpp.html#boost::xpressive::detail::match_state" title='boost::xpressive::detail::match_state' data-ref="boost::xpressive::detail::match_state">match_state</a>&lt;BidiIter&gt; &amp;<dfn class="local col2 decl" id="8322state" title='state' data-type='match_state&lt;BidiIter&gt; &amp;' data-ref="8322state">state</dfn>, Next <em>const</em> &amp;<dfn class="local col3 decl" id="8323next" title='next' data-type='const Next &amp;' data-ref="8323next">next</dfn>, <a class="type" href="#boost::xpressive::detail::non_greedy_tag" title='boost::xpressive::detail::non_greedy_tag' data-ref="boost::xpressive::detail::non_greedy_tag">non_greedy_tag</a>) <em>const</em></td></tr>
+<tr><th id="141">141</th><td>        {</td></tr>
+<tr><th id="142">142</th><td>            <a class="macro" href="../../../../../../../assert/include/boost/assert.hpp.html#60" title="(static_cast&lt;void&gt; (0))" data-ref="_M/BOOST_ASSERT">BOOST_ASSERT</a>(!<b>this</b>-&gt;leading_);</td></tr>
+<tr><th id="143">143</th><td>            BidiIter <em>const</em> <dfn class="local col4 decl" id="8324tmp" title='tmp' data-type='const BidiIter' data-ref="8324tmp">tmp</dfn> = <a class="local col2 ref" href="#8322state" title='state' data-ref="8322state">state</a>.cur_;</td></tr>
+<tr><th id="144">144</th><td>            <em>unsigned</em> <em>int</em> <dfn class="local col5 decl" id="8325matches" title='matches' data-type='unsigned int' data-ref="8325matches">matches</dfn> = <var>0</var>;</td></tr>
+<tr><th id="145">145</th><td></td></tr>
+<tr><th id="146">146</th><td>            <b>for</b>(; <a class="local col5 ref" href="#8325matches" title='matches' data-ref="8325matches">matches</a> &lt; <b>this</b>-&gt;min_; ++<a class="local col5 ref" href="#8325matches" title='matches' data-ref="8325matches">matches</a>)</td></tr>
+<tr><th id="147">147</th><td>            {</td></tr>
+<tr><th id="148">148</th><td>                <b>if</b>(!<b>this</b>-&gt;xpr_.match(<a class="local col2 ref" href="#8322state" title='state' data-ref="8322state">state</a>))</td></tr>
+<tr><th id="149">149</th><td>                {</td></tr>
+<tr><th id="150">150</th><td>                    <a class="local col2 ref" href="#8322state" title='state' data-ref="8322state">state</a>.cur_ = <a class="local col4 ref" href="#8324tmp" title='tmp' data-ref="8324tmp">tmp</a>;</td></tr>
+<tr><th id="151">151</th><td>                    <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="152">152</th><td>                }</td></tr>
+<tr><th id="153">153</th><td>            }</td></tr>
+<tr><th id="154">154</th><td></td></tr>
+<tr><th id="155">155</th><td>            <b>do</b></td></tr>
+<tr><th id="156">156</th><td>            {</td></tr>
+<tr><th id="157">157</th><td>                <b>if</b>(<a class="local col3 ref" href="#8323next" title='next' data-ref="8323next">next</a>.match(<a class="local col2 ref" href="#8322state" title='state' data-ref="8322state">state</a>))</td></tr>
+<tr><th id="158">158</th><td>                {</td></tr>
+<tr><th id="159">159</th><td>                    <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="160">160</th><td>                }</td></tr>
+<tr><th id="161">161</th><td>            }</td></tr>
+<tr><th id="162">162</th><td>            <b>while</b>(<a class="local col5 ref" href="#8325matches" title='matches' data-ref="8325matches">matches</a>++ &lt; <b>this</b>-&gt;max_ &amp;&amp; <b>this</b>-&gt;xpr_.match(<a class="local col2 ref" href="#8322state" title='state' data-ref="8322state">state</a>));</td></tr>
+<tr><th id="163">163</th><td></td></tr>
+<tr><th id="164">164</th><td>            <a class="local col2 ref" href="#8322state" title='state' data-ref="8322state">state</a>.cur_ = <a class="local col4 ref" href="#8324tmp" title='tmp' data-ref="8324tmp">tmp</a>;</td></tr>
+<tr><th id="165">165</th><td>            <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="166">166</th><td>        }</td></tr>
+<tr><th id="167">167</th><td></td></tr>
+<tr><th id="168">168</th><td>        <i>// when greedily matching any character, skip to the end instead of iterating there.</i></td></tr>
+<tr><th id="169">169</th><td>        <b>template</b>&lt;<b>typename</b> BidiIter, <b>typename</b> Next&gt;</td></tr>
+<tr><th id="170">170</th><td>        <em>bool</em> <dfn class="decl def fn" id="_ZNK5boost9xpressive6detail21simple_repeat_matcher6match_ERNS1_11match_stateITL0__EERKTL0_0_NS1_15greedy_fast_tagE" title='boost::xpressive::detail::simple_repeat_matcher::match_' data-ref="_ZNK5boost9xpressive6detail21simple_repeat_matcher6match_ERNS1_11match_stateITL0__EERKTL0_0_NS1_15greedy_fast_tagE">match_</dfn>(<a class="type" href="../../detail_fwd.hpp.html#boost::xpressive::detail::match_state" title='boost::xpressive::detail::match_state' data-ref="boost::xpressive::detail::match_state">match_state</a>&lt;BidiIter&gt; &amp;<dfn class="local col6 decl" id="8326state" title='state' data-type='match_state&lt;BidiIter&gt; &amp;' data-ref="8326state">state</dfn>, Next <em>const</em> &amp;<dfn class="local col7 decl" id="8327next" title='next' data-type='const Next &amp;' data-ref="8327next">next</dfn>, <a class="type" href="#boost::xpressive::detail::greedy_fast_tag" title='boost::xpressive::detail::greedy_fast_tag' data-ref="boost::xpressive::detail::greedy_fast_tag">greedy_fast_tag</a>) <em>const</em></td></tr>
+<tr><th id="171">171</th><td>        {</td></tr>
+<tr><th id="172">172</th><td>            BidiIter <em>const</em> <dfn class="local col8 decl" id="8328tmp" title='tmp' data-type='const BidiIter' data-ref="8328tmp">tmp</dfn> = <a class="local col6 ref" href="#8326state" title='state' data-ref="8326state">state</a>.cur_;</td></tr>
+<tr><th id="173">173</th><td>            <span class="namespace">std::</span><a class="typedef" href="../../../../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> <em>const</em> <dfn class="local col9 decl" id="8329diff_to_end" title='diff_to_end' data-type='const std::size_t' data-ref="8329diff_to_end">diff_to_end</dfn> = <b>static_cast</b>&lt;<span class="namespace">std::</span><a class="typedef" href="../../../../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a>&gt;(<a class="local col6 ref" href="#8326state" title='state' data-ref="8326state">state</a>.end_ - <a class="local col8 ref" href="#8328tmp" title='tmp' data-ref="8328tmp">tmp</a>);</td></tr>
+<tr><th id="174">174</th><td></td></tr>
+<tr><th id="175">175</th><td>            <i>// is there enough room?</i></td></tr>
+<tr><th id="176">176</th><td>            <b>if</b>(<b>this</b>-&gt;min_ &gt; <a class="local col9 ref" href="#8329diff_to_end" title='diff_to_end' data-ref="8329diff_to_end">diff_to_end</a>)</td></tr>
+<tr><th id="177">177</th><td>            {</td></tr>
+<tr><th id="178">178</th><td>                <b>if</b>(<b>this</b>-&gt;leading_)</td></tr>
+<tr><th id="179">179</th><td>                {</td></tr>
+<tr><th id="180">180</th><td>                    <a class="local col6 ref" href="#8326state" title='state' data-ref="8326state">state</a>.next_search_ = (<a class="local col8 ref" href="#8328tmp" title='tmp' data-ref="8328tmp">tmp</a> == <a class="local col6 ref" href="#8326state" title='state' data-ref="8326state">state</a>.end_) ? <a class="local col8 ref" href="#8328tmp" title='tmp' data-ref="8328tmp">tmp</a> : <span class="namespace">boost::</span>next(<a class="local col8 ref" href="#8328tmp" title='tmp' data-ref="8328tmp">tmp</a>);</td></tr>
+<tr><th id="181">181</th><td>                }</td></tr>
+<tr><th id="182">182</th><td>                <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="183">183</th><td>            }</td></tr>
+<tr><th id="184">184</th><td></td></tr>
+<tr><th id="185">185</th><td>            BidiIter <em>const</em> <dfn class="local col0 decl" id="8330min_iter" title='min_iter' data-type='const BidiIter' data-ref="8330min_iter">min_iter</dfn> = <a class="local col8 ref" href="#8328tmp" title='tmp' data-ref="8328tmp">tmp</a> + <b>this</b>-&gt;min_;</td></tr>
+<tr><th id="186">186</th><td>            <a class="local col6 ref" href="#8326state" title='state' data-ref="8326state">state</a>.cur_ += (<span class="namespace">std::</span><a class="ref fn" href="../../../../../../../../../include/c++/9/bits/algorithmfwd.h.html#_ZSt3minRKT_S1_" title='std::min' data-ref="_ZSt3minRKT_S1_">min</a>)(<span class='inlayHint'>a:&nbsp;</span>(<span class="namespace">std::</span><a class="typedef" href="../../../../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a>)<b>this</b>-&gt;max_, <span class='inlayHint'>b:&nbsp;</span><a class="local col9 ref" href="#8329diff_to_end" title='diff_to_end' data-ref="8329diff_to_end">diff_to_end</a>);</td></tr>
+<tr><th id="187">187</th><td></td></tr>
+<tr><th id="188">188</th><td>            <b>if</b>(<b>this</b>-&gt;leading_)</td></tr>
+<tr><th id="189">189</th><td>            {</td></tr>
+<tr><th id="190">190</th><td>                <a class="local col6 ref" href="#8326state" title='state' data-ref="8326state">state</a>.next_search_ = (<a class="local col9 ref" href="#8329diff_to_end" title='diff_to_end' data-ref="8329diff_to_end">diff_to_end</a> &amp;&amp; <a class="local col9 ref" href="#8329diff_to_end" title='diff_to_end' data-ref="8329diff_to_end">diff_to_end</a> &lt; <b>this</b>-&gt;max_)</td></tr>
+<tr><th id="191">191</th><td>                                   ? <a class="local col6 ref" href="#8326state" title='state' data-ref="8326state">state</a>.cur_</td></tr>
+<tr><th id="192">192</th><td>                                   : (<a class="local col8 ref" href="#8328tmp" title='tmp' data-ref="8328tmp">tmp</a> == <a class="local col6 ref" href="#8326state" title='state' data-ref="8326state">state</a>.end_) ? <a class="local col8 ref" href="#8328tmp" title='tmp' data-ref="8328tmp">tmp</a> : <span class="namespace">boost::</span>next(<a class="local col8 ref" href="#8328tmp" title='tmp' data-ref="8328tmp">tmp</a>);</td></tr>
+<tr><th id="193">193</th><td>            }</td></tr>
+<tr><th id="194">194</th><td></td></tr>
+<tr><th id="195">195</th><td>            <b>for</b>(;; --<a class="local col6 ref" href="#8326state" title='state' data-ref="8326state">state</a>.cur_)</td></tr>
+<tr><th id="196">196</th><td>            {</td></tr>
+<tr><th id="197">197</th><td>                <b>if</b>(<a class="local col7 ref" href="#8327next" title='next' data-ref="8327next">next</a>.match(<a class="local col6 ref" href="#8326state" title='state' data-ref="8326state">state</a>))</td></tr>
+<tr><th id="198">198</th><td>                {</td></tr>
+<tr><th id="199">199</th><td>                    <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="200">200</th><td>                }</td></tr>
+<tr><th id="201">201</th><td>                <b>else</b> <b>if</b>(<a class="local col0 ref" href="#8330min_iter" title='min_iter' data-ref="8330min_iter">min_iter</a> == <a class="local col6 ref" href="#8326state" title='state' data-ref="8326state">state</a>.cur_)</td></tr>
+<tr><th id="202">202</th><td>                {</td></tr>
+<tr><th id="203">203</th><td>                    <a class="local col6 ref" href="#8326state" title='state' data-ref="8326state">state</a>.cur_ = <a class="local col8 ref" href="#8328tmp" title='tmp' data-ref="8328tmp">tmp</a>;</td></tr>
+<tr><th id="204">204</th><td>                    <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="205">205</th><td>                }</td></tr>
+<tr><th id="206">206</th><td>            }</td></tr>
+<tr><th id="207">207</th><td>        }</td></tr>
+<tr><th id="208">208</th><td></td></tr>
+<tr><th id="209">209</th><td>        <span class="namespace">detail::</span><a class="type" href="../../utility/width.hpp.html#boost::xpressive::detail::width" title='boost::xpressive::detail::width' data-ref="boost::xpressive::detail::width">width</a> <dfn class="decl def fn" id="_ZNK5boost9xpressive6detail21simple_repeat_matcher9get_widthEv" title='boost::xpressive::detail::simple_repeat_matcher::get_width' data-ref="_ZNK5boost9xpressive6detail21simple_repeat_matcher9get_widthEv">get_width</dfn>() <em>const</em></td></tr>
+<tr><th id="210">210</th><td>        {</td></tr>
+<tr><th id="211">211</th><td>            <b>if</b>(<b>this</b>-&gt;min_ != <b>this</b>-&gt;max_)</td></tr>
+<tr><th id="212">212</th><td>            {</td></tr>
+<tr><th id="213">213</th><td>                <b>return</b> <a class="ref fn fake" href="../../utility/width.hpp.html#_ZN5boost9xpressive6detail5widthC1Em" title='boost::xpressive::detail::width::width' data-ref="_ZN5boost9xpressive6detail5widthC1Em"></a><a class="typedef" href="../../detail_fwd.hpp.html#boost::xpressive::detail::unknown_width" title='boost::xpressive::detail::unknown_width' data-type='mpl::size_t&lt;2147483647 / 2 - 1&gt;' data-ref="boost::xpressive::detail::unknown_width">unknown_width</a>::<a class="ref" href="../../../../../../../mpl/include/boost/mpl/aux_/integral_wrapper.hpp.html#45" title='mpl_::size_t::value' data-ref="mpl_::size_t::value">value</a>;</td></tr>
+<tr><th id="214">214</th><td>            }</td></tr>
+<tr><th id="215">215</th><td>            <b>return</b> <b>this</b>-&gt;min_ * <b>this</b>-&gt;width_;</td></tr>
+<tr><th id="216">216</th><td>        }</td></tr>
+<tr><th id="217">217</th><td></td></tr>
+<tr><th id="218">218</th><td>    <b>private</b>:</td></tr>
+<tr><th id="219">219</th><td>        simple_repeat_matcher &amp;<dfn class="decl fn" id="_ZN5boost9xpressive6detail21simple_repeat_matcheraSERKNS1_21simple_repeat_matcherIT_T0_EE" title='boost::xpressive::detail::simple_repeat_matcher::operator=' data-ref="_ZN5boost9xpressive6detail21simple_repeat_matcheraSERKNS1_21simple_repeat_matcherIT_T0_EE"><b>operator</b> =</dfn>(simple_repeat_matcher <em>const</em> &amp;);</td></tr>
+<tr><th id="220">220</th><td>    };</td></tr>
+<tr><th id="221">221</th><td></td></tr>
+<tr><th id="222">222</th><td>    <i>// BUGBUG can all non-greedy quantification be done with the fixed width quantifier?</i></td></tr>
+<tr><th id="223">223</th><td><i></i></td></tr>
+<tr><th id="224">224</th><td><i>    // BUGBUG matchers are chained together using static_xpression so that matchers to</i></td></tr>
+<tr><th id="225">225</th><td><i>    // the left can invoke matchers to the right. This is so that if the left matcher</i></td></tr>
+<tr><th id="226">226</th><td><i>    // succeeds but the right matcher fails, the left matcher is given the opportunity</i></td></tr>
+<tr><th id="227">227</th><td><i>    // to try something else. This is how backtracking works. However, if the left matcher</i></td></tr>
+<tr><th id="228">228</th><td><i>    // can succeed only one way (as with any_matcher, for example), it does not need</i></td></tr>
+<tr><th id="229">229</th><td><i>    // backtracking. In this case, leaving its stack frame active is a waste of stack</i></td></tr>
+<tr><th id="230">230</th><td><i>    // space. Can something be done?</i></td></tr>
+<tr><th id="231">231</th><td></td></tr>
+<tr><th id="232">232</th><td>}}}</td></tr>
+<tr><th id="233">233</th><td></td></tr>
+<tr><th id="234">234</th><td><u>#<span data-ppcond="8">endif</span></u></td></tr>
+<tr><th id="235">235</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../../../../../../../graph/src/graphml.cpp.html'>boost-1.85.0/libs/graph/src/graphml.cpp</a><br/>Generated on <em>2024-Jun-14</em> from project boost-1.85.0 revision <em>1.85.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

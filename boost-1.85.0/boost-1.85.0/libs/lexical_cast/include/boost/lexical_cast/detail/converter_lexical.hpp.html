@@ -1,0 +1,499 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>converter_lexical.hpp source code [boost-1.85.0/libs/lexical_cast/include/boost/lexical_cast/detail/converter_lexical.hpp] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="boost::detail::array_to_pointer_decay,boost::detail::deduce_character_type_later,boost::detail::deduce_source_char,boost::detail::deduce_source_char_impl,boost::detail::deduce_target_char,boost::detail::deduce_target_char_impl,boost::detail::lcast_src_length,boost::detail::lexical_cast_stream_traits,boost::detail::lexical_converter_impl,boost::detail::normalize_single_byte_char,boost::detail::stream_char_common "/>
+<link rel="stylesheet" href="../../../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'boost-1.85.0/libs/lexical_cast/include/boost/lexical_cast/detail/converter_lexical.hpp'; var root_path = '../../../../../../..'; var data_path = '../../../../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../../../..'>boost-1.85.0</a>/<a href='../../../../..'>libs</a>/<a href='../../../..'>lexical_cast</a>/<a href='../../..'>include</a>/<a href='../..'>boost</a>/<a href='..'>lexical_cast</a>/<a href='./'>detail</a>/<a href='converter_lexical.hpp.html'>converter_lexical.hpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>// Copyright Kevlin Henney, 2000-2005.</i></td></tr>
+<tr><th id="2">2</th><td><i>// Copyright Alexander Nasonov, 2006-2010.</i></td></tr>
+<tr><th id="3">3</th><td><i>// Copyright Antony Polukhin, 2011-2024.</i></td></tr>
+<tr><th id="4">4</th><td><i>//</i></td></tr>
+<tr><th id="5">5</th><td><i>// Distributed under the Boost Software License, Version 1.0. (See</i></td></tr>
+<tr><th id="6">6</th><td><i>// accompanying file LICENSE_1_0.txt or copy at</i></td></tr>
+<tr><th id="7">7</th><td><i>// <a href="http://www.boost.org/LICENSE_1_0.txt">http://www.boost.org/LICENSE_1_0.txt</a>)</i></td></tr>
+<tr><th id="8">8</th><td><i>//</i></td></tr>
+<tr><th id="9">9</th><td><i>// what:  lexical_cast custom keyword cast</i></td></tr>
+<tr><th id="10">10</th><td><i>// who:   contributed by Kevlin Henney,</i></td></tr>
+<tr><th id="11">11</th><td><i>//        enhanced with contributions from Terje Slettebo,</i></td></tr>
+<tr><th id="12">12</th><td><i>//        with additional fixes and suggestions from Gennaro Prota,</i></td></tr>
+<tr><th id="13">13</th><td><i>//        Beman Dawes, Dave Abrahams, Daryle Walker, Peter Dimov,</i></td></tr>
+<tr><th id="14">14</th><td><i>//        Alexander Nasonov, Antony Polukhin, Justin Viiret, Michael Hofmann,</i></td></tr>
+<tr><th id="15">15</th><td><i>//        Cheng Yang, Matthew Bradbury, David W. Birdsall, Pavel Korzh and other Boosters</i></td></tr>
+<tr><th id="16">16</th><td><i>// when:  November 2000, March 2003, June 2005, June 2006, March 2011 - 2014</i></td></tr>
+<tr><th id="17">17</th><td></td></tr>
+<tr><th id="18">18</th><td><u>#<span data-ppcond="18">ifndef</span> <span class="macro" data-ref="_M/BOOST_LEXICAL_CAST_DETAIL_CONVERTER_LEXICAL_HPP">BOOST_LEXICAL_CAST_DETAIL_CONVERTER_LEXICAL_HPP</span></u></td></tr>
+<tr><th id="19">19</th><td><u>#define <dfn class="macro" id="_M/BOOST_LEXICAL_CAST_DETAIL_CONVERTER_LEXICAL_HPP" data-ref="_M/BOOST_LEXICAL_CAST_DETAIL_CONVERTER_LEXICAL_HPP">BOOST_LEXICAL_CAST_DETAIL_CONVERTER_LEXICAL_HPP</dfn></u></td></tr>
+<tr><th id="20">20</th><td></td></tr>
+<tr><th id="21">21</th><td><u>#include <a href="../../../../../config/include/boost/config.hpp.html">&lt;boost/config.hpp&gt;</a></u></td></tr>
+<tr><th id="22">22</th><td><u>#<span data-ppcond="22">ifdef</span> <a class="macro" href="../../../../../config/include/boost/config/compiler/clang.hpp.html#11" data-ref="_M/BOOST_HAS_PRAGMA_ONCE">BOOST_HAS_PRAGMA_ONCE</a></u></td></tr>
+<tr><th id="23">23</th><td><u>#   pragma once</u></td></tr>
+<tr><th id="24">24</th><td><u>#<span data-ppcond="22">endif</span></u></td></tr>
+<tr><th id="25">25</th><td></td></tr>
+<tr><th id="26">26</th><td><u>#<span data-ppcond="26">if</span> defined(<span class="macro" data-ref="_M/BOOST_NO_STRINGSTREAM">BOOST_NO_STRINGSTREAM</span>) || defined(<span class="macro" data-ref="_M/BOOST_NO_STD_WSTRING">BOOST_NO_STD_WSTRING</span>)</u></td></tr>
+<tr><th id="27">27</th><td><u>#define BOOST_LCAST_NO_WCHAR_T</u></td></tr>
+<tr><th id="28">28</th><td><u>#<span data-ppcond="26">endif</span></u></td></tr>
+<tr><th id="29">29</th><td></td></tr>
+<tr><th id="30">30</th><td><u>#include <a href="../../../../../../../include/c++/9/cstddef.html">&lt;cstddef&gt;</a></u></td></tr>
+<tr><th id="31">31</th><td><u>#include <a href="../../../../../../../include/c++/9/string.html">&lt;string&gt;</a></u></td></tr>
+<tr><th id="32">32</th><td><u>#include <a href="../../../../../config/include/boost/limits.hpp.html">&lt;boost/limits.hpp&gt;</a></u></td></tr>
+<tr><th id="33">33</th><td><u>#include <a href="../../../../../type_traits/include/boost/type_traits/integral_constant.hpp.html">&lt;boost/type_traits/integral_constant.hpp&gt;</a></u></td></tr>
+<tr><th id="34">34</th><td><u>#include <a href="../../../../../type_traits/include/boost/type_traits/type_identity.hpp.html">&lt;boost/type_traits/type_identity.hpp&gt;</a></u></td></tr>
+<tr><th id="35">35</th><td><u>#include <a href="../../../../../type_traits/include/boost/type_traits/conditional.hpp.html">&lt;boost/type_traits/conditional.hpp&gt;</a></u></td></tr>
+<tr><th id="36">36</th><td><u>#include <a href="../../../../../type_traits/include/boost/type_traits/is_integral.hpp.html">&lt;boost/type_traits/is_integral.hpp&gt;</a></u></td></tr>
+<tr><th id="37">37</th><td><u>#include <a href="../../../../../type_traits/include/boost/type_traits/is_float.hpp.html">&lt;boost/type_traits/is_float.hpp&gt;</a></u></td></tr>
+<tr><th id="38">38</th><td><u>#include <a href="../../detail/lcast_precision.hpp.html">&lt;boost/detail/lcast_precision.hpp&gt;</a></u></td></tr>
+<tr><th id="39">39</th><td></td></tr>
+<tr><th id="40">40</th><td><u>#include <a href="widest_char.hpp.html">&lt;boost/lexical_cast/detail/widest_char.hpp&gt;</a></u></td></tr>
+<tr><th id="41">41</th><td><u>#include <a href="is_character.hpp.html">&lt;boost/lexical_cast/detail/is_character.hpp&gt;</a></u></td></tr>
+<tr><th id="42">42</th><td></td></tr>
+<tr><th id="43">43</th><td><u>#include <a href="../../../../../../../include/c++/9/array.html">&lt;array&gt;</a></u></td></tr>
+<tr><th id="44">44</th><td></td></tr>
+<tr><th id="45">45</th><td><u>#<span data-ppcond="45">ifndef</span> <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1159" data-ref="_M/BOOST_NO_CXX17_HDR_STRING_VIEW">BOOST_NO_CXX17_HDR_STRING_VIEW</a></u></td></tr>
+<tr><th id="46">46</th><td><u>#include &lt;string_view&gt;</u></td></tr>
+<tr><th id="47">47</th><td><u>#<span data-ppcond="45">endif</span></u></td></tr>
+<tr><th id="48">48</th><td></td></tr>
+<tr><th id="49">49</th><td><u>#include <a href="buffer_view.hpp.html">&lt;boost/lexical_cast/detail/buffer_view.hpp&gt;</a></u></td></tr>
+<tr><th id="50">50</th><td><u>#include <a href="../../../../../container/include/boost/container/container_fwd.hpp.html">&lt;boost/container/container_fwd.hpp&gt;</a></u></td></tr>
+<tr><th id="51">51</th><td></td></tr>
+<tr><th id="52">52</th><td><u>#include <a href="converter_lexical_streams.hpp.html">&lt;boost/lexical_cast/detail/converter_lexical_streams.hpp&gt;</a></u></td></tr>
+<tr><th id="53">53</th><td></td></tr>
+<tr><th id="54">54</th><td><b>namespace</b> <span class="namespace">boost</span> {</td></tr>
+<tr><th id="55">55</th><td></td></tr>
+<tr><th id="56">56</th><td>    <i>// Forward declaration</i></td></tr>
+<tr><th id="57">57</th><td>    <b>template</b>&lt;<b>class</b> T, <span class="namespace">std::</span><a class="typedef" href="../../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> N&gt;</td></tr>
+<tr><th id="58">58</th><td>    <b>class</b> <a class="type" href="converter_lexical_streams.hpp.html#boost::array" title='boost::array' data-ref="boost::array" id="boost::array">array</a>;</td></tr>
+<tr><th id="59">59</th><td>    <b>template</b>&lt;<b>class</b> IteratorT&gt;</td></tr>
+<tr><th id="60">60</th><td>    <b>class</b> <a class="type" href="../../../../../range/include/boost/range/iterator_range_core.hpp.html#boost::iterator_range" title='boost::iterator_range' data-ref="boost::iterator_range" id="boost::iterator_range">iterator_range</a>;</td></tr>
+<tr><th id="61">61</th><td></td></tr>
+<tr><th id="62">62</th><td>    <i>// Forward declaration of boost::basic_string_view from Utility</i></td></tr>
+<tr><th id="63">63</th><td>    <b>template</b>&lt;<b>class</b> Ch, <b>class</b> Tr&gt; <b>class</b> <a class="type" href="converter_lexical_streams.hpp.html#boost::basic_string_view" title='boost::basic_string_view' data-ref="boost::basic_string_view" id="boost::basic_string_view">basic_string_view</a>;</td></tr>
+<tr><th id="64">64</th><td></td></tr>
+<tr><th id="65">65</th><td>    <b>namespace</b> <span class="namespace">detail</span> <i>// normalize_single_byte_char&lt;Char&gt;</i></td></tr>
+<tr><th id="66">66</th><td>    {</td></tr>
+<tr><th id="67">67</th><td>        <i>// Converts signed/unsigned char to char</i></td></tr>
+<tr><th id="68">68</th><td>        <b>template</b> &lt; <b>class</b> Char &gt;</td></tr>
+<tr><th id="69">69</th><td>        <b>struct</b> <dfn class="type def" id="boost::detail::normalize_single_byte_char" title='boost::detail::normalize_single_byte_char' data-ref="boost::detail::normalize_single_byte_char">normalize_single_byte_char</dfn></td></tr>
+<tr><th id="70">70</th><td>        {</td></tr>
+<tr><th id="71">71</th><td>            <b>typedef</b> Char <dfn class="typedef" id="boost::detail::normalize_single_byte_char::type" title='boost::detail::normalize_single_byte_char::type' data-type='Char' data-ref="boost::detail::normalize_single_byte_char::type">type</dfn>;</td></tr>
+<tr><th id="72">72</th><td>        };</td></tr>
+<tr><th id="73">73</th><td></td></tr>
+<tr><th id="74">74</th><td>        <b>template</b> &lt;&gt;</td></tr>
+<tr><th id="75">75</th><td>        <b>struct</b> <dfn class="type def" id="boost::detail::normalize_single_byte_char" title='boost::detail::normalize_single_byte_char' data-ref="boost::detail::normalize_single_byte_char"><a class="type" href="#boost::detail::normalize_single_byte_char" title='boost::detail::normalize_single_byte_char' data-ref="boost::detail::normalize_single_byte_char">normalize_single_byte_char</a></dfn>&lt; <em>signed</em> <em>char</em> &gt;</td></tr>
+<tr><th id="76">76</th><td>        {</td></tr>
+<tr><th id="77">77</th><td>            <b>typedef</b> <em>char</em> <dfn class="typedef" id="boost::detail::normalize_single_byte_char{signedchar}::type" title='boost::detail::normalize_single_byte_char&lt;signed char&gt;::type' data-type='char' data-ref="boost::detail::normalize_single_byte_char{signedchar}::type">type</dfn>;</td></tr>
+<tr><th id="78">78</th><td>        };</td></tr>
+<tr><th id="79">79</th><td></td></tr>
+<tr><th id="80">80</th><td>        <b>template</b> &lt;&gt;</td></tr>
+<tr><th id="81">81</th><td>        <b>struct</b> <dfn class="type def" id="boost::detail::normalize_single_byte_char" title='boost::detail::normalize_single_byte_char' data-ref="boost::detail::normalize_single_byte_char"><a class="type" href="#boost::detail::normalize_single_byte_char" title='boost::detail::normalize_single_byte_char' data-ref="boost::detail::normalize_single_byte_char">normalize_single_byte_char</a></dfn>&lt; <em>unsigned</em> <em>char</em> &gt;</td></tr>
+<tr><th id="82">82</th><td>        {</td></tr>
+<tr><th id="83">83</th><td>            <b>typedef</b> <em>char</em> <dfn class="typedef" id="boost::detail::normalize_single_byte_char{unsignedchar}::type" title='boost::detail::normalize_single_byte_char&lt;unsigned char&gt;::type' data-type='char' data-ref="boost::detail::normalize_single_byte_char{unsignedchar}::type">type</dfn>;</td></tr>
+<tr><th id="84">84</th><td>        };</td></tr>
+<tr><th id="85">85</th><td>    }</td></tr>
+<tr><th id="86">86</th><td></td></tr>
+<tr><th id="87">87</th><td>    <b>namespace</b> <span class="namespace">detail</span> <i>// deduce_character_type_later&lt;T&gt;</i></td></tr>
+<tr><th id="88">88</th><td>    {</td></tr>
+<tr><th id="89">89</th><td>        <i>// Helper type, meaning that stram character for T must be deduced</i></td></tr>
+<tr><th id="90">90</th><td><i>        // at Stage 2 (See deduce_source_char&lt;T&gt; and deduce_target_char&lt;T&gt;)</i></td></tr>
+<tr><th id="91">91</th><td>        <b>template</b> &lt; <b>class</b> T &gt; <b>struct</b> <dfn class="type def" id="boost::detail::deduce_character_type_later" title='boost::detail::deduce_character_type_later' data-ref="boost::detail::deduce_character_type_later">deduce_character_type_later</dfn> {};</td></tr>
+<tr><th id="92">92</th><td>    }</td></tr>
+<tr><th id="93">93</th><td></td></tr>
+<tr><th id="94">94</th><td>    <b>namespace</b> <span class="namespace">detail</span> <i>// stream_char_common&lt;T&gt;</i></td></tr>
+<tr><th id="95">95</th><td>    {</td></tr>
+<tr><th id="96">96</th><td>        <i>// Selectors to choose stream character type (common for Source and Target)</i></td></tr>
+<tr><th id="97">97</th><td><i>        // Returns one of char, wchar_t, char16_t, char32_t or deduce_character_type_later&lt;T&gt; types</i></td></tr>
+<tr><th id="98">98</th><td><i>        // Executed on Stage 1 (See deduce_source_char&lt;T&gt; and deduce_target_char&lt;T&gt;)</i></td></tr>
+<tr><th id="99">99</th><td>        <b>template</b> &lt; <b>typename</b> Type &gt;</td></tr>
+<tr><th id="100">100</th><td>        <b>struct</b> <dfn class="type def" id="boost::detail::stream_char_common" title='boost::detail::stream_char_common' data-ref="boost::detail::stream_char_common">stream_char_common</dfn>: <b>public</b> <span class="namespace">boost::</span><a class="type" href="../../../../../type_traits/include/boost/type_traits/conditional.hpp.html#boost::conditional" title='boost::conditional' data-ref="boost::conditional">conditional</a>&lt;</td></tr>
+<tr><th id="101">101</th><td>            <span class="namespace">boost::detail::</span><a class="type" href="is_character.hpp.html#boost::detail::is_character" title='boost::detail::is_character' data-ref="boost::detail::is_character">is_character</a>&lt; Type &gt;::value,</td></tr>
+<tr><th id="102">102</th><td>            Type,</td></tr>
+<tr><th id="103">103</th><td>            <span class="namespace">boost::detail::</span><a class="type" href="#boost::detail::deduce_character_type_later" title='boost::detail::deduce_character_type_later' data-ref="boost::detail::deduce_character_type_later">deduce_character_type_later</a>&lt; Type &gt;</td></tr>
+<tr><th id="104">104</th><td>        &gt; {};</td></tr>
+<tr><th id="105">105</th><td></td></tr>
+<tr><th id="106">106</th><td>        <b>template</b> &lt; <b>typename</b> Char &gt;</td></tr>
+<tr><th id="107">107</th><td>        <b>struct</b> <dfn class="type def" id="boost::detail::stream_char_common" title='boost::detail::stream_char_common' data-ref="boost::detail::stream_char_common">stream_char_common</dfn>&lt; Char* &gt;: <b>public</b> <span class="namespace">boost::</span><a class="type" href="../../../../../type_traits/include/boost/type_traits/conditional.hpp.html#boost::conditional" title='boost::conditional' data-ref="boost::conditional">conditional</a>&lt;</td></tr>
+<tr><th id="108">108</th><td>            <span class="namespace">boost::detail::</span><a class="type" href="is_character.hpp.html#boost::detail::is_character" title='boost::detail::is_character' data-ref="boost::detail::is_character">is_character</a>&lt; Char &gt;::value,</td></tr>
+<tr><th id="109">109</th><td>            Char,</td></tr>
+<tr><th id="110">110</th><td>            <span class="namespace">boost::detail::</span><a class="type" href="#boost::detail::deduce_character_type_later" title='boost::detail::deduce_character_type_later' data-ref="boost::detail::deduce_character_type_later">deduce_character_type_later</a>&lt; Char* &gt;</td></tr>
+<tr><th id="111">111</th><td>        &gt; {};</td></tr>
+<tr><th id="112">112</th><td></td></tr>
+<tr><th id="113">113</th><td>        <b>template</b> &lt; <b>typename</b> Char &gt;</td></tr>
+<tr><th id="114">114</th><td>        <b>struct</b> <dfn class="type def" id="boost::detail::stream_char_common" title='boost::detail::stream_char_common' data-ref="boost::detail::stream_char_common">stream_char_common</dfn>&lt; <em>const</em> Char* &gt;: <b>public</b> <span class="namespace">boost::</span><a class="type" href="../../../../../type_traits/include/boost/type_traits/conditional.hpp.html#boost::conditional" title='boost::conditional' data-ref="boost::conditional">conditional</a>&lt;</td></tr>
+<tr><th id="115">115</th><td>            <span class="namespace">boost::detail::</span><a class="type" href="is_character.hpp.html#boost::detail::is_character" title='boost::detail::is_character' data-ref="boost::detail::is_character">is_character</a>&lt; Char &gt;::value,</td></tr>
+<tr><th id="116">116</th><td>            Char,</td></tr>
+<tr><th id="117">117</th><td>            <span class="namespace">boost::detail::</span><a class="type" href="#boost::detail::deduce_character_type_later" title='boost::detail::deduce_character_type_later' data-ref="boost::detail::deduce_character_type_later">deduce_character_type_later</a>&lt; <em>const</em> Char* &gt;</td></tr>
+<tr><th id="118">118</th><td>        &gt; {};</td></tr>
+<tr><th id="119">119</th><td></td></tr>
+<tr><th id="120">120</th><td>        <b>template</b> &lt; <b>typename</b> Char &gt;</td></tr>
+<tr><th id="121">121</th><td>        <b>struct</b> <dfn class="type def" id="boost::detail::stream_char_common" title='boost::detail::stream_char_common' data-ref="boost::detail::stream_char_common">stream_char_common</dfn>&lt; <span class="namespace">boost::conversion::detail::</span><a class="type" href="buffer_view.hpp.html#boost::conversion::detail::buffer_view" title='boost::conversion::detail::buffer_view' data-ref="boost::conversion::detail::buffer_view">buffer_view</a>&lt; Char &gt; &gt;</td></tr>
+<tr><th id="122">122</th><td>        {</td></tr>
+<tr><th id="123">123</th><td>            <b>typedef</b> Char <dfn class="typedef" id="boost::detail::stream_char_common{buffer_view{type-parameter-0-0}}::type" title='boost::detail::stream_char_common&lt;buffer_view&lt;type-parameter-0-0&gt;&gt;::type' data-type='Char' data-ref="boost::detail::stream_char_common{buffer_view{type-parameter-0-0}}::type">type</dfn>;</td></tr>
+<tr><th id="124">124</th><td>        };</td></tr>
+<tr><th id="125">125</th><td></td></tr>
+<tr><th id="126">126</th><td>        <b>template</b> &lt; <b>typename</b> Char &gt;</td></tr>
+<tr><th id="127">127</th><td>        <b>struct</b> <dfn class="type def" id="boost::detail::stream_char_common" title='boost::detail::stream_char_common' data-ref="boost::detail::stream_char_common">stream_char_common</dfn>&lt; <span class="namespace">boost::</span><a class="type" href="../../../../../range/include/boost/range/range_fwd.hpp.html#boost::iterator_range" title='boost::iterator_range' data-ref="boost::iterator_range">iterator_range</a>&lt; Char* &gt; &gt;: <b>public</b> <span class="namespace">boost::</span><a class="type" href="../../../../../type_traits/include/boost/type_traits/conditional.hpp.html#boost::conditional" title='boost::conditional' data-ref="boost::conditional">conditional</a>&lt;</td></tr>
+<tr><th id="128">128</th><td>            <span class="namespace">boost::detail::</span><a class="type" href="is_character.hpp.html#boost::detail::is_character" title='boost::detail::is_character' data-ref="boost::detail::is_character">is_character</a>&lt; Char &gt;::value,</td></tr>
+<tr><th id="129">129</th><td>            Char,</td></tr>
+<tr><th id="130">130</th><td>            <span class="namespace">boost::detail::</span><a class="type" href="#boost::detail::deduce_character_type_later" title='boost::detail::deduce_character_type_later' data-ref="boost::detail::deduce_character_type_later">deduce_character_type_later</a>&lt; <span class="namespace">boost::</span><a class="type" href="../../../../../range/include/boost/range/range_fwd.hpp.html#boost::iterator_range" title='boost::iterator_range' data-ref="boost::iterator_range">iterator_range</a>&lt; Char* &gt; &gt;</td></tr>
+<tr><th id="131">131</th><td>        &gt; {};</td></tr>
+<tr><th id="132">132</th><td></td></tr>
+<tr><th id="133">133</th><td>        <b>template</b> &lt; <b>typename</b> Char &gt;</td></tr>
+<tr><th id="134">134</th><td>        <b>struct</b> <dfn class="type def" id="boost::detail::stream_char_common" title='boost::detail::stream_char_common' data-ref="boost::detail::stream_char_common">stream_char_common</dfn>&lt; <span class="namespace">boost::</span><a class="type" href="../../../../../range/include/boost/range/range_fwd.hpp.html#boost::iterator_range" title='boost::iterator_range' data-ref="boost::iterator_range">iterator_range</a>&lt; <em>const</em> Char* &gt; &gt;: <b>public</b> <span class="namespace">boost::</span><a class="type" href="../../../../../type_traits/include/boost/type_traits/conditional.hpp.html#boost::conditional" title='boost::conditional' data-ref="boost::conditional">conditional</a>&lt;</td></tr>
+<tr><th id="135">135</th><td>            <span class="namespace">boost::detail::</span><a class="type" href="is_character.hpp.html#boost::detail::is_character" title='boost::detail::is_character' data-ref="boost::detail::is_character">is_character</a>&lt; Char &gt;::value,</td></tr>
+<tr><th id="136">136</th><td>            Char,</td></tr>
+<tr><th id="137">137</th><td>            <span class="namespace">boost::detail::</span><a class="type" href="#boost::detail::deduce_character_type_later" title='boost::detail::deduce_character_type_later' data-ref="boost::detail::deduce_character_type_later">deduce_character_type_later</a>&lt; <span class="namespace">boost::</span><a class="type" href="../../../../../range/include/boost/range/range_fwd.hpp.html#boost::iterator_range" title='boost::iterator_range' data-ref="boost::iterator_range">iterator_range</a>&lt; <em>const</em> Char* &gt; &gt;</td></tr>
+<tr><th id="138">138</th><td>        &gt; {};</td></tr>
+<tr><th id="139">139</th><td></td></tr>
+<tr><th id="140">140</th><td>        <b>template</b> &lt; <b>class</b> Char, <b>class</b> Traits, <b>class</b> Alloc &gt;</td></tr>
+<tr><th id="141">141</th><td>        <b>struct</b> <dfn class="type def" id="boost::detail::stream_char_common" title='boost::detail::stream_char_common' data-ref="boost::detail::stream_char_common">stream_char_common</dfn>&lt; <span class="namespace">std::</span><a class="type" href="../../../../../../../include/c++/9/bits/stringfwd.h.html#std::basic_string" title='std::basic_string' data-ref="std::basic_string">basic_string</a>&lt; Char, Traits, Alloc &gt; &gt;</td></tr>
+<tr><th id="142">142</th><td>        {</td></tr>
+<tr><th id="143">143</th><td>            <b>typedef</b> Char <dfn class="typedef" id="boost::detail::stream_char_common{basic_string{type-parameter-0-0,type-parameter-0-1,type-parameter-0-2}}::type" title='boost::detail::stream_char_common&lt;basic_string&lt;type-parameter-0-0, type-parameter-0-1, type-parameter-0-2&gt;&gt;::type' data-type='Char' data-ref="boost::detail::stream_char_common{basic_string{type-parameter-0-0,type-parameter-0-1,type-parameter-0-2}}::type">type</dfn>;</td></tr>
+<tr><th id="144">144</th><td>        };</td></tr>
+<tr><th id="145">145</th><td></td></tr>
+<tr><th id="146">146</th><td>        <b>template</b> &lt; <b>class</b> Char, <b>class</b> Traits, <b>class</b> Alloc &gt;</td></tr>
+<tr><th id="147">147</th><td>        <b>struct</b> <dfn class="type def" id="boost::detail::stream_char_common" title='boost::detail::stream_char_common' data-ref="boost::detail::stream_char_common">stream_char_common</dfn>&lt; <span class="namespace">boost::container::</span><a class="type" href="../../../../../container/include/boost/container/container_fwd.hpp.html#boost::container::basic_string" title='boost::container::basic_string' data-ref="boost::container::basic_string">basic_string</a>&lt; Char, Traits, Alloc &gt; &gt;</td></tr>
+<tr><th id="148">148</th><td>        {</td></tr>
+<tr><th id="149">149</th><td>            <b>typedef</b> Char <dfn class="typedef" id="boost::detail::stream_char_common{basic_string{type-parameter-0-0,type-parameter-0-1,type-parameter-0-2}}::type" title='boost::detail::stream_char_common&lt;basic_string&lt;type-parameter-0-0, type-parameter-0-1, type-parameter-0-2&gt;&gt;::type' data-type='Char' data-ref="boost::detail::stream_char_common{basic_string{type-parameter-0-0,type-parameter-0-1,type-parameter-0-2}}::type">type</dfn>;</td></tr>
+<tr><th id="150">150</th><td>        };</td></tr>
+<tr><th id="151">151</th><td></td></tr>
+<tr><th id="152">152</th><td>        <b>template</b> &lt; <b>typename</b> Char, <span class="namespace">std::</span><a class="typedef" href="../../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> N &gt;</td></tr>
+<tr><th id="153">153</th><td>        <b>struct</b> <dfn class="type def" id="boost::detail::stream_char_common" title='boost::detail::stream_char_common' data-ref="boost::detail::stream_char_common">stream_char_common</dfn>&lt; <span class="namespace">boost::</span><a class="type" href="converter_lexical_streams.hpp.html#boost::array" title='boost::array' data-ref="boost::array">array</a>&lt; Char, <a class="tu ref" href="#boost::detail::stream_char_common{array{type-parameter-0-0,N}}::N" title='boost::detail::stream_char_common&lt;array&lt;type-parameter-0-0, N&gt;&gt;::N' data-ref="boost::detail::stream_char_common{array{type-parameter-0-0,N}}::N">N</a> &gt; &gt;: <b>public</b> <span class="namespace">boost::</span><a class="type" href="../../../../../type_traits/include/boost/type_traits/conditional.hpp.html#boost::conditional" title='boost::conditional' data-ref="boost::conditional">conditional</a>&lt;</td></tr>
+<tr><th id="154">154</th><td>            <span class="namespace">boost::detail::</span><a class="type" href="is_character.hpp.html#boost::detail::is_character" title='boost::detail::is_character' data-ref="boost::detail::is_character">is_character</a>&lt; Char &gt;::value,</td></tr>
+<tr><th id="155">155</th><td>            Char,</td></tr>
+<tr><th id="156">156</th><td>            <span class="namespace">boost::detail::</span><a class="type" href="#boost::detail::deduce_character_type_later" title='boost::detail::deduce_character_type_later' data-ref="boost::detail::deduce_character_type_later">deduce_character_type_later</a>&lt; <span class="namespace">boost::</span><a class="type" href="converter_lexical_streams.hpp.html#boost::array" title='boost::array' data-ref="boost::array">array</a>&lt; Char, <a class="tu ref" href="#boost::detail::stream_char_common{array{type-parameter-0-0,N}}::N" title='boost::detail::stream_char_common&lt;array&lt;type-parameter-0-0, N&gt;&gt;::N' data-ref="boost::detail::stream_char_common{array{type-parameter-0-0,N}}::N">N</a> &gt; &gt;</td></tr>
+<tr><th id="157">157</th><td>        &gt; {};</td></tr>
+<tr><th id="158">158</th><td></td></tr>
+<tr><th id="159">159</th><td>        <b>template</b> &lt; <b>typename</b> Char, <span class="namespace">std::</span><a class="typedef" href="../../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> N &gt;</td></tr>
+<tr><th id="160">160</th><td>        <b>struct</b> <dfn class="type def" id="boost::detail::stream_char_common" title='boost::detail::stream_char_common' data-ref="boost::detail::stream_char_common">stream_char_common</dfn>&lt; <span class="namespace">boost::</span><a class="type" href="converter_lexical_streams.hpp.html#boost::array" title='boost::array' data-ref="boost::array">array</a>&lt; <em>const</em> Char, <a class="tu ref" href="#boost::detail::stream_char_common{array{consttype-parameter-0-0,N}}::N" title='boost::detail::stream_char_common&lt;array&lt;const type-parameter-0-0, N&gt;&gt;::N' data-ref="boost::detail::stream_char_common{array{consttype-parameter-0-0,N}}::N">N</a> &gt; &gt;: <b>public</b> <span class="namespace">boost::</span><a class="type" href="../../../../../type_traits/include/boost/type_traits/conditional.hpp.html#boost::conditional" title='boost::conditional' data-ref="boost::conditional">conditional</a>&lt;</td></tr>
+<tr><th id="161">161</th><td>            <span class="namespace">boost::detail::</span><a class="type" href="is_character.hpp.html#boost::detail::is_character" title='boost::detail::is_character' data-ref="boost::detail::is_character">is_character</a>&lt; Char &gt;::value,</td></tr>
+<tr><th id="162">162</th><td>            Char,</td></tr>
+<tr><th id="163">163</th><td>            <span class="namespace">boost::detail::</span><a class="type" href="#boost::detail::deduce_character_type_later" title='boost::detail::deduce_character_type_later' data-ref="boost::detail::deduce_character_type_later">deduce_character_type_later</a>&lt; <span class="namespace">boost::</span><a class="type" href="converter_lexical_streams.hpp.html#boost::array" title='boost::array' data-ref="boost::array">array</a>&lt; <em>const</em> Char, <a class="tu ref" href="#boost::detail::stream_char_common{array{consttype-parameter-0-0,N}}::N" title='boost::detail::stream_char_common&lt;array&lt;const type-parameter-0-0, N&gt;&gt;::N' data-ref="boost::detail::stream_char_common{array{consttype-parameter-0-0,N}}::N">N</a> &gt; &gt;</td></tr>
+<tr><th id="164">164</th><td>        &gt; {};</td></tr>
+<tr><th id="165">165</th><td></td></tr>
+<tr><th id="166">166</th><td><u>#<span data-ppcond="166">ifndef</span> <span class="macro" data-ref="_M/BOOST_NO_CXX11_HDR_ARRAY">BOOST_NO_CXX11_HDR_ARRAY</span></u></td></tr>
+<tr><th id="167">167</th><td>        <b>template</b> &lt; <b>typename</b> Char, <span class="namespace">std::</span><a class="typedef" href="../../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> N &gt;</td></tr>
+<tr><th id="168">168</th><td>        <b>struct</b> <dfn class="type def" id="boost::detail::stream_char_common" title='boost::detail::stream_char_common' data-ref="boost::detail::stream_char_common">stream_char_common</dfn>&lt; <span class="namespace">std::</span><a class="type" href="../../../../../../../include/c++/9/array.html#std::array" title='std::array' data-ref="std::array">array</a>&lt;Char, <a class="tu ref" href="#boost::detail::stream_char_common{array{type-parameter-0-0,_Nm}}::N" title='boost::detail::stream_char_common&lt;array&lt;type-parameter-0-0, _Nm&gt;&gt;::N' data-ref="boost::detail::stream_char_common{array{type-parameter-0-0,_Nm}}::N">N</a> &gt; &gt;: <b>public</b> <span class="namespace">boost::</span><a class="type" href="../../../../../type_traits/include/boost/type_traits/conditional.hpp.html#boost::conditional" title='boost::conditional' data-ref="boost::conditional">conditional</a>&lt;</td></tr>
+<tr><th id="169">169</th><td>            <span class="namespace">boost::detail::</span><a class="type" href="is_character.hpp.html#boost::detail::is_character" title='boost::detail::is_character' data-ref="boost::detail::is_character">is_character</a>&lt; Char &gt;::value,</td></tr>
+<tr><th id="170">170</th><td>            Char,</td></tr>
+<tr><th id="171">171</th><td>            <span class="namespace">boost::detail::</span><a class="type" href="#boost::detail::deduce_character_type_later" title='boost::detail::deduce_character_type_later' data-ref="boost::detail::deduce_character_type_later">deduce_character_type_later</a>&lt; <span class="namespace">std::</span><a class="type" href="../../../../../../../include/c++/9/array.html#std::array" title='std::array' data-ref="std::array">array</a>&lt; Char, <a class="tu ref" href="#boost::detail::stream_char_common{array{type-parameter-0-0,_Nm}}::N" title='boost::detail::stream_char_common&lt;array&lt;type-parameter-0-0, _Nm&gt;&gt;::N' data-ref="boost::detail::stream_char_common{array{type-parameter-0-0,_Nm}}::N">N</a> &gt; &gt;</td></tr>
+<tr><th id="172">172</th><td>        &gt; {};</td></tr>
+<tr><th id="173">173</th><td></td></tr>
+<tr><th id="174">174</th><td>        <b>template</b> &lt; <b>typename</b> Char, <span class="namespace">std::</span><a class="typedef" href="../../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> N &gt;</td></tr>
+<tr><th id="175">175</th><td>        <b>struct</b> <dfn class="type def" id="boost::detail::stream_char_common" title='boost::detail::stream_char_common' data-ref="boost::detail::stream_char_common">stream_char_common</dfn>&lt; <span class="namespace">std::</span><a class="type" href="../../../../../../../include/c++/9/array.html#std::array" title='std::array' data-ref="std::array">array</a>&lt; <em>const</em> Char, <a class="tu ref" href="#boost::detail::stream_char_common{array{consttype-parameter-0-0,N}}::N" title='boost::detail::stream_char_common&lt;array&lt;const type-parameter-0-0, N&gt;&gt;::N' data-ref="boost::detail::stream_char_common{array{consttype-parameter-0-0,N}}::N">N</a> &gt; &gt;: <b>public</b> <span class="namespace">boost::</span><a class="type" href="../../../../../type_traits/include/boost/type_traits/conditional.hpp.html#boost::conditional" title='boost::conditional' data-ref="boost::conditional">conditional</a>&lt;</td></tr>
+<tr><th id="176">176</th><td>            <span class="namespace">boost::detail::</span><a class="type" href="is_character.hpp.html#boost::detail::is_character" title='boost::detail::is_character' data-ref="boost::detail::is_character">is_character</a>&lt; Char &gt;::value,</td></tr>
+<tr><th id="177">177</th><td>            Char,</td></tr>
+<tr><th id="178">178</th><td>            <span class="namespace">boost::detail::</span><a class="type" href="#boost::detail::deduce_character_type_later" title='boost::detail::deduce_character_type_later' data-ref="boost::detail::deduce_character_type_later">deduce_character_type_later</a>&lt; <span class="namespace">std::</span><a class="type" href="../../../../../../../include/c++/9/array.html#std::array" title='std::array' data-ref="std::array">array</a>&lt; <em>const</em> Char, <a class="tu ref" href="#boost::detail::stream_char_common{array{consttype-parameter-0-0,N}}::N" title='boost::detail::stream_char_common&lt;array&lt;const type-parameter-0-0, N&gt;&gt;::N' data-ref="boost::detail::stream_char_common{array{consttype-parameter-0-0,N}}::N">N</a> &gt; &gt;</td></tr>
+<tr><th id="179">179</th><td>        &gt; {};</td></tr>
+<tr><th id="180">180</th><td><u>#<span data-ppcond="166">endif</span></u></td></tr>
+<tr><th id="181">181</th><td></td></tr>
+<tr><th id="182">182</th><td><u>#<span data-ppcond="182">ifndef</span> <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1159" data-ref="_M/BOOST_NO_CXX17_HDR_STRING_VIEW">BOOST_NO_CXX17_HDR_STRING_VIEW</a></u></td></tr>
+<tr><th id="183">183</th><td>        <b>template</b> &lt; <b>class</b> Char, <b>class</b> Traits &gt;</td></tr>
+<tr><th id="184">184</th><td>        <b>struct</b> stream_char_common&lt; std::basic_string_view&lt; Char, Traits &gt; &gt;</td></tr>
+<tr><th id="185">185</th><td>        {</td></tr>
+<tr><th id="186">186</th><td>            <b>typedef</b> Char type;</td></tr>
+<tr><th id="187">187</th><td>        };</td></tr>
+<tr><th id="188">188</th><td><u>#<span data-ppcond="182">endif</span></u></td></tr>
+<tr><th id="189">189</th><td>        <b>template</b> &lt; <b>class</b> Char, <b>class</b> Traits &gt;</td></tr>
+<tr><th id="190">190</th><td>        <b>struct</b> <dfn class="type def" id="boost::detail::stream_char_common" title='boost::detail::stream_char_common' data-ref="boost::detail::stream_char_common">stream_char_common</dfn>&lt; <span class="namespace">boost::</span><a class="type" href="converter_lexical_streams.hpp.html#boost::basic_string_view" title='boost::basic_string_view' data-ref="boost::basic_string_view">basic_string_view</a>&lt; Char, Traits &gt; &gt;</td></tr>
+<tr><th id="191">191</th><td>        {</td></tr>
+<tr><th id="192">192</th><td>            <b>typedef</b> Char <dfn class="typedef" id="boost::detail::stream_char_common{basic_string_view{type-parameter-0-0,type-parameter-0-1}}::type" title='boost::detail::stream_char_common&lt;basic_string_view&lt;type-parameter-0-0, type-parameter-0-1&gt;&gt;::type' data-type='Char' data-ref="boost::detail::stream_char_common{basic_string_view{type-parameter-0-0,type-parameter-0-1}}::type">type</dfn>;</td></tr>
+<tr><th id="193">193</th><td>        };</td></tr>
+<tr><th id="194">194</th><td></td></tr>
+<tr><th id="195">195</th><td><u>#<span data-ppcond="195">ifdef</span> <a class="macro" href="../../../../../config/include/boost/config/compiler/clang.hpp.html#102" data-ref="_M/BOOST_HAS_INT128">BOOST_HAS_INT128</a></u></td></tr>
+<tr><th id="196">196</th><td>        <b>template</b> &lt;&gt; <b>struct</b> <dfn class="type def" id="boost::detail::stream_char_common" title='boost::detail::stream_char_common' data-ref="boost::detail::stream_char_common"><a class="type" href="#boost::detail::stream_char_common" title='boost::detail::stream_char_common' data-ref="boost::detail::stream_char_common">stream_char_common</a></dfn>&lt; <span class="namespace">boost::</span><a class="typedef" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#boost::int128_type" title='boost::int128_type' data-type='__int128' data-ref="boost::int128_type">int128_type</a> &gt;: <b>public</b> boost::type_identity&lt; <em>char</em> &gt; {};</td></tr>
+<tr><th id="197">197</th><td>        <b>template</b> &lt;&gt; <b>struct</b> <dfn class="type def" id="boost::detail::stream_char_common" title='boost::detail::stream_char_common' data-ref="boost::detail::stream_char_common"><a class="type" href="#boost::detail::stream_char_common" title='boost::detail::stream_char_common' data-ref="boost::detail::stream_char_common">stream_char_common</a></dfn>&lt; <span class="namespace">boost::</span><a class="typedef" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#boost::uint128_type" title='boost::uint128_type' data-type='unsigned __int128' data-ref="boost::uint128_type">uint128_type</a> &gt;: <b>public</b> boost::type_identity&lt; <em>char</em> &gt; {};</td></tr>
+<tr><th id="198">198</th><td><u>#<span data-ppcond="195">endif</span></u></td></tr>
+<tr><th id="199">199</th><td></td></tr>
+<tr><th id="200">200</th><td><u>#<span data-ppcond="200">if</span> !defined(<span class="macro" data-ref="_M/BOOST_LCAST_NO_WCHAR_T">BOOST_LCAST_NO_WCHAR_T</span>) &amp;&amp; defined(<span class="macro" data-ref="_M/BOOST_NO_INTRINSIC_WCHAR_T">BOOST_NO_INTRINSIC_WCHAR_T</span>)</u></td></tr>
+<tr><th id="201">201</th><td>        <b>template</b> &lt;&gt;</td></tr>
+<tr><th id="202">202</th><td>        <b>struct</b> stream_char_common&lt; <em>wchar_t</em> &gt;</td></tr>
+<tr><th id="203">203</th><td>        {</td></tr>
+<tr><th id="204">204</th><td>            <b>typedef</b> <em>char</em> type;</td></tr>
+<tr><th id="205">205</th><td>        };</td></tr>
+<tr><th id="206">206</th><td><u>#<span data-ppcond="200">endif</span></u></td></tr>
+<tr><th id="207">207</th><td>    }</td></tr>
+<tr><th id="208">208</th><td></td></tr>
+<tr><th id="209">209</th><td>    <b>namespace</b> <span class="namespace">detail</span> <i>// deduce_source_char_impl&lt;T&gt;</i></td></tr>
+<tr><th id="210">210</th><td>    {</td></tr>
+<tr><th id="211">211</th><td>        <i>// If type T is `deduce_character_type_later` type, then tries to deduce</i></td></tr>
+<tr><th id="212">212</th><td><i>        // character type using streaming metafunctions.</i></td></tr>
+<tr><th id="213">213</th><td><i>        // Otherwise supplied type T is a character type, that must be normalized</i></td></tr>
+<tr><th id="214">214</th><td><i>        // using normalize_single_byte_char&lt;Char&gt;.</i></td></tr>
+<tr><th id="215">215</th><td><i>        // Executed at Stage 2  (See deduce_source_char&lt;T&gt; and deduce_target_char&lt;T&gt;)</i></td></tr>
+<tr><th id="216">216</th><td>        <b>template</b> &lt; <b>class</b> Char &gt;</td></tr>
+<tr><th id="217">217</th><td>        <b>struct</b> <dfn class="type def" id="boost::detail::deduce_source_char_impl" title='boost::detail::deduce_source_char_impl' data-ref="boost::detail::deduce_source_char_impl">deduce_source_char_impl</dfn></td></tr>
+<tr><th id="218">218</th><td>        {</td></tr>
+<tr><th id="219">219</th><td>            <b>typedef</b> <b>typename</b> <span class="namespace">boost::detail::</span><a class="type" href="#boost::detail::normalize_single_byte_char" title='boost::detail::normalize_single_byte_char' data-ref="boost::detail::normalize_single_byte_char">normalize_single_byte_char</a>&lt; Char &gt;::type <dfn class="typedef" id="boost::detail::deduce_source_char_impl::type" title='boost::detail::deduce_source_char_impl::type' data-type='typename boost::detail::normalize_single_byte_char&lt;Char&gt;::type' data-ref="boost::detail::deduce_source_char_impl::type">type</dfn>;</td></tr>
+<tr><th id="220">220</th><td>        };</td></tr>
+<tr><th id="221">221</th><td></td></tr>
+<tr><th id="222">222</th><td>        <b>template</b> &lt; <b>class</b> T &gt;</td></tr>
+<tr><th id="223">223</th><td>        <b>struct</b> <dfn class="type def" id="boost::detail::deduce_source_char_impl" title='boost::detail::deduce_source_char_impl' data-ref="boost::detail::deduce_source_char_impl">deduce_source_char_impl</dfn>&lt; <a class="type" href="#boost::detail::deduce_character_type_later" title='boost::detail::deduce_character_type_later' data-ref="boost::detail::deduce_character_type_later">deduce_character_type_later</a>&lt; T &gt; &gt;</td></tr>
+<tr><th id="224">224</th><td>        {</td></tr>
+<tr><th id="225">225</th><td>            <b>template</b> &lt;<b>class</b> U&gt;</td></tr>
+<tr><th id="226">226</th><td>            <em>static</em> <em>auto</em> <dfn class="decl fn" id="_ZN5boost6detail23deduce_source_char_implINS0_27deduce_character_type_laterIT_EEE15left_shift_typeEl" title='boost::detail::deduce_source_char_impl&lt;deduce_character_type_later&lt;type-parameter-0-0&gt;&gt;::left_shift_type' data-ref="_ZN5boost6detail23deduce_source_char_implINS0_27deduce_character_type_laterIT_EEE15left_shift_typeEl">left_shift_type</dfn>(<em>long</em>)</td></tr>
+<tr><th id="227">227</th><td>                -&gt; <b>decltype</b>( <span class="namespace">std::</span><a class="ref fn" href="../../../../../../../include/c++/9/type_traits.html#_ZSt7declvalv" title='std::declval' data-ref="_ZSt7declvalv">declval</a>&lt;<span class="namespace">std::</span><a class="type" href="../../../../../../../include/c++/9/iosfwd.html#std::basic_ostream" title='std::basic_ostream' data-ref="std::basic_ostream">basic_ostream</a>&lt; <em>char</em> &gt;&amp;&gt;() &lt;&lt; <span class="namespace">std::</span>declval&lt;<em>const</em> U&amp;&gt;(), <em>char</em>{});</td></tr>
+<tr><th id="228">228</th><td></td></tr>
+<tr><th id="229">229</th><td><u>#<span data-ppcond="229">if</span> !defined(<span class="macro" data-ref="_M/BOOST_LCAST_NO_WCHAR_T">BOOST_LCAST_NO_WCHAR_T</span>)</u></td></tr>
+<tr><th id="230">230</th><td>            <b>template</b> &lt;<b>class</b> U&gt;</td></tr>
+<tr><th id="231">231</th><td>            <em>static</em> <em>auto</em> <dfn class="decl fn" id="_ZN5boost6detail23deduce_source_char_implINS0_27deduce_character_type_laterIT_EEE15left_shift_typeEi" title='boost::detail::deduce_source_char_impl&lt;deduce_character_type_later&lt;type-parameter-0-0&gt;&gt;::left_shift_type' data-ref="_ZN5boost6detail23deduce_source_char_implINS0_27deduce_character_type_laterIT_EEE15left_shift_typeEi">left_shift_type</dfn>(<em>int</em>)</td></tr>
+<tr><th id="232">232</th><td>                -&gt; <b>decltype</b>( <span class="namespace">std::</span><a class="ref fn" href="../../../../../../../include/c++/9/type_traits.html#_ZSt7declvalv" title='std::declval' data-ref="_ZSt7declvalv">declval</a>&lt;<span class="namespace">std::</span><a class="type" href="../../../../../../../include/c++/9/iosfwd.html#std::basic_ostream" title='std::basic_ostream' data-ref="std::basic_ostream">basic_ostream</a>&lt; <em>wchar_t</em> &gt;&amp;&gt;() &lt;&lt; <span class="namespace">std::</span>declval&lt;<em>const</em> U&amp;&gt;(), <em>wchar_t</em>{});</td></tr>
+<tr><th id="233">233</th><td><u>#<span data-ppcond="229">endif</span></u></td></tr>
+<tr><th id="234">234</th><td></td></tr>
+<tr><th id="235">235</th><td>            <b>template</b> &lt;<b>class</b> U&gt;</td></tr>
+<tr><th id="236">236</th><td>            <em>static</em> <em>void</em> <dfn class="decl fn" id="_ZN5boost6detail23deduce_source_char_implINS0_27deduce_character_type_laterIT_EEE15left_shift_typeEz" title='boost::detail::deduce_source_char_impl&lt;deduce_character_type_later&lt;type-parameter-0-0&gt;&gt;::left_shift_type' data-ref="_ZN5boost6detail23deduce_source_char_implINS0_27deduce_character_type_laterIT_EEE15left_shift_typeEz">left_shift_type</dfn>(...);</td></tr>
+<tr><th id="237">237</th><td></td></tr>
+<tr><th id="238">238</th><td>            <b>using</b> <dfn class="typedef" id="boost::detail::deduce_source_char_impl{deduce_character_type_later{type-parameter-0-0}}::type" title='boost::detail::deduce_source_char_impl&lt;deduce_character_type_later&lt;type-parameter-0-0&gt;&gt;::type' data-type='decltype(left_shift_type&lt;T&gt;(1L))' data-ref="boost::detail::deduce_source_char_impl{deduce_character_type_later{type-parameter-0-0}}::type">type</dfn> = <b>decltype</b>(left_shift_type&lt;T&gt;(<var>1L</var>));</td></tr>
+<tr><th id="239">239</th><td></td></tr>
+<tr><th id="240">240</th><td>            <b>static_assert</b>(!<span class="namespace">std::</span><a class="type" href="../../../../../../../include/c++/9/type_traits.html#std::is_same" title='std::is_same' data-ref="std::is_same">is_same</a>&lt;<a class="typedef" href="#boost::detail::deduce_source_char_impl{deduce_character_type_later{type-parameter-0-0}}::type" title='boost::detail::deduce_source_char_impl&lt;deduce_character_type_later&lt;type-parameter-0-0&gt;&gt;::type' data-type='decltype(left_shift_type&lt;T&gt;(1L))' data-ref="boost::detail::deduce_source_char_impl{deduce_character_type_later{type-parameter-0-0}}::type">type</a>, <em>void</em>&gt;::value,</td></tr>
+<tr><th id="241">241</th><td><u>#<span data-ppcond="241">if</span> defined(<span class="macro" data-ref="_M/BOOST_LCAST_NO_WCHAR_T">BOOST_LCAST_NO_WCHAR_T</span>)</u></td></tr>
+<tr><th id="242">242</th><td>                <q>"Source type is not std::ostream`able and std::wostream`s are "</q></td></tr>
+<tr><th id="243">243</th><td>                <q>"not supported by your STL implementation"</q></td></tr>
+<tr><th id="244">244</th><td><u>#<span data-ppcond="241">else</span></u></td></tr>
+<tr><th id="245">245</th><td>                <q>"Source type is neither std::ostream`able nor std::wostream`able"</q></td></tr>
+<tr><th id="246">246</th><td><u>#<span data-ppcond="241">endif</span></u></td></tr>
+<tr><th id="247">247</th><td>            );</td></tr>
+<tr><th id="248">248</th><td>        };</td></tr>
+<tr><th id="249">249</th><td>    }</td></tr>
+<tr><th id="250">250</th><td></td></tr>
+<tr><th id="251">251</th><td>    <b>namespace</b> <span class="namespace">detail</span>  <i>// deduce_target_char_impl&lt;T&gt;</i></td></tr>
+<tr><th id="252">252</th><td>    {</td></tr>
+<tr><th id="253">253</th><td>        <i>// If type T is `deduce_character_type_later` type, then tries to deduce</i></td></tr>
+<tr><th id="254">254</th><td><i>        // character type using boost::has_right_shift&lt;T&gt; metafunction.</i></td></tr>
+<tr><th id="255">255</th><td><i>        // Otherwise supplied type T is a character type, that must be normalized</i></td></tr>
+<tr><th id="256">256</th><td><i>        // using normalize_single_byte_char&lt;Char&gt;.</i></td></tr>
+<tr><th id="257">257</th><td><i>        // Executed at Stage 2  (See deduce_source_char&lt;T&gt; and deduce_target_char&lt;T&gt;)</i></td></tr>
+<tr><th id="258">258</th><td>        <b>template</b> &lt; <b>class</b> Char &gt;</td></tr>
+<tr><th id="259">259</th><td>        <b>struct</b> <dfn class="type def" id="boost::detail::deduce_target_char_impl" title='boost::detail::deduce_target_char_impl' data-ref="boost::detail::deduce_target_char_impl">deduce_target_char_impl</dfn></td></tr>
+<tr><th id="260">260</th><td>        {</td></tr>
+<tr><th id="261">261</th><td>            <b>typedef</b> <b>typename</b> <a class="type" href="#boost::detail::normalize_single_byte_char" title='boost::detail::normalize_single_byte_char' data-ref="boost::detail::normalize_single_byte_char">normalize_single_byte_char</a>&lt; Char &gt;::type <dfn class="typedef" id="boost::detail::deduce_target_char_impl::type" title='boost::detail::deduce_target_char_impl::type' data-type='typename normalize_single_byte_char&lt;Char&gt;::type' data-ref="boost::detail::deduce_target_char_impl::type">type</dfn>;</td></tr>
+<tr><th id="262">262</th><td>        };</td></tr>
+<tr><th id="263">263</th><td></td></tr>
+<tr><th id="264">264</th><td>        <b>template</b> &lt; <b>class</b> T &gt;</td></tr>
+<tr><th id="265">265</th><td>        <b>struct</b> <dfn class="type def" id="boost::detail::deduce_target_char_impl" title='boost::detail::deduce_target_char_impl' data-ref="boost::detail::deduce_target_char_impl">deduce_target_char_impl</dfn>&lt; <a class="type" href="#boost::detail::deduce_character_type_later" title='boost::detail::deduce_character_type_later' data-ref="boost::detail::deduce_character_type_later">deduce_character_type_later</a>&lt;T&gt; &gt;</td></tr>
+<tr><th id="266">266</th><td>        {</td></tr>
+<tr><th id="267">267</th><td>            <b>template</b> &lt;<b>class</b> U&gt;</td></tr>
+<tr><th id="268">268</th><td>            <em>static</em> <em>auto</em> <dfn class="decl fn" id="_ZN5boost6detail23deduce_target_char_implINS0_27deduce_character_type_laterIT_EEE16right_shift_typeEl" title='boost::detail::deduce_target_char_impl&lt;deduce_character_type_later&lt;type-parameter-0-0&gt;&gt;::right_shift_type' data-ref="_ZN5boost6detail23deduce_target_char_implINS0_27deduce_character_type_laterIT_EEE16right_shift_typeEl">right_shift_type</dfn>(<em>long</em>)</td></tr>
+<tr><th id="269">269</th><td>                -&gt; <b>decltype</b>( <span class="namespace">std::</span><a class="ref fn" href="../../../../../../../include/c++/9/type_traits.html#_ZSt7declvalv" title='std::declval' data-ref="_ZSt7declvalv">declval</a>&lt;<span class="namespace">std::</span><a class="type" href="../../../../../../../include/c++/9/iosfwd.html#std::basic_istream" title='std::basic_istream' data-ref="std::basic_istream">basic_istream</a>&lt; <em>char</em> &gt;&amp;&gt;() &gt;&gt; <span class="namespace">std::</span>declval&lt;U&amp;&gt;(), <em>char</em>{});</td></tr>
+<tr><th id="270">270</th><td></td></tr>
+<tr><th id="271">271</th><td><u>#<span data-ppcond="271">if</span> !defined(<span class="macro" data-ref="_M/BOOST_LCAST_NO_WCHAR_T">BOOST_LCAST_NO_WCHAR_T</span>)</u></td></tr>
+<tr><th id="272">272</th><td>            <b>template</b> &lt;<b>class</b> U&gt;</td></tr>
+<tr><th id="273">273</th><td>            <em>static</em> <em>auto</em> <dfn class="decl fn" id="_ZN5boost6detail23deduce_target_char_implINS0_27deduce_character_type_laterIT_EEE16right_shift_typeEi" title='boost::detail::deduce_target_char_impl&lt;deduce_character_type_later&lt;type-parameter-0-0&gt;&gt;::right_shift_type' data-ref="_ZN5boost6detail23deduce_target_char_implINS0_27deduce_character_type_laterIT_EEE16right_shift_typeEi">right_shift_type</dfn>(<em>int</em>)</td></tr>
+<tr><th id="274">274</th><td>                -&gt; <b>decltype</b>( <span class="namespace">std::</span><a class="ref fn" href="../../../../../../../include/c++/9/type_traits.html#_ZSt7declvalv" title='std::declval' data-ref="_ZSt7declvalv">declval</a>&lt;<span class="namespace">std::</span><a class="type" href="../../../../../../../include/c++/9/iosfwd.html#std::basic_istream" title='std::basic_istream' data-ref="std::basic_istream">basic_istream</a>&lt; <em>wchar_t</em> &gt;&amp;&gt;() &gt;&gt; <span class="namespace">std::</span>declval&lt;U&amp;&gt;(), <em>wchar_t</em>{});</td></tr>
+<tr><th id="275">275</th><td><u>#<span data-ppcond="271">endif</span></u></td></tr>
+<tr><th id="276">276</th><td></td></tr>
+<tr><th id="277">277</th><td>            <b>template</b> &lt;<b>class</b> U&gt;</td></tr>
+<tr><th id="278">278</th><td>            <em>static</em> <em>void</em> <dfn class="decl fn" id="_ZN5boost6detail23deduce_target_char_implINS0_27deduce_character_type_laterIT_EEE16right_shift_typeEz" title='boost::detail::deduce_target_char_impl&lt;deduce_character_type_later&lt;type-parameter-0-0&gt;&gt;::right_shift_type' data-ref="_ZN5boost6detail23deduce_target_char_implINS0_27deduce_character_type_laterIT_EEE16right_shift_typeEz">right_shift_type</dfn>(...);</td></tr>
+<tr><th id="279">279</th><td></td></tr>
+<tr><th id="280">280</th><td>            <b>using</b> <dfn class="typedef" id="boost::detail::deduce_target_char_impl{deduce_character_type_later{type-parameter-0-0}}::type" title='boost::detail::deduce_target_char_impl&lt;deduce_character_type_later&lt;type-parameter-0-0&gt;&gt;::type' data-type='decltype(right_shift_type&lt;T&gt;(1L))' data-ref="boost::detail::deduce_target_char_impl{deduce_character_type_later{type-parameter-0-0}}::type">type</dfn> = <b>decltype</b>(right_shift_type&lt;T&gt;(<var>1L</var>));</td></tr>
+<tr><th id="281">281</th><td></td></tr>
+<tr><th id="282">282</th><td>            <b>static_assert</b>(!<span class="namespace">std::</span><a class="type" href="../../../../../../../include/c++/9/type_traits.html#std::is_same" title='std::is_same' data-ref="std::is_same">is_same</a>&lt;<a class="typedef" href="#boost::detail::deduce_target_char_impl{deduce_character_type_later{type-parameter-0-0}}::type" title='boost::detail::deduce_target_char_impl&lt;deduce_character_type_later&lt;type-parameter-0-0&gt;&gt;::type' data-type='decltype(right_shift_type&lt;T&gt;(1L))' data-ref="boost::detail::deduce_target_char_impl{deduce_character_type_later{type-parameter-0-0}}::type">type</a>, <em>void</em>&gt;::value,</td></tr>
+<tr><th id="283">283</th><td><u>#<span data-ppcond="283">if</span> defined(<span class="macro" data-ref="_M/BOOST_LCAST_NO_WCHAR_T">BOOST_LCAST_NO_WCHAR_T</span>)</u></td></tr>
+<tr><th id="284">284</th><td>               <q>"Target type is not std::istream`able and std::wistream`s are "</q></td></tr>
+<tr><th id="285">285</th><td>               <q>"not supported by your STL implementation"</q></td></tr>
+<tr><th id="286">286</th><td><u>#<span data-ppcond="283">else</span></u></td></tr>
+<tr><th id="287">287</th><td>               <q>"Target type is neither std::istream`able nor std::wistream`able"</q></td></tr>
+<tr><th id="288">288</th><td><u>#<span data-ppcond="283">endif</span></u></td></tr>
+<tr><th id="289">289</th><td>            );</td></tr>
+<tr><th id="290">290</th><td>        };</td></tr>
+<tr><th id="291">291</th><td>    }</td></tr>
+<tr><th id="292">292</th><td></td></tr>
+<tr><th id="293">293</th><td>    <b>namespace</b> <span class="namespace">detail</span>  <i>// deduce_target_char&lt;T&gt; and deduce_source_char&lt;T&gt;</i></td></tr>
+<tr><th id="294">294</th><td>    {</td></tr>
+<tr><th id="295">295</th><td>        <i>// We deduce stream character types in two stages.</i></td></tr>
+<tr><th id="296">296</th><td><i>        //</i></td></tr>
+<tr><th id="297">297</th><td><i>        // Stage 1 is common for Target and Source. At Stage 1 we get</i></td></tr>
+<tr><th id="298">298</th><td><i>        // non normalized character type (may contain unsigned/signed char)</i></td></tr>
+<tr><th id="299">299</th><td><i>        // or deduce_character_type_later&lt;T&gt; where T is the original type.</i></td></tr>
+<tr><th id="300">300</th><td><i>        // Stage 1 is executed by stream_char_common&lt;T&gt;</i></td></tr>
+<tr><th id="301">301</th><td><i>        //</i></td></tr>
+<tr><th id="302">302</th><td><i>        // At Stage 2 we normalize character types or try to deduce character</i></td></tr>
+<tr><th id="303">303</th><td><i>        // type using metafunctions.</i></td></tr>
+<tr><th id="304">304</th><td><i>        // Stage 2 is executed by deduce_target_char_impl&lt;T&gt; and</i></td></tr>
+<tr><th id="305">305</th><td><i>        // deduce_source_char_impl&lt;T&gt;</i></td></tr>
+<tr><th id="306">306</th><td><i>        //</i></td></tr>
+<tr><th id="307">307</th><td><i>        // deduce_target_char&lt;T&gt; and deduce_source_char&lt;T&gt; functions combine</i></td></tr>
+<tr><th id="308">308</th><td><i>        // both stages</i></td></tr>
+<tr><th id="309">309</th><td></td></tr>
+<tr><th id="310">310</th><td>        <b>template</b> &lt; <b>class</b> T &gt;</td></tr>
+<tr><th id="311">311</th><td>        <b>struct</b> <dfn class="type def" id="boost::detail::deduce_target_char" title='boost::detail::deduce_target_char' data-ref="boost::detail::deduce_target_char">deduce_target_char</dfn></td></tr>
+<tr><th id="312">312</th><td>        {</td></tr>
+<tr><th id="313">313</th><td>            <b>typedef</b> <b>typename</b> <a class="type" href="#boost::detail::stream_char_common" title='boost::detail::stream_char_common' data-ref="boost::detail::stream_char_common">stream_char_common</a>&lt; T &gt;::type <dfn class="typedef" id="boost::detail::deduce_target_char::stage1_type" title='boost::detail::deduce_target_char::stage1_type' data-type='typename stream_char_common&lt;T&gt;::type' data-ref="boost::detail::deduce_target_char::stage1_type">stage1_type</dfn>;</td></tr>
+<tr><th id="314">314</th><td>            <b>typedef</b> <b>typename</b> <a class="type" href="#boost::detail::deduce_target_char_impl" title='boost::detail::deduce_target_char_impl' data-ref="boost::detail::deduce_target_char_impl">deduce_target_char_impl</a>&lt; <a class="typedef" href="#boost::detail::deduce_target_char::stage1_type" title='boost::detail::deduce_target_char::stage1_type' data-type='typename stream_char_common&lt;T&gt;::type' data-ref="boost::detail::deduce_target_char::stage1_type">stage1_type</a> &gt;::type <dfn class="typedef" id="boost::detail::deduce_target_char::type" title='boost::detail::deduce_target_char::type' data-type='typename deduce_target_char_impl&lt;stage1_type&gt;::type' data-ref="boost::detail::deduce_target_char::type">type</dfn>;</td></tr>
+<tr><th id="315">315</th><td>        };</td></tr>
+<tr><th id="316">316</th><td></td></tr>
+<tr><th id="317">317</th><td>        <b>template</b> &lt; <b>class</b> T &gt;</td></tr>
+<tr><th id="318">318</th><td>        <b>struct</b> <dfn class="type def" id="boost::detail::deduce_source_char" title='boost::detail::deduce_source_char' data-ref="boost::detail::deduce_source_char">deduce_source_char</dfn></td></tr>
+<tr><th id="319">319</th><td>        {</td></tr>
+<tr><th id="320">320</th><td>            <b>typedef</b> <b>typename</b> <a class="type" href="#boost::detail::stream_char_common" title='boost::detail::stream_char_common' data-ref="boost::detail::stream_char_common">stream_char_common</a>&lt; T &gt;::type <dfn class="typedef" id="boost::detail::deduce_source_char::stage1_type" title='boost::detail::deduce_source_char::stage1_type' data-type='typename stream_char_common&lt;T&gt;::type' data-ref="boost::detail::deduce_source_char::stage1_type">stage1_type</dfn>;</td></tr>
+<tr><th id="321">321</th><td>            <b>typedef</b> <b>typename</b> <a class="type" href="#boost::detail::deduce_source_char_impl" title='boost::detail::deduce_source_char_impl' data-ref="boost::detail::deduce_source_char_impl">deduce_source_char_impl</a>&lt; <a class="typedef" href="#boost::detail::deduce_source_char::stage1_type" title='boost::detail::deduce_source_char::stage1_type' data-type='typename stream_char_common&lt;T&gt;::type' data-ref="boost::detail::deduce_source_char::stage1_type">stage1_type</a> &gt;::type <dfn class="typedef" id="boost::detail::deduce_source_char::type" title='boost::detail::deduce_source_char::type' data-type='typename deduce_source_char_impl&lt;stage1_type&gt;::type' data-ref="boost::detail::deduce_source_char::type">type</dfn>;</td></tr>
+<tr><th id="322">322</th><td>        };</td></tr>
+<tr><th id="323">323</th><td>    }</td></tr>
+<tr><th id="324">324</th><td></td></tr>
+<tr><th id="325">325</th><td>    <b>namespace</b> <span class="namespace">detail</span> <i>// array_to_pointer_decay&lt;T&gt;</i></td></tr>
+<tr><th id="326">326</th><td>    {</td></tr>
+<tr><th id="327">327</th><td>        <b>template</b>&lt;<b>class</b> T&gt;</td></tr>
+<tr><th id="328">328</th><td>        <b>struct</b> <dfn class="type def" id="boost::detail::array_to_pointer_decay" title='boost::detail::array_to_pointer_decay' data-ref="boost::detail::array_to_pointer_decay">array_to_pointer_decay</dfn></td></tr>
+<tr><th id="329">329</th><td>        {</td></tr>
+<tr><th id="330">330</th><td>            <b>typedef</b> T <dfn class="typedef" id="boost::detail::array_to_pointer_decay::type" title='boost::detail::array_to_pointer_decay::type' data-type='T' data-ref="boost::detail::array_to_pointer_decay::type">type</dfn>;</td></tr>
+<tr><th id="331">331</th><td>        };</td></tr>
+<tr><th id="332">332</th><td></td></tr>
+<tr><th id="333">333</th><td>        <b>template</b>&lt;<b>class</b> T, <span class="namespace">std::</span><a class="typedef" href="../../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a> N&gt;</td></tr>
+<tr><th id="334">334</th><td>        <b>struct</b> <dfn class="type def" id="boost::detail::array_to_pointer_decay" title='boost::detail::array_to_pointer_decay' data-ref="boost::detail::array_to_pointer_decay">array_to_pointer_decay</dfn>&lt;T[<a class="tu ref" href="#boost::detail::array_to_pointer_decay{type-parameter-0-0[_Size]}::N" title='boost::detail::array_to_pointer_decay&lt;type-parameter-0-0[_Size]&gt;::N' data-ref="boost::detail::array_to_pointer_decay{type-parameter-0-0[_Size]}::N">N</a>]&gt;</td></tr>
+<tr><th id="335">335</th><td>        {</td></tr>
+<tr><th id="336">336</th><td>            <b>typedef</b> <em>const</em> T * <dfn class="typedef" id="boost::detail::array_to_pointer_decay{type-parameter-0-0[_Size]}::type" title='boost::detail::array_to_pointer_decay&lt;type-parameter-0-0[_Size]&gt;::type' data-type='const T *' data-ref="boost::detail::array_to_pointer_decay{type-parameter-0-0[_Size]}::type">type</dfn>;</td></tr>
+<tr><th id="337">337</th><td>        };</td></tr>
+<tr><th id="338">338</th><td>    }</td></tr>
+<tr><th id="339">339</th><td></td></tr>
+<tr><th id="340">340</th><td>    <b>namespace</b> <span class="namespace">detail</span> <i>// lcast_src_length</i></td></tr>
+<tr><th id="341">341</th><td>    {</td></tr>
+<tr><th id="342">342</th><td>        <i>// Return max. length of string representation of Source;</i></td></tr>
+<tr><th id="343">343</th><td>        <b>template</b>&lt; <b>class</b> Source,         <i>// Source type of lexical_cast.</i></td></tr>
+<tr><th id="344">344</th><td>                  <b>class</b> Enable = <em>void</em>   <i>// helper type</i></td></tr>
+<tr><th id="345">345</th><td>                &gt;</td></tr>
+<tr><th id="346">346</th><td>        <b>struct</b> <dfn class="type def" id="boost::detail::lcast_src_length" title='boost::detail::lcast_src_length' data-ref="boost::detail::lcast_src_length">lcast_src_length</dfn></td></tr>
+<tr><th id="347">347</th><td>        {</td></tr>
+<tr><th id="348">348</th><td>            <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#410" title="static const std::size_t value = 1" data-ref="_M/BOOST_STATIC_CONSTANT">BOOST_STATIC_CONSTANT</a>(std::<a class="typedef" href="../../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a>, <dfn class="decl" id="boost::detail::lcast_src_length::value" title='boost::detail::lcast_src_length::value' data-ref="boost::detail::lcast_src_length::value">value</dfn> = <var>1</var>);</td></tr>
+<tr><th id="349">349</th><td>        };</td></tr>
+<tr><th id="350">350</th><td></td></tr>
+<tr><th id="351">351</th><td>        <i>// Helper for integral types.</i></td></tr>
+<tr><th id="352">352</th><td><i>        // Notes on length calculation:</i></td></tr>
+<tr><th id="353">353</th><td><i>        // Max length for 32bit int with grouping "\1" and thousands_sep ',':</i></td></tr>
+<tr><th id="354">354</th><td><i>        // "-2,1,4,7,4,8,3,6,4,7"</i></td></tr>
+<tr><th id="355">355</th><td><i>        //  ^                    - is_signed</i></td></tr>
+<tr><th id="356">356</th><td><i>        //   ^                   - 1 digit not counted by digits10</i></td></tr>
+<tr><th id="357">357</th><td><i>        //    ^^^^^^^^^^^^^^^^^^ - digits10 * 2</i></td></tr>
+<tr><th id="358">358</th><td><i>        //</i></td></tr>
+<tr><th id="359">359</th><td><i>        // Constant is_specialized is used instead of constant 1</i></td></tr>
+<tr><th id="360">360</th><td><i>        // to prevent buffer overflow in a rare case when</i></td></tr>
+<tr><th id="361">361</th><td><i>        // &lt;boost/limits.hpp&gt; doesn't add missing specialization for</i></td></tr>
+<tr><th id="362">362</th><td><i>        // numeric_limits&lt;T&gt; for some integral type T.</i></td></tr>
+<tr><th id="363">363</th><td><i>        // When is_specialized is false, the whole expression is 0.</i></td></tr>
+<tr><th id="364">364</th><td>        <b>template</b> &lt;<b>class</b> Source&gt;</td></tr>
+<tr><th id="365">365</th><td>        <b>struct</b> <dfn class="type def" id="boost::detail::lcast_src_length" title='boost::detail::lcast_src_length' data-ref="boost::detail::lcast_src_length">lcast_src_length</dfn>&lt;</td></tr>
+<tr><th id="366">366</th><td>                    Source, <b>typename</b> <span class="namespace">boost::</span><a class="type" href="../../../../../core/include/boost/core/enable_if.hpp.html#boost::enable_if" title='boost::enable_if' data-ref="boost::enable_if">enable_if</a>&lt;<span class="namespace">boost::</span><a class="type" href="../../../../../type_traits/include/boost/type_traits/is_integral.hpp.html#boost::is_integral" title='boost::is_integral' data-ref="boost::is_integral">is_integral</a>&lt;Source&gt; &gt;::type</td></tr>
+<tr><th id="367">367</th><td>                &gt;</td></tr>
+<tr><th id="368">368</th><td>        {</td></tr>
+<tr><th id="369">369</th><td>            <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#410" title="static const std::size_t value = std::numeric_limits&lt;Source&gt;::is_signed + std::numeric_limits&lt;Source&gt;::is_specialized + std::numeric_limits&lt;Source&gt;::digits10 * 2" data-ref="_M/BOOST_STATIC_CONSTANT">BOOST_STATIC_CONSTANT</a>(std::<a class="typedef" href="../../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a>, <dfn class="decl" id="boost::detail::lcast_src_length{type-parameter-0-0,typenameenable_if{is_integral{type-parameter-0-0},void}::type}::value" title='boost::detail::lcast_src_length&lt;type-parameter-0-0, typename enable_if&lt;is_integral&lt;type-parameter-0-0&gt;, void&gt;::type&gt;::value' data-ref="boost::detail::lcast_src_length{type-parameter-0-0,typenameenable_if{is_integral{type-parameter-0-0},void}::type}::value">value</dfn> =</td></tr>
+<tr><th id="370">370</th><td>                  std::<a class="type" href="../../../../../../../include/c++/9/limits.html#std::numeric_limits" title='std::numeric_limits' data-ref="std::numeric_limits">numeric_limits</a>&lt;Source&gt;::is_signed +</td></tr>
+<tr><th id="371">371</th><td>                  std::<a class="type" href="../../../../../../../include/c++/9/limits.html#std::numeric_limits" title='std::numeric_limits' data-ref="std::numeric_limits">numeric_limits</a>&lt;Source&gt;::is_specialized + <i>/* == 1 */</i></td></tr>
+<tr><th id="372">372</th><td>                  std::<a class="type" href="../../../../../../../include/c++/9/limits.html#std::numeric_limits" title='std::numeric_limits' data-ref="std::numeric_limits">numeric_limits</a>&lt;Source&gt;::digits10 * <var>2</var></td></tr>
+<tr><th id="373">373</th><td>              );</td></tr>
+<tr><th id="374">374</th><td>        };</td></tr>
+<tr><th id="375">375</th><td></td></tr>
+<tr><th id="376">376</th><td>        <i>// Helper for floating point types.</i></td></tr>
+<tr><th id="377">377</th><td><i>        // -1.23456789e-123456</i></td></tr>
+<tr><th id="378">378</th><td><i>        // ^                   sign</i></td></tr>
+<tr><th id="379">379</th><td><i>        //  ^                  leading digit</i></td></tr>
+<tr><th id="380">380</th><td><i>        //   ^                 decimal point</i></td></tr>
+<tr><th id="381">381</th><td><i>        //    ^^^^^^^^         lcast_precision&lt;Source&gt;::value</i></td></tr>
+<tr><th id="382">382</th><td><i>        //            ^        "e"</i></td></tr>
+<tr><th id="383">383</th><td><i>        //             ^       exponent sign</i></td></tr>
+<tr><th id="384">384</th><td><i>        //              ^^^^^^ exponent (assumed 6 or less digits)</i></td></tr>
+<tr><th id="385">385</th><td><i>        // sign + leading digit + decimal point + "e" + exponent sign == 5</i></td></tr>
+<tr><th id="386">386</th><td>        <b>template</b>&lt;<b>class</b> Source&gt;</td></tr>
+<tr><th id="387">387</th><td>        <b>struct</b> <dfn class="type def" id="boost::detail::lcast_src_length" title='boost::detail::lcast_src_length' data-ref="boost::detail::lcast_src_length">lcast_src_length</dfn>&lt;</td></tr>
+<tr><th id="388">388</th><td>                Source, <b>typename</b> <span class="namespace">boost::</span><a class="type" href="../../../../../core/include/boost/core/enable_if.hpp.html#boost::enable_if" title='boost::enable_if' data-ref="boost::enable_if">enable_if</a>&lt;<span class="namespace">boost::</span><a class="type" href="../../../../../type_traits/include/boost/type_traits/is_float.hpp.html#boost::is_float" title='boost::is_float' data-ref="boost::is_float">is_float</a>&lt;Source&gt; &gt;::type</td></tr>
+<tr><th id="389">389</th><td>            &gt;</td></tr>
+<tr><th id="390">390</th><td>        {</td></tr>
+<tr><th id="391">391</th><td>            <b>static_assert</b>(</td></tr>
+<tr><th id="392">392</th><td>                    <span class="namespace">std::</span><a class="type" href="../../../../../../../include/c++/9/limits.html#std::numeric_limits" title='std::numeric_limits' data-ref="std::numeric_limits">numeric_limits</a>&lt;Source&gt;::max_exponent10 &lt;=  <var>999999L</var> &amp;&amp;</td></tr>
+<tr><th id="393">393</th><td>                    <span class="namespace">std::</span><a class="type" href="../../../../../../../include/c++/9/limits.html#std::numeric_limits" title='std::numeric_limits' data-ref="std::numeric_limits">numeric_limits</a>&lt;Source&gt;::min_exponent10 &gt;= -<var>999999L</var></td></tr>
+<tr><th id="394">394</th><td>                , <q>""</q>);</td></tr>
+<tr><th id="395">395</th><td></td></tr>
+<tr><th id="396">396</th><td>            <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#410" title="static const std::size_t value = 5 + lcast_precision&lt;Source&gt;::value + 6" data-ref="_M/BOOST_STATIC_CONSTANT">BOOST_STATIC_CONSTANT</a>(std::<a class="typedef" href="../../../../../../../include/x86_64-linux-gnu/c++/9/bits/c++config.h.html#std::size_t" title='std::size_t' data-type='unsigned long' data-ref="std::size_t">size_t</a>, <dfn class="decl" id="boost::detail::lcast_src_length{type-parameter-0-0,typenameenable_if{is_float{type-parameter-0-0},void}::type}::value" title='boost::detail::lcast_src_length&lt;type-parameter-0-0, typename enable_if&lt;is_float&lt;type-parameter-0-0&gt;, void&gt;::type&gt;::value' data-ref="boost::detail::lcast_src_length{type-parameter-0-0,typenameenable_if{is_float{type-parameter-0-0},void}::type}::value">value</dfn> =</td></tr>
+<tr><th id="397">397</th><td>                    <var>5</var> + <a class="type" href="../../detail/lcast_precision.hpp.html#boost::detail::lcast_precision" title='boost::detail::lcast_precision' data-ref="boost::detail::lcast_precision">lcast_precision</a>&lt;Source&gt;::value + <var>6</var></td></tr>
+<tr><th id="398">398</th><td>                );</td></tr>
+<tr><th id="399">399</th><td>        };</td></tr>
+<tr><th id="400">400</th><td>    }</td></tr>
+<tr><th id="401">401</th><td></td></tr>
+<tr><th id="402">402</th><td>    <b>namespace</b> <span class="namespace">detail</span> <i>// lexical_cast_stream_traits&lt;Source, Target&gt;</i></td></tr>
+<tr><th id="403">403</th><td>    {</td></tr>
+<tr><th id="404">404</th><td>        <b>template</b> &lt;<b>class</b> Source, <b>class</b> Target&gt;</td></tr>
+<tr><th id="405">405</th><td>        <b>struct</b> <dfn class="type def" id="boost::detail::lexical_cast_stream_traits" title='boost::detail::lexical_cast_stream_traits' data-ref="boost::detail::lexical_cast_stream_traits">lexical_cast_stream_traits</dfn> {</td></tr>
+<tr><th id="406">406</th><td>            <b>typedef</b> <b>typename</b> <span class="namespace">boost::detail::</span><a class="type" href="#boost::detail::array_to_pointer_decay" title='boost::detail::array_to_pointer_decay' data-ref="boost::detail::array_to_pointer_decay">array_to_pointer_decay</a>&lt;Source&gt;::type <dfn class="typedef" id="boost::detail::lexical_cast_stream_traits::src" title='boost::detail::lexical_cast_stream_traits::src' data-type='typename boost::detail::array_to_pointer_decay&lt;Source&gt;::type' data-ref="boost::detail::lexical_cast_stream_traits::src">src</dfn>;</td></tr>
+<tr><th id="407">407</th><td>            <b>typedef</b> <b>typename</b> <span class="namespace">boost::</span><a class="type" href="../../../../../type_traits/include/boost/type_traits/remove_cv.hpp.html#boost::remove_cv" title='boost::remove_cv' data-ref="boost::remove_cv">remove_cv</a>&lt;<a class="typedef" href="#boost::detail::lexical_cast_stream_traits::src" title='boost::detail::lexical_cast_stream_traits::src' data-type='typename boost::detail::array_to_pointer_decay&lt;Source&gt;::type' data-ref="boost::detail::lexical_cast_stream_traits::src">src</a>&gt;::type            <dfn class="typedef" id="boost::detail::lexical_cast_stream_traits::no_cv_src" title='boost::detail::lexical_cast_stream_traits::no_cv_src' data-type='typename boost::remove_cv&lt;src&gt;::type' data-ref="boost::detail::lexical_cast_stream_traits::no_cv_src">no_cv_src</dfn>;</td></tr>
+<tr><th id="408">408</th><td></td></tr>
+<tr><th id="409">409</th><td>            <b>typedef</b> <span class="namespace">boost::detail::</span><a class="type" href="#boost::detail::deduce_source_char" title='boost::detail::deduce_source_char' data-ref="boost::detail::deduce_source_char">deduce_source_char</a>&lt;<a class="typedef" href="#boost::detail::lexical_cast_stream_traits::no_cv_src" title='boost::detail::lexical_cast_stream_traits::no_cv_src' data-type='typename boost::remove_cv&lt;src&gt;::type' data-ref="boost::detail::lexical_cast_stream_traits::no_cv_src">no_cv_src</a>&gt;                           <dfn class="typedef" id="boost::detail::lexical_cast_stream_traits::deduce_src_char_metafunc" title='boost::detail::lexical_cast_stream_traits::deduce_src_char_metafunc' data-type='boost::detail::deduce_source_char&lt;no_cv_src&gt;' data-ref="boost::detail::lexical_cast_stream_traits::deduce_src_char_metafunc">deduce_src_char_metafunc</dfn>;</td></tr>
+<tr><th id="410">410</th><td>            <b>typedef</b> <b>typename</b> <a class="typedef" href="#boost::detail::lexical_cast_stream_traits::deduce_src_char_metafunc" title='boost::detail::lexical_cast_stream_traits::deduce_src_char_metafunc' data-type='boost::detail::deduce_source_char&lt;no_cv_src&gt;' data-ref="boost::detail::lexical_cast_stream_traits::deduce_src_char_metafunc">deduce_src_char_metafunc</a>::type           <dfn class="typedef" id="boost::detail::lexical_cast_stream_traits::src_char_t" title='boost::detail::lexical_cast_stream_traits::src_char_t' data-type='typename deduce_src_char_metafunc::type' data-ref="boost::detail::lexical_cast_stream_traits::src_char_t">src_char_t</dfn>;</td></tr>
+<tr><th id="411">411</th><td>            <b>typedef</b> <b>typename</b> <span class="namespace">boost::detail::</span><a class="type" href="#boost::detail::deduce_target_char" title='boost::detail::deduce_target_char' data-ref="boost::detail::deduce_target_char">deduce_target_char</a>&lt;Target&gt;::type <dfn class="typedef" id="boost::detail::lexical_cast_stream_traits::target_char_t" title='boost::detail::lexical_cast_stream_traits::target_char_t' data-type='typename boost::detail::deduce_target_char&lt;Target&gt;::type' data-ref="boost::detail::lexical_cast_stream_traits::target_char_t">target_char_t</dfn>;</td></tr>
+<tr><th id="412">412</th><td></td></tr>
+<tr><th id="413">413</th><td>            <b>typedef</b> <b>typename</b> <span class="namespace">boost::detail::</span><a class="type" href="widest_char.hpp.html#boost::detail::widest_char" title='boost::detail::widest_char' data-ref="boost::detail::widest_char">widest_char</a>&lt;</td></tr>
+<tr><th id="414">414</th><td>                <a class="typedef" href="#boost::detail::lexical_cast_stream_traits::target_char_t" title='boost::detail::lexical_cast_stream_traits::target_char_t' data-type='typename boost::detail::deduce_target_char&lt;Target&gt;::type' data-ref="boost::detail::lexical_cast_stream_traits::target_char_t">target_char_t</a>, <a class="typedef" href="#boost::detail::lexical_cast_stream_traits::src_char_t" title='boost::detail::lexical_cast_stream_traits::src_char_t' data-type='typename deduce_src_char_metafunc::type' data-ref="boost::detail::lexical_cast_stream_traits::src_char_t">src_char_t</a></td></tr>
+<tr><th id="415">415</th><td>            &gt;::type <dfn class="typedef" id="boost::detail::lexical_cast_stream_traits::char_type" title='boost::detail::lexical_cast_stream_traits::char_type' data-type='typename boost::detail::widest_char&lt;target_char_t, src_char_t&gt;::type' data-ref="boost::detail::lexical_cast_stream_traits::char_type">char_type</dfn>;</td></tr>
+<tr><th id="416">416</th><td></td></tr>
+<tr><th id="417">417</th><td><u>#<span data-ppcond="417">if</span> !defined(<span class="macro" data-ref="_M/BOOST_NO_CXX11_CHAR16_T">BOOST_NO_CXX11_CHAR16_T</span>) &amp;&amp; defined(<span class="macro" data-ref="_M/BOOST_NO_CXX11_UNICODE_LITERALS">BOOST_NO_CXX11_UNICODE_LITERALS</span>)</u></td></tr>
+<tr><th id="418">418</th><td>            <b>static_assert</b>(!boost::is_same&lt;<em>char16_t</em>, src_char_t&gt;::value</td></tr>
+<tr><th id="419">419</th><td>                                        &amp;&amp; !boost::is_same&lt;<em>char16_t</em>, target_char_t&gt;::value,</td></tr>
+<tr><th id="420">420</th><td>                <q>"Your compiler does not have full support for char16_t"</q> );</td></tr>
+<tr><th id="421">421</th><td><u>#<span data-ppcond="417">endif</span></u></td></tr>
+<tr><th id="422">422</th><td><u>#<span data-ppcond="422">if</span> !defined(<span class="macro" data-ref="_M/BOOST_NO_CXX11_CHAR32_T">BOOST_NO_CXX11_CHAR32_T</span>) &amp;&amp; defined(<span class="macro" data-ref="_M/BOOST_NO_CXX11_UNICODE_LITERALS">BOOST_NO_CXX11_UNICODE_LITERALS</span>)</u></td></tr>
+<tr><th id="423">423</th><td>            <b>static_assert</b>(!boost::is_same&lt;<em>char32_t</em>, src_char_t&gt;::value</td></tr>
+<tr><th id="424">424</th><td>                                        &amp;&amp; !boost::is_same&lt;<em>char32_t</em>, target_char_t&gt;::value,</td></tr>
+<tr><th id="425">425</th><td>                <q>"Your compiler does not have full support for char32_t"</q> );</td></tr>
+<tr><th id="426">426</th><td><u>#<span data-ppcond="422">endif</span></u></td></tr>
+<tr><th id="427">427</th><td></td></tr>
+<tr><th id="428">428</th><td>            <b>typedef</b> <span class="namespace">std::</span><a class="type" href="../../../../../../../include/c++/9/bits/stringfwd.h.html#std::char_traits" title='std::char_traits' data-ref="std::char_traits">char_traits</a>&lt;<a class="typedef" href="#boost::detail::lexical_cast_stream_traits::char_type" title='boost::detail::lexical_cast_stream_traits::char_type' data-type='typename boost::detail::widest_char&lt;target_char_t, src_char_t&gt;::type' data-ref="boost::detail::lexical_cast_stream_traits::char_type">char_type</a>&gt; <dfn class="typedef" id="boost::detail::lexical_cast_stream_traits::traits" title='boost::detail::lexical_cast_stream_traits::traits' data-type='std::char_traits&lt;char_type&gt;' data-ref="boost::detail::lexical_cast_stream_traits::traits">traits</dfn>;</td></tr>
+<tr><th id="429">429</th><td></td></tr>
+<tr><th id="430">430</th><td>            <b>typedef</b> <span class="namespace">boost::detail::</span><a class="type" href="#boost::detail::lcast_src_length" title='boost::detail::lcast_src_length' data-ref="boost::detail::lcast_src_length">lcast_src_length</a>&lt;<a class="typedef" href="#boost::detail::lexical_cast_stream_traits::no_cv_src" title='boost::detail::lexical_cast_stream_traits::no_cv_src' data-type='typename boost::remove_cv&lt;src&gt;::type' data-ref="boost::detail::lexical_cast_stream_traits::no_cv_src">no_cv_src</a>&gt; <dfn class="typedef" id="boost::detail::lexical_cast_stream_traits::len_t" title='boost::detail::lexical_cast_stream_traits::len_t' data-type='boost::detail::lcast_src_length&lt;no_cv_src&gt;' data-ref="boost::detail::lexical_cast_stream_traits::len_t">len_t</dfn>;</td></tr>
+<tr><th id="431">431</th><td>        };</td></tr>
+<tr><th id="432">432</th><td>    }</td></tr>
+<tr><th id="433">433</th><td></td></tr>
+<tr><th id="434">434</th><td>    <b>namespace</b> <span class="namespace">detail</span></td></tr>
+<tr><th id="435">435</th><td>    {</td></tr>
+<tr><th id="436">436</th><td>        <b>template</b>&lt;<b>typename</b> Target, <b>typename</b> Source&gt;</td></tr>
+<tr><th id="437">437</th><td>        <b>struct</b> <dfn class="type def" id="boost::detail::lexical_converter_impl" title='boost::detail::lexical_converter_impl' data-ref="boost::detail::lexical_converter_impl">lexical_converter_impl</dfn></td></tr>
+<tr><th id="438">438</th><td>        {</td></tr>
+<tr><th id="439">439</th><td>            <b>typedef</b> <a class="type" href="#boost::detail::lexical_cast_stream_traits" title='boost::detail::lexical_cast_stream_traits' data-ref="boost::detail::lexical_cast_stream_traits">lexical_cast_stream_traits</a>&lt;Source, Target&gt;  <dfn class="typedef" id="boost::detail::lexical_converter_impl::stream_trait" title='boost::detail::lexical_converter_impl::stream_trait' data-type='lexical_cast_stream_traits&lt;Source, Target&gt;' data-ref="boost::detail::lexical_converter_impl::stream_trait">stream_trait</dfn>;</td></tr>
+<tr><th id="440">440</th><td></td></tr>
+<tr><th id="441">441</th><td>            <b>typedef</b> <span class="namespace">detail::lcast::</span><a class="type" href="converter_lexical_streams.hpp.html#boost::detail::lcast::optimized_src_stream" title='boost::detail::lcast::optimized_src_stream' data-ref="boost::detail::lcast::optimized_src_stream">optimized_src_stream</a>&lt;</td></tr>
+<tr><th id="442">442</th><td>                <b>typename</b> <a class="typedef" href="#boost::detail::lexical_converter_impl::stream_trait" title='boost::detail::lexical_converter_impl::stream_trait' data-type='lexical_cast_stream_traits&lt;Source, Target&gt;' data-ref="boost::detail::lexical_converter_impl::stream_trait">stream_trait</a>::char_type,</td></tr>
+<tr><th id="443">443</th><td>                <b>typename</b> <a class="typedef" href="#boost::detail::lexical_converter_impl::stream_trait" title='boost::detail::lexical_converter_impl::stream_trait' data-type='lexical_cast_stream_traits&lt;Source, Target&gt;' data-ref="boost::detail::lexical_converter_impl::stream_trait">stream_trait</a>::traits,</td></tr>
+<tr><th id="444">444</th><td>                <a class="typedef" href="#boost::detail::lexical_converter_impl::stream_trait" title='boost::detail::lexical_converter_impl::stream_trait' data-type='lexical_cast_stream_traits&lt;Source, Target&gt;' data-ref="boost::detail::lexical_converter_impl::stream_trait">stream_trait</a>::len_t::value + <var>1</var></td></tr>
+<tr><th id="445">445</th><td>            &gt; <dfn class="typedef" id="boost::detail::lexical_converter_impl::optimized_src_stream" title='boost::detail::lexical_converter_impl::optimized_src_stream' data-type='detail::lcast::optimized_src_stream&lt;typename stream_trait::char_type, typename stream_trait::traits, stream_trait::len_t::value + 1&gt;' data-ref="boost::detail::lexical_converter_impl::optimized_src_stream">optimized_src_stream</dfn>;</td></tr>
+<tr><th id="446">446</th><td>            </td></tr>
+<tr><th id="447">447</th><td>            <b>template</b> &lt;<b>class</b> T&gt;</td></tr>
+<tr><th id="448">448</th><td>            <em>static</em> <em>auto</em> <dfn class="decl fn" id="_ZN5boost6detail22lexical_converter_impl11detect_typeEi" title='boost::detail::lexical_converter_impl::detect_type' data-ref="_ZN5boost6detail22lexical_converter_impl11detect_typeEi">detect_type</dfn>(<em>int</em>)</td></tr>
+<tr><th id="449">449</th><td>                -&gt; <b>decltype</b>(<span class="namespace">std::</span>declval&lt;<a class="typedef" href="#boost::detail::lexical_converter_impl::optimized_src_stream" title='boost::detail::lexical_converter_impl::optimized_src_stream' data-type='detail::lcast::optimized_src_stream&lt;typename stream_trait::char_type, typename stream_trait::traits, stream_trait::len_t::value + 1&gt;' data-ref="boost::detail::lexical_converter_impl::optimized_src_stream">optimized_src_stream</a>&amp;&gt;().stream_in(<span class="namespace">std::</span>declval&lt;<span class="namespace">lcast::</span><a class="type" href="converter_lexical_streams.hpp.html#boost::detail::lcast::exact" title='boost::detail::lcast::exact' data-ref="boost::detail::lcast::exact">exact</a>&lt;T&gt;&gt;()), <a class="typedef" href="#boost::detail::lexical_converter_impl::optimized_src_stream" title='boost::detail::lexical_converter_impl::optimized_src_stream' data-type='detail::lcast::optimized_src_stream&lt;typename stream_trait::char_type, typename stream_trait::traits, stream_trait::len_t::value + 1&gt;' data-ref="boost::detail::lexical_converter_impl::optimized_src_stream">optimized_src_stream</a>{});</td></tr>
+<tr><th id="450">450</th><td></td></tr>
+<tr><th id="451">451</th><td>            <b>template</b> &lt;<b>class</b> T&gt;</td></tr>
+<tr><th id="452">452</th><td>            <em>static</em> <span class="namespace">lcast::</span><a class="type" href="converter_lexical_streams.hpp.html#boost::detail::lcast::ios_src_stream" title='boost::detail::lcast::ios_src_stream' data-ref="boost::detail::lcast::ios_src_stream">ios_src_stream</a>&lt;<b>typename</b> <a class="typedef" href="#boost::detail::lexical_converter_impl::stream_trait" title='boost::detail::lexical_converter_impl::stream_trait' data-type='lexical_cast_stream_traits&lt;Source, Target&gt;' data-ref="boost::detail::lexical_converter_impl::stream_trait">stream_trait</a>::char_type, <b>typename</b> <a class="typedef" href="#boost::detail::lexical_converter_impl::stream_trait" title='boost::detail::lexical_converter_impl::stream_trait' data-type='lexical_cast_stream_traits&lt;Source, Target&gt;' data-ref="boost::detail::lexical_converter_impl::stream_trait">stream_trait</a>::traits&gt; <dfn class="decl fn" id="_ZN5boost6detail22lexical_converter_impl11detect_typeEz" title='boost::detail::lexical_converter_impl::detect_type' data-ref="_ZN5boost6detail22lexical_converter_impl11detect_typeEz">detect_type</dfn>(...);</td></tr>
+<tr><th id="453">453</th><td></td></tr>
+<tr><th id="454">454</th><td>            <b>using</b> <dfn class="typedef" id="boost::detail::lexical_converter_impl::from_src_stream" title='boost::detail::lexical_converter_impl::from_src_stream' data-type='decltype(detect_type&lt;Source&gt;(1))' data-ref="boost::detail::lexical_converter_impl::from_src_stream">from_src_stream</dfn> = <b>decltype</b>(detect_type&lt;Source&gt;(<var>1</var>));</td></tr>
+<tr><th id="455">455</th><td></td></tr>
+<tr><th id="456">456</th><td>            <b>typedef</b> <span class="namespace">detail::lcast::</span><a class="type" href="converter_lexical_streams.hpp.html#boost::detail::lcast::to_target_stream" title='boost::detail::lcast::to_target_stream' data-ref="boost::detail::lcast::to_target_stream">to_target_stream</a>&lt;</td></tr>
+<tr><th id="457">457</th><td>                <b>typename</b> <a class="typedef" href="#boost::detail::lexical_converter_impl::stream_trait" title='boost::detail::lexical_converter_impl::stream_trait' data-type='lexical_cast_stream_traits&lt;Source, Target&gt;' data-ref="boost::detail::lexical_converter_impl::stream_trait">stream_trait</a>::char_type,</td></tr>
+<tr><th id="458">458</th><td>                <b>typename</b> <a class="typedef" href="#boost::detail::lexical_converter_impl::stream_trait" title='boost::detail::lexical_converter_impl::stream_trait' data-type='lexical_cast_stream_traits&lt;Source, Target&gt;' data-ref="boost::detail::lexical_converter_impl::stream_trait">stream_trait</a>::traits</td></tr>
+<tr><th id="459">459</th><td>            &gt; <dfn class="typedef" id="boost::detail::lexical_converter_impl::to_target_stream" title='boost::detail::lexical_converter_impl::to_target_stream' data-type='detail::lcast::to_target_stream&lt;typename stream_trait::char_type, typename stream_trait::traits&gt;' data-ref="boost::detail::lexical_converter_impl::to_target_stream">to_target_stream</dfn>;</td></tr>
+<tr><th id="460">460</th><td></td></tr>
+<tr><th id="461">461</th><td>            <em>static</em> <b>inline</b> <em>bool</em> <dfn class="decl def fn" id="_ZN5boost6detail22lexical_converter_impl11try_convertERKT0_RT_" title='boost::detail::lexical_converter_impl::try_convert' data-ref="_ZN5boost6detail22lexical_converter_impl11try_convertERKT0_RT_">try_convert</dfn>(<em>const</em> Source&amp; <dfn class="local col9 decl" id="309arg" title='arg' data-type='const Source &amp;' data-ref="309arg">arg</dfn>, Target&amp; <dfn class="local col0 decl" id="310result" title='result' data-type='Target &amp;' data-ref="310result">result</dfn>) {</td></tr>
+<tr><th id="462">462</th><td>                <a class="typedef" href="#boost::detail::lexical_converter_impl::from_src_stream" title='boost::detail::lexical_converter_impl::from_src_stream' data-type='decltype(detect_type&lt;Source&gt;(1))' data-ref="boost::detail::lexical_converter_impl::from_src_stream">from_src_stream</a> <dfn class="local col1 decl" id="311src_stream" title='src_stream' data-type='boost::detail::lexical_converter_impl::from_src_stream' data-ref="311src_stream">src_stream</dfn>;</td></tr>
+<tr><th id="463">463</th><td>                <b>if</b> (!<a class="local col1 ref" href="#311src_stream" title='src_stream' data-ref="311src_stream">src_stream</a>.stream_in(<span class="namespace">lcast::</span><a class="type" href="converter_lexical_streams.hpp.html#boost::detail::lcast::exact" title='boost::detail::lcast::exact' data-ref="boost::detail::lcast::exact">exact</a>&lt;Source&gt;{<a class="local col9 ref" href="#309arg" title='arg' data-ref="309arg">arg</a>}))</td></tr>
+<tr><th id="464">464</th><td>                    <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="465">465</th><td></td></tr>
+<tr><th id="466">466</th><td>                <a class="typedef" href="#boost::detail::lexical_converter_impl::to_target_stream" title='boost::detail::lexical_converter_impl::to_target_stream' data-type='detail::lcast::to_target_stream&lt;typename stream_trait::char_type, typename stream_trait::traits&gt;' data-ref="boost::detail::lexical_converter_impl::to_target_stream">to_target_stream</a> <dfn class="local col2 decl" id="312out" title='out' data-type='boost::detail::lexical_converter_impl::to_target_stream' data-ref="312out">out</dfn>(<a class="local col1 ref" href="#311src_stream" title='src_stream' data-ref="311src_stream">src_stream</a>.cbegin(), <a class="local col1 ref" href="#311src_stream" title='src_stream' data-ref="311src_stream">src_stream</a>.cend());</td></tr>
+<tr><th id="467">467</th><td>                <b>if</b> (!<a class="local col2 ref" href="#312out" title='out' data-ref="312out">out</a>.stream_out(<a class="local col0 ref" href="#310result" title='result' data-ref="310result">result</a>))</td></tr>
+<tr><th id="468">468</th><td>                    <b>return</b> <b>false</b>;</td></tr>
+<tr><th id="469">469</th><td></td></tr>
+<tr><th id="470">470</th><td>                <b>return</b> <b>true</b>;</td></tr>
+<tr><th id="471">471</th><td>            }</td></tr>
+<tr><th id="472">472</th><td>        };</td></tr>
+<tr><th id="473">473</th><td>    }</td></tr>
+<tr><th id="474">474</th><td></td></tr>
+<tr><th id="475">475</th><td>} <i>// namespace boost</i></td></tr>
+<tr><th id="476">476</th><td></td></tr>
+<tr><th id="477">477</th><td><u>#undef <span class="macro" data-ref="_M/BOOST_LCAST_NO_WCHAR_T">BOOST_LCAST_NO_WCHAR_T</span></u></td></tr>
+<tr><th id="478">478</th><td></td></tr>
+<tr><th id="479">479</th><td><u>#<span data-ppcond="18">endif</span> // BOOST_LEXICAL_CAST_DETAIL_CONVERTER_LEXICAL_HPP</u></td></tr>
+<tr><th id="480">480</th><td></td></tr>
+<tr><th id="481">481</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../../../../../graph/src/graphml.cpp.html'>boost-1.85.0/libs/graph/src/graphml.cpp</a><br/>Generated on <em>2024-Jun-14</em> from project boost-1.85.0 revision <em>1.85.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

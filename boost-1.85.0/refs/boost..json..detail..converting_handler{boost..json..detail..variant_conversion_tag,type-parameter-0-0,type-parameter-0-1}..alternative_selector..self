@@ -1,0 +1,4 @@
+<dec f='boost-1.85.0/libs/json/include/boost/json/detail/parse_into.hpp' l='1374' type='converting_handler&lt;boost::json::detail::variant_conversion_tag, type-parameter-0-0, type-parameter-0-1&gt; *'/>
+<use f='boost-1.85.0/libs/json/include/boost/json/detail/parse_into.hpp' l='1381' u='c' c='_ZNK5boost4json6detail18converting_handlerINS1_22variant_conversion_tagET_T0_E20alternative_selectorclETL0__'/>
+<use f='boost-1.85.0/libs/json/include/boost/json/detail/parse_into.hpp' l='1382' u='c' c='_ZNK5boost4json6detail18converting_handlerINS1_22variant_conversion_tagET_T0_E20alternative_selectorclETL0__'/>
+<use f='boost-1.85.0/libs/json/include/boost/json/detail/parse_into.hpp' l='1382' c='_ZNK5boost4json6detail18converting_handlerINS1_22variant_conversion_tagET_T0_E20alternative_selectorclETL0__'/>

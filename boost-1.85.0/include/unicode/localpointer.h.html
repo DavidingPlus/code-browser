@@ -1,0 +1,626 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>localpointer.h source code [include/unicode/localpointer.h] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="icu_66::LocalArray,icu_66::LocalPointer,icu_66::LocalPointerBase "/>
+<link rel="stylesheet" href="../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'include/unicode/localpointer.h'; var root_path = '../..'; var data_path = '../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='..'>include</a>/<a href='./'>unicode</a>/<a href='localpointer.h.html'>localpointer.h</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>// © 2016 and later: Unicode, Inc. and others.</i></td></tr>
+<tr><th id="2">2</th><td><i>// License &amp; terms of use: <a href="http://www.unicode.org/copyright.html">http://www.unicode.org/copyright.html</a></i></td></tr>
+<tr><th id="3">3</th><td><i>/*</i></td></tr>
+<tr><th id="4">4</th><td><i>*******************************************************************************</i></td></tr>
+<tr><th id="5">5</th><td><i>*</i></td></tr>
+<tr><th id="6">6</th><td><i>*   Copyright (C) 2009-2016, International Business Machines</i></td></tr>
+<tr><th id="7">7</th><td><i>*   Corporation and others.  All Rights Reserved.</i></td></tr>
+<tr><th id="8">8</th><td><i>*</i></td></tr>
+<tr><th id="9">9</th><td><i>*******************************************************************************</i></td></tr>
+<tr><th id="10">10</th><td><i>*   file name:  localpointer.h</i></td></tr>
+<tr><th id="11">11</th><td><i>*   encoding:   UTF-8</i></td></tr>
+<tr><th id="12">12</th><td><i>*   tab size:   8 (not used)</i></td></tr>
+<tr><th id="13">13</th><td><i>*   indentation:4</i></td></tr>
+<tr><th id="14">14</th><td><i>*</i></td></tr>
+<tr><th id="15">15</th><td><i>*   created on: 2009nov13</i></td></tr>
+<tr><th id="16">16</th><td><i>*   created by: Markus W. Scherer</i></td></tr>
+<tr><th id="17">17</th><td><i>*/</i></td></tr>
+<tr><th id="18">18</th><td></td></tr>
+<tr><th id="19">19</th><td><u>#<span data-ppcond="19">ifndef</span> <span class="macro" data-ref="_M/__LOCALPOINTER_H__">__LOCALPOINTER_H__</span></u></td></tr>
+<tr><th id="20">20</th><td><u>#define <dfn class="macro" id="_M/__LOCALPOINTER_H__" data-ref="_M/__LOCALPOINTER_H__">__LOCALPOINTER_H__</dfn></u></td></tr>
+<tr><th id="21">21</th><td></td></tr>
+<tr><th id="22">22</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="23">23</th><td><i class="doc"> * <span class="command">\file</span></i></td></tr>
+<tr><th id="24">24</th><td><i class="doc"> * <span class="command">\brief</span> C++ API: "Smart pointers" for use with and in ICU4C C++ code.</i></td></tr>
+<tr><th id="25">25</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="26">26</th><td><i class="doc"> * These classes are inspired by</i></td></tr>
+<tr><th id="27">27</th><td><i class="doc"> * - std::auto_ptr</i></td></tr>
+<tr><th id="28">28</th><td><i class="doc"> * - boost::scoped_ptr &amp; boost::scoped_array</i></td></tr>
+<tr><th id="29">29</th><td><i class="doc"> * - Taligent Safe Pointers (TOnlyPointerTo)</i></td></tr>
+<tr><th id="30">30</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="31">31</th><td><i class="doc"> * but none of those provide for all of the goals for ICU smart pointers:</i></td></tr>
+<tr><th id="32">32</th><td><i class="doc"> * - Smart pointer owns the object and releases it when it goes out of scope.</i></td></tr>
+<tr><th id="33">33</th><td><i class="doc"> * - No transfer of ownership via copy/assignment to reduce misuse. Simpler &amp; more robust.</i></td></tr>
+<tr><th id="34">34</th><td><i class="doc"> * - ICU-compatible: No exceptions.</i></td></tr>
+<tr><th id="35">35</th><td><i class="doc"> * - Need to be able to orphan/release the pointer and its ownership.</i></td></tr>
+<tr><th id="36">36</th><td><i class="doc"> * - Need variants for normal C++ object pointers, C++ arrays, and ICU C service objects.</i></td></tr>
+<tr><th id="37">37</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="38">38</th><td><i class="doc"> * For details see <a href="http://site.icu-project.org/design/cpp/scoped_ptr">http://site.icu-project.org/design/cpp/scoped_ptr</a></i></td></tr>
+<tr><th id="39">39</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="40">40</th><td></td></tr>
+<tr><th id="41">41</th><td><u>#include <a href="utypes.h.html">"unicode/utypes.h"</a></u></td></tr>
+<tr><th id="42">42</th><td></td></tr>
+<tr><th id="43">43</th><td><u>#<span data-ppcond="43">if</span> <a class="macro" href="utypes.h.html#64" title="1" data-ref="_M/U_SHOW_CPLUSPLUS_API">U_SHOW_CPLUSPLUS_API</a></u></td></tr>
+<tr><th id="44">44</th><td></td></tr>
+<tr><th id="45">45</th><td><u>#include <a href="../c++/9/memory.html">&lt;memory&gt;</a></u></td></tr>
+<tr><th id="46">46</th><td></td></tr>
+<tr><th id="47">47</th><td><a class="macro" href="uversion.h.html#110" title="namespace icu_66 {" data-ref="_M/U_NAMESPACE_BEGIN">U_NAMESPACE_BEGIN</a></td></tr>
+<tr><th id="48">48</th><td></td></tr>
+<tr><th id="49">49</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="50">50</th><td><i class="doc"> * "Smart pointer" base class; do not use directly: use LocalPointer etc.</i></td></tr>
+<tr><th id="51">51</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="52">52</th><td><i class="doc"> * Base class for smart pointer classes that do not throw exceptions.</i></td></tr>
+<tr><th id="53">53</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="54">54</th><td><i class="doc"> * Do not use this base class directly, since it does not delete its pointer.</i></td></tr>
+<tr><th id="55">55</th><td><i class="doc"> * A subclass must implement methods that delete the pointer:</i></td></tr>
+<tr><th id="56">56</th><td><i class="doc"> * Destructor and adoptInstead().</i></td></tr>
+<tr><th id="57">57</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="58">58</th><td><i class="doc"> * There is no operator T *() provided because the programmer must decide</i></td></tr>
+<tr><th id="59">59</th><td><i class="doc"> * whether to use getAlias() (without transfer of ownership) or orphan()</i></td></tr>
+<tr><th id="60">60</th><td><i class="doc"> * (with transfer of ownership and NULLing of the pointer).</i></td></tr>
+<tr><th id="61">61</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="62">62</th><td><i class="doc"> * <span class="command">@see</span> LocalPointer</i></td></tr>
+<tr><th id="63">63</th><td><i class="doc"> * <span class="command">@see</span> LocalArray</i></td></tr>
+<tr><th id="64">64</th><td><i class="doc"> * <span class="command">@see</span> U_DEFINE_LOCAL_OPEN_POINTER</i></td></tr>
+<tr><th id="65">65</th><td><i class="doc"> *<span class="command"> @stable</span> ICU 4.4</i></td></tr>
+<tr><th id="66">66</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="67">67</th><td><b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="68">68</th><td><b>class</b> <dfn class="type def" id="icu_66::LocalPointerBase" title='icu_66::LocalPointerBase' data-ref="icu_66::LocalPointerBase">LocalPointerBase</dfn> {</td></tr>
+<tr><th id="69">69</th><td><b>public</b>:</td></tr>
+<tr><th id="70">70</th><td>    <i>// No heap allocation. Use only on the stack.</i></td></tr>
+<tr><th id="71">71</th><td>    <em>static</em> <em>void</em>* <a class="macro" href="platform.h.html#837" title="" data-ref="_M/U_EXPORT2">U_EXPORT2</a> <dfn class="decl def fn" id="_ZN6icu_6616LocalPointerBasenwEm" title='icu_66::LocalPointerBase::operator new' data-ref="_ZN6icu_6616LocalPointerBasenwEm"><b>operator</b> <b>new</b></dfn>(<span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span>) = <b>delete</b>;</td></tr>
+<tr><th id="72">72</th><td>    <em>static</em> <em>void</em>* <a class="macro" href="platform.h.html#837" title="" data-ref="_M/U_EXPORT2">U_EXPORT2</a> <dfn class="decl def fn" id="_ZN6icu_6616LocalPointerBasenaEm" title='icu_66::LocalPointerBase::operator new[]' data-ref="_ZN6icu_6616LocalPointerBasenaEm"><b>operator</b> <b>new</b>[]</dfn>(<span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span>) = <b>delete</b>;</td></tr>
+<tr><th id="73">73</th><td><u>#<span data-ppcond="73">if</span> <a class="macro" href="platform.h.html#409" title="1" data-ref="_M/U_HAVE_PLACEMENT_NEW">U_HAVE_PLACEMENT_NEW</a></u></td></tr>
+<tr><th id="74">74</th><td>    <em>static</em> <em>void</em>* <a class="macro" href="platform.h.html#837" title="" data-ref="_M/U_EXPORT2">U_EXPORT2</a> <dfn class="decl def fn" id="_ZN6icu_6616LocalPointerBasenwEmPv" title='icu_66::LocalPointerBase::operator new' data-ref="_ZN6icu_6616LocalPointerBasenwEmPv"><b>operator</b> <b>new</b></dfn>(<span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span>, <em>void</em>*) = <b>delete</b>;</td></tr>
+<tr><th id="75">75</th><td><u>#<span data-ppcond="73">endif</span></u></td></tr>
+<tr><th id="76">76</th><td></td></tr>
+<tr><th id="77">77</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="78">78</th><td><i class="doc">     * Constructor takes ownership.</i></td></tr>
+<tr><th id="79">79</th><td><i class="doc">     * <span class="command">@param</span> <span class="arg">p</span> simple pointer to an object that is adopted</i></td></tr>
+<tr><th id="80">80</th><td><i class="doc">     *<span class="command"> @stable</span> ICU 4.4</i></td></tr>
+<tr><th id="81">81</th><td><i class="doc">     */</i></td></tr>
+<tr><th id="82">82</th><td>    <b>explicit</b> <dfn class="decl def fn" id="_ZN6icu_6616LocalPointerBaseC1EPT_" title='icu_66::LocalPointerBase::LocalPointerBase&lt;T&gt;' data-ref="_ZN6icu_6616LocalPointerBaseC1EPT_">LocalPointerBase</dfn>(T *<dfn class="local col6 decl" id="506p" title='p' data-type='T *' data-ref="506p">p</dfn>=<span class="macro" title="__null" data-ref="_M/NULL">NULL</span>) : <a class="member field" href="#icu_66::LocalPointerBase::ptr" title='icu_66::LocalPointerBase::ptr' data-ref="icu_66::LocalPointerBase::ptr">ptr</a>(<a class="local col6 ref" href="#506p" title='p' data-ref="506p">p</a>) {}</td></tr>
+<tr><th id="83">83</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="84">84</th><td><i class="doc">     * Destructor deletes the object it owns.</i></td></tr>
+<tr><th id="85">85</th><td><i class="doc">     * Subclass must override: Base class does nothing.</i></td></tr>
+<tr><th id="86">86</th><td><i class="doc">     *<span class="command"> @stable</span> ICU 4.4</i></td></tr>
+<tr><th id="87">87</th><td><i class="doc">     */</i></td></tr>
+<tr><th id="88">88</th><td>    <dfn class="decl def fn" id="_ZN6icu_6616LocalPointerBaseD1Ev" title='icu_66::LocalPointerBase::~LocalPointerBase&lt;T&gt;' data-ref="_ZN6icu_6616LocalPointerBaseD1Ev">~LocalPointerBase</dfn>() { <i>/* delete ptr; */</i> }</td></tr>
+<tr><th id="89">89</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="90">90</th><td><i class="doc">     * NULL check.</i></td></tr>
+<tr><th id="91">91</th><td><i class="doc">     * <span class="command">@return</span> TRUE if ==NULL</i></td></tr>
+<tr><th id="92">92</th><td><i class="doc">     *<span class="command"> @stable</span> ICU 4.4</i></td></tr>
+<tr><th id="93">93</th><td><i class="doc">     */</i></td></tr>
+<tr><th id="94">94</th><td>    <a class="typedef" href="umachine.h.html#UBool" title='UBool' data-type='int8_t' data-ref="UBool">UBool</a> <dfn class="decl def fn" id="_ZNK6icu_6616LocalPointerBase6isNullEv" title='icu_66::LocalPointerBase::isNull' data-ref="_ZNK6icu_6616LocalPointerBase6isNullEv">isNull</dfn>() <em>const</em> { <b>return</b> <a class="member field" href="#icu_66::LocalPointerBase::ptr" title='icu_66::LocalPointerBase::ptr' data-ref="icu_66::LocalPointerBase::ptr">ptr</a>==<span class="macro" title="__null" data-ref="_M/NULL">NULL</span>; }</td></tr>
+<tr><th id="95">95</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="96">96</th><td><i class="doc">     * NULL check.</i></td></tr>
+<tr><th id="97">97</th><td><i class="doc">     * <span class="command">@return</span> TRUE if !=NULL</i></td></tr>
+<tr><th id="98">98</th><td><i class="doc">     *<span class="command"> @stable</span> ICU 4.4</i></td></tr>
+<tr><th id="99">99</th><td><i class="doc">     */</i></td></tr>
+<tr><th id="100">100</th><td>    <a class="typedef" href="umachine.h.html#UBool" title='UBool' data-type='int8_t' data-ref="UBool">UBool</a> <dfn class="decl def fn" id="_ZNK6icu_6616LocalPointerBase7isValidEv" title='icu_66::LocalPointerBase::isValid' data-ref="_ZNK6icu_6616LocalPointerBase7isValidEv">isValid</dfn>() <em>const</em> { <b>return</b> <a class="member field" href="#icu_66::LocalPointerBase::ptr" title='icu_66::LocalPointerBase::ptr' data-ref="icu_66::LocalPointerBase::ptr">ptr</a>!=<span class="macro" title="__null" data-ref="_M/NULL">NULL</span>; }</td></tr>
+<tr><th id="101">101</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="102">102</th><td><i class="doc">     * Comparison with a simple pointer, so that existing code</i></td></tr>
+<tr><th id="103">103</th><td><i class="doc">     * with ==NULL need not be changed.</i></td></tr>
+<tr><th id="104">104</th><td><i class="doc">     * <span class="command">@param</span> <span class="arg">other</span> simple pointer for comparison</i></td></tr>
+<tr><th id="105">105</th><td><i class="doc">     * <span class="command">@return</span> true if this pointer value equals other</i></td></tr>
+<tr><th id="106">106</th><td><i class="doc">     *<span class="command"> @stable</span> ICU 4.4</i></td></tr>
+<tr><th id="107">107</th><td><i class="doc">     */</i></td></tr>
+<tr><th id="108">108</th><td>    <em>bool</em> <dfn class="decl def fn" id="_ZNK6icu_6616LocalPointerBaseeqEPKT_" title='icu_66::LocalPointerBase::operator==' data-ref="_ZNK6icu_6616LocalPointerBaseeqEPKT_"><b>operator</b>==</dfn>(<em>const</em> T *<dfn class="local col7 decl" id="507other" title='other' data-type='const T *' data-ref="507other">other</dfn>) <em>const</em> { <b>return</b> <a class="member field" href="#icu_66::LocalPointerBase::ptr" title='icu_66::LocalPointerBase::ptr' data-ref="icu_66::LocalPointerBase::ptr">ptr</a>==<a class="local col7 ref" href="#507other" title='other' data-ref="507other">other</a>; }</td></tr>
+<tr><th id="109">109</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="110">110</th><td><i class="doc">     * Comparison with a simple pointer, so that existing code</i></td></tr>
+<tr><th id="111">111</th><td><i class="doc">     * with !=NULL need not be changed.</i></td></tr>
+<tr><th id="112">112</th><td><i class="doc">     * <span class="command">@param</span> <span class="arg">other</span> simple pointer for comparison</i></td></tr>
+<tr><th id="113">113</th><td><i class="doc">     * <span class="command">@return</span> true if this pointer value differs from other</i></td></tr>
+<tr><th id="114">114</th><td><i class="doc">     *<span class="command"> @stable</span> ICU 4.4</i></td></tr>
+<tr><th id="115">115</th><td><i class="doc">     */</i></td></tr>
+<tr><th id="116">116</th><td>    <em>bool</em> <dfn class="decl def fn" id="_ZNK6icu_6616LocalPointerBaseneEPKT_" title='icu_66::LocalPointerBase::operator!=' data-ref="_ZNK6icu_6616LocalPointerBaseneEPKT_"><b>operator</b>!=</dfn>(<em>const</em> T *<dfn class="local col8 decl" id="508other" title='other' data-type='const T *' data-ref="508other">other</dfn>) <em>const</em> { <b>return</b> <a class="member field" href="#icu_66::LocalPointerBase::ptr" title='icu_66::LocalPointerBase::ptr' data-ref="icu_66::LocalPointerBase::ptr">ptr</a>!=<a class="local col8 ref" href="#508other" title='other' data-ref="508other">other</a>; }</td></tr>
+<tr><th id="117">117</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="118">118</th><td><i class="doc">     * Access without ownership change.</i></td></tr>
+<tr><th id="119">119</th><td><i class="doc">     * <span class="command">@return</span> the pointer value</i></td></tr>
+<tr><th id="120">120</th><td><i class="doc">     *<span class="command"> @stable</span> ICU 4.4</i></td></tr>
+<tr><th id="121">121</th><td><i class="doc">     */</i></td></tr>
+<tr><th id="122">122</th><td>    T *<dfn class="decl def fn" id="_ZNK6icu_6616LocalPointerBase8getAliasEv" title='icu_66::LocalPointerBase::getAlias' data-ref="_ZNK6icu_6616LocalPointerBase8getAliasEv">getAlias</dfn>() <em>const</em> { <b>return</b> <a class="member field" href="#icu_66::LocalPointerBase::ptr" title='icu_66::LocalPointerBase::ptr' data-ref="icu_66::LocalPointerBase::ptr">ptr</a>; }</td></tr>
+<tr><th id="123">123</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="124">124</th><td><i class="doc">     * Access without ownership change.</i></td></tr>
+<tr><th id="125">125</th><td><i class="doc">     * <span class="command">@return</span> the pointer value as a reference</i></td></tr>
+<tr><th id="126">126</th><td><i class="doc">     *<span class="command"> @stable</span> ICU 4.4</i></td></tr>
+<tr><th id="127">127</th><td><i class="doc">     */</i></td></tr>
+<tr><th id="128">128</th><td>    T &amp;<dfn class="decl def fn" id="_ZNK6icu_6616LocalPointerBasedeEv" title='icu_66::LocalPointerBase::operator*' data-ref="_ZNK6icu_6616LocalPointerBasedeEv"><b>operator</b>*</dfn>() <em>const</em> { <b>return</b> *<a class="member field" href="#icu_66::LocalPointerBase::ptr" title='icu_66::LocalPointerBase::ptr' data-ref="icu_66::LocalPointerBase::ptr">ptr</a>; }</td></tr>
+<tr><th id="129">129</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="130">130</th><td><i class="doc">     * Access without ownership change.</i></td></tr>
+<tr><th id="131">131</th><td><i class="doc">     * <span class="command">@return</span> the pointer value</i></td></tr>
+<tr><th id="132">132</th><td><i class="doc">     *<span class="command"> @stable</span> ICU 4.4</i></td></tr>
+<tr><th id="133">133</th><td><i class="doc">     */</i></td></tr>
+<tr><th id="134">134</th><td>    T *<dfn class="decl def fn" id="_ZNK6icu_6616LocalPointerBaseptEv" title='icu_66::LocalPointerBase::operator-&gt;' data-ref="_ZNK6icu_6616LocalPointerBaseptEv"><b>operator</b>-&gt;</dfn>() <em>const</em> { <b>return</b> <a class="member field" href="#icu_66::LocalPointerBase::ptr" title='icu_66::LocalPointerBase::ptr' data-ref="icu_66::LocalPointerBase::ptr">ptr</a>; }</td></tr>
+<tr><th id="135">135</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="136">136</th><td><i class="doc">     * Gives up ownership; the internal pointer becomes NULL.</i></td></tr>
+<tr><th id="137">137</th><td><i class="doc">     * <span class="command">@return</span> the pointer value;</i></td></tr>
+<tr><th id="138">138</th><td><i class="doc">     *         caller becomes responsible for deleting the object</i></td></tr>
+<tr><th id="139">139</th><td><i class="doc">     *<span class="command"> @stable</span> ICU 4.4</i></td></tr>
+<tr><th id="140">140</th><td><i class="doc">     */</i></td></tr>
+<tr><th id="141">141</th><td>    T *<dfn class="decl def fn" id="_ZN6icu_6616LocalPointerBase6orphanEv" title='icu_66::LocalPointerBase::orphan' data-ref="_ZN6icu_6616LocalPointerBase6orphanEv">orphan</dfn>() {</td></tr>
+<tr><th id="142">142</th><td>        T *<dfn class="local col9 decl" id="509p" title='p' data-type='T *' data-ref="509p">p</dfn>=<a class="member field" href="#icu_66::LocalPointerBase::ptr" title='icu_66::LocalPointerBase::ptr' data-ref="icu_66::LocalPointerBase::ptr">ptr</a>;</td></tr>
+<tr><th id="143">143</th><td>        <a class="member field" href="#icu_66::LocalPointerBase::ptr" title='icu_66::LocalPointerBase::ptr' data-ref="icu_66::LocalPointerBase::ptr">ptr</a>=<span class="macro" title="__null" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="144">144</th><td>        <b>return</b> <a class="local col9 ref" href="#509p" title='p' data-ref="509p">p</a>;</td></tr>
+<tr><th id="145">145</th><td>    }</td></tr>
+<tr><th id="146">146</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="147">147</th><td><i class="doc">     * Deletes the object it owns,</i></td></tr>
+<tr><th id="148">148</th><td><i class="doc">     * and adopts (takes ownership of) the one passed in.</i></td></tr>
+<tr><th id="149">149</th><td><i class="doc">     * Subclass must override: Base class does not delete the object.</i></td></tr>
+<tr><th id="150">150</th><td><i class="doc">     * <span class="command">@param</span> <span class="arg">p</span> simple pointer to an object that is adopted</i></td></tr>
+<tr><th id="151">151</th><td><i class="doc">     *<span class="command"> @stable</span> ICU 4.4</i></td></tr>
+<tr><th id="152">152</th><td><i class="doc">     */</i></td></tr>
+<tr><th id="153">153</th><td>    <em>void</em> <dfn class="decl def fn" id="_ZN6icu_6616LocalPointerBase12adoptInsteadEPT_" title='icu_66::LocalPointerBase::adoptInstead' data-ref="_ZN6icu_6616LocalPointerBase12adoptInsteadEPT_">adoptInstead</dfn>(T *<dfn class="local col0 decl" id="510p" title='p' data-type='T *' data-ref="510p">p</dfn>) {</td></tr>
+<tr><th id="154">154</th><td>        <i>// delete ptr;</i></td></tr>
+<tr><th id="155">155</th><td>        <a class="member field" href="#icu_66::LocalPointerBase::ptr" title='icu_66::LocalPointerBase::ptr' data-ref="icu_66::LocalPointerBase::ptr">ptr</a>=<a class="local col0 ref" href="#510p" title='p' data-ref="510p">p</a>;</td></tr>
+<tr><th id="156">156</th><td>    }</td></tr>
+<tr><th id="157">157</th><td><b>protected</b>:</td></tr>
+<tr><th id="158">158</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="159">159</th><td><i class="doc">     * Actual pointer.</i></td></tr>
+<tr><th id="160">160</th><td><i class="doc">     * <span class="command">@internal</span></i></td></tr>
+<tr><th id="161">161</th><td><i class="doc"><span class="verb">     *</span>/</i><span class="verb"></span></td></tr>
+<tr><th id="162">162</th><td><span class="verb"></span>    T *<dfn class="decl field" id="icu_66::LocalPointerBase::ptr" title='icu_66::LocalPointerBase::ptr' data-ref="icu_66::LocalPointerBase::ptr">ptr</dfn>;</td></tr>
+<tr><th id="163">163</th><td><b>private</b>:</td></tr>
+<tr><th id="164">164</th><td>    <i>// No comparison operators with other LocalPointerBases.</i></td></tr>
+<tr><th id="165">165</th><td>    <em>bool</em> <dfn class="decl fn" id="_ZN6icu_6616LocalPointerBaseeqERKNS_16LocalPointerBaseIT_EE" title='icu_66::LocalPointerBase::operator==' data-ref="_ZN6icu_6616LocalPointerBaseeqERKNS_16LocalPointerBaseIT_EE"><b>operator</b>==</dfn>(<em>const</em> <a class="type" href="#icu_66::LocalPointerBase" title='icu_66::LocalPointerBase' data-ref="icu_66::LocalPointerBase">LocalPointerBase</a>&lt;T&gt; &amp;<dfn class="local col1 decl" id="511other" title='other' data-type='const LocalPointerBase&lt;T&gt; &amp;' data-ref="511other">other</dfn>);</td></tr>
+<tr><th id="166">166</th><td>    <em>bool</em> <dfn class="decl fn" id="_ZN6icu_6616LocalPointerBaseneERKNS_16LocalPointerBaseIT_EE" title='icu_66::LocalPointerBase::operator!=' data-ref="_ZN6icu_6616LocalPointerBaseneERKNS_16LocalPointerBaseIT_EE"><b>operator</b>!=</dfn>(<em>const</em> <a class="type" href="#icu_66::LocalPointerBase" title='icu_66::LocalPointerBase' data-ref="icu_66::LocalPointerBase">LocalPointerBase</a>&lt;T&gt; &amp;<dfn class="local col2 decl" id="512other" title='other' data-type='const LocalPointerBase&lt;T&gt; &amp;' data-ref="512other">other</dfn>);</td></tr>
+<tr><th id="167">167</th><td>    <i>// No ownership sharing: No copy constructor, no assignment operator.</i></td></tr>
+<tr><th id="168">168</th><td>    <dfn class="decl fn" id="_ZN6icu_6616LocalPointerBaseC1ERKNS_16LocalPointerBaseIT_EE" title='icu_66::LocalPointerBase::LocalPointerBase&lt;T&gt;' data-ref="_ZN6icu_6616LocalPointerBaseC1ERKNS_16LocalPointerBaseIT_EE">LocalPointerBase</dfn>(<em>const</em> <a class="type" href="#icu_66::LocalPointerBase" title='icu_66::LocalPointerBase' data-ref="icu_66::LocalPointerBase">LocalPointerBase</a>&lt;T&gt; &amp;<dfn class="local col3 decl" id="513other" title='other' data-type='const LocalPointerBase&lt;T&gt; &amp;' data-ref="513other">other</dfn>);</td></tr>
+<tr><th id="169">169</th><td>    <em>void</em> <dfn class="decl fn" id="_ZN6icu_6616LocalPointerBaseaSERKNS_16LocalPointerBaseIT_EE" title='icu_66::LocalPointerBase::operator=' data-ref="_ZN6icu_6616LocalPointerBaseaSERKNS_16LocalPointerBaseIT_EE"><b>operator</b>=</dfn>(<em>const</em> <a class="type" href="#icu_66::LocalPointerBase" title='icu_66::LocalPointerBase' data-ref="icu_66::LocalPointerBase">LocalPointerBase</a>&lt;T&gt; &amp;<dfn class="local col4 decl" id="514other" title='other' data-type='const LocalPointerBase&lt;T&gt; &amp;' data-ref="514other">other</dfn>);</td></tr>
+<tr><th id="170">170</th><td>};</td></tr>
+<tr><th id="171">171</th><td></td></tr>
+<tr><th id="172">172</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="173">173</th><td><i class="doc"> * "Smart pointer" class, deletes objects via the standard C++ delete operator.</i></td></tr>
+<tr><th id="174">174</th><td><i class="doc"> * For most methods see the LocalPointerBase base class.</i></td></tr>
+<tr><th id="175">175</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="176">176</th><td><i class="doc"> * Usage example:</i></td></tr>
+<tr><th id="177">177</th><td><i class="doc"> * <span class="command">\code</span></i></td></tr>
+<tr><th id="178">178</th><td><i class="doc"> *<span class="verb"> LocalPointer&lt;UnicodeString&gt; s(new UnicodeString((UChar32)0x50005));</span></i></td></tr>
+<tr><th id="179">179</th><td><i class="doc"><span class="verb"></span> *<span class="verb"> int32_t length=s-&gt;length();  // 2</span></i></td></tr>
+<tr><th id="180">180</th><td><i class="doc"><span class="verb"></span> *<span class="verb"> char16_t lead=s-&gt;charAt(0);  // 0xd900</span></i></td></tr>
+<tr><th id="181">181</th><td><i class="doc"><span class="verb"></span> *<span class="verb"> if(some condition) { return; }  // no need to explicitly delete the pointer</span></i></td></tr>
+<tr><th id="182">182</th><td><i class="doc"><span class="verb"></span> *<span class="verb"> s.adoptInstead(new UnicodeString((char16_t)0xfffc));</span></i></td></tr>
+<tr><th id="183">183</th><td><i class="doc"><span class="verb"></span> *<span class="verb"> length=s-&gt;length();  // 1</span></i></td></tr>
+<tr><th id="184">184</th><td><i class="doc"><span class="verb"></span> *<span class="verb"> // no need to explicitly delete the pointer</span></i></td></tr>
+<tr><th id="185">185</th><td><i class="doc"><span class="verb"></span> * \endcode</i></td></tr>
+<tr><th id="186">186</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="187">187</th><td><i class="doc"> * <span class="command">@see</span> LocalPointerBase</i></td></tr>
+<tr><th id="188">188</th><td><i class="doc"> *<span class="command"> @stable</span> ICU 4.4</i></td></tr>
+<tr><th id="189">189</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="190">190</th><td><b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="191">191</th><td><b>class</b> <dfn class="type def" id="icu_66::LocalPointer" title='icu_66::LocalPointer' data-ref="icu_66::LocalPointer">LocalPointer</dfn> : <b>public</b> <a class="type" href="#icu_66::LocalPointerBase" title='icu_66::LocalPointerBase' data-ref="icu_66::LocalPointerBase">LocalPointerBase</a>&lt;T&gt; {</td></tr>
+<tr><th id="192">192</th><td><b>public</b>:</td></tr>
+<tr><th id="193">193</th><td>    <b>using</b> <a class="type" href="#icu_66::LocalPointerBase" title='icu_66::LocalPointerBase' data-ref="icu_66::LocalPointerBase">LocalPointerBase</a>&lt;T&gt;::<b>operator</b>*;</td></tr>
+<tr><th id="194">194</th><td>    <b>using</b> <a class="type" href="#icu_66::LocalPointerBase" title='icu_66::LocalPointerBase' data-ref="icu_66::LocalPointerBase">LocalPointerBase</a>&lt;T&gt;::<b>operator</b>-&gt;;</td></tr>
+<tr><th id="195">195</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="196">196</th><td><i class="doc">     * Constructor takes ownership.</i></td></tr>
+<tr><th id="197">197</th><td><i class="doc">     * <span class="command">@param</span> <span class="arg">p</span> simple pointer to an object that is adopted</i></td></tr>
+<tr><th id="198">198</th><td><i class="doc">     *<span class="command"> @stable</span> ICU 4.4</i></td></tr>
+<tr><th id="199">199</th><td><i class="doc">     */</i></td></tr>
+<tr><th id="200">200</th><td>    <b>explicit</b> <dfn class="decl def fn" id="_ZN6icu_6612LocalPointerC1EPT_" title='icu_66::LocalPointer::LocalPointer&lt;T&gt;' data-ref="_ZN6icu_6612LocalPointerC1EPT_">LocalPointer</dfn>(T *<dfn class="local col5 decl" id="515p" title='p' data-type='T *' data-ref="515p">p</dfn>=<span class="macro" title="__null" data-ref="_M/NULL">NULL</span>) : <a class="type" href="#icu_66::LocalPointerBase" title='icu_66::LocalPointerBase' data-ref="icu_66::LocalPointerBase">LocalPointerBase</a>&lt;T&gt;(<a class="local col5 ref" href="#515p" title='p' data-ref="515p">p</a>) {}</td></tr>
+<tr><th id="201">201</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="202">202</th><td><i class="doc">     * Constructor takes ownership and reports an error if NULL.</i></td></tr>
+<tr><th id="203">203</th><td><i class="doc">     *</i></td></tr>
+<tr><th id="204">204</th><td><i class="doc">     * This constructor is intended to be used with other-class constructors</i></td></tr>
+<tr><th id="205">205</th><td><i class="doc">     * that may report a failure UErrorCode,</i></td></tr>
+<tr><th id="206">206</th><td><i class="doc">     * so that callers need to check only for U_FAILURE(errorCode)</i></td></tr>
+<tr><th id="207">207</th><td><i class="doc">     * and not also separately for isNull().</i></td></tr>
+<tr><th id="208">208</th><td><i class="doc">     *</i></td></tr>
+<tr><th id="209">209</th><td><i class="doc">     * <span class="command">@param</span> <span class="arg">p</span> simple pointer to an object that is adopted</i></td></tr>
+<tr><th id="210">210</th><td><i class="doc">     * <span class="command">@param</span> <span class="arg">errorCode</span> in/out UErrorCode, set to U_MEMORY_ALLOCATION_ERROR</i></td></tr>
+<tr><th id="211">211</th><td><i class="doc">     *     if p==NULL and no other failure code had been set</i></td></tr>
+<tr><th id="212">212</th><td><i class="doc">     *<span class="command"> @stable</span> ICU 55</i></td></tr>
+<tr><th id="213">213</th><td><i class="doc">     */</i></td></tr>
+<tr><th id="214">214</th><td>    <dfn class="decl def fn" id="_ZN6icu_6612LocalPointerC1EPT_R10UErrorCode" title='icu_66::LocalPointer::LocalPointer&lt;T&gt;' data-ref="_ZN6icu_6612LocalPointerC1EPT_R10UErrorCode">LocalPointer</dfn>(T *<dfn class="local col6 decl" id="516p" title='p' data-type='T *' data-ref="516p">p</dfn>, <a class="typedef" href="utypes.h.html#UErrorCode" title='UErrorCode' data-type='enum UErrorCode' data-ref="UErrorCode">UErrorCode</a> &amp;<dfn class="local col7 decl" id="517errorCode" title='errorCode' data-type='UErrorCode &amp;' data-ref="517errorCode">errorCode</dfn>) : <a class="type" href="#icu_66::LocalPointerBase" title='icu_66::LocalPointerBase' data-ref="icu_66::LocalPointerBase">LocalPointerBase</a>&lt;T&gt;(<a class="local col6 ref" href="#516p" title='p' data-ref="516p">p</a>) {</td></tr>
+<tr><th id="215">215</th><td>        <b>if</b>(<a class="local col6 ref" href="#516p" title='p' data-ref="516p">p</a>==<span class="macro" title="__null" data-ref="_M/NULL">NULL</span> &amp;&amp; <a class="ref fn" href="utypes.h.html#_ZL9U_SUCCESS10UErrorCode" title='U_SUCCESS' data-ref="_ZL9U_SUCCESS10UErrorCode">U_SUCCESS</a>(<span class='inlayHint'>code:&nbsp;</span><a class="local col7 ref" href="#517errorCode" title='errorCode' data-ref="517errorCode">errorCode</a>)) {</td></tr>
+<tr><th id="216">216</th><td>            <a class="local col7 ref" href="#517errorCode" title='errorCode' data-ref="517errorCode">errorCode</a>=<a class="enum" href="utypes.h.html#U_MEMORY_ALLOCATION_ERROR" title='U_MEMORY_ALLOCATION_ERROR' data-ref="U_MEMORY_ALLOCATION_ERROR">U_MEMORY_ALLOCATION_ERROR</a>;</td></tr>
+<tr><th id="217">217</th><td>        }</td></tr>
+<tr><th id="218">218</th><td>    }</td></tr>
+<tr><th id="219">219</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="220">220</th><td><i class="doc">     * Move constructor, leaves src with isNull().</i></td></tr>
+<tr><th id="221">221</th><td><i class="doc">     * <span class="command">@param</span> <span class="arg">src</span> source smart pointer</i></td></tr>
+<tr><th id="222">222</th><td><i class="doc">     *<span class="command"> @stable</span> ICU 56</i></td></tr>
+<tr><th id="223">223</th><td><i class="doc">     */</i></td></tr>
+<tr><th id="224">224</th><td>    <dfn class="decl def fn" id="_ZN6icu_6612LocalPointerC1EONS_12LocalPointerIT_EE" title='icu_66::LocalPointer::LocalPointer&lt;T&gt;' data-ref="_ZN6icu_6612LocalPointerC1EONS_12LocalPointerIT_EE">LocalPointer</dfn>(<a class="type" href="#icu_66::LocalPointer" title='icu_66::LocalPointer' data-ref="icu_66::LocalPointer">LocalPointer</a>&lt;T&gt; &amp;&amp;<dfn class="local col8 decl" id="518src" title='src' data-type='LocalPointer&lt;T&gt; &amp;&amp;' data-ref="518src">src</dfn>) <a class="macro" href="platform.h.html#529" title="noexcept" data-ref="_M/U_NOEXCEPT">U_NOEXCEPT</a> : <a class="type" href="#icu_66::LocalPointerBase" title='icu_66::LocalPointerBase' data-ref="icu_66::LocalPointerBase">LocalPointerBase</a>&lt;T&gt;(<a class="local col8 ref" href="#518src" title='src' data-ref="518src">src</a>.ptr) {</td></tr>
+<tr><th id="225">225</th><td>        <a class="local col8 ref" href="#518src" title='src' data-ref="518src">src</a>.ptr=<span class="macro" title="__null" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="226">226</th><td>    }</td></tr>
+<tr><th id="227">227</th><td></td></tr>
+<tr><th id="228">228</th><td><u>#<span data-ppcond="228">ifndef</span> <span class="macro" data-ref="_M/U_HIDE_DRAFT_API">U_HIDE_DRAFT_API</span></u></td></tr>
+<tr><th id="229">229</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="230">230</th><td><i class="doc">     * Constructs a LocalPointer from a C++11 std::unique_ptr.</i></td></tr>
+<tr><th id="231">231</th><td><i class="doc">     * The LocalPointer steals the object owned by the std::unique_ptr.</i></td></tr>
+<tr><th id="232">232</th><td><i class="doc">     *</i></td></tr>
+<tr><th id="233">233</th><td><i class="doc">     * This constructor works via move semantics. If your std::unique_ptr is</i></td></tr>
+<tr><th id="234">234</th><td><i class="doc">     * in a local variable, you must use std::move.</i></td></tr>
+<tr><th id="235">235</th><td><i class="doc">     *</i></td></tr>
+<tr><th id="236">236</th><td><i class="doc">     * <span class="command">@param</span> <span class="arg">p</span> The std::unique_ptr from which the pointer will be stolen.</i></td></tr>
+<tr><th id="237">237</th><td><i class="doc">     *<span class="command"> @draft</span> ICU 64</i></td></tr>
+<tr><th id="238">238</th><td><i class="doc">     */</i></td></tr>
+<tr><th id="239">239</th><td>    <b>explicit</b> <dfn class="decl def fn" id="_ZN6icu_6612LocalPointerC1EOSt10unique_ptrIT_St14default_deleteIS2_EE" title='icu_66::LocalPointer::LocalPointer&lt;T&gt;' data-ref="_ZN6icu_6612LocalPointerC1EOSt10unique_ptrIT_St14default_deleteIS2_EE">LocalPointer</dfn>(<span class="namespace">std::</span><a class="type" href="../c++/9/bits/unique_ptr.h.html#std::unique_ptr" title='std::unique_ptr' data-ref="std::unique_ptr">unique_ptr</a>&lt;T&gt; &amp;&amp;<dfn class="local col9 decl" id="519p" title='p' data-type='std::unique_ptr&lt;T&gt; &amp;&amp;' data-ref="519p">p</dfn>)</td></tr>
+<tr><th id="240">240</th><td>        : <a class="type" href="#icu_66::LocalPointerBase" title='icu_66::LocalPointerBase' data-ref="icu_66::LocalPointerBase">LocalPointerBase</a>&lt;T&gt;(<a class="local col9 ref" href="#519p" title='p' data-ref="519p">p</a>.release()) {}</td></tr>
+<tr><th id="241">241</th><td><u>#<span data-ppcond="228">endif</span>  /* U_HIDE_DRAFT_API */</u></td></tr>
+<tr><th id="242">242</th><td></td></tr>
+<tr><th id="243">243</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="244">244</th><td><i class="doc">     * Destructor deletes the object it owns.</i></td></tr>
+<tr><th id="245">245</th><td><i class="doc">     *<span class="command"> @stable</span> ICU 4.4</i></td></tr>
+<tr><th id="246">246</th><td><i class="doc">     */</i></td></tr>
+<tr><th id="247">247</th><td>    <dfn class="decl def fn" id="_ZN6icu_6612LocalPointerD1Ev" title='icu_66::LocalPointer::~LocalPointer&lt;T&gt;' data-ref="_ZN6icu_6612LocalPointerD1Ev">~LocalPointer</dfn>() {</td></tr>
+<tr><th id="248">248</th><td>        <b>delete</b> <a class="type" href="#icu_66::LocalPointerBase" title='icu_66::LocalPointerBase' data-ref="icu_66::LocalPointerBase">LocalPointerBase</a>&lt;T&gt;::ptr;</td></tr>
+<tr><th id="249">249</th><td>    }</td></tr>
+<tr><th id="250">250</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="251">251</th><td><i class="doc">     * Move assignment operator, leaves src with isNull().</i></td></tr>
+<tr><th id="252">252</th><td><i class="doc">     * The behavior is undefined if *this and src are the same object.</i></td></tr>
+<tr><th id="253">253</th><td><i class="doc">     * <span class="command">@param</span> <span class="arg">src</span> source smart pointer</i></td></tr>
+<tr><th id="254">254</th><td><i class="doc">     * <span class="command">@return</span> *this</i></td></tr>
+<tr><th id="255">255</th><td><i class="doc">     *<span class="command"> @stable</span> ICU 56</i></td></tr>
+<tr><th id="256">256</th><td><i class="doc">     */</i></td></tr>
+<tr><th id="257">257</th><td>    <a class="type" href="#icu_66::LocalPointer" title='icu_66::LocalPointer' data-ref="icu_66::LocalPointer">LocalPointer</a>&lt;T&gt; &amp;<dfn class="decl def fn" id="_ZN6icu_6612LocalPointeraSEONS_12LocalPointerIT_EE" title='icu_66::LocalPointer::operator=' data-ref="_ZN6icu_6612LocalPointeraSEONS_12LocalPointerIT_EE"><b>operator</b>=</dfn>(<a class="type" href="#icu_66::LocalPointer" title='icu_66::LocalPointer' data-ref="icu_66::LocalPointer">LocalPointer</a>&lt;T&gt; &amp;&amp;<dfn class="local col0 decl" id="520src" title='src' data-type='LocalPointer&lt;T&gt; &amp;&amp;' data-ref="520src">src</dfn>) <a class="macro" href="platform.h.html#529" title="noexcept" data-ref="_M/U_NOEXCEPT">U_NOEXCEPT</a> {</td></tr>
+<tr><th id="258">258</th><td>        <b>delete</b> <a class="type" href="#icu_66::LocalPointerBase" title='icu_66::LocalPointerBase' data-ref="icu_66::LocalPointerBase">LocalPointerBase</a>&lt;T&gt;::ptr;</td></tr>
+<tr><th id="259">259</th><td>        <a class="type" href="#icu_66::LocalPointerBase" title='icu_66::LocalPointerBase' data-ref="icu_66::LocalPointerBase">LocalPointerBase</a>&lt;T&gt;::ptr=<a class="local col0 ref" href="#520src" title='src' data-ref="520src">src</a>.ptr;</td></tr>
+<tr><th id="260">260</th><td>        <a class="local col0 ref" href="#520src" title='src' data-ref="520src">src</a>.ptr=<span class="macro" title="__null" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="261">261</th><td>        <b>return</b> *<b>this</b>;</td></tr>
+<tr><th id="262">262</th><td>    }</td></tr>
+<tr><th id="263">263</th><td></td></tr>
+<tr><th id="264">264</th><td><u>#<span data-ppcond="264">ifndef</span> <span class="macro" data-ref="_M/U_HIDE_DRAFT_API">U_HIDE_DRAFT_API</span></u></td></tr>
+<tr><th id="265">265</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="266">266</th><td><i class="doc">     * Move-assign from an std::unique_ptr to this LocalPointer.</i></td></tr>
+<tr><th id="267">267</th><td><i class="doc">     * Steals the pointer from the std::unique_ptr.</i></td></tr>
+<tr><th id="268">268</th><td><i class="doc">     *</i></td></tr>
+<tr><th id="269">269</th><td><i class="doc">     * <span class="command">@param</span> <span class="arg">p</span> The std::unique_ptr from which the pointer will be stolen.</i></td></tr>
+<tr><th id="270">270</th><td><i class="doc">     * <span class="command">@return</span> *this</i></td></tr>
+<tr><th id="271">271</th><td><i class="doc">     *<span class="command"> @draft</span> ICU 64</i></td></tr>
+<tr><th id="272">272</th><td><i class="doc">     */</i></td></tr>
+<tr><th id="273">273</th><td>    <a class="type" href="#icu_66::LocalPointer" title='icu_66::LocalPointer' data-ref="icu_66::LocalPointer">LocalPointer</a>&lt;T&gt; &amp;<dfn class="decl def fn" id="_ZN6icu_6612LocalPointeraSEOSt10unique_ptrIT_St14default_deleteIS2_EE" title='icu_66::LocalPointer::operator=' data-ref="_ZN6icu_6612LocalPointeraSEOSt10unique_ptrIT_St14default_deleteIS2_EE"><b>operator</b>=</dfn>(<span class="namespace">std::</span><a class="type" href="../c++/9/bits/unique_ptr.h.html#std::unique_ptr" title='std::unique_ptr' data-ref="std::unique_ptr">unique_ptr</a>&lt;T&gt; &amp;&amp;<dfn class="local col1 decl" id="521p" title='p' data-type='std::unique_ptr&lt;T&gt; &amp;&amp;' data-ref="521p">p</dfn>) <a class="macro" href="platform.h.html#529" title="noexcept" data-ref="_M/U_NOEXCEPT">U_NOEXCEPT</a> {</td></tr>
+<tr><th id="274">274</th><td>        <a class="member fn" href="#_ZN6icu_6612LocalPointer12adoptInsteadEPT_" title='icu_66::LocalPointer::adoptInstead' data-ref="_ZN6icu_6612LocalPointer12adoptInsteadEPT_">adoptInstead</a>(<span class='inlayHint'>p:&nbsp;</span><a class="local col1 ref" href="#521p" title='p' data-ref="521p">p</a>.release());</td></tr>
+<tr><th id="275">275</th><td>        <b>return</b> *<b>this</b>;</td></tr>
+<tr><th id="276">276</th><td>    }</td></tr>
+<tr><th id="277">277</th><td><u>#<span data-ppcond="264">endif</span>  /* U_HIDE_DRAFT_API */</u></td></tr>
+<tr><th id="278">278</th><td></td></tr>
+<tr><th id="279">279</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="280">280</th><td><i class="doc">     * Swap pointers.</i></td></tr>
+<tr><th id="281">281</th><td><i class="doc">     * <span class="command">@param</span> <span class="arg">other</span> other smart pointer</i></td></tr>
+<tr><th id="282">282</th><td><i class="doc">     *<span class="command"> @stable</span> ICU 56</i></td></tr>
+<tr><th id="283">283</th><td><i class="doc">     */</i></td></tr>
+<tr><th id="284">284</th><td>    <em>void</em> <dfn class="decl def fn" id="_ZN6icu_6612LocalPointer4swapERNS_12LocalPointerIT_EE" title='icu_66::LocalPointer::swap' data-ref="_ZN6icu_6612LocalPointer4swapERNS_12LocalPointerIT_EE">swap</dfn>(<a class="type" href="#icu_66::LocalPointer" title='icu_66::LocalPointer' data-ref="icu_66::LocalPointer">LocalPointer</a>&lt;T&gt; &amp;<dfn class="local col2 decl" id="522other" title='other' data-type='LocalPointer&lt;T&gt; &amp;' data-ref="522other">other</dfn>) <a class="macro" href="platform.h.html#529" title="noexcept" data-ref="_M/U_NOEXCEPT">U_NOEXCEPT</a> {</td></tr>
+<tr><th id="285">285</th><td>        T *<dfn class="local col3 decl" id="523temp" title='temp' data-type='T *' data-ref="523temp">temp</dfn>=<a class="type" href="#icu_66::LocalPointerBase" title='icu_66::LocalPointerBase' data-ref="icu_66::LocalPointerBase">LocalPointerBase</a>&lt;T&gt;::ptr;</td></tr>
+<tr><th id="286">286</th><td>        <a class="type" href="#icu_66::LocalPointerBase" title='icu_66::LocalPointerBase' data-ref="icu_66::LocalPointerBase">LocalPointerBase</a>&lt;T&gt;::ptr=<a class="local col2 ref" href="#522other" title='other' data-ref="522other">other</a>.ptr;</td></tr>
+<tr><th id="287">287</th><td>        <a class="local col2 ref" href="#522other" title='other' data-ref="522other">other</a>.ptr=<a class="local col3 ref" href="#523temp" title='temp' data-ref="523temp">temp</a>;</td></tr>
+<tr><th id="288">288</th><td>    }</td></tr>
+<tr><th id="289">289</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="290">290</th><td><i class="doc">     * Non-member LocalPointer swap function.</i></td></tr>
+<tr><th id="291">291</th><td><i class="doc">     * <span class="command">@param</span> <span class="arg">p1</span> will get p2's pointer</i></td></tr>
+<tr><th id="292">292</th><td><i class="doc">     * <span class="command">@param</span> <span class="arg">p2</span> will get p1's pointer</i></td></tr>
+<tr><th id="293">293</th><td><i class="doc">     *<span class="command"> @stable</span> ICU 56</i></td></tr>
+<tr><th id="294">294</th><td><i class="doc">     */</i></td></tr>
+<tr><th id="295">295</th><td>    <b>friend</b> <b>inline</b> <em>void</em> <dfn class="decl def fn" id="_ZN6icu_664swapERNS_12LocalPointerIT_EES4_" title='icu_66::swap' data-ref="_ZN6icu_664swapERNS_12LocalPointerIT_EES4_">swap</dfn>(<a class="type" href="#icu_66::LocalPointer" title='icu_66::LocalPointer' data-ref="icu_66::LocalPointer">LocalPointer</a>&lt;T&gt; &amp;<dfn class="local col4 decl" id="524p1" title='p1' data-type='LocalPointer&lt;T&gt; &amp;' data-ref="524p1">p1</dfn>, <a class="type" href="#icu_66::LocalPointer" title='icu_66::LocalPointer' data-ref="icu_66::LocalPointer">LocalPointer</a>&lt;T&gt; &amp;<dfn class="local col5 decl" id="525p2" title='p2' data-type='LocalPointer&lt;T&gt; &amp;' data-ref="525p2">p2</dfn>) <a class="macro" href="platform.h.html#529" title="noexcept" data-ref="_M/U_NOEXCEPT">U_NOEXCEPT</a> {</td></tr>
+<tr><th id="296">296</th><td>        <a class="local col4 ref" href="#524p1" title='p1' data-ref="524p1">p1</a>.swap(<a class="local col5 ref" href="#525p2" title='p2' data-ref="525p2">p2</a>);</td></tr>
+<tr><th id="297">297</th><td>    }</td></tr>
+<tr><th id="298">298</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="299">299</th><td><i class="doc">     * Deletes the object it owns,</i></td></tr>
+<tr><th id="300">300</th><td><i class="doc">     * and adopts (takes ownership of) the one passed in.</i></td></tr>
+<tr><th id="301">301</th><td><i class="doc">     * <span class="command">@param</span> <span class="arg">p</span> simple pointer to an object that is adopted</i></td></tr>
+<tr><th id="302">302</th><td><i class="doc">     *<span class="command"> @stable</span> ICU 4.4</i></td></tr>
+<tr><th id="303">303</th><td><i class="doc">     */</i></td></tr>
+<tr><th id="304">304</th><td>    <em>void</em> <dfn class="decl def fn" id="_ZN6icu_6612LocalPointer12adoptInsteadEPT_" title='icu_66::LocalPointer::adoptInstead' data-ref="_ZN6icu_6612LocalPointer12adoptInsteadEPT_">adoptInstead</dfn>(T *<dfn class="local col6 decl" id="526p" title='p' data-type='T *' data-ref="526p">p</dfn>) {</td></tr>
+<tr><th id="305">305</th><td>        <b>delete</b> <a class="type" href="#icu_66::LocalPointerBase" title='icu_66::LocalPointerBase' data-ref="icu_66::LocalPointerBase">LocalPointerBase</a>&lt;T&gt;::ptr;</td></tr>
+<tr><th id="306">306</th><td>        <a class="type" href="#icu_66::LocalPointerBase" title='icu_66::LocalPointerBase' data-ref="icu_66::LocalPointerBase">LocalPointerBase</a>&lt;T&gt;::ptr=<a class="local col6 ref" href="#526p" title='p' data-ref="526p">p</a>;</td></tr>
+<tr><th id="307">307</th><td>    }</td></tr>
+<tr><th id="308">308</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="309">309</th><td><i class="doc">     * Deletes the object it owns,</i></td></tr>
+<tr><th id="310">310</th><td><i class="doc">     * and adopts (takes ownership of) the one passed in.</i></td></tr>
+<tr><th id="311">311</th><td><i class="doc">     *</i></td></tr>
+<tr><th id="312">312</th><td><i class="doc">     * If U_FAILURE(errorCode), then the current object is retained and the new one deleted.</i></td></tr>
+<tr><th id="313">313</th><td><i class="doc">     *</i></td></tr>
+<tr><th id="314">314</th><td><i class="doc">     * If U_SUCCESS(errorCode) but the input pointer is NULL,</i></td></tr>
+<tr><th id="315">315</th><td><i class="doc">     * then U_MEMORY_ALLOCATION_ERROR is set,</i></td></tr>
+<tr><th id="316">316</th><td><i class="doc">     * the current object is deleted, and NULL is set.</i></td></tr>
+<tr><th id="317">317</th><td><i class="doc">     *</i></td></tr>
+<tr><th id="318">318</th><td><i class="doc">     * <span class="command">@param</span> <span class="arg">p</span> simple pointer to an object that is adopted</i></td></tr>
+<tr><th id="319">319</th><td><i class="doc">     * <span class="command">@param</span> <span class="arg">errorCode</span> in/out UErrorCode, set to U_MEMORY_ALLOCATION_ERROR</i></td></tr>
+<tr><th id="320">320</th><td><i class="doc">     *     if p==NULL and no other failure code had been set</i></td></tr>
+<tr><th id="321">321</th><td><i class="doc">     *<span class="command"> @stable</span> ICU 55</i></td></tr>
+<tr><th id="322">322</th><td><i class="doc">     */</i></td></tr>
+<tr><th id="323">323</th><td>    <em>void</em> <dfn class="decl def fn" id="_ZN6icu_6612LocalPointer29adoptInsteadAndCheckErrorCodeEPT_R10UErrorCode" title='icu_66::LocalPointer::adoptInsteadAndCheckErrorCode' data-ref="_ZN6icu_6612LocalPointer29adoptInsteadAndCheckErrorCodeEPT_R10UErrorCode">adoptInsteadAndCheckErrorCode</dfn>(T *<dfn class="local col7 decl" id="527p" title='p' data-type='T *' data-ref="527p">p</dfn>, <a class="typedef" href="utypes.h.html#UErrorCode" title='UErrorCode' data-type='enum UErrorCode' data-ref="UErrorCode">UErrorCode</a> &amp;<dfn class="local col8 decl" id="528errorCode" title='errorCode' data-type='UErrorCode &amp;' data-ref="528errorCode">errorCode</dfn>) {</td></tr>
+<tr><th id="324">324</th><td>        <b>if</b>(<a class="ref fn" href="utypes.h.html#_ZL9U_SUCCESS10UErrorCode" title='U_SUCCESS' data-ref="_ZL9U_SUCCESS10UErrorCode">U_SUCCESS</a>(<span class='inlayHint'>code:&nbsp;</span><a class="local col8 ref" href="#528errorCode" title='errorCode' data-ref="528errorCode">errorCode</a>)) {</td></tr>
+<tr><th id="325">325</th><td>            <b>delete</b> <a class="type" href="#icu_66::LocalPointerBase" title='icu_66::LocalPointerBase' data-ref="icu_66::LocalPointerBase">LocalPointerBase</a>&lt;T&gt;::ptr;</td></tr>
+<tr><th id="326">326</th><td>            <a class="type" href="#icu_66::LocalPointerBase" title='icu_66::LocalPointerBase' data-ref="icu_66::LocalPointerBase">LocalPointerBase</a>&lt;T&gt;::ptr=<a class="local col7 ref" href="#527p" title='p' data-ref="527p">p</a>;</td></tr>
+<tr><th id="327">327</th><td>            <b>if</b>(<a class="local col7 ref" href="#527p" title='p' data-ref="527p">p</a>==<span class="macro" title="__null" data-ref="_M/NULL">NULL</span>) {</td></tr>
+<tr><th id="328">328</th><td>                <a class="local col8 ref" href="#528errorCode" title='errorCode' data-ref="528errorCode">errorCode</a>=<a class="enum" href="utypes.h.html#U_MEMORY_ALLOCATION_ERROR" title='U_MEMORY_ALLOCATION_ERROR' data-ref="U_MEMORY_ALLOCATION_ERROR">U_MEMORY_ALLOCATION_ERROR</a>;</td></tr>
+<tr><th id="329">329</th><td>            }</td></tr>
+<tr><th id="330">330</th><td>        } <b>else</b> {</td></tr>
+<tr><th id="331">331</th><td>            <b>delete</b> <a class="local col7 ref" href="#527p" title='p' data-ref="527p">p</a>;</td></tr>
+<tr><th id="332">332</th><td>        }</td></tr>
+<tr><th id="333">333</th><td>    }</td></tr>
+<tr><th id="334">334</th><td></td></tr>
+<tr><th id="335">335</th><td><u>#<span data-ppcond="335">ifndef</span> <span class="macro" data-ref="_M/U_HIDE_DRAFT_API">U_HIDE_DRAFT_API</span></u></td></tr>
+<tr><th id="336">336</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="337">337</th><td><i class="doc">     * Conversion operator to a C++11 std::unique_ptr.</i></td></tr>
+<tr><th id="338">338</th><td><i class="doc">     * Disowns the object and gives it to the returned std::unique_ptr.</i></td></tr>
+<tr><th id="339">339</th><td><i class="doc">     *</i></td></tr>
+<tr><th id="340">340</th><td><i class="doc">     * This operator works via move semantics. If your LocalPointer is</i></td></tr>
+<tr><th id="341">341</th><td><i class="doc">     * in a local variable, you must use std::move.</i></td></tr>
+<tr><th id="342">342</th><td><i class="doc">     *</i></td></tr>
+<tr><th id="343">343</th><td><i class="doc">     * <span class="command">@return</span> An std::unique_ptr owning the pointer previously owned by this</i></td></tr>
+<tr><th id="344">344</th><td><i class="doc">     *         icu::LocalPointer.</i></td></tr>
+<tr><th id="345">345</th><td><i class="doc">     *<span class="command"> @draft</span> ICU 64</i></td></tr>
+<tr><th id="346">346</th><td><i class="doc">     */</i></td></tr>
+<tr><th id="347">347</th><td>    <dfn class="decl def fn" id="_ZNO6icu_6612LocalPointercvSt10unique_ptrIT_St14default_deleteIS2_EEEv" title='icu_66::LocalPointer::operator unique_ptr&lt;type-parameter-0-0, default_delete&lt;type-parameter-0-0&gt; &gt;' data-ref="_ZNO6icu_6612LocalPointercvSt10unique_ptrIT_St14default_deleteIS2_EEEv"><b>operator</b> <span class="namespace">std::</span><a class="type" href="../c++/9/bits/unique_ptr.h.html#std::unique_ptr" title='std::unique_ptr' data-ref="std::unique_ptr">unique_ptr</a>&lt;T&gt;</dfn> () &amp;&amp; {</td></tr>
+<tr><th id="348">348</th><td>        <b>return</b> <span class="namespace">std::</span><a class="type" href="../c++/9/bits/unique_ptr.h.html#std::unique_ptr" title='std::unique_ptr' data-ref="std::unique_ptr">unique_ptr</a>&lt;T&gt;(<a class="type" href="#icu_66::LocalPointerBase" title='icu_66::LocalPointerBase' data-ref="icu_66::LocalPointerBase">LocalPointerBase</a>&lt;T&gt;::orphan());</td></tr>
+<tr><th id="349">349</th><td>    }</td></tr>
+<tr><th id="350">350</th><td><u>#<span data-ppcond="335">endif</span>  /* U_HIDE_DRAFT_API */</u></td></tr>
+<tr><th id="351">351</th><td>};</td></tr>
+<tr><th id="352">352</th><td></td></tr>
+<tr><th id="353">353</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="354">354</th><td><i class="doc"> * "Smart pointer" class, deletes objects via the C++ array delete[] operator.</i></td></tr>
+<tr><th id="355">355</th><td><i class="doc"> * For most methods see the LocalPointerBase base class.</i></td></tr>
+<tr><th id="356">356</th><td><i class="doc"> * Adds operator[] for array item access.</i></td></tr>
+<tr><th id="357">357</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="358">358</th><td><i class="doc"> * Usage example:</i></td></tr>
+<tr><th id="359">359</th><td><i class="doc"> * <span class="command">\code</span></i></td></tr>
+<tr><th id="360">360</th><td><i class="doc"> *<span class="verb"> LocalArray&lt;UnicodeString&gt; a(new UnicodeString[2]);</span></i></td></tr>
+<tr><th id="361">361</th><td><i class="doc"><span class="verb"></span> *<span class="verb"> a[0].append((char16_t)0x61);</span></i></td></tr>
+<tr><th id="362">362</th><td><i class="doc"><span class="verb"></span> *<span class="verb"> if(some condition) { return; }  // no need to explicitly delete the array</span></i></td></tr>
+<tr><th id="363">363</th><td><i class="doc"><span class="verb"></span> *<span class="verb"> a.adoptInstead(new UnicodeString[4]);</span></i></td></tr>
+<tr><th id="364">364</th><td><i class="doc"><span class="verb"></span> *<span class="verb"> a[3].append((char16_t)0x62).append((char16_t)0x63).reverse();</span></i></td></tr>
+<tr><th id="365">365</th><td><i class="doc"><span class="verb"></span> *<span class="verb"> // no need to explicitly delete the array</span></i></td></tr>
+<tr><th id="366">366</th><td><i class="doc"><span class="verb"></span> * \endcode</i></td></tr>
+<tr><th id="367">367</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="368">368</th><td><i class="doc"> * <span class="command">@see</span> LocalPointerBase</i></td></tr>
+<tr><th id="369">369</th><td><i class="doc"> *<span class="command"> @stable</span> ICU 4.4</i></td></tr>
+<tr><th id="370">370</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="371">371</th><td><b>template</b>&lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="372">372</th><td><b>class</b> <dfn class="type def" id="icu_66::LocalArray" title='icu_66::LocalArray' data-ref="icu_66::LocalArray">LocalArray</dfn> : <b>public</b> <a class="type" href="#icu_66::LocalPointerBase" title='icu_66::LocalPointerBase' data-ref="icu_66::LocalPointerBase">LocalPointerBase</a>&lt;T&gt; {</td></tr>
+<tr><th id="373">373</th><td><b>public</b>:</td></tr>
+<tr><th id="374">374</th><td>    <b>using</b> <a class="type" href="#icu_66::LocalPointerBase" title='icu_66::LocalPointerBase' data-ref="icu_66::LocalPointerBase">LocalPointerBase</a>&lt;T&gt;::<b>operator</b>*;</td></tr>
+<tr><th id="375">375</th><td>    <b>using</b> <a class="type" href="#icu_66::LocalPointerBase" title='icu_66::LocalPointerBase' data-ref="icu_66::LocalPointerBase">LocalPointerBase</a>&lt;T&gt;::<b>operator</b>-&gt;;</td></tr>
+<tr><th id="376">376</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="377">377</th><td><i class="doc">     * Constructor takes ownership.</i></td></tr>
+<tr><th id="378">378</th><td><i class="doc">     * <span class="command">@param</span> <span class="arg">p</span> simple pointer to an array of T objects that is adopted</i></td></tr>
+<tr><th id="379">379</th><td><i class="doc">     *<span class="command"> @stable</span> ICU 4.4</i></td></tr>
+<tr><th id="380">380</th><td><i class="doc">     */</i></td></tr>
+<tr><th id="381">381</th><td>    <b>explicit</b> <dfn class="decl def fn" id="_ZN6icu_6610LocalArrayC1EPT_" title='icu_66::LocalArray::LocalArray&lt;T&gt;' data-ref="_ZN6icu_6610LocalArrayC1EPT_">LocalArray</dfn>(T *<dfn class="local col9 decl" id="529p" title='p' data-type='T *' data-ref="529p">p</dfn>=<span class="macro" title="__null" data-ref="_M/NULL">NULL</span>) : <a class="type" href="#icu_66::LocalPointerBase" title='icu_66::LocalPointerBase' data-ref="icu_66::LocalPointerBase">LocalPointerBase</a>&lt;T&gt;(<a class="local col9 ref" href="#529p" title='p' data-ref="529p">p</a>) {}</td></tr>
+<tr><th id="382">382</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="383">383</th><td><i class="doc">     * Constructor takes ownership and reports an error if NULL.</i></td></tr>
+<tr><th id="384">384</th><td><i class="doc">     *</i></td></tr>
+<tr><th id="385">385</th><td><i class="doc">     * This constructor is intended to be used with other-class constructors</i></td></tr>
+<tr><th id="386">386</th><td><i class="doc">     * that may report a failure UErrorCode,</i></td></tr>
+<tr><th id="387">387</th><td><i class="doc">     * so that callers need to check only for U_FAILURE(errorCode)</i></td></tr>
+<tr><th id="388">388</th><td><i class="doc">     * and not also separately for isNull().</i></td></tr>
+<tr><th id="389">389</th><td><i class="doc">     *</i></td></tr>
+<tr><th id="390">390</th><td><i class="doc">     * <span class="command">@param</span> <span class="arg">p</span> simple pointer to an array of T objects that is adopted</i></td></tr>
+<tr><th id="391">391</th><td><i class="doc">     * <span class="command">@param</span> <span class="arg">errorCode</span> in/out UErrorCode, set to U_MEMORY_ALLOCATION_ERROR</i></td></tr>
+<tr><th id="392">392</th><td><i class="doc">     *     if p==NULL and no other failure code had been set</i></td></tr>
+<tr><th id="393">393</th><td><i class="doc">     *<span class="command"> @stable</span> ICU 56</i></td></tr>
+<tr><th id="394">394</th><td><i class="doc">     */</i></td></tr>
+<tr><th id="395">395</th><td>    <dfn class="decl def fn" id="_ZN6icu_6610LocalArrayC1EPT_R10UErrorCode" title='icu_66::LocalArray::LocalArray&lt;T&gt;' data-ref="_ZN6icu_6610LocalArrayC1EPT_R10UErrorCode">LocalArray</dfn>(T *<dfn class="local col0 decl" id="530p" title='p' data-type='T *' data-ref="530p">p</dfn>, <a class="typedef" href="utypes.h.html#UErrorCode" title='UErrorCode' data-type='enum UErrorCode' data-ref="UErrorCode">UErrorCode</a> &amp;<dfn class="local col1 decl" id="531errorCode" title='errorCode' data-type='UErrorCode &amp;' data-ref="531errorCode">errorCode</dfn>) : <a class="type" href="#icu_66::LocalPointerBase" title='icu_66::LocalPointerBase' data-ref="icu_66::LocalPointerBase">LocalPointerBase</a>&lt;T&gt;(<a class="local col0 ref" href="#530p" title='p' data-ref="530p">p</a>) {</td></tr>
+<tr><th id="396">396</th><td>        <b>if</b>(<a class="local col0 ref" href="#530p" title='p' data-ref="530p">p</a>==<span class="macro" title="__null" data-ref="_M/NULL">NULL</span> &amp;&amp; <a class="ref fn" href="utypes.h.html#_ZL9U_SUCCESS10UErrorCode" title='U_SUCCESS' data-ref="_ZL9U_SUCCESS10UErrorCode">U_SUCCESS</a>(<span class='inlayHint'>code:&nbsp;</span><a class="local col1 ref" href="#531errorCode" title='errorCode' data-ref="531errorCode">errorCode</a>)) {</td></tr>
+<tr><th id="397">397</th><td>            <a class="local col1 ref" href="#531errorCode" title='errorCode' data-ref="531errorCode">errorCode</a>=<a class="enum" href="utypes.h.html#U_MEMORY_ALLOCATION_ERROR" title='U_MEMORY_ALLOCATION_ERROR' data-ref="U_MEMORY_ALLOCATION_ERROR">U_MEMORY_ALLOCATION_ERROR</a>;</td></tr>
+<tr><th id="398">398</th><td>        }</td></tr>
+<tr><th id="399">399</th><td>    }</td></tr>
+<tr><th id="400">400</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="401">401</th><td><i class="doc">     * Move constructor, leaves src with isNull().</i></td></tr>
+<tr><th id="402">402</th><td><i class="doc">     * <span class="command">@param</span> <span class="arg">src</span> source smart pointer</i></td></tr>
+<tr><th id="403">403</th><td><i class="doc">     *<span class="command"> @stable</span> ICU 56</i></td></tr>
+<tr><th id="404">404</th><td><i class="doc">     */</i></td></tr>
+<tr><th id="405">405</th><td>    <dfn class="decl def fn" id="_ZN6icu_6610LocalArrayC1EONS_10LocalArrayIT_EE" title='icu_66::LocalArray::LocalArray&lt;T&gt;' data-ref="_ZN6icu_6610LocalArrayC1EONS_10LocalArrayIT_EE">LocalArray</dfn>(<a class="type" href="#icu_66::LocalArray" title='icu_66::LocalArray' data-ref="icu_66::LocalArray">LocalArray</a>&lt;T&gt; &amp;&amp;<dfn class="local col2 decl" id="532src" title='src' data-type='LocalArray&lt;T&gt; &amp;&amp;' data-ref="532src">src</dfn>) <a class="macro" href="platform.h.html#529" title="noexcept" data-ref="_M/U_NOEXCEPT">U_NOEXCEPT</a> : <a class="type" href="#icu_66::LocalPointerBase" title='icu_66::LocalPointerBase' data-ref="icu_66::LocalPointerBase">LocalPointerBase</a>&lt;T&gt;(<a class="local col2 ref" href="#532src" title='src' data-ref="532src">src</a>.ptr) {</td></tr>
+<tr><th id="406">406</th><td>        <a class="local col2 ref" href="#532src" title='src' data-ref="532src">src</a>.ptr=<span class="macro" title="__null" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="407">407</th><td>    }</td></tr>
+<tr><th id="408">408</th><td></td></tr>
+<tr><th id="409">409</th><td><u>#<span data-ppcond="409">ifndef</span> <span class="macro" data-ref="_M/U_HIDE_DRAFT_API">U_HIDE_DRAFT_API</span></u></td></tr>
+<tr><th id="410">410</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="411">411</th><td><i class="doc">     * Constructs a LocalArray from a C++11 std::unique_ptr of an array type.</i></td></tr>
+<tr><th id="412">412</th><td><i class="doc">     * The LocalPointer steals the array owned by the std::unique_ptr.</i></td></tr>
+<tr><th id="413">413</th><td><i class="doc">     *</i></td></tr>
+<tr><th id="414">414</th><td><i class="doc">     * This constructor works via move semantics. If your std::unique_ptr is</i></td></tr>
+<tr><th id="415">415</th><td><i class="doc">     * in a local variable, you must use std::move.</i></td></tr>
+<tr><th id="416">416</th><td><i class="doc">     *</i></td></tr>
+<tr><th id="417">417</th><td><i class="doc">     * <span class="command">@param</span> <span class="arg">p</span> The std::unique_ptr from which the array will be stolen.</i></td></tr>
+<tr><th id="418">418</th><td><i class="doc">     *<span class="command"> @draft</span> ICU 64</i></td></tr>
+<tr><th id="419">419</th><td><i class="doc">     */</i></td></tr>
+<tr><th id="420">420</th><td>    <b>explicit</b> <dfn class="decl def fn" id="_ZN6icu_6610LocalArrayC1EOSt10unique_ptrIA_T_St14default_deleteIS3_EE" title='icu_66::LocalArray::LocalArray&lt;T&gt;' data-ref="_ZN6icu_6610LocalArrayC1EOSt10unique_ptrIA_T_St14default_deleteIS3_EE">LocalArray</dfn>(<span class="namespace">std::</span><a class="type" href="../c++/9/bits/unique_ptr.h.html#std::unique_ptr" title='std::unique_ptr' data-ref="std::unique_ptr">unique_ptr</a>&lt;T[]&gt; &amp;&amp;<dfn class="local col3 decl" id="533p" title='p' data-type='std::unique_ptr&lt;T[]&gt; &amp;&amp;' data-ref="533p">p</dfn>)</td></tr>
+<tr><th id="421">421</th><td>        : <a class="type" href="#icu_66::LocalPointerBase" title='icu_66::LocalPointerBase' data-ref="icu_66::LocalPointerBase">LocalPointerBase</a>&lt;T&gt;(<a class="local col3 ref" href="#533p" title='p' data-ref="533p">p</a>.release()) {}</td></tr>
+<tr><th id="422">422</th><td><u>#<span data-ppcond="409">endif</span>  /* U_HIDE_DRAFT_API */</u></td></tr>
+<tr><th id="423">423</th><td></td></tr>
+<tr><th id="424">424</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="425">425</th><td><i class="doc">     * Destructor deletes the array it owns.</i></td></tr>
+<tr><th id="426">426</th><td><i class="doc">     *<span class="command"> @stable</span> ICU 4.4</i></td></tr>
+<tr><th id="427">427</th><td><i class="doc">     */</i></td></tr>
+<tr><th id="428">428</th><td>    <dfn class="decl def fn" id="_ZN6icu_6610LocalArrayD1Ev" title='icu_66::LocalArray::~LocalArray&lt;T&gt;' data-ref="_ZN6icu_6610LocalArrayD1Ev">~LocalArray</dfn>() {</td></tr>
+<tr><th id="429">429</th><td>        <b>delete</b>[] <a class="type" href="#icu_66::LocalPointerBase" title='icu_66::LocalPointerBase' data-ref="icu_66::LocalPointerBase">LocalPointerBase</a>&lt;T&gt;::ptr;</td></tr>
+<tr><th id="430">430</th><td>    }</td></tr>
+<tr><th id="431">431</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="432">432</th><td><i class="doc">     * Move assignment operator, leaves src with isNull().</i></td></tr>
+<tr><th id="433">433</th><td><i class="doc">     * The behavior is undefined if *this and src are the same object.</i></td></tr>
+<tr><th id="434">434</th><td><i class="doc">     * <span class="command">@param</span> <span class="arg">src</span> source smart pointer</i></td></tr>
+<tr><th id="435">435</th><td><i class="doc">     * <span class="command">@return</span> *this</i></td></tr>
+<tr><th id="436">436</th><td><i class="doc">     *<span class="command"> @stable</span> ICU 56</i></td></tr>
+<tr><th id="437">437</th><td><i class="doc">     */</i></td></tr>
+<tr><th id="438">438</th><td>    <a class="type" href="#icu_66::LocalArray" title='icu_66::LocalArray' data-ref="icu_66::LocalArray">LocalArray</a>&lt;T&gt; &amp;<dfn class="decl def fn" id="_ZN6icu_6610LocalArrayaSEONS_10LocalArrayIT_EE" title='icu_66::LocalArray::operator=' data-ref="_ZN6icu_6610LocalArrayaSEONS_10LocalArrayIT_EE"><b>operator</b>=</dfn>(<a class="type" href="#icu_66::LocalArray" title='icu_66::LocalArray' data-ref="icu_66::LocalArray">LocalArray</a>&lt;T&gt; &amp;&amp;<dfn class="local col4 decl" id="534src" title='src' data-type='LocalArray&lt;T&gt; &amp;&amp;' data-ref="534src">src</dfn>) <a class="macro" href="platform.h.html#529" title="noexcept" data-ref="_M/U_NOEXCEPT">U_NOEXCEPT</a> {</td></tr>
+<tr><th id="439">439</th><td>        <b>delete</b>[] <a class="type" href="#icu_66::LocalPointerBase" title='icu_66::LocalPointerBase' data-ref="icu_66::LocalPointerBase">LocalPointerBase</a>&lt;T&gt;::ptr;</td></tr>
+<tr><th id="440">440</th><td>        <a class="type" href="#icu_66::LocalPointerBase" title='icu_66::LocalPointerBase' data-ref="icu_66::LocalPointerBase">LocalPointerBase</a>&lt;T&gt;::ptr=<a class="local col4 ref" href="#534src" title='src' data-ref="534src">src</a>.ptr;</td></tr>
+<tr><th id="441">441</th><td>        <a class="local col4 ref" href="#534src" title='src' data-ref="534src">src</a>.ptr=<span class="macro" title="__null" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="442">442</th><td>        <b>return</b> *<b>this</b>;</td></tr>
+<tr><th id="443">443</th><td>    }</td></tr>
+<tr><th id="444">444</th><td></td></tr>
+<tr><th id="445">445</th><td><u>#<span data-ppcond="445">ifndef</span> <span class="macro" data-ref="_M/U_HIDE_DRAFT_API">U_HIDE_DRAFT_API</span></u></td></tr>
+<tr><th id="446">446</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="447">447</th><td><i class="doc">     * Move-assign from an std::unique_ptr to this LocalPointer.</i></td></tr>
+<tr><th id="448">448</th><td><i class="doc">     * Steals the array from the std::unique_ptr.</i></td></tr>
+<tr><th id="449">449</th><td><i class="doc">     *</i></td></tr>
+<tr><th id="450">450</th><td><i class="doc">     * <span class="command">@param</span> <span class="arg">p</span> The std::unique_ptr from which the array will be stolen.</i></td></tr>
+<tr><th id="451">451</th><td><i class="doc">     * <span class="command">@return</span> *this</i></td></tr>
+<tr><th id="452">452</th><td><i class="doc">     *<span class="command"> @draft</span> ICU 64</i></td></tr>
+<tr><th id="453">453</th><td><i class="doc">     */</i></td></tr>
+<tr><th id="454">454</th><td>    <a class="type" href="#icu_66::LocalArray" title='icu_66::LocalArray' data-ref="icu_66::LocalArray">LocalArray</a>&lt;T&gt; &amp;<dfn class="decl def fn" id="_ZN6icu_6610LocalArrayaSEOSt10unique_ptrIA_T_St14default_deleteIS3_EE" title='icu_66::LocalArray::operator=' data-ref="_ZN6icu_6610LocalArrayaSEOSt10unique_ptrIA_T_St14default_deleteIS3_EE"><b>operator</b>=</dfn>(<span class="namespace">std::</span><a class="type" href="../c++/9/bits/unique_ptr.h.html#std::unique_ptr" title='std::unique_ptr' data-ref="std::unique_ptr">unique_ptr</a>&lt;T[]&gt; &amp;&amp;<dfn class="local col5 decl" id="535p" title='p' data-type='std::unique_ptr&lt;T[]&gt; &amp;&amp;' data-ref="535p">p</dfn>) <a class="macro" href="platform.h.html#529" title="noexcept" data-ref="_M/U_NOEXCEPT">U_NOEXCEPT</a> {</td></tr>
+<tr><th id="455">455</th><td>        <a class="member fn" href="#_ZN6icu_6610LocalArray12adoptInsteadEPT_" title='icu_66::LocalArray::adoptInstead' data-ref="_ZN6icu_6610LocalArray12adoptInsteadEPT_">adoptInstead</a>(<span class='inlayHint'>p:&nbsp;</span><a class="local col5 ref" href="#535p" title='p' data-ref="535p">p</a>.release());</td></tr>
+<tr><th id="456">456</th><td>        <b>return</b> *<b>this</b>;</td></tr>
+<tr><th id="457">457</th><td>    }</td></tr>
+<tr><th id="458">458</th><td><u>#<span data-ppcond="445">endif</span>  /* U_HIDE_DRAFT_API */</u></td></tr>
+<tr><th id="459">459</th><td></td></tr>
+<tr><th id="460">460</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="461">461</th><td><i class="doc">     * Swap pointers.</i></td></tr>
+<tr><th id="462">462</th><td><i class="doc">     * <span class="command">@param</span> <span class="arg">other</span> other smart pointer</i></td></tr>
+<tr><th id="463">463</th><td><i class="doc">     *<span class="command"> @stable</span> ICU 56</i></td></tr>
+<tr><th id="464">464</th><td><i class="doc">     */</i></td></tr>
+<tr><th id="465">465</th><td>    <em>void</em> <dfn class="decl def fn" id="_ZN6icu_6610LocalArray4swapERNS_10LocalArrayIT_EE" title='icu_66::LocalArray::swap' data-ref="_ZN6icu_6610LocalArray4swapERNS_10LocalArrayIT_EE">swap</dfn>(<a class="type" href="#icu_66::LocalArray" title='icu_66::LocalArray' data-ref="icu_66::LocalArray">LocalArray</a>&lt;T&gt; &amp;<dfn class="local col6 decl" id="536other" title='other' data-type='LocalArray&lt;T&gt; &amp;' data-ref="536other">other</dfn>) <a class="macro" href="platform.h.html#529" title="noexcept" data-ref="_M/U_NOEXCEPT">U_NOEXCEPT</a> {</td></tr>
+<tr><th id="466">466</th><td>        T *<dfn class="local col7 decl" id="537temp" title='temp' data-type='T *' data-ref="537temp">temp</dfn>=<a class="type" href="#icu_66::LocalPointerBase" title='icu_66::LocalPointerBase' data-ref="icu_66::LocalPointerBase">LocalPointerBase</a>&lt;T&gt;::ptr;</td></tr>
+<tr><th id="467">467</th><td>        <a class="type" href="#icu_66::LocalPointerBase" title='icu_66::LocalPointerBase' data-ref="icu_66::LocalPointerBase">LocalPointerBase</a>&lt;T&gt;::ptr=<a class="local col6 ref" href="#536other" title='other' data-ref="536other">other</a>.ptr;</td></tr>
+<tr><th id="468">468</th><td>        <a class="local col6 ref" href="#536other" title='other' data-ref="536other">other</a>.ptr=<a class="local col7 ref" href="#537temp" title='temp' data-ref="537temp">temp</a>;</td></tr>
+<tr><th id="469">469</th><td>    }</td></tr>
+<tr><th id="470">470</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="471">471</th><td><i class="doc">     * Non-member LocalArray swap function.</i></td></tr>
+<tr><th id="472">472</th><td><i class="doc">     * <span class="command">@param</span> <span class="arg">p1</span> will get p2's pointer</i></td></tr>
+<tr><th id="473">473</th><td><i class="doc">     * <span class="command">@param</span> <span class="arg">p2</span> will get p1's pointer</i></td></tr>
+<tr><th id="474">474</th><td><i class="doc">     *<span class="command"> @stable</span> ICU 56</i></td></tr>
+<tr><th id="475">475</th><td><i class="doc">     */</i></td></tr>
+<tr><th id="476">476</th><td>    <b>friend</b> <b>inline</b> <em>void</em> <dfn class="decl def fn" id="_ZN6icu_664swapERNS_10LocalArrayIT_EES4_" title='icu_66::swap' data-ref="_ZN6icu_664swapERNS_10LocalArrayIT_EES4_">swap</dfn>(<a class="type" href="#icu_66::LocalArray" title='icu_66::LocalArray' data-ref="icu_66::LocalArray">LocalArray</a>&lt;T&gt; &amp;<dfn class="local col8 decl" id="538p1" title='p1' data-type='LocalArray&lt;T&gt; &amp;' data-ref="538p1">p1</dfn>, <a class="type" href="#icu_66::LocalArray" title='icu_66::LocalArray' data-ref="icu_66::LocalArray">LocalArray</a>&lt;T&gt; &amp;<dfn class="local col9 decl" id="539p2" title='p2' data-type='LocalArray&lt;T&gt; &amp;' data-ref="539p2">p2</dfn>) <a class="macro" href="platform.h.html#529" title="noexcept" data-ref="_M/U_NOEXCEPT">U_NOEXCEPT</a> {</td></tr>
+<tr><th id="477">477</th><td>        <a class="local col8 ref" href="#538p1" title='p1' data-ref="538p1">p1</a>.swap(<a class="local col9 ref" href="#539p2" title='p2' data-ref="539p2">p2</a>);</td></tr>
+<tr><th id="478">478</th><td>    }</td></tr>
+<tr><th id="479">479</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="480">480</th><td><i class="doc">     * Deletes the array it owns,</i></td></tr>
+<tr><th id="481">481</th><td><i class="doc">     * and adopts (takes ownership of) the one passed in.</i></td></tr>
+<tr><th id="482">482</th><td><i class="doc">     * <span class="command">@param</span> <span class="arg">p</span> simple pointer to an array of T objects that is adopted</i></td></tr>
+<tr><th id="483">483</th><td><i class="doc">     *<span class="command"> @stable</span> ICU 4.4</i></td></tr>
+<tr><th id="484">484</th><td><i class="doc">     */</i></td></tr>
+<tr><th id="485">485</th><td>    <em>void</em> <dfn class="decl def fn" id="_ZN6icu_6610LocalArray12adoptInsteadEPT_" title='icu_66::LocalArray::adoptInstead' data-ref="_ZN6icu_6610LocalArray12adoptInsteadEPT_">adoptInstead</dfn>(T *<dfn class="local col0 decl" id="540p" title='p' data-type='T *' data-ref="540p">p</dfn>) {</td></tr>
+<tr><th id="486">486</th><td>        <b>delete</b>[] <a class="type" href="#icu_66::LocalPointerBase" title='icu_66::LocalPointerBase' data-ref="icu_66::LocalPointerBase">LocalPointerBase</a>&lt;T&gt;::ptr;</td></tr>
+<tr><th id="487">487</th><td>        <a class="type" href="#icu_66::LocalPointerBase" title='icu_66::LocalPointerBase' data-ref="icu_66::LocalPointerBase">LocalPointerBase</a>&lt;T&gt;::ptr=<a class="local col0 ref" href="#540p" title='p' data-ref="540p">p</a>;</td></tr>
+<tr><th id="488">488</th><td>    }</td></tr>
+<tr><th id="489">489</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="490">490</th><td><i class="doc">     * Deletes the array it owns,</i></td></tr>
+<tr><th id="491">491</th><td><i class="doc">     * and adopts (takes ownership of) the one passed in.</i></td></tr>
+<tr><th id="492">492</th><td><i class="doc">     *</i></td></tr>
+<tr><th id="493">493</th><td><i class="doc">     * If U_FAILURE(errorCode), then the current array is retained and the new one deleted.</i></td></tr>
+<tr><th id="494">494</th><td><i class="doc">     *</i></td></tr>
+<tr><th id="495">495</th><td><i class="doc">     * If U_SUCCESS(errorCode) but the input pointer is NULL,</i></td></tr>
+<tr><th id="496">496</th><td><i class="doc">     * then U_MEMORY_ALLOCATION_ERROR is set,</i></td></tr>
+<tr><th id="497">497</th><td><i class="doc">     * the current array is deleted, and NULL is set.</i></td></tr>
+<tr><th id="498">498</th><td><i class="doc">     *</i></td></tr>
+<tr><th id="499">499</th><td><i class="doc">     * <span class="command">@param</span> <span class="arg">p</span> simple pointer to an array of T objects that is adopted</i></td></tr>
+<tr><th id="500">500</th><td><i class="doc">     * <span class="command">@param</span> <span class="arg">errorCode</span> in/out UErrorCode, set to U_MEMORY_ALLOCATION_ERROR</i></td></tr>
+<tr><th id="501">501</th><td><i class="doc">     *     if p==NULL and no other failure code had been set</i></td></tr>
+<tr><th id="502">502</th><td><i class="doc">     *<span class="command"> @stable</span> ICU 56</i></td></tr>
+<tr><th id="503">503</th><td><i class="doc">     */</i></td></tr>
+<tr><th id="504">504</th><td>    <em>void</em> <dfn class="decl def fn" id="_ZN6icu_6610LocalArray29adoptInsteadAndCheckErrorCodeEPT_R10UErrorCode" title='icu_66::LocalArray::adoptInsteadAndCheckErrorCode' data-ref="_ZN6icu_6610LocalArray29adoptInsteadAndCheckErrorCodeEPT_R10UErrorCode">adoptInsteadAndCheckErrorCode</dfn>(T *<dfn class="local col1 decl" id="541p" title='p' data-type='T *' data-ref="541p">p</dfn>, <a class="typedef" href="utypes.h.html#UErrorCode" title='UErrorCode' data-type='enum UErrorCode' data-ref="UErrorCode">UErrorCode</a> &amp;<dfn class="local col2 decl" id="542errorCode" title='errorCode' data-type='UErrorCode &amp;' data-ref="542errorCode">errorCode</dfn>) {</td></tr>
+<tr><th id="505">505</th><td>        <b>if</b>(<a class="ref fn" href="utypes.h.html#_ZL9U_SUCCESS10UErrorCode" title='U_SUCCESS' data-ref="_ZL9U_SUCCESS10UErrorCode">U_SUCCESS</a>(<span class='inlayHint'>code:&nbsp;</span><a class="local col2 ref" href="#542errorCode" title='errorCode' data-ref="542errorCode">errorCode</a>)) {</td></tr>
+<tr><th id="506">506</th><td>            <b>delete</b>[] <a class="type" href="#icu_66::LocalPointerBase" title='icu_66::LocalPointerBase' data-ref="icu_66::LocalPointerBase">LocalPointerBase</a>&lt;T&gt;::ptr;</td></tr>
+<tr><th id="507">507</th><td>            <a class="type" href="#icu_66::LocalPointerBase" title='icu_66::LocalPointerBase' data-ref="icu_66::LocalPointerBase">LocalPointerBase</a>&lt;T&gt;::ptr=<a class="local col1 ref" href="#541p" title='p' data-ref="541p">p</a>;</td></tr>
+<tr><th id="508">508</th><td>            <b>if</b>(<a class="local col1 ref" href="#541p" title='p' data-ref="541p">p</a>==<span class="macro" title="__null" data-ref="_M/NULL">NULL</span>) {</td></tr>
+<tr><th id="509">509</th><td>                <a class="local col2 ref" href="#542errorCode" title='errorCode' data-ref="542errorCode">errorCode</a>=<a class="enum" href="utypes.h.html#U_MEMORY_ALLOCATION_ERROR" title='U_MEMORY_ALLOCATION_ERROR' data-ref="U_MEMORY_ALLOCATION_ERROR">U_MEMORY_ALLOCATION_ERROR</a>;</td></tr>
+<tr><th id="510">510</th><td>            }</td></tr>
+<tr><th id="511">511</th><td>        } <b>else</b> {</td></tr>
+<tr><th id="512">512</th><td>            <b>delete</b>[] <a class="local col1 ref" href="#541p" title='p' data-ref="541p">p</a>;</td></tr>
+<tr><th id="513">513</th><td>        }</td></tr>
+<tr><th id="514">514</th><td>    }</td></tr>
+<tr><th id="515">515</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="516">516</th><td><i class="doc">     * Array item access (writable).</i></td></tr>
+<tr><th id="517">517</th><td><i class="doc">     * No index bounds check.</i></td></tr>
+<tr><th id="518">518</th><td><i class="doc">     * <span class="command">@param</span> <span class="arg">i</span> array index</i></td></tr>
+<tr><th id="519">519</th><td><i class="doc">     * <span class="command">@return</span> reference to the array item</i></td></tr>
+<tr><th id="520">520</th><td><i class="doc">     *<span class="command"> @stable</span> ICU 4.4</i></td></tr>
+<tr><th id="521">521</th><td><i class="doc">     */</i></td></tr>
+<tr><th id="522">522</th><td>    T &amp;<dfn class="decl def fn" id="_ZNK6icu_6610LocalArrayixEl" title='icu_66::LocalArray::operator[]' data-ref="_ZNK6icu_6610LocalArrayixEl"><b>operator</b>[]</dfn>(<span class='typedef' title='ptrdiff_t' data-type='long' data-ref="ptrdiff_t">ptrdiff_t</span> <dfn class="local col3 decl" id="543i" title='i' data-type='ptrdiff_t' data-ref="543i">i</dfn>) <em>const</em> { <b>return</b> <a class="type" href="#icu_66::LocalPointerBase" title='icu_66::LocalPointerBase' data-ref="icu_66::LocalPointerBase">LocalPointerBase</a>&lt;T&gt;::ptr[<a class="local col3 ref" href="#543i" title='i' data-ref="543i">i</a>]; }</td></tr>
+<tr><th id="523">523</th><td></td></tr>
+<tr><th id="524">524</th><td><u>#<span data-ppcond="524">ifndef</span> <span class="macro" data-ref="_M/U_HIDE_DRAFT_API">U_HIDE_DRAFT_API</span></u></td></tr>
+<tr><th id="525">525</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="526">526</th><td><i class="doc">     * Conversion operator to a C++11 std::unique_ptr.</i></td></tr>
+<tr><th id="527">527</th><td><i class="doc">     * Disowns the object and gives it to the returned std::unique_ptr.</i></td></tr>
+<tr><th id="528">528</th><td><i class="doc">     *</i></td></tr>
+<tr><th id="529">529</th><td><i class="doc">     * This operator works via move semantics. If your LocalPointer is</i></td></tr>
+<tr><th id="530">530</th><td><i class="doc">     * in a local variable, you must use std::move.</i></td></tr>
+<tr><th id="531">531</th><td><i class="doc">     *</i></td></tr>
+<tr><th id="532">532</th><td><i class="doc">     * <span class="command">@return</span> An std::unique_ptr owning the pointer previously owned by this</i></td></tr>
+<tr><th id="533">533</th><td><i class="doc">     *         icu::LocalPointer.</i></td></tr>
+<tr><th id="534">534</th><td><i class="doc">     *<span class="command"> @draft</span> ICU 64</i></td></tr>
+<tr><th id="535">535</th><td><i class="doc">     */</i></td></tr>
+<tr><th id="536">536</th><td>    <dfn class="decl def fn" id="_ZNO6icu_6610LocalArraycvSt10unique_ptrIA_T_St14default_deleteIS3_EEEv" title='icu_66::LocalArray::operator unique_ptr&lt;type-parameter-0-0[], default_delete&lt;type-parameter-0-0[]&gt; &gt;' data-ref="_ZNO6icu_6610LocalArraycvSt10unique_ptrIA_T_St14default_deleteIS3_EEEv"><b>operator</b> <span class="namespace">std::</span><a class="type" href="../c++/9/bits/unique_ptr.h.html#std::unique_ptr" title='std::unique_ptr' data-ref="std::unique_ptr">unique_ptr</a>&lt;T[]&gt;</dfn> () &amp;&amp; {</td></tr>
+<tr><th id="537">537</th><td>        <b>return</b> <span class="namespace">std::</span><a class="type" href="../c++/9/bits/unique_ptr.h.html#std::unique_ptr" title='std::unique_ptr' data-ref="std::unique_ptr">unique_ptr</a>&lt;T[]&gt;(<a class="type" href="#icu_66::LocalPointerBase" title='icu_66::LocalPointerBase' data-ref="icu_66::LocalPointerBase">LocalPointerBase</a>&lt;T&gt;::orphan());</td></tr>
+<tr><th id="538">538</th><td>    }</td></tr>
+<tr><th id="539">539</th><td><u>#<span data-ppcond="524">endif</span>  /* U_HIDE_DRAFT_API */</u></td></tr>
+<tr><th id="540">540</th><td>};</td></tr>
+<tr><th id="541">541</th><td></td></tr>
+<tr><th id="542">542</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="543">543</th><td><i class="doc"> * <span class="command">\def</span> <span class="verb">U_DEFINE_LOCAL_OPEN_POINTER</span></i></td></tr>
+<tr><th id="544">544</th><td><i class="doc"> * "Smart pointer" definition macro, deletes objects via the closeFunction.</i></td></tr>
+<tr><th id="545">545</th><td><i class="doc"> * Defines a subclass of LocalPointerBase which works just</i></td></tr>
+<tr><th id="546">546</th><td><i class="doc"> * like LocalPointer&lt;Type&gt; except that this subclass will use the closeFunction</i></td></tr>
+<tr><th id="547">547</th><td><i class="doc"> * rather than the C++ delete operator.</i></td></tr>
+<tr><th id="548">548</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="549">549</th><td><i class="doc"> * Usage example:</i></td></tr>
+<tr><th id="550">550</th><td><i class="doc"> * <span class="command">\code</span></i></td></tr>
+<tr><th id="551">551</th><td><i class="doc"> *<span class="verb"> LocalUCaseMapPointer csm(ucasemap_open(localeID, options, &amp;errorCode));</span></i></td></tr>
+<tr><th id="552">552</th><td><i class="doc"><span class="verb"></span> *<span class="verb"> utf8OutLength=ucasemap_utf8ToLower(csm.getAlias(),</span></i></td></tr>
+<tr><th id="553">553</th><td><i class="doc"><span class="verb"></span> *<span class="verb">     utf8Out, (int32_t)sizeof(utf8Out),</span></i></td></tr>
+<tr><th id="554">554</th><td><i class="doc"><span class="verb"></span> *<span class="verb">     utf8In, utf8InLength, &amp;errorCode);</span></i></td></tr>
+<tr><th id="555">555</th><td><i class="doc"><span class="verb"></span> *<span class="verb"> if(U_FAILURE(errorCode)) { return; }  // no need to explicitly delete the UCaseMap</span></i></td></tr>
+<tr><th id="556">556</th><td><i class="doc"><span class="verb"></span> * \endcode</i></td></tr>
+<tr><th id="557">557</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="558">558</th><td><i class="doc"> * <span class="command">@see</span> LocalPointerBase</i></td></tr>
+<tr><th id="559">559</th><td><i class="doc"> * <span class="command">@see</span> LocalPointer</i></td></tr>
+<tr><th id="560">560</th><td><i class="doc"> *<span class="command"> @stable</span> ICU 4.4</i></td></tr>
+<tr><th id="561">561</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="562">562</th><td><u>#define <dfn class="macro" id="_M/U_DEFINE_LOCAL_OPEN_POINTER" data-ref="_M/U_DEFINE_LOCAL_OPEN_POINTER">U_DEFINE_LOCAL_OPEN_POINTER</dfn>(LocalPointerClassName, Type, closeFunction) \</u></td></tr>
+<tr><th id="563">563</th><td><u>    class LocalPointerClassName : public LocalPointerBase&lt;Type&gt; { \</u></td></tr>
+<tr><th id="564">564</th><td><u>    public: \</u></td></tr>
+<tr><th id="565">565</th><td><u>        using LocalPointerBase&lt;Type&gt;::operator*; \</u></td></tr>
+<tr><th id="566">566</th><td><u>        using LocalPointerBase&lt;Type&gt;::operator-&gt;; \</u></td></tr>
+<tr><th id="567">567</th><td><u>        explicit LocalPointerClassName(Type *p=NULL) : LocalPointerBase&lt;Type&gt;(p) {} \</u></td></tr>
+<tr><th id="568">568</th><td><u>        LocalPointerClassName(LocalPointerClassName &amp;&amp;src) U_NOEXCEPT \</u></td></tr>
+<tr><th id="569">569</th><td><u>                : LocalPointerBase&lt;Type&gt;(src.ptr) { \</u></td></tr>
+<tr><th id="570">570</th><td><u>            src.ptr=NULL; \</u></td></tr>
+<tr><th id="571">571</th><td><u>        } \</u></td></tr>
+<tr><th id="572">572</th><td><u>        /* TODO: Be agnostic of the deleter function signature from the user-provided std::unique_ptr? */ \</u></td></tr>
+<tr><th id="573">573</th><td><u>        explicit LocalPointerClassName(std::unique_ptr&lt;Type, decltype(&amp;closeFunction)&gt; &amp;&amp;p) \</u></td></tr>
+<tr><th id="574">574</th><td><u>                : LocalPointerBase&lt;Type&gt;(p.release()) {} \</u></td></tr>
+<tr><th id="575">575</th><td><u>        ~LocalPointerClassName() { if (ptr != NULL) { closeFunction(ptr); } } \</u></td></tr>
+<tr><th id="576">576</th><td><u>        LocalPointerClassName &amp;operator=(LocalPointerClassName &amp;&amp;src) U_NOEXCEPT { \</u></td></tr>
+<tr><th id="577">577</th><td><u>            if (ptr != NULL) { closeFunction(ptr); } \</u></td></tr>
+<tr><th id="578">578</th><td><u>            LocalPointerBase&lt;Type&gt;::ptr=src.ptr; \</u></td></tr>
+<tr><th id="579">579</th><td><u>            src.ptr=NULL; \</u></td></tr>
+<tr><th id="580">580</th><td><u>            return *this; \</u></td></tr>
+<tr><th id="581">581</th><td><u>        } \</u></td></tr>
+<tr><th id="582">582</th><td><u>        /* TODO: Be agnostic of the deleter function signature from the user-provided std::unique_ptr? */ \</u></td></tr>
+<tr><th id="583">583</th><td><u>        LocalPointerClassName &amp;operator=(std::unique_ptr&lt;Type, decltype(&amp;closeFunction)&gt; &amp;&amp;p) { \</u></td></tr>
+<tr><th id="584">584</th><td><u>            adoptInstead(p.release()); \</u></td></tr>
+<tr><th id="585">585</th><td><u>            return *this; \</u></td></tr>
+<tr><th id="586">586</th><td><u>        } \</u></td></tr>
+<tr><th id="587">587</th><td><u>        void swap(LocalPointerClassName &amp;other) U_NOEXCEPT { \</u></td></tr>
+<tr><th id="588">588</th><td><u>            Type *temp=LocalPointerBase&lt;Type&gt;::ptr; \</u></td></tr>
+<tr><th id="589">589</th><td><u>            LocalPointerBase&lt;Type&gt;::ptr=other.ptr; \</u></td></tr>
+<tr><th id="590">590</th><td><u>            other.ptr=temp; \</u></td></tr>
+<tr><th id="591">591</th><td><u>        } \</u></td></tr>
+<tr><th id="592">592</th><td><u>        friend inline void swap(LocalPointerClassName &amp;p1, LocalPointerClassName &amp;p2) U_NOEXCEPT { \</u></td></tr>
+<tr><th id="593">593</th><td><u>            p1.swap(<span class='refarg'>p2</span>); \</u></td></tr>
+<tr><th id="594">594</th><td><u>        } \</u></td></tr>
+<tr><th id="595">595</th><td><u>        void adoptInstead(Type *p) { \</u></td></tr>
+<tr><th id="596">596</th><td><u>            if (ptr != NULL) { closeFunction(ptr); } \</u></td></tr>
+<tr><th id="597">597</th><td><u>            ptr=p; \</u></td></tr>
+<tr><th id="598">598</th><td><u>        } \</u></td></tr>
+<tr><th id="599">599</th><td><u>        operator std::unique_ptr&lt;Type, decltype(&amp;closeFunction)&gt; () &amp;&amp; { \</u></td></tr>
+<tr><th id="600">600</th><td><u>            return std::unique_ptr&lt;Type, decltype(&amp;closeFunction)&gt;(LocalPointerBase&lt;Type&gt;::orphan(), closeFunction); \</u></td></tr>
+<tr><th id="601">601</th><td><u>        } \</u></td></tr>
+<tr><th id="602">602</th><td><u>    }</u></td></tr>
+<tr><th id="603">603</th><td></td></tr>
+<tr><th id="604">604</th><td><a class="macro" href="uversion.h.html#111" title="}" data-ref="_M/U_NAMESPACE_END">U_NAMESPACE_END</a></td></tr>
+<tr><th id="605">605</th><td></td></tr>
+<tr><th id="606">606</th><td><u>#<span data-ppcond="43">endif</span>  /* U_SHOW_CPLUSPLUS_API */</u></td></tr>
+<tr><th id="607">607</th><td><u>#<span data-ppcond="19">endif</span>  /* __LOCALPOINTER_H__ */</u></td></tr>
+<tr><th id="608">608</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../../boost-1.85.0/libs/locale/src/boost/locale/encoding/codepage.cpp.html'>boost-1.85.0/libs/locale/src/boost/locale/encoding/codepage.cpp</a><br/>Generated on <em>2024-Jun-14</em> from project include<br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

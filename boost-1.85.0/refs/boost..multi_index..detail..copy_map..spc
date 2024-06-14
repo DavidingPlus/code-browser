@@ -1,0 +1,12 @@
+<use f='boost-1.85.0/libs/multi_index/include/boost/multi_index/detail/copy_map.hpp' l='87' u='w' c='_ZN5boost11multi_index6detail8copy_mapC1ERKT0_NS1_16allocator_traitsINS1_16rebind_alloc_forIS3_T_E4typeEE9size_typeEPS8_SD_'/>
+<use f='boost-1.85.0/libs/multi_index/include/boost/multi_index/detail/copy_map.hpp' l='96' u='c' c='_ZN5boost11multi_index6detail8copy_mapD1Ev'/>
+<use f='boost-1.85.0/libs/multi_index/include/boost/multi_index/detail/copy_map.hpp' l='97' u='c' c='_ZN5boost11multi_index6detail8copy_mapD1Ev'/>
+<use f='boost-1.85.0/libs/multi_index/include/boost/multi_index/detail/copy_map.hpp' l='102' u='c' c='_ZNK5boost11multi_index6detail8copy_map5beginEv'/>
+<use f='boost-1.85.0/libs/multi_index/include/boost/multi_index/detail/copy_map.hpp' l='103' u='c' c='_ZNK5boost11multi_index6detail8copy_map3endEv'/>
+<dec f='boost-1.85.0/libs/multi_index/include/boost/multi_index/detail/copy_map.hpp' l='123' type='auto_space&lt;copy_map_entry&lt;Node&gt;, Allocator&gt;'/>
+<use f='boost-1.85.0/libs/multi_index/include/boost/multi_index/detail/copy_map.hpp' l='142' u='c' c='_ZN5boost11multi_index6detail8copy_map5cloneEPT_TL0__'/>
+<use f='boost-1.85.0/libs/multi_index/include/boost/multi_index/detail/copy_map.hpp' l='143' u='c' c='_ZN5boost11multi_index6detail8copy_map5cloneEPT_TL0__'/>
+<use f='boost-1.85.0/libs/multi_index/include/boost/multi_index/detail/copy_map.hpp' l='146' u='c' c='_ZN5boost11multi_index6detail8copy_map5cloneEPT_TL0__'/>
+<use f='boost-1.85.0/libs/multi_index/include/boost/multi_index/detail/copy_map.hpp' l='150' u='c' c='_ZN5boost11multi_index6detail8copy_map5cloneEPT_TL0__'/>
+<use f='boost-1.85.0/libs/multi_index/include/boost/multi_index/detail/copy_map.hpp' l='158' u='c' c='_ZN5boost11multi_index6detail8copy_map5cloneEPT_TL0__'/>
+<use f='boost-1.85.0/libs/multi_index/include/boost/multi_index/detail/copy_map.hpp' l='159' u='c' c='_ZN5boost11multi_index6detail8copy_map5cloneEPT_TL0__'/>

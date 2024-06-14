@@ -1,0 +1,409 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>simple_segregated_storage.hpp source code [boost-1.85.0/libs/pool/include/boost/pool/simple_segregated_storage.hpp] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="boost::simple_segregated_storage "/>
+<link rel="stylesheet" href="../../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'boost-1.85.0/libs/pool/include/boost/pool/simple_segregated_storage.hpp'; var root_path = '../../../../../..'; var data_path = '../../../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../../..'>boost-1.85.0</a>/<a href='../../../..'>libs</a>/<a href='../../..'>pool</a>/<a href='../..'>include</a>/<a href='..'>boost</a>/<a href='./'>pool</a>/<a href='simple_segregated_storage.hpp.html'>simple_segregated_storage.hpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>// Copyright (C) 2000, 2001 Stephen Cleary</i></td></tr>
+<tr><th id="2">2</th><td><i>//</i></td></tr>
+<tr><th id="3">3</th><td><i>// Distributed under the Boost Software License, Version 1.0. (See</i></td></tr>
+<tr><th id="4">4</th><td><i>// accompanying file LICENSE_1_0.txt or copy at</i></td></tr>
+<tr><th id="5">5</th><td><i>// <a href="http://www.boost.org/LICENSE_1_0.txt">http://www.boost.org/LICENSE_1_0.txt</a>)</i></td></tr>
+<tr><th id="6">6</th><td><i>//</i></td></tr>
+<tr><th id="7">7</th><td><i>// See <a href="http://www.boost.org">http://www.boost.org</a> for updates, documentation, and revision history.</i></td></tr>
+<tr><th id="8">8</th><td></td></tr>
+<tr><th id="9">9</th><td><u>#<span data-ppcond="9">ifndef</span> <span class="macro" data-ref="_M/BOOST_SIMPLE_SEGREGATED_STORAGE_HPP">BOOST_SIMPLE_SEGREGATED_STORAGE_HPP</span></u></td></tr>
+<tr><th id="10">10</th><td><u>#define <dfn class="macro" id="_M/BOOST_SIMPLE_SEGREGATED_STORAGE_HPP" data-ref="_M/BOOST_SIMPLE_SEGREGATED_STORAGE_HPP">BOOST_SIMPLE_SEGREGATED_STORAGE_HPP</dfn></u></td></tr>
+<tr><th id="11">11</th><td></td></tr>
+<tr><th id="12">12</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="13">13</th><td><i class="doc">  <span class="command">\file</span></i></td></tr>
+<tr><th id="14">14</th><td><i class="doc">  <span class="command">\brief</span> Simple Segregated Storage.</i></td></tr>
+<tr><th id="15">15</th><td><i class="doc">  <span class="command">\details</span> A simple segregated storage implementation:</i></td></tr>
+<tr><th id="16">16</th><td><i class="doc">  simple segregated storage is the basic idea behind the Boost Pool library.</i></td></tr>
+<tr><th id="17">17</th><td><i class="doc">  Simple segregated storage is the simplest, and probably the fastest,</i></td></tr>
+<tr><th id="18">18</th><td><i class="doc">  memory allocation/deallocation algorithm.</i></td></tr>
+<tr><th id="19">19</th><td><i class="doc">  It begins by partitioning a memory block into fixed-size chunks.</i></td></tr>
+<tr><th id="20">20</th><td><i class="doc">  Where the block comes from is not important until implementation time.</i></td></tr>
+<tr><th id="21">21</th><td><i class="doc">  A Pool is some object that uses Simple Segregated Storage in this fashion.</i></td></tr>
+<tr><th id="22">22</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="23">23</th><td><i class="doc"></i></td></tr>
+<tr><th id="24">24</th><td><i class="doc">// std::greater</i></td></tr>
+<tr><th id="25">25</th><td><u>#include <a href="../../../../../../include/c++/9/functional.html">&lt;functional&gt;</a></u></td></tr>
+<tr><th id="26">26</th><td></td></tr>
+<tr><th id="27">27</th><td><u>#include <a href="poolfwd.hpp.html">&lt;boost/pool/poolfwd.hpp&gt;</a></u></td></tr>
+<tr><th id="28">28</th><td></td></tr>
+<tr><th id="29">29</th><td><u>#<span data-ppcond="29">ifdef</span> <span class="macro" data-ref="_M/BOOST_MSVC">BOOST_MSVC</span></u></td></tr>
+<tr><th id="30">30</th><td><u>#pragma warning(push)</u></td></tr>
+<tr><th id="31">31</th><td><u>#pragma warning(disable:4127)  // Conditional expression is constant</u></td></tr>
+<tr><th id="32">32</th><td><u>#<span data-ppcond="29">endif</span></u></td></tr>
+<tr><th id="33">33</th><td></td></tr>
+<tr><th id="34">34</th><td><u>#<span data-ppcond="34">ifdef</span> <span class="macro" data-ref="_M/BOOST_POOL_VALIDATE">BOOST_POOL_VALIDATE</span></u></td></tr>
+<tr><th id="35">35</th><td><u>#  define BOOST_POOL_VALIDATE_INTERNALS validate();</u></td></tr>
+<tr><th id="36">36</th><td><u>#<span data-ppcond="34">else</span></u></td></tr>
+<tr><th id="37">37</th><td><u>#  define <dfn class="macro" id="_M/BOOST_POOL_VALIDATE_INTERNALS" data-ref="_M/BOOST_POOL_VALIDATE_INTERNALS">BOOST_POOL_VALIDATE_INTERNALS</dfn></u></td></tr>
+<tr><th id="38">38</th><td><u>#<span data-ppcond="34">endif</span></u></td></tr>
+<tr><th id="39">39</th><td></td></tr>
+<tr><th id="40">40</th><td><b>namespace</b> <span class="namespace">boost</span> {</td></tr>
+<tr><th id="41">41</th><td></td></tr>
+<tr><th id="42">42</th><td><i class="doc">/*! </i></td></tr>
+<tr><th id="43">43</th><td><i class="doc"></i></td></tr>
+<tr><th id="44">44</th><td><i class="doc"><span class="command">\brief</span> Simple Segregated Storage is the simplest, and probably the fastest,</i></td></tr>
+<tr><th id="45">45</th><td><i class="doc">memory allocation/deallocation algorithm.  It is responsible for</i></td></tr>
+<tr><th id="46">46</th><td><i class="doc">partitioning a memory block into fixed-size chunks: where the block comes from </i></td></tr>
+<tr><th id="47">47</th><td><i class="doc">is determined by the client of the class.</i></td></tr>
+<tr><th id="48">48</th><td><i class="doc"></i></td></tr>
+<tr><th id="49">49</th><td><i class="doc"><span class="command">\details</span> Template class simple_segregated_storage controls access to a free list of memory chunks. </i></td></tr>
+<tr><th id="50">50</th><td><i class="doc">Please note that this is a very simple class, with preconditions on almost all its functions. It is intended to </i></td></tr>
+<tr><th id="51">51</th><td><i class="doc">be the fastest and smallest possible quick memory allocator - e.g., something to use in embedded systems. </i></td></tr>
+<tr><th id="52">52</th><td><i class="doc">This class delegates many difficult preconditions to the user (i.e., alignment issues).</i></td></tr>
+<tr><th id="53">53</th><td><i class="doc"></i></td></tr>
+<tr><th id="54">54</th><td><i class="doc">An object of type simple_segregated_storage&lt;SizeType&gt;  is empty  if its free list is empty. </i></td></tr>
+<tr><th id="55">55</th><td><i class="doc">If it is not empty, then it is ordered  if its free list is ordered. A free list is ordered if repeated calls </i></td></tr>
+<tr><th id="56">56</th><td><i class="doc">to <span class="tag">&lt;tt&gt;</span>malloc()<span class="tag">&lt;/tt&gt;</span> will result in a constantly-increasing sequence of values, as determined by <span class="tag">&lt;tt&gt;</span>std::less&lt;void *&gt;<span class="tag">&lt;/tt&gt;</span>. </i></td></tr>
+<tr><th id="57">57</th><td><i class="doc">A member function is <span class="tag">&lt;i&gt;</span>order-preserving<span class="tag">&lt;/i&gt;</span> if the free list maintains its order orientation (that is, an </i></td></tr>
+<tr><th id="58">58</th><td><i class="doc">ordered free list is still ordered after the member function call).</i></td></tr>
+<tr><th id="59">59</th><td><i class="doc"></i></td></tr>
+<tr><th id="60">60</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="61">61</th><td><b>template</b> &lt;<b>typename</b> SizeType&gt;</td></tr>
+<tr><th id="62">62</th><td><b>class</b> <dfn class="type def" id="boost::simple_segregated_storage" title='boost::simple_segregated_storage' data-ref="boost::simple_segregated_storage">simple_segregated_storage</dfn></td></tr>
+<tr><th id="63">63</th><td>{</td></tr>
+<tr><th id="64">64</th><td>  <b>public</b>:</td></tr>
+<tr><th id="65">65</th><td>    <b>typedef</b> SizeType <dfn class="typedef" id="boost::simple_segregated_storage::size_type" title='boost::simple_segregated_storage::size_type' data-type='SizeType' data-ref="boost::simple_segregated_storage::size_type">size_type</dfn>;</td></tr>
+<tr><th id="66">66</th><td></td></tr>
+<tr><th id="67">67</th><td>  <b>private</b>:</td></tr>
+<tr><th id="68">68</th><td>    <dfn class="decl fn" id="_ZN5boost25simple_segregated_storageC1ERKNS_25simple_segregated_storageIT_EE" title='boost::simple_segregated_storage::simple_segregated_storage&lt;SizeType&gt;' data-ref="_ZN5boost25simple_segregated_storageC1ERKNS_25simple_segregated_storageIT_EE">simple_segregated_storage</dfn>(<em>const</em> simple_segregated_storage &amp;);</td></tr>
+<tr><th id="69">69</th><td>    <em>void</em> <dfn class="decl fn" id="_ZN5boost25simple_segregated_storageaSERKNS_25simple_segregated_storageIT_EE" title='boost::simple_segregated_storage::operator=' data-ref="_ZN5boost25simple_segregated_storageaSERKNS_25simple_segregated_storageIT_EE"><b>operator</b>=</dfn>(<em>const</em> simple_segregated_storage &amp;);</td></tr>
+<tr><th id="70">70</th><td></td></tr>
+<tr><th id="71">71</th><td>    <em>static</em> <em>void</em> * <a class="decl fn" href="#_ZN5boost25simple_segregated_storage12try_malloc_nERPvT_S3_" title='boost::simple_segregated_storage::try_malloc_n' data-ref="_ZN5boost25simple_segregated_storage12try_malloc_nERPvT_S3_">try_malloc_n</a>(<em>void</em> * &amp; <dfn class="local col7 decl" id="127start" title='start' data-type='void *&amp;' data-ref="127start">start</dfn>, <a class="typedef" href="#boost::simple_segregated_storage::size_type" title='boost::simple_segregated_storage::size_type' data-type='SizeType' data-ref="boost::simple_segregated_storage::size_type">size_type</a> <dfn class="local col8 decl" id="128n" title='n' data-type='boost::simple_segregated_storage::size_type' data-ref="128n">n</dfn>,</td></tr>
+<tr><th id="72">72</th><td>        <a class="typedef" href="#boost::simple_segregated_storage::size_type" title='boost::simple_segregated_storage::size_type' data-type='SizeType' data-ref="boost::simple_segregated_storage::size_type">size_type</a> <dfn class="local col9 decl" id="129partition_size" title='partition_size' data-type='boost::simple_segregated_storage::size_type' data-ref="129partition_size">partition_size</dfn>);</td></tr>
+<tr><th id="73">73</th><td></td></tr>
+<tr><th id="74">74</th><td>  <b>protected</b>:</td></tr>
+<tr><th id="75">75</th><td>    <em>void</em> * <dfn class="decl field" id="boost::simple_segregated_storage::first" title='boost::simple_segregated_storage::first' data-ref="boost::simple_segregated_storage::first">first</dfn>; <i class="doc">/*!&lt; This data member is the free list.</i></td></tr>
+<tr><th id="76">76</th><td><i class="doc">      It points to the first chunk in the free list,</i></td></tr>
+<tr><th id="77">77</th><td><i class="doc">      or is equal to 0 if the free list is empty.</i></td></tr>
+<tr><th id="78">78</th><td><i class="doc">    */</i></td></tr>
+<tr><th id="79">79</th><td></td></tr>
+<tr><th id="80">80</th><td>    <em>void</em> * <a class="decl fn" href="#_ZN5boost25simple_segregated_storage9find_prevEPv" title='boost::simple_segregated_storage::find_prev' data-ref="_ZN5boost25simple_segregated_storage9find_prevEPv">find_prev</a>(<em>void</em> * <dfn class="local col0 decl" id="130ptr" title='ptr' data-type='void *' data-ref="130ptr">ptr</dfn>);</td></tr>
+<tr><th id="81">81</th><td></td></tr>
+<tr><th id="82">82</th><td>    <i>// for the sake of code readability :)</i></td></tr>
+<tr><th id="83">83</th><td>    <em>static</em> <em>void</em> * &amp; <dfn class="decl def fn" id="_ZN5boost25simple_segregated_storage6nextofEPv" title='boost::simple_segregated_storage::nextof' data-ref="_ZN5boost25simple_segregated_storage6nextofEPv">nextof</dfn>(<em>void</em> * <em>const</em> <dfn class="local col1 decl" id="131ptr" title='ptr' data-type='void *const' data-ref="131ptr">ptr</dfn>)</td></tr>
+<tr><th id="84">84</th><td>    { <i class="doc">//! The return value is just *ptr cast to the appropriate type. ptr must not be 0. (For the sake of code readability :)</i></td></tr>
+<tr><th id="85">85</th><td>    <i class="doc">//! As an example, let us assume that we want to truncate the free list after the first chunk.</i></td></tr>
+<tr><th id="86">86</th><td><i class="doc">    //! That is, we want to set *first to 0; this will result in a free list with only one entry.</i></td></tr>
+<tr><th id="87">87</th><td><i class="doc">    //! The normal way to do this is to first cast first to a pointer to a pointer to void,</i></td></tr>
+<tr><th id="88">88</th><td><i class="doc">    //! and then dereference and assign (*static_cast&lt;void **&gt;(first) = 0;).</i></td></tr>
+<tr><th id="89">89</th><td><i class="doc">    //! This can be done more easily through the use of this convenience function (nextof(first) = 0;).</i></td></tr>
+<tr><th id="90">90</th><td><i class="doc">    //! <span class="command">\returns</span> dereferenced pointer.</i></td></tr>
+<tr><th id="91">91</th><td>      <b>return</b> *(<b>static_cast</b>&lt;<em>void</em> **&gt;(<a class="local col1 ref" href="#131ptr" title='ptr' data-ref="131ptr">ptr</a>));</td></tr>
+<tr><th id="92">92</th><td>    }</td></tr>
+<tr><th id="93">93</th><td></td></tr>
+<tr><th id="94">94</th><td>  <b>public</b>:</td></tr>
+<tr><th id="95">95</th><td>    <i>// Post: empty()</i></td></tr>
+<tr><th id="96">96</th><td>    <dfn class="decl def fn" id="_ZN5boost25simple_segregated_storageC1Ev" title='boost::simple_segregated_storage::simple_segregated_storage&lt;SizeType&gt;' data-ref="_ZN5boost25simple_segregated_storageC1Ev">simple_segregated_storage</dfn>()</td></tr>
+<tr><th id="97">97</th><td>    :<a class="member field" href="#boost::simple_segregated_storage::first" title='boost::simple_segregated_storage::first' data-ref="boost::simple_segregated_storage::first">first</a>(<var>0</var>)</td></tr>
+<tr><th id="98">98</th><td>    { <i class="doc">//! Construct empty storage area.</i></td></tr>
+<tr><th id="99">99</th><td>      <i class="doc">//! <span class="command">\post</span> empty()</i></td></tr>
+<tr><th id="100">100</th><td>    }</td></tr>
+<tr><th id="101">101</th><td></td></tr>
+<tr><th id="102">102</th><td>    <em>static</em> <em>void</em> * <a class="decl fn" href="#_ZN5boost25simple_segregated_storage9segregateEPvT_S2_S1_" title='boost::simple_segregated_storage::segregate' data-ref="_ZN5boost25simple_segregated_storage9segregateEPvT_S2_S1_">segregate</a>(<em>void</em> * <dfn class="local col2 decl" id="132block" title='block' data-type='void *' data-ref="132block">block</dfn>,</td></tr>
+<tr><th id="103">103</th><td>        <a class="typedef" href="#boost::simple_segregated_storage::size_type" title='boost::simple_segregated_storage::size_type' data-type='SizeType' data-ref="boost::simple_segregated_storage::size_type">size_type</a> <dfn class="local col3 decl" id="133nsz" title='nsz' data-type='boost::simple_segregated_storage::size_type' data-ref="133nsz">nsz</dfn>, <a class="typedef" href="#boost::simple_segregated_storage::size_type" title='boost::simple_segregated_storage::size_type' data-type='SizeType' data-ref="boost::simple_segregated_storage::size_type">size_type</a> <dfn class="local col4 decl" id="134npartition_sz" title='npartition_sz' data-type='boost::simple_segregated_storage::size_type' data-ref="134npartition_sz">npartition_sz</dfn>,</td></tr>
+<tr><th id="104">104</th><td>        <em>void</em> * <dfn class="local col5 decl" id="135end" title='end' data-type='void *' data-ref="135end">end</dfn> = <var>0</var>);</td></tr>
+<tr><th id="105">105</th><td></td></tr>
+<tr><th id="106">106</th><td>    <i>// Same preconditions as 'segregate'</i></td></tr>
+<tr><th id="107">107</th><td><i>    // Post: !empty()</i></td></tr>
+<tr><th id="108">108</th><td>    <em>void</em> <dfn class="decl def fn" id="_ZN5boost25simple_segregated_storage9add_blockEPvT_S2_" title='boost::simple_segregated_storage::add_block' data-ref="_ZN5boost25simple_segregated_storage9add_blockEPvT_S2_">add_block</dfn>(<em>void</em> * <em>const</em> <dfn class="local col6 decl" id="136block" title='block' data-type='void *const' data-ref="136block">block</dfn>,</td></tr>
+<tr><th id="109">109</th><td>        <em>const</em> <a class="typedef" href="#boost::simple_segregated_storage::size_type" title='boost::simple_segregated_storage::size_type' data-type='SizeType' data-ref="boost::simple_segregated_storage::size_type">size_type</a> <dfn class="local col7 decl" id="137nsz" title='nsz' data-type='const boost::simple_segregated_storage::size_type' data-ref="137nsz">nsz</dfn>, <em>const</em> <a class="typedef" href="#boost::simple_segregated_storage::size_type" title='boost::simple_segregated_storage::size_type' data-type='SizeType' data-ref="boost::simple_segregated_storage::size_type">size_type</a> <dfn class="local col8 decl" id="138npartition_sz" title='npartition_sz' data-type='const boost::simple_segregated_storage::size_type' data-ref="138npartition_sz">npartition_sz</dfn>)</td></tr>
+<tr><th id="110">110</th><td>    { <i class="doc">//! Add block</i></td></tr>
+<tr><th id="111">111</th><td>      <i class="doc">//! Segregate this block and merge its free list into the</i></td></tr>
+<tr><th id="112">112</th><td><i class="doc">      //!  free list referred to by "first".</i></td></tr>
+<tr><th id="113">113</th><td><i class="doc">      //! <span class="command">\pre</span> Same as segregate.</i></td></tr>
+<tr><th id="114">114</th><td><i class="doc">      //!  <span class="command">\post</span> !empty()</i></td></tr>
+<tr><th id="115">115</th><td>      <a class="macro" href="#37" title="" data-ref="_M/BOOST_POOL_VALIDATE_INTERNALS">BOOST_POOL_VALIDATE_INTERNALS</a></td></tr>
+<tr><th id="116">116</th><td>      <a class="member field" href="#boost::simple_segregated_storage::first" title='boost::simple_segregated_storage::first' data-ref="boost::simple_segregated_storage::first">first</a> = <a class="member fn" href="#_ZN5boost25simple_segregated_storage9segregateEPvT_S2_S1_" title='boost::simple_segregated_storage::segregate' data-ref="_ZN5boost25simple_segregated_storage9segregateEPvT_S2_S1_">segregate</a>(<a class="local col6 ref" href="#136block" title='block' data-ref="136block">block</a>, <a class="local col7 ref" href="#137nsz" title='nsz' data-ref="137nsz">nsz</a>, <a class="local col8 ref" href="#138npartition_sz" title='npartition_sz' data-ref="138npartition_sz">npartition_sz</a>, <span class='inlayHint'>end:&nbsp;</span><a class="member field" href="#boost::simple_segregated_storage::first" title='boost::simple_segregated_storage::first' data-ref="boost::simple_segregated_storage::first">first</a>);</td></tr>
+<tr><th id="117">117</th><td>      <a class="macro" href="#37" title="" data-ref="_M/BOOST_POOL_VALIDATE_INTERNALS">BOOST_POOL_VALIDATE_INTERNALS</a></td></tr>
+<tr><th id="118">118</th><td>    }</td></tr>
+<tr><th id="119">119</th><td></td></tr>
+<tr><th id="120">120</th><td>    <i>// Same preconditions as 'segregate'</i></td></tr>
+<tr><th id="121">121</th><td><i>    // Post: !empty()</i></td></tr>
+<tr><th id="122">122</th><td>    <em>void</em> <dfn class="decl def fn" id="_ZN5boost25simple_segregated_storage17add_ordered_blockEPvT_S2_" title='boost::simple_segregated_storage::add_ordered_block' data-ref="_ZN5boost25simple_segregated_storage17add_ordered_blockEPvT_S2_">add_ordered_block</dfn>(<em>void</em> * <em>const</em> <dfn class="local col9 decl" id="139block" title='block' data-type='void *const' data-ref="139block">block</dfn>,</td></tr>
+<tr><th id="123">123</th><td>        <em>const</em> <a class="typedef" href="#boost::simple_segregated_storage::size_type" title='boost::simple_segregated_storage::size_type' data-type='SizeType' data-ref="boost::simple_segregated_storage::size_type">size_type</a> <dfn class="local col0 decl" id="140nsz" title='nsz' data-type='const boost::simple_segregated_storage::size_type' data-ref="140nsz">nsz</dfn>, <em>const</em> <a class="typedef" href="#boost::simple_segregated_storage::size_type" title='boost::simple_segregated_storage::size_type' data-type='SizeType' data-ref="boost::simple_segregated_storage::size_type">size_type</a> <dfn class="local col1 decl" id="141npartition_sz" title='npartition_sz' data-type='const boost::simple_segregated_storage::size_type' data-ref="141npartition_sz">npartition_sz</dfn>)</td></tr>
+<tr><th id="124">124</th><td>    { <i class="doc">//! add block (ordered into list)</i></td></tr>
+<tr><th id="125">125</th><td>      <i class="doc">//! This (slower) version of add_block segregates the</i></td></tr>
+<tr><th id="126">126</th><td><i class="doc">      //!  block and merges its free list into our free list</i></td></tr>
+<tr><th id="127">127</th><td><i class="doc">      //!  in the proper order.</i></td></tr>
+<tr><th id="128">128</th><td>       <a class="macro" href="#37" title="" data-ref="_M/BOOST_POOL_VALIDATE_INTERNALS">BOOST_POOL_VALIDATE_INTERNALS</a></td></tr>
+<tr><th id="129">129</th><td>      <i>// Find where "block" would go in the free list</i></td></tr>
+<tr><th id="130">130</th><td>      <em>void</em> * <em>const</em> <dfn class="local col2 decl" id="142loc" title='loc' data-type='void *const' data-ref="142loc">loc</dfn> = <a class="member fn" href="#_ZN5boost25simple_segregated_storage9find_prevEPv" title='boost::simple_segregated_storage::find_prev' data-ref="_ZN5boost25simple_segregated_storage9find_prevEPv">find_prev</a>(<span class='inlayHint'>ptr:&nbsp;</span><a class="local col9 ref" href="#139block" title='block' data-ref="139block">block</a>);</td></tr>
+<tr><th id="131">131</th><td></td></tr>
+<tr><th id="132">132</th><td>      <i>// Place either at beginning or in middle/end</i></td></tr>
+<tr><th id="133">133</th><td>      <b>if</b> (<a class="local col2 ref" href="#142loc" title='loc' data-ref="142loc">loc</a> == <var>0</var>)</td></tr>
+<tr><th id="134">134</th><td>        <a class="member fn" href="#_ZN5boost25simple_segregated_storage9add_blockEPvT_S2_" title='boost::simple_segregated_storage::add_block' data-ref="_ZN5boost25simple_segregated_storage9add_blockEPvT_S2_">add_block</a>(<a class="local col9 ref" href="#139block" title='block' data-ref="139block">block</a>, <a class="local col0 ref" href="#140nsz" title='nsz' data-ref="140nsz">nsz</a>, <a class="local col1 ref" href="#141npartition_sz" title='npartition_sz' data-ref="141npartition_sz">npartition_sz</a>);</td></tr>
+<tr><th id="135">135</th><td>      <b>else</b></td></tr>
+<tr><th id="136">136</th><td>        <a class="member fn" href="#_ZN5boost25simple_segregated_storage6nextofEPv" title='boost::simple_segregated_storage::nextof' data-ref="_ZN5boost25simple_segregated_storage6nextofEPv">nextof</a>(<span class='inlayHint'>ptr:&nbsp;</span><a class="local col2 ref" href="#142loc" title='loc' data-ref="142loc">loc</a>) = <a class="member fn" href="#_ZN5boost25simple_segregated_storage9segregateEPvT_S2_S1_" title='boost::simple_segregated_storage::segregate' data-ref="_ZN5boost25simple_segregated_storage9segregateEPvT_S2_S1_">segregate</a>(<a class="local col9 ref" href="#139block" title='block' data-ref="139block">block</a>, <a class="local col0 ref" href="#140nsz" title='nsz' data-ref="140nsz">nsz</a>, <a class="local col1 ref" href="#141npartition_sz" title='npartition_sz' data-ref="141npartition_sz">npartition_sz</a>, <span class='inlayHint'>end:&nbsp;</span><a class="member fn" href="#_ZN5boost25simple_segregated_storage6nextofEPv" title='boost::simple_segregated_storage::nextof' data-ref="_ZN5boost25simple_segregated_storage6nextofEPv">nextof</a>(<span class='inlayHint'>ptr:&nbsp;</span><a class="local col2 ref" href="#142loc" title='loc' data-ref="142loc">loc</a>));</td></tr>
+<tr><th id="137">137</th><td>      <a class="macro" href="#37" title="" data-ref="_M/BOOST_POOL_VALIDATE_INTERNALS">BOOST_POOL_VALIDATE_INTERNALS</a></td></tr>
+<tr><th id="138">138</th><td>    }</td></tr>
+<tr><th id="139">139</th><td></td></tr>
+<tr><th id="140">140</th><td>    <i>// default destructor.</i></td></tr>
+<tr><th id="141">141</th><td></td></tr>
+<tr><th id="142">142</th><td>    <em>bool</em> <dfn class="decl def fn" id="_ZNK5boost25simple_segregated_storage5emptyEv" title='boost::simple_segregated_storage::empty' data-ref="_ZNK5boost25simple_segregated_storage5emptyEv">empty</dfn>() <em>const</em></td></tr>
+<tr><th id="143">143</th><td>    { <i class="doc">//! <span class="command">\returns</span> true only if simple_segregated_storage is empty.</i></td></tr>
+<tr><th id="144">144</th><td>      <b>return</b> (<a class="member field" href="#boost::simple_segregated_storage::first" title='boost::simple_segregated_storage::first' data-ref="boost::simple_segregated_storage::first">first</a> == <var>0</var>);</td></tr>
+<tr><th id="145">145</th><td>    }</td></tr>
+<tr><th id="146">146</th><td></td></tr>
+<tr><th id="147">147</th><td>    <em>void</em> * <dfn class="decl def fn" id="_ZN5boost25simple_segregated_storage6mallocEv" title='boost::simple_segregated_storage::malloc' data-ref="_ZN5boost25simple_segregated_storage6mallocEv">malloc</dfn> <a class="macro" href="../../../../config/include/boost/config/detail/suffix.hpp.html#374" title="" data-ref="_M/BOOST_PREVENT_MACRO_SUBSTITUTION">BOOST_PREVENT_MACRO_SUBSTITUTION</a>()</td></tr>
+<tr><th id="148">148</th><td>    { <i class="doc">//! Create a chunk.</i></td></tr>
+<tr><th id="149">149</th><td>      <i class="doc">//!  <span class="command">\pre</span> !empty()</i></td></tr>
+<tr><th id="150">150</th><td><i class="doc">      //! Increment the "first" pointer to point to the next chunk.</i></td></tr>
+<tr><th id="151">151</th><td>       <a class="macro" href="#37" title="" data-ref="_M/BOOST_POOL_VALIDATE_INTERNALS">BOOST_POOL_VALIDATE_INTERNALS</a></td></tr>
+<tr><th id="152">152</th><td>      <em>void</em> * <em>const</em> <dfn class="local col3 decl" id="143ret" title='ret' data-type='void *const' data-ref="143ret">ret</dfn> = <a class="member field" href="#boost::simple_segregated_storage::first" title='boost::simple_segregated_storage::first' data-ref="boost::simple_segregated_storage::first">first</a>;</td></tr>
+<tr><th id="153">153</th><td></td></tr>
+<tr><th id="154">154</th><td>      <i>// Increment the "first" pointer to point to the next chunk.</i></td></tr>
+<tr><th id="155">155</th><td>      <a class="member field" href="#boost::simple_segregated_storage::first" title='boost::simple_segregated_storage::first' data-ref="boost::simple_segregated_storage::first">first</a> = <a class="member fn" href="#_ZN5boost25simple_segregated_storage6nextofEPv" title='boost::simple_segregated_storage::nextof' data-ref="_ZN5boost25simple_segregated_storage6nextofEPv">nextof</a>(<span class='inlayHint'>ptr:&nbsp;</span><a class="member field" href="#boost::simple_segregated_storage::first" title='boost::simple_segregated_storage::first' data-ref="boost::simple_segregated_storage::first">first</a>);</td></tr>
+<tr><th id="156">156</th><td>      <a class="macro" href="#37" title="" data-ref="_M/BOOST_POOL_VALIDATE_INTERNALS">BOOST_POOL_VALIDATE_INTERNALS</a></td></tr>
+<tr><th id="157">157</th><td>      <b>return</b> <a class="local col3 ref" href="#143ret" title='ret' data-ref="143ret">ret</a>;</td></tr>
+<tr><th id="158">158</th><td>    }</td></tr>
+<tr><th id="159">159</th><td></td></tr>
+<tr><th id="160">160</th><td>    <em>void</em> <dfn class="decl def fn" id="_ZN5boost25simple_segregated_storage4freeEPv" title='boost::simple_segregated_storage::free' data-ref="_ZN5boost25simple_segregated_storage4freeEPv">free</dfn> <a class="macro" href="../../../../config/include/boost/config/detail/suffix.hpp.html#374" title="" data-ref="_M/BOOST_PREVENT_MACRO_SUBSTITUTION">BOOST_PREVENT_MACRO_SUBSTITUTION</a>(<em>void</em> * <em>const</em> <dfn class="local col4 decl" id="144chunk" title='chunk' data-type='void *const' data-ref="144chunk">chunk</dfn>)</td></tr>
+<tr><th id="161">161</th><td>    { <i class="doc">//! Free a chunk.</i></td></tr>
+<tr><th id="162">162</th><td>      <i class="doc">//! <span class="command">\pre</span> chunk was previously returned from a malloc() referring to the same free list.</i></td></tr>
+<tr><th id="163">163</th><td><i class="doc">      //! <span class="command">\post</span> !empty()</i></td></tr>
+<tr><th id="164">164</th><td>       <a class="macro" href="#37" title="" data-ref="_M/BOOST_POOL_VALIDATE_INTERNALS">BOOST_POOL_VALIDATE_INTERNALS</a></td></tr>
+<tr><th id="165">165</th><td>      <a class="member fn" href="#_ZN5boost25simple_segregated_storage6nextofEPv" title='boost::simple_segregated_storage::nextof' data-ref="_ZN5boost25simple_segregated_storage6nextofEPv">nextof</a>(<span class='inlayHint'>ptr:&nbsp;</span><a class="local col4 ref" href="#144chunk" title='chunk' data-ref="144chunk">chunk</a>) = <a class="member field" href="#boost::simple_segregated_storage::first" title='boost::simple_segregated_storage::first' data-ref="boost::simple_segregated_storage::first">first</a>;</td></tr>
+<tr><th id="166">166</th><td>      <a class="member field" href="#boost::simple_segregated_storage::first" title='boost::simple_segregated_storage::first' data-ref="boost::simple_segregated_storage::first">first</a> = <a class="local col4 ref" href="#144chunk" title='chunk' data-ref="144chunk">chunk</a>;</td></tr>
+<tr><th id="167">167</th><td>      <a class="macro" href="#37" title="" data-ref="_M/BOOST_POOL_VALIDATE_INTERNALS">BOOST_POOL_VALIDATE_INTERNALS</a></td></tr>
+<tr><th id="168">168</th><td>    }</td></tr>
+<tr><th id="169">169</th><td></td></tr>
+<tr><th id="170">170</th><td>    <em>void</em> <dfn class="decl def fn" id="_ZN5boost25simple_segregated_storage12ordered_freeEPv" title='boost::simple_segregated_storage::ordered_free' data-ref="_ZN5boost25simple_segregated_storage12ordered_freeEPv">ordered_free</dfn>(<em>void</em> * <em>const</em> <dfn class="local col5 decl" id="145chunk" title='chunk' data-type='void *const' data-ref="145chunk">chunk</dfn>)</td></tr>
+<tr><th id="171">171</th><td>    { <i class="doc">//! This (slower) implementation of 'free' places the memory</i></td></tr>
+<tr><th id="172">172</th><td>      <i class="doc">//!  back in the list in its proper order.</i></td></tr>
+<tr><th id="173">173</th><td><i class="doc">      //! <span class="command">\pre</span> chunk was previously returned from a malloc() referring to the same free list</i></td></tr>
+<tr><th id="174">174</th><td><i class="doc">      //! <span class="command">\post</span> !empty().</i></td></tr>
+<tr><th id="175">175</th><td><i class="doc"></i></td></tr>
+<tr><th id="176">176</th><td><i class="doc">      // Find where "chunk" goes in the free list</i></td></tr>
+<tr><th id="177">177</th><td>       <a class="macro" href="#37" title="" data-ref="_M/BOOST_POOL_VALIDATE_INTERNALS">BOOST_POOL_VALIDATE_INTERNALS</a></td></tr>
+<tr><th id="178">178</th><td>      <em>void</em> * <em>const</em> <dfn class="local col6 decl" id="146loc" title='loc' data-type='void *const' data-ref="146loc">loc</dfn> = <a class="member fn" href="#_ZN5boost25simple_segregated_storage9find_prevEPv" title='boost::simple_segregated_storage::find_prev' data-ref="_ZN5boost25simple_segregated_storage9find_prevEPv">find_prev</a>(<span class='inlayHint'>ptr:&nbsp;</span><a class="local col5 ref" href="#145chunk" title='chunk' data-ref="145chunk">chunk</a>);</td></tr>
+<tr><th id="179">179</th><td></td></tr>
+<tr><th id="180">180</th><td>      <i>// Place either at beginning or in middle/end.</i></td></tr>
+<tr><th id="181">181</th><td>      <b>if</b> (<a class="local col6 ref" href="#146loc" title='loc' data-ref="146loc">loc</a> == <var>0</var>)</td></tr>
+<tr><th id="182">182</th><td>        (<a class="member fn" href="#_ZN5boost25simple_segregated_storage4freeEPv" title='boost::simple_segregated_storage::free' data-ref="_ZN5boost25simple_segregated_storage4freeEPv">free</a>)(<a class="local col5 ref" href="#145chunk" title='chunk' data-ref="145chunk">chunk</a>);</td></tr>
+<tr><th id="183">183</th><td>      <b>else</b></td></tr>
+<tr><th id="184">184</th><td>      {</td></tr>
+<tr><th id="185">185</th><td>        <a class="member fn" href="#_ZN5boost25simple_segregated_storage6nextofEPv" title='boost::simple_segregated_storage::nextof' data-ref="_ZN5boost25simple_segregated_storage6nextofEPv">nextof</a>(<span class='inlayHint'>ptr:&nbsp;</span><a class="local col5 ref" href="#145chunk" title='chunk' data-ref="145chunk">chunk</a>) = <a class="member fn" href="#_ZN5boost25simple_segregated_storage6nextofEPv" title='boost::simple_segregated_storage::nextof' data-ref="_ZN5boost25simple_segregated_storage6nextofEPv">nextof</a>(<span class='inlayHint'>ptr:&nbsp;</span><a class="local col6 ref" href="#146loc" title='loc' data-ref="146loc">loc</a>);</td></tr>
+<tr><th id="186">186</th><td>        <a class="member fn" href="#_ZN5boost25simple_segregated_storage6nextofEPv" title='boost::simple_segregated_storage::nextof' data-ref="_ZN5boost25simple_segregated_storage6nextofEPv">nextof</a>(<span class='inlayHint'>ptr:&nbsp;</span><a class="local col6 ref" href="#146loc" title='loc' data-ref="146loc">loc</a>) = <a class="local col5 ref" href="#145chunk" title='chunk' data-ref="145chunk">chunk</a>;</td></tr>
+<tr><th id="187">187</th><td>      }</td></tr>
+<tr><th id="188">188</th><td>      <a class="macro" href="#37" title="" data-ref="_M/BOOST_POOL_VALIDATE_INTERNALS">BOOST_POOL_VALIDATE_INTERNALS</a></td></tr>
+<tr><th id="189">189</th><td>    }</td></tr>
+<tr><th id="190">190</th><td></td></tr>
+<tr><th id="191">191</th><td>   <em>void</em> * <a class="decl fn" href="#_ZN5boost25simple_segregated_storage8malloc_nET_S1_" title='boost::simple_segregated_storage::malloc_n' data-ref="_ZN5boost25simple_segregated_storage8malloc_nET_S1_">malloc_n</a>(<a class="typedef" href="#boost::simple_segregated_storage::size_type" title='boost::simple_segregated_storage::size_type' data-type='SizeType' data-ref="boost::simple_segregated_storage::size_type">size_type</a> <dfn class="local col7 decl" id="147n" title='n' data-type='boost::simple_segregated_storage::size_type' data-ref="147n">n</dfn>, <a class="typedef" href="#boost::simple_segregated_storage::size_type" title='boost::simple_segregated_storage::size_type' data-type='SizeType' data-ref="boost::simple_segregated_storage::size_type">size_type</a> <dfn class="local col8 decl" id="148partition_size" title='partition_size' data-type='boost::simple_segregated_storage::size_type' data-ref="148partition_size">partition_size</dfn>);</td></tr>
+<tr><th id="192">192</th><td>    </td></tr>
+<tr><th id="193">193</th><td>    <i class="doc">//! <span class="command">\pre</span> chunks was previously allocated from *this with the same</i></td></tr>
+<tr><th id="194">194</th><td><i class="doc">    //!   values for n and partition_size.</i></td></tr>
+<tr><th id="195">195</th><td><i class="doc">    //! <span class="command">\post</span> !empty()</i></td></tr>
+<tr><th id="196">196</th><td><i class="doc">    //! <span class="command">\note</span> If you're allocating/deallocating n a lot, you should</i></td></tr>
+<tr><th id="197">197</th><td><i class="doc">    //!  be using an ordered pool.</i></td></tr>
+<tr><th id="198">198</th><td>    <em>void</em> <dfn class="decl def fn" id="_ZN5boost25simple_segregated_storage6free_nEPvT_S2_" title='boost::simple_segregated_storage::free_n' data-ref="_ZN5boost25simple_segregated_storage6free_nEPvT_S2_">free_n</dfn>(<em>void</em> * <em>const</em> <dfn class="local col9 decl" id="149chunks" title='chunks' data-type='void *const' data-ref="149chunks">chunks</dfn>, <em>const</em> <a class="typedef" href="#boost::simple_segregated_storage::size_type" title='boost::simple_segregated_storage::size_type' data-type='SizeType' data-ref="boost::simple_segregated_storage::size_type">size_type</a> <dfn class="local col0 decl" id="150n" title='n' data-type='const boost::simple_segregated_storage::size_type' data-ref="150n">n</dfn>,</td></tr>
+<tr><th id="199">199</th><td>        <em>const</em> <a class="typedef" href="#boost::simple_segregated_storage::size_type" title='boost::simple_segregated_storage::size_type' data-type='SizeType' data-ref="boost::simple_segregated_storage::size_type">size_type</a> <dfn class="local col1 decl" id="151partition_size" title='partition_size' data-type='const boost::simple_segregated_storage::size_type' data-ref="151partition_size">partition_size</dfn>)</td></tr>
+<tr><th id="200">200</th><td>    { </td></tr>
+<tr><th id="201">201</th><td>       <a class="macro" href="#37" title="" data-ref="_M/BOOST_POOL_VALIDATE_INTERNALS">BOOST_POOL_VALIDATE_INTERNALS</a></td></tr>
+<tr><th id="202">202</th><td>      <b>if</b>(<a class="local col0 ref" href="#150n" title='n' data-ref="150n">n</a> != <var>0</var>)</td></tr>
+<tr><th id="203">203</th><td>        <a class="member fn" href="#_ZN5boost25simple_segregated_storage9add_blockEPvT_S2_" title='boost::simple_segregated_storage::add_block' data-ref="_ZN5boost25simple_segregated_storage9add_blockEPvT_S2_">add_block</a>(<span class='inlayHint'>block:&nbsp;</span><a class="local col9 ref" href="#149chunks" title='chunks' data-ref="149chunks">chunks</a>, <span class='inlayHint'>nsz:&nbsp;</span><a class="local col0 ref" href="#150n" title='n' data-ref="150n">n</a> * <a class="local col1 ref" href="#151partition_size" title='partition_size' data-ref="151partition_size">partition_size</a>, <span class='inlayHint'>npartition_sz:&nbsp;</span><a class="local col1 ref" href="#151partition_size" title='partition_size' data-ref="151partition_size">partition_size</a>);</td></tr>
+<tr><th id="204">204</th><td>       <a class="macro" href="#37" title="" data-ref="_M/BOOST_POOL_VALIDATE_INTERNALS">BOOST_POOL_VALIDATE_INTERNALS</a></td></tr>
+<tr><th id="205">205</th><td>    }</td></tr>
+<tr><th id="206">206</th><td></td></tr>
+<tr><th id="207">207</th><td>    <i>// pre: chunks was previously allocated from *this with the same</i></td></tr>
+<tr><th id="208">208</th><td><i>    //   values for n and partition_size.</i></td></tr>
+<tr><th id="209">209</th><td><i>    // post: !empty()</i></td></tr>
+<tr><th id="210">210</th><td>    <em>void</em> <dfn class="decl def fn" id="_ZN5boost25simple_segregated_storage14ordered_free_nEPvT_S2_" title='boost::simple_segregated_storage::ordered_free_n' data-ref="_ZN5boost25simple_segregated_storage14ordered_free_nEPvT_S2_">ordered_free_n</dfn>(<em>void</em> * <em>const</em> <dfn class="local col2 decl" id="152chunks" title='chunks' data-type='void *const' data-ref="152chunks">chunks</dfn>, <em>const</em> <a class="typedef" href="#boost::simple_segregated_storage::size_type" title='boost::simple_segregated_storage::size_type' data-type='SizeType' data-ref="boost::simple_segregated_storage::size_type">size_type</a> <dfn class="local col3 decl" id="153n" title='n' data-type='const boost::simple_segregated_storage::size_type' data-ref="153n">n</dfn>,</td></tr>
+<tr><th id="211">211</th><td>        <em>const</em> <a class="typedef" href="#boost::simple_segregated_storage::size_type" title='boost::simple_segregated_storage::size_type' data-type='SizeType' data-ref="boost::simple_segregated_storage::size_type">size_type</a> <dfn class="local col4 decl" id="154partition_size" title='partition_size' data-type='const boost::simple_segregated_storage::size_type' data-ref="154partition_size">partition_size</dfn>)</td></tr>
+<tr><th id="212">212</th><td>    { <i class="doc">//! Free n chunks from order list.</i></td></tr>
+<tr><th id="213">213</th><td>      <i class="doc">//! <span class="command">\pre</span> chunks was previously allocated from *this with the same</i></td></tr>
+<tr><th id="214">214</th><td><i class="doc">      //!   values for n and partition_size.</i></td></tr>
+<tr><th id="215">215</th><td><i class="doc"></i></td></tr>
+<tr><th id="216">216</th><td><i class="doc">      //! <span class="command">\pre</span> n should not be zero (n == 0 has no effect).</i></td></tr>
+<tr><th id="217">217</th><td>       <a class="macro" href="#37" title="" data-ref="_M/BOOST_POOL_VALIDATE_INTERNALS">BOOST_POOL_VALIDATE_INTERNALS</a></td></tr>
+<tr><th id="218">218</th><td>      <b>if</b>(<a class="local col3 ref" href="#153n" title='n' data-ref="153n">n</a> != <var>0</var>)</td></tr>
+<tr><th id="219">219</th><td>        <a class="member fn" href="#_ZN5boost25simple_segregated_storage17add_ordered_blockEPvT_S2_" title='boost::simple_segregated_storage::add_ordered_block' data-ref="_ZN5boost25simple_segregated_storage17add_ordered_blockEPvT_S2_">add_ordered_block</a>(<span class='inlayHint'>block:&nbsp;</span><a class="local col2 ref" href="#152chunks" title='chunks' data-ref="152chunks">chunks</a>, <span class='inlayHint'>nsz:&nbsp;</span><a class="local col3 ref" href="#153n" title='n' data-ref="153n">n</a> * <a class="local col4 ref" href="#154partition_size" title='partition_size' data-ref="154partition_size">partition_size</a>, <span class='inlayHint'>npartition_sz:&nbsp;</span><a class="local col4 ref" href="#154partition_size" title='partition_size' data-ref="154partition_size">partition_size</a>);</td></tr>
+<tr><th id="220">220</th><td>       <a class="macro" href="#37" title="" data-ref="_M/BOOST_POOL_VALIDATE_INTERNALS">BOOST_POOL_VALIDATE_INTERNALS</a></td></tr>
+<tr><th id="221">221</th><td>    }</td></tr>
+<tr><th id="222">222</th><td><u>#<span data-ppcond="222">ifdef</span> <span class="macro" data-ref="_M/BOOST_POOL_VALIDATE">BOOST_POOL_VALIDATE</span></u></td></tr>
+<tr><th id="223">223</th><td>    <em>void</em> validate()</td></tr>
+<tr><th id="224">224</th><td>    {</td></tr>
+<tr><th id="225">225</th><td>       <em>int</em> index = <var>0</var>;</td></tr>
+<tr><th id="226">226</th><td>       <em>void</em>* old = <var>0</var>;</td></tr>
+<tr><th id="227">227</th><td>       <em>void</em>* ptr = first;</td></tr>
+<tr><th id="228">228</th><td>       <b>while</b>(ptr)</td></tr>
+<tr><th id="229">229</th><td>       {</td></tr>
+<tr><th id="230">230</th><td>          <em>void</em>* pt = nextof(ptr); <i>// trigger possible segfault *before* we update variables</i></td></tr>
+<tr><th id="231">231</th><td>          ++index;</td></tr>
+<tr><th id="232">232</th><td>          old = ptr;</td></tr>
+<tr><th id="233">233</th><td>          ptr = nextof(ptr);</td></tr>
+<tr><th id="234">234</th><td>       }</td></tr>
+<tr><th id="235">235</th><td>    }</td></tr>
+<tr><th id="236">236</th><td><u>#<span data-ppcond="222">endif</span></u></td></tr>
+<tr><th id="237">237</th><td>};</td></tr>
+<tr><th id="238">238</th><td></td></tr>
+<tr><th id="239">239</th><td><i class="doc">//! Traverses the free list referred to by "first",</i></td></tr>
+<tr><th id="240">240</th><td><i class="doc">//!  and returns the iterator previous to where</i></td></tr>
+<tr><th id="241">241</th><td><i class="doc">//!  "ptr" would go if it was in the free list.</i></td></tr>
+<tr><th id="242">242</th><td><i class="doc">//!  Returns 0 if "ptr" would go at the beginning</i></td></tr>
+<tr><th id="243">243</th><td><i class="doc">//!  of the free list (i.e., before "first").</i></td></tr>
+<tr><th id="244">244</th><td><i class="doc"></i></td></tr>
+<tr><th id="245">245</th><td><i class="doc">//! <span class="command">\note</span> Note that this function finds the location previous to where ptr would go</i></td></tr>
+<tr><th id="246">246</th><td><i class="doc">//! if it was in the free list.</i></td></tr>
+<tr><th id="247">247</th><td><i class="doc">//! It does not find the entry in the free list before ptr</i></td></tr>
+<tr><th id="248">248</th><td><i class="doc">//! (unless ptr is already in the free list).</i></td></tr>
+<tr><th id="249">249</th><td><i class="doc">//! Specifically, find_prev(0) will return 0,</i></td></tr>
+<tr><th id="250">250</th><td><i class="doc">//! not the last entry in the free list.</i></td></tr>
+<tr><th id="251">251</th><td><i class="doc">//! <span class="command">\returns</span> location previous to where ptr would go if it was in the free list.</i></td></tr>
+<tr><th id="252">252</th><td><b>template</b> &lt;<b>typename</b> SizeType&gt;</td></tr>
+<tr><th id="253">253</th><td><em>void</em> * <a class="type" href="poolfwd.hpp.html#boost::simple_segregated_storage" title='boost::simple_segregated_storage' data-ref="boost::simple_segregated_storage">simple_segregated_storage</a>&lt;SizeType&gt;::<dfn class="decl def fn" id="_ZN5boost25simple_segregated_storage9find_prevEPv" title='boost::simple_segregated_storage::find_prev' data-ref="_ZN5boost25simple_segregated_storage9find_prevEPv">find_prev</dfn>(<em>void</em> * <em>const</em> <dfn class="local col5 decl" id="155ptr" title='ptr' data-type='void *const' data-ref="155ptr">ptr</dfn>)</td></tr>
+<tr><th id="254">254</th><td>{ </td></tr>
+<tr><th id="255">255</th><td>  <i>// Handle border case.</i></td></tr>
+<tr><th id="256">256</th><td>  <b>if</b> (<a class="member field" href="#boost::simple_segregated_storage::first" title='boost::simple_segregated_storage::first' data-ref="boost::simple_segregated_storage::first">first</a> == <var>0</var> || <span class="namespace">std::</span><a class="type" href="../../../../../../include/c++/9/bits/stl_function.h.html#std::greater" title='std::greater' data-ref="std::greater">greater</a>&lt;<em>void</em> *&gt;<a class="ref fn" href="../../../../../../include/c++/9/bits/stl_function.h.html#411" title='std::greater&lt;void *&gt;::greater' data-ref="_ZNSt7greaterIPvEC1Ev">(</a>)<a class="ref fn" href="../../../../../../include/c++/9/bits/stl_function.h.html#_ZNKSt7greaterIPT_EclES1_S1_" title='std::greater&lt;type-parameter-0-0 *&gt;::operator()' data-ref="_ZNKSt7greaterIPT_EclES1_S1_">(<a class="member field" href="#boost::simple_segregated_storage::first" title='boost::simple_segregated_storage::first' data-ref="boost::simple_segregated_storage::first">first</a>, <a class="local col5 ref" href="#155ptr" title='ptr' data-ref="155ptr">ptr</a>)</a>)</td></tr>
+<tr><th id="257">257</th><td>    <b>return</b> <var>0</var>;</td></tr>
+<tr><th id="258">258</th><td></td></tr>
+<tr><th id="259">259</th><td>  <em>void</em> * <dfn class="local col6 decl" id="156iter" title='iter' data-type='void *' data-ref="156iter">iter</dfn> = <a class="member field" href="#boost::simple_segregated_storage::first" title='boost::simple_segregated_storage::first' data-ref="boost::simple_segregated_storage::first">first</a>;</td></tr>
+<tr><th id="260">260</th><td>  <b>while</b> (<b>true</b>)</td></tr>
+<tr><th id="261">261</th><td>  {</td></tr>
+<tr><th id="262">262</th><td>    <i>// if we're about to hit the end, or if we've found where "ptr" goes.</i></td></tr>
+<tr><th id="263">263</th><td>    <b>if</b> (<a class="member fn" href="#_ZN5boost25simple_segregated_storage6nextofEPv" title='boost::simple_segregated_storage::nextof' data-ref="_ZN5boost25simple_segregated_storage6nextofEPv">nextof</a>(<span class='inlayHint'>ptr:&nbsp;</span><a class="local col6 ref" href="#156iter" title='iter' data-ref="156iter">iter</a>) == <var>0</var> || <span class="namespace">std::</span><a class="type" href="../../../../../../include/c++/9/bits/stl_function.h.html#std::greater" title='std::greater' data-ref="std::greater">greater</a>&lt;<em>void</em> *&gt;<a class="ref fn" href="../../../../../../include/c++/9/bits/stl_function.h.html#411" title='std::greater&lt;void *&gt;::greater' data-ref="_ZNSt7greaterIPvEC1Ev">(</a>)<a class="ref fn" href="../../../../../../include/c++/9/bits/stl_function.h.html#_ZNKSt7greaterIPT_EclES1_S1_" title='std::greater&lt;type-parameter-0-0 *&gt;::operator()' data-ref="_ZNKSt7greaterIPT_EclES1_S1_">(<a class="member fn" href="#_ZN5boost25simple_segregated_storage6nextofEPv" title='boost::simple_segregated_storage::nextof' data-ref="_ZN5boost25simple_segregated_storage6nextofEPv">nextof</a>(<span class='inlayHint'>ptr:&nbsp;</span><a class="local col6 ref" href="#156iter" title='iter' data-ref="156iter">iter</a>), <a class="local col5 ref" href="#155ptr" title='ptr' data-ref="155ptr">ptr</a>)</a>)</td></tr>
+<tr><th id="264">264</th><td>      <b>return</b> <a class="local col6 ref" href="#156iter" title='iter' data-ref="156iter">iter</a>;</td></tr>
+<tr><th id="265">265</th><td></td></tr>
+<tr><th id="266">266</th><td>    <a class="local col6 ref" href="#156iter" title='iter' data-ref="156iter">iter</a> = <a class="member fn" href="#_ZN5boost25simple_segregated_storage6nextofEPv" title='boost::simple_segregated_storage::nextof' data-ref="_ZN5boost25simple_segregated_storage6nextofEPv">nextof</a>(<span class='inlayHint'>ptr:&nbsp;</span><a class="local col6 ref" href="#156iter" title='iter' data-ref="156iter">iter</a>);</td></tr>
+<tr><th id="267">267</th><td>  }</td></tr>
+<tr><th id="268">268</th><td>}</td></tr>
+<tr><th id="269">269</th><td></td></tr>
+<tr><th id="270">270</th><td><i class="doc">//! Segregate block into chunks.</i></td></tr>
+<tr><th id="271">271</th><td><i class="doc">//! <span class="command">\pre</span> npartition_sz &gt;= sizeof(void *)</i></td></tr>
+<tr><th id="272">272</th><td><i class="doc">//! <span class="command">\pre</span>    npartition_sz = sizeof(void *) * i, for some integer i</i></td></tr>
+<tr><th id="273">273</th><td><i class="doc">//! <span class="command">\pre</span>    nsz &gt;= npartition_sz</i></td></tr>
+<tr><th id="274">274</th><td><i class="doc">//! <span class="command">\pre</span> Block is properly aligned for an array of object of</i></td></tr>
+<tr><th id="275">275</th><td><i class="doc">//!        size npartition_sz and array of void *.</i></td></tr>
+<tr><th id="276">276</th><td><i class="doc">//! The requirements above guarantee that any pointer to a chunk</i></td></tr>
+<tr><th id="277">277</th><td><i class="doc">//! (which is a pointer to an element in an array of npartition_sz)</i></td></tr>
+<tr><th id="278">278</th><td><i class="doc">//! may be cast to void **.</i></td></tr>
+<tr><th id="279">279</th><td><b>template</b> &lt;<b>typename</b> SizeType&gt;</td></tr>
+<tr><th id="280">280</th><td><em>void</em> * <a class="type" href="poolfwd.hpp.html#boost::simple_segregated_storage" title='boost::simple_segregated_storage' data-ref="boost::simple_segregated_storage">simple_segregated_storage</a>&lt;SizeType&gt;::<dfn class="decl def fn" id="_ZN5boost25simple_segregated_storage9segregateEPvT_S2_S1_" title='boost::simple_segregated_storage::segregate' data-ref="_ZN5boost25simple_segregated_storage9segregateEPvT_S2_S1_">segregate</dfn>(</td></tr>
+<tr><th id="281">281</th><td>    <em>void</em> * <em>const</em> <dfn class="local col7 decl" id="157block" title='block' data-type='void *const' data-ref="157block">block</dfn>,</td></tr>
+<tr><th id="282">282</th><td>    <em>const</em> <a class="typedef" href="#boost::simple_segregated_storage::size_type" title='boost::simple_segregated_storage::size_type' data-type='SizeType' data-ref="boost::simple_segregated_storage::size_type">size_type</a> <dfn class="local col8 decl" id="158sz" title='sz' data-type='const boost::simple_segregated_storage::size_type' data-ref="158sz">sz</dfn>,</td></tr>
+<tr><th id="283">283</th><td>    <em>const</em> <a class="typedef" href="#boost::simple_segregated_storage::size_type" title='boost::simple_segregated_storage::size_type' data-type='SizeType' data-ref="boost::simple_segregated_storage::size_type">size_type</a> <dfn class="local col9 decl" id="159partition_sz" title='partition_sz' data-type='const boost::simple_segregated_storage::size_type' data-ref="159partition_sz">partition_sz</dfn>,</td></tr>
+<tr><th id="284">284</th><td>    <em>void</em> * <em>const</em> <dfn class="local col0 decl" id="160end" title='end' data-type='void *const' data-ref="160end">end</dfn>)</td></tr>
+<tr><th id="285">285</th><td>{</td></tr>
+<tr><th id="286">286</th><td>  <i>// Get pointer to last valid chunk, preventing overflow on size calculations</i></td></tr>
+<tr><th id="287">287</th><td><i>  //  The division followed by the multiplication just makes sure that</i></td></tr>
+<tr><th id="288">288</th><td><i>  //    old == block + partition_sz * i, for some integer i, even if the</i></td></tr>
+<tr><th id="289">289</th><td><i>  //    block size (sz) is not a multiple of the partition size.</i></td></tr>
+<tr><th id="290">290</th><td>  <em>char</em> * <dfn class="local col1 decl" id="161old" title='old' data-type='char *' data-ref="161old">old</dfn> = <b>static_cast</b>&lt;<em>char</em> *&gt;(<a class="local col7 ref" href="#157block" title='block' data-ref="157block">block</a>)</td></tr>
+<tr><th id="291">291</th><td>      + ((<a class="local col8 ref" href="#158sz" title='sz' data-ref="158sz">sz</a> - <a class="local col9 ref" href="#159partition_sz" title='partition_sz' data-ref="159partition_sz">partition_sz</a>) / <a class="local col9 ref" href="#159partition_sz" title='partition_sz' data-ref="159partition_sz">partition_sz</a>) * <a class="local col9 ref" href="#159partition_sz" title='partition_sz' data-ref="159partition_sz">partition_sz</a>;</td></tr>
+<tr><th id="292">292</th><td></td></tr>
+<tr><th id="293">293</th><td>  <i>// Set it to point to the end</i></td></tr>
+<tr><th id="294">294</th><td>  <a class="member fn" href="#_ZN5boost25simple_segregated_storage6nextofEPv" title='boost::simple_segregated_storage::nextof' data-ref="_ZN5boost25simple_segregated_storage6nextofEPv">nextof</a>(<span class='inlayHint'>ptr:&nbsp;</span><a class="local col1 ref" href="#161old" title='old' data-ref="161old">old</a>) = <a class="local col0 ref" href="#160end" title='end' data-ref="160end">end</a>;</td></tr>
+<tr><th id="295">295</th><td></td></tr>
+<tr><th id="296">296</th><td>  <i>// Handle border case where sz == partition_sz (i.e., we're handling an array</i></td></tr>
+<tr><th id="297">297</th><td><i>  //  of 1 element)</i></td></tr>
+<tr><th id="298">298</th><td>  <b>if</b> (<a class="local col1 ref" href="#161old" title='old' data-ref="161old">old</a> == <a class="local col7 ref" href="#157block" title='block' data-ref="157block">block</a>)</td></tr>
+<tr><th id="299">299</th><td>    <b>return</b> <a class="local col7 ref" href="#157block" title='block' data-ref="157block">block</a>;</td></tr>
+<tr><th id="300">300</th><td></td></tr>
+<tr><th id="301">301</th><td>  <i>// Iterate backwards, building a singly-linked list of pointers</i></td></tr>
+<tr><th id="302">302</th><td>  <b>for</b> (<em>char</em> * <dfn class="local col2 decl" id="162iter" title='iter' data-type='char *' data-ref="162iter">iter</dfn> = <a class="local col1 ref" href="#161old" title='old' data-ref="161old">old</a> - <a class="local col9 ref" href="#159partition_sz" title='partition_sz' data-ref="159partition_sz">partition_sz</a>; <a class="local col2 ref" href="#162iter" title='iter' data-ref="162iter">iter</a> != <a class="local col7 ref" href="#157block" title='block' data-ref="157block">block</a>;</td></tr>
+<tr><th id="303">303</th><td>      <a class="local col1 ref" href="#161old" title='old' data-ref="161old">old</a> = <a class="local col2 ref" href="#162iter" title='iter' data-ref="162iter">iter</a>, <a class="local col2 ref" href="#162iter" title='iter' data-ref="162iter">iter</a> -= <a class="local col9 ref" href="#159partition_sz" title='partition_sz' data-ref="159partition_sz">partition_sz</a>)</td></tr>
+<tr><th id="304">304</th><td>    <a class="member fn" href="#_ZN5boost25simple_segregated_storage6nextofEPv" title='boost::simple_segregated_storage::nextof' data-ref="_ZN5boost25simple_segregated_storage6nextofEPv">nextof</a>(<span class='inlayHint'>ptr:&nbsp;</span><a class="local col2 ref" href="#162iter" title='iter' data-ref="162iter">iter</a>) = <a class="local col1 ref" href="#161old" title='old' data-ref="161old">old</a>;</td></tr>
+<tr><th id="305">305</th><td></td></tr>
+<tr><th id="306">306</th><td>  <i>// Point the first pointer, too</i></td></tr>
+<tr><th id="307">307</th><td>  <a class="member fn" href="#_ZN5boost25simple_segregated_storage6nextofEPv" title='boost::simple_segregated_storage::nextof' data-ref="_ZN5boost25simple_segregated_storage6nextofEPv">nextof</a>(<span class='inlayHint'>ptr:&nbsp;</span><a class="local col7 ref" href="#157block" title='block' data-ref="157block">block</a>) = <a class="local col1 ref" href="#161old" title='old' data-ref="161old">old</a>;</td></tr>
+<tr><th id="308">308</th><td></td></tr>
+<tr><th id="309">309</th><td>  <b>return</b> <a class="local col7 ref" href="#157block" title='block' data-ref="157block">block</a>;</td></tr>
+<tr><th id="310">310</th><td>}</td></tr>
+<tr><th id="311">311</th><td></td></tr>
+<tr><th id="312">312</th><td><i class="doc">//! <span class="command">\pre</span> (n &gt; 0), (start != 0), (nextof(start) != 0)</i></td></tr>
+<tr><th id="313">313</th><td><i class="doc">//! <span class="command">\post</span> (start != 0)</i></td></tr>
+<tr><th id="314">314</th><td><i class="doc">//! The function attempts to find n contiguous chunks</i></td></tr>
+<tr><th id="315">315</th><td><i class="doc">//!  of size partition_size in the free list, starting at start.</i></td></tr>
+<tr><th id="316">316</th><td><i class="doc">//! If it succeds, it returns the last chunk in that contiguous</i></td></tr>
+<tr><th id="317">317</th><td><i class="doc">//!  sequence, so that the sequence is known by [start, {retval}]</i></td></tr>
+<tr><th id="318">318</th><td><i class="doc">//! If it fails, it does do either because it's at the end of the</i></td></tr>
+<tr><th id="319">319</th><td><i class="doc">//!  free list or hits a non-contiguous chunk.  In either case,</i></td></tr>
+<tr><th id="320">320</th><td><i class="doc">//!  it will return 0, and set start to the last considered</i></td></tr>
+<tr><th id="321">321</th><td><i class="doc">//!  chunk.  You are at the end of the free list if</i></td></tr>
+<tr><th id="322">322</th><td><i class="doc">//!  nextof(start) == 0.  Otherwise, start points to the last</i></td></tr>
+<tr><th id="323">323</th><td><i class="doc">//!  chunk in the contiguous sequence, and nextof(start) points</i></td></tr>
+<tr><th id="324">324</th><td><i class="doc">//!  to the first chunk in the next contiguous sequence (assuming</i></td></tr>
+<tr><th id="325">325</th><td><i class="doc">//!  an ordered free list).</i></td></tr>
+<tr><th id="326">326</th><td><b>template</b> &lt;<b>typename</b> SizeType&gt;</td></tr>
+<tr><th id="327">327</th><td><em>void</em> * <a class="type" href="poolfwd.hpp.html#boost::simple_segregated_storage" title='boost::simple_segregated_storage' data-ref="boost::simple_segregated_storage">simple_segregated_storage</a>&lt;SizeType&gt;::<dfn class="decl def fn" id="_ZN5boost25simple_segregated_storage12try_malloc_nERPvT_S3_" title='boost::simple_segregated_storage::try_malloc_n' data-ref="_ZN5boost25simple_segregated_storage12try_malloc_nERPvT_S3_">try_malloc_n</dfn>(</td></tr>
+<tr><th id="328">328</th><td>    <em>void</em> * &amp; <dfn class="local col3 decl" id="163start" title='start' data-type='void *&amp;' data-ref="163start">start</dfn>, <a class="typedef" href="#boost::simple_segregated_storage::size_type" title='boost::simple_segregated_storage::size_type' data-type='SizeType' data-ref="boost::simple_segregated_storage::size_type">size_type</a> <dfn class="local col4 decl" id="164n" title='n' data-type='boost::simple_segregated_storage::size_type' data-ref="164n">n</dfn>, <em>const</em> <a class="typedef" href="#boost::simple_segregated_storage::size_type" title='boost::simple_segregated_storage::size_type' data-type='SizeType' data-ref="boost::simple_segregated_storage::size_type">size_type</a> <dfn class="local col5 decl" id="165partition_size" title='partition_size' data-type='const boost::simple_segregated_storage::size_type' data-ref="165partition_size">partition_size</dfn>)</td></tr>
+<tr><th id="329">329</th><td>{</td></tr>
+<tr><th id="330">330</th><td>  <em>void</em> * <dfn class="local col6 decl" id="166iter" title='iter' data-type='void *' data-ref="166iter">iter</dfn> = <a class="member fn" href="#_ZN5boost25simple_segregated_storage6nextofEPv" title='boost::simple_segregated_storage::nextof' data-ref="_ZN5boost25simple_segregated_storage6nextofEPv">nextof</a>(<span class='inlayHint'>ptr:&nbsp;</span><a class="local col3 ref" href="#163start" title='start' data-ref="163start">start</a>);</td></tr>
+<tr><th id="331">331</th><td>  <b>if</b> (<a class="local col4 ref" href="#164n" title='n' data-ref="164n">n</a> == <var>1</var>)</td></tr>
+<tr><th id="332">332</th><td>  {</td></tr>
+<tr><th id="333">333</th><td>    <em>void</em> * <dfn class="local col7 decl" id="167next" title='next' data-type='void *' data-ref="167next">next</dfn> = <a class="member fn" href="#_ZN5boost25simple_segregated_storage6nextofEPv" title='boost::simple_segregated_storage::nextof' data-ref="_ZN5boost25simple_segregated_storage6nextofEPv">nextof</a>(<span class='inlayHint'>ptr:&nbsp;</span><a class="local col6 ref" href="#166iter" title='iter' data-ref="166iter">iter</a>);</td></tr>
+<tr><th id="334">334</th><td>    <b>if</b> (<a class="local col7 ref" href="#167next" title='next' data-ref="167next">next</a> != <b>static_cast</b>&lt;<em>char</em> *&gt;(<a class="local col6 ref" href="#166iter" title='iter' data-ref="166iter">iter</a>) + <a class="local col5 ref" href="#165partition_size" title='partition_size' data-ref="165partition_size">partition_size</a>)</td></tr>
+<tr><th id="335">335</th><td>    {</td></tr>
+<tr><th id="336">336</th><td>      <a class="local col3 ref" href="#163start" title='start' data-ref="163start">start</a> = <a class="local col6 ref" href="#166iter" title='iter' data-ref="166iter">iter</a>;</td></tr>
+<tr><th id="337">337</th><td>      <b>return</b> <var>0</var>;</td></tr>
+<tr><th id="338">338</th><td>    }</td></tr>
+<tr><th id="339">339</th><td>    <b>else</b></td></tr>
+<tr><th id="340">340</th><td>    {</td></tr>
+<tr><th id="341">341</th><td>      <b>return</b> <a class="local col6 ref" href="#166iter" title='iter' data-ref="166iter">iter</a>;</td></tr>
+<tr><th id="342">342</th><td>    }</td></tr>
+<tr><th id="343">343</th><td>  }</td></tr>
+<tr><th id="344">344</th><td>  <b>while</b> (--<a class="local col4 ref" href="#164n" title='n' data-ref="164n">n</a> != <var>0</var>)</td></tr>
+<tr><th id="345">345</th><td>  {</td></tr>
+<tr><th id="346">346</th><td>    <em>void</em> * <dfn class="local col8 decl" id="168next" title='next' data-type='void *' data-ref="168next">next</dfn> = <a class="member fn" href="#_ZN5boost25simple_segregated_storage6nextofEPv" title='boost::simple_segregated_storage::nextof' data-ref="_ZN5boost25simple_segregated_storage6nextofEPv">nextof</a>(<span class='inlayHint'>ptr:&nbsp;</span><a class="local col6 ref" href="#166iter" title='iter' data-ref="166iter">iter</a>);</td></tr>
+<tr><th id="347">347</th><td>    <b>if</b> (<a class="local col8 ref" href="#168next" title='next' data-ref="168next">next</a> != <b>static_cast</b>&lt;<em>char</em> *&gt;(<a class="local col6 ref" href="#166iter" title='iter' data-ref="166iter">iter</a>) + <a class="local col5 ref" href="#165partition_size" title='partition_size' data-ref="165partition_size">partition_size</a>)</td></tr>
+<tr><th id="348">348</th><td>    {</td></tr>
+<tr><th id="349">349</th><td>      <i>// next == 0 (end-of-list) or non-contiguous chunk found</i></td></tr>
+<tr><th id="350">350</th><td>      <a class="local col3 ref" href="#163start" title='start' data-ref="163start">start</a> = <a class="local col6 ref" href="#166iter" title='iter' data-ref="166iter">iter</a>;</td></tr>
+<tr><th id="351">351</th><td>      <b>return</b> <var>0</var>;</td></tr>
+<tr><th id="352">352</th><td>    }</td></tr>
+<tr><th id="353">353</th><td>    <a class="local col6 ref" href="#166iter" title='iter' data-ref="166iter">iter</a> = <a class="local col8 ref" href="#168next" title='next' data-ref="168next">next</a>;</td></tr>
+<tr><th id="354">354</th><td>  }</td></tr>
+<tr><th id="355">355</th><td>  <b>return</b> <a class="local col6 ref" href="#166iter" title='iter' data-ref="166iter">iter</a>;</td></tr>
+<tr><th id="356">356</th><td>}</td></tr>
+<tr><th id="357">357</th><td></td></tr>
+<tr><th id="358">358</th><td><i class="doc">//! Attempts to find a contiguous sequence of n partition_sz-sized chunks. If found, removes them </i></td></tr>
+<tr><th id="359">359</th><td><i class="doc">//! all from the free list and returns a pointer to the first. If not found, returns 0. It is strongly </i></td></tr>
+<tr><th id="360">360</th><td><i class="doc">//! recommended (but not required) that the free list be ordered, as this algorithm will fail to find </i></td></tr>
+<tr><th id="361">361</th><td><i class="doc">//! a contiguous sequence unless it is contiguous in the free list as well. Order-preserving. </i></td></tr>
+<tr><th id="362">362</th><td><i class="doc">//! O(N) with respect to the size of the free list.</i></td></tr>
+<tr><th id="363">363</th><td><b>template</b> &lt;<b>typename</b> SizeType&gt;</td></tr>
+<tr><th id="364">364</th><td><em>void</em> * <a class="type" href="poolfwd.hpp.html#boost::simple_segregated_storage" title='boost::simple_segregated_storage' data-ref="boost::simple_segregated_storage">simple_segregated_storage</a>&lt;SizeType&gt;::<dfn class="decl def fn" id="_ZN5boost25simple_segregated_storage8malloc_nET_S1_" title='boost::simple_segregated_storage::malloc_n' data-ref="_ZN5boost25simple_segregated_storage8malloc_nET_S1_">malloc_n</dfn>(<em>const</em> <a class="typedef" href="#boost::simple_segregated_storage::size_type" title='boost::simple_segregated_storage::size_type' data-type='SizeType' data-ref="boost::simple_segregated_storage::size_type">size_type</a> <dfn class="local col9 decl" id="169n" title='n' data-type='const boost::simple_segregated_storage::size_type' data-ref="169n">n</dfn>,</td></tr>
+<tr><th id="365">365</th><td>    <em>const</em> <a class="typedef" href="#boost::simple_segregated_storage::size_type" title='boost::simple_segregated_storage::size_type' data-type='SizeType' data-ref="boost::simple_segregated_storage::size_type">size_type</a> <dfn class="local col0 decl" id="170partition_size" title='partition_size' data-type='const boost::simple_segregated_storage::size_type' data-ref="170partition_size">partition_size</dfn>)</td></tr>
+<tr><th id="366">366</th><td>{</td></tr>
+<tr><th id="367">367</th><td>   <a class="macro" href="#37" title="" data-ref="_M/BOOST_POOL_VALIDATE_INTERNALS">BOOST_POOL_VALIDATE_INTERNALS</a></td></tr>
+<tr><th id="368">368</th><td>  <b>if</b>(<a class="local col9 ref" href="#169n" title='n' data-ref="169n">n</a> == <var>0</var>)</td></tr>
+<tr><th id="369">369</th><td>    <b>return</b> <var>0</var>;</td></tr>
+<tr><th id="370">370</th><td>  <em>void</em> * <dfn class="local col1 decl" id="171start" title='start' data-type='void *' data-ref="171start">start</dfn> = &amp;<a class="member field" href="#boost::simple_segregated_storage::first" title='boost::simple_segregated_storage::first' data-ref="boost::simple_segregated_storage::first">first</a>;</td></tr>
+<tr><th id="371">371</th><td>  <em>void</em> * <dfn class="local col2 decl" id="172iter" title='iter' data-type='void *' data-ref="172iter">iter</dfn>;</td></tr>
+<tr><th id="372">372</th><td>  <b>do</b></td></tr>
+<tr><th id="373">373</th><td>  {</td></tr>
+<tr><th id="374">374</th><td>    <b>if</b> (<a class="member fn" href="#_ZN5boost25simple_segregated_storage6nextofEPv" title='boost::simple_segregated_storage::nextof' data-ref="_ZN5boost25simple_segregated_storage6nextofEPv">nextof</a>(<span class='inlayHint'>ptr:&nbsp;</span><a class="local col1 ref" href="#171start" title='start' data-ref="171start">start</a>) == <var>0</var>)</td></tr>
+<tr><th id="375">375</th><td>      <b>return</b> <var>0</var>;</td></tr>
+<tr><th id="376">376</th><td>    <a class="local col2 ref" href="#172iter" title='iter' data-ref="172iter">iter</a> = <a class="member fn" href="#_ZN5boost25simple_segregated_storage12try_malloc_nERPvT_S3_" title='boost::simple_segregated_storage::try_malloc_n' data-ref="_ZN5boost25simple_segregated_storage12try_malloc_nERPvT_S3_">try_malloc_n</a>(<span class='refarg'><a class="local col1 ref" href="#171start" title='start' data-ref="171start">start</a></span>, <a class="local col9 ref" href="#169n" title='n' data-ref="169n">n</a>, <a class="local col0 ref" href="#170partition_size" title='partition_size' data-ref="170partition_size">partition_size</a>);</td></tr>
+<tr><th id="377">377</th><td>  } <b>while</b> (<a class="local col2 ref" href="#172iter" title='iter' data-ref="172iter">iter</a> == <var>0</var>);</td></tr>
+<tr><th id="378">378</th><td>  <em>void</em> * <em>const</em> <dfn class="local col3 decl" id="173ret" title='ret' data-type='void *const' data-ref="173ret">ret</dfn> = <a class="member fn" href="#_ZN5boost25simple_segregated_storage6nextofEPv" title='boost::simple_segregated_storage::nextof' data-ref="_ZN5boost25simple_segregated_storage6nextofEPv">nextof</a>(<span class='inlayHint'>ptr:&nbsp;</span><a class="local col1 ref" href="#171start" title='start' data-ref="171start">start</a>);</td></tr>
+<tr><th id="379">379</th><td>  <a class="member fn" href="#_ZN5boost25simple_segregated_storage6nextofEPv" title='boost::simple_segregated_storage::nextof' data-ref="_ZN5boost25simple_segregated_storage6nextofEPv">nextof</a>(<span class='inlayHint'>ptr:&nbsp;</span><a class="local col1 ref" href="#171start" title='start' data-ref="171start">start</a>) = <a class="member fn" href="#_ZN5boost25simple_segregated_storage6nextofEPv" title='boost::simple_segregated_storage::nextof' data-ref="_ZN5boost25simple_segregated_storage6nextofEPv">nextof</a>(<span class='inlayHint'>ptr:&nbsp;</span><a class="local col2 ref" href="#172iter" title='iter' data-ref="172iter">iter</a>);</td></tr>
+<tr><th id="380">380</th><td>  <a class="macro" href="#37" title="" data-ref="_M/BOOST_POOL_VALIDATE_INTERNALS">BOOST_POOL_VALIDATE_INTERNALS</a></td></tr>
+<tr><th id="381">381</th><td>  <b>return</b> <a class="local col3 ref" href="#173ret" title='ret' data-ref="173ret">ret</a>;</td></tr>
+<tr><th id="382">382</th><td>}</td></tr>
+<tr><th id="383">383</th><td></td></tr>
+<tr><th id="384">384</th><td>} <i>// namespace boost</i></td></tr>
+<tr><th id="385">385</th><td></td></tr>
+<tr><th id="386">386</th><td><u>#<span data-ppcond="386">ifdef</span> <span class="macro" data-ref="_M/BOOST_MSVC">BOOST_MSVC</span></u></td></tr>
+<tr><th id="387">387</th><td><u>#pragma warning(pop)</u></td></tr>
+<tr><th id="388">388</th><td><u>#<span data-ppcond="386">endif</span></u></td></tr>
+<tr><th id="389">389</th><td></td></tr>
+<tr><th id="390">390</th><td><u>#<span data-ppcond="9">endif</span></u></td></tr>
+<tr><th id="391">391</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../../../../wave/src/instantiate_cpp_exprgrammar.cpp.html'>boost-1.85.0/libs/wave/src/instantiate_cpp_exprgrammar.cpp</a><br/>Generated on <em>2024-Jun-14</em> from project boost-1.85.0 revision <em>1.85.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

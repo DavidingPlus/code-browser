@@ -1,0 +1,978 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>exception.hpp source code [boost-1.85.0/libs/contract/include/boost/contract/core/exception.hpp] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="boost::contract::assertion_failure,boost::contract::bad_virtual_result_cast,boost::contract::exception,boost::contract::from "/>
+<link rel="stylesheet" href="../../../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'boost-1.85.0/libs/contract/include/boost/contract/core/exception.hpp'; var root_path = '../../../../../../..'; var data_path = '../../../../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../../../..'>boost-1.85.0</a>/<a href='../../../../..'>libs</a>/<a href='../../../..'>contract</a>/<a href='../../..'>include</a>/<a href='../..'>boost</a>/<a href='..'>contract</a>/<a href='./'>core</a>/<a href='exception.hpp.html'>exception.hpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td></td></tr>
+<tr><th id="2">2</th><td><u>#<span data-ppcond="2">ifndef</span> <span class="macro" data-ref="_M/BOOST_CONTRACT_EXCEPTION_HPP_">BOOST_CONTRACT_EXCEPTION_HPP_</span></u></td></tr>
+<tr><th id="3">3</th><td><u>#define <dfn class="macro" id="_M/BOOST_CONTRACT_EXCEPTION_HPP_" data-ref="_M/BOOST_CONTRACT_EXCEPTION_HPP_">BOOST_CONTRACT_EXCEPTION_HPP_</dfn></u></td></tr>
+<tr><th id="4">4</th><td></td></tr>
+<tr><th id="5">5</th><td><i>// Copyright (C) 2008-2018 Lorenzo Caminiti</i></td></tr>
+<tr><th id="6">6</th><td><i>// Distributed under the Boost Software License, Version 1.0 (see accompanying</i></td></tr>
+<tr><th id="7">7</th><td><i>// file LICENSE_1_0.txt or a copy at <a href="http://www.boost.org/LICENSE_1_0.txt">http://www.boost.org/LICENSE_1_0.txt</a>).</i></td></tr>
+<tr><th id="8">8</th><td><i>// See: <a href="http://www.boost.org/doc/libs/release/libs/contract/doc/html/index.html">http://www.boost.org/doc/libs/release/libs/contract/doc/html/index.html</a></i></td></tr>
+<tr><th id="9">9</th><td></td></tr>
+<tr><th id="10">10</th><td><i class="doc">/** <span class="command">@file</span></i></td></tr>
+<tr><th id="11">11</th><td><i class="doc">Handle contract assertion failures.</i></td></tr>
+<tr><th id="12">12</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="13">13</th><td><i class="doc"></i></td></tr>
+<tr><th id="14">14</th><td><i class="doc">// IMPORTANT: Included by contract_macro.hpp so trivial headers only.</i></td></tr>
+<tr><th id="15">15</th><td><u>#include <a href="config.hpp.html">&lt;boost/contract/core/config.hpp&gt;</a></u></td></tr>
+<tr><th id="16">16</th><td><u>#include <a href="../detail/declspec.hpp.html">&lt;boost/contract/detail/declspec.hpp&gt;</a> // No compile-time overhead.</u></td></tr>
+<tr><th id="17">17</th><td><u>#include <a href="../../../../../function/include/boost/function.hpp.html">&lt;boost/function.hpp&gt;</a></u></td></tr>
+<tr><th id="18">18</th><td><u>#include <a href="../../../../../config/include/boost/config.hpp.html">&lt;boost/config.hpp&gt;</a></u></td></tr>
+<tr><th id="19">19</th><td><u>#include <a href="../../../../../../../include/c++/9/exception.html">&lt;exception&gt;</a></u></td></tr>
+<tr><th id="20">20</th><td><u>#include <a href="../../../../../../../include/c++/9/string.html">&lt;string&gt;</a></u></td></tr>
+<tr><th id="21">21</th><td></td></tr>
+<tr><th id="22">22</th><td><i>// NOTE: This code should not change (not even its impl) based on the</i></td></tr>
+<tr><th id="23">23</th><td><i>// CONTRACT_NO_... macros. For example, preconditions_failure() should still</i></td></tr>
+<tr><th id="24">24</th><td><i>// all the set precondition failure handler even when NO_PRECONDITIONS is</i></td></tr>
+<tr><th id="25">25</th><td><i>// #defined, because user code might explicitly call precondition_failure()</i></td></tr>
+<tr><th id="26">26</th><td><i>// (for whatever reason...). Otherwise, the public API of this lib will change.</i></td></tr>
+<tr><th id="27">27</th><td></td></tr>
+<tr><th id="28">28</th><td><u>#<span data-ppcond="28">ifdef</span> <span class="macro" data-ref="_M/BOOST_CONTRACT_DETAIL_DOXYGEN">BOOST_CONTRACT_DETAIL_DOXYGEN</span></u></td></tr>
+<tr><th id="29">29</th><td><i>// Needed for `std::` prefix to show (but removed via `EXCLUDE_SYMBOLS=std`).</i></td></tr>
+<tr><th id="30">30</th><td><b>namespace</b> std {</td></tr>
+<tr><th id="31">31</th><td>    <b>class</b> exception {};</td></tr>
+<tr><th id="32">32</th><td>    <b>class</b> bad_cast {};</td></tr>
+<tr><th id="33">33</th><td>}</td></tr>
+<tr><th id="34">34</th><td><u>#<span data-ppcond="28">endif</span></u></td></tr>
+<tr><th id="35">35</th><td></td></tr>
+<tr><th id="36">36</th><td><b>namespace</b> <span class="namespace">boost</span> { <b>namespace</b> <span class="namespace">contract</span> {</td></tr>
+<tr><th id="37">37</th><td></td></tr>
+<tr><th id="38">38</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="39">39</th><td><i class="doc">Public base class for all exceptions directly thrown by this library.</i></td></tr>
+<tr><th id="40">40</th><td><i class="doc"></i></td></tr>
+<tr><th id="41">41</th><td><i class="doc">This class does not inherit from<span class="command"> @c</span> <span class="arg">std::exception</span> because exceptions deriving</i></td></tr>
+<tr><th id="42">42</th><td><i class="doc">from this class will do that (inheriting from<span class="command"> @c</span> <span class="arg">std::exception,</span><span class="command"></span></i></td></tr>
+<tr><th id="43">43</th><td><i class="doc"><span class="command">@c</span> <span class="arg">std::bad_cast,</span> etc.).</i></td></tr>
+<tr><th id="44">44</th><td><i class="doc"></i></td></tr>
+<tr><th id="45">45</th><td><i class="doc"><span class="command">@see</span>   <span class="command"> @RefClass</span>{boost::contract::assertion_failure},</i></td></tr>
+<tr><th id="46">46</th><td><i class="doc">       <span class="command"> @RefClass</span>{boost::contract::bad_virtual_result_cast},</i></td></tr>
+<tr><th id="47">47</th><td><i class="doc">        etc.</i></td></tr>
+<tr><th id="48">48</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="49">49</th><td><b>class</b> <a class="macro" href="../detail/declspec.hpp.html#30" title="" data-ref="_M/BOOST_CONTRACT_DETAIL_DECLSPEC">BOOST_CONTRACT_DETAIL_DECLSPEC</a> <dfn class="type def" id="boost::contract::exception" title='boost::contract::exception' data-ref="boost::contract::exception">exception</dfn> {</td></tr>
+<tr><th id="50">50</th><td><b>public</b>:</td></tr>
+<tr><th id="51">51</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="52">52</th><td><i class="doc">    Destruct this object.</i></td></tr>
+<tr><th id="53">53</th><td><i class="doc"></i></td></tr>
+<tr><th id="54">54</th><td><i class="doc">   <span class="command"> @b</span> <span class="arg">Throws:</span> This is declared<span class="command"> @c</span> <span class="arg">noexcept</span> (or<span class="command"> @c</span> <span class="arg">throw()</span> before C++11).</i></td></tr>
+<tr><th id="55">55</th><td><i class="doc">    */</i></td></tr>
+<tr><th id="56">56</th><td>    <b>virtual</b> <a class="virtual decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract9exceptionD1Ev" title='boost::contract::exception::~exception' data-ref="_ZN5boost8contract9exceptionD1Ev" id="_ZN5boost8contract9exceptionD1Ev">~exception</a>() <i class="doc">/** <span class="command">@cond</span> */</i> <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a> <i class="doc">/** <span class="command">@endcond</span> */</i>;</td></tr>
+<tr><th id="57">57</th><td>};</td></tr>
+<tr><th id="58">58</th><td></td></tr>
+<tr><th id="59">59</th><td><u>#<span data-ppcond="59">ifdef</span> <span class="macro" data-ref="_M/BOOST_MSVC">BOOST_MSVC</span></u></td></tr>
+<tr><th id="60">60</th><td>    <u>#pragma warning(push)</u></td></tr>
+<tr><th id="61">61</th><td>    <u>#pragma warning(disable: 4275) // Bases w/o DLL spec (bad_cast, etc).</u></td></tr>
+<tr><th id="62">62</th><td>    <u>#pragma warning(disable: 4251) // Members w/o DLL spec (string for what_).</u></td></tr>
+<tr><th id="63">63</th><td><u>#<span data-ppcond="59">endif</span></u></td></tr>
+<tr><th id="64">64</th><td></td></tr>
+<tr><th id="65">65</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="66">66</th><td><i class="doc">Exception thrown when inconsistent return values are passed to overridden</i></td></tr>
+<tr><th id="67">67</th><td><i class="doc">virtual public functions.</i></td></tr>
+<tr><th id="68">68</th><td><i class="doc"></i></td></tr>
+<tr><th id="69">69</th><td><i class="doc">This exception is thrown when programmers pass to this library return value</i></td></tr>
+<tr><th id="70">70</th><td><i class="doc">parameters for public function overrides in derived classes that are not</i></td></tr>
+<tr><th id="71">71</th><td><i class="doc">consistent with the return type parameter passed for the virtual public function</i></td></tr>
+<tr><th id="72">72</th><td><i class="doc">being overridden from the base classes.</i></td></tr>
+<tr><th id="73">73</th><td><i class="doc">This allows this library to give more descriptive error messages in such cases</i></td></tr>
+<tr><th id="74">74</th><td><i class="doc">of misuse.</i></td></tr>
+<tr><th id="75">75</th><td><i class="doc"></i></td></tr>
+<tr><th id="76">76</th><td><i class="doc">This exception is internally thrown by this library and programmers should not</i></td></tr>
+<tr><th id="77">77</th><td><i class="doc">need to throw it from user code.</i></td></tr>
+<tr><th id="78">78</th><td><i class="doc"></i></td></tr>
+<tr><th id="79">79</th><td><i class="doc"><span class="command">@see</span>   <span class="command"> @RefSect</span>{tutorial.public_function_overrides__subcontracting_,</i></td></tr>
+<tr><th id="80">80</th><td><i class="doc">        Public Function Overrides}</i></td></tr>
+<tr><th id="81">81</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="82">82</th><td><b>class</b> <a class="macro" href="../detail/declspec.hpp.html#30" title="" data-ref="_M/BOOST_CONTRACT_DETAIL_DECLSPEC">BOOST_CONTRACT_DETAIL_DECLSPEC</a> <dfn class="type def" id="boost::contract::bad_virtual_result_cast" title='boost::contract::bad_virtual_result_cast' data-ref="boost::contract::bad_virtual_result_cast">bad_virtual_result_cast</dfn> : <i>// Copy (as str).</i></td></tr>
+<tr><th id="83">83</th><td>        <b>public</b> <span class="namespace">std::</span><a class="type" href="../../../../../../../include/c++/9/typeinfo.html#std::bad_cast" title='std::bad_cast' data-ref="std::bad_cast">bad_cast</a>, <b>public</b> <span class="namespace">boost::contract::</span><a class="type" href="#boost::contract::exception" title='boost::contract::exception' data-ref="boost::contract::exception">exception</a> {</td></tr>
+<tr><th id="84">84</th><td><b>public</b>:</td></tr>
+<tr><th id="85">85</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="86">86</th><td><i class="doc">    Construct this object with the name of the from- and to- result types.</i></td></tr>
+<tr><th id="87">87</th><td><i class="doc"></i></td></tr>
+<tr><th id="88">88</th><td><i class="doc">    <span class="command">@param</span> <span class="arg">from_type_name</span> Name of the from-type (source of the cast).</i></td></tr>
+<tr><th id="89">89</th><td><i class="doc">    <span class="command">@param</span> <span class="arg">to_type_name</span> Name of the to-type (destination of the cast).</i></td></tr>
+<tr><th id="90">90</th><td><i class="doc">    */</i></td></tr>
+<tr><th id="91">91</th><td>    <b>explicit</b> <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract23bad_virtual_result_castC1EPKcS3_" title='boost::contract::bad_virtual_result_cast::bad_virtual_result_cast' data-ref="_ZN5boost8contract23bad_virtual_result_castC1EPKcS3_" id="_ZN5boost8contract23bad_virtual_result_castC1EPKcS3_">bad_virtual_result_cast</a>(<em>char</em> <em>const</em>* <dfn class="local col1 decl" id="3381from_type_name" title='from_type_name' data-type='const char *' data-ref="3381from_type_name">from_type_name</dfn>,</td></tr>
+<tr><th id="92">92</th><td>            <em>char</em> <em>const</em>* <dfn class="local col2 decl" id="3382to_type_name" title='to_type_name' data-type='const char *' data-ref="3382to_type_name">to_type_name</dfn>);</td></tr>
+<tr><th id="93">93</th><td></td></tr>
+<tr><th id="94">94</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="95">95</th><td><i class="doc">    Destruct this object.</i></td></tr>
+<tr><th id="96">96</th><td><i class="doc"></i></td></tr>
+<tr><th id="97">97</th><td><i class="doc">   <span class="command"> @b</span> <span class="arg">Throws:</span> This is declared<span class="command"> @c</span> <span class="arg">noexcept</span> (or<span class="command"> @c</span> <span class="arg">throw()</span> before C++11).</i></td></tr>
+<tr><th id="98">98</th><td><i class="doc">    */</i></td></tr>
+<tr><th id="99">99</th><td>    <b>virtual</b> <a class="virtual decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract23bad_virtual_result_castD1Ev" title='boost::contract::bad_virtual_result_cast::~bad_virtual_result_cast' data-ref="_ZN5boost8contract23bad_virtual_result_castD1Ev" id="_ZN5boost8contract23bad_virtual_result_castD1Ev">~bad_virtual_result_cast</a>()</td></tr>
+<tr><th id="100">100</th><td>            <i class="doc">/** <span class="command">@cond</span> */</i> <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a> <i class="doc">/** <span class="command">@endcond</span> */</i>;</td></tr>
+<tr><th id="101">101</th><td></td></tr>
+<tr><th id="102">102</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="103">103</th><td><i class="doc">    Description for this error (containing both from- and to- type names).</i></td></tr>
+<tr><th id="104">104</th><td><i class="doc"></i></td></tr>
+<tr><th id="105">105</th><td><i class="doc">   <span class="command"> @b</span> <span class="arg">Throws:</span> This is declared<span class="command"> @c</span> <span class="arg">noexcept</span> (or<span class="command"> @c</span> <span class="arg">throw()</span> before C++11).</i></td></tr>
+<tr><th id="106">106</th><td><i class="doc">    */</i></td></tr>
+<tr><th id="107">107</th><td>    <b>virtual</b> <em>char</em> <em>const</em>* <a class="virtual decl fn" href="../detail/inlined/core/exception.hpp.html#_ZNK5boost8contract23bad_virtual_result_cast4whatEv" title='boost::contract::bad_virtual_result_cast::what' data-ref="_ZNK5boost8contract23bad_virtual_result_cast4whatEv" id="_ZNK5boost8contract23bad_virtual_result_cast4whatEv">what</a>() <em>const</em></td></tr>
+<tr><th id="108">108</th><td>            <i class="doc">/** <span class="command">@cond</span> */</i> <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a> <i class="doc">/** <span class="command">@endcond</span> */</i>;</td></tr>
+<tr><th id="109">109</th><td></td></tr>
+<tr><th id="110">110</th><td><i class="doc">/** <span class="command">@cond</span> */</i></td></tr>
+<tr><th id="111">111</th><td><b>private</b>:</td></tr>
+<tr><th id="112">112</th><td>    <span class="namespace">std::</span><a class="typedef" href="../../../../../../../include/c++/9/bits/stringfwd.h.html#std::string" title='std::string' data-type='basic_string&lt;char&gt;' data-ref="std::string">string</a> <dfn class="decl field" id="boost::contract::bad_virtual_result_cast::what_" title='boost::contract::bad_virtual_result_cast::what_' data-ref="boost::contract::bad_virtual_result_cast::what_">what_</dfn>;</td></tr>
+<tr><th id="113">113</th><td><i class="doc">/** <span class="command">@endcond</span> */</i></td></tr>
+<tr><th id="114">114</th><td>};</td></tr>
+<tr><th id="115">115</th><td></td></tr>
+<tr><th id="116">116</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="117">117</th><td><i class="doc">Exception typically used to report a contract assertion failure.</i></td></tr>
+<tr><th id="118">118</th><td><i class="doc"></i></td></tr>
+<tr><th id="119">119</th><td><i class="doc">This exception is thrown by code expanded by<span class="command"> @RefMacro</span>{BOOST_CONTRACT_ASSERT}</i></td></tr>
+<tr><th id="120">120</th><td><i class="doc">(but it can also be thrown by user code programmed manually without that macro).</i></td></tr>
+<tr><th id="121">121</th><td><i class="doc">This exception is typically used to report contract assertion failures because</i></td></tr>
+<tr><th id="122">122</th><td><i class="doc">it contains detailed information about the file name, line number, and source</i></td></tr>
+<tr><th id="123">123</th><td><i class="doc">code of the asserted condition (so it can be used by this library to provide</i></td></tr>
+<tr><th id="124">124</th><td><i class="doc">detailed error messages when handling contract assertion failures).</i></td></tr>
+<tr><th id="125">125</th><td><i class="doc"></i></td></tr>
+<tr><th id="126">126</th><td><i class="doc">However, any other exception can be used to report a contract assertion failure</i></td></tr>
+<tr><th id="127">127</th><td><i class="doc">(including user-defined exceptions).</i></td></tr>
+<tr><th id="128">128</th><td><i class="doc">This library will call the appropriate contract failure handler function</i></td></tr>
+<tr><th id="129">129</th><td><i class="doc"><span class="command">(@RefFunc</span>{boost::contract::precondition_failure}, etc.) when this or any other</i></td></tr>
+<tr><th id="130">130</th><td><i class="doc">exception is thrown while checking contracts (by default, these failure handler</i></td></tr>
+<tr><th id="131">131</th><td><i class="doc">functions print an error message to<span class="command"> @c</span> <span class="arg">std::cerr</span> and terminate the program, but</i></td></tr>
+<tr><th id="132">132</th><td><i class="doc">they can be customized to take any other action).</i></td></tr>
+<tr><th id="133">133</th><td><i class="doc"></i></td></tr>
+<tr><th id="134">134</th><td><i class="doc"><span class="command">@see</span>   <span class="command"> @RefSect</span>{advanced.throw_on_failures__and__noexcept__, Throw on Failure},</i></td></tr>
+<tr><th id="135">135</th><td><i class="doc">       <span class="command"> @RefSect</span>{extras.no_macros__and_no_variadic_macros_, No Macros}</i></td></tr>
+<tr><th id="136">136</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="137">137</th><td><b>class</b> <a class="macro" href="../detail/declspec.hpp.html#30" title="" data-ref="_M/BOOST_CONTRACT_DETAIL_DECLSPEC">BOOST_CONTRACT_DETAIL_DECLSPEC</a> <dfn class="type def" id="boost::contract::assertion_failure" title='boost::contract::assertion_failure' data-ref="boost::contract::assertion_failure">assertion_failure</dfn> : <i>// Copy (as str, etc.).</i></td></tr>
+<tr><th id="138">138</th><td>        <b>public</b> <span class="namespace">std::</span><a class="type" href="../../../../../../../include/c++/9/bits/exception.h.html#std::exception" title='std::exception' data-ref="std::exception">exception</a>, <b>public</b> <span class="namespace">boost::contract::</span><a class="type" href="#boost::contract::exception" title='boost::contract::exception' data-ref="boost::contract::exception">exception</a> {</td></tr>
+<tr><th id="139">139</th><td><b>public</b>:</td></tr>
+<tr><th id="140">140</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="141">141</th><td><i class="doc">    Construct this object with file name, line number, and source code text of</i></td></tr>
+<tr><th id="142">142</th><td><i class="doc">    an assertion condition (all optional).</i></td></tr>
+<tr><th id="143">143</th><td><i class="doc"></i></td></tr>
+<tr><th id="144">144</th><td><i class="doc">    This constructor can also be used to specify no information (default</i></td></tr>
+<tr><th id="145">145</th><td><i class="doc">    constructor), or to specify only file name and line number but not source</i></td></tr>
+<tr><th id="146">146</th><td><i class="doc">    code text (because of the parameter default values).</i></td></tr>
+<tr><th id="147">147</th><td><i class="doc">    </i></td></tr>
+<tr><th id="148">148</th><td><i class="doc">    <span class="command">@param</span> <span class="arg">file</span> Name of the file containing the assertion (usually set using</i></td></tr>
+<tr><th id="149">149</th><td><i class="doc">                &lt;c&gt;__FILE__&lt;/c&gt;).</i></td></tr>
+<tr><th id="150">150</th><td><i class="doc">    <span class="command">@param</span> <span class="arg">line</span> Number of the line containing the assertion (usually set using</i></td></tr>
+<tr><th id="151">151</th><td><i class="doc">                &lt;c&gt;__LINE__&lt;/c&gt;).</i></td></tr>
+<tr><th id="152">152</th><td><i class="doc">    <span class="command">@param</span> <span class="arg">code</span> Text listing the source code of the assertion condition.</i></td></tr>
+<tr><th id="153">153</th><td><i class="doc">    */</i></td></tr>
+<tr><th id="154">154</th><td>    <b>explicit</b> <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract17assertion_failureC1EPKcmS3_" title='boost::contract::assertion_failure::assertion_failure' data-ref="_ZN5boost8contract17assertion_failureC1EPKcmS3_" id="_ZN5boost8contract17assertion_failureC1EPKcmS3_">assertion_failure</a>(<em>char</em> <em>const</em>* <dfn class="local col3 decl" id="3383file" title='file' data-type='const char *' data-ref="3383file">file</dfn> = <q>""</q>, <em>unsigned</em> <em>long</em> <dfn class="local col4 decl" id="3384line" title='line' data-type='unsigned long' data-ref="3384line">line</dfn> = <var>0</var>,</td></tr>
+<tr><th id="155">155</th><td>            <em>char</em> <em>const</em>* <dfn class="local col5 decl" id="3385code" title='code' data-type='const char *' data-ref="3385code">code</dfn> = <q>""</q>);</td></tr>
+<tr><th id="156">156</th><td></td></tr>
+<tr><th id="157">157</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="158">158</th><td><i class="doc">    Construct this object only with the source code text of the assertion</i></td></tr>
+<tr><th id="159">159</th><td><i class="doc">    condition.</i></td></tr>
+<tr><th id="160">160</th><td><i class="doc">    <span class="command">@param</span> <span class="arg">code</span> Text listing the source code of the assertion condition.</i></td></tr>
+<tr><th id="161">161</th><td><i class="doc">    */</i></td></tr>
+<tr><th id="162">162</th><td>    <b>explicit</b> <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract17assertion_failureC1EPKc" title='boost::contract::assertion_failure::assertion_failure' data-ref="_ZN5boost8contract17assertion_failureC1EPKc" id="_ZN5boost8contract17assertion_failureC1EPKc">assertion_failure</a>(<em>char</em> <em>const</em>* <dfn class="local col6 decl" id="3386code" title='code' data-type='const char *' data-ref="3386code">code</dfn>);</td></tr>
+<tr><th id="163">163</th><td>    </td></tr>
+<tr><th id="164">164</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="165">165</th><td><i class="doc">    Destruct this object.</i></td></tr>
+<tr><th id="166">166</th><td><i class="doc"></i></td></tr>
+<tr><th id="167">167</th><td><i class="doc">   <span class="command"> @b</span> <span class="arg">Throws:</span> This is declared<span class="command"> @c</span> <span class="arg">noexcept</span> (or<span class="command"> @c</span> <span class="arg">throw()</span> before C++11).</i></td></tr>
+<tr><th id="168">168</th><td><i class="doc">    */</i></td></tr>
+<tr><th id="169">169</th><td>    <b>virtual</b> <a class="virtual decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract17assertion_failureD1Ev" title='boost::contract::assertion_failure::~assertion_failure' data-ref="_ZN5boost8contract17assertion_failureD1Ev" id="_ZN5boost8contract17assertion_failureD1Ev">~assertion_failure</a>()</td></tr>
+<tr><th id="170">170</th><td>            <i class="doc">/** <span class="command">@cond</span> */</i> <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a> <i class="doc">/** <span class="command">@endcond</span> */</i>;</td></tr>
+<tr><th id="171">171</th><td></td></tr>
+<tr><th id="172">172</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="173">173</th><td><i class="doc">    String describing the failed assertion.</i></td></tr>
+<tr><th id="174">174</th><td><i class="doc">    </i></td></tr>
+<tr><th id="175">175</th><td><i class="doc">   <span class="command"> @b</span> <span class="arg">Throws:</span> This is declared<span class="command"> @c</span> <span class="arg">noexcept</span> (or<span class="command"> @c</span> <span class="arg">throw()</span> before C++11).</i></td></tr>
+<tr><th id="176">176</th><td><i class="doc">    </i></td></tr>
+<tr><th id="177">177</th><td><i class="doc">    <span class="command">@return</span> A string formatted similarly to the following:</i></td></tr>
+<tr><th id="178">178</th><td><i class="doc">      &lt;c&gt;assertion "`code()`" failed: file "`file()`", line \`line()\`&lt;/c&gt;</i></td></tr>
+<tr><th id="179">179</th><td><i class="doc">            (where `` indicate execution quotes).</i></td></tr>
+<tr><th id="180">180</th><td><i class="doc">            File, line, and code will be omitted from this string if they were</i></td></tr>
+<tr><th id="181">181</th><td><i class="doc">            not specified when constructing this object.</i></td></tr>
+<tr><th id="182">182</th><td><i class="doc">    */</i></td></tr>
+<tr><th id="183">183</th><td>    <b>virtual</b> <em>char</em> <em>const</em>* <a class="virtual decl fn" href="../detail/inlined/core/exception.hpp.html#_ZNK5boost8contract17assertion_failure4whatEv" title='boost::contract::assertion_failure::what' data-ref="_ZNK5boost8contract17assertion_failure4whatEv" id="_ZNK5boost8contract17assertion_failure4whatEv">what</a>() <em>const</em></td></tr>
+<tr><th id="184">184</th><td>            <i class="doc">/** <span class="command">@cond</span> */</i> <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a> <i class="doc">/** <span class="command">@endcond</span> */</i>;</td></tr>
+<tr><th id="185">185</th><td></td></tr>
+<tr><th id="186">186</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="187">187</th><td><i class="doc">    Name of the file containing the assertion.</i></td></tr>
+<tr><th id="188">188</th><td><i class="doc"></i></td></tr>
+<tr><th id="189">189</th><td><i class="doc">    <span class="command">@return</span> File name as specified at construction (or<span class="command"> @c</span> <span class="arg">""</span> if no file was</i></td></tr>
+<tr><th id="190">190</th><td><i class="doc">            specified).</i></td></tr>
+<tr><th id="191">191</th><td><i class="doc">    */</i></td></tr>
+<tr><th id="192">192</th><td>    <em>char</em> <em>const</em>* <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZNK5boost8contract17assertion_failure4fileEv" title='boost::contract::assertion_failure::file' data-ref="_ZNK5boost8contract17assertion_failure4fileEv" id="_ZNK5boost8contract17assertion_failure4fileEv">file</a>() <em>const</em>;</td></tr>
+<tr><th id="193">193</th><td>    </td></tr>
+<tr><th id="194">194</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="195">195</th><td><i class="doc">    Number of the line containing the assertion.</i></td></tr>
+<tr><th id="196">196</th><td><i class="doc"></i></td></tr>
+<tr><th id="197">197</th><td><i class="doc">    <span class="command">@return</span> Line number as specified at construction (or<span class="command"> @c</span> <span class="arg">0</span> if no line number</i></td></tr>
+<tr><th id="198">198</th><td><i class="doc">            was specified).</i></td></tr>
+<tr><th id="199">199</th><td><i class="doc">    */</i></td></tr>
+<tr><th id="200">200</th><td>    <em>unsigned</em> <em>long</em> <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZNK5boost8contract17assertion_failure4lineEv" title='boost::contract::assertion_failure::line' data-ref="_ZNK5boost8contract17assertion_failure4lineEv" id="_ZNK5boost8contract17assertion_failure4lineEv">line</a>() <em>const</em>;</td></tr>
+<tr><th id="201">201</th><td>    </td></tr>
+<tr><th id="202">202</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="203">203</th><td><i class="doc">    Text listing the source code of the assertion condition.</i></td></tr>
+<tr><th id="204">204</th><td><i class="doc"></i></td></tr>
+<tr><th id="205">205</th><td><i class="doc">    <span class="command">@return</span> Assertion condition source code as specified at construction (or</i></td></tr>
+<tr><th id="206">206</th><td><i class="doc">           <span class="command"> @c</span> <span class="arg">""</span> if no source code text was specified).</i></td></tr>
+<tr><th id="207">207</th><td><i class="doc">    */</i></td></tr>
+<tr><th id="208">208</th><td>    <em>char</em> <em>const</em>* <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZNK5boost8contract17assertion_failure4codeEv" title='boost::contract::assertion_failure::code' data-ref="_ZNK5boost8contract17assertion_failure4codeEv" id="_ZNK5boost8contract17assertion_failure4codeEv">code</a>() <em>const</em>;</td></tr>
+<tr><th id="209">209</th><td></td></tr>
+<tr><th id="210">210</th><td><i class="doc">/** <span class="command">@cond</span> */</i></td></tr>
+<tr><th id="211">211</th><td><b>private</b>:</td></tr>
+<tr><th id="212">212</th><td>    <em>void</em> <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract17assertion_failure4initEv" title='boost::contract::assertion_failure::init' data-ref="_ZN5boost8contract17assertion_failure4initEv" id="_ZN5boost8contract17assertion_failure4initEv">init</a>();</td></tr>
+<tr><th id="213">213</th><td></td></tr>
+<tr><th id="214">214</th><td>    <em>char</em> <em>const</em>* <dfn class="decl field" id="boost::contract::assertion_failure::file_" title='boost::contract::assertion_failure::file_' data-ref="boost::contract::assertion_failure::file_">file_</dfn>;</td></tr>
+<tr><th id="215">215</th><td>    <em>unsigned</em> <em>long</em> <dfn class="decl field" id="boost::contract::assertion_failure::line_" title='boost::contract::assertion_failure::line_' data-ref="boost::contract::assertion_failure::line_">line_</dfn>;</td></tr>
+<tr><th id="216">216</th><td>    <em>char</em> <em>const</em>* <dfn class="decl field" id="boost::contract::assertion_failure::code_" title='boost::contract::assertion_failure::code_' data-ref="boost::contract::assertion_failure::code_">code_</dfn>;</td></tr>
+<tr><th id="217">217</th><td>    <span class="namespace">std::</span><a class="typedef" href="../../../../../../../include/c++/9/bits/stringfwd.h.html#std::string" title='std::string' data-type='basic_string&lt;char&gt;' data-ref="std::string">string</a> <dfn class="decl field" id="boost::contract::assertion_failure::what_" title='boost::contract::assertion_failure::what_' data-ref="boost::contract::assertion_failure::what_">what_</dfn>;</td></tr>
+<tr><th id="218">218</th><td><i class="doc">/** <span class="command">@endcond</span> */</i></td></tr>
+<tr><th id="219">219</th><td>};</td></tr>
+<tr><th id="220">220</th><td></td></tr>
+<tr><th id="221">221</th><td><u>#<span data-ppcond="221">ifdef</span> <span class="macro" data-ref="_M/BOOST_MSVC">BOOST_MSVC</span></u></td></tr>
+<tr><th id="222">222</th><td>    <u>#pragma warning(pop)</u></td></tr>
+<tr><th id="223">223</th><td><u>#<span data-ppcond="221">endif</span></u></td></tr>
+<tr><th id="224">224</th><td></td></tr>
+<tr><th id="225">225</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="226">226</th><td><i class="doc">Indicate the kind of operation where the contract assertion failed.</i></td></tr>
+<tr><th id="227">227</th><td><i class="doc"></i></td></tr>
+<tr><th id="228">228</th><td><i class="doc">This is passed as a parameter to the assertion failure handler functions.</i></td></tr>
+<tr><th id="229">229</th><td><i class="doc">For example, it might be necessary to know in which operation an assertion</i></td></tr>
+<tr><th id="230">230</th><td><i class="doc">failed to make sure exceptions are never thrown from destructors, not even</i></td></tr>
+<tr><th id="231">231</th><td><i class="doc">when contract failure handlers are programmed by users to throw exceptions</i></td></tr>
+<tr><th id="232">232</th><td><i class="doc">instead of terminating the program.</i></td></tr>
+<tr><th id="233">233</th><td><i class="doc"></i></td></tr>
+<tr><th id="234">234</th><td><i class="doc"><span class="command">@see</span><span class="command"> @RefSect</span>{advanced.throw_on_failures__and__noexcept__, Throw on Failure}</i></td></tr>
+<tr><th id="235">235</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="236">236</th><td><b>enum</b> <dfn class="type def" id="boost::contract::from" title='boost::contract::from' data-ref="boost::contract::from">from</dfn> {</td></tr>
+<tr><th id="237">237</th><td>    <i class="doc">/** Assertion failed when checking contracts for constructors. */</i></td></tr>
+<tr><th id="238">238</th><td>    <dfn class="enum" id="boost::contract::from_constructor" title='boost::contract::from_constructor' data-ref="boost::contract::from_constructor">from_constructor</dfn>,</td></tr>
+<tr><th id="239">239</th><td>    </td></tr>
+<tr><th id="240">240</th><td>    <i class="doc">/** Assertion failed when checking contracts for destructors . */</i></td></tr>
+<tr><th id="241">241</th><td>    <dfn class="enum" id="boost::contract::from_destructor" title='boost::contract::from_destructor' data-ref="boost::contract::from_destructor">from_destructor</dfn>,</td></tr>
+<tr><th id="242">242</th><td>    </td></tr>
+<tr><th id="243">243</th><td>    <i class="doc">/**</i></td></tr>
+<tr><th id="244">244</th><td><i class="doc">    Assertion failed when checking contracts for functions (members or not,</i></td></tr>
+<tr><th id="245">245</th><td><i class="doc">    public or not).</i></td></tr>
+<tr><th id="246">246</th><td><i class="doc">    */</i></td></tr>
+<tr><th id="247">247</th><td>    <dfn class="enum" id="boost::contract::from_function" title='boost::contract::from_function' data-ref="boost::contract::from_function">from_function</dfn></td></tr>
+<tr><th id="248">248</th><td>};</td></tr>
+<tr><th id="249">249</th><td></td></tr>
+<tr><th id="250">250</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="251">251</th><td><i class="doc">Type of assertion failure handler functions (with<span class="command"> @c</span> <span class="arg">from</span> parameter).</i></td></tr>
+<tr><th id="252">252</th><td><i class="doc"></i></td></tr>
+<tr><th id="253">253</th><td><i class="doc">Assertion failure handler functions specified by this type must be functors</i></td></tr>
+<tr><th id="254">254</th><td><i class="doc">returning<span class="command"> @c</span> <span class="arg">void</span> and taking a single parameter of type<span class="command"></span></i></td></tr>
+<tr><th id="255">255</th><td><i class="doc"><span class="command">@RefEnum</span>{boost::contract::from}.</i></td></tr>
+<tr><th id="256">256</th><td><i class="doc">For example, this is used to specify contract failure handlers for class</i></td></tr>
+<tr><th id="257">257</th><td><i class="doc">invariants, preconditions, postconditions, and exception guarantees.</i></td></tr>
+<tr><th id="258">258</th><td><i class="doc"></i></td></tr>
+<tr><th id="259">259</th><td><i class="doc"><span class="command">@see</span><span class="command"> @RefSect</span>{advanced.throw_on_failures__and__noexcept__, Throw on Failure}</i></td></tr>
+<tr><th id="260">260</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="261">261</th><td><b>typedef</b> <span class="namespace">boost::</span><a class="type" href="../../../../../function/include/boost/function/function_fwd.hpp.html#boost::function" title='boost::function' data-ref="boost::function">function</a>&lt;<em>void</em> (<a class="type" href="#boost::contract::from" title='boost::contract::from' data-ref="boost::contract::from">from</a>)&gt; <dfn class="typedef" id="boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</dfn>;</td></tr>
+<tr><th id="262">262</th><td></td></tr>
+<tr><th id="263">263</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="264">264</th><td><i class="doc">Type of assertion failure handler functions (without<span class="command"> @c</span> <span class="arg">from</span> parameter).</i></td></tr>
+<tr><th id="265">265</th><td><i class="doc"></i></td></tr>
+<tr><th id="266">266</th><td><i class="doc">Assertion failure handler functions specified by this type must be nullary</i></td></tr>
+<tr><th id="267">267</th><td><i class="doc">functors returning<span class="command"> @c</span> <span class="arg">void.</span></i></td></tr>
+<tr><th id="268">268</th><td><i class="doc"><span class="arg">Fo</span>r example, this is used to specify contract failure handlers for</i></td></tr>
+<tr><th id="269">269</th><td><i class="doc">implementation checks.</i></td></tr>
+<tr><th id="270">270</th><td><i class="doc"></i></td></tr>
+<tr><th id="271">271</th><td><i class="doc"><span class="command">@see</span><span class="command"> @RefSect</span>{advanced.throw_on_failures__and__noexcept__, Throw on Failure}</i></td></tr>
+<tr><th id="272">272</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="273">273</th><td><b>typedef</b> <span class="namespace">boost::</span><a class="type" href="../../../../../function/include/boost/function/function_fwd.hpp.html#boost::function" title='boost::function' data-ref="boost::function">function</a>&lt;<em>void</em> ()&gt; <dfn class="typedef" id="boost::contract::failure_handler" title='boost::contract::failure_handler' data-type='boost::function&lt;void ()&gt;' data-ref="boost::contract::failure_handler">failure_handler</dfn>;</td></tr>
+<tr><th id="274">274</th><td></td></tr>
+<tr><th id="275">275</th><td><i class="doc">/** <span class="command">@cond</span> */</i></td></tr>
+<tr><th id="276">276</th><td><b>namespace</b> <span class="namespace">exception_</span> {</td></tr>
+<tr><th id="277">277</th><td>    <i>// Check failure.</i></td></tr>
+<tr><th id="278">278</th><td></td></tr>
+<tr><th id="279">279</th><td>    <a class="macro" href="../detail/declspec.hpp.html#30" title="" data-ref="_M/BOOST_CONTRACT_DETAIL_DECLSPEC">BOOST_CONTRACT_DETAIL_DECLSPEC</a></td></tr>
+<tr><th id="280">280</th><td>    <a class="typedef" href="#boost::contract::failure_handler" title='boost::contract::failure_handler' data-type='boost::function&lt;void ()&gt;' data-ref="boost::contract::failure_handler">failure_handler</a> <em>const</em>&amp; <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_26set_check_failure_unlockedERKNS_8functionIFvvEEE" title='boost::contract::exception_::set_check_failure_unlocked' data-ref="_ZN5boost8contract10exception_26set_check_failure_unlockedERKNS_8functionIFvvEEE" id="_ZN5boost8contract10exception_26set_check_failure_unlockedERKNS_8functionIFvvEEE">set_check_failure_unlocked</a>(<a class="typedef" href="#boost::contract::failure_handler" title='boost::contract::failure_handler' data-type='boost::function&lt;void ()&gt;' data-ref="boost::contract::failure_handler">failure_handler</a> <em>const</em>&amp; <dfn class="local col7 decl" id="3387f" title='f' data-type='const boost::contract::failure_handler &amp;' data-ref="3387f">f</dfn>)</td></tr>
+<tr><th id="281">281</th><td>            <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a>;</td></tr>
+<tr><th id="282">282</th><td>    <a class="macro" href="../detail/declspec.hpp.html#30" title="" data-ref="_M/BOOST_CONTRACT_DETAIL_DECLSPEC">BOOST_CONTRACT_DETAIL_DECLSPEC</a></td></tr>
+<tr><th id="283">283</th><td>    <a class="typedef" href="#boost::contract::failure_handler" title='boost::contract::failure_handler' data-type='boost::function&lt;void ()&gt;' data-ref="boost::contract::failure_handler">failure_handler</a> <em>const</em>&amp; <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_24set_check_failure_lockedERKNS_8functionIFvvEEE" title='boost::contract::exception_::set_check_failure_locked' data-ref="_ZN5boost8contract10exception_24set_check_failure_lockedERKNS_8functionIFvvEEE" id="_ZN5boost8contract10exception_24set_check_failure_lockedERKNS_8functionIFvvEEE">set_check_failure_locked</a>(<a class="typedef" href="#boost::contract::failure_handler" title='boost::contract::failure_handler' data-type='boost::function&lt;void ()&gt;' data-ref="boost::contract::failure_handler">failure_handler</a> <em>const</em>&amp; <dfn class="local col8 decl" id="3388f" title='f' data-type='const boost::contract::failure_handler &amp;' data-ref="3388f">f</dfn>)</td></tr>
+<tr><th id="284">284</th><td>            <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a>;</td></tr>
+<tr><th id="285">285</th><td></td></tr>
+<tr><th id="286">286</th><td>    <a class="macro" href="../detail/declspec.hpp.html#30" title="" data-ref="_M/BOOST_CONTRACT_DETAIL_DECLSPEC">BOOST_CONTRACT_DETAIL_DECLSPEC</a></td></tr>
+<tr><th id="287">287</th><td>    <a class="typedef" href="#boost::contract::failure_handler" title='boost::contract::failure_handler' data-type='boost::function&lt;void ()&gt;' data-ref="boost::contract::failure_handler">failure_handler</a> <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_26get_check_failure_unlockedEv" title='boost::contract::exception_::get_check_failure_unlocked' data-ref="_ZN5boost8contract10exception_26get_check_failure_unlockedEv" id="_ZN5boost8contract10exception_26get_check_failure_unlockedEv">get_check_failure_unlocked</a>() <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a>;</td></tr>
+<tr><th id="288">288</th><td>    <a class="macro" href="../detail/declspec.hpp.html#30" title="" data-ref="_M/BOOST_CONTRACT_DETAIL_DECLSPEC">BOOST_CONTRACT_DETAIL_DECLSPEC</a></td></tr>
+<tr><th id="289">289</th><td>    <a class="typedef" href="#boost::contract::failure_handler" title='boost::contract::failure_handler' data-type='boost::function&lt;void ()&gt;' data-ref="boost::contract::failure_handler">failure_handler</a> <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_24get_check_failure_lockedEv" title='boost::contract::exception_::get_check_failure_locked' data-ref="_ZN5boost8contract10exception_24get_check_failure_lockedEv" id="_ZN5boost8contract10exception_24get_check_failure_lockedEv">get_check_failure_locked</a>() <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a>;</td></tr>
+<tr><th id="290">290</th><td></td></tr>
+<tr><th id="291">291</th><td>    <a class="macro" href="../detail/declspec.hpp.html#30" title="" data-ref="_M/BOOST_CONTRACT_DETAIL_DECLSPEC">BOOST_CONTRACT_DETAIL_DECLSPEC</a></td></tr>
+<tr><th id="292">292</th><td>    <em>void</em> <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_22check_failure_unlockedEv" title='boost::contract::exception_::check_failure_unlocked' data-ref="_ZN5boost8contract10exception_22check_failure_unlockedEv" id="_ZN5boost8contract10exception_22check_failure_unlockedEv">check_failure_unlocked</a>() <i>/* can throw */</i>;</td></tr>
+<tr><th id="293">293</th><td>    <a class="macro" href="../detail/declspec.hpp.html#30" title="" data-ref="_M/BOOST_CONTRACT_DETAIL_DECLSPEC">BOOST_CONTRACT_DETAIL_DECLSPEC</a></td></tr>
+<tr><th id="294">294</th><td>    <em>void</em> <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_20check_failure_lockedEv" title='boost::contract::exception_::check_failure_locked' data-ref="_ZN5boost8contract10exception_20check_failure_lockedEv" id="_ZN5boost8contract10exception_20check_failure_lockedEv">check_failure_locked</a>() <i>/* can throw */</i>;</td></tr>
+<tr><th id="295">295</th><td>    </td></tr>
+<tr><th id="296">296</th><td>    <i>// Precondition failure.</i></td></tr>
+<tr><th id="297">297</th><td></td></tr>
+<tr><th id="298">298</th><td>    <a class="macro" href="../detail/declspec.hpp.html#30" title="" data-ref="_M/BOOST_CONTRACT_DETAIL_DECLSPEC">BOOST_CONTRACT_DETAIL_DECLSPEC</a></td></tr>
+<tr><th id="299">299</th><td>    <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <em>const</em>&amp; <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_24set_pre_failure_unlockedERKNS_8functionIFvNS0_4fromEEEE" title='boost::contract::exception_::set_pre_failure_unlocked' data-ref="_ZN5boost8contract10exception_24set_pre_failure_unlockedERKNS_8functionIFvNS0_4fromEEEE" id="_ZN5boost8contract10exception_24set_pre_failure_unlockedERKNS_8functionIFvNS0_4fromEEEE">set_pre_failure_unlocked</a>(</td></tr>
+<tr><th id="300">300</th><td>            <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <em>const</em>&amp; <dfn class="local col9 decl" id="3389f" title='f' data-type='const boost::contract::from_failure_handler &amp;' data-ref="3389f">f</dfn>) <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a>;</td></tr>
+<tr><th id="301">301</th><td>    <a class="macro" href="../detail/declspec.hpp.html#30" title="" data-ref="_M/BOOST_CONTRACT_DETAIL_DECLSPEC">BOOST_CONTRACT_DETAIL_DECLSPEC</a></td></tr>
+<tr><th id="302">302</th><td>    <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <em>const</em>&amp; <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_22set_pre_failure_lockedERKNS_8functionIFvNS0_4fromEEEE" title='boost::contract::exception_::set_pre_failure_locked' data-ref="_ZN5boost8contract10exception_22set_pre_failure_lockedERKNS_8functionIFvNS0_4fromEEEE" id="_ZN5boost8contract10exception_22set_pre_failure_lockedERKNS_8functionIFvNS0_4fromEEEE">set_pre_failure_locked</a>(</td></tr>
+<tr><th id="303">303</th><td>            <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <em>const</em>&amp; <dfn class="local col0 decl" id="3390f" title='f' data-type='const boost::contract::from_failure_handler &amp;' data-ref="3390f">f</dfn>) <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a>;</td></tr>
+<tr><th id="304">304</th><td></td></tr>
+<tr><th id="305">305</th><td>    <a class="macro" href="../detail/declspec.hpp.html#30" title="" data-ref="_M/BOOST_CONTRACT_DETAIL_DECLSPEC">BOOST_CONTRACT_DETAIL_DECLSPEC</a></td></tr>
+<tr><th id="306">306</th><td>    <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_24get_pre_failure_unlockedEv" title='boost::contract::exception_::get_pre_failure_unlocked' data-ref="_ZN5boost8contract10exception_24get_pre_failure_unlockedEv" id="_ZN5boost8contract10exception_24get_pre_failure_unlockedEv">get_pre_failure_unlocked</a>() <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a>;</td></tr>
+<tr><th id="307">307</th><td>    <a class="macro" href="../detail/declspec.hpp.html#30" title="" data-ref="_M/BOOST_CONTRACT_DETAIL_DECLSPEC">BOOST_CONTRACT_DETAIL_DECLSPEC</a></td></tr>
+<tr><th id="308">308</th><td>    <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_22get_pre_failure_lockedEv" title='boost::contract::exception_::get_pre_failure_locked' data-ref="_ZN5boost8contract10exception_22get_pre_failure_lockedEv" id="_ZN5boost8contract10exception_22get_pre_failure_lockedEv">get_pre_failure_locked</a>() <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a>;</td></tr>
+<tr><th id="309">309</th><td></td></tr>
+<tr><th id="310">310</th><td>    <a class="macro" href="../detail/declspec.hpp.html#30" title="" data-ref="_M/BOOST_CONTRACT_DETAIL_DECLSPEC">BOOST_CONTRACT_DETAIL_DECLSPEC</a></td></tr>
+<tr><th id="311">311</th><td>    <em>void</em> <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_20pre_failure_unlockedENS0_4fromE" title='boost::contract::exception_::pre_failure_unlocked' data-ref="_ZN5boost8contract10exception_20pre_failure_unlockedENS0_4fromE" id="_ZN5boost8contract10exception_20pre_failure_unlockedENS0_4fromE">pre_failure_unlocked</a>(<a class="type" href="#boost::contract::from" title='boost::contract::from' data-ref="boost::contract::from">from</a> <dfn class="local col1 decl" id="3391where" title='where' data-type='boost::contract::from' data-ref="3391where">where</dfn>) <i>/* can throw */</i>;</td></tr>
+<tr><th id="312">312</th><td>    <a class="macro" href="../detail/declspec.hpp.html#30" title="" data-ref="_M/BOOST_CONTRACT_DETAIL_DECLSPEC">BOOST_CONTRACT_DETAIL_DECLSPEC</a></td></tr>
+<tr><th id="313">313</th><td>    <em>void</em> <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_18pre_failure_lockedENS0_4fromE" title='boost::contract::exception_::pre_failure_locked' data-ref="_ZN5boost8contract10exception_18pre_failure_lockedENS0_4fromE" id="_ZN5boost8contract10exception_18pre_failure_lockedENS0_4fromE">pre_failure_locked</a>(<a class="type" href="#boost::contract::from" title='boost::contract::from' data-ref="boost::contract::from">from</a> <dfn class="local col2 decl" id="3392where" title='where' data-type='boost::contract::from' data-ref="3392where">where</dfn>) <i>/* can throw */</i>;</td></tr>
+<tr><th id="314">314</th><td>    </td></tr>
+<tr><th id="315">315</th><td>    <i>// Postcondition failure.</i></td></tr>
+<tr><th id="316">316</th><td></td></tr>
+<tr><th id="317">317</th><td>    <a class="macro" href="../detail/declspec.hpp.html#30" title="" data-ref="_M/BOOST_CONTRACT_DETAIL_DECLSPEC">BOOST_CONTRACT_DETAIL_DECLSPEC</a></td></tr>
+<tr><th id="318">318</th><td>    <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <em>const</em>&amp; <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_25set_post_failure_unlockedERKNS_8functionIFvNS0_4fromEEEE" title='boost::contract::exception_::set_post_failure_unlocked' data-ref="_ZN5boost8contract10exception_25set_post_failure_unlockedERKNS_8functionIFvNS0_4fromEEEE" id="_ZN5boost8contract10exception_25set_post_failure_unlockedERKNS_8functionIFvNS0_4fromEEEE">set_post_failure_unlocked</a>(</td></tr>
+<tr><th id="319">319</th><td>            <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <em>const</em>&amp; <dfn class="local col3 decl" id="3393f" title='f' data-type='const boost::contract::from_failure_handler &amp;' data-ref="3393f">f</dfn>) <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a>;</td></tr>
+<tr><th id="320">320</th><td>    <a class="macro" href="../detail/declspec.hpp.html#30" title="" data-ref="_M/BOOST_CONTRACT_DETAIL_DECLSPEC">BOOST_CONTRACT_DETAIL_DECLSPEC</a></td></tr>
+<tr><th id="321">321</th><td>    <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <em>const</em>&amp; <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_23set_post_failure_lockedERKNS_8functionIFvNS0_4fromEEEE" title='boost::contract::exception_::set_post_failure_locked' data-ref="_ZN5boost8contract10exception_23set_post_failure_lockedERKNS_8functionIFvNS0_4fromEEEE" id="_ZN5boost8contract10exception_23set_post_failure_lockedERKNS_8functionIFvNS0_4fromEEEE">set_post_failure_locked</a>(</td></tr>
+<tr><th id="322">322</th><td>            <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <em>const</em>&amp; <dfn class="local col4 decl" id="3394f" title='f' data-type='const boost::contract::from_failure_handler &amp;' data-ref="3394f">f</dfn>) <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a>;</td></tr>
+<tr><th id="323">323</th><td></td></tr>
+<tr><th id="324">324</th><td>    <a class="macro" href="../detail/declspec.hpp.html#30" title="" data-ref="_M/BOOST_CONTRACT_DETAIL_DECLSPEC">BOOST_CONTRACT_DETAIL_DECLSPEC</a></td></tr>
+<tr><th id="325">325</th><td>    <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_25get_post_failure_unlockedEv" title='boost::contract::exception_::get_post_failure_unlocked' data-ref="_ZN5boost8contract10exception_25get_post_failure_unlockedEv" id="_ZN5boost8contract10exception_25get_post_failure_unlockedEv">get_post_failure_unlocked</a>() <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a>;</td></tr>
+<tr><th id="326">326</th><td>    <a class="macro" href="../detail/declspec.hpp.html#30" title="" data-ref="_M/BOOST_CONTRACT_DETAIL_DECLSPEC">BOOST_CONTRACT_DETAIL_DECLSPEC</a></td></tr>
+<tr><th id="327">327</th><td>    <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_23get_post_failure_lockedEv" title='boost::contract::exception_::get_post_failure_locked' data-ref="_ZN5boost8contract10exception_23get_post_failure_lockedEv" id="_ZN5boost8contract10exception_23get_post_failure_lockedEv">get_post_failure_locked</a>() <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a>;</td></tr>
+<tr><th id="328">328</th><td></td></tr>
+<tr><th id="329">329</th><td>    <a class="macro" href="../detail/declspec.hpp.html#30" title="" data-ref="_M/BOOST_CONTRACT_DETAIL_DECLSPEC">BOOST_CONTRACT_DETAIL_DECLSPEC</a></td></tr>
+<tr><th id="330">330</th><td>    <em>void</em> <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_21post_failure_unlockedENS0_4fromE" title='boost::contract::exception_::post_failure_unlocked' data-ref="_ZN5boost8contract10exception_21post_failure_unlockedENS0_4fromE" id="_ZN5boost8contract10exception_21post_failure_unlockedENS0_4fromE">post_failure_unlocked</a>(<a class="type" href="#boost::contract::from" title='boost::contract::from' data-ref="boost::contract::from">from</a> <dfn class="local col5 decl" id="3395where" title='where' data-type='boost::contract::from' data-ref="3395where">where</dfn>) <i>/* can throw */</i>;</td></tr>
+<tr><th id="331">331</th><td>    <a class="macro" href="../detail/declspec.hpp.html#30" title="" data-ref="_M/BOOST_CONTRACT_DETAIL_DECLSPEC">BOOST_CONTRACT_DETAIL_DECLSPEC</a></td></tr>
+<tr><th id="332">332</th><td>    <em>void</em> <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_19post_failure_lockedENS0_4fromE" title='boost::contract::exception_::post_failure_locked' data-ref="_ZN5boost8contract10exception_19post_failure_lockedENS0_4fromE" id="_ZN5boost8contract10exception_19post_failure_lockedENS0_4fromE">post_failure_locked</a>(<a class="type" href="#boost::contract::from" title='boost::contract::from' data-ref="boost::contract::from">from</a> <dfn class="local col6 decl" id="3396where" title='where' data-type='boost::contract::from' data-ref="3396where">where</dfn>) <i>/* can throw */</i>;</td></tr>
+<tr><th id="333">333</th><td>    </td></tr>
+<tr><th id="334">334</th><td>    <i>// Except failure.</i></td></tr>
+<tr><th id="335">335</th><td></td></tr>
+<tr><th id="336">336</th><td>    <a class="macro" href="../detail/declspec.hpp.html#30" title="" data-ref="_M/BOOST_CONTRACT_DETAIL_DECLSPEC">BOOST_CONTRACT_DETAIL_DECLSPEC</a></td></tr>
+<tr><th id="337">337</th><td>    <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <em>const</em>&amp; <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_27set_except_failure_unlockedERKNS_8functionIFvNS0_4fromEEEE" title='boost::contract::exception_::set_except_failure_unlocked' data-ref="_ZN5boost8contract10exception_27set_except_failure_unlockedERKNS_8functionIFvNS0_4fromEEEE" id="_ZN5boost8contract10exception_27set_except_failure_unlockedERKNS_8functionIFvNS0_4fromEEEE">set_except_failure_unlocked</a>(</td></tr>
+<tr><th id="338">338</th><td>            <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <em>const</em>&amp; <dfn class="local col7 decl" id="3397f" title='f' data-type='const boost::contract::from_failure_handler &amp;' data-ref="3397f">f</dfn>) <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a>;</td></tr>
+<tr><th id="339">339</th><td>    <a class="macro" href="../detail/declspec.hpp.html#30" title="" data-ref="_M/BOOST_CONTRACT_DETAIL_DECLSPEC">BOOST_CONTRACT_DETAIL_DECLSPEC</a></td></tr>
+<tr><th id="340">340</th><td>    <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <em>const</em>&amp; <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_25set_except_failure_lockedERKNS_8functionIFvNS0_4fromEEEE" title='boost::contract::exception_::set_except_failure_locked' data-ref="_ZN5boost8contract10exception_25set_except_failure_lockedERKNS_8functionIFvNS0_4fromEEEE" id="_ZN5boost8contract10exception_25set_except_failure_lockedERKNS_8functionIFvNS0_4fromEEEE">set_except_failure_locked</a>(</td></tr>
+<tr><th id="341">341</th><td>            <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <em>const</em>&amp; <dfn class="local col8 decl" id="3398f" title='f' data-type='const boost::contract::from_failure_handler &amp;' data-ref="3398f">f</dfn>) <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a>;</td></tr>
+<tr><th id="342">342</th><td></td></tr>
+<tr><th id="343">343</th><td>    <a class="macro" href="../detail/declspec.hpp.html#30" title="" data-ref="_M/BOOST_CONTRACT_DETAIL_DECLSPEC">BOOST_CONTRACT_DETAIL_DECLSPEC</a></td></tr>
+<tr><th id="344">344</th><td>    <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_27get_except_failure_unlockedEv" title='boost::contract::exception_::get_except_failure_unlocked' data-ref="_ZN5boost8contract10exception_27get_except_failure_unlockedEv" id="_ZN5boost8contract10exception_27get_except_failure_unlockedEv">get_except_failure_unlocked</a>()</td></tr>
+<tr><th id="345">345</th><td>            <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a>;</td></tr>
+<tr><th id="346">346</th><td>    <a class="macro" href="../detail/declspec.hpp.html#30" title="" data-ref="_M/BOOST_CONTRACT_DETAIL_DECLSPEC">BOOST_CONTRACT_DETAIL_DECLSPEC</a></td></tr>
+<tr><th id="347">347</th><td>    <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_25get_except_failure_lockedEv" title='boost::contract::exception_::get_except_failure_locked' data-ref="_ZN5boost8contract10exception_25get_except_failure_lockedEv" id="_ZN5boost8contract10exception_25get_except_failure_lockedEv">get_except_failure_locked</a>() <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a>;</td></tr>
+<tr><th id="348">348</th><td></td></tr>
+<tr><th id="349">349</th><td>    <a class="macro" href="../detail/declspec.hpp.html#30" title="" data-ref="_M/BOOST_CONTRACT_DETAIL_DECLSPEC">BOOST_CONTRACT_DETAIL_DECLSPEC</a></td></tr>
+<tr><th id="350">350</th><td>    <em>void</em> <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_23except_failure_unlockedENS0_4fromE" title='boost::contract::exception_::except_failure_unlocked' data-ref="_ZN5boost8contract10exception_23except_failure_unlockedENS0_4fromE" id="_ZN5boost8contract10exception_23except_failure_unlockedENS0_4fromE">except_failure_unlocked</a>(<a class="type" href="#boost::contract::from" title='boost::contract::from' data-ref="boost::contract::from">from</a> <dfn class="local col9 decl" id="3399where" title='where' data-type='boost::contract::from' data-ref="3399where">where</dfn>) <i>/* can throw */</i>;</td></tr>
+<tr><th id="351">351</th><td>    <a class="macro" href="../detail/declspec.hpp.html#30" title="" data-ref="_M/BOOST_CONTRACT_DETAIL_DECLSPEC">BOOST_CONTRACT_DETAIL_DECLSPEC</a></td></tr>
+<tr><th id="352">352</th><td>    <em>void</em> <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_21except_failure_lockedENS0_4fromE" title='boost::contract::exception_::except_failure_locked' data-ref="_ZN5boost8contract10exception_21except_failure_lockedENS0_4fromE" id="_ZN5boost8contract10exception_21except_failure_lockedENS0_4fromE">except_failure_locked</a>(<a class="type" href="#boost::contract::from" title='boost::contract::from' data-ref="boost::contract::from">from</a> <dfn class="local col0 decl" id="3400where" title='where' data-type='boost::contract::from' data-ref="3400where">where</dfn>) <i>/* can throw */</i>;</td></tr>
+<tr><th id="353">353</th><td>    </td></tr>
+<tr><th id="354">354</th><td>    <i>// Old-copy failure.</i></td></tr>
+<tr><th id="355">355</th><td></td></tr>
+<tr><th id="356">356</th><td>    <a class="macro" href="../detail/declspec.hpp.html#30" title="" data-ref="_M/BOOST_CONTRACT_DETAIL_DECLSPEC">BOOST_CONTRACT_DETAIL_DECLSPEC</a></td></tr>
+<tr><th id="357">357</th><td>    <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <em>const</em>&amp; <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_24set_old_failure_unlockedERKNS_8functionIFvNS0_4fromEEEE" title='boost::contract::exception_::set_old_failure_unlocked' data-ref="_ZN5boost8contract10exception_24set_old_failure_unlockedERKNS_8functionIFvNS0_4fromEEEE" id="_ZN5boost8contract10exception_24set_old_failure_unlockedERKNS_8functionIFvNS0_4fromEEEE">set_old_failure_unlocked</a>(</td></tr>
+<tr><th id="358">358</th><td>            <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <em>const</em>&amp; <dfn class="local col1 decl" id="3401f" title='f' data-type='const boost::contract::from_failure_handler &amp;' data-ref="3401f">f</dfn>) <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a>;</td></tr>
+<tr><th id="359">359</th><td>    <a class="macro" href="../detail/declspec.hpp.html#30" title="" data-ref="_M/BOOST_CONTRACT_DETAIL_DECLSPEC">BOOST_CONTRACT_DETAIL_DECLSPEC</a></td></tr>
+<tr><th id="360">360</th><td>    <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <em>const</em>&amp; <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_22set_old_failure_lockedERKNS_8functionIFvNS0_4fromEEEE" title='boost::contract::exception_::set_old_failure_locked' data-ref="_ZN5boost8contract10exception_22set_old_failure_lockedERKNS_8functionIFvNS0_4fromEEEE" id="_ZN5boost8contract10exception_22set_old_failure_lockedERKNS_8functionIFvNS0_4fromEEEE">set_old_failure_locked</a>(</td></tr>
+<tr><th id="361">361</th><td>            <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <em>const</em>&amp; <dfn class="local col2 decl" id="3402f" title='f' data-type='const boost::contract::from_failure_handler &amp;' data-ref="3402f">f</dfn>) <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a>;</td></tr>
+<tr><th id="362">362</th><td></td></tr>
+<tr><th id="363">363</th><td>    <a class="macro" href="../detail/declspec.hpp.html#30" title="" data-ref="_M/BOOST_CONTRACT_DETAIL_DECLSPEC">BOOST_CONTRACT_DETAIL_DECLSPEC</a></td></tr>
+<tr><th id="364">364</th><td>    <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_24get_old_failure_unlockedEv" title='boost::contract::exception_::get_old_failure_unlocked' data-ref="_ZN5boost8contract10exception_24get_old_failure_unlockedEv" id="_ZN5boost8contract10exception_24get_old_failure_unlockedEv">get_old_failure_unlocked</a>() <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a>;</td></tr>
+<tr><th id="365">365</th><td>    <a class="macro" href="../detail/declspec.hpp.html#30" title="" data-ref="_M/BOOST_CONTRACT_DETAIL_DECLSPEC">BOOST_CONTRACT_DETAIL_DECLSPEC</a></td></tr>
+<tr><th id="366">366</th><td>    <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_22get_old_failure_lockedEv" title='boost::contract::exception_::get_old_failure_locked' data-ref="_ZN5boost8contract10exception_22get_old_failure_lockedEv" id="_ZN5boost8contract10exception_22get_old_failure_lockedEv">get_old_failure_locked</a>() <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a>;</td></tr>
+<tr><th id="367">367</th><td></td></tr>
+<tr><th id="368">368</th><td>    <a class="macro" href="../detail/declspec.hpp.html#30" title="" data-ref="_M/BOOST_CONTRACT_DETAIL_DECLSPEC">BOOST_CONTRACT_DETAIL_DECLSPEC</a></td></tr>
+<tr><th id="369">369</th><td>    <em>void</em> <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_20old_failure_unlockedENS0_4fromE" title='boost::contract::exception_::old_failure_unlocked' data-ref="_ZN5boost8contract10exception_20old_failure_unlockedENS0_4fromE" id="_ZN5boost8contract10exception_20old_failure_unlockedENS0_4fromE">old_failure_unlocked</a>(<a class="type" href="#boost::contract::from" title='boost::contract::from' data-ref="boost::contract::from">from</a> <dfn class="local col3 decl" id="3403where" title='where' data-type='boost::contract::from' data-ref="3403where">where</dfn>) <i>/* can throw */</i>;</td></tr>
+<tr><th id="370">370</th><td>    <a class="macro" href="../detail/declspec.hpp.html#30" title="" data-ref="_M/BOOST_CONTRACT_DETAIL_DECLSPEC">BOOST_CONTRACT_DETAIL_DECLSPEC</a></td></tr>
+<tr><th id="371">371</th><td>    <em>void</em> <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_18old_failure_lockedENS0_4fromE" title='boost::contract::exception_::old_failure_locked' data-ref="_ZN5boost8contract10exception_18old_failure_lockedENS0_4fromE" id="_ZN5boost8contract10exception_18old_failure_lockedENS0_4fromE">old_failure_locked</a>(<a class="type" href="#boost::contract::from" title='boost::contract::from' data-ref="boost::contract::from">from</a> <dfn class="local col4 decl" id="3404where" title='where' data-type='boost::contract::from' data-ref="3404where">where</dfn>) <i>/* can throw */</i>;</td></tr>
+<tr><th id="372">372</th><td>    </td></tr>
+<tr><th id="373">373</th><td>    <i>// Entry invariant failure.</i></td></tr>
+<tr><th id="374">374</th><td></td></tr>
+<tr><th id="375">375</th><td>    <a class="macro" href="../detail/declspec.hpp.html#30" title="" data-ref="_M/BOOST_CONTRACT_DETAIL_DECLSPEC">BOOST_CONTRACT_DETAIL_DECLSPEC</a></td></tr>
+<tr><th id="376">376</th><td>    <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <em>const</em>&amp; <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_30set_entry_inv_failure_unlockedERKNS_8functionIFvNS0_4fromEEEE" title='boost::contract::exception_::set_entry_inv_failure_unlocked' data-ref="_ZN5boost8contract10exception_30set_entry_inv_failure_unlockedERKNS_8functionIFvNS0_4fromEEEE" id="_ZN5boost8contract10exception_30set_entry_inv_failure_unlockedERKNS_8functionIFvNS0_4fromEEEE">set_entry_inv_failure_unlocked</a>(</td></tr>
+<tr><th id="377">377</th><td>            <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <em>const</em>&amp; <dfn class="local col5 decl" id="3405f" title='f' data-type='const boost::contract::from_failure_handler &amp;' data-ref="3405f">f</dfn>) <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a>;</td></tr>
+<tr><th id="378">378</th><td>    <a class="macro" href="../detail/declspec.hpp.html#30" title="" data-ref="_M/BOOST_CONTRACT_DETAIL_DECLSPEC">BOOST_CONTRACT_DETAIL_DECLSPEC</a></td></tr>
+<tr><th id="379">379</th><td>    <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <em>const</em>&amp; <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_28set_entry_inv_failure_lockedERKNS_8functionIFvNS0_4fromEEEE" title='boost::contract::exception_::set_entry_inv_failure_locked' data-ref="_ZN5boost8contract10exception_28set_entry_inv_failure_lockedERKNS_8functionIFvNS0_4fromEEEE" id="_ZN5boost8contract10exception_28set_entry_inv_failure_lockedERKNS_8functionIFvNS0_4fromEEEE">set_entry_inv_failure_locked</a>(</td></tr>
+<tr><th id="380">380</th><td>            <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <em>const</em>&amp; <dfn class="local col6 decl" id="3406f" title='f' data-type='const boost::contract::from_failure_handler &amp;' data-ref="3406f">f</dfn>) <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a>;</td></tr>
+<tr><th id="381">381</th><td></td></tr>
+<tr><th id="382">382</th><td>    <a class="macro" href="../detail/declspec.hpp.html#30" title="" data-ref="_M/BOOST_CONTRACT_DETAIL_DECLSPEC">BOOST_CONTRACT_DETAIL_DECLSPEC</a></td></tr>
+<tr><th id="383">383</th><td>    <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_30get_entry_inv_failure_unlockedEv" title='boost::contract::exception_::get_entry_inv_failure_unlocked' data-ref="_ZN5boost8contract10exception_30get_entry_inv_failure_unlockedEv" id="_ZN5boost8contract10exception_30get_entry_inv_failure_unlockedEv">get_entry_inv_failure_unlocked</a>()</td></tr>
+<tr><th id="384">384</th><td>            <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a>;</td></tr>
+<tr><th id="385">385</th><td>    <a class="macro" href="../detail/declspec.hpp.html#30" title="" data-ref="_M/BOOST_CONTRACT_DETAIL_DECLSPEC">BOOST_CONTRACT_DETAIL_DECLSPEC</a></td></tr>
+<tr><th id="386">386</th><td>    <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_28get_entry_inv_failure_lockedEv" title='boost::contract::exception_::get_entry_inv_failure_locked' data-ref="_ZN5boost8contract10exception_28get_entry_inv_failure_lockedEv" id="_ZN5boost8contract10exception_28get_entry_inv_failure_lockedEv">get_entry_inv_failure_locked</a>()</td></tr>
+<tr><th id="387">387</th><td>            <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a>;</td></tr>
+<tr><th id="388">388</th><td></td></tr>
+<tr><th id="389">389</th><td>    <a class="macro" href="../detail/declspec.hpp.html#30" title="" data-ref="_M/BOOST_CONTRACT_DETAIL_DECLSPEC">BOOST_CONTRACT_DETAIL_DECLSPEC</a></td></tr>
+<tr><th id="390">390</th><td>    <em>void</em> <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_26entry_inv_failure_unlockedENS0_4fromE" title='boost::contract::exception_::entry_inv_failure_unlocked' data-ref="_ZN5boost8contract10exception_26entry_inv_failure_unlockedENS0_4fromE" id="_ZN5boost8contract10exception_26entry_inv_failure_unlockedENS0_4fromE">entry_inv_failure_unlocked</a>(<a class="type" href="#boost::contract::from" title='boost::contract::from' data-ref="boost::contract::from">from</a> <dfn class="local col7 decl" id="3407where" title='where' data-type='boost::contract::from' data-ref="3407where">where</dfn>) <i>/* can throw */</i>;</td></tr>
+<tr><th id="391">391</th><td>    <a class="macro" href="../detail/declspec.hpp.html#30" title="" data-ref="_M/BOOST_CONTRACT_DETAIL_DECLSPEC">BOOST_CONTRACT_DETAIL_DECLSPEC</a></td></tr>
+<tr><th id="392">392</th><td>    <em>void</em> <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_24entry_inv_failure_lockedENS0_4fromE" title='boost::contract::exception_::entry_inv_failure_locked' data-ref="_ZN5boost8contract10exception_24entry_inv_failure_lockedENS0_4fromE" id="_ZN5boost8contract10exception_24entry_inv_failure_lockedENS0_4fromE">entry_inv_failure_locked</a>(<a class="type" href="#boost::contract::from" title='boost::contract::from' data-ref="boost::contract::from">from</a> <dfn class="local col8 decl" id="3408where" title='where' data-type='boost::contract::from' data-ref="3408where">where</dfn>) <i>/* can throw */</i>;</td></tr>
+<tr><th id="393">393</th><td>    </td></tr>
+<tr><th id="394">394</th><td>    <i>// Exit invariant failure.</i></td></tr>
+<tr><th id="395">395</th><td></td></tr>
+<tr><th id="396">396</th><td>    <a class="macro" href="../detail/declspec.hpp.html#30" title="" data-ref="_M/BOOST_CONTRACT_DETAIL_DECLSPEC">BOOST_CONTRACT_DETAIL_DECLSPEC</a></td></tr>
+<tr><th id="397">397</th><td>    <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <em>const</em>&amp; <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_29set_exit_inv_failure_unlockedERKNS_8functionIFvNS0_4fromEEEE" title='boost::contract::exception_::set_exit_inv_failure_unlocked' data-ref="_ZN5boost8contract10exception_29set_exit_inv_failure_unlockedERKNS_8functionIFvNS0_4fromEEEE" id="_ZN5boost8contract10exception_29set_exit_inv_failure_unlockedERKNS_8functionIFvNS0_4fromEEEE">set_exit_inv_failure_unlocked</a>(</td></tr>
+<tr><th id="398">398</th><td>            <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <em>const</em>&amp; <dfn class="local col9 decl" id="3409f" title='f' data-type='const boost::contract::from_failure_handler &amp;' data-ref="3409f">f</dfn>) <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a>;</td></tr>
+<tr><th id="399">399</th><td>    <a class="macro" href="../detail/declspec.hpp.html#30" title="" data-ref="_M/BOOST_CONTRACT_DETAIL_DECLSPEC">BOOST_CONTRACT_DETAIL_DECLSPEC</a></td></tr>
+<tr><th id="400">400</th><td>    <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <em>const</em>&amp;<a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_27set_exit_inv_failure_lockedERKNS_8functionIFvNS0_4fromEEEE" title='boost::contract::exception_::set_exit_inv_failure_locked' data-ref="_ZN5boost8contract10exception_27set_exit_inv_failure_lockedERKNS_8functionIFvNS0_4fromEEEE" id="_ZN5boost8contract10exception_27set_exit_inv_failure_lockedERKNS_8functionIFvNS0_4fromEEEE">set_exit_inv_failure_locked</a>(</td></tr>
+<tr><th id="401">401</th><td>            <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <em>const</em>&amp; <dfn class="local col0 decl" id="3410f" title='f' data-type='const boost::contract::from_failure_handler &amp;' data-ref="3410f">f</dfn>) <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a>;</td></tr>
+<tr><th id="402">402</th><td></td></tr>
+<tr><th id="403">403</th><td>    <a class="macro" href="../detail/declspec.hpp.html#30" title="" data-ref="_M/BOOST_CONTRACT_DETAIL_DECLSPEC">BOOST_CONTRACT_DETAIL_DECLSPEC</a></td></tr>
+<tr><th id="404">404</th><td>    <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_29get_exit_inv_failure_unlockedEv" title='boost::contract::exception_::get_exit_inv_failure_unlocked' data-ref="_ZN5boost8contract10exception_29get_exit_inv_failure_unlockedEv" id="_ZN5boost8contract10exception_29get_exit_inv_failure_unlockedEv">get_exit_inv_failure_unlocked</a>()</td></tr>
+<tr><th id="405">405</th><td>            <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a>;</td></tr>
+<tr><th id="406">406</th><td>    <a class="macro" href="../detail/declspec.hpp.html#30" title="" data-ref="_M/BOOST_CONTRACT_DETAIL_DECLSPEC">BOOST_CONTRACT_DETAIL_DECLSPEC</a></td></tr>
+<tr><th id="407">407</th><td>    <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_27get_exit_inv_failure_lockedEv" title='boost::contract::exception_::get_exit_inv_failure_locked' data-ref="_ZN5boost8contract10exception_27get_exit_inv_failure_lockedEv" id="_ZN5boost8contract10exception_27get_exit_inv_failure_lockedEv">get_exit_inv_failure_locked</a>()</td></tr>
+<tr><th id="408">408</th><td>            <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a>;</td></tr>
+<tr><th id="409">409</th><td></td></tr>
+<tr><th id="410">410</th><td>    <a class="macro" href="../detail/declspec.hpp.html#30" title="" data-ref="_M/BOOST_CONTRACT_DETAIL_DECLSPEC">BOOST_CONTRACT_DETAIL_DECLSPEC</a></td></tr>
+<tr><th id="411">411</th><td>    <em>void</em> <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_25exit_inv_failure_unlockedENS0_4fromE" title='boost::contract::exception_::exit_inv_failure_unlocked' data-ref="_ZN5boost8contract10exception_25exit_inv_failure_unlockedENS0_4fromE" id="_ZN5boost8contract10exception_25exit_inv_failure_unlockedENS0_4fromE">exit_inv_failure_unlocked</a>(<a class="type" href="#boost::contract::from" title='boost::contract::from' data-ref="boost::contract::from">from</a> <dfn class="local col1 decl" id="3411where" title='where' data-type='boost::contract::from' data-ref="3411where">where</dfn>) <i>/* can throw */</i>;</td></tr>
+<tr><th id="412">412</th><td>    <a class="macro" href="../detail/declspec.hpp.html#30" title="" data-ref="_M/BOOST_CONTRACT_DETAIL_DECLSPEC">BOOST_CONTRACT_DETAIL_DECLSPEC</a></td></tr>
+<tr><th id="413">413</th><td>    <em>void</em> <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_23exit_inv_failure_lockedENS0_4fromE" title='boost::contract::exception_::exit_inv_failure_locked' data-ref="_ZN5boost8contract10exception_23exit_inv_failure_lockedENS0_4fromE" id="_ZN5boost8contract10exception_23exit_inv_failure_lockedENS0_4fromE">exit_inv_failure_locked</a>(<a class="type" href="#boost::contract::from" title='boost::contract::from' data-ref="boost::contract::from">from</a> <dfn class="local col2 decl" id="3412where" title='where' data-type='boost::contract::from' data-ref="3412where">where</dfn>) <i>/* can throw */</i>;</td></tr>
+<tr><th id="414">414</th><td>}</td></tr>
+<tr><th id="415">415</th><td><i class="doc">/** <span class="command">@endcond</span> */</i></td></tr>
+<tr><th id="416">416</th><td></td></tr>
+<tr><th id="417">417</th><td>} } <i>// namespace</i></td></tr>
+<tr><th id="418">418</th><td></td></tr>
+<tr><th id="419">419</th><td><i class="doc">/** <span class="command">@cond</span> */</i></td></tr>
+<tr><th id="420">420</th><td><u>#<span data-ppcond="420">ifdef</span> <span class="macro" data-ref="_M/BOOST_CONTRACT_HEADER_ONLY">BOOST_CONTRACT_HEADER_ONLY</span></u></td></tr>
+<tr><th id="421">421</th><td>    <i>// NOTE: This header must be included in the middle of this file (because</i></td></tr>
+<tr><th id="422">422</th><td><i>    // its impl depends on both from and assert_failure types). This is not</i></td></tr>
+<tr><th id="423">423</th><td><i>    // ideal, but it is better than splitting this file into multiple</i></td></tr>
+<tr><th id="424">424</th><td><i>    // independent ones because all content in this file is logically related</i></td></tr>
+<tr><th id="425">425</th><td><i>    // from the user prospective.</i></td></tr>
+<tr><th id="426">426</th><td>    <u>#include &lt;boost/contract/detail/inlined/core/exception.hpp&gt;</u></td></tr>
+<tr><th id="427">427</th><td><u>#<span data-ppcond="420">endif</span></u></td></tr>
+<tr><th id="428">428</th><td><i class="doc">/** <span class="command">@endcond</span> */</i></td></tr>
+<tr><th id="429">429</th><td></td></tr>
+<tr><th id="430">430</th><td><b>namespace</b> <span class="namespace">boost</span> { <b>namespace</b> <span class="namespace">contract</span> {</td></tr>
+<tr><th id="431">431</th><td>    </td></tr>
+<tr><th id="432">432</th><td><i>// Following must be inline for static linkage (no DYN_LINK and no HEADER_ONLY).</i></td></tr>
+<tr><th id="433">433</th><td></td></tr>
+<tr><th id="434">434</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="435">435</th><td><i class="doc">Set failure handler for implementation checks.</i></td></tr>
+<tr><th id="436">436</th><td><i class="doc"></i></td></tr>
+<tr><th id="437">437</th><td><i class="doc">Set a new failure handler and returns it.</i></td></tr>
+<tr><th id="438">438</th><td><i class="doc"><span class="command"></span></i></td></tr>
+<tr><th id="439">439</th><td><i class="doc"><span class="command">@b</span> <span class="arg">Throws:</span> This is declared<span class="command"> @c</span> <span class="arg">noexcept</span> (or<span class="command"> @c</span> <span class="arg">throw()</span> before C++11).</i></td></tr>
+<tr><th id="440">440</th><td><i class="doc"></i></td></tr>
+<tr><th id="441">441</th><td><i class="doc"><span class="command">@param</span> <span class="arg">f</span> New failure handler functor to set.</i></td></tr>
+<tr><th id="442">442</th><td><i class="doc"></i></td></tr>
+<tr><th id="443">443</th><td><i class="doc"><span class="command">@return</span> Same failure handler functor<span class="command"> @p</span> <span class="arg">f</span> passed as parameter (e.g., for</i></td></tr>
+<tr><th id="444">444</th><td><i class="doc">        concatenating function calls).</i></td></tr>
+<tr><th id="445">445</th><td><i class="doc"></i></td></tr>
+<tr><th id="446">446</th><td><i class="doc"><span class="command">@see</span>   <span class="command"> @RefSect</span>{advanced.throw_on_failures__and__noexcept__, Throw on Failure},</i></td></tr>
+<tr><th id="447">447</th><td><i class="doc">       <span class="command"> @RefSect</span>{advanced.implementation_checks, Implementation Checks}</i></td></tr>
+<tr><th id="448">448</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="449">449</th><td><b>inline</b> <a class="typedef" href="#boost::contract::failure_handler" title='boost::contract::failure_handler' data-type='boost::function&lt;void ()&gt;' data-ref="boost::contract::failure_handler">failure_handler</a> <em>const</em>&amp; <dfn class="decl def fn" id="_ZN5boost8contract17set_check_failureERKNS_8functionIFvvEEE" title='boost::contract::set_check_failure' data-ref="_ZN5boost8contract17set_check_failureERKNS_8functionIFvvEEE">set_check_failure</dfn>(<a class="typedef" href="#boost::contract::failure_handler" title='boost::contract::failure_handler' data-type='boost::function&lt;void ()&gt;' data-ref="boost::contract::failure_handler">failure_handler</a> <em>const</em>&amp; <dfn class="local col3 decl" id="3413f" title='f' data-type='const boost::contract::failure_handler &amp;' data-ref="3413f">f</dfn>)</td></tr>
+<tr><th id="450">450</th><td>        <i class="doc">/** <span class="command">@cond</span> */</i> <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a> <i class="doc">/** <span class="command">@endcond</span> */</i> {</td></tr>
+<tr><th id="451">451</th><td>    <u>#<span data-ppcond="451">ifndef</span> <span class="macro" data-ref="_M/BOOST_CONTRACT_DISABLE_THREADS">BOOST_CONTRACT_DISABLE_THREADS</span></u></td></tr>
+<tr><th id="452">452</th><td>        <b>return</b> <span class="namespace">exception_::</span><a class="ref fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_24set_check_failure_lockedERKNS_8functionIFvvEEE" title='boost::contract::exception_::set_check_failure_locked' data-ref="_ZN5boost8contract10exception_24set_check_failure_lockedERKNS_8functionIFvvEEE">set_check_failure_locked</a>(<a class="local col3 ref" href="#3413f" title='f' data-ref="3413f">f</a>);</td></tr>
+<tr><th id="453">453</th><td>    <u>#<span data-ppcond="451">else</span></u></td></tr>
+<tr><th id="454">454</th><td>        <b>return</b> exception_::set_check_failure_unlocked(f);</td></tr>
+<tr><th id="455">455</th><td>    <u>#<span data-ppcond="451">endif</span></u></td></tr>
+<tr><th id="456">456</th><td>}</td></tr>
+<tr><th id="457">457</th><td></td></tr>
+<tr><th id="458">458</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="459">459</th><td><i class="doc">Return failure handler currently set for implementation checks.</i></td></tr>
+<tr><th id="460">460</th><td><i class="doc"></i></td></tr>
+<tr><th id="461">461</th><td><i class="doc">This is often called only internally by this library.</i></td></tr>
+<tr><th id="462">462</th><td><i class="doc"><span class="command"></span></i></td></tr>
+<tr><th id="463">463</th><td><i class="doc"><span class="command">@b</span> <span class="arg">Throws:</span> This is declared<span class="command"> @c</span> <span class="arg">noexcept</span> (or<span class="command"> @c</span> <span class="arg">throw()</span> before C++11).</i></td></tr>
+<tr><th id="464">464</th><td><i class="doc"></i></td></tr>
+<tr><th id="465">465</th><td><i class="doc"><span class="command">@return</span> A copy of the failure handler currently set.</i></td></tr>
+<tr><th id="466">466</th><td><i class="doc"></i></td></tr>
+<tr><th id="467">467</th><td><i class="doc"><span class="command">@see</span>   <span class="command"> @RefSect</span>{advanced.throw_on_failures__and__noexcept__, Throw on Failure},</i></td></tr>
+<tr><th id="468">468</th><td><i class="doc">       <span class="command"> @RefSect</span>{advanced.implementation_checks, Implementation Checks}</i></td></tr>
+<tr><th id="469">469</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="470">470</th><td><b>inline</b> <a class="typedef" href="#boost::contract::failure_handler" title='boost::contract::failure_handler' data-type='boost::function&lt;void ()&gt;' data-ref="boost::contract::failure_handler">failure_handler</a> <dfn class="decl def fn" id="_ZN5boost8contract17get_check_failureEv" title='boost::contract::get_check_failure' data-ref="_ZN5boost8contract17get_check_failureEv">get_check_failure</dfn>()</td></tr>
+<tr><th id="471">471</th><td>        <i class="doc">/** <span class="command">@cond</span> */</i> <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a> <i class="doc">/** <span class="command">@endcond</span> */</i> {</td></tr>
+<tr><th id="472">472</th><td>    <u>#<span data-ppcond="472">ifndef</span> <span class="macro" data-ref="_M/BOOST_CONTRACT_DISABLE_THREADS">BOOST_CONTRACT_DISABLE_THREADS</span></u></td></tr>
+<tr><th id="473">473</th><td>        <b>return</b> <span class="namespace">exception_::</span><a class="ref fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_24get_check_failure_lockedEv" title='boost::contract::exception_::get_check_failure_locked' data-ref="_ZN5boost8contract10exception_24get_check_failure_lockedEv">get_check_failure_locked</a>();</td></tr>
+<tr><th id="474">474</th><td>    <u>#<span data-ppcond="472">else</span></u></td></tr>
+<tr><th id="475">475</th><td>        <b>return</b> exception_::get_check_failure_unlocked();</td></tr>
+<tr><th id="476">476</th><td>    <u>#<span data-ppcond="472">endif</span></u></td></tr>
+<tr><th id="477">477</th><td>}</td></tr>
+<tr><th id="478">478</th><td></td></tr>
+<tr><th id="479">479</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="480">480</th><td><i class="doc">Call failure handler for implementation checks.</i></td></tr>
+<tr><th id="481">481</th><td><i class="doc"></i></td></tr>
+<tr><th id="482">482</th><td><i class="doc">This is often called only internally by this library.</i></td></tr>
+<tr><th id="483">483</th><td><i class="doc"><span class="command"></span></i></td></tr>
+<tr><th id="484">484</th><td><i class="doc"><span class="command">@b</span> <span class="arg">Throws:</span>  This can throw in case programmers specify a failure handler that</i></td></tr>
+<tr><th id="485">485</th><td><i class="doc">            throws exceptions on implementation check failures (not the</i></td></tr>
+<tr><th id="486">486</th><td><i class="doc">            default).</i></td></tr>
+<tr><th id="487">487</th><td><i class="doc"></i></td></tr>
+<tr><th id="488">488</th><td><i class="doc"><span class="command">@see</span>   <span class="command"> @RefSect</span>{advanced.throw_on_failures__and__noexcept__, Throw on Failure},</i></td></tr>
+<tr><th id="489">489</th><td><i class="doc">       <span class="command"> @RefSect</span>{advanced.implementation_checks, Implementation Checks}</i></td></tr>
+<tr><th id="490">490</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="491">491</th><td><b>inline</b> <em>void</em> <dfn class="decl def fn" id="_ZN5boost8contract13check_failureEv" title='boost::contract::check_failure' data-ref="_ZN5boost8contract13check_failureEv">check_failure</dfn>() <i>/* can throw */</i> {</td></tr>
+<tr><th id="492">492</th><td>    <u>#<span data-ppcond="492">ifndef</span> <span class="macro" data-ref="_M/BOOST_CONTRACT_DISABLE_THREADS">BOOST_CONTRACT_DISABLE_THREADS</span></u></td></tr>
+<tr><th id="493">493</th><td>        <span class="namespace">exception_::</span><a class="ref fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_20check_failure_lockedEv" title='boost::contract::exception_::check_failure_locked' data-ref="_ZN5boost8contract10exception_20check_failure_lockedEv">check_failure_locked</a>();</td></tr>
+<tr><th id="494">494</th><td>    <u>#<span data-ppcond="492">else</span></u></td></tr>
+<tr><th id="495">495</th><td>        exception_::check_failure_unlocked();</td></tr>
+<tr><th id="496">496</th><td>    <u>#<span data-ppcond="492">endif</span></u></td></tr>
+<tr><th id="497">497</th><td>}</td></tr>
+<tr><th id="498">498</th><td></td></tr>
+<tr><th id="499">499</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="500">500</th><td><i class="doc">Set failure handler for preconditions.</i></td></tr>
+<tr><th id="501">501</th><td><i class="doc"></i></td></tr>
+<tr><th id="502">502</th><td><i class="doc">Set a new failure handler and returns it.</i></td></tr>
+<tr><th id="503">503</th><td><i class="doc"><span class="command"></span></i></td></tr>
+<tr><th id="504">504</th><td><i class="doc"><span class="command">@b</span> <span class="arg">Throws:</span> This is declared<span class="command"> @c</span> <span class="arg">noexcept</span> (or<span class="command"> @c</span> <span class="arg">throw()</span> before C++11).</i></td></tr>
+<tr><th id="505">505</th><td><i class="doc"></i></td></tr>
+<tr><th id="506">506</th><td><i class="doc"><span class="command">@param</span> <span class="arg">f</span> New failure handler functor to set.</i></td></tr>
+<tr><th id="507">507</th><td><i class="doc"></i></td></tr>
+<tr><th id="508">508</th><td><i class="doc"><span class="command">@return</span> Same failure handler functor<span class="command"> @p</span> <span class="arg">f</span> passed as parameter (e.g., for</i></td></tr>
+<tr><th id="509">509</th><td><i class="doc">        concatenating function calls).</i></td></tr>
+<tr><th id="510">510</th><td><i class="doc"></i></td></tr>
+<tr><th id="511">511</th><td><i class="doc"><span class="command">@see</span>   <span class="command"> @RefSect</span>{advanced.throw_on_failures__and__noexcept__, Throw on Failure},</i></td></tr>
+<tr><th id="512">512</th><td><i class="doc">       <span class="command"> @RefSect</span>{tutorial.preconditions, Preconditions}</i></td></tr>
+<tr><th id="513">513</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="514">514</th><td><b>inline</b> <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <em>const</em>&amp; <dfn class="decl def fn" id="_ZN5boost8contract24set_precondition_failureERKNS_8functionIFvNS0_4fromEEEE" title='boost::contract::set_precondition_failure' data-ref="_ZN5boost8contract24set_precondition_failureERKNS_8functionIFvNS0_4fromEEEE">set_precondition_failure</dfn>(<a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a></td></tr>
+<tr><th id="515">515</th><td>        <em>const</em>&amp; <dfn class="local col4 decl" id="3414f" title='f' data-type='const boost::contract::from_failure_handler &amp;' data-ref="3414f">f</dfn>) <i class="doc">/** <span class="command">@cond</span> */</i> <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a> <i class="doc">/** <span class="command">@endcond</span> */</i> {</td></tr>
+<tr><th id="516">516</th><td>    <u>#<span data-ppcond="516">ifndef</span> <span class="macro" data-ref="_M/BOOST_CONTRACT_DISABLE_THREADS">BOOST_CONTRACT_DISABLE_THREADS</span></u></td></tr>
+<tr><th id="517">517</th><td>        <b>return</b> <span class="namespace">exception_::</span><a class="ref fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_22set_pre_failure_lockedERKNS_8functionIFvNS0_4fromEEEE" title='boost::contract::exception_::set_pre_failure_locked' data-ref="_ZN5boost8contract10exception_22set_pre_failure_lockedERKNS_8functionIFvNS0_4fromEEEE">set_pre_failure_locked</a>(<a class="local col4 ref" href="#3414f" title='f' data-ref="3414f">f</a>);</td></tr>
+<tr><th id="518">518</th><td>    <u>#<span data-ppcond="516">else</span></u></td></tr>
+<tr><th id="519">519</th><td>        <b>return</b> exception_::set_pre_failure_unlocked(f);</td></tr>
+<tr><th id="520">520</th><td>    <u>#<span data-ppcond="516">endif</span></u></td></tr>
+<tr><th id="521">521</th><td>}</td></tr>
+<tr><th id="522">522</th><td></td></tr>
+<tr><th id="523">523</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="524">524</th><td><i class="doc">Return failure handler currently set for preconditions.</i></td></tr>
+<tr><th id="525">525</th><td><i class="doc"></i></td></tr>
+<tr><th id="526">526</th><td><i class="doc">This is often called only internally by this library.</i></td></tr>
+<tr><th id="527">527</th><td><i class="doc"><span class="command"></span></i></td></tr>
+<tr><th id="528">528</th><td><i class="doc"><span class="command">@b</span> <span class="arg">Throws:</span> This is declared<span class="command"> @c</span> <span class="arg">noexcept</span> (or<span class="command"> @c</span> <span class="arg">throw()</span> before C++11).</i></td></tr>
+<tr><th id="529">529</th><td><i class="doc"></i></td></tr>
+<tr><th id="530">530</th><td><i class="doc"><span class="command">@return</span> A copy of the failure handler currently set.</i></td></tr>
+<tr><th id="531">531</th><td><i class="doc"></i></td></tr>
+<tr><th id="532">532</th><td><i class="doc"><span class="command">@see</span>   <span class="command"> @RefSect</span>{advanced.throw_on_failures__and__noexcept__, Throw on Failure},</i></td></tr>
+<tr><th id="533">533</th><td><i class="doc">       <span class="command"> @RefSect</span>{tutorial.preconditions, Preconditions}</i></td></tr>
+<tr><th id="534">534</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="535">535</th><td><b>inline</b> <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <dfn class="decl def fn" id="_ZN5boost8contract24get_precondition_failureEv" title='boost::contract::get_precondition_failure' data-ref="_ZN5boost8contract24get_precondition_failureEv">get_precondition_failure</dfn>()</td></tr>
+<tr><th id="536">536</th><td>        <i class="doc">/** <span class="command">@cond</span> */</i> <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a> <i class="doc">/** <span class="command">@endcond</span> */</i> {</td></tr>
+<tr><th id="537">537</th><td>    <u>#<span data-ppcond="537">ifndef</span> <span class="macro" data-ref="_M/BOOST_CONTRACT_DISABLE_THREADS">BOOST_CONTRACT_DISABLE_THREADS</span></u></td></tr>
+<tr><th id="538">538</th><td>        <b>return</b> <span class="namespace">exception_::</span><a class="ref fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_22get_pre_failure_lockedEv" title='boost::contract::exception_::get_pre_failure_locked' data-ref="_ZN5boost8contract10exception_22get_pre_failure_lockedEv">get_pre_failure_locked</a>();</td></tr>
+<tr><th id="539">539</th><td>    <u>#<span data-ppcond="537">else</span></u></td></tr>
+<tr><th id="540">540</th><td>        <b>return</b> exception_::get_pre_failure_unlocked();</td></tr>
+<tr><th id="541">541</th><td>    <u>#<span data-ppcond="537">endif</span></u></td></tr>
+<tr><th id="542">542</th><td>}</td></tr>
+<tr><th id="543">543</th><td></td></tr>
+<tr><th id="544">544</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="545">545</th><td><i class="doc">Call failure handler for preconditions.</i></td></tr>
+<tr><th id="546">546</th><td><i class="doc"></i></td></tr>
+<tr><th id="547">547</th><td><i class="doc">This is often called only internally by this library.</i></td></tr>
+<tr><th id="548">548</th><td><i class="doc"><span class="command"></span></i></td></tr>
+<tr><th id="549">549</th><td><i class="doc"><span class="command">@b</span> <span class="arg">Throws:</span>  This can throw in case programmers specify a failure handler that</i></td></tr>
+<tr><th id="550">550</th><td><i class="doc">            throws exceptions on contract assertion failures (not the default).</i></td></tr>
+<tr><th id="551">551</th><td><i class="doc"></i></td></tr>
+<tr><th id="552">552</th><td><i class="doc"><span class="command">@param</span> <span class="arg">where</span>    Operation that failed the contract assertion (when this function</i></td></tr>
+<tr><th id="553">553</th><td><i class="doc">                is called by this library, this parameter will never be</i></td></tr>
+<tr><th id="554">554</th><td><i class="doc">               <span class="command"> @c</span> <span class="arg">from_destructor</span> because destructors do not have</i></td></tr>
+<tr><th id="555">555</th><td><i class="doc">                preconditions).</i></td></tr>
+<tr><th id="556">556</th><td><i class="doc"></i></td></tr>
+<tr><th id="557">557</th><td><i class="doc"><span class="command">@see</span>   <span class="command"> @RefSect</span>{advanced.throw_on_failures__and__noexcept__, Throw on Failure},</i></td></tr>
+<tr><th id="558">558</th><td><i class="doc">       <span class="command"> @RefSect</span>{tutorial.preconditions, Preconditions}</i></td></tr>
+<tr><th id="559">559</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="560">560</th><td><b>inline</b> <em>void</em> <dfn class="decl def fn" id="_ZN5boost8contract20precondition_failureENS0_4fromE" title='boost::contract::precondition_failure' data-ref="_ZN5boost8contract20precondition_failureENS0_4fromE">precondition_failure</dfn>(<a class="type" href="#boost::contract::from" title='boost::contract::from' data-ref="boost::contract::from">from</a> <dfn class="local col5 decl" id="3415where" title='where' data-type='boost::contract::from' data-ref="3415where">where</dfn>) <i>/* can throw */</i> {</td></tr>
+<tr><th id="561">561</th><td>    <u>#<span data-ppcond="561">ifndef</span> <span class="macro" data-ref="_M/BOOST_CONTRACT_DISABLE_THREADS">BOOST_CONTRACT_DISABLE_THREADS</span></u></td></tr>
+<tr><th id="562">562</th><td>        <span class="namespace">exception_::</span><a class="ref fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_18pre_failure_lockedENS0_4fromE" title='boost::contract::exception_::pre_failure_locked' data-ref="_ZN5boost8contract10exception_18pre_failure_lockedENS0_4fromE">pre_failure_locked</a>(<a class="local col5 ref" href="#3415where" title='where' data-ref="3415where">where</a>);</td></tr>
+<tr><th id="563">563</th><td>    <u>#<span data-ppcond="561">else</span></u></td></tr>
+<tr><th id="564">564</th><td>        exception_::pre_failure_unlocked(where);</td></tr>
+<tr><th id="565">565</th><td>    <u>#<span data-ppcond="561">endif</span></u></td></tr>
+<tr><th id="566">566</th><td>}</td></tr>
+<tr><th id="567">567</th><td></td></tr>
+<tr><th id="568">568</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="569">569</th><td><i class="doc">Set failure handler for postconditions.</i></td></tr>
+<tr><th id="570">570</th><td><i class="doc"></i></td></tr>
+<tr><th id="571">571</th><td><i class="doc">Set a new failure handler and returns it.</i></td></tr>
+<tr><th id="572">572</th><td><i class="doc"><span class="command"></span></i></td></tr>
+<tr><th id="573">573</th><td><i class="doc"><span class="command">@b</span> <span class="arg">Throws:</span> This is declared<span class="command"> @c</span> <span class="arg">noexcept</span> (or<span class="command"> @c</span> <span class="arg">throw()</span> before C++11).</i></td></tr>
+<tr><th id="574">574</th><td><i class="doc"></i></td></tr>
+<tr><th id="575">575</th><td><i class="doc"><span class="command">@param</span> <span class="arg">f</span> New failure handler functor to set.</i></td></tr>
+<tr><th id="576">576</th><td><i class="doc"></i></td></tr>
+<tr><th id="577">577</th><td><i class="doc"><span class="command">@return</span> Same failure handler functor<span class="command"> @p</span> <span class="arg">f</span> passed as parameter (e.g., for</i></td></tr>
+<tr><th id="578">578</th><td><i class="doc">        concatenating function calls).</i></td></tr>
+<tr><th id="579">579</th><td><i class="doc"></i></td></tr>
+<tr><th id="580">580</th><td><i class="doc"><span class="command">@see</span>   <span class="command"> @RefSect</span>{advanced.throw_on_failures__and__noexcept__, Throw on Failure},</i></td></tr>
+<tr><th id="581">581</th><td><i class="doc">       <span class="command"> @RefSect</span>{tutorial.postconditions, Postconditions}</i></td></tr>
+<tr><th id="582">582</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="583">583</th><td><b>inline</b> <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <em>const</em>&amp; <dfn class="decl def fn" id="_ZN5boost8contract25set_postcondition_failureERKNS_8functionIFvNS0_4fromEEEE" title='boost::contract::set_postcondition_failure' data-ref="_ZN5boost8contract25set_postcondition_failureERKNS_8functionIFvNS0_4fromEEEE">set_postcondition_failure</dfn>(</td></tr>
+<tr><th id="584">584</th><td>    <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <em>const</em>&amp; <dfn class="local col6 decl" id="3416f" title='f' data-type='const boost::contract::from_failure_handler &amp;' data-ref="3416f">f</dfn></td></tr>
+<tr><th id="585">585</th><td>) <i class="doc">/** <span class="command">@cond</span> */</i> <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a> <i class="doc">/** <span class="command">@endcond</span> */</i> {</td></tr>
+<tr><th id="586">586</th><td>    <u>#<span data-ppcond="586">ifndef</span> <span class="macro" data-ref="_M/BOOST_CONTRACT_DISABLE_THREADS">BOOST_CONTRACT_DISABLE_THREADS</span></u></td></tr>
+<tr><th id="587">587</th><td>        <b>return</b> <span class="namespace">exception_::</span><a class="ref fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_23set_post_failure_lockedERKNS_8functionIFvNS0_4fromEEEE" title='boost::contract::exception_::set_post_failure_locked' data-ref="_ZN5boost8contract10exception_23set_post_failure_lockedERKNS_8functionIFvNS0_4fromEEEE">set_post_failure_locked</a>(<a class="local col6 ref" href="#3416f" title='f' data-ref="3416f">f</a>);</td></tr>
+<tr><th id="588">588</th><td>    <u>#<span data-ppcond="586">else</span></u></td></tr>
+<tr><th id="589">589</th><td>        <b>return</b> exception_::set_post_failure_unlocked(f);</td></tr>
+<tr><th id="590">590</th><td>    <u>#<span data-ppcond="586">endif</span></u></td></tr>
+<tr><th id="591">591</th><td>}</td></tr>
+<tr><th id="592">592</th><td></td></tr>
+<tr><th id="593">593</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="594">594</th><td><i class="doc">Return failure handler currently set for postconditions.</i></td></tr>
+<tr><th id="595">595</th><td><i class="doc"></i></td></tr>
+<tr><th id="596">596</th><td><i class="doc">This is often called only internally by this library.</i></td></tr>
+<tr><th id="597">597</th><td><i class="doc"><span class="command"></span></i></td></tr>
+<tr><th id="598">598</th><td><i class="doc"><span class="command">@b</span> <span class="arg">Throws:</span> This is declared<span class="command"> @c</span> <span class="arg">noexcept</span> (or<span class="command"> @c</span> <span class="arg">throw()</span> before C++11).</i></td></tr>
+<tr><th id="599">599</th><td><i class="doc"></i></td></tr>
+<tr><th id="600">600</th><td><i class="doc"><span class="command">@return</span> A copy of the failure handler currently set.</i></td></tr>
+<tr><th id="601">601</th><td><i class="doc"></i></td></tr>
+<tr><th id="602">602</th><td><i class="doc"><span class="command">@see</span>   <span class="command"> @RefSect</span>{advanced.throw_on_failures__and__noexcept__, Throw on Failure},</i></td></tr>
+<tr><th id="603">603</th><td><i class="doc">       <span class="command"> @RefSect</span>{tutorial.postconditions, Postconditions}</i></td></tr>
+<tr><th id="604">604</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="605">605</th><td><b>inline</b> <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <dfn class="decl def fn" id="_ZN5boost8contract25get_postcondition_failureEv" title='boost::contract::get_postcondition_failure' data-ref="_ZN5boost8contract25get_postcondition_failureEv">get_postcondition_failure</dfn>()</td></tr>
+<tr><th id="606">606</th><td>        <i class="doc">/** <span class="command">@cond</span> */</i> <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a> <i class="doc">/** <span class="command">@endcond</span> */</i> {</td></tr>
+<tr><th id="607">607</th><td>    <u>#<span data-ppcond="607">ifndef</span> <span class="macro" data-ref="_M/BOOST_CONTRACT_DISABLE_THREADS">BOOST_CONTRACT_DISABLE_THREADS</span></u></td></tr>
+<tr><th id="608">608</th><td>        <b>return</b> <span class="namespace">exception_::</span><a class="ref fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_23get_post_failure_lockedEv" title='boost::contract::exception_::get_post_failure_locked' data-ref="_ZN5boost8contract10exception_23get_post_failure_lockedEv">get_post_failure_locked</a>();</td></tr>
+<tr><th id="609">609</th><td>    <u>#<span data-ppcond="607">else</span></u></td></tr>
+<tr><th id="610">610</th><td>        <b>return</b> exception_::get_post_failure_unlocked();</td></tr>
+<tr><th id="611">611</th><td>    <u>#<span data-ppcond="607">endif</span></u></td></tr>
+<tr><th id="612">612</th><td>}</td></tr>
+<tr><th id="613">613</th><td></td></tr>
+<tr><th id="614">614</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="615">615</th><td><i class="doc">Call failure handler for postconditions.</i></td></tr>
+<tr><th id="616">616</th><td><i class="doc"></i></td></tr>
+<tr><th id="617">617</th><td><i class="doc">This is often called only internally by this library.</i></td></tr>
+<tr><th id="618">618</th><td><i class="doc"><span class="command"></span></i></td></tr>
+<tr><th id="619">619</th><td><i class="doc"><span class="command">@b</span> <span class="arg">Throws:</span>  This can throw in case programmers specify a failure handler that</i></td></tr>
+<tr><th id="620">620</th><td><i class="doc">            throws exceptions on contract assertion failures (not the default).</i></td></tr>
+<tr><th id="621">621</th><td><i class="doc"></i></td></tr>
+<tr><th id="622">622</th><td><i class="doc"><span class="command">@param</span> <span class="arg">where</span>    Operation that failed the contract assertion (e.g., this might</i></td></tr>
+<tr><th id="623">623</th><td><i class="doc">                be useful to program failure handler functors that never throw</i></td></tr>
+<tr><th id="624">624</th><td><i class="doc">                from destructors, not even when they are programmed by users to</i></td></tr>
+<tr><th id="625">625</th><td><i class="doc">                throw exceptions instead of terminating the program).</i></td></tr>
+<tr><th id="626">626</th><td><i class="doc"></i></td></tr>
+<tr><th id="627">627</th><td><i class="doc"><span class="command">@see</span>   <span class="command"> @RefSect</span>{advanced.throw_on_failures__and__noexcept__, Throw on Failure},</i></td></tr>
+<tr><th id="628">628</th><td><i class="doc">       <span class="command"> @RefSect</span>{tutorial.postconditions, Postconditions}</i></td></tr>
+<tr><th id="629">629</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="630">630</th><td><b>inline</b> <em>void</em> <dfn class="decl def fn" id="_ZN5boost8contract21postcondition_failureENS0_4fromE" title='boost::contract::postcondition_failure' data-ref="_ZN5boost8contract21postcondition_failureENS0_4fromE">postcondition_failure</dfn>(<a class="type" href="#boost::contract::from" title='boost::contract::from' data-ref="boost::contract::from">from</a> <dfn class="local col7 decl" id="3417where" title='where' data-type='boost::contract::from' data-ref="3417where">where</dfn>) <i>/* can throw */</i> {</td></tr>
+<tr><th id="631">631</th><td>    <u>#<span data-ppcond="631">ifndef</span> <span class="macro" data-ref="_M/BOOST_CONTRACT_DISABLE_THREADS">BOOST_CONTRACT_DISABLE_THREADS</span></u></td></tr>
+<tr><th id="632">632</th><td>        <span class="namespace">exception_::</span><a class="ref fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_19post_failure_lockedENS0_4fromE" title='boost::contract::exception_::post_failure_locked' data-ref="_ZN5boost8contract10exception_19post_failure_lockedENS0_4fromE">post_failure_locked</a>(<a class="local col7 ref" href="#3417where" title='where' data-ref="3417where">where</a>);</td></tr>
+<tr><th id="633">633</th><td>    <u>#<span data-ppcond="631">else</span></u></td></tr>
+<tr><th id="634">634</th><td>        exception_::post_failure_unlocked(where);</td></tr>
+<tr><th id="635">635</th><td>    <u>#<span data-ppcond="631">endif</span></u></td></tr>
+<tr><th id="636">636</th><td>}</td></tr>
+<tr><th id="637">637</th><td></td></tr>
+<tr><th id="638">638</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="639">639</th><td><i class="doc">Set failure handler for exception guarantees.</i></td></tr>
+<tr><th id="640">640</th><td><i class="doc"></i></td></tr>
+<tr><th id="641">641</th><td><i class="doc">Set a new failure handler and returns it.</i></td></tr>
+<tr><th id="642">642</th><td><i class="doc"><span class="command"></span></i></td></tr>
+<tr><th id="643">643</th><td><i class="doc"><span class="command">@b</span> <span class="arg">Throws:</span> This is declared<span class="command"> @c</span> <span class="arg">noexcept</span> (or<span class="command"> @c</span> <span class="arg">throw()</span> before C++11).</i></td></tr>
+<tr><th id="644">644</th><td><i class="doc"></i></td></tr>
+<tr><th id="645">645</th><td><i class="doc"><span class="command">@param</span> <span class="arg">f</span> New failure handler functor to set.</i></td></tr>
+<tr><th id="646">646</th><td><i class="doc"></i></td></tr>
+<tr><th id="647">647</th><td><i class="doc"><span class="command">@return</span> Same failure handler functor<span class="command"> @p</span> <span class="arg">f</span> passed as parameter (e.g., for</i></td></tr>
+<tr><th id="648">648</th><td><i class="doc">        concatenating function calls).</i></td></tr>
+<tr><th id="649">649</th><td><i class="doc"></i></td></tr>
+<tr><th id="650">650</th><td><i class="doc"><span class="command">@see</span>   <span class="command"> @RefSect</span>{advanced.throw_on_failures__and__noexcept__, Throw on Failure},</i></td></tr>
+<tr><th id="651">651</th><td><i class="doc">       <span class="command"> @RefSect</span>{tutorial.exception_guarantees, Exception Guarantees}</i></td></tr>
+<tr><th id="652">652</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="653">653</th><td><b>inline</b> <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <em>const</em>&amp; <dfn class="decl def fn" id="_ZN5boost8contract18set_except_failureERKNS_8functionIFvNS0_4fromEEEE" title='boost::contract::set_except_failure' data-ref="_ZN5boost8contract18set_except_failureERKNS_8functionIFvNS0_4fromEEEE">set_except_failure</dfn>(<a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a></td></tr>
+<tr><th id="654">654</th><td>        <em>const</em>&amp; <dfn class="local col8 decl" id="3418f" title='f' data-type='const boost::contract::from_failure_handler &amp;' data-ref="3418f">f</dfn>) <i class="doc">/** <span class="command">@cond</span> */</i> <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a> <i class="doc">/** <span class="command">@endcond</span> */</i> {</td></tr>
+<tr><th id="655">655</th><td>    <u>#<span data-ppcond="655">ifndef</span> <span class="macro" data-ref="_M/BOOST_CONTRACT_DISABLE_THREADS">BOOST_CONTRACT_DISABLE_THREADS</span></u></td></tr>
+<tr><th id="656">656</th><td>        <b>return</b> <span class="namespace">exception_::</span><a class="ref fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_25set_except_failure_lockedERKNS_8functionIFvNS0_4fromEEEE" title='boost::contract::exception_::set_except_failure_locked' data-ref="_ZN5boost8contract10exception_25set_except_failure_lockedERKNS_8functionIFvNS0_4fromEEEE">set_except_failure_locked</a>(<a class="local col8 ref" href="#3418f" title='f' data-ref="3418f">f</a>);</td></tr>
+<tr><th id="657">657</th><td>    <u>#<span data-ppcond="655">else</span></u></td></tr>
+<tr><th id="658">658</th><td>        <b>return</b> exception_::set_except_failure_unlocked(f);</td></tr>
+<tr><th id="659">659</th><td>    <u>#<span data-ppcond="655">endif</span></u></td></tr>
+<tr><th id="660">660</th><td>}</td></tr>
+<tr><th id="661">661</th><td></td></tr>
+<tr><th id="662">662</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="663">663</th><td><i class="doc">Return failure handler currently set for exception guarantees.</i></td></tr>
+<tr><th id="664">664</th><td><i class="doc"></i></td></tr>
+<tr><th id="665">665</th><td><i class="doc">This is often called only internally by this library.</i></td></tr>
+<tr><th id="666">666</th><td><i class="doc"><span class="command"></span></i></td></tr>
+<tr><th id="667">667</th><td><i class="doc"><span class="command">@b</span> <span class="arg">Throws:</span> This is declared<span class="command"> @c</span> <span class="arg">noexcept</span> (or<span class="command"> @c</span> <span class="arg">throw()</span> before C++11).</i></td></tr>
+<tr><th id="668">668</th><td><i class="doc"></i></td></tr>
+<tr><th id="669">669</th><td><i class="doc"><span class="command">@return</span> A copy of the failure handler currently set.</i></td></tr>
+<tr><th id="670">670</th><td><i class="doc"></i></td></tr>
+<tr><th id="671">671</th><td><i class="doc"><span class="command">@see</span>   <span class="command"> @RefSect</span>{advanced.throw_on_failures__and__noexcept__, Throw on Failure},</i></td></tr>
+<tr><th id="672">672</th><td><i class="doc">       <span class="command"> @RefSect</span>{tutorial.exception_guarantees, Exception Guarantees}</i></td></tr>
+<tr><th id="673">673</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="674">674</th><td><b>inline</b> <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <dfn class="decl def fn" id="_ZN5boost8contract18get_except_failureEv" title='boost::contract::get_except_failure' data-ref="_ZN5boost8contract18get_except_failureEv">get_except_failure</dfn>()</td></tr>
+<tr><th id="675">675</th><td>        <i class="doc">/** <span class="command">@cond</span> */</i> <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a> <i class="doc">/** <span class="command">@endcond</span> */</i> {</td></tr>
+<tr><th id="676">676</th><td>    <u>#<span data-ppcond="676">ifndef</span> <span class="macro" data-ref="_M/BOOST_CONTRACT_DISABLE_THREADS">BOOST_CONTRACT_DISABLE_THREADS</span></u></td></tr>
+<tr><th id="677">677</th><td>        <b>return</b> <span class="namespace">exception_::</span><a class="ref fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_25get_except_failure_lockedEv" title='boost::contract::exception_::get_except_failure_locked' data-ref="_ZN5boost8contract10exception_25get_except_failure_lockedEv">get_except_failure_locked</a>();</td></tr>
+<tr><th id="678">678</th><td>    <u>#<span data-ppcond="676">else</span></u></td></tr>
+<tr><th id="679">679</th><td>        <b>return</b> exception_::get_except_failure_unlocked();</td></tr>
+<tr><th id="680">680</th><td>    <u>#<span data-ppcond="676">endif</span></u></td></tr>
+<tr><th id="681">681</th><td>}</td></tr>
+<tr><th id="682">682</th><td></td></tr>
+<tr><th id="683">683</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="684">684</th><td><i class="doc">Call failure handler for exception guarantees.</i></td></tr>
+<tr><th id="685">685</th><td><i class="doc"></i></td></tr>
+<tr><th id="686">686</th><td><i class="doc">This is often called only internally by this library.</i></td></tr>
+<tr><th id="687">687</th><td><i class="doc"><span class="command"></span></i></td></tr>
+<tr><th id="688">688</th><td><i class="doc"><span class="command">@b</span> <span class="arg">Throws:</span>  This can throw in case programmers specify a failure handler that</i></td></tr>
+<tr><th id="689">689</th><td><i class="doc">            throws exceptions on contract assertion failures (not the default),</i></td></tr>
+<tr><th id="690">690</th><td><i class="doc">            however:</i></td></tr>
+<tr><th id="691">691</th><td><i class="doc"></i></td></tr>
+<tr><th id="692">692</th><td><i class="doc"><span class="command">@warning</span>    When this failure handler is called there is already an active</i></td></tr>
+<tr><th id="693">693</th><td><i class="doc">            exception (the one that caused the exception guarantees to be</i></td></tr>
+<tr><th id="694">694</th><td><i class="doc">            checked in the first place).</i></td></tr>
+<tr><th id="695">695</th><td><i class="doc">            Therefore, programming this failure handler to throw yet another</i></td></tr>
+<tr><th id="696">696</th><td><i class="doc">            exception will force C++ to automatically terminate the program.</i></td></tr>
+<tr><th id="697">697</th><td><i class="doc"></i></td></tr>
+<tr><th id="698">698</th><td><i class="doc"><span class="command">@param</span> <span class="arg">where</span> Operation that failed the contract assertion.</i></td></tr>
+<tr><th id="699">699</th><td><i class="doc"></i></td></tr>
+<tr><th id="700">700</th><td><i class="doc"><span class="command">@see</span>   <span class="command"> @RefSect</span>{advanced.throw_on_failures__and__noexcept__, Throw on Failure},</i></td></tr>
+<tr><th id="701">701</th><td><i class="doc">       <span class="command"> @RefSect</span>{tutorial.exception_guarantees, Exception Guarantees}</i></td></tr>
+<tr><th id="702">702</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="703">703</th><td><b>inline</b> <em>void</em> <dfn class="decl def fn" id="_ZN5boost8contract14except_failureENS0_4fromE" title='boost::contract::except_failure' data-ref="_ZN5boost8contract14except_failureENS0_4fromE">except_failure</dfn>(<a class="type" href="#boost::contract::from" title='boost::contract::from' data-ref="boost::contract::from">from</a> <dfn class="local col9 decl" id="3419where" title='where' data-type='boost::contract::from' data-ref="3419where">where</dfn>) <i>/* can throw */</i> {</td></tr>
+<tr><th id="704">704</th><td>    <u>#<span data-ppcond="704">ifndef</span> <span class="macro" data-ref="_M/BOOST_CONTRACT_DISABLE_THREADS">BOOST_CONTRACT_DISABLE_THREADS</span></u></td></tr>
+<tr><th id="705">705</th><td>        <span class="namespace">exception_::</span><a class="ref fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_21except_failure_lockedENS0_4fromE" title='boost::contract::exception_::except_failure_locked' data-ref="_ZN5boost8contract10exception_21except_failure_lockedENS0_4fromE">except_failure_locked</a>(<a class="local col9 ref" href="#3419where" title='where' data-ref="3419where">where</a>);</td></tr>
+<tr><th id="706">706</th><td>    <u>#<span data-ppcond="704">else</span></u></td></tr>
+<tr><th id="707">707</th><td>        exception_::except_failure_unlocked(where);</td></tr>
+<tr><th id="708">708</th><td>    <u>#<span data-ppcond="704">endif</span></u></td></tr>
+<tr><th id="709">709</th><td>}</td></tr>
+<tr><th id="710">710</th><td></td></tr>
+<tr><th id="711">711</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="712">712</th><td><i class="doc">Set failure handler for old values copied at body.</i></td></tr>
+<tr><th id="713">713</th><td><i class="doc"></i></td></tr>
+<tr><th id="714">714</th><td><i class="doc">Set a new failure handler and returns it.</i></td></tr>
+<tr><th id="715">715</th><td><i class="doc"><span class="command"></span></i></td></tr>
+<tr><th id="716">716</th><td><i class="doc"><span class="command">@b</span> <span class="arg">Throws:</span> This is declared<span class="command"> @c</span> <span class="arg">noexcept</span> (or<span class="command"> @c</span> <span class="arg">throw()</span> before C++11).</i></td></tr>
+<tr><th id="717">717</th><td><i class="doc"></i></td></tr>
+<tr><th id="718">718</th><td><i class="doc"><span class="command">@param</span> <span class="arg">f</span> New failure handler functor to set.</i></td></tr>
+<tr><th id="719">719</th><td><i class="doc"></i></td></tr>
+<tr><th id="720">720</th><td><i class="doc"><span class="command">@return</span> Same failure handler functor<span class="command"> @p</span> <span class="arg">f</span> passed as parameter (e.g., for</i></td></tr>
+<tr><th id="721">721</th><td><i class="doc">        concatenating function calls).</i></td></tr>
+<tr><th id="722">722</th><td><i class="doc"></i></td></tr>
+<tr><th id="723">723</th><td><i class="doc"><span class="command">@see</span>   <span class="command"> @RefSect</span>{advanced.throw_on_failures__and__noexcept__, Throw on Failure},</i></td></tr>
+<tr><th id="724">724</th><td><i class="doc">       <span class="command"> @RefSect</span>{advanced.old_values_copied_at_body, Old Values Copied at Body}</i></td></tr>
+<tr><th id="725">725</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="726">726</th><td><b>inline</b> <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <em>const</em>&amp; <dfn class="decl def fn" id="_ZN5boost8contract15set_old_failureERKNS_8functionIFvNS0_4fromEEEE" title='boost::contract::set_old_failure' data-ref="_ZN5boost8contract15set_old_failureERKNS_8functionIFvNS0_4fromEEEE">set_old_failure</dfn>(<a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <em>const</em>&amp;</td></tr>
+<tr><th id="727">727</th><td>        <dfn class="local col0 decl" id="3420f" title='f' data-type='const boost::contract::from_failure_handler &amp;' data-ref="3420f">f</dfn>) <i class="doc">/** <span class="command">@cond</span> */</i> <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a> <i class="doc">/** <span class="command">@endcond</span> */</i> {</td></tr>
+<tr><th id="728">728</th><td>    <u>#<span data-ppcond="728">ifndef</span> <span class="macro" data-ref="_M/BOOST_CONTRACT_DISABLE_THREADS">BOOST_CONTRACT_DISABLE_THREADS</span></u></td></tr>
+<tr><th id="729">729</th><td>        <b>return</b> <span class="namespace">exception_::</span><a class="ref fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_22set_old_failure_lockedERKNS_8functionIFvNS0_4fromEEEE" title='boost::contract::exception_::set_old_failure_locked' data-ref="_ZN5boost8contract10exception_22set_old_failure_lockedERKNS_8functionIFvNS0_4fromEEEE">set_old_failure_locked</a>(<a class="local col0 ref" href="#3420f" title='f' data-ref="3420f">f</a>);</td></tr>
+<tr><th id="730">730</th><td>    <u>#<span data-ppcond="728">else</span></u></td></tr>
+<tr><th id="731">731</th><td>        <b>return</b> exception_::set_old_failure_unlocked(f);</td></tr>
+<tr><th id="732">732</th><td>    <u>#<span data-ppcond="728">endif</span></u></td></tr>
+<tr><th id="733">733</th><td>}</td></tr>
+<tr><th id="734">734</th><td></td></tr>
+<tr><th id="735">735</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="736">736</th><td><i class="doc">Return failure handler currently set for old values copied at body.</i></td></tr>
+<tr><th id="737">737</th><td><i class="doc"></i></td></tr>
+<tr><th id="738">738</th><td><i class="doc">This is often called only internally by this library.</i></td></tr>
+<tr><th id="739">739</th><td><i class="doc"><span class="command"></span></i></td></tr>
+<tr><th id="740">740</th><td><i class="doc"><span class="command">@b</span> <span class="arg">Throws:</span> This is declared<span class="command"> @c</span> <span class="arg">noexcept</span> (or<span class="command"> @c</span> <span class="arg">throw()</span> before C++11).</i></td></tr>
+<tr><th id="741">741</th><td><i class="doc"></i></td></tr>
+<tr><th id="742">742</th><td><i class="doc"><span class="command">@return</span> A copy of the failure handler currently set.</i></td></tr>
+<tr><th id="743">743</th><td><i class="doc"></i></td></tr>
+<tr><th id="744">744</th><td><i class="doc"><span class="command">@see</span>   <span class="command"> @RefSect</span>{advanced.throw_on_failures__and__noexcept__, Throw on Failure},</i></td></tr>
+<tr><th id="745">745</th><td><i class="doc">       <span class="command"> @RefSect</span>{advanced.old_values_copied_at_body, Old Values Copied at Body}</i></td></tr>
+<tr><th id="746">746</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="747">747</th><td><b>inline</b> <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <dfn class="decl def fn" id="_ZN5boost8contract15get_old_failureEv" title='boost::contract::get_old_failure' data-ref="_ZN5boost8contract15get_old_failureEv">get_old_failure</dfn>()</td></tr>
+<tr><th id="748">748</th><td>        <i class="doc">/** <span class="command">@cond</span> */</i> <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a> <i class="doc">/** <span class="command">@endcond</span> */</i> {</td></tr>
+<tr><th id="749">749</th><td>    <u>#<span data-ppcond="749">ifndef</span> <span class="macro" data-ref="_M/BOOST_CONTRACT_DISABLE_THREADS">BOOST_CONTRACT_DISABLE_THREADS</span></u></td></tr>
+<tr><th id="750">750</th><td>        <b>return</b> <span class="namespace">exception_::</span><a class="ref fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_22get_old_failure_lockedEv" title='boost::contract::exception_::get_old_failure_locked' data-ref="_ZN5boost8contract10exception_22get_old_failure_lockedEv">get_old_failure_locked</a>();</td></tr>
+<tr><th id="751">751</th><td>    <u>#<span data-ppcond="749">else</span></u></td></tr>
+<tr><th id="752">752</th><td>        <b>return</b> exception_::get_old_failure_unlocked();</td></tr>
+<tr><th id="753">753</th><td>    <u>#<span data-ppcond="749">endif</span></u></td></tr>
+<tr><th id="754">754</th><td>}</td></tr>
+<tr><th id="755">755</th><td></td></tr>
+<tr><th id="756">756</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="757">757</th><td><i class="doc">Call failure handler for old values copied at body.</i></td></tr>
+<tr><th id="758">758</th><td><i class="doc"></i></td></tr>
+<tr><th id="759">759</th><td><i class="doc">This is often called only internally by this library.</i></td></tr>
+<tr><th id="760">760</th><td><i class="doc"><span class="command"></span></i></td></tr>
+<tr><th id="761">761</th><td><i class="doc"><span class="command">@b</span> <span class="arg">Throws:</span>  This can throw in case programmers specify a failure handler that</i></td></tr>
+<tr><th id="762">762</th><td><i class="doc">            throws exceptions on contract assertion failures (not the default).</i></td></tr>
+<tr><th id="763">763</th><td><i class="doc"></i></td></tr>
+<tr><th id="764">764</th><td><i class="doc"><span class="command">@param</span> <span class="arg">where</span>    Operation that failed the old value copy (e.g., this might</i></td></tr>
+<tr><th id="765">765</th><td><i class="doc">                be useful to program failure handler functors that never throw</i></td></tr>
+<tr><th id="766">766</th><td><i class="doc">                from destructors, not even when they are programmed by users to</i></td></tr>
+<tr><th id="767">767</th><td><i class="doc">                throw exceptions instead of terminating the program).</i></td></tr>
+<tr><th id="768">768</th><td><i class="doc"></i></td></tr>
+<tr><th id="769">769</th><td><i class="doc"><span class="command">@see</span>   <span class="command"> @RefSect</span>{advanced.throw_on_failures__and__noexcept__, Throw on Failure},</i></td></tr>
+<tr><th id="770">770</th><td><i class="doc">       <span class="command"> @RefSect</span>{advanced.old_values_copied_at_body, Old Values Copied at Body}</i></td></tr>
+<tr><th id="771">771</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="772">772</th><td><b>inline</b> <em>void</em> <dfn class="decl def fn" id="_ZN5boost8contract11old_failureENS0_4fromE" title='boost::contract::old_failure' data-ref="_ZN5boost8contract11old_failureENS0_4fromE">old_failure</dfn>(<a class="type" href="#boost::contract::from" title='boost::contract::from' data-ref="boost::contract::from">from</a> <dfn class="local col1 decl" id="3421where" title='where' data-type='boost::contract::from' data-ref="3421where">where</dfn>) <i>/* can throw */</i> {</td></tr>
+<tr><th id="773">773</th><td>    <u>#<span data-ppcond="773">ifndef</span> <span class="macro" data-ref="_M/BOOST_CONTRACT_DISABLE_THREADS">BOOST_CONTRACT_DISABLE_THREADS</span></u></td></tr>
+<tr><th id="774">774</th><td>        <span class="namespace">exception_::</span><a class="ref fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_18old_failure_lockedENS0_4fromE" title='boost::contract::exception_::old_failure_locked' data-ref="_ZN5boost8contract10exception_18old_failure_lockedENS0_4fromE">old_failure_locked</a>(<a class="local col1 ref" href="#3421where" title='where' data-ref="3421where">where</a>);</td></tr>
+<tr><th id="775">775</th><td>    <u>#<span data-ppcond="773">else</span></u></td></tr>
+<tr><th id="776">776</th><td>        exception_::old_failure_unlocked(where);</td></tr>
+<tr><th id="777">777</th><td>    <u>#<span data-ppcond="773">endif</span></u></td></tr>
+<tr><th id="778">778</th><td>}</td></tr>
+<tr><th id="779">779</th><td></td></tr>
+<tr><th id="780">780</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="781">781</th><td><i class="doc">Set failure handler for class invariants at entry.</i></td></tr>
+<tr><th id="782">782</th><td><i class="doc"></i></td></tr>
+<tr><th id="783">783</th><td><i class="doc">Set a new failure handler and returns it.</i></td></tr>
+<tr><th id="784">784</th><td><i class="doc"><span class="command"></span></i></td></tr>
+<tr><th id="785">785</th><td><i class="doc"><span class="command">@b</span> <span class="arg">Throws:</span> This is declared<span class="command"> @c</span> <span class="arg">noexcept</span> (or<span class="command"> @c</span> <span class="arg">throw()</span> before C++11).</i></td></tr>
+<tr><th id="786">786</th><td><i class="doc"></i></td></tr>
+<tr><th id="787">787</th><td><i class="doc"><span class="command">@param</span> <span class="arg">f</span> New failure handler functor to set.</i></td></tr>
+<tr><th id="788">788</th><td><i class="doc"></i></td></tr>
+<tr><th id="789">789</th><td><i class="doc"><span class="command">@return</span> Same failure handler functor<span class="command"> @p</span> <span class="arg">f</span> passed as parameter (e.g., for</i></td></tr>
+<tr><th id="790">790</th><td><i class="doc">        concatenating function calls).</i></td></tr>
+<tr><th id="791">791</th><td><i class="doc"></i></td></tr>
+<tr><th id="792">792</th><td><i class="doc"><span class="command">@see</span>   <span class="command"> @RefSect</span>{advanced.throw_on_failures__and__noexcept__, Throw on Failure},</i></td></tr>
+<tr><th id="793">793</th><td><i class="doc">       <span class="command"> @RefSect</span>{tutorial.class_invariants, Class Invariants},</i></td></tr>
+<tr><th id="794">794</th><td><i class="doc">       <span class="command"> @RefSect</span>{extras.volatile_public_functions,</i></td></tr>
+<tr><th id="795">795</th><td><i class="doc">        Volatile Public Functions}</i></td></tr>
+<tr><th id="796">796</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="797">797</th><td><b>inline</b> <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <em>const</em>&amp; <dfn class="decl def fn" id="_ZN5boost8contract27set_entry_invariant_failureERKNS_8functionIFvNS0_4fromEEEE" title='boost::contract::set_entry_invariant_failure' data-ref="_ZN5boost8contract27set_entry_invariant_failureERKNS_8functionIFvNS0_4fromEEEE">set_entry_invariant_failure</dfn>(</td></tr>
+<tr><th id="798">798</th><td>    <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <em>const</em>&amp; <dfn class="local col2 decl" id="3422f" title='f' data-type='const boost::contract::from_failure_handler &amp;' data-ref="3422f">f</dfn></td></tr>
+<tr><th id="799">799</th><td>)<i class="doc">/** <span class="command">@cond</span> */</i> <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a> <i class="doc">/** <span class="command">@endcond</span> */</i> {</td></tr>
+<tr><th id="800">800</th><td>    <u>#<span data-ppcond="800">ifndef</span> <span class="macro" data-ref="_M/BOOST_CONTRACT_DISABLE_THREADS">BOOST_CONTRACT_DISABLE_THREADS</span></u></td></tr>
+<tr><th id="801">801</th><td>        <b>return</b> <span class="namespace">exception_::</span><a class="ref fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_28set_entry_inv_failure_lockedERKNS_8functionIFvNS0_4fromEEEE" title='boost::contract::exception_::set_entry_inv_failure_locked' data-ref="_ZN5boost8contract10exception_28set_entry_inv_failure_lockedERKNS_8functionIFvNS0_4fromEEEE">set_entry_inv_failure_locked</a>(<a class="local col2 ref" href="#3422f" title='f' data-ref="3422f">f</a>);</td></tr>
+<tr><th id="802">802</th><td>    <u>#<span data-ppcond="800">else</span></u></td></tr>
+<tr><th id="803">803</th><td>        <b>return</b> exception_::set_entry_inv_failure_unlocked(f);</td></tr>
+<tr><th id="804">804</th><td>    <u>#<span data-ppcond="800">endif</span></u></td></tr>
+<tr><th id="805">805</th><td>}</td></tr>
+<tr><th id="806">806</th><td></td></tr>
+<tr><th id="807">807</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="808">808</th><td><i class="doc">Return failure handler currently set for class invariants at entry.</i></td></tr>
+<tr><th id="809">809</th><td><i class="doc"></i></td></tr>
+<tr><th id="810">810</th><td><i class="doc">This is often called only internally by this library.</i></td></tr>
+<tr><th id="811">811</th><td><i class="doc"><span class="command"></span></i></td></tr>
+<tr><th id="812">812</th><td><i class="doc"><span class="command">@b</span> <span class="arg">Throws:</span> This is declared<span class="command"> @c</span> <span class="arg">noexcept</span> (or<span class="command"> @c</span> <span class="arg">throw()</span> before C++11).</i></td></tr>
+<tr><th id="813">813</th><td><i class="doc"></i></td></tr>
+<tr><th id="814">814</th><td><i class="doc"><span class="command">@return</span> A copy of the failure handler currently set.</i></td></tr>
+<tr><th id="815">815</th><td><i class="doc"></i></td></tr>
+<tr><th id="816">816</th><td><i class="doc"><span class="command">@see</span>   <span class="command"> @RefSect</span>{advanced.throw_on_failures__and__noexcept__, Throw on Failure},</i></td></tr>
+<tr><th id="817">817</th><td><i class="doc">       <span class="command"> @RefSect</span>{tutorial.class_invariants, Class Invariants},</i></td></tr>
+<tr><th id="818">818</th><td><i class="doc">       <span class="command"> @RefSect</span>{extras.volatile_public_functions,</i></td></tr>
+<tr><th id="819">819</th><td><i class="doc">        Volatile Public Functions}</i></td></tr>
+<tr><th id="820">820</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="821">821</th><td><b>inline</b> <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <dfn class="decl def fn" id="_ZN5boost8contract27get_entry_invariant_failureEv" title='boost::contract::get_entry_invariant_failure' data-ref="_ZN5boost8contract27get_entry_invariant_failureEv">get_entry_invariant_failure</dfn>()</td></tr>
+<tr><th id="822">822</th><td>        <i class="doc">/** <span class="command">@cond</span> */</i> <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a> <i class="doc">/** <span class="command">@endcond</span> */</i> {</td></tr>
+<tr><th id="823">823</th><td>    <u>#<span data-ppcond="823">ifndef</span> <span class="macro" data-ref="_M/BOOST_CONTRACT_DISABLE_THREADS">BOOST_CONTRACT_DISABLE_THREADS</span></u></td></tr>
+<tr><th id="824">824</th><td>        <b>return</b> <span class="namespace">exception_::</span><a class="ref fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_28get_entry_inv_failure_lockedEv" title='boost::contract::exception_::get_entry_inv_failure_locked' data-ref="_ZN5boost8contract10exception_28get_entry_inv_failure_lockedEv">get_entry_inv_failure_locked</a>();</td></tr>
+<tr><th id="825">825</th><td>    <u>#<span data-ppcond="823">else</span></u></td></tr>
+<tr><th id="826">826</th><td>        <b>return</b> exception_::get_entry_inv_failure_unlocked();</td></tr>
+<tr><th id="827">827</th><td>    <u>#<span data-ppcond="823">endif</span></u></td></tr>
+<tr><th id="828">828</th><td>}</td></tr>
+<tr><th id="829">829</th><td></td></tr>
+<tr><th id="830">830</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="831">831</th><td><i class="doc">Call failure handler for class invariants at entry.</i></td></tr>
+<tr><th id="832">832</th><td><i class="doc"></i></td></tr>
+<tr><th id="833">833</th><td><i class="doc">This is often called only internally by this library.</i></td></tr>
+<tr><th id="834">834</th><td><i class="doc"><span class="command"></span></i></td></tr>
+<tr><th id="835">835</th><td><i class="doc"><span class="command">@b</span> <span class="arg">Throws:</span>  This can throw in case programmers specify a failure handler that</i></td></tr>
+<tr><th id="836">836</th><td><i class="doc">            throws exceptions on contract assertion failures (not the default).</i></td></tr>
+<tr><th id="837">837</th><td><i class="doc"></i></td></tr>
+<tr><th id="838">838</th><td><i class="doc"><span class="command">@param</span> <span class="arg">where</span>    Operation that failed the contract assertion (e.g., this might</i></td></tr>
+<tr><th id="839">839</th><td><i class="doc">                be useful to program failure handler functors that never throw</i></td></tr>
+<tr><th id="840">840</th><td><i class="doc">                from destructors, not even when they are programmed by users to</i></td></tr>
+<tr><th id="841">841</th><td><i class="doc">                throw exceptions instead of terminating the program).</i></td></tr>
+<tr><th id="842">842</th><td><i class="doc"></i></td></tr>
+<tr><th id="843">843</th><td><i class="doc"><span class="command">@see</span>   <span class="command"> @RefSect</span>{advanced.throw_on_failures__and__noexcept__, Throw on Failure},</i></td></tr>
+<tr><th id="844">844</th><td><i class="doc">       <span class="command"> @RefSect</span>{tutorial.class_invariants, Class Invariants},</i></td></tr>
+<tr><th id="845">845</th><td><i class="doc">       <span class="command"> @RefSect</span>{extras.volatile_public_functions,</i></td></tr>
+<tr><th id="846">846</th><td><i class="doc">        Volatile Public Functions}</i></td></tr>
+<tr><th id="847">847</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="848">848</th><td><b>inline</b> <em>void</em> <dfn class="decl def fn" id="_ZN5boost8contract23entry_invariant_failureENS0_4fromE" title='boost::contract::entry_invariant_failure' data-ref="_ZN5boost8contract23entry_invariant_failureENS0_4fromE">entry_invariant_failure</dfn>(<a class="type" href="#boost::contract::from" title='boost::contract::from' data-ref="boost::contract::from">from</a> <dfn class="local col3 decl" id="3423where" title='where' data-type='boost::contract::from' data-ref="3423where">where</dfn>) <i>/* can throw */</i> {</td></tr>
+<tr><th id="849">849</th><td>    <u>#<span data-ppcond="849">ifndef</span> <span class="macro" data-ref="_M/BOOST_CONTRACT_DISABLE_THREADS">BOOST_CONTRACT_DISABLE_THREADS</span></u></td></tr>
+<tr><th id="850">850</th><td>        <b>return</b> <span class="namespace">exception_::</span><a class="ref fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_24entry_inv_failure_lockedENS0_4fromE" title='boost::contract::exception_::entry_inv_failure_locked' data-ref="_ZN5boost8contract10exception_24entry_inv_failure_lockedENS0_4fromE">entry_inv_failure_locked</a>(<a class="local col3 ref" href="#3423where" title='where' data-ref="3423where">where</a>);</td></tr>
+<tr><th id="851">851</th><td>    <u>#<span data-ppcond="849">else</span></u></td></tr>
+<tr><th id="852">852</th><td>        <b>return</b> exception_::entry_inv_failure_unlocked(where);</td></tr>
+<tr><th id="853">853</th><td>    <u>#<span data-ppcond="849">endif</span></u></td></tr>
+<tr><th id="854">854</th><td>}</td></tr>
+<tr><th id="855">855</th><td></td></tr>
+<tr><th id="856">856</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="857">857</th><td><i class="doc">Set failure handler for class invariants at exit.</i></td></tr>
+<tr><th id="858">858</th><td><i class="doc"></i></td></tr>
+<tr><th id="859">859</th><td><i class="doc">Set a new failure handler and returns it.</i></td></tr>
+<tr><th id="860">860</th><td><i class="doc"><span class="command"></span></i></td></tr>
+<tr><th id="861">861</th><td><i class="doc"><span class="command">@b</span> <span class="arg">Throws:</span> This is declared<span class="command"> @c</span> <span class="arg">noexcept</span> (or<span class="command"> @c</span> <span class="arg">throw()</span> before C++11).</i></td></tr>
+<tr><th id="862">862</th><td><i class="doc"></i></td></tr>
+<tr><th id="863">863</th><td><i class="doc"><span class="command">@param</span> <span class="arg">f</span> New failure handler functor to set.</i></td></tr>
+<tr><th id="864">864</th><td><i class="doc"></i></td></tr>
+<tr><th id="865">865</th><td><i class="doc"><span class="command">@return</span> Same failure handler functor<span class="command"> @p</span> <span class="arg">f</span> passed as parameter (e.g., for</i></td></tr>
+<tr><th id="866">866</th><td><i class="doc">        concatenating function calls).</i></td></tr>
+<tr><th id="867">867</th><td><i class="doc"></i></td></tr>
+<tr><th id="868">868</th><td><i class="doc"><span class="command">@see</span>   <span class="command"> @RefSect</span>{advanced.throw_on_failures__and__noexcept__, Throw on Failure},</i></td></tr>
+<tr><th id="869">869</th><td><i class="doc">       <span class="command"> @RefSect</span>{tutorial.class_invariants, Class Invariants},</i></td></tr>
+<tr><th id="870">870</th><td><i class="doc">       <span class="command"> @RefSect</span>{extras.volatile_public_functions,</i></td></tr>
+<tr><th id="871">871</th><td><i class="doc">        Volatile Public Functions}</i></td></tr>
+<tr><th id="872">872</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="873">873</th><td><b>inline</b> <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <em>const</em>&amp; <dfn class="decl def fn" id="_ZN5boost8contract26set_exit_invariant_failureERKNS_8functionIFvNS0_4fromEEEE" title='boost::contract::set_exit_invariant_failure' data-ref="_ZN5boost8contract26set_exit_invariant_failureERKNS_8functionIFvNS0_4fromEEEE">set_exit_invariant_failure</dfn>(</td></tr>
+<tr><th id="874">874</th><td>    <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <em>const</em>&amp; <dfn class="local col4 decl" id="3424f" title='f' data-type='const boost::contract::from_failure_handler &amp;' data-ref="3424f">f</dfn></td></tr>
+<tr><th id="875">875</th><td>) <i class="doc">/** <span class="command">@cond</span> */</i> <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a> <i class="doc">/** <span class="command">@endcond</span> */</i> {</td></tr>
+<tr><th id="876">876</th><td>    <u>#<span data-ppcond="876">ifndef</span> <span class="macro" data-ref="_M/BOOST_CONTRACT_DISABLE_THREADS">BOOST_CONTRACT_DISABLE_THREADS</span></u></td></tr>
+<tr><th id="877">877</th><td>        <b>return</b> <span class="namespace">exception_::</span><a class="ref fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_27set_exit_inv_failure_lockedERKNS_8functionIFvNS0_4fromEEEE" title='boost::contract::exception_::set_exit_inv_failure_locked' data-ref="_ZN5boost8contract10exception_27set_exit_inv_failure_lockedERKNS_8functionIFvNS0_4fromEEEE">set_exit_inv_failure_locked</a>(<a class="local col4 ref" href="#3424f" title='f' data-ref="3424f">f</a>);</td></tr>
+<tr><th id="878">878</th><td>    <u>#<span data-ppcond="876">else</span></u></td></tr>
+<tr><th id="879">879</th><td>        <b>return</b> exception_::set_exit_inv_failure_unlocked(f);</td></tr>
+<tr><th id="880">880</th><td>    <u>#<span data-ppcond="876">endif</span></u></td></tr>
+<tr><th id="881">881</th><td>}</td></tr>
+<tr><th id="882">882</th><td></td></tr>
+<tr><th id="883">883</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="884">884</th><td><i class="doc">Return failure handler currently set for class invariants at exit.</i></td></tr>
+<tr><th id="885">885</th><td><i class="doc"></i></td></tr>
+<tr><th id="886">886</th><td><i class="doc">This is often called only internally by this library.</i></td></tr>
+<tr><th id="887">887</th><td><i class="doc"><span class="command"></span></i></td></tr>
+<tr><th id="888">888</th><td><i class="doc"><span class="command">@b</span> <span class="arg">Throws:</span> This is declared<span class="command"> @c</span> <span class="arg">noexcept</span> (or<span class="command"> @c</span> <span class="arg">throw()</span> before C++11).</i></td></tr>
+<tr><th id="889">889</th><td><i class="doc"></i></td></tr>
+<tr><th id="890">890</th><td><i class="doc"><span class="command">@return</span> A copy of the failure handler currently set.</i></td></tr>
+<tr><th id="891">891</th><td><i class="doc"></i></td></tr>
+<tr><th id="892">892</th><td><i class="doc"><span class="command">@see</span>   <span class="command"> @RefSect</span>{advanced.throw_on_failures__and__noexcept__, Throw on Failure},</i></td></tr>
+<tr><th id="893">893</th><td><i class="doc">       <span class="command"> @RefSect</span>{tutorial.class_invariants, Class Invariants},</i></td></tr>
+<tr><th id="894">894</th><td><i class="doc">       <span class="command"> @RefSect</span>{extras.volatile_public_functions,</i></td></tr>
+<tr><th id="895">895</th><td><i class="doc">        Volatile Public Functions}</i></td></tr>
+<tr><th id="896">896</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="897">897</th><td><b>inline</b> <a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <dfn class="decl def fn" id="_ZN5boost8contract26get_exit_invariant_failureEv" title='boost::contract::get_exit_invariant_failure' data-ref="_ZN5boost8contract26get_exit_invariant_failureEv">get_exit_invariant_failure</dfn>()</td></tr>
+<tr><th id="898">898</th><td>        <i class="doc">/** <span class="command">@cond</span> */</i> <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a> <i class="doc">/** <span class="command">@endcond</span> */</i> {</td></tr>
+<tr><th id="899">899</th><td>    <u>#<span data-ppcond="899">ifndef</span> <span class="macro" data-ref="_M/BOOST_CONTRACT_DISABLE_THREADS">BOOST_CONTRACT_DISABLE_THREADS</span></u></td></tr>
+<tr><th id="900">900</th><td>        <b>return</b> <span class="namespace">exception_::</span><a class="ref fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_27get_exit_inv_failure_lockedEv" title='boost::contract::exception_::get_exit_inv_failure_locked' data-ref="_ZN5boost8contract10exception_27get_exit_inv_failure_lockedEv">get_exit_inv_failure_locked</a>();</td></tr>
+<tr><th id="901">901</th><td>    <u>#<span data-ppcond="899">else</span></u></td></tr>
+<tr><th id="902">902</th><td>        <b>return</b> exception_::get_exit_inv_failure_unlocked();</td></tr>
+<tr><th id="903">903</th><td>    <u>#<span data-ppcond="899">endif</span></u></td></tr>
+<tr><th id="904">904</th><td>}</td></tr>
+<tr><th id="905">905</th><td></td></tr>
+<tr><th id="906">906</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="907">907</th><td><i class="doc">Call failure handler for class invariants at exit.</i></td></tr>
+<tr><th id="908">908</th><td><i class="doc"></i></td></tr>
+<tr><th id="909">909</th><td><i class="doc">This is often called only internally by this library.</i></td></tr>
+<tr><th id="910">910</th><td><i class="doc"><span class="command"></span></i></td></tr>
+<tr><th id="911">911</th><td><i class="doc"><span class="command">@b</span> <span class="arg">Throws:</span>  This can throw in case programmers specify a failure handler that</i></td></tr>
+<tr><th id="912">912</th><td><i class="doc">            throws exceptions on contract assertion failures (not the default).</i></td></tr>
+<tr><th id="913">913</th><td><i class="doc"></i></td></tr>
+<tr><th id="914">914</th><td><i class="doc"><span class="command">@param</span> <span class="arg">where</span>    Operation that failed the contract assertion (e.g., this might</i></td></tr>
+<tr><th id="915">915</th><td><i class="doc">                be useful to program failure handler functors that never throw</i></td></tr>
+<tr><th id="916">916</th><td><i class="doc">                from destructors, not even when they are programmed by users to</i></td></tr>
+<tr><th id="917">917</th><td><i class="doc">                throw exceptions instead of terminating the program).</i></td></tr>
+<tr><th id="918">918</th><td><i class="doc"></i></td></tr>
+<tr><th id="919">919</th><td><i class="doc"><span class="command">@see</span>   <span class="command"> @RefSect</span>{advanced.throw_on_failures__and__noexcept__, Throw on Failure},</i></td></tr>
+<tr><th id="920">920</th><td><i class="doc">       <span class="command"> @RefSect</span>{tutorial.class_invariants, Class Invariants},</i></td></tr>
+<tr><th id="921">921</th><td><i class="doc">       <span class="command"> @RefSect</span>{extras.volatile_public_functions,</i></td></tr>
+<tr><th id="922">922</th><td><i class="doc">        Volatile Public Functions}</i></td></tr>
+<tr><th id="923">923</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="924">924</th><td><b>inline</b> <em>void</em> <dfn class="decl def fn" id="_ZN5boost8contract22exit_invariant_failureENS0_4fromE" title='boost::contract::exit_invariant_failure' data-ref="_ZN5boost8contract22exit_invariant_failureENS0_4fromE">exit_invariant_failure</dfn>(<a class="type" href="#boost::contract::from" title='boost::contract::from' data-ref="boost::contract::from">from</a> <dfn class="local col5 decl" id="3425where" title='where' data-type='boost::contract::from' data-ref="3425where">where</dfn>) <i>/* can throw */</i> {</td></tr>
+<tr><th id="925">925</th><td>    <u>#<span data-ppcond="925">ifndef</span> <span class="macro" data-ref="_M/BOOST_CONTRACT_DISABLE_THREADS">BOOST_CONTRACT_DISABLE_THREADS</span></u></td></tr>
+<tr><th id="926">926</th><td>        <span class="namespace">exception_::</span><a class="ref fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract10exception_23exit_inv_failure_lockedENS0_4fromE" title='boost::contract::exception_::exit_inv_failure_locked' data-ref="_ZN5boost8contract10exception_23exit_inv_failure_lockedENS0_4fromE">exit_inv_failure_locked</a>(<a class="local col5 ref" href="#3425where" title='where' data-ref="3425where">where</a>);</td></tr>
+<tr><th id="927">927</th><td>    <u>#<span data-ppcond="925">else</span></u></td></tr>
+<tr><th id="928">928</th><td>        exception_::exit_inv_failure_unlocked(where);</td></tr>
+<tr><th id="929">929</th><td>    <u>#<span data-ppcond="925">endif</span></u></td></tr>
+<tr><th id="930">930</th><td>}</td></tr>
+<tr><th id="931">931</th><td></td></tr>
+<tr><th id="932">932</th><td><i class="doc">/**</i></td></tr>
+<tr><th id="933">933</th><td><i class="doc">Set failure handler for class invariants (at both entry and exit).</i></td></tr>
+<tr><th id="934">934</th><td><i class="doc"></i></td></tr>
+<tr><th id="935">935</th><td><i class="doc">This is provided for convenience and it is equivalent to call both<span class="command"></span></i></td></tr>
+<tr><th id="936">936</th><td><i class="doc"><span class="command">@RefFunc</span>{boost::contract::set_entry_invariant_failure} and<span class="command"></span></i></td></tr>
+<tr><th id="937">937</th><td><i class="doc"><span class="command">@RefFunc</span>{boost::contract::set_exit_invariant_failure} with the same functor</i></td></tr>
+<tr><th id="938">938</th><td><i class="doc">parameter<span class="command"> @p</span> <span class="arg">f.</span></i></td></tr>
+<tr><th id="939">939</th><td><i class="doc"><span class="command"></span></i></td></tr>
+<tr><th id="940">940</th><td><i class="doc"><span class="command">@b</span> <span class="arg">Throws:</span> This is declared<span class="command"> @c</span> <span class="arg">noexcept</span> (or<span class="command"> @c</span> <span class="arg">throw()</span> before C++11).</i></td></tr>
+<tr><th id="941">941</th><td><i class="doc"></i></td></tr>
+<tr><th id="942">942</th><td><i class="doc"><span class="command">@param</span> <span class="arg">f</span> New failure handler functor to set for both entry and exit invariants.</i></td></tr>
+<tr><th id="943">943</th><td><i class="doc"></i></td></tr>
+<tr><th id="944">944</th><td><i class="doc"><span class="command">@return</span> Same failure handler functor<span class="command"> @p</span> <span class="arg">f</span> passed as parameter (e.g., for</i></td></tr>
+<tr><th id="945">945</th><td><i class="doc">        concatenating function calls).</i></td></tr>
+<tr><th id="946">946</th><td><i class="doc"></i></td></tr>
+<tr><th id="947">947</th><td><i class="doc"><span class="command">@see</span>   <span class="command"> @RefSect</span>{advanced.throw_on_failures__and__noexcept__, Throw on Failure},</i></td></tr>
+<tr><th id="948">948</th><td><i class="doc">       <span class="command"> @RefSect</span>{tutorial.class_invariants, Class Invariants},</i></td></tr>
+<tr><th id="949">949</th><td><i class="doc">       <span class="command"> @RefSect</span>{extras.volatile_public_functions,</i></td></tr>
+<tr><th id="950">950</th><td><i class="doc">        Volatile Public Functions}</i></td></tr>
+<tr><th id="951">951</th><td><i class="doc">*/</i></td></tr>
+<tr><th id="952">952</th><td><i class="doc">/** <span class="command">@cond</span> */</i> <a class="macro" href="../detail/declspec.hpp.html#30" title="" data-ref="_M/BOOST_CONTRACT_DETAIL_DECLSPEC">BOOST_CONTRACT_DETAIL_DECLSPEC</a> <i class="doc">/** <span class="command">@endcond</span> */</i></td></tr>
+<tr><th id="953">953</th><td><a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <em>const</em>&amp; <a class="decl fn" href="../detail/inlined/core/exception.hpp.html#_ZN5boost8contract21set_invariant_failureERKNS_8functionIFvNS0_4fromEEEE" title='boost::contract::set_invariant_failure' data-ref="_ZN5boost8contract21set_invariant_failureERKNS_8functionIFvNS0_4fromEEEE" id="_ZN5boost8contract21set_invariant_failureERKNS_8functionIFvNS0_4fromEEEE">set_invariant_failure</a>(<a class="typedef" href="#boost::contract::from_failure_handler" title='boost::contract::from_failure_handler' data-type='boost::function&lt;void (from)&gt;' data-ref="boost::contract::from_failure_handler">from_failure_handler</a> <em>const</em>&amp; <dfn class="local col6 decl" id="3426f" title='f' data-type='const boost::contract::from_failure_handler &amp;' data-ref="3426f">f</dfn>)</td></tr>
+<tr><th id="954">954</th><td>        <i class="doc">/** <span class="command">@cond</span> */</i> <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1021" title="noexcept" data-ref="_M/BOOST_NOEXCEPT_OR_NOTHROW">BOOST_NOEXCEPT_OR_NOTHROW</a> <i class="doc">/** <span class="command">@endcond</span> */</i>;</td></tr>
+<tr><th id="955">955</th><td></td></tr>
+<tr><th id="956">956</th><td>} } <i>// namespace</i></td></tr>
+<tr><th id="957">957</th><td></td></tr>
+<tr><th id="958">958</th><td><u>#<span data-ppcond="2">endif</span> // #include guard</u></td></tr>
+<tr><th id="959">959</th><td></td></tr>
+<tr><th id="960">960</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../../../../src/contract.cpp.html'>boost-1.85.0/libs/contract/src/contract.cpp</a><br/>Generated on <em>2024-Jun-14</em> from project boost-1.85.0 revision <em>1.85.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

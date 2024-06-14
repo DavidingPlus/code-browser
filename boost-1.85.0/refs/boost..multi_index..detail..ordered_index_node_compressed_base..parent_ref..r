@@ -1,0 +1,6 @@
+<use f='boost-1.85.0/libs/multi_index/include/boost/multi_index/detail/ord_index_node.hpp' l='171' u='w' c='_ZN5boost11multi_index6detail34ordered_index_node_compressed_base10parent_refC1EPm'/>
+<use f='boost-1.85.0/libs/multi_index/include/boost/multi_index/detail/ord_index_node.hpp' l='172' u='w' c='_ZN5boost11multi_index6detail34ordered_index_node_compressed_base10parent_refC1ERKS3_'/>
+<use f='boost-1.85.0/libs/multi_index/include/boost/multi_index/detail/ord_index_node.hpp' l='176' u='r' c='_ZNK5boost11multi_index6detail34ordered_index_node_compressed_base10parent_refcvPNS1_23ordered_index_node_implIT_T0_EEEv'/>
+<use f='boost-1.85.0/libs/multi_index/include/boost/multi_index/detail/ord_index_node.hpp' l='181' u='r' c='_ZN5boost11multi_index6detail34ordered_index_node_compressed_base10parent_refaSEPNS1_23ordered_index_node_implIT_T0_EE'/>
+<use f='boost-1.85.0/libs/multi_index/include/boost/multi_index/detail/ord_index_node.hpp' l='181' u='r' c='_ZN5boost11multi_index6detail34ordered_index_node_compressed_base10parent_refaSEPNS1_23ordered_index_node_implIT_T0_EE'/>
+<dec f='boost-1.85.0/libs/multi_index/include/boost/multi_index/detail/ord_index_node.hpp' l='196' type='boost::multi_index::detail::uintptr_type *'/>

@@ -1,0 +1,280 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>actor.hpp source code [boost-1.85.0/libs/phoenix/include/boost/phoenix/core/actor.hpp] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="boost::phoenix::actor,boost::phoenix::detail::error_expecting_arguments,boost::phoenix::detail::error_invalid_lambda_expr,boost::phoenix::detail::result_type_deduction_helper,boost::phoenix::result_of::actor,boost::phoenix::result_of::actor_impl,boost::phoenix::result_of::nullary_actor_result,boost::result_of "/>
+<link rel="stylesheet" href="../../../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'boost-1.85.0/libs/phoenix/include/boost/phoenix/core/actor.hpp'; var root_path = '../../../../../../..'; var data_path = '../../../../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../../../..'>boost-1.85.0</a>/<a href='../../../../..'>libs</a>/<a href='../../../..'>phoenix</a>/<a href='../../..'>include</a>/<a href='../..'>boost</a>/<a href='..'>phoenix</a>/<a href='./'>core</a>/<a href='actor.hpp.html'>actor.hpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*=============================================================================</i></td></tr>
+<tr><th id="2">2</th><td><i>    Copyright (c) 2005-2010 Joel de Guzman</i></td></tr>
+<tr><th id="3">3</th><td><i>    Copyright (c) 2010 Eric Niebler</i></td></tr>
+<tr><th id="4">4</th><td><i>    Copyright (c) 2010 Thomas Heller</i></td></tr>
+<tr><th id="5">5</th><td><i>    Copyright (c) 2014 John Fletcher</i></td></tr>
+<tr><th id="6">6</th><td><i></i></td></tr>
+<tr><th id="7">7</th><td><i>    Distributed under the Boost Software License, Version 1.0. (See accompanying</i></td></tr>
+<tr><th id="8">8</th><td><i>    file LICENSE_1_0.txt or copy at <a href="http://www.boost.org/LICENSE_1_0.txt">http://www.boost.org/LICENSE_1_0.txt</a>)</i></td></tr>
+<tr><th id="9">9</th><td><i>==============================================================================*/</i></td></tr>
+<tr><th id="10">10</th><td><u>#<span data-ppcond="10">ifndef</span> <span class="macro" data-ref="_M/BOOST_PHOENIX_CORE_ACTOR_HPP">BOOST_PHOENIX_CORE_ACTOR_HPP</span></u></td></tr>
+<tr><th id="11">11</th><td><u>#define <dfn class="macro" id="_M/BOOST_PHOENIX_CORE_ACTOR_HPP" data-ref="_M/BOOST_PHOENIX_CORE_ACTOR_HPP">BOOST_PHOENIX_CORE_ACTOR_HPP</dfn></u></td></tr>
+<tr><th id="12">12</th><td></td></tr>
+<tr><th id="13">13</th><td><u>#include <a href="limits.hpp.html">&lt;boost/phoenix/core/limits.hpp&gt;</a></u></td></tr>
+<tr><th id="14">14</th><td></td></tr>
+<tr><th id="15">15</th><td><u>#include <a href="../../../../../bind/include/boost/is_placeholder.hpp.html">&lt;boost/is_placeholder.hpp&gt;</a></u></td></tr>
+<tr><th id="16">16</th><td><u>#include <a href="../../../../../mpl/include/boost/mpl/identity.hpp.html">&lt;boost/mpl/identity.hpp&gt;</a></u></td></tr>
+<tr><th id="17">17</th><td><u>#include <a href="../../../../../mpl/include/boost/mpl/eval_if.hpp.html">&lt;boost/mpl/eval_if.hpp&gt;</a></u></td></tr>
+<tr><th id="18">18</th><td><u>#include <a href="domain.hpp.html">&lt;boost/phoenix/core/domain.hpp&gt;</a></u></td></tr>
+<tr><th id="19">19</th><td><u>#include <a href="environment.hpp.html">&lt;boost/phoenix/core/environment.hpp&gt;</a></u></td></tr>
+<tr><th id="20">20</th><td><u>#include <a href="is_nullary.hpp.html">&lt;boost/phoenix/core/is_nullary.hpp&gt;</a></u></td></tr>
+<tr><th id="21">21</th><td><u>#include <a href="meta_grammar.hpp.html">&lt;boost/phoenix/core/meta_grammar.hpp&gt;</a></u></td></tr>
+<tr><th id="22">22</th><td><u>#include <a href="../support/iterate.hpp.html">&lt;boost/phoenix/support/iterate.hpp&gt;</a></u></td></tr>
+<tr><th id="23">23</th><td><u>#include <a href="../support/vector.hpp.html">&lt;boost/phoenix/support/vector.hpp&gt;</a></u></td></tr>
+<tr><th id="24">24</th><td><u>#include <a href="../../../../../proto/include/boost/proto/extends.hpp.html">&lt;boost/proto/extends.hpp&gt;</a></u></td></tr>
+<tr><th id="25">25</th><td><u>#include <a href="../../../../../proto/include/boost/proto/make_expr.hpp.html">&lt;boost/proto/make_expr.hpp&gt;</a></u></td></tr>
+<tr><th id="26">26</th><td><u>#include <a href="../../../../../utility/include/boost/utility/result_of.hpp.html">&lt;boost/utility/result_of.hpp&gt;</a></u></td></tr>
+<tr><th id="27">27</th><td><u>#include <a href="../../../../../mpl/include/boost/mpl/void.hpp.html">&lt;boost/mpl/void.hpp&gt;</a></u></td></tr>
+<tr><th id="28">28</th><td><u>#include <a href="../../../../../../../include/c++/9/cstring.html">&lt;cstring&gt;</a></u></td></tr>
+<tr><th id="29">29</th><td><u>#<span data-ppcond="29">ifndef</span> <span class="macro" data-ref="_M/BOOST_PHOENIX_NO_VARIADIC_ACTOR">BOOST_PHOENIX_NO_VARIADIC_ACTOR</span></u></td></tr>
+<tr><th id="30">30</th><td><u>#   include <a href="../../../../../mpl/include/boost/mpl/if.hpp.html">&lt;boost/mpl/if.hpp&gt;</a></u></td></tr>
+<tr><th id="31">31</th><td><u>#   include <a href="../../../../../type_traits/include/boost/type_traits/is_reference.hpp.html">&lt;boost/type_traits/is_reference.hpp&gt;</a></u></td></tr>
+<tr><th id="32">32</th><td><u>#   include <a href="detail/index_sequence.hpp.html">&lt;boost/phoenix/core/detail/index_sequence.hpp&gt;</a></u></td></tr>
+<tr><th id="33">33</th><td><u>#<span data-ppcond="29">endif</span></u></td></tr>
+<tr><th id="34">34</th><td></td></tr>
+<tr><th id="35">35</th><td><u>#<span data-ppcond="35">ifdef</span> <span class="macro" data-ref="_M/BOOST_MSVC">BOOST_MSVC</span></u></td></tr>
+<tr><th id="36">36</th><td><u>#pragma warning(push)</u></td></tr>
+<tr><th id="37">37</th><td><u>#pragma warning(disable: 4522) // 'this' used in base member initializer list</u></td></tr>
+<tr><th id="38">38</th><td><u>#pragma warning(disable: 4510) // default constructor could not be generated</u></td></tr>
+<tr><th id="39">39</th><td><u>#pragma warning(disable: 4610) // can never be instantiated - user defined cons</u></td></tr>
+<tr><th id="40">40</th><td><u>#<span data-ppcond="35">endif</span></u></td></tr>
+<tr><th id="41">41</th><td></td></tr>
+<tr><th id="42">42</th><td><b>namespace</b> <span class="namespace">boost</span> { <b>namespace</b> <span class="namespace">phoenix</span></td></tr>
+<tr><th id="43">43</th><td>{</td></tr>
+<tr><th id="44">44</th><td>    <b>template</b> &lt;<b>typename</b> Expr&gt;</td></tr>
+<tr><th id="45">45</th><td>    <b>struct</b> <a class="type" href="#boost::phoenix::actor" title='boost::phoenix::actor' data-ref="boost::phoenix::actor">actor</a>;</td></tr>
+<tr><th id="46">46</th><td></td></tr>
+<tr><th id="47">47</th><td>    <b>namespace</b> <span class="namespace">detail</span></td></tr>
+<tr><th id="48">48</th><td>    {</td></tr>
+<tr><th id="49">49</th><td>        <b>struct</b> <dfn class="type def" id="boost::phoenix::detail::error_expecting_arguments" title='boost::phoenix::detail::error_expecting_arguments' data-ref="boost::phoenix::detail::error_expecting_arguments">error_expecting_arguments</dfn></td></tr>
+<tr><th id="50">50</th><td>        {</td></tr>
+<tr><th id="51">51</th><td>            <b>template</b> &lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="52">52</th><td>            <dfn class="decl def fn" id="_ZN5boost7phoenix6detail25error_expecting_argumentsC1ERKT_" title='boost::phoenix::detail::error_expecting_arguments::error_expecting_arguments' data-ref="_ZN5boost7phoenix6detail25error_expecting_argumentsC1ERKT_">error_expecting_arguments</dfn>(T <em>const</em>&amp;) {}</td></tr>
+<tr><th id="53">53</th><td>        };</td></tr>
+<tr><th id="54">54</th><td></td></tr>
+<tr><th id="55">55</th><td>        <b>struct</b> <dfn class="type def" id="boost::phoenix::detail::error_invalid_lambda_expr" title='boost::phoenix::detail::error_invalid_lambda_expr' data-ref="boost::phoenix::detail::error_invalid_lambda_expr">error_invalid_lambda_expr</dfn></td></tr>
+<tr><th id="56">56</th><td>        {</td></tr>
+<tr><th id="57">57</th><td>            <b>template</b> &lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="58">58</th><td>            <dfn class="decl def fn" id="_ZN5boost7phoenix6detail25error_invalid_lambda_exprC1ERKT_" title='boost::phoenix::detail::error_invalid_lambda_expr::error_invalid_lambda_expr' data-ref="_ZN5boost7phoenix6detail25error_invalid_lambda_exprC1ERKT_">error_invalid_lambda_expr</dfn>(T <em>const</em>&amp;) {}</td></tr>
+<tr><th id="59">59</th><td>        };</td></tr>
+<tr><th id="60">60</th><td></td></tr>
+<tr><th id="61">61</th><td>        <b>template</b> &lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="62">62</th><td>        <b>struct</b> <dfn class="type def" id="boost::phoenix::detail::result_type_deduction_helper" title='boost::phoenix::detail::result_type_deduction_helper' data-ref="boost::phoenix::detail::result_type_deduction_helper">result_type_deduction_helper</dfn></td></tr>
+<tr><th id="63">63</th><td>        {</td></tr>
+<tr><th id="64">64</th><td>            <b>typedef</b> T <em>const</em> &amp; <dfn class="typedef" id="boost::phoenix::detail::result_type_deduction_helper::type" title='boost::phoenix::detail::result_type_deduction_helper::type' data-type='const T &amp;' data-ref="boost::phoenix::detail::result_type_deduction_helper::type">type</dfn>;</td></tr>
+<tr><th id="65">65</th><td>        };</td></tr>
+<tr><th id="66">66</th><td></td></tr>
+<tr><th id="67">67</th><td>        <b>template</b> &lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="68">68</th><td>        <b>struct</b> <dfn class="type def" id="boost::phoenix::detail::result_type_deduction_helper" title='boost::phoenix::detail::result_type_deduction_helper' data-ref="boost::phoenix::detail::result_type_deduction_helper">result_type_deduction_helper</dfn>&lt;T &amp;&gt;</td></tr>
+<tr><th id="69">69</th><td>        {</td></tr>
+<tr><th id="70">70</th><td>            <b>typedef</b> T &amp; <dfn class="typedef" id="boost::phoenix::detail::result_type_deduction_helper{type-parameter-0-0&amp;}::type" title='boost::phoenix::detail::result_type_deduction_helper&lt;type-parameter-0-0 &amp;&gt;::type' data-type='T &amp;' data-ref="boost::phoenix::detail::result_type_deduction_helper{type-parameter-0-0&amp;}::type">type</dfn>;</td></tr>
+<tr><th id="71">71</th><td>        };</td></tr>
+<tr><th id="72">72</th><td></td></tr>
+<tr><th id="73">73</th><td>        <b>template</b> &lt;<b>typename</b> T&gt;</td></tr>
+<tr><th id="74">74</th><td>        <b>struct</b> <dfn class="type def" id="boost::phoenix::detail::result_type_deduction_helper" title='boost::phoenix::detail::result_type_deduction_helper' data-ref="boost::phoenix::detail::result_type_deduction_helper">result_type_deduction_helper</dfn>&lt;T <em>const</em> &amp;&gt;</td></tr>
+<tr><th id="75">75</th><td>        {</td></tr>
+<tr><th id="76">76</th><td>            <b>typedef</b> T <em>const</em> &amp; <dfn class="typedef" id="boost::phoenix::detail::result_type_deduction_helper{consttype-parameter-0-0&amp;}::type" title='boost::phoenix::detail::result_type_deduction_helper&lt;const type-parameter-0-0 &amp;&gt;::type' data-type='const T &amp;' data-ref="boost::phoenix::detail::result_type_deduction_helper{consttype-parameter-0-0&amp;}::type">type</dfn>;</td></tr>
+<tr><th id="77">77</th><td>        };</td></tr>
+<tr><th id="78">78</th><td>    }</td></tr>
+<tr><th id="79">79</th><td></td></tr>
+<tr><th id="80">80</th><td>    <b>namespace</b> <span class="namespace">result_of</span></td></tr>
+<tr><th id="81">81</th><td>    {</td></tr>
+<tr><th id="82">82</th><td><u>#<span data-ppcond="82">ifdef</span> <span class="macro" data-ref="_M/BOOST_PHOENIX_NO_VARIADIC_ACTOR">BOOST_PHOENIX_NO_VARIADIC_ACTOR</span></u></td></tr>
+<tr><th id="83">83</th><td>        <i>// Bring in the result_of::actor&lt;&gt;</i></td></tr>
+<tr><th id="84">84</th><td>        <u>#include &lt;boost/phoenix/core/detail/cpp03/actor_result_of.hpp&gt;</u></td></tr>
+<tr><th id="85">85</th><td><u>#<span data-ppcond="82">else</span></u></td></tr>
+<tr><th id="86">86</th><td>        <b>template</b> &lt;<b>typename</b> Expr, <b>typename</b>... A&gt;</td></tr>
+<tr><th id="87">87</th><td>        <b>struct</b> <dfn class="type def" id="boost::phoenix::result_of::actor_impl" title='boost::phoenix::result_of::actor_impl' data-ref="boost::phoenix::result_of::actor_impl">actor_impl</dfn></td></tr>
+<tr><th id="88">88</th><td>        {</td></tr>
+<tr><th id="89">89</th><td>            <b>typedef</b></td></tr>
+<tr><th id="90">90</th><td>                <b>typename</b> <span class="namespace">boost::phoenix::</span><a class="type" href="meta_grammar.hpp.html#boost::phoenix::evaluator" title='boost::phoenix::evaluator' data-ref="boost::phoenix::evaluator">evaluator</a>::<a class="type" href="meta_grammar.hpp.html#boost::phoenix::evaluator::impl" title='boost::phoenix::evaluator::impl' data-ref="boost::phoenix::evaluator::impl">impl</a>&lt;</td></tr>
+<tr><th id="91">91</th><td>                    Expr <em>const</em>&amp;</td></tr>
+<tr><th id="92">92</th><td>                  , <a class="type" href="../support/preprocessed/vector_10.hpp.html#boost::phoenix::vector2" title='boost::phoenix::vector2' data-ref="boost::phoenix::vector2">vector2</a>&lt;</td></tr>
+<tr><th id="93">93</th><td>                        <b>typename</b> <a class="type" href="../support/preprocessed/vector_10.hpp.html#boost::phoenix::vector_chooser" title='boost::phoenix::vector_chooser' data-ref="boost::phoenix::vector_chooser">vector_chooser</a>&lt;<b>sizeof</b>...(A) + <var>1</var>&gt;::</td></tr>
+<tr><th id="94">94</th><td>                          <b>template</b> apply&lt;<em>const</em> <span class="namespace">::boost::phoenix::</span><a class="type" href="../../../../../log/include/boost/log/expressions/keyword_fwd.hpp.html#boost::phoenix::actor" title='boost::phoenix::actor' data-ref="boost::phoenix::actor">actor</a>&lt;Expr&gt; *, A...&gt;::type&amp;</td></tr>
+<tr><th id="95">95</th><td>                      , <a class="type" href="meta_grammar.hpp.html#boost::phoenix::default_actions" title='boost::phoenix::default_actions' data-ref="boost::phoenix::default_actions">default_actions</a></td></tr>
+<tr><th id="96">96</th><td>                    &gt; <em>const</em> &amp;</td></tr>
+<tr><th id="97">97</th><td>                  , <span class="namespace">proto::</span>empty_env</td></tr>
+<tr><th id="98">98</th><td>                &gt;::result_type</td></tr>
+<tr><th id="99">99</th><td>                <dfn class="typedef" id="boost::phoenix::result_of::actor_impl::type" title='boost::phoenix::result_of::actor_impl::type' data-type='typename boost::phoenix::evaluator::impl&lt;const Expr &amp;, const vector2&lt;typename vector_chooser&lt;sizeof...(A) + 1&gt;::template apply&lt;const ::boost::phoenix::actor&lt;Expr&gt; *, A...&gt;::type &amp;, default_actions&gt; &amp;, proto::empty_env&gt;::result_type' data-ref="boost::phoenix::result_of::actor_impl::type">type</dfn>;</td></tr>
+<tr><th id="100">100</th><td>        };</td></tr>
+<tr><th id="101">101</th><td></td></tr>
+<tr><th id="102">102</th><td>        <b>template</b> &lt;<b>typename</b> Expr, <b>typename</b>... A&gt;</td></tr>
+<tr><th id="103">103</th><td>        <b>struct</b> <dfn class="type def" id="boost::phoenix::result_of::actor" title='boost::phoenix::result_of::actor' data-ref="boost::phoenix::result_of::actor">actor</dfn> : <a class="type" href="#boost::phoenix::result_of::actor_impl" title='boost::phoenix::result_of::actor_impl' data-ref="boost::phoenix::result_of::actor_impl">actor_impl</a>&lt;Expr, A...&gt; {};</td></tr>
+<tr><th id="104">104</th><td></td></tr>
+<tr><th id="105">105</th><td>        <b>template</b> &lt;<b>typename</b> Expr&gt;</td></tr>
+<tr><th id="106">106</th><td>        <b>struct</b> <dfn class="type def" id="boost::phoenix::result_of::nullary_actor_result" title='boost::phoenix::result_of::nullary_actor_result' data-ref="boost::phoenix::result_of::nullary_actor_result">nullary_actor_result</dfn> : <a class="type" href="#boost::phoenix::result_of::actor_impl" title='boost::phoenix::result_of::actor_impl' data-ref="boost::phoenix::result_of::actor_impl">actor_impl</a>&lt;Expr&gt; {};</td></tr>
+<tr><th id="107">107</th><td><u>#<span data-ppcond="82">endif</span></u></td></tr>
+<tr><th id="108">108</th><td></td></tr>
+<tr><th id="109">109</th><td>        <b>template</b> &lt;<b>typename</b> Expr&gt;</td></tr>
+<tr><th id="110">110</th><td>        <b>struct</b> <dfn class="type def" id="boost::phoenix::result_of::actor" title='boost::phoenix::result_of::actor' data-ref="boost::phoenix::result_of::actor">actor</dfn>&lt;Expr&gt;</td></tr>
+<tr><th id="111">111</th><td>        {</td></tr>
+<tr><th id="112">112</th><td>            <b>typedef</b></td></tr>
+<tr><th id="113">113</th><td>                <i>// avoid calling result_of::actor when this is false</i></td></tr>
+<tr><th id="114">114</th><td>                <b>typename</b> <span class="namespace">mpl::</span><a class="type" href="../../../../../mpl/include/boost/mpl/eval_if.hpp.html#boost::mpl::eval_if_c" title='boost::mpl::eval_if_c' data-ref="boost::mpl::eval_if_c">eval_if_c</a>&lt;</td></tr>
+<tr><th id="115">115</th><td>                    <span class="namespace">result_of::</span><a class="type" href="is_nullary.hpp.html#boost::phoenix::result_of::is_nullary" title='boost::phoenix::result_of::is_nullary' data-ref="boost::phoenix::result_of::is_nullary">is_nullary</a>&lt;Expr&gt;::value</td></tr>
+<tr><th id="116">116</th><td>                  , <a class="type" href="#boost::phoenix::result_of::nullary_actor_result" title='boost::phoenix::result_of::nullary_actor_result' data-ref="boost::phoenix::result_of::nullary_actor_result">nullary_actor_result</a>&lt;Expr&gt;</td></tr>
+<tr><th id="117">117</th><td>                  , <span class="namespace">mpl::</span><a class="type" href="../../../../../mpl/include/boost/mpl/identity.hpp.html#boost::mpl::identity" title='boost::mpl::identity' data-ref="boost::mpl::identity">identity</a>&lt;<span class="namespace">detail::</span><a class="type" href="#boost::phoenix::detail::error_expecting_arguments" title='boost::phoenix::detail::error_expecting_arguments' data-ref="boost::phoenix::detail::error_expecting_arguments">error_expecting_arguments</a>&gt;</td></tr>
+<tr><th id="118">118</th><td>                &gt;::type</td></tr>
+<tr><th id="119">119</th><td>            <dfn class="typedef" id="boost::phoenix::result_of::actor{type-parameter-0-0}::type" title='boost::phoenix::result_of::actor&lt;type-parameter-0-0&gt;::type' data-type='typename mpl::eval_if_c&lt;result_of::is_nullary&lt;Expr&gt;::value, nullary_actor_result&lt;Expr&gt;, mpl::identity&lt;detail::error_expecting_arguments&gt;&gt;::type' data-ref="boost::phoenix::result_of::actor{type-parameter-0-0}::type">type</dfn>;</td></tr>
+<tr><th id="120">120</th><td>        };</td></tr>
+<tr><th id="121">121</th><td>    }</td></tr>
+<tr><th id="122">122</th><td></td></tr>
+<tr><th id="123">123</th><td>    <i>////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="124">124</th><td><i>    //</i></td></tr>
+<tr><th id="125">125</th><td><i>    //  actor</i></td></tr>
+<tr><th id="126">126</th><td><i>    //</i></td></tr>
+<tr><th id="127">127</th><td><i>    //      The actor class. The main thing! In phoenix, everything is an actor</i></td></tr>
+<tr><th id="128">128</th><td><i>    //      This class is responsible for full function evaluation. Partial</i></td></tr>
+<tr><th id="129">129</th><td><i>    //      function evaluation involves creating a hierarchy of actor objects.</i></td></tr>
+<tr><th id="130">130</th><td><i>    //</i></td></tr>
+<tr><th id="131">131</th><td><i>    ////////////////////////////////////////////////////////////////////////////</i></td></tr>
+<tr><th id="132">132</th><td><u>#<span data-ppcond="132">if</span> defined <span class="macro" data-ref="_M/__clang__">__clang__</span> &amp;&amp; defined <span class="macro" data-ref="_M/__has_warning">__has_warning</span></u></td></tr>
+<tr><th id="133">133</th><td><u>#  pragma clang diagnostic push</u></td></tr>
+<tr><th id="134">134</th><td><u>#  <span data-ppcond="134">if</span> <span class="macro" title="" data-ref="_M/__has_warning">__has_warning</span>("-Wdeprecated-copy")</u></td></tr>
+<tr><th id="135">135</th><td><u>#    pragma clang diagnostic ignored "-Wdeprecated-copy"</u></td></tr>
+<tr><th id="136">136</th><td><u>#  <span data-ppcond="134">endif</span></u></td></tr>
+<tr><th id="137">137</th><td><u>#<span data-ppcond="132">endif</span></u></td></tr>
+<tr><th id="138">138</th><td>    <b>template</b> &lt;<b>typename</b> Expr&gt;</td></tr>
+<tr><th id="139">139</th><td>    <b>struct</b> <dfn class="type def" id="boost::phoenix::actor" title='boost::phoenix::actor' data-ref="boost::phoenix::actor">actor</dfn></td></tr>
+<tr><th id="140">140</th><td>    {</td></tr>
+<tr><th id="141">141</th><td>        <b>typedef</b> <b>typename</b></td></tr>
+<tr><th id="142">142</th><td>            <span class="namespace">mpl::</span><a class="type" href="../../../../../mpl/include/boost/mpl/eval_if.hpp.html#boost::mpl::eval_if_c" title='boost::mpl::eval_if_c' data-ref="boost::mpl::eval_if_c">eval_if_c</a>&lt;</td></tr>
+<tr><th id="143">143</th><td>                <span class="namespace">mpl::</span><a class="type" href="../../../../../mpl/include/boost/mpl/aux_/preprocessed/gcc/or.hpp.html#boost::mpl::or_" title='boost::mpl::or_' data-ref="boost::mpl::or_">or_</a>&lt;</td></tr>
+<tr><th id="144">144</th><td>                    <a class="type" href="terminal_fwd.hpp.html#boost::phoenix::is_custom_terminal" title='boost::phoenix::is_custom_terminal' data-ref="boost::phoenix::is_custom_terminal">is_custom_terminal</a>&lt;Expr&gt;</td></tr>
+<tr><th id="145">145</th><td>                  , <span class="namespace">mpl::</span><a class="type" href="../../../../../mpl/include/boost/mpl/bool_fwd.hpp.html#mpl_::bool_" title='mpl_::bool_' data-ref="mpl_::bool_">bool_</a>&lt;<a class="type" href="../../../../../bind/include/boost/is_placeholder.hpp.html#boost::is_placeholder" title='boost::is_placeholder' data-ref="boost::is_placeholder">is_placeholder</a>&lt;Expr&gt;::value&gt;</td></tr>
+<tr><th id="146">146</th><td>                &gt;::value</td></tr>
+<tr><th id="147">147</th><td>              , <span class="namespace">proto::</span><a class="type" href="../../../../../proto/include/boost/proto/proto_fwd.hpp.html#boost::proto::terminal" title='boost::proto::terminal' data-ref="boost::proto::terminal">terminal</a>&lt;Expr&gt;</td></tr>
+<tr><th id="148">148</th><td>              , <span class="namespace">mpl::</span><a class="type" href="../../../../../mpl/include/boost/mpl/identity.hpp.html#boost::mpl::identity" title='boost::mpl::identity' data-ref="boost::mpl::identity">identity</a>&lt;Expr&gt;</td></tr>
+<tr><th id="149">149</th><td>            &gt;::type</td></tr>
+<tr><th id="150">150</th><td>            <dfn class="typedef" id="boost::phoenix::actor::expr_type" title='boost::phoenix::actor::expr_type' data-type='typename mpl::eval_if_c&lt;mpl::or_&lt;is_custom_terminal&lt;Expr&gt;, mpl::bool_&lt;is_placeholder&lt;Expr&gt;::value&gt;&gt;::value, proto::terminal&lt;Expr&gt;, mpl::identity&lt;Expr&gt;&gt;::type' data-ref="boost::phoenix::actor::expr_type">expr_type</dfn>;</td></tr>
+<tr><th id="151">151</th><td></td></tr>
+<tr><th id="152">152</th><td>        <a class="macro" href="../../../../../proto/include/boost/proto/extends.hpp.html#214" title="expr_type proto_expr_; typedef expr_type proto_base_expr_; typedef typename proto_base_expr_::proto_base_expr proto_base_expr; typedef phoenix_domain proto_domain; typedef actor&lt;Expr&gt; proto_derived_expr; typedef phoenix_domain::proto_generator proto_generator; typedef typename proto_base_expr::proto_tag proto_tag; typedef typename proto_base_expr::proto_args proto_args; typedef typename proto_base_expr::proto_arity proto_arity; typedef typename proto_base_expr::proto_grammar proto_grammar; typedef typename proto_base_expr::address_of_hack_type_ proto_address_of_hack_type_; typedef void proto_is_expr_; static const long proto_arity_c = proto_base_expr::proto_arity_c; typedef boost::proto::tag::proto_expr&lt;proto_tag, proto_domain&gt; fusion_tag; typedef typename proto_base_expr::proto_child0 proto_child0; typedef typename proto_base_expr::proto_child1 proto_child1; typedef typename proto_base_expr::proto_child2 proto_child2; typedef typename proto_base_expr::proto_child3 proto_child3; typedef typename proto_base_expr::proto_child4 proto_child4; typedef typename proto_base_expr::proto_child5 proto_child5; typedef typename proto_base_expr::proto_child6 proto_child6; typedef typename proto_base_expr::proto_child7 proto_child7; typedef typename proto_base_expr::proto_child8 proto_child8; typedef typename proto_base_expr::proto_child9 proto_child9; inline __attribute__ ((__always_inline__)) static proto_derived_expr const make(expr_type const &amp;e) { proto_derived_expr that = {e}; return that; } inline __attribute__ ((__always_inline__)) proto_base_expr &amp;proto_base() { return this-&gt;proto_expr_.proto_base(); } inline __attribute__ ((__always_inline__)) proto_base_expr const &amp;proto_base() const { return this-&gt;proto_expr_.proto_base(); } inline __attribute__ ((__always_inline__)) operator proto_address_of_hack_type_() const { return boost::addressof(this-&gt;proto_base().child0); } typedef void proto_is_aggregate_;" data-ref="_M/BOOST_PROTO_BASIC_EXTENDS">BOOST_PROTO_BASIC_EXTENDS</a>(<a class="typedef" href="#boost::phoenix::actor::expr_type" title='boost::phoenix::actor::expr_type' data-type='typename mpl::eval_if_c&lt;mpl::or_&lt;is_custom_terminal&lt;Expr&gt;, mpl::bool_&lt;is_placeholder&lt;Expr&gt;::value&gt;&gt;::value, proto::terminal&lt;Expr&gt;, mpl::identity&lt;Expr&gt;&gt;::type' data-ref="boost::phoenix::actor::expr_type">expr_type</a>, <a class="type" href="../../../../../log/include/boost/log/expressions/keyword_fwd.hpp.html#boost::phoenix::actor" title='boost::phoenix::actor' data-ref="boost::phoenix::actor">actor</a>&lt;Expr&gt;, <a class="type" href="domain.hpp.html#boost::phoenix::phoenix_domain" title='boost::phoenix::phoenix_domain' data-ref="boost::phoenix::phoenix_domain">phoenix_domain</a>)</td></tr>
+<tr><th id="153">153</th><td>        <a class="macro" href="../../../../../proto/include/boost/proto/extends.hpp.html#389" title="template&lt;typename A&gt; inline __attribute__ ((__always_inline__)) typename boost::tr1_result_of&lt; proto_generator( typename boost::proto::base_expr&lt; proto_domain , boost::proto::tag::subscript , boost::proto::list2&lt; proto_derived_expr const &amp; , typename boost::proto::result_of::as_child&lt;A , proto_domain&gt;::type &gt; &gt;::type ) &gt;::type const operator [](A &amp;a) const { typedef typename boost::proto::base_expr&lt; proto_domain , boost::proto::tag::subscript , boost::proto::list2&lt; proto_derived_expr const &amp; , typename boost::proto::result_of::as_child&lt;A , proto_domain&gt;::type &gt; &gt;::type that_type; that_type const that = { *static_cast&lt;proto_derived_expr const *&gt;(this) , boost::proto::as_child&lt;proto_domain&gt;(a) }; return proto_generator()(that); } template&lt;typename A&gt; inline __attribute__ ((__always_inline__)) typename boost::tr1_result_of&lt; proto_generator( typename boost::proto::base_expr&lt; proto_domain , boost::proto::tag::subscript , boost::proto::list2&lt; proto_derived_expr const &amp; , typename boost::proto::result_of::as_child&lt;A const, proto_domain&gt;::type &gt; &gt;::type ) &gt;::type const operator [](A const &amp;a) const { typedef typename boost::proto::base_expr&lt; proto_domain , boost::proto::tag::subscript , boost::proto::list2&lt; proto_derived_expr const &amp; , typename boost::proto::result_of::as_child&lt;A const, proto_domain&gt;::type &gt; &gt;::type that_type; that_type const that = { *static_cast&lt;proto_derived_expr const *&gt;(this) , boost::proto::as_child&lt;proto_domain&gt;(a) }; return proto_generator()(that); } template&lt;typename A&gt; inline __attribute__ ((__always_inline__)) typename boost::tr1_result_of&lt; proto_generator( typename boost::proto::base_expr&lt; proto_domain , boost::proto::tag::subscript , boost::proto::list2&lt; proto_derived_expr &amp; , typename boost::proto::result_of::as_child&lt;A , proto_domain&gt;::type &gt; &gt;::type ) &gt;::type const operator [](A &amp;a) { typedef typename boost::proto::base_expr&lt; proto_domain , boost::proto::tag::subscript , boost::proto::list2&lt; proto_derived_expr &amp; , typename boost::proto::result_of::as_child&lt;A , proto_domain&gt;::type &gt; &gt;::type that_type; that_type const that = { *static_cast&lt;proto_derived_expr *&gt;(this) , boost::proto::as_child&lt;proto_domain&gt;(a) }; return proto_generator()(that); } template&lt;typename A&gt; inline __attribute__ ((__always_inline__)) typename boost::tr1_result_of&lt; proto_generator( typename boost::proto::base_expr&lt; proto_domain , boost::proto::tag::subscript , boost::proto::list2&lt; proto_derived_expr &amp; , typename boost::proto::result_of::as_child&lt;A const, proto_domain&gt;::type &gt; &gt;::type ) &gt;::type const operator [](A const &amp;a) { typedef typename boost::proto::base_expr&lt; proto_domain , boost::proto::tag::subscript , boost::proto::list2&lt; proto_derived_expr &amp; , typename boost::proto::result_of::as_child&lt;A const, proto_domain&gt;::type &gt; &gt;::type that_type; that_type const that = { *static_cast&lt;proto_derived_expr *&gt;(this) , boost::proto::as_child&lt;proto_domain&gt;(a) }; return proto_generator()(that); }" data-ref="_M/BOOST_PROTO_EXTENDS_SUBSCRIPT">BOOST_PROTO_EXTENDS_SUBSCRIPT</a>()</td></tr>
+<tr><th id="154">154</th><td>        <a class="macro" href="../../../../../proto/include/boost/proto/extends.hpp.html#319" title="template&lt;typename A&gt; inline __attribute__ ((__always_inline__)) typename boost::tr1_result_of&lt; proto_generator( typename boost::proto::base_expr&lt; proto_domain , boost::proto::tag::assign , boost::proto::list2&lt; proto_derived_expr const &amp; , typename boost::proto::result_of::as_child&lt;A , proto_domain&gt;::type &gt; &gt;::type ) &gt;::type const operator =(A &amp;a) const { typedef typename boost::proto::base_expr&lt; proto_domain , boost::proto::tag::assign , boost::proto::list2&lt; proto_derived_expr const &amp; , typename boost::proto::result_of::as_child&lt;A , proto_domain&gt;::type &gt; &gt;::type that_type; that_type const that = { *static_cast&lt;proto_derived_expr const *&gt;(this) , boost::proto::as_child&lt;proto_domain&gt;(a) }; return proto_generator()(that); } template&lt;typename A&gt; inline __attribute__ ((__always_inline__)) typename boost::tr1_result_of&lt; proto_generator( typename boost::proto::base_expr&lt; proto_domain , boost::proto::tag::assign , boost::proto::list2&lt; proto_derived_expr const &amp; , typename boost::proto::result_of::as_child&lt;A const, proto_domain&gt;::type &gt; &gt;::type ) &gt;::type const operator =(A const &amp;a) const { typedef typename boost::proto::base_expr&lt; proto_domain , boost::proto::tag::assign , boost::proto::list2&lt; proto_derived_expr const &amp; , typename boost::proto::result_of::as_child&lt;A const, proto_domain&gt;::type &gt; &gt;::type that_type; that_type const that = { *static_cast&lt;proto_derived_expr const *&gt;(this) , boost::proto::as_child&lt;proto_domain&gt;(a) }; return proto_generator()(that); } template&lt;typename A&gt; inline __attribute__ ((__always_inline__)) typename boost::tr1_result_of&lt; proto_generator( typename boost::proto::base_expr&lt; proto_domain , boost::proto::tag::assign , boost::proto::list2&lt; proto_derived_expr &amp; , typename boost::proto::result_of::as_child&lt;A , proto_domain&gt;::type &gt; &gt;::type ) &gt;::type const operator =(A &amp;a) { typedef typename boost::proto::base_expr&lt; proto_domain , boost::proto::tag::assign , boost::proto::list2&lt; proto_derived_expr &amp; , typename boost::proto::result_of::as_child&lt;A , proto_domain&gt;::type &gt; &gt;::type that_type; that_type const that = { *static_cast&lt;proto_derived_expr *&gt;(this) , boost::proto::as_child&lt;proto_domain&gt;(a) }; return proto_generator()(that); } template&lt;typename A&gt; inline __attribute__ ((__always_inline__)) typename boost::tr1_result_of&lt; proto_generator( typename boost::proto::base_expr&lt; proto_domain , boost::proto::tag::assign , boost::proto::list2&lt; proto_derived_expr &amp; , typename boost::proto::result_of::as_child&lt;A const, proto_domain&gt;::type &gt; &gt;::type ) &gt;::type const operator =(A const &amp;a) { typedef typename boost::proto::base_expr&lt; proto_domain , boost::proto::tag::assign , boost::proto::list2&lt; proto_derived_expr &amp; , typename boost::proto::result_of::as_child&lt;A const, proto_domain&gt;::type &gt; &gt;::type that_type; that_type const that = { *static_cast&lt;proto_derived_expr *&gt;(this) , boost::proto::as_child&lt;proto_domain&gt;(a) }; return proto_generator()(that); }" data-ref="_M/BOOST_PROTO_EXTENDS_ASSIGN_">BOOST_PROTO_EXTENDS_ASSIGN_</a>()</td></tr>
+<tr><th id="155">155</th><td></td></tr>
+<tr><th id="156">156</th><td>        <b>template</b> &lt;<b>typename</b> Sig&gt;</td></tr>
+<tr><th id="157">157</th><td>        <b>struct</b> <dfn class="type" id="boost::phoenix::actor::result" title='boost::phoenix::actor::result' data-ref="boost::phoenix::actor::result">result</dfn>;</td></tr>
+<tr><th id="158">158</th><td></td></tr>
+<tr><th id="159">159</th><td>        <b>typename</b> <span class="namespace">result_of::</span><a class="type" href="#boost::phoenix::result_of::actor" title='boost::phoenix::result_of::actor' data-ref="boost::phoenix::result_of::actor">actor</a>&lt;<a class="typedef" href="#152" title='boost::phoenix::actor::proto_base_expr' data-type='typename proto_base_expr_::proto_base_expr' data-ref="boost::phoenix::actor::proto_base_expr">proto_base_expr</a>&gt;::type</td></tr>
+<tr><th id="160">160</th><td>        <dfn class="decl def fn" id="_ZN5boost7phoenix5actorclEv" title='boost::phoenix::actor::operator()' data-ref="_ZN5boost7phoenix5actorclEv"><b>operator</b>()</dfn>()</td></tr>
+<tr><th id="161">161</th><td>        {</td></tr>
+<tr><th id="162">162</th><td>            <b>typedef</b> <a class="type" href="../support/preprocessed/vector_10.hpp.html#boost::phoenix::vector1" title='boost::phoenix::vector1' data-ref="boost::phoenix::vector1">vector1</a>&lt;<em>const</em> <a class="type" href="../../../../../log/include/boost/log/expressions/keyword_fwd.hpp.html#boost::phoenix::actor" title='boost::phoenix::actor' data-ref="boost::phoenix::actor">actor</a>&lt;Expr&gt; *&gt; <dfn class="local col6 typedef" id="1266env_type" title='env_type' data-type='vector1&lt;const actor&lt;Expr&gt; *&gt;' data-ref="1266env_type">env_type</dfn>;</td></tr>
+<tr><th id="163">163</th><td>            <a class="local col6 typedef" href="#1266env_type" title='env_type' data-type='vector1&lt;const actor&lt;Expr&gt; *&gt;' data-ref="1266env_type">env_type</a> <dfn class="local col7 decl" id="1267env" title='env' data-type='env_type' data-ref="1267env">env</dfn> = {<b>this</b>};</td></tr>
+<tr><th id="164">164</th><td></td></tr>
+<tr><th id="165">165</th><td>            <b>return</b> <span class="namespace">phoenix::</span>eval(*<b>this</b>, <span class="namespace">phoenix::</span>context(<a class="local col7 ref" href="#1267env" title='env' data-ref="1267env">env</a>, <a class="type" href="meta_grammar.hpp.html#boost::phoenix::default_actions" title='boost::phoenix::default_actions' data-ref="boost::phoenix::default_actions">default_actions</a><a class="ref fn" href="meta_grammar.hpp.html#106" title='boost::phoenix::default_actions::default_actions' data-ref="_ZN5boost7phoenix15default_actionsC1Ev">(</a>)));</td></tr>
+<tr><th id="166">166</th><td>        }</td></tr>
+<tr><th id="167">167</th><td></td></tr>
+<tr><th id="168">168</th><td>        <b>typename</b> <span class="namespace">result_of::</span><a class="type" href="#boost::phoenix::result_of::actor" title='boost::phoenix::result_of::actor' data-ref="boost::phoenix::result_of::actor">actor</a>&lt;<a class="typedef" href="#152" title='boost::phoenix::actor::proto_base_expr' data-type='typename proto_base_expr_::proto_base_expr' data-ref="boost::phoenix::actor::proto_base_expr">proto_base_expr</a>&gt;::type</td></tr>
+<tr><th id="169">169</th><td>        <dfn class="decl def fn" id="_ZNK5boost7phoenix5actorclEv" title='boost::phoenix::actor::operator()' data-ref="_ZNK5boost7phoenix5actorclEv"><b>operator</b>()</dfn>() <em>const</em></td></tr>
+<tr><th id="170">170</th><td>        {</td></tr>
+<tr><th id="171">171</th><td>            <b>typedef</b> <a class="type" href="../support/preprocessed/vector_10.hpp.html#boost::phoenix::vector1" title='boost::phoenix::vector1' data-ref="boost::phoenix::vector1">vector1</a>&lt;<em>const</em> <a class="type" href="../../../../../log/include/boost/log/expressions/keyword_fwd.hpp.html#boost::phoenix::actor" title='boost::phoenix::actor' data-ref="boost::phoenix::actor">actor</a>&lt;Expr&gt; *&gt; <dfn class="local col8 typedef" id="1268env_type" title='env_type' data-type='vector1&lt;const actor&lt;Expr&gt; *&gt;' data-ref="1268env_type">env_type</dfn>;</td></tr>
+<tr><th id="172">172</th><td>            <a class="local col8 typedef" href="#1268env_type" title='env_type' data-type='vector1&lt;const actor&lt;Expr&gt; *&gt;' data-ref="1268env_type">env_type</a> <dfn class="local col9 decl" id="1269env" title='env' data-type='env_type' data-ref="1269env">env</dfn> = {<b>this</b>};</td></tr>
+<tr><th id="173">173</th><td></td></tr>
+<tr><th id="174">174</th><td>            <b>return</b> <span class="namespace">phoenix::</span>eval(*<b>this</b>, <span class="namespace">phoenix::</span>context(<a class="local col9 ref" href="#1269env" title='env' data-ref="1269env">env</a>, <a class="type" href="meta_grammar.hpp.html#boost::phoenix::default_actions" title='boost::phoenix::default_actions' data-ref="boost::phoenix::default_actions">default_actions</a><a class="ref fn" href="meta_grammar.hpp.html#106" title='boost::phoenix::default_actions::default_actions' data-ref="_ZN5boost7phoenix15default_actionsC1Ev">(</a>)));</td></tr>
+<tr><th id="175">175</th><td>        }</td></tr>
+<tr><th id="176">176</th><td></td></tr>
+<tr><th id="177">177</th><td>        <b>template</b> &lt;<b>typename</b> Env&gt;</td></tr>
+<tr><th id="178">178</th><td>        <b>typename</b> <a class="type" href="meta_grammar.hpp.html#boost::phoenix::evaluator" title='boost::phoenix::evaluator' data-ref="boost::phoenix::evaluator">evaluator</a>::<a class="type" href="meta_grammar.hpp.html#boost::phoenix::evaluator::impl" title='boost::phoenix::evaluator::impl' data-ref="boost::phoenix::evaluator::impl">impl</a>&lt;</td></tr>
+<tr><th id="179">179</th><td>            <a class="typedef" href="#152" title='boost::phoenix::actor::proto_base_expr' data-type='typename proto_base_expr_::proto_base_expr' data-ref="boost::phoenix::actor::proto_base_expr">proto_base_expr</a> <em>const</em> &amp;</td></tr>
+<tr><th id="180">180</th><td>          , <b>typename</b> <span class="namespace">result_of::</span><a class="type" href="environment.hpp.html#boost::phoenix::result_of::context" title='boost::phoenix::result_of::context' data-ref="boost::phoenix::result_of::context">context</a>&lt;</td></tr>
+<tr><th id="181">181</th><td>                Env <em>const</em> &amp;</td></tr>
+<tr><th id="182">182</th><td>              , <a class="type" href="meta_grammar.hpp.html#boost::phoenix::default_actions" title='boost::phoenix::default_actions' data-ref="boost::phoenix::default_actions">default_actions</a> <em>const</em> &amp;</td></tr>
+<tr><th id="183">183</th><td>            &gt;::type</td></tr>
+<tr><th id="184">184</th><td>          , <span class="namespace">proto::</span>empty_env</td></tr>
+<tr><th id="185">185</th><td>        &gt;::result_type</td></tr>
+<tr><th id="186">186</th><td>        <dfn class="decl def fn" id="_ZNK5boost7phoenix5actor4evalERKTL0__" title='boost::phoenix::actor::eval' data-ref="_ZNK5boost7phoenix5actor4evalERKTL0__">eval</dfn>(Env <em>const</em> &amp; <dfn class="local col0 decl" id="1270env" title='env' data-type='const Env &amp;' data-ref="1270env">env</dfn>) <em>const</em></td></tr>
+<tr><th id="187">187</th><td>        {</td></tr>
+<tr><th id="188">188</th><td>            <b>return</b> <span class="namespace">phoenix::</span>eval(*<b>this</b>, <span class="namespace">phoenix::</span>context(<a class="local col0 ref" href="#1270env" title='env' data-ref="1270env">env</a>, <a class="type" href="meta_grammar.hpp.html#boost::phoenix::default_actions" title='boost::phoenix::default_actions' data-ref="boost::phoenix::default_actions">default_actions</a><a class="ref fn" href="meta_grammar.hpp.html#106" title='boost::phoenix::default_actions::default_actions' data-ref="_ZN5boost7phoenix15default_actionsC1Ev">(</a>)));</td></tr>
+<tr><th id="189">189</th><td>        }</td></tr>
+<tr><th id="190">190</th><td></td></tr>
+<tr><th id="191">191</th><td><u>#<span data-ppcond="191">ifdef</span> <span class="macro" data-ref="_M/BOOST_PHOENIX_NO_VARIADIC_ACTOR">BOOST_PHOENIX_NO_VARIADIC_ACTOR</span></u></td></tr>
+<tr><th id="192">192</th><td>        <i>// Bring in the rest</i></td></tr>
+<tr><th id="193">193</th><td>        <u>#include &lt;boost/phoenix/core/detail/cpp03/actor_operator.hpp&gt;</u></td></tr>
+<tr><th id="194">194</th><td><u>#<span data-ppcond="191">else</span></u></td></tr>
+<tr><th id="195">195</th><td>        <b>template</b> &lt;<b>typename</b> This, <b>typename</b>... A&gt;</td></tr>
+<tr><th id="196">196</th><td>        <b>struct</b> <dfn class="type def" id="boost::phoenix::actor::result" title='boost::phoenix::actor::result' data-ref="boost::phoenix::actor::result">result</dfn>&lt;This(A...)&gt;</td></tr>
+<tr><th id="197">197</th><td>            : <span class="namespace">result_of::</span><a class="type" href="#boost::phoenix::result_of::actor" title='boost::phoenix::result_of::actor' data-ref="boost::phoenix::result_of::actor">actor</a>&lt;</td></tr>
+<tr><th id="198">198</th><td>                <a class="typedef" href="#152" title='boost::phoenix::actor::proto_base_expr' data-type='typename proto_base_expr_::proto_base_expr' data-ref="boost::phoenix::actor::proto_base_expr">proto_base_expr</a></td></tr>
+<tr><th id="199">199</th><td>              , <b>typename</b> <span class="namespace">mpl::</span><a class="type" href="../../../../../mpl/include/boost/mpl/if.hpp.html#boost::mpl::if_" title='boost::mpl::if_' data-ref="boost::mpl::if_">if_</a>&lt;<a class="type" href="../../../../../type_traits/include/boost/type_traits/is_reference.hpp.html#boost::is_reference" title='boost::is_reference' data-ref="boost::is_reference">is_reference</a>&lt;A&gt;, A, A <em>const</em> &amp;&gt;::type...</td></tr>
+<tr><th id="200">200</th><td>            &gt;</td></tr>
+<tr><th id="201">201</th><td>        {};</td></tr>
+<tr><th id="202">202</th><td></td></tr>
+<tr><th id="203">203</th><td>        <b>template</b> &lt;<b>typename</b>... A&gt;</td></tr>
+<tr><th id="204">204</th><td>        <b>typename</b> <a class="type" href="#boost::phoenix::actor::result" title='boost::phoenix::actor::result' data-ref="boost::phoenix::actor::result">result</a>&lt;actor(A...)&gt;::type</td></tr>
+<tr><th id="205">205</th><td>        <dfn class="decl def fn" id="_ZN5boost7phoenix5actorclEDpOTL0__" title='boost::phoenix::actor::operator()' data-ref="_ZN5boost7phoenix5actorclEDpOTL0__"><b>operator</b>()</dfn>(A &amp;&amp;... <dfn class="local col1 decl" id="1271a" title='a' data-type='A &amp;&amp;...' data-ref="1271a">a</dfn>)</td></tr>
+<tr><th id="206">206</th><td>        {</td></tr>
+<tr><th id="207">207</th><td>            <b>typedef</b></td></tr>
+<tr><th id="208">208</th><td>                <b>typename</b> <a class="type" href="../support/preprocessed/vector_10.hpp.html#boost::phoenix::vector_chooser" title='boost::phoenix::vector_chooser' data-ref="boost::phoenix::vector_chooser">vector_chooser</a>&lt;<b>sizeof</b>...(A) + <var>1</var>&gt;::<b>template</b> apply&lt;</td></tr>
+<tr><th id="209">209</th><td>                    <em>const</em> <a class="type" href="../../../../../log/include/boost/log/expressions/keyword_fwd.hpp.html#boost::phoenix::actor" title='boost::phoenix::actor' data-ref="boost::phoenix::actor">actor</a>&lt;Expr&gt; *</td></tr>
+<tr><th id="210">210</th><td>                  , <b>typename</b> <span class="namespace">mpl::</span><a class="type" href="../../../../../mpl/include/boost/mpl/if.hpp.html#boost::mpl::if_" title='boost::mpl::if_' data-ref="boost::mpl::if_">if_</a>&lt;<a class="type" href="../../../../../type_traits/include/boost/type_traits/is_reference.hpp.html#boost::is_reference" title='boost::is_reference' data-ref="boost::is_reference">is_reference</a>&lt;A&gt;, A, A <em>const</em> &amp;&gt;::type...</td></tr>
+<tr><th id="211">211</th><td>                &gt;::type</td></tr>
+<tr><th id="212">212</th><td>            <dfn class="local col2 typedef" id="1272env_type" title='env_type' data-type='typename vector_chooser&lt;sizeof...(A) + 1&gt;::template apply&lt;const actor&lt;Expr&gt; *, typename mpl::if_&lt;is_reference&lt;A&gt;, A, const A &amp;&gt;::type...&gt;::type' data-ref="1272env_type">env_type</dfn>;</td></tr>
+<tr><th id="213">213</th><td></td></tr>
+<tr><th id="214">214</th><td>            <a class="local col2 typedef" href="#1272env_type" title='env_type' data-type='typename vector_chooser&lt;sizeof...(A) + 1&gt;::template apply&lt;const actor&lt;Expr&gt; *, typename mpl::if_&lt;is_reference&lt;A&gt;, A, const A &amp;&gt;::type...&gt;::type' data-ref="1272env_type">env_type</a> <dfn class="local col3 decl" id="1273env" title='env' data-type='env_type' data-ref="1273env">env</dfn> = {<b>this</b>, <a class="local col1 ref" href="#1271a" title='a' data-ref="1271a">a</a>...};</td></tr>
+<tr><th id="215">215</th><td>            <b>return</b> <span class="namespace">phoenix::</span>eval(*<b>this</b>, <span class="namespace">phoenix::</span>context(<a class="local col3 ref" href="#1273env" title='env' data-ref="1273env">env</a>, <a class="type" href="meta_grammar.hpp.html#boost::phoenix::default_actions" title='boost::phoenix::default_actions' data-ref="boost::phoenix::default_actions">default_actions</a><a class="ref fn" href="meta_grammar.hpp.html#106" title='boost::phoenix::default_actions::default_actions' data-ref="_ZN5boost7phoenix15default_actionsC1Ev">(</a>)));</td></tr>
+<tr><th id="216">216</th><td>        }</td></tr>
+<tr><th id="217">217</th><td></td></tr>
+<tr><th id="218">218</th><td>        <b>template</b> &lt;<b>typename</b>... A&gt;</td></tr>
+<tr><th id="219">219</th><td>        <b>typename</b> <a class="type" href="#boost::phoenix::actor::result" title='boost::phoenix::actor::result' data-ref="boost::phoenix::actor::result">result</a>&lt;actor(A...)&gt;::type</td></tr>
+<tr><th id="220">220</th><td>        <dfn class="decl def fn" id="_ZNK5boost7phoenix5actorclEDpOTL0__" title='boost::phoenix::actor::operator()' data-ref="_ZNK5boost7phoenix5actorclEDpOTL0__"><b>operator</b>()</dfn>(A &amp;&amp;... <dfn class="local col4 decl" id="1274a" title='a' data-type='A &amp;&amp;...' data-ref="1274a">a</dfn>) <em>const</em></td></tr>
+<tr><th id="221">221</th><td>        {</td></tr>
+<tr><th id="222">222</th><td>            <b>typedef</b></td></tr>
+<tr><th id="223">223</th><td>                <b>typename</b> <a class="type" href="../support/preprocessed/vector_10.hpp.html#boost::phoenix::vector_chooser" title='boost::phoenix::vector_chooser' data-ref="boost::phoenix::vector_chooser">vector_chooser</a>&lt;<b>sizeof</b>...(A) + <var>1</var>&gt;::<b>template</b> apply&lt;</td></tr>
+<tr><th id="224">224</th><td>                    <em>const</em> <a class="type" href="../../../../../log/include/boost/log/expressions/keyword_fwd.hpp.html#boost::phoenix::actor" title='boost::phoenix::actor' data-ref="boost::phoenix::actor">actor</a>&lt;Expr&gt; *</td></tr>
+<tr><th id="225">225</th><td>                  , <b>typename</b> <span class="namespace">mpl::</span><a class="type" href="../../../../../mpl/include/boost/mpl/if.hpp.html#boost::mpl::if_" title='boost::mpl::if_' data-ref="boost::mpl::if_">if_</a>&lt;<a class="type" href="../../../../../type_traits/include/boost/type_traits/is_reference.hpp.html#boost::is_reference" title='boost::is_reference' data-ref="boost::is_reference">is_reference</a>&lt;A&gt;, A, A <em>const</em> &amp;&gt;::type...</td></tr>
+<tr><th id="226">226</th><td>                &gt;::type</td></tr>
+<tr><th id="227">227</th><td>            <dfn class="local col5 typedef" id="1275env_type" title='env_type' data-type='typename vector_chooser&lt;sizeof...(A) + 1&gt;::template apply&lt;const actor&lt;Expr&gt; *, typename mpl::if_&lt;is_reference&lt;A&gt;, A, const A &amp;&gt;::type...&gt;::type' data-ref="1275env_type">env_type</dfn>;</td></tr>
+<tr><th id="228">228</th><td></td></tr>
+<tr><th id="229">229</th><td>            <a class="local col5 typedef" href="#1275env_type" title='env_type' data-type='typename vector_chooser&lt;sizeof...(A) + 1&gt;::template apply&lt;const actor&lt;Expr&gt; *, typename mpl::if_&lt;is_reference&lt;A&gt;, A, const A &amp;&gt;::type...&gt;::type' data-ref="1275env_type">env_type</a> <dfn class="local col6 decl" id="1276env" title='env' data-type='env_type' data-ref="1276env">env</dfn> = {<b>this</b>, <a class="local col4 ref" href="#1274a" title='a' data-ref="1274a">a</a>...};</td></tr>
+<tr><th id="230">230</th><td>            <b>return</b> <span class="namespace">phoenix::</span>eval(*<b>this</b>, <span class="namespace">phoenix::</span>context(<a class="local col6 ref" href="#1276env" title='env' data-ref="1276env">env</a>, <a class="type" href="meta_grammar.hpp.html#boost::phoenix::default_actions" title='boost::phoenix::default_actions' data-ref="boost::phoenix::default_actions">default_actions</a><a class="ref fn" href="meta_grammar.hpp.html#106" title='boost::phoenix::default_actions::default_actions' data-ref="_ZN5boost7phoenix15default_actionsC1Ev">(</a>)));</td></tr>
+<tr><th id="231">231</th><td>        }</td></tr>
+<tr><th id="232">232</th><td><u>#<span data-ppcond="191">endif</span></u></td></tr>
+<tr><th id="233">233</th><td></td></tr>
+<tr><th id="234">234</th><td>        <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#776" title="actor&amp; operator=(actor const&amp;) = delete;" data-ref="_M/BOOST_DELETED_FUNCTION">BOOST_DELETED_FUNCTION</a>(actor&amp; <b>operator</b>=(actor <em>const</em>&amp;))</td></tr>
+<tr><th id="235">235</th><td>    };</td></tr>
+<tr><th id="236">236</th><td><u>#<span data-ppcond="236">if</span> defined <span class="macro" data-ref="_M/__clang__">__clang__</span> &amp;&amp; defined <span class="macro" data-ref="_M/__has_warning">__has_warning</span></u></td></tr>
+<tr><th id="237">237</th><td><u>#  pragma clang diagnostic pop</u></td></tr>
+<tr><th id="238">238</th><td><u>#<span data-ppcond="236">endif</span></u></td></tr>
+<tr><th id="239">239</th><td>}}</td></tr>
+<tr><th id="240">240</th><td></td></tr>
+<tr><th id="241">241</th><td><b>namespace</b> <span class="namespace">boost</span></td></tr>
+<tr><th id="242">242</th><td>{</td></tr>
+<tr><th id="243">243</th><td>    <i>// specialize boost::result_of to return the proper result type</i></td></tr>
+<tr><th id="244">244</th><td>    <b>template</b> &lt;<b>typename</b> Expr&gt;</td></tr>
+<tr><th id="245">245</th><td>    <b>struct</b> <dfn class="type def" id="boost::result_of" title='boost::result_of' data-ref="boost::result_of">result_of</dfn>&lt;<span class="namespace">phoenix::</span><a class="type" href="../../../../../log/include/boost/log/expressions/keyword_fwd.hpp.html#boost::phoenix::actor" title='boost::phoenix::actor' data-ref="boost::phoenix::actor">actor</a>&lt;Expr&gt;()&gt;</td></tr>
+<tr><th id="246">246</th><td>        : <span class="namespace">phoenix::result_of::</span><a class="type" href="#boost::phoenix::result_of::actor" title='boost::phoenix::result_of::actor' data-ref="boost::phoenix::result_of::actor">actor</a>&lt;<b>typename</b> <span class="namespace">phoenix::</span><a class="type" href="../../../../../log/include/boost/log/expressions/keyword_fwd.hpp.html#boost::phoenix::actor" title='boost::phoenix::actor' data-ref="boost::phoenix::actor">actor</a>&lt;Expr&gt;::proto_base_expr&gt;</td></tr>
+<tr><th id="247">247</th><td>    {};</td></tr>
+<tr><th id="248">248</th><td></td></tr>
+<tr><th id="249">249</th><td>    <b>template</b> &lt;<b>typename</b> Expr&gt;</td></tr>
+<tr><th id="250">250</th><td>    <b>struct</b> <dfn class="type def" id="boost::result_of" title='boost::result_of' data-ref="boost::result_of">result_of</dfn>&lt;<span class="namespace">phoenix::</span><a class="type" href="../../../../../log/include/boost/log/expressions/keyword_fwd.hpp.html#boost::phoenix::actor" title='boost::phoenix::actor' data-ref="boost::phoenix::actor">actor</a>&lt;Expr&gt; <em>const</em>()&gt;</td></tr>
+<tr><th id="251">251</th><td>        : <span class="namespace">phoenix::result_of::</span><a class="type" href="#boost::phoenix::result_of::actor" title='boost::phoenix::result_of::actor' data-ref="boost::phoenix::result_of::actor">actor</a>&lt;<b>typename</b> <span class="namespace">phoenix::</span><a class="type" href="../../../../../log/include/boost/log/expressions/keyword_fwd.hpp.html#boost::phoenix::actor" title='boost::phoenix::actor' data-ref="boost::phoenix::actor">actor</a>&lt;Expr&gt;::proto_base_expr&gt;</td></tr>
+<tr><th id="252">252</th><td>    {};</td></tr>
+<tr><th id="253">253</th><td>}</td></tr>
+<tr><th id="254">254</th><td></td></tr>
+<tr><th id="255">255</th><td></td></tr>
+<tr><th id="256">256</th><td><u>#<span data-ppcond="256">ifdef</span> <span class="macro" data-ref="_M/BOOST_MSVC">BOOST_MSVC</span></u></td></tr>
+<tr><th id="257">257</th><td><u>#pragma warning(pop)</u></td></tr>
+<tr><th id="258">258</th><td><u>#<span data-ppcond="256">endif</span></u></td></tr>
+<tr><th id="259">259</th><td></td></tr>
+<tr><th id="260">260</th><td><u>#<span data-ppcond="10">endif</span></u></td></tr>
+<tr><th id="261">261</th><td></td></tr>
+<tr><th id="262">262</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../../../../../log/src/core.cpp.html'>boost-1.85.0/libs/log/src/core.cpp</a><br/>Generated on <em>2024-Jun-14</em> from project boost-1.85.0 revision <em>1.85.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

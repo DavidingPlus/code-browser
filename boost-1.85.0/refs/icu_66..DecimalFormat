@@ -1,0 +1,728 @@
+<inh f='include/unicode/numfmt.h' l='175' c='icu_66::NumberFormat'/>
+<def f='include/unicode/decimfmt.h' l='668' ll='2200'/>
+<use f='include/unicode/decimfmt.h' l='786' c='_ZN6icu_6613DecimalFormat12setAttributeE22UNumberFormatAttributeiR10UErrorCode'/>
+<use f='include/unicode/decimfmt.h' l='879' c='_ZN6icu_6613DecimalFormatC1ERKS0_'/>
+<use f='include/unicode/decimfmt.h' l='887' c='_ZN6icu_6613DecimalFormataSERKS0_'/>
+<use f='include/unicode/decimfmt.h' l='887' c='_ZN6icu_6613DecimalFormataSERKS0_'/>
+<use f='include/unicode/decimfmt.h' l='902' c='_ZNK6icu_6613DecimalFormat5cloneEv'/>
+<size>368</size>
+<doc f='include/unicode/decimfmt.h' l='69'>/**
+ * **IMPORTANT:** New users are strongly encouraged to see if
+ * numberformatter.h fits their use case.  Although not deprecated, this header
+ * is provided for backwards compatibility only.
+ *
+ * DecimalFormat is a concrete subclass of NumberFormat that formats decimal
+ * numbers. It has a variety of features designed to make it possible to parse
+ * and format numbers in any locale, including support for Western, Arabic, or
+ * Indic digits.  It also supports different flavors of numbers, including
+ * integers (&quot;123&quot;), fixed-point numbers (&quot;123.4&quot;), scientific notation
+ * (&quot;1.23E4&quot;), percentages (&quot;12%&quot;), and currency amounts (&quot;$123&quot;, &quot;USD123&quot;,
+ * &quot;123 US dollars&quot;).  All of these flavors can be easily localized.
+ *
+ * To obtain a NumberFormat for a specific locale (including the default
+ * locale) call one of NumberFormat&apos;s factory methods such as
+ * createInstance(). Do not call the DecimalFormat constructors directly, unless
+ * you know what you are doing, since the NumberFormat factory methods may
+ * return subclasses other than DecimalFormat.
+ *
+ * **Example Usage**
+ *
+ * \code
+ *     // Normally we would have a GUI with a menu for this
+ *     int32_t locCount;
+ *     const Locale* locales = NumberFormat::getAvailableLocales(locCount);
+ *
+ *     double myNumber = -1234.56;
+ *     UErrorCode success = U_ZERO_ERROR;
+ *     NumberFormat* form;
+ *
+ *     // Print out a number with the localized number, currency and percent
+ *     // format for each locale.
+ *     UnicodeString countryName;
+ *     UnicodeString displayName;
+ *     UnicodeString str;
+ *     UnicodeString pattern;
+ *     Formattable fmtable;
+ *     for (int32_t j = 0; j &lt; 3; ++j) {
+ *         cout &lt;&lt; endl &lt;&lt; &quot;FORMAT &quot; &lt;&lt; j &lt;&lt; endl;
+ *         for (int32_t i = 0; i &lt; locCount; ++i) {
+ *             if (locales[i].getCountry(countryName).size() == 0) {
+ *                 // skip language-only
+ *                 continue;
+ *             }
+ *             switch (j) {
+ *             case 0:
+ *                 form = NumberFormat::createInstance(locales[i], success ); break;
+ *             case 1:
+ *                 form = NumberFormat::createCurrencyInstance(locales[i], success ); break;
+ *             default:
+ *                 form = NumberFormat::createPercentInstance(locales[i], success ); break;
+ *             }
+ *             if (form) {
+ *                 str.remove();
+ *                 pattern = ((DecimalFormat*)form)-&gt;toPattern(pattern);
+ *                 cout &lt;&lt; locales[i].getDisplayName(displayName) &lt;&lt; &quot;: &quot; &lt;&lt; pattern;
+ *                 cout &lt;&lt; &quot;  -&gt;  &quot; &lt;&lt; form-&gt;format(myNumber,str) &lt;&lt; endl;
+ *                 form-&gt;parse(form-&gt;format(myNumber,str), fmtable, success);
+ *                 delete form;
+ *             }
+ *         }
+ *     }
+ * \endcode
+ *
+ * **Another example use createInstance(style)**
+ *
+ * \code
+ * // Print out a number using the localized number, currency,
+ * // percent, scientific, integer, iso currency, and plural currency
+ * // format for each locale&lt;/strong&gt;
+ * Locale* locale = new Locale(&quot;en&quot;, &quot;US&quot;);
+ * double myNumber = 1234.56;
+ * UErrorCode success = U_ZERO_ERROR;
+ * UnicodeString str;
+ * Formattable fmtable;
+ * for (int j=NumberFormat::kNumberStyle;
+ *      j&lt;=NumberFormat::kPluralCurrencyStyle;
+ *      ++j) {
+ *     NumberFormat* form = NumberFormat::createInstance(locale, j, success);
+ *     str.remove();
+ *     cout &lt;&lt; &quot;format result &quot; &lt;&lt; form-&gt;format(myNumber, str) &lt;&lt; endl;
+ *     format-&gt;parse(form-&gt;format(myNumber, str), fmtable, success);
+ *     delete form;
+ * }
+ * \endcode
+ *
+ *
+ * &lt;p&gt;&lt;strong&gt;Patterns&lt;/strong&gt;
+ *
+ * &lt;p&gt;A DecimalFormat consists of a &lt;em&gt;pattern&lt;/em&gt; and a set of
+ * &lt;em&gt;symbols&lt;/em&gt;.  The pattern may be set directly using
+ * applyPattern(), or indirectly using other API methods which
+ * manipulate aspects of the pattern, such as the minimum number of integer
+ * digits.  The symbols are stored in a DecimalFormatSymbols
+ * object.  When using the NumberFormat factory methods, the
+ * pattern and symbols are read from ICU&apos;s locale data.
+ *
+ * &lt;p&gt;&lt;strong&gt;Special Pattern Characters&lt;/strong&gt;
+ *
+ * &lt;p&gt;Many characters in a pattern are taken literally; they are matched during
+ * parsing and output unchanged during formatting.  Special characters, on the
+ * other hand, stand for other characters, strings, or classes of characters.
+ * For example, the &apos;#&apos; character is replaced by a localized digit.  Often the
+ * replacement character is the same as the pattern character; in the U.S. locale,
+ * the &apos;,&apos; grouping character is replaced by &apos;,&apos;.  However, the replacement is
+ * still happening, and if the symbols are modified, the grouping character
+ * changes.  Some special characters affect the behavior of the formatter by
+ * their presence; for example, if the percent character is seen, then the
+ * value is multiplied by 100 before being displayed.
+ *
+ * &lt;p&gt;To insert a special character in a pattern as a literal, that is, without
+ * any special meaning, the character must be quoted.  There are some exceptions to
+ * this which are noted below.
+ *
+ * &lt;p&gt;The characters listed here are used in non-localized patterns.  Localized
+ * patterns use the corresponding characters taken from this formatter&apos;s
+ * DecimalFormatSymbols object instead, and these characters lose
+ * their special status.  Two exceptions are the currency sign and quote, which
+ * are not localized.
+ *
+ * &lt;table border=0 cellspacing=3 cellpadding=0&gt;
+ *   &lt;tr bgcolor=&quot;#ccccff&quot;&gt;
+ *     &lt;td align=left&gt;&lt;strong&gt;Symbol&lt;/strong&gt;
+ *     &lt;td align=left&gt;&lt;strong&gt;Location&lt;/strong&gt;
+ *     &lt;td align=left&gt;&lt;strong&gt;Localized?&lt;/strong&gt;
+ *     &lt;td align=left&gt;&lt;strong&gt;Meaning&lt;/strong&gt;
+ *   &lt;tr valign=top&gt;
+ *     &lt;td&gt;&lt;code&gt;0&lt;/code&gt;
+ *     &lt;td&gt;Number
+ *     &lt;td&gt;Yes
+ *     &lt;td&gt;Digit
+ *   &lt;tr valign=top bgcolor=&quot;#eeeeff&quot;&gt;
+ *     &lt;td&gt;&lt;code&gt;1-9&lt;/code&gt;
+ *     &lt;td&gt;Number
+ *     &lt;td&gt;Yes
+ *     &lt;td&gt;&apos;1&apos; through &apos;9&apos; indicate rounding.
+ *   &lt;tr valign=top&gt;
+ *     &lt;td&gt;&lt;code&gt;\htmlonly&amp;#x40;\endhtmlonly&lt;/code&gt; &lt;!--doxygen doesn&apos;t like @--&gt;
+ *     &lt;td&gt;Number
+ *     &lt;td&gt;No
+ *     &lt;td&gt;Significant digit
+ *   &lt;tr valign=top bgcolor=&quot;#eeeeff&quot;&gt;
+ *     &lt;td&gt;&lt;code&gt;#&lt;/code&gt;
+ *     &lt;td&gt;Number
+ *     &lt;td&gt;Yes
+ *     &lt;td&gt;Digit, zero shows as absent
+ *   &lt;tr valign=top&gt;
+ *     &lt;td&gt;&lt;code&gt;.&lt;/code&gt;
+ *     &lt;td&gt;Number
+ *     &lt;td&gt;Yes
+ *     &lt;td&gt;Decimal separator or monetary decimal separator
+ *   &lt;tr valign=top bgcolor=&quot;#eeeeff&quot;&gt;
+ *     &lt;td&gt;&lt;code&gt;-&lt;/code&gt;
+ *     &lt;td&gt;Number
+ *     &lt;td&gt;Yes
+ *     &lt;td&gt;Minus sign
+ *   &lt;tr valign=top&gt;
+ *     &lt;td&gt;&lt;code&gt;,&lt;/code&gt;
+ *     &lt;td&gt;Number
+ *     &lt;td&gt;Yes
+ *     &lt;td&gt;Grouping separator
+ *   &lt;tr valign=top bgcolor=&quot;#eeeeff&quot;&gt;
+ *     &lt;td&gt;&lt;code&gt;E&lt;/code&gt;
+ *     &lt;td&gt;Number
+ *     &lt;td&gt;Yes
+ *     &lt;td&gt;Separates mantissa and exponent in scientific notation.
+ *         &lt;em&gt;Need not be quoted in prefix or suffix.&lt;/em&gt;
+ *   &lt;tr valign=top&gt;
+ *     &lt;td&gt;&lt;code&gt;+&lt;/code&gt;
+ *     &lt;td&gt;Exponent
+ *     &lt;td&gt;Yes
+ *     &lt;td&gt;Prefix positive exponents with localized plus sign.
+ *         &lt;em&gt;Need not be quoted in prefix or suffix.&lt;/em&gt;
+ *   &lt;tr valign=top bgcolor=&quot;#eeeeff&quot;&gt;
+ *     &lt;td&gt;&lt;code&gt;;&lt;/code&gt;
+ *     &lt;td&gt;Subpattern boundary
+ *     &lt;td&gt;Yes
+ *     &lt;td&gt;Separates positive and negative subpatterns
+ *   &lt;tr valign=top&gt;
+ *     &lt;td&gt;&lt;code&gt;\%&lt;/code&gt;
+ *     &lt;td&gt;Prefix or suffix
+ *     &lt;td&gt;Yes
+ *     &lt;td&gt;Multiply by 100 and show as percentage
+ *   &lt;tr valign=top bgcolor=&quot;#eeeeff&quot;&gt;
+ *     &lt;td&gt;&lt;code&gt;\\u2030&lt;/code&gt;
+ *     &lt;td&gt;Prefix or suffix
+ *     &lt;td&gt;Yes
+ *     &lt;td&gt;Multiply by 1000 and show as per mille
+ *   &lt;tr valign=top&gt;
+ *     &lt;td&gt;&lt;code&gt;\htmlonly&amp;curren;\endhtmlonly&lt;/code&gt; (&lt;code&gt;\\u00A4&lt;/code&gt;)
+ *     &lt;td&gt;Prefix or suffix
+ *     &lt;td&gt;No
+ *     &lt;td&gt;Currency sign, replaced by currency symbol.  If
+ *         doubled, replaced by international currency symbol.
+ *         If tripled, replaced by currency plural names, for example,
+ *         &quot;US dollar&quot; or &quot;US dollars&quot; for America.
+ *         If present in a pattern, the monetary decimal separator
+ *         is used instead of the decimal separator.
+ *   &lt;tr valign=top bgcolor=&quot;#eeeeff&quot;&gt;
+ *     &lt;td&gt;&lt;code&gt;&apos;&lt;/code&gt;
+ *     &lt;td&gt;Prefix or suffix
+ *     &lt;td&gt;No
+ *     &lt;td&gt;Used to quote special characters in a prefix or suffix,
+ *         for example, &lt;code&gt;&quot;&apos;#&apos;#&quot;&lt;/code&gt; formats 123 to
+ *         &lt;code&gt;&quot;#123&quot;&lt;/code&gt;.  To create a single quote
+ *         itself, use two in a row: &lt;code&gt;&quot;# o&apos;&apos;clock&quot;&lt;/code&gt;.
+ *   &lt;tr valign=top&gt;
+ *     &lt;td&gt;&lt;code&gt;*&lt;/code&gt;
+ *     &lt;td&gt;Prefix or suffix boundary
+ *     &lt;td&gt;Yes
+ *     &lt;td&gt;Pad escape, precedes pad character
+ * &lt;/table&gt;
+ *
+ * &lt;p&gt;A DecimalFormat pattern contains a positive and negative
+ * subpattern, for example, &quot;#,##0.00;(#,##0.00)&quot;.  Each subpattern has a
+ * prefix, a numeric part, and a suffix.  If there is no explicit negative
+ * subpattern, the negative subpattern is the localized minus sign prefixed to the
+ * positive subpattern. That is, &quot;0.00&quot; alone is equivalent to &quot;0.00;-0.00&quot;.  If there
+ * is an explicit negative subpattern, it serves only to specify the negative
+ * prefix and suffix; the number of digits, minimal digits, and other
+ * characteristics are ignored in the negative subpattern. That means that
+ * &quot;#,##0.0#;(#)&quot; has precisely the same result as &quot;#,##0.0#;(#,##0.0#)&quot;.
+ *
+ * &lt;p&gt;The prefixes, suffixes, and various symbols used for infinity, digits,
+ * thousands separators, decimal separators, etc. may be set to arbitrary
+ * values, and they will appear properly during formatting.  However, care must
+ * be taken that the symbols and strings do not conflict, or parsing will be
+ * unreliable.  For example, either the positive and negative prefixes or the
+ * suffixes must be distinct for parse() to be able
+ * to distinguish positive from negative values.  Another example is that the
+ * decimal separator and thousands separator should be distinct characters, or
+ * parsing will be impossible.
+ *
+ * &lt;p&gt;The &lt;em&gt;grouping separator&lt;/em&gt; is a character that separates clusters of
+ * integer digits to make large numbers more legible.  It commonly used for
+ * thousands, but in some locales it separates ten-thousands.  The &lt;em&gt;grouping
+ * size&lt;/em&gt; is the number of digits between the grouping separators, such as 3
+ * for &quot;100,000,000&quot; or 4 for &quot;1 0000 0000&quot;. There are actually two different
+ * grouping sizes: One used for the least significant integer digits, the
+ * &lt;em&gt;primary grouping size&lt;/em&gt;, and one used for all others, the
+ * &lt;em&gt;secondary grouping size&lt;/em&gt;.  In most locales these are the same, but
+ * sometimes they are different. For example, if the primary grouping interval
+ * is 3, and the secondary is 2, then this corresponds to the pattern
+ * &quot;#,##,##0&quot;, and the number 123456789 is formatted as &quot;12,34,56,789&quot;.  If a
+ * pattern contains multiple grouping separators, the interval between the last
+ * one and the end of the integer defines the primary grouping size, and the
+ * interval between the last two defines the secondary grouping size. All others
+ * are ignored, so &quot;#,##,###,####&quot; == &quot;###,###,####&quot; == &quot;##,#,###,####&quot;.
+ *
+ * &lt;p&gt;Illegal patterns, such as &quot;#.#.#&quot; or &quot;#.###,###&quot;, will cause
+ * DecimalFormat to set a failing UErrorCode.
+ *
+ * &lt;p&gt;&lt;strong&gt;Pattern BNF&lt;/strong&gt;
+ *
+ * &lt;pre&gt;
+ * pattern    := subpattern (&apos;;&apos; subpattern)?
+ * subpattern := prefix? number exponent? suffix?
+ * number     := (integer (&apos;.&apos; fraction)?) | sigDigits
+ * prefix     := &apos;\\u0000&apos;..&apos;\\uFFFD&apos; - specialCharacters
+ * suffix     := &apos;\\u0000&apos;..&apos;\\uFFFD&apos; - specialCharacters
+ * integer    := &apos;#&apos;* &apos;0&apos;* &apos;0&apos;
+ * fraction   := &apos;0&apos;* &apos;#&apos;*
+ * sigDigits  := &apos;#&apos;* &apos;@&apos; &apos;@&apos;* &apos;#&apos;*
+ * exponent   := &apos;E&apos; &apos;+&apos;? &apos;0&apos;* &apos;0&apos;
+ * padSpec    := &apos;*&apos; padChar
+ * padChar    := &apos;\\u0000&apos;..&apos;\\uFFFD&apos; - quote
+ * &amp;nbsp;
+ * Notation:
+ *   X*       0 or more instances of X
+ *   X?       0 or 1 instances of X
+ *   X|Y      either X or Y
+ *   C..D     any character from C up to D, inclusive
+ *   S-T      characters in S, except those in T
+ * &lt;/pre&gt;
+ * The first subpattern is for positive numbers. The second (optional)
+ * subpattern is for negative numbers.
+ *
+ * &lt;p&gt;Not indicated in the BNF syntax above:
+ *
+ * &lt;ul&gt;&lt;li&gt;The grouping separator &apos;,&apos; can occur inside the integer and
+ * sigDigits elements, between any two pattern characters of that
+ * element, as long as the integer or sigDigits element is not
+ * followed by the exponent element.
+ *
+ * &lt;li&gt;Two grouping intervals are recognized: That between the
+ *     decimal point and the first grouping symbol, and that
+ *     between the first and second grouping symbols. These
+ *     intervals are identical in most locales, but in some
+ *     locales they differ. For example, the pattern
+ *     &amp;quot;#,##,###&amp;quot; formats the number 123456789 as
+ *     &amp;quot;12,34,56,789&amp;quot;.&lt;/li&gt;
+ *
+ * &lt;li&gt;The pad specifier &lt;code&gt;padSpec&lt;/code&gt; may appear before the prefix,
+ * after the prefix, before the suffix, after the suffix, or not at all.
+ *
+ * &lt;li&gt;In place of &apos;0&apos;, the digits &apos;1&apos; through &apos;9&apos; may be used to
+ * indicate a rounding increment.
+ * &lt;/ul&gt;
+ *
+ * &lt;p&gt;&lt;strong&gt;Parsing&lt;/strong&gt;
+ *
+ * &lt;p&gt;DecimalFormat parses all Unicode characters that represent
+ * decimal digits, as defined by u_charDigitValue().  In addition,
+ * DecimalFormat also recognizes as digits the ten consecutive
+ * characters starting with the localized zero digit defined in the
+ * DecimalFormatSymbols object.  During formatting, the
+ * DecimalFormatSymbols-based digits are output.
+ *
+ * &lt;p&gt;During parsing, grouping separators are ignored if in lenient mode;
+ * otherwise, if present, they must be in appropriate positions.
+ *
+ * &lt;p&gt;For currency parsing, the formatter is able to parse every currency
+ * style formats no matter which style the formatter is constructed with.
+ * For example, a formatter instance gotten from
+ * NumberFormat.getInstance(ULocale, NumberFormat.CURRENCYSTYLE) can parse
+ * formats such as &quot;USD1.00&quot; and &quot;3.00 US dollars&quot;.
+ *
+ * &lt;p&gt;If parse(UnicodeString&amp;,Formattable&amp;,ParsePosition&amp;)
+ * fails to parse a string, it leaves the parse position unchanged.
+ * The convenience method parse(UnicodeString&amp;,Formattable&amp;,UErrorCode&amp;)
+ * indicates parse failure by setting a failing
+ * UErrorCode.
+ *
+ * &lt;p&gt;&lt;strong&gt;Formatting&lt;/strong&gt;
+ *
+ * &lt;p&gt;Formatting is guided by several parameters, all of which can be
+ * specified either using a pattern or using the API.  The following
+ * description applies to formats that do not use &lt;a href=&quot;#sci&quot;&gt;scientific
+ * notation&lt;/a&gt; or &lt;a href=&quot;#sigdig&quot;&gt;significant digits&lt;/a&gt;.
+ *
+ * &lt;ul&gt;&lt;li&gt;If the number of actual integer digits exceeds the
+ * &lt;em&gt;maximum integer digits&lt;/em&gt;, then only the least significant
+ * digits are shown.  For example, 1997 is formatted as &quot;97&quot; if the
+ * maximum integer digits is set to 2.
+ *
+ * &lt;li&gt;If the number of actual integer digits is less than the
+ * &lt;em&gt;minimum integer digits&lt;/em&gt;, then leading zeros are added.  For
+ * example, 1997 is formatted as &quot;01997&quot; if the minimum integer digits
+ * is set to 5.
+ *
+ * &lt;li&gt;If the number of actual fraction digits exceeds the &lt;em&gt;maximum
+ * fraction digits&lt;/em&gt;, then rounding is performed to the
+ * maximum fraction digits.  For example, 0.125 is formatted as &quot;0.12&quot;
+ * if the maximum fraction digits is 2.  This behavior can be changed
+ * by specifying a rounding increment and/or a rounding mode.
+ *
+ * &lt;li&gt;If the number of actual fraction digits is less than the
+ * &lt;em&gt;minimum fraction digits&lt;/em&gt;, then trailing zeros are added.
+ * For example, 0.125 is formatted as &quot;0.1250&quot; if the minimum fraction
+ * digits is set to 4.
+ *
+ * &lt;li&gt;Trailing fractional zeros are not displayed if they occur
+ * &lt;em&gt;j&lt;/em&gt; positions after the decimal, where &lt;em&gt;j&lt;/em&gt; is less
+ * than the maximum fraction digits. For example, 0.10004 is
+ * formatted as &quot;0.1&quot; if the maximum fraction digits is four or less.
+ * &lt;/ul&gt;
+ *
+ * &lt;p&gt;&lt;strong&gt;Special Values&lt;/strong&gt;
+ *
+ * &lt;p&gt;&lt;code&gt;NaN&lt;/code&gt; is represented as a single character, typically
+ * &lt;code&gt;\\uFFFD&lt;/code&gt;.  This character is determined by the
+ * DecimalFormatSymbols object.  This is the only value for which
+ * the prefixes and suffixes are not used.
+ *
+ * &lt;p&gt;Infinity is represented as a single character, typically
+ * &lt;code&gt;\\u221E&lt;/code&gt;, with the positive or negative prefixes and suffixes
+ * applied.  The infinity character is determined by the
+ * DecimalFormatSymbols object.
+ *
+ * &lt;a name=&quot;sci&quot;&gt;&lt;strong&gt;Scientific Notation&lt;/strong&gt;&lt;/a&gt;
+ *
+ * &lt;p&gt;Numbers in scientific notation are expressed as the product of a mantissa
+ * and a power of ten, for example, 1234 can be expressed as 1.234 x 10&lt;sup&gt;3&lt;/sup&gt;. The
+ * mantissa is typically in the half-open interval [1.0, 10.0) or sometimes [0.0, 1.0),
+ * but it need not be.  DecimalFormat supports arbitrary mantissas.
+ * DecimalFormat can be instructed to use scientific
+ * notation through the API or through the pattern.  In a pattern, the exponent
+ * character immediately followed by one or more digit characters indicates
+ * scientific notation.  Example: &quot;0.###E0&quot; formats the number 1234 as
+ * &quot;1.234E3&quot;.
+ *
+ * &lt;ul&gt;
+ * &lt;li&gt;The number of digit characters after the exponent character gives the
+ * minimum exponent digit count.  There is no maximum.  Negative exponents are
+ * formatted using the localized minus sign, &lt;em&gt;not&lt;/em&gt; the prefix and suffix
+ * from the pattern.  This allows patterns such as &quot;0.###E0 m/s&quot;.  To prefix
+ * positive exponents with a localized plus sign, specify &apos;+&apos; between the
+ * exponent and the digits: &quot;0.###E+0&quot; will produce formats &quot;1E+1&quot;, &quot;1E+0&quot;,
+ * &quot;1E-1&quot;, etc.  (In localized patterns, use the localized plus sign rather than
+ * &apos;+&apos;.)
+ *
+ * &lt;li&gt;The minimum number of integer digits is achieved by adjusting the
+ * exponent.  Example: 0.00123 formatted with &quot;00.###E0&quot; yields &quot;12.3E-4&quot;.  This
+ * only happens if there is no maximum number of integer digits.  If there is a
+ * maximum, then the minimum number of integer digits is fixed at one.
+ *
+ * &lt;li&gt;The maximum number of integer digits, if present, specifies the exponent
+ * grouping.  The most common use of this is to generate &lt;em&gt;engineering
+ * notation&lt;/em&gt;, in which the exponent is a multiple of three, e.g.,
+ * &quot;##0.###E0&quot;.  The number 12345 is formatted using &quot;##0.####E0&quot; as &quot;12.345E3&quot;.
+ *
+ * &lt;li&gt;When using scientific notation, the formatter controls the
+ * digit counts using significant digits logic.  The maximum number of
+ * significant digits limits the total number of integer and fraction
+ * digits that will be shown in the mantissa; it does not affect
+ * parsing.  For example, 12345 formatted with &quot;##0.##E0&quot; is &quot;12.3E3&quot;.
+ * See the section on significant digits for more details.
+ *
+ * &lt;li&gt;The number of significant digits shown is determined as
+ * follows: If areSignificantDigitsUsed() returns false, then the
+ * minimum number of significant digits shown is one, and the maximum
+ * number of significant digits shown is the sum of the &lt;em&gt;minimum
+ * integer&lt;/em&gt; and &lt;em&gt;maximum fraction&lt;/em&gt; digits, and is
+ * unaffected by the maximum integer digits.  If this sum is zero,
+ * then all significant digits are shown.  If
+ * areSignificantDigitsUsed() returns true, then the significant digit
+ * counts are specified by getMinimumSignificantDigits() and
+ * getMaximumSignificantDigits().  In this case, the number of
+ * integer digits is fixed at one, and there is no exponent grouping.
+ *
+ * &lt;li&gt;Exponential patterns may not contain grouping separators.
+ * &lt;/ul&gt;
+ *
+ * &lt;a name=&quot;sigdig&quot;&gt;&lt;strong&gt;Significant Digits&lt;/strong&gt;&lt;/a&gt;
+ *
+ * &lt;code&gt;DecimalFormat&lt;/code&gt; has two ways of controlling how many
+ * digits are shows: (a) significant digits counts, or (b) integer and
+ * fraction digit counts.  Integer and fraction digit counts are
+ * described above.  When a formatter is using significant digits
+ * counts, the number of integer and fraction digits is not specified
+ * directly, and the formatter settings for these counts are ignored.
+ * Instead, the formatter uses however many integer and fraction
+ * digits are required to display the specified number of significant
+ * digits.  Examples:
+ *
+ * &lt;table border=0 cellspacing=3 cellpadding=0&gt;
+ *   &lt;tr bgcolor=&quot;#ccccff&quot;&gt;
+ *     &lt;td align=left&gt;Pattern
+ *     &lt;td align=left&gt;Minimum significant digits
+ *     &lt;td align=left&gt;Maximum significant digits
+ *     &lt;td align=left&gt;Number
+ *     &lt;td align=left&gt;Output of format()
+ *   &lt;tr valign=top&gt;
+ *     &lt;td&gt;&lt;code&gt;\@\@\@&lt;/code&gt;
+ *     &lt;td&gt;3
+ *     &lt;td&gt;3
+ *     &lt;td&gt;12345
+ *     &lt;td&gt;&lt;code&gt;12300&lt;/code&gt;
+ *   &lt;tr valign=top bgcolor=&quot;#eeeeff&quot;&gt;
+ *     &lt;td&gt;&lt;code&gt;\@\@\@&lt;/code&gt;
+ *     &lt;td&gt;3
+ *     &lt;td&gt;3
+ *     &lt;td&gt;0.12345
+ *     &lt;td&gt;&lt;code&gt;0.123&lt;/code&gt;
+ *   &lt;tr valign=top&gt;
+ *     &lt;td&gt;&lt;code&gt;\@\@##&lt;/code&gt;
+ *     &lt;td&gt;2
+ *     &lt;td&gt;4
+ *     &lt;td&gt;3.14159
+ *     &lt;td&gt;&lt;code&gt;3.142&lt;/code&gt;
+ *   &lt;tr valign=top bgcolor=&quot;#eeeeff&quot;&gt;
+ *     &lt;td&gt;&lt;code&gt;\@\@##&lt;/code&gt;
+ *     &lt;td&gt;2
+ *     &lt;td&gt;4
+ *     &lt;td&gt;1.23004
+ *     &lt;td&gt;&lt;code&gt;1.23&lt;/code&gt;
+ * &lt;/table&gt;
+ *
+ * &lt;ul&gt;
+ * &lt;li&gt;Significant digit counts may be expressed using patterns that
+ * specify a minimum and maximum number of significant digits.  These
+ * are indicated by the &lt;code&gt;&apos;@&apos;&lt;/code&gt; and &lt;code&gt;&apos;#&apos;&lt;/code&gt;
+ * characters.  The minimum number of significant digits is the number
+ * of &lt;code&gt;&apos;@&apos;&lt;/code&gt; characters.  The maximum number of significant
+ * digits is the number of &lt;code&gt;&apos;@&apos;&lt;/code&gt; characters plus the number
+ * of &lt;code&gt;&apos;#&apos;&lt;/code&gt; characters following on the right.  For
+ * example, the pattern &lt;code&gt;&quot;@@@&quot;&lt;/code&gt; indicates exactly 3
+ * significant digits.  The pattern &lt;code&gt;&quot;@##&quot;&lt;/code&gt; indicates from
+ * 1 to 3 significant digits.  Trailing zero digits to the right of
+ * the decimal separator are suppressed after the minimum number of
+ * significant digits have been shown.  For example, the pattern
+ * &lt;code&gt;&quot;@##&quot;&lt;/code&gt; formats the number 0.1203 as
+ * &lt;code&gt;&quot;0.12&quot;&lt;/code&gt;.
+ *
+ * &lt;li&gt;If a pattern uses significant digits, it may not contain a
+ * decimal separator, nor the &lt;code&gt;&apos;0&apos;&lt;/code&gt; pattern character.
+ * Patterns such as &lt;code&gt;&quot;@00&quot;&lt;/code&gt; or &lt;code&gt;&quot;@.###&quot;&lt;/code&gt; are
+ * disallowed.
+ *
+ * &lt;li&gt;Any number of &lt;code&gt;&apos;#&apos;&lt;/code&gt; characters may be prepended to
+ * the left of the leftmost &lt;code&gt;&apos;@&apos;&lt;/code&gt; character.  These have no
+ * effect on the minimum and maximum significant digits counts, but
+ * may be used to position grouping separators.  For example,
+ * &lt;code&gt;&quot;#,#@#&quot;&lt;/code&gt; indicates a minimum of one significant digits,
+ * a maximum of two significant digits, and a grouping size of three.
+ *
+ * &lt;li&gt;In order to enable significant digits formatting, use a pattern
+ * containing the &lt;code&gt;&apos;@&apos;&lt;/code&gt; pattern character.  Alternatively,
+ * call setSignificantDigitsUsed(TRUE).
+ *
+ * &lt;li&gt;In order to disable significant digits formatting, use a
+ * pattern that does not contain the &lt;code&gt;&apos;@&apos;&lt;/code&gt; pattern
+ * character. Alternatively, call setSignificantDigitsUsed(FALSE).
+ *
+ * &lt;li&gt;The number of significant digits has no effect on parsing.
+ *
+ * &lt;li&gt;Significant digits may be used together with exponential notation. Such
+ * patterns are equivalent to a normal exponential pattern with a minimum and
+ * maximum integer digit count of one, a minimum fraction digit count of
+ * &lt;code&gt;getMinimumSignificantDigits() - 1&lt;/code&gt;, and a maximum fraction digit
+ * count of &lt;code&gt;getMaximumSignificantDigits() - 1&lt;/code&gt;. For example, the
+ * pattern &lt;code&gt;&quot;@@###E0&quot;&lt;/code&gt; is equivalent to &lt;code&gt;&quot;0.0###E0&quot;&lt;/code&gt;.
+ *
+ * &lt;li&gt;If significant digits are in use, then the integer and fraction
+ * digit counts, as set via the API, are ignored.  If significant
+ * digits are not in use, then the significant digit counts, as set via
+ * the API, are ignored.
+ *
+ * &lt;/ul&gt;
+ *
+ * &lt;p&gt;&lt;strong&gt;Padding&lt;/strong&gt;
+ *
+ * &lt;p&gt;DecimalFormat supports padding the result of
+ * format() to a specific width.  Padding may be specified either
+ * through the API or through the pattern syntax.  In a pattern the pad escape
+ * character, followed by a single pad character, causes padding to be parsed
+ * and formatted.  The pad escape character is &apos;*&apos; in unlocalized patterns, and
+ * can be localized using DecimalFormatSymbols::setSymbol() with a
+ * DecimalFormatSymbols::kPadEscapeSymbol
+ * selector.  For example, &lt;code&gt;&quot;$*x#,##0.00&quot;&lt;/code&gt; formats 123 to
+ * &lt;code&gt;&quot;$xx123.00&quot;&lt;/code&gt;, and 1234 to &lt;code&gt;&quot;$1,234.00&quot;&lt;/code&gt;.
+ *
+ * &lt;ul&gt;
+ * &lt;li&gt;When padding is in effect, the width of the positive subpattern,
+ * including prefix and suffix, determines the format width.  For example, in
+ * the pattern &lt;code&gt;&quot;* #0 o&apos;&apos;clock&quot;&lt;/code&gt;, the format width is 10.
+ *
+ * &lt;li&gt;The width is counted in 16-bit code units (char16_ts).
+ *
+ * &lt;li&gt;Some parameters which usually do not matter have meaning when padding is
+ * used, because the pattern width is significant with padding.  In the pattern
+ * &quot;* ##,##,#,##0.##&quot;, the format width is 14.  The initial characters &quot;##,##,&quot;
+ * do not affect the grouping size or maximum integer digits, but they do affect
+ * the format width.
+ *
+ * &lt;li&gt;Padding may be inserted at one of four locations: before the prefix,
+ * after the prefix, before the suffix, or after the suffix.  If padding is
+ * specified in any other location, applyPattern()
+ * sets a failing UErrorCode.  If there is no prefix,
+ * before the prefix and after the prefix are equivalent, likewise for the
+ * suffix.
+ *
+ * &lt;li&gt;When specified in a pattern, the 32-bit code point immediately
+ * following the pad escape is the pad character. This may be any character,
+ * including a special pattern character. That is, the pad escape
+ * &lt;em&gt;escapes&lt;/em&gt; the following character. If there is no character after
+ * the pad escape, then the pattern is illegal.
+ *
+ * &lt;/ul&gt;
+ *
+ * &lt;p&gt;&lt;strong&gt;Rounding&lt;/strong&gt;
+ *
+ * &lt;p&gt;DecimalFormat supports rounding to a specific increment.  For
+ * example, 1230 rounded to the nearest 50 is 1250.  1.234 rounded to the
+ * nearest 0.65 is 1.3.  The rounding increment may be specified through the API
+ * or in a pattern.  To specify a rounding increment in a pattern, include the
+ * increment in the pattern itself.  &quot;#,#50&quot; specifies a rounding increment of
+ * 50.  &quot;#,##0.05&quot; specifies a rounding increment of 0.05.
+ *
+ * &lt;p&gt;In the absence of an explicit rounding increment numbers are
+ * rounded to their formatted width.
+ *
+ * &lt;ul&gt;
+ * &lt;li&gt;Rounding only affects the string produced by formatting.  It does
+ * not affect parsing or change any numerical values.
+ *
+ * &lt;li&gt;A &lt;em&gt;rounding mode&lt;/em&gt; determines how values are rounded; see
+ * DecimalFormat::ERoundingMode.  The default rounding mode is
+ * DecimalFormat::kRoundHalfEven.  The rounding mode can only be set
+ * through the API; it can not be set with a pattern.
+ *
+ * &lt;li&gt;Some locales use rounding in their currency formats to reflect the
+ * smallest currency denomination.
+ *
+ * &lt;li&gt;In a pattern, digits &apos;1&apos; through &apos;9&apos; specify rounding, but otherwise
+ * behave identically to digit &apos;0&apos;.
+ * &lt;/ul&gt;
+ *
+ * &lt;p&gt;&lt;strong&gt;Synchronization&lt;/strong&gt;
+ *
+ * &lt;p&gt;DecimalFormat objects are not synchronized.  Multiple
+ * threads should not access one formatter concurrently.
+ *
+ * &lt;p&gt;&lt;strong&gt;Subclassing&lt;/strong&gt;
+ *
+ * &lt;p&gt;&lt;em&gt;User subclasses are not supported.&lt;/em&gt; While clients may write
+ * subclasses, such code will not necessarily work and will not be
+ * guaranteed to work stably from release to release.
+ */</doc>
+<fun r='_ZN6icu_6613DecimalFormatC1ER10UErrorCode'/>
+<fun r='_ZN6icu_6613DecimalFormatC1ERKNS_13UnicodeStringER10UErrorCode'/>
+<fun r='_ZN6icu_6613DecimalFormatC1ERKNS_13UnicodeStringEPNS_20DecimalFormatSymbolsER10UErrorCode'/>
+<fun r='_ZN6icu_6613DecimalFormatC1ERKNS_13UnicodeStringEPNS_20DecimalFormatSymbolsE18UNumberFormatStyleR10UErrorCode'/>
+<fun r='_ZN6icu_6613DecimalFormat16setParseAllInputE27UNumberFormatAttributeValue'/>
+<fun r='_ZN6icu_6613DecimalFormatC1EPKNS_20DecimalFormatSymbolsER10UErrorCode'/>
+<fun r='_ZN6icu_6613DecimalFormat12setAttributeE22UNumberFormatAttributeiR10UErrorCode'/>
+<fun r='_ZNK6icu_6613DecimalFormat12getAttributeE22UNumberFormatAttributeR10UErrorCode'/>
+<fun r='_ZN6icu_6613DecimalFormat15setGroupingUsedEa'/>
+<fun r='_ZN6icu_6613DecimalFormat19setParseIntegerOnlyEa'/>
+<fun r='_ZN6icu_6613DecimalFormat10setLenientEa'/>
+<fun r='_ZN6icu_6613DecimalFormatC1ERKNS_13UnicodeStringEPNS_20DecimalFormatSymbolsER11UParseErrorR10UErrorCode'/>
+<fun r='_ZN6icu_6613DecimalFormatC1ERKNS_13UnicodeStringERKNS_20DecimalFormatSymbolsER10UErrorCode'/>
+<fun r='_ZN6icu_6613DecimalFormatC1ERKS0_'/>
+<fun r='_ZN6icu_6613DecimalFormataSERKS0_'/>
+<fun r='_ZN6icu_6613DecimalFormatD1Ev'/>
+<fun r='_ZNK6icu_6613DecimalFormat5cloneEv'/>
+<fun r='_ZNK6icu_6613DecimalFormateqERKNS_6FormatE'/>
+<fun r='_ZNK6icu_6613DecimalFormat6formatEdRNS_13UnicodeStringERNS_13FieldPositionE'/>
+<fun r='_ZNK6icu_6613DecimalFormat6formatEdRNS_13UnicodeStringERNS_13FieldPositionER10UErrorCode'/>
+<fun r='_ZNK6icu_6613DecimalFormat6formatEdRNS_13UnicodeStringEPNS_21FieldPositionIteratorER10UErrorCode'/>
+<fun r='_ZNK6icu_6613DecimalFormat6formatEiRNS_13UnicodeStringERNS_13FieldPositionE'/>
+<fun r='_ZNK6icu_6613DecimalFormat6formatEiRNS_13UnicodeStringERNS_13FieldPositionER10UErrorCode'/>
+<fun r='_ZNK6icu_6613DecimalFormat6formatEiRNS_13UnicodeStringEPNS_21FieldPositionIteratorER10UErrorCode'/>
+<fun r='_ZNK6icu_6613DecimalFormat6formatElRNS_13UnicodeStringERNS_13FieldPositionE'/>
+<fun r='_ZNK6icu_6613DecimalFormat6formatElRNS_13UnicodeStringERNS_13FieldPositionER10UErrorCode'/>
+<fun r='_ZNK6icu_6613DecimalFormat6formatElRNS_13UnicodeStringEPNS_21FieldPositionIteratorER10UErrorCode'/>
+<fun r='_ZNK6icu_6613DecimalFormat6formatENS_11StringPieceERNS_13UnicodeStringEPNS_21FieldPositionIteratorER10UErrorCode'/>
+<fun r='_ZNK6icu_6613DecimalFormat6formatERKNS_6number4impl15DecimalQuantityERNS_13UnicodeStringEPNS_21FieldPositionIteratorER10UErrorCode'/>
+<fun r='_ZNK6icu_6613DecimalFormat6formatERKNS_6number4impl15DecimalQuantityERNS_13UnicodeStringERNS_13FieldPositionER10UErrorCode'/>
+<fun r='_ZNK6icu_6613DecimalFormat5parseERKNS_13UnicodeStringERNS_11FormattableERNS_13ParsePositionE'/>
+<fun r='_ZNK6icu_6613DecimalFormat13parseCurrencyERKNS_13UnicodeStringERNS_13ParsePositionE'/>
+<fun r='_ZNK6icu_6613DecimalFormat23getDecimalFormatSymbolsEv'/>
+<fun r='_ZN6icu_6613DecimalFormat25adoptDecimalFormatSymbolsEPNS_20DecimalFormatSymbolsE'/>
+<fun r='_ZN6icu_6613DecimalFormat23setDecimalFormatSymbolsERKNS_20DecimalFormatSymbolsE'/>
+<fun r='_ZNK6icu_6613DecimalFormat21getCurrencyPluralInfoEv'/>
+<fun r='_ZN6icu_6613DecimalFormat23adoptCurrencyPluralInfoEPNS_18CurrencyPluralInfoE'/>
+<fun r='_ZN6icu_6613DecimalFormat21setCurrencyPluralInfoERKNS_18CurrencyPluralInfoE'/>
+<fun r='_ZNK6icu_6613DecimalFormat17getPositivePrefixERNS_13UnicodeStringE'/>
+<fun r='_ZN6icu_6613DecimalFormat17setPositivePrefixERKNS_13UnicodeStringE'/>
+<fun r='_ZNK6icu_6613DecimalFormat17getNegativePrefixERNS_13UnicodeStringE'/>
+<fun r='_ZN6icu_6613DecimalFormat17setNegativePrefixERKNS_13UnicodeStringE'/>
+<fun r='_ZNK6icu_6613DecimalFormat17getPositiveSuffixERNS_13UnicodeStringE'/>
+<fun r='_ZN6icu_6613DecimalFormat17setPositiveSuffixERKNS_13UnicodeStringE'/>
+<fun r='_ZNK6icu_6613DecimalFormat17getNegativeSuffixERNS_13UnicodeStringE'/>
+<fun r='_ZN6icu_6613DecimalFormat17setNegativeSuffixERKNS_13UnicodeStringE'/>
+<fun r='_ZNK6icu_6613DecimalFormat17isSignAlwaysShownEv'/>
+<fun r='_ZN6icu_6613DecimalFormat18setSignAlwaysShownEa'/>
+<fun r='_ZNK6icu_6613DecimalFormat13getMultiplierEv'/>
+<fun r='_ZN6icu_6613DecimalFormat13setMultiplierEi'/>
+<fun r='_ZNK6icu_6613DecimalFormat18getMultiplierScaleEv'/>
+<fun r='_ZN6icu_6613DecimalFormat18setMultiplierScaleEi'/>
+<fun r='_ZNK6icu_6613DecimalFormat20getRoundingIncrementEv'/>
+<fun r='_ZN6icu_6613DecimalFormat20setRoundingIncrementEd'/>
+<fun r='_ZNK6icu_6613DecimalFormat15getRoundingModeEv'/>
+<fun r='_ZN6icu_6613DecimalFormat15setRoundingModeENS_12NumberFormat13ERoundingModeE'/>
+<fun r='_ZNK6icu_6613DecimalFormat14getFormatWidthEv'/>
+<fun r='_ZN6icu_6613DecimalFormat14setFormatWidthEi'/>
+<fun r='_ZNK6icu_6613DecimalFormat21getPadCharacterStringEv'/>
+<fun r='_ZN6icu_6613DecimalFormat15setPadCharacterERKNS_13UnicodeStringE'/>
+<fun r='_ZNK6icu_6613DecimalFormat14getPadPositionEv'/>
+<fun r='_ZN6icu_6613DecimalFormat14setPadPositionENS0_12EPadPositionE'/>
+<fun r='_ZNK6icu_6613DecimalFormat20isScientificNotationEv'/>
+<fun r='_ZN6icu_6613DecimalFormat21setScientificNotationEa'/>
+<fun r='_ZNK6icu_6613DecimalFormat24getMinimumExponentDigitsEv'/>
+<fun r='_ZN6icu_6613DecimalFormat24setMinimumExponentDigitsEa'/>
+<fun r='_ZNK6icu_6613DecimalFormat25isExponentSignAlwaysShownEv'/>
+<fun r='_ZN6icu_6613DecimalFormat26setExponentSignAlwaysShownEa'/>
+<fun r='_ZNK6icu_6613DecimalFormat15getGroupingSizeEv'/>
+<fun r='_ZN6icu_6613DecimalFormat15setGroupingSizeEi'/>
+<fun r='_ZNK6icu_6613DecimalFormat24getSecondaryGroupingSizeEv'/>
+<fun r='_ZN6icu_6613DecimalFormat24setSecondaryGroupingSizeEi'/>
+<fun r='_ZNK6icu_6613DecimalFormat24getMinimumGroupingDigitsEv'/>
+<fun r='_ZN6icu_6613DecimalFormat24setMinimumGroupingDigitsEi'/>
+<fun r='_ZNK6icu_6613DecimalFormat29isDecimalSeparatorAlwaysShownEv'/>
+<fun r='_ZN6icu_6613DecimalFormat30setDecimalSeparatorAlwaysShownEa'/>
+<fun r='_ZNK6icu_6613DecimalFormat29isDecimalPatternMatchRequiredEv'/>
+<fun r='_ZN6icu_6613DecimalFormat30setDecimalPatternMatchRequiredEa'/>
+<fun r='_ZNK6icu_6613DecimalFormat17isParseNoExponentEv'/>
+<fun r='_ZN6icu_6613DecimalFormat18setParseNoExponentEa'/>
+<fun r='_ZNK6icu_6613DecimalFormat20isParseCaseSensitiveEv'/>
+<fun r='_ZN6icu_6613DecimalFormat21setParseCaseSensitiveEa'/>
+<fun r='_ZNK6icu_6613DecimalFormat31isFormatFailIfMoreThanMaxDigitsEv'/>
+<fun r='_ZN6icu_6613DecimalFormat32setFormatFailIfMoreThanMaxDigitsEa'/>
+<fun r='_ZNK6icu_6613DecimalFormat9toPatternERNS_13UnicodeStringE'/>
+<fun r='_ZNK6icu_6613DecimalFormat18toLocalizedPatternERNS_13UnicodeStringE'/>
+<fun r='_ZN6icu_6613DecimalFormat12applyPatternERKNS_13UnicodeStringER11UParseErrorR10UErrorCode'/>
+<fun r='_ZN6icu_6613DecimalFormat12applyPatternERKNS_13UnicodeStringER10UErrorCode'/>
+<fun r='_ZN6icu_6613DecimalFormat21applyLocalizedPatternERKNS_13UnicodeStringER11UParseErrorR10UErrorCode'/>
+<fun r='_ZN6icu_6613DecimalFormat21applyLocalizedPatternERKNS_13UnicodeStringER10UErrorCode'/>
+<fun r='_ZN6icu_6613DecimalFormat23setMaximumIntegerDigitsEi'/>
+<fun r='_ZN6icu_6613DecimalFormat23setMinimumIntegerDigitsEi'/>
+<fun r='_ZN6icu_6613DecimalFormat24setMaximumFractionDigitsEi'/>
+<fun r='_ZN6icu_6613DecimalFormat24setMinimumFractionDigitsEi'/>
+<fun r='_ZNK6icu_6613DecimalFormat27getMinimumSignificantDigitsEv'/>
+<fun r='_ZNK6icu_6613DecimalFormat27getMaximumSignificantDigitsEv'/>
+<fun r='_ZN6icu_6613DecimalFormat27setMinimumSignificantDigitsEi'/>
+<fun r='_ZN6icu_6613DecimalFormat27setMaximumSignificantDigitsEi'/>
+<fun r='_ZNK6icu_6613DecimalFormat24areSignificantDigitsUsedEv'/>
+<fun r='_ZN6icu_6613DecimalFormat24setSignificantDigitsUsedEa'/>
+<fun r='_ZN6icu_6613DecimalFormat11setCurrencyEPKDsR10UErrorCode'/>
+<fun r='_ZN6icu_6613DecimalFormat11setCurrencyEPKDs'/>
+<fun r='_ZN6icu_6613DecimalFormat16setCurrencyUsageE14UCurrencyUsageP10UErrorCode'/>
+<fun r='_ZNK6icu_6613DecimalFormat16getCurrencyUsageEv'/>
+<fun r='_ZNK6icu_6613DecimalFormat23formatToDecimalQuantityEdRNS_6number4impl15DecimalQuantityER10UErrorCode'/>
+<fun r='_ZNK6icu_6613DecimalFormat23formatToDecimalQuantityERKNS_11FormattableERNS_6number4impl15DecimalQuantityER10UErrorCode'/>
+<fun r='_ZNK6icu_6613DecimalFormat17toNumberFormatterER10UErrorCode'/>
+<fun r='_ZN6icu_6613DecimalFormat16getStaticClassIDEv'/>
+<fun r='_ZNK6icu_6613DecimalFormat17getDynamicClassIDEv'/>
+<fun r='_ZN6icu_6613DecimalFormat5touchER10UErrorCode'/>
+<fun r='_ZN6icu_6613DecimalFormat12touchNoErrorEv'/>
+<fun r='_ZN6icu_6613DecimalFormat24setPropertiesFromPatternERKNS_13UnicodeStringEiR10UErrorCode'/>
+<fun r='_ZNK6icu_6613DecimalFormat9getParserER10UErrorCode'/>
+<fun r='_ZNK6icu_6613DecimalFormat17getCurrencyParserER10UErrorCode'/>
+<fun r='_ZN6icu_6613DecimalFormat19fieldPositionHelperERKNS_6number15FormattedNumberERNS_13FieldPositionEiR10UErrorCode'/>
+<fun r='_ZN6icu_6613DecimalFormat27fieldPositionIteratorHelperERKNS_6number15FormattedNumberEPNS_21FieldPositionIteratorEiR10UErrorCode'/>
+<fun r='_ZN6icu_6613DecimalFormat15setupFastFormatEv'/>
+<fun r='_ZNK6icu_6613DecimalFormat16fastFormatDoubleEdRNS_13UnicodeStringE'/>
+<fun r='_ZNK6icu_6613DecimalFormat15fastFormatInt64ElRNS_13UnicodeStringE'/>
+<fun r='_ZNK6icu_6613DecimalFormat17doFastFormatInt32EibRNS_13UnicodeStringE'/>
+<mbr r='icu_66::DecimalFormat::fields' o='2880' t='number::impl::DecimalFormatFields *'/>

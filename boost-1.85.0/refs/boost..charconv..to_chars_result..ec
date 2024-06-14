@@ -1,0 +1,7 @@
+<dec f='boost-1.85.0/libs/charconv/include/boost/charconv/detail/to_chars_result.hpp' l='17' type='std::errc'/>
+<use f='boost-1.85.0/libs/charconv/include/boost/charconv/detail/to_chars_result.hpp' l='21' u='r' c='_ZN5boost8charconveqERKNS0_15to_chars_resultES3_'/>
+<use f='boost-1.85.0/libs/charconv/include/boost/charconv/detail/to_chars_result.hpp' l='21' u='r' c='_ZN5boost8charconveqERKNS0_15to_chars_resultES3_'/>
+<use f='boost-1.85.0/libs/charconv/include/boost/charconv/detail/to_chars_result.hpp' l='29' u='r' c='_ZNK5boost8charconv15to_chars_resultcvbEv'/>
+<offset>64</offset>
+<use f='boost-1.85.0/libs/charconv/include/boost/charconv/detail/ryu/ryu_generic_128.hpp' l='379' u='r' c='_ZN5boost8charconv6detail3ryuL22generic_to_chars_fixedENS2_20floating_decimal_128EPcli'/>
+<use f='boost-1.85.0/libs/charconv/include/boost/charconv/detail/ryu/ryu_generic_128.hpp' l='381' u='r' c='_ZN5boost8charconv6detail3ryuL22generic_to_chars_fixedENS2_20floating_decimal_128EPcli'/>

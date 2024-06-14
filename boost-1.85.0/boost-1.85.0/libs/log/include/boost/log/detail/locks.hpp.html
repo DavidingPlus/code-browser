@@ -1,0 +1,218 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>locks.hpp source code [boost-1.85.0/libs/log/include/boost/log/detail/locks.hpp] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="boost::log::aux::exclusive_auto_unlocker,boost::log::aux::exclusive_lock_guard,boost::log::aux::is_exclusively_lockable,boost::log::aux::is_shared_lockable,boost::log::aux::multiple_unique_lock2,boost::log::aux::shared_lock_guard,boost::log::no_lock "/>
+<link rel="stylesheet" href="../../../../../../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../../../../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../../../../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../../../../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'boost-1.85.0/libs/log/include/boost/log/detail/locks.hpp'; var root_path = '../../../../../../..'; var data_path = '../../../../../../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../../../../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='../../../../../..'>boost-1.85.0</a>/<a href='../../../../..'>libs</a>/<a href='../../../..'>log</a>/<a href='../../..'>include</a>/<a href='../..'>boost</a>/<a href='..'>log</a>/<a href='./'>detail</a>/<a href='locks.hpp.html'>locks.hpp</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/*</i></td></tr>
+<tr><th id="2">2</th><td><i> *          Copyright Andrey Semashev 2007 - 2015.</i></td></tr>
+<tr><th id="3">3</th><td><i> * Distributed under the Boost Software License, Version 1.0.</i></td></tr>
+<tr><th id="4">4</th><td><i> *    (See accompanying file LICENSE_1_0.txt or copy at</i></td></tr>
+<tr><th id="5">5</th><td><i> *          <a href="http://www.boost.org/LICENSE_1_0.txt">http://www.boost.org/LICENSE_1_0.txt</a>)</i></td></tr>
+<tr><th id="6">6</th><td><i> */</i></td></tr>
+<tr><th id="7">7</th><td><i class="doc">/*!</i></td></tr>
+<tr><th id="8">8</th><td><i class="doc"> * <span class="command">\file</span> <span class="verb">  locks.hpp</span></i></td></tr>
+<tr><th id="9">9</th><td><i class="doc"> * <span class="command">\author</span> Andrey Semashev</i></td></tr>
+<tr><th id="10">10</th><td><i class="doc"> * <span class="command">\date</span>   30.05.2010</i></td></tr>
+<tr><th id="11">11</th><td><i class="doc"> *</i></td></tr>
+<tr><th id="12">12</th><td><i class="doc"> * <span class="command">\brief</span>  This header is the Boost.Log library implementation, see the library documentation</i></td></tr>
+<tr><th id="13">13</th><td><i class="doc"> *         at <a href="http://www.boost.org/doc/libs/release/libs/log/doc/html/index.html">http://www.boost.org/doc/libs/release/libs/log/doc/html/index.html</a>.</i></td></tr>
+<tr><th id="14">14</th><td><i class="doc"> */</i></td></tr>
+<tr><th id="15">15</th><td></td></tr>
+<tr><th id="16">16</th><td><u>#<span data-ppcond="16">ifndef</span> <span class="macro" data-ref="_M/BOOST_LOG_DETAIL_LOCKS_HPP_INCLUDED_">BOOST_LOG_DETAIL_LOCKS_HPP_INCLUDED_</span></u></td></tr>
+<tr><th id="17">17</th><td><u>#define <dfn class="macro" id="_M/BOOST_LOG_DETAIL_LOCKS_HPP_INCLUDED_" data-ref="_M/BOOST_LOG_DETAIL_LOCKS_HPP_INCLUDED_">BOOST_LOG_DETAIL_LOCKS_HPP_INCLUDED_</dfn></u></td></tr>
+<tr><th id="18">18</th><td></td></tr>
+<tr><th id="19">19</th><td><u>#include <a href="config.hpp.html">&lt;boost/log/detail/config.hpp&gt;</a></u></td></tr>
+<tr><th id="20">20</th><td><u>#include <a href="header.hpp.html">&lt;boost/log/detail/header.hpp&gt;</a></u></td></tr>
+<tr><th id="21">21</th><td></td></tr>
+<tr><th id="22">22</th><td><u>#<span data-ppcond="22">ifdef</span> <a class="macro" href="../../../../../config/include/boost/config/compiler/clang.hpp.html#11" data-ref="_M/BOOST_HAS_PRAGMA_ONCE">BOOST_HAS_PRAGMA_ONCE</a></u></td></tr>
+<tr><th id="23">23</th><td><u>#pragma once</u></td></tr>
+<tr><th id="24">24</th><td><u>#<span data-ppcond="22">endif</span></u></td></tr>
+<tr><th id="25">25</th><td></td></tr>
+<tr><th id="26">26</th><td><b>namespace</b> <span class="namespace">boost</span> {</td></tr>
+<tr><th id="27">27</th><td></td></tr>
+<tr><th id="28">28</th><td><u>#<span data-ppcond="28">ifndef</span> <span class="macro" data-ref="_M/BOOST_LOG_NO_THREADS">BOOST_LOG_NO_THREADS</span></u></td></tr>
+<tr><th id="29">29</th><td></td></tr>
+<tr><th id="30">30</th><td><i>// Forward declaration of Boost.Thread locks. Specified here to avoid including Boost.Thread,</i></td></tr>
+<tr><th id="31">31</th><td><i>// which would bring in many dependent headers, including a great deal of Boost.DateTime.</i></td></tr>
+<tr><th id="32">32</th><td><b>template</b>&lt; <b>typename</b> &gt;</td></tr>
+<tr><th id="33">33</th><td><b>class</b> <dfn class="type" id="boost::lock_guard" title='boost::lock_guard' data-ref="boost::lock_guard">lock_guard</dfn>;</td></tr>
+<tr><th id="34">34</th><td><b>template</b>&lt; <b>typename</b> &gt;</td></tr>
+<tr><th id="35">35</th><td><b>class</b> <dfn class="type" id="boost::shared_lock_guard" title='boost::shared_lock_guard' data-ref="boost::shared_lock_guard">shared_lock_guard</dfn>;</td></tr>
+<tr><th id="36">36</th><td><b>template</b>&lt; <b>typename</b> &gt;</td></tr>
+<tr><th id="37">37</th><td><b>class</b> <dfn class="type" id="boost::shared_lock" title='boost::shared_lock' data-ref="boost::shared_lock">shared_lock</dfn>;</td></tr>
+<tr><th id="38">38</th><td><b>template</b>&lt; <b>typename</b> &gt;</td></tr>
+<tr><th id="39">39</th><td><b>class</b> <dfn class="type" id="boost::upgrade_lock" title='boost::upgrade_lock' data-ref="boost::upgrade_lock">upgrade_lock</dfn>;</td></tr>
+<tr><th id="40">40</th><td><b>template</b>&lt; <b>typename</b> &gt;</td></tr>
+<tr><th id="41">41</th><td><b>class</b> <dfn class="type" id="boost::unique_lock" title='boost::unique_lock' data-ref="boost::unique_lock">unique_lock</dfn>;</td></tr>
+<tr><th id="42">42</th><td></td></tr>
+<tr><th id="43">43</th><td><b>template</b>&lt; <b>typename</b> &gt;</td></tr>
+<tr><th id="44">44</th><td><b>struct</b> <dfn class="type" id="boost::is_mutex_type" title='boost::is_mutex_type' data-ref="boost::is_mutex_type">is_mutex_type</dfn>;</td></tr>
+<tr><th id="45">45</th><td></td></tr>
+<tr><th id="46">46</th><td><u>#<span data-ppcond="28">endif</span> // BOOST_LOG_NO_THREADS</u></td></tr>
+<tr><th id="47">47</th><td></td></tr>
+<tr><th id="48">48</th><td><a class="macro" href="config.hpp.html#375" title="namespace log { inline namespace v2s_mt_posix {" data-ref="_M/BOOST_LOG_OPEN_NAMESPACE">BOOST_LOG_OPEN_NAMESPACE</a></td></tr>
+<tr><th id="49">49</th><td></td></tr>
+<tr><th id="50">50</th><td><i class="doc">//! An auxiliary pseudo-lock to express no locking requirements in logger features</i></td></tr>
+<tr><th id="51">51</th><td><b>template</b>&lt; <b>typename</b> MutexT &gt;</td></tr>
+<tr><th id="52">52</th><td><b>class</b> <dfn class="type def" id="boost::log::no_lock" title='boost::log::no_lock' data-ref="boost::log::no_lock">no_lock</dfn></td></tr>
+<tr><th id="53">53</th><td>{</td></tr>
+<tr><th id="54">54</th><td><b>public</b>:</td></tr>
+<tr><th id="55">55</th><td>    <i class="doc">/*!</i></td></tr>
+<tr><th id="56">56</th><td><i class="doc">     * Constructs the pseudo-lock. The mutex is not affected during the construction.</i></td></tr>
+<tr><th id="57">57</th><td><i class="doc">     */</i></td></tr>
+<tr><th id="58">58</th><td>    <b>explicit</b> <dfn class="decl def fn" id="_ZN5boost3log12v2s_mt_posix7no_lockC1ERT_" title='boost::log::no_lock::no_lock&lt;MutexT&gt;' data-ref="_ZN5boost3log12v2s_mt_posix7no_lockC1ERT_">no_lock</dfn>(MutexT&amp;) <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1020" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a> {}</td></tr>
+<tr><th id="59">59</th><td></td></tr>
+<tr><th id="60">60</th><td><b>private</b>:</td></tr>
+<tr><th id="61">61</th><td>    <dfn class="decl fn" id="_ZN5boost3log12v2s_mt_posix7no_lockC1ERKNS1_7no_lockIT_EE" title='boost::log::no_lock::no_lock&lt;MutexT&gt;' data-ref="_ZN5boost3log12v2s_mt_posix7no_lockC1ERKNS1_7no_lockIT_EE">no_lock</dfn>(no_lock <em>const</em>&amp;);</td></tr>
+<tr><th id="62">62</th><td>    no_lock&amp; <dfn class="decl fn" id="_ZN5boost3log12v2s_mt_posix7no_lockaSERKNS1_7no_lockIT_EE" title='boost::log::no_lock::operator=' data-ref="_ZN5boost3log12v2s_mt_posix7no_lockaSERKNS1_7no_lockIT_EE"><b>operator</b>=</dfn> (no_lock <em>const</em>&amp;);</td></tr>
+<tr><th id="63">63</th><td>};</td></tr>
+<tr><th id="64">64</th><td></td></tr>
+<tr><th id="65">65</th><td><b>namespace</b> <span class="namespace">aux</span> {</td></tr>
+<tr><th id="66">66</th><td></td></tr>
+<tr><th id="67">67</th><td><u>#<span data-ppcond="67">ifndef</span> <span class="macro" data-ref="_M/BOOST_LOG_NO_THREADS">BOOST_LOG_NO_THREADS</span></u></td></tr>
+<tr><th id="68">68</th><td></td></tr>
+<tr><th id="69">69</th><td><i class="doc">//! A trait to detect if the mutex supports exclusive locking</i></td></tr>
+<tr><th id="70">70</th><td><b>template</b>&lt; <b>typename</b> MutexT &gt;</td></tr>
+<tr><th id="71">71</th><td><b>struct</b> <dfn class="type def" id="boost::log::aux::is_exclusively_lockable" title='boost::log::aux::is_exclusively_lockable' data-ref="boost::log::aux::is_exclusively_lockable">is_exclusively_lockable</dfn></td></tr>
+<tr><th id="72">72</th><td>{</td></tr>
+<tr><th id="73">73</th><td>    <b>typedef</b> <em>char</em> <dfn class="typedef" id="boost::log::aux::is_exclusively_lockable::true_type" title='boost::log::aux::is_exclusively_lockable::true_type' data-type='char' data-ref="boost::log::aux::is_exclusively_lockable::true_type">true_type</dfn>;</td></tr>
+<tr><th id="74">74</th><td>    <b>struct</b> <dfn class="type def" id="boost::log::aux::is_exclusively_lockable::false_type" title='boost::log::aux::is_exclusively_lockable::false_type' data-ref="boost::log::aux::is_exclusively_lockable::false_type">false_type</dfn> { <em>char</em> <dfn class="decl field" id="boost::log::aux::is_exclusively_lockable::false_type::t" title='boost::log::aux::is_exclusively_lockable::false_type::t' data-ref="boost::log::aux::is_exclusively_lockable::false_type::t">t</dfn>[<var>2</var>]; };</td></tr>
+<tr><th id="75">75</th><td></td></tr>
+<tr><th id="76">76</th><td>    <b>template</b>&lt; <b>typename</b> T &gt;</td></tr>
+<tr><th id="77">77</th><td>    <em>static</em> <a class="typedef" href="#boost::log::aux::is_exclusively_lockable::true_type" title='boost::log::aux::is_exclusively_lockable::true_type' data-type='char' data-ref="boost::log::aux::is_exclusively_lockable::true_type">true_type</a> <dfn class="decl fn" id="_ZN5boost3log12v2s_mt_posix3aux23is_exclusively_lockable14check_lockableEPTL0__MS4_FvvES7_" title='boost::log::aux::is_exclusively_lockable::check_lockable' data-ref="_ZN5boost3log12v2s_mt_posix3aux23is_exclusively_lockable14check_lockableEPTL0__MS4_FvvES7_">check_lockable</dfn>(T*, <em>void</em> (T::*)() = &amp;T::lock, <em>void</em> (T::*)() = &amp;T::unlock);</td></tr>
+<tr><th id="78">78</th><td>    <em>static</em> <a class="type" href="#boost::log::aux::is_exclusively_lockable::false_type" title='boost::log::aux::is_exclusively_lockable::false_type' data-ref="boost::log::aux::is_exclusively_lockable::false_type">false_type</a> <dfn class="decl fn" id="_ZN5boost3log12v2s_mt_posix3aux23is_exclusively_lockable14check_lockableEPv" title='boost::log::aux::is_exclusively_lockable::check_lockable' data-ref="_ZN5boost3log12v2s_mt_posix3aux23is_exclusively_lockable14check_lockableEPv">check_lockable</dfn>(<em>void</em>*);</td></tr>
+<tr><th id="79">79</th><td></td></tr>
+<tr><th id="80">80</th><td>    <b>enum</b> <dfn class="type def" id="boost::log::aux::is_exclusively_lockable::value_t" title='boost::log::aux::is_exclusively_lockable::value_t' data-ref="boost::log::aux::is_exclusively_lockable::value_t">value_t</dfn> { <dfn class="enum" id="boost::log::aux::is_exclusively_lockable::value" title='boost::log::aux::is_exclusively_lockable::value' data-ref="boost::log::aux::is_exclusively_lockable::value">value</dfn> = <b>sizeof</b>(check_lockable((MutexT*)<span class="macro" title="__null" data-ref="_M/NULL">NULL</span>)) == <b>sizeof</b>(<a class="typedef" href="#boost::log::aux::is_exclusively_lockable::true_type" title='boost::log::aux::is_exclusively_lockable::true_type' data-type='char' data-ref="boost::log::aux::is_exclusively_lockable::true_type">true_type</a>) };</td></tr>
+<tr><th id="81">81</th><td>};</td></tr>
+<tr><th id="82">82</th><td></td></tr>
+<tr><th id="83">83</th><td><i class="doc">//! A trait to detect if the mutex supports shared locking</i></td></tr>
+<tr><th id="84">84</th><td><b>template</b>&lt; <b>typename</b> MutexT &gt;</td></tr>
+<tr><th id="85">85</th><td><b>struct</b> <dfn class="type def" id="boost::log::aux::is_shared_lockable" title='boost::log::aux::is_shared_lockable' data-ref="boost::log::aux::is_shared_lockable">is_shared_lockable</dfn></td></tr>
+<tr><th id="86">86</th><td>{</td></tr>
+<tr><th id="87">87</th><td>    <b>typedef</b> <em>char</em> <dfn class="typedef" id="boost::log::aux::is_shared_lockable::true_type" title='boost::log::aux::is_shared_lockable::true_type' data-type='char' data-ref="boost::log::aux::is_shared_lockable::true_type">true_type</dfn>;</td></tr>
+<tr><th id="88">88</th><td>    <b>struct</b> <dfn class="type def" id="boost::log::aux::is_shared_lockable::false_type" title='boost::log::aux::is_shared_lockable::false_type' data-ref="boost::log::aux::is_shared_lockable::false_type">false_type</dfn> { <em>char</em> <dfn class="decl field" id="boost::log::aux::is_shared_lockable::false_type::t" title='boost::log::aux::is_shared_lockable::false_type::t' data-ref="boost::log::aux::is_shared_lockable::false_type::t">t</dfn>[<var>2</var>]; };</td></tr>
+<tr><th id="89">89</th><td></td></tr>
+<tr><th id="90">90</th><td>    <b>template</b>&lt; <b>typename</b> T &gt;</td></tr>
+<tr><th id="91">91</th><td>    <em>static</em> <a class="typedef" href="#boost::log::aux::is_shared_lockable::true_type" title='boost::log::aux::is_shared_lockable::true_type' data-type='char' data-ref="boost::log::aux::is_shared_lockable::true_type">true_type</a> <dfn class="decl fn" id="_ZN5boost3log12v2s_mt_posix3aux18is_shared_lockable21check_shared_lockableEPTL0__MS4_FvvES7_" title='boost::log::aux::is_shared_lockable::check_shared_lockable' data-ref="_ZN5boost3log12v2s_mt_posix3aux18is_shared_lockable21check_shared_lockableEPTL0__MS4_FvvES7_">check_shared_lockable</dfn>(T*, <em>void</em> (T::*)() = &amp;T::lock_shared, <em>void</em> (T::*)() = &amp;T::unlock_shared);</td></tr>
+<tr><th id="92">92</th><td>    <em>static</em> <a class="type" href="#boost::log::aux::is_shared_lockable::false_type" title='boost::log::aux::is_shared_lockable::false_type' data-ref="boost::log::aux::is_shared_lockable::false_type">false_type</a> <dfn class="decl fn" id="_ZN5boost3log12v2s_mt_posix3aux18is_shared_lockable21check_shared_lockableEPv" title='boost::log::aux::is_shared_lockable::check_shared_lockable' data-ref="_ZN5boost3log12v2s_mt_posix3aux18is_shared_lockable21check_shared_lockableEPv">check_shared_lockable</dfn>(<em>void</em>*);</td></tr>
+<tr><th id="93">93</th><td></td></tr>
+<tr><th id="94">94</th><td>    <b>enum</b> <dfn class="type def" id="boost::log::aux::is_shared_lockable::value_t" title='boost::log::aux::is_shared_lockable::value_t' data-ref="boost::log::aux::is_shared_lockable::value_t">value_t</dfn> { <dfn class="enum" id="boost::log::aux::is_shared_lockable::value" title='boost::log::aux::is_shared_lockable::value' data-ref="boost::log::aux::is_shared_lockable::value">value</dfn> = <b>sizeof</b>(check_shared_lockable((MutexT*)<span class="macro" title="__null" data-ref="_M/NULL">NULL</span>)) == <b>sizeof</b>(<a class="typedef" href="#boost::log::aux::is_shared_lockable::true_type" title='boost::log::aux::is_shared_lockable::true_type' data-type='char' data-ref="boost::log::aux::is_shared_lockable::true_type">true_type</a>) };</td></tr>
+<tr><th id="95">95</th><td>};</td></tr>
+<tr><th id="96">96</th><td></td></tr>
+<tr><th id="97">97</th><td><i class="doc">//! A scope guard that automatically unlocks the mutex on destruction</i></td></tr>
+<tr><th id="98">98</th><td><b>template</b>&lt; <b>typename</b> MutexT &gt;</td></tr>
+<tr><th id="99">99</th><td><b>struct</b> <dfn class="type def" id="boost::log::aux::exclusive_auto_unlocker" title='boost::log::aux::exclusive_auto_unlocker' data-ref="boost::log::aux::exclusive_auto_unlocker">exclusive_auto_unlocker</dfn></td></tr>
+<tr><th id="100">100</th><td>{</td></tr>
+<tr><th id="101">101</th><td>    <b>explicit</b> <dfn class="decl def fn" id="_ZN5boost3log12v2s_mt_posix3aux23exclusive_auto_unlockerC1ERT_" title='boost::log::aux::exclusive_auto_unlocker::exclusive_auto_unlocker&lt;MutexT&gt;' data-ref="_ZN5boost3log12v2s_mt_posix3aux23exclusive_auto_unlockerC1ERT_">exclusive_auto_unlocker</dfn>(MutexT&amp; <dfn class="local col0 decl" id="190m" title='m' data-type='MutexT &amp;' data-ref="190m">m</dfn>) <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1020" title="noexcept" data-ref="_M/BOOST_NOEXCEPT">BOOST_NOEXCEPT</a> : <a class="member field" href="#boost::log::aux::exclusive_auto_unlocker::m_Mutex" title='boost::log::aux::exclusive_auto_unlocker::m_Mutex' data-ref="boost::log::aux::exclusive_auto_unlocker::m_Mutex">m_Mutex</a>(<a class="local col0 ref" href="#190m" title='m' data-ref="190m">m</a>)</td></tr>
+<tr><th id="102">102</th><td>    {</td></tr>
+<tr><th id="103">103</th><td>    }</td></tr>
+<tr><th id="104">104</th><td>    <dfn class="decl def fn" id="_ZN5boost3log12v2s_mt_posix3aux23exclusive_auto_unlockerD1Ev" title='boost::log::aux::exclusive_auto_unlocker::~exclusive_auto_unlocker&lt;MutexT&gt;' data-ref="_ZN5boost3log12v2s_mt_posix3aux23exclusive_auto_unlockerD1Ev">~exclusive_auto_unlocker</dfn>()</td></tr>
+<tr><th id="105">105</th><td>    {</td></tr>
+<tr><th id="106">106</th><td>        <a class="member field" href="#boost::log::aux::exclusive_auto_unlocker::m_Mutex" title='boost::log::aux::exclusive_auto_unlocker::m_Mutex' data-ref="boost::log::aux::exclusive_auto_unlocker::m_Mutex">m_Mutex</a>.unlock();</td></tr>
+<tr><th id="107">107</th><td>    }</td></tr>
+<tr><th id="108">108</th><td></td></tr>
+<tr><th id="109">109</th><td>    <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#776" title="exclusive_auto_unlocker(exclusive_auto_unlocker const&amp;) = delete;" data-ref="_M/BOOST_DELETED_FUNCTION">BOOST_DELETED_FUNCTION</a>(<dfn class="decl def fn" id="_ZN5boost3log12v2s_mt_posix3aux23exclusive_auto_unlockerC1ERKNS2_23exclusive_auto_unlockerIT_EE" title='boost::log::aux::exclusive_auto_unlocker::exclusive_auto_unlocker&lt;MutexT&gt;' data-ref="_ZN5boost3log12v2s_mt_posix3aux23exclusive_auto_unlockerC1ERKNS2_23exclusive_auto_unlockerIT_EE">exclusive_auto_unlocker</dfn>(exclusive_auto_unlocker <em>const</em>&amp;))</td></tr>
+<tr><th id="110">110</th><td>    <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#776" title="exclusive_auto_unlocker&amp; operator= (exclusive_auto_unlocker const&amp;) = delete;" data-ref="_M/BOOST_DELETED_FUNCTION">BOOST_DELETED_FUNCTION</a>(exclusive_auto_unlocker&amp; <b>operator</b>= (exclusive_auto_unlocker <em>const</em>&amp;))</td></tr>
+<tr><th id="111">111</th><td></td></tr>
+<tr><th id="112">112</th><td><b>protected</b>:</td></tr>
+<tr><th id="113">113</th><td>    MutexT&amp; <dfn class="decl field" id="boost::log::aux::exclusive_auto_unlocker::m_Mutex" title='boost::log::aux::exclusive_auto_unlocker::m_Mutex' data-ref="boost::log::aux::exclusive_auto_unlocker::m_Mutex">m_Mutex</dfn>;</td></tr>
+<tr><th id="114">114</th><td>};</td></tr>
+<tr><th id="115">115</th><td></td></tr>
+<tr><th id="116">116</th><td><i class="doc">//! An analogue to the minimalistic<span class="command"> \c</span> <span class="arg">lock_guard</span> template. Defined here to avoid including Boost.Thread.</i></td></tr>
+<tr><th id="117">117</th><td><b>template</b>&lt; <b>typename</b> MutexT &gt;</td></tr>
+<tr><th id="118">118</th><td><b>struct</b> <dfn class="type def" id="boost::log::aux::exclusive_lock_guard" title='boost::log::aux::exclusive_lock_guard' data-ref="boost::log::aux::exclusive_lock_guard">exclusive_lock_guard</dfn></td></tr>
+<tr><th id="119">119</th><td>{</td></tr>
+<tr><th id="120">120</th><td>    <b>explicit</b> <dfn class="decl def fn" id="_ZN5boost3log12v2s_mt_posix3aux20exclusive_lock_guardC1ERT_" title='boost::log::aux::exclusive_lock_guard::exclusive_lock_guard&lt;MutexT&gt;' data-ref="_ZN5boost3log12v2s_mt_posix3aux20exclusive_lock_guardC1ERT_">exclusive_lock_guard</dfn>(MutexT&amp; <dfn class="local col1 decl" id="191m" title='m' data-type='MutexT &amp;' data-ref="191m">m</dfn>) <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1022" title="noexcept((noexcept((m.lock()))))" data-ref="_M/BOOST_NOEXCEPT_IF">BOOST_NOEXCEPT_IF</a>(<a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1023" title="noexcept((m.lock()))" data-ref="_M/BOOST_NOEXCEPT_EXPR">BOOST_NOEXCEPT_EXPR</a>(<a class="local col1 ref" href="#191m" title='m' data-ref="191m">m</a>.lock())) : <a class="member field" href="#boost::log::aux::exclusive_lock_guard::m_Mutex" title='boost::log::aux::exclusive_lock_guard::m_Mutex' data-ref="boost::log::aux::exclusive_lock_guard::m_Mutex">m_Mutex</a>(<a class="local col1 ref" href="#191m" title='m' data-ref="191m">m</a>)</td></tr>
+<tr><th id="121">121</th><td>    {</td></tr>
+<tr><th id="122">122</th><td>        <a class="local col1 ref" href="#191m" title='m' data-ref="191m">m</a>.lock();</td></tr>
+<tr><th id="123">123</th><td>    }</td></tr>
+<tr><th id="124">124</th><td>    <dfn class="decl def fn" id="_ZN5boost3log12v2s_mt_posix3aux20exclusive_lock_guardD1Ev" title='boost::log::aux::exclusive_lock_guard::~exclusive_lock_guard&lt;MutexT&gt;' data-ref="_ZN5boost3log12v2s_mt_posix3aux20exclusive_lock_guardD1Ev">~exclusive_lock_guard</dfn>()</td></tr>
+<tr><th id="125">125</th><td>    {</td></tr>
+<tr><th id="126">126</th><td>        <a class="member field" href="#boost::log::aux::exclusive_lock_guard::m_Mutex" title='boost::log::aux::exclusive_lock_guard::m_Mutex' data-ref="boost::log::aux::exclusive_lock_guard::m_Mutex">m_Mutex</a>.unlock();</td></tr>
+<tr><th id="127">127</th><td>    }</td></tr>
+<tr><th id="128">128</th><td></td></tr>
+<tr><th id="129">129</th><td>    <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#776" title="exclusive_lock_guard(exclusive_lock_guard const&amp;) = delete;" data-ref="_M/BOOST_DELETED_FUNCTION">BOOST_DELETED_FUNCTION</a>(<dfn class="decl def fn" id="_ZN5boost3log12v2s_mt_posix3aux20exclusive_lock_guardC1ERKNS2_20exclusive_lock_guardIT_EE" title='boost::log::aux::exclusive_lock_guard::exclusive_lock_guard&lt;MutexT&gt;' data-ref="_ZN5boost3log12v2s_mt_posix3aux20exclusive_lock_guardC1ERKNS2_20exclusive_lock_guardIT_EE">exclusive_lock_guard</dfn>(exclusive_lock_guard <em>const</em>&amp;))</td></tr>
+<tr><th id="130">130</th><td>    <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#776" title="exclusive_lock_guard&amp; operator= (exclusive_lock_guard const&amp;) = delete;" data-ref="_M/BOOST_DELETED_FUNCTION">BOOST_DELETED_FUNCTION</a>(exclusive_lock_guard&amp; <b>operator</b>= (exclusive_lock_guard <em>const</em>&amp;))</td></tr>
+<tr><th id="131">131</th><td></td></tr>
+<tr><th id="132">132</th><td><b>private</b>:</td></tr>
+<tr><th id="133">133</th><td>    MutexT&amp; <dfn class="decl field" id="boost::log::aux::exclusive_lock_guard::m_Mutex" title='boost::log::aux::exclusive_lock_guard::m_Mutex' data-ref="boost::log::aux::exclusive_lock_guard::m_Mutex">m_Mutex</dfn>;</td></tr>
+<tr><th id="134">134</th><td>};</td></tr>
+<tr><th id="135">135</th><td></td></tr>
+<tr><th id="136">136</th><td><i class="doc">//! An analogue to the minimalistic<span class="command"> \c</span> <span class="arg">lock_guard</span> template that locks<span class="command"> \c</span> <span class="arg">shared_mutex</span> with shared ownership.</i></td></tr>
+<tr><th id="137">137</th><td><b>template</b>&lt; <b>typename</b> MutexT &gt;</td></tr>
+<tr><th id="138">138</th><td><b>struct</b> <dfn class="type def" id="boost::log::aux::shared_lock_guard" title='boost::log::aux::shared_lock_guard' data-ref="boost::log::aux::shared_lock_guard">shared_lock_guard</dfn></td></tr>
+<tr><th id="139">139</th><td>{</td></tr>
+<tr><th id="140">140</th><td>    <b>explicit</b> <dfn class="decl def fn" id="_ZN5boost3log12v2s_mt_posix3aux17shared_lock_guardC1ERT_" title='boost::log::aux::shared_lock_guard::shared_lock_guard&lt;MutexT&gt;' data-ref="_ZN5boost3log12v2s_mt_posix3aux17shared_lock_guardC1ERT_">shared_lock_guard</dfn>(MutexT&amp; <dfn class="local col2 decl" id="192m" title='m' data-type='MutexT &amp;' data-ref="192m">m</dfn>) <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1022" title="noexcept((noexcept((m.lock_shared()))))" data-ref="_M/BOOST_NOEXCEPT_IF">BOOST_NOEXCEPT_IF</a>(<a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1023" title="noexcept((m.lock_shared()))" data-ref="_M/BOOST_NOEXCEPT_EXPR">BOOST_NOEXCEPT_EXPR</a>(<a class="local col2 ref" href="#192m" title='m' data-ref="192m">m</a>.lock_shared())) : <a class="member field" href="#boost::log::aux::shared_lock_guard::m_Mutex" title='boost::log::aux::shared_lock_guard::m_Mutex' data-ref="boost::log::aux::shared_lock_guard::m_Mutex">m_Mutex</a>(<a class="local col2 ref" href="#192m" title='m' data-ref="192m">m</a>)</td></tr>
+<tr><th id="141">141</th><td>    {</td></tr>
+<tr><th id="142">142</th><td>        <a class="local col2 ref" href="#192m" title='m' data-ref="192m">m</a>.lock_shared();</td></tr>
+<tr><th id="143">143</th><td>    }</td></tr>
+<tr><th id="144">144</th><td>    <dfn class="decl def fn" id="_ZN5boost3log12v2s_mt_posix3aux17shared_lock_guardD1Ev" title='boost::log::aux::shared_lock_guard::~shared_lock_guard&lt;MutexT&gt;' data-ref="_ZN5boost3log12v2s_mt_posix3aux17shared_lock_guardD1Ev">~shared_lock_guard</dfn>()</td></tr>
+<tr><th id="145">145</th><td>    {</td></tr>
+<tr><th id="146">146</th><td>        <a class="member field" href="#boost::log::aux::shared_lock_guard::m_Mutex" title='boost::log::aux::shared_lock_guard::m_Mutex' data-ref="boost::log::aux::shared_lock_guard::m_Mutex">m_Mutex</a>.unlock_shared();</td></tr>
+<tr><th id="147">147</th><td>    }</td></tr>
+<tr><th id="148">148</th><td></td></tr>
+<tr><th id="149">149</th><td>    <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#776" title="shared_lock_guard(shared_lock_guard const&amp;) = delete;" data-ref="_M/BOOST_DELETED_FUNCTION">BOOST_DELETED_FUNCTION</a>(<dfn class="decl def fn" id="_ZN5boost3log12v2s_mt_posix3aux17shared_lock_guardC1ERKNS2_17shared_lock_guardIT_EE" title='boost::log::aux::shared_lock_guard::shared_lock_guard&lt;MutexT&gt;' data-ref="_ZN5boost3log12v2s_mt_posix3aux17shared_lock_guardC1ERKNS2_17shared_lock_guardIT_EE">shared_lock_guard</dfn>(shared_lock_guard <em>const</em>&amp;))</td></tr>
+<tr><th id="150">150</th><td>    <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#776" title="shared_lock_guard&amp; operator= (shared_lock_guard const&amp;) = delete;" data-ref="_M/BOOST_DELETED_FUNCTION">BOOST_DELETED_FUNCTION</a>(shared_lock_guard&amp; <b>operator</b>= (shared_lock_guard <em>const</em>&amp;))</td></tr>
+<tr><th id="151">151</th><td></td></tr>
+<tr><th id="152">152</th><td><b>private</b>:</td></tr>
+<tr><th id="153">153</th><td>    MutexT&amp; <dfn class="decl field" id="boost::log::aux::shared_lock_guard::m_Mutex" title='boost::log::aux::shared_lock_guard::m_Mutex' data-ref="boost::log::aux::shared_lock_guard::m_Mutex">m_Mutex</dfn>;</td></tr>
+<tr><th id="154">154</th><td>};</td></tr>
+<tr><th id="155">155</th><td></td></tr>
+<tr><th id="156">156</th><td><i class="doc">//! A deadlock-safe lock type that exclusively locks two mutexes</i></td></tr>
+<tr><th id="157">157</th><td><b>template</b>&lt; <b>typename</b> MutexT1, <b>typename</b> MutexT2 &gt;</td></tr>
+<tr><th id="158">158</th><td><b>class</b> <dfn class="type def" id="boost::log::aux::multiple_unique_lock2" title='boost::log::aux::multiple_unique_lock2' data-ref="boost::log::aux::multiple_unique_lock2">multiple_unique_lock2</dfn></td></tr>
+<tr><th id="159">159</th><td>{</td></tr>
+<tr><th id="160">160</th><td><b>public</b>:</td></tr>
+<tr><th id="161">161</th><td>    <dfn class="decl def fn" id="_ZN5boost3log12v2s_mt_posix3aux21multiple_unique_lock2C1ERT_RT0_" title='boost::log::aux::multiple_unique_lock2::multiple_unique_lock2&lt;MutexT1, MutexT2&gt;' data-ref="_ZN5boost3log12v2s_mt_posix3aux21multiple_unique_lock2C1ERT_RT0_">multiple_unique_lock2</dfn>(MutexT1&amp; <dfn class="local col3 decl" id="193m1" title='m1' data-type='MutexT1 &amp;' data-ref="193m1">m1</dfn>, MutexT2&amp; <dfn class="local col4 decl" id="194m2" title='m2' data-type='MutexT2 &amp;' data-ref="194m2">m2</dfn>) <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1022" title="noexcept((noexcept((m1.lock())) &amp;&amp; noexcept((m2.lock()))))" data-ref="_M/BOOST_NOEXCEPT_IF">BOOST_NOEXCEPT_IF</a>(<a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1023" title="noexcept((m1.lock()))" data-ref="_M/BOOST_NOEXCEPT_EXPR">BOOST_NOEXCEPT_EXPR</a>(<a class="local col3 ref" href="#193m1" title='m1' data-ref="193m1">m1</a>.lock()) &amp;&amp; <a class="macro" href="../../../../../config/include/boost/config/detail/suffix.hpp.html#1023" title="noexcept((m2.lock()))" data-ref="_M/BOOST_NOEXCEPT_EXPR">BOOST_NOEXCEPT_EXPR</a>(<a class="local col4 ref" href="#194m2" title='m2' data-ref="194m2">m2</a>.lock())) :</td></tr>
+<tr><th id="162">162</th><td>        <a class="member field" href="#boost::log::aux::multiple_unique_lock2::m_p1" title='boost::log::aux::multiple_unique_lock2::m_p1' data-ref="boost::log::aux::multiple_unique_lock2::m_p1">m_p1</a>(&amp;<a class="local col3 ref" href="#193m1" title='m1' data-ref="193m1">m1</a>),</td></tr>
+<tr><th id="163">163</th><td>        <a class="member field" href="#boost::log::aux::multiple_unique_lock2::m_p2" title='boost::log::aux::multiple_unique_lock2::m_p2' data-ref="boost::log::aux::multiple_unique_lock2::m_p2">m_p2</a>(&amp;<a class="local col4 ref" href="#194m2" title='m2' data-ref="194m2">m2</a>)</td></tr>
+<tr><th id="164">164</th><td>    {</td></tr>
+<tr><th id="165">165</th><td>        <i>// Yes, it's not conforming, but it works</i></td></tr>
+<tr><th id="166">166</th><td><i>        // and it doesn't require to #include &lt;functional&gt;</i></td></tr>
+<tr><th id="167">167</th><td>        <b>if</b> (<b>static_cast</b>&lt; <em>void</em>* &gt;(<a class="member field" href="#boost::log::aux::multiple_unique_lock2::m_p1" title='boost::log::aux::multiple_unique_lock2::m_p1' data-ref="boost::log::aux::multiple_unique_lock2::m_p1">m_p1</a>) &lt; <b>static_cast</b>&lt; <em>void</em>* &gt;(<a class="member field" href="#boost::log::aux::multiple_unique_lock2::m_p2" title='boost::log::aux::multiple_unique_lock2::m_p2' data-ref="boost::log::aux::multiple_unique_lock2::m_p2">m_p2</a>))</td></tr>
+<tr><th id="168">168</th><td>        {</td></tr>
+<tr><th id="169">169</th><td>            <a class="member field" href="#boost::log::aux::multiple_unique_lock2::m_p1" title='boost::log::aux::multiple_unique_lock2::m_p1' data-ref="boost::log::aux::multiple_unique_lock2::m_p1">m_p1</a>-&gt;lock();</td></tr>
+<tr><th id="170">170</th><td>            <a class="member field" href="#boost::log::aux::multiple_unique_lock2::m_p2" title='boost::log::aux::multiple_unique_lock2::m_p2' data-ref="boost::log::aux::multiple_unique_lock2::m_p2">m_p2</a>-&gt;lock();</td></tr>
+<tr><th id="171">171</th><td>        }</td></tr>
+<tr><th id="172">172</th><td>        <b>else</b></td></tr>
+<tr><th id="173">173</th><td>        {</td></tr>
+<tr><th id="174">174</th><td>            <a class="member field" href="#boost::log::aux::multiple_unique_lock2::m_p2" title='boost::log::aux::multiple_unique_lock2::m_p2' data-ref="boost::log::aux::multiple_unique_lock2::m_p2">m_p2</a>-&gt;lock();</td></tr>
+<tr><th id="175">175</th><td>            <a class="member field" href="#boost::log::aux::multiple_unique_lock2::m_p1" title='boost::log::aux::multiple_unique_lock2::m_p1' data-ref="boost::log::aux::multiple_unique_lock2::m_p1">m_p1</a>-&gt;lock();</td></tr>
+<tr><th id="176">176</th><td>        }</td></tr>
+<tr><th id="177">177</th><td>    }</td></tr>
+<tr><th id="178">178</th><td>    <dfn class="decl def fn" id="_ZN5boost3log12v2s_mt_posix3aux21multiple_unique_lock2D1Ev" title='boost::log::aux::multiple_unique_lock2::~multiple_unique_lock2&lt;MutexT1, MutexT2&gt;' data-ref="_ZN5boost3log12v2s_mt_posix3aux21multiple_unique_lock2D1Ev">~multiple_unique_lock2</dfn>()</td></tr>
+<tr><th id="179">179</th><td>    {</td></tr>
+<tr><th id="180">180</th><td>        <a class="member field" href="#boost::log::aux::multiple_unique_lock2::m_p2" title='boost::log::aux::multiple_unique_lock2::m_p2' data-ref="boost::log::aux::multiple_unique_lock2::m_p2">m_p2</a>-&gt;unlock();</td></tr>
+<tr><th id="181">181</th><td>        <a class="member field" href="#boost::log::aux::multiple_unique_lock2::m_p1" title='boost::log::aux::multiple_unique_lock2::m_p1' data-ref="boost::log::aux::multiple_unique_lock2::m_p1">m_p1</a>-&gt;unlock();</td></tr>
+<tr><th id="182">182</th><td>    }</td></tr>
+<tr><th id="183">183</th><td></td></tr>
+<tr><th id="184">184</th><td><b>private</b>:</td></tr>
+<tr><th id="185">185</th><td>    MutexT1* <dfn class="decl field" id="boost::log::aux::multiple_unique_lock2::m_p1" title='boost::log::aux::multiple_unique_lock2::m_p1' data-ref="boost::log::aux::multiple_unique_lock2::m_p1">m_p1</dfn>;</td></tr>
+<tr><th id="186">186</th><td>    MutexT2* <dfn class="decl field" id="boost::log::aux::multiple_unique_lock2::m_p2" title='boost::log::aux::multiple_unique_lock2::m_p2' data-ref="boost::log::aux::multiple_unique_lock2::m_p2">m_p2</dfn>;</td></tr>
+<tr><th id="187">187</th><td>};</td></tr>
+<tr><th id="188">188</th><td></td></tr>
+<tr><th id="189">189</th><td><u>#<span data-ppcond="67">endif</span> // BOOST_LOG_NO_THREADS</u></td></tr>
+<tr><th id="190">190</th><td></td></tr>
+<tr><th id="191">191</th><td>} <i>// namespace aux</i></td></tr>
+<tr><th id="192">192</th><td></td></tr>
+<tr><th id="193">193</th><td><a class="macro" href="config.hpp.html#376" title="}}" data-ref="_M/BOOST_LOG_CLOSE_NAMESPACE">BOOST_LOG_CLOSE_NAMESPACE</a> <i>// namespace log</i></td></tr>
+<tr><th id="194">194</th><td></td></tr>
+<tr><th id="195">195</th><td>} <i>// namespace boost</i></td></tr>
+<tr><th id="196">196</th><td></td></tr>
+<tr><th id="197">197</th><td><u>#include <a href="footer.hpp.html">&lt;boost/log/detail/footer.hpp&gt;</a></u></td></tr>
+<tr><th id="198">198</th><td></td></tr>
+<tr><th id="199">199</th><td><u>#<span data-ppcond="16">endif</span> // BOOST_LOG_DETAIL_LOCKS_HPP_INCLUDED_</u></td></tr>
+<tr><th id="200">200</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='../../../../src/attribute_name.cpp.html'>boost-1.85.0/libs/log/src/attribute_name.cpp</a><br/>Generated on <em>2024-Jun-14</em> from project boost-1.85.0 revision <em>1.85.0</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

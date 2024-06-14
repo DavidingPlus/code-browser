@@ -1,0 +1,2 @@
+<use f='boost-1.85.0/libs/fusion/include/boost/fusion/view/transform_view/transform_view_iterator.hpp' l='48' u='w' c='_ZN5boost6fusion23transform_view_iteratorC1ERKT_RKT0_'/>
+<dec f='boost-1.85.0/libs/fusion/include/boost/fusion/view/transform_view/transform_view_iterator.hpp' l='51' type='boost::fusion::transform_view_iterator::transform_type'/>
