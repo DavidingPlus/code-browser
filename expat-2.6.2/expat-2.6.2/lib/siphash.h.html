@@ -1,0 +1,412 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>siphash.h source code [expat-2.6.2/lib/siphash.h] - Woboq Code Browser</title>
+<meta name="woboq:interestingDefinitions" content="siphash,sipkey "/>
+<link rel="stylesheet" href="../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'expat-2.6.2/lib/siphash.h'; var root_path = '../..'; var data_path = '../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='..'>expat-2.6.2</a>/<a href='./'>lib</a>/<a href='siphash.h.html'>siphash.h</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/* ==========================================================================</i></td></tr>
+<tr><th id="2">2</th><td><i> * siphash.h - SipHash-2-4 in a single header file</i></td></tr>
+<tr><th id="3">3</th><td><i> * --------------------------------------------------------------------------</i></td></tr>
+<tr><th id="4">4</th><td><i> * Derived by William Ahern from the reference implementation[1] published[2]</i></td></tr>
+<tr><th id="5">5</th><td><i> * by Jean-Philippe Aumasson and Daniel J. Berstein.</i></td></tr>
+<tr><th id="6">6</th><td><i> * Minimal changes by Sebastian Pipping and Victor Stinner on top, see below.</i></td></tr>
+<tr><th id="7">7</th><td><i> * Licensed under the CC0 Public Domain Dedication license.</i></td></tr>
+<tr><th id="8">8</th><td><i> *</i></td></tr>
+<tr><th id="9">9</th><td><i> * 1. <a href="https://www.131002.net/siphash/siphash24.c">https://www.131002.net/siphash/siphash24.c</a></i></td></tr>
+<tr><th id="10">10</th><td><i> * 2. <a href="https://www.131002.net/siphash/">https://www.131002.net/siphash/</a></i></td></tr>
+<tr><th id="11">11</th><td><i> * --------------------------------------------------------------------------</i></td></tr>
+<tr><th id="12">12</th><td><i> * HISTORY:</i></td></tr>
+<tr><th id="13">13</th><td><i> *</i></td></tr>
+<tr><th id="14">14</th><td><i> * 2020-10-03  (Sebastian Pipping)</i></td></tr>
+<tr><th id="15">15</th><td><i> *   - Drop support for Visual Studio 9.0/2008 and earlier</i></td></tr>
+<tr><th id="16">16</th><td><i> *</i></td></tr>
+<tr><th id="17">17</th><td><i> * 2019-08-03  (Sebastian Pipping)</i></td></tr>
+<tr><th id="18">18</th><td><i> *   - Mark part of sip24_valid as to be excluded from clang-format</i></td></tr>
+<tr><th id="19">19</th><td><i> *   - Re-format code using clang-format 9</i></td></tr>
+<tr><th id="20">20</th><td><i> *</i></td></tr>
+<tr><th id="21">21</th><td><i> * 2018-07-08  (Anton Maklakov)</i></td></tr>
+<tr><th id="22">22</th><td><i> *   - Add "fall through" markers for GCC's -Wimplicit-fallthrough</i></td></tr>
+<tr><th id="23">23</th><td><i> *</i></td></tr>
+<tr><th id="24">24</th><td><i> * 2017-11-03  (Sebastian Pipping)</i></td></tr>
+<tr><th id="25">25</th><td><i> *   - Hide sip_tobin and sip_binof unless SIPHASH_TOBIN macro is defined</i></td></tr>
+<tr><th id="26">26</th><td><i> *</i></td></tr>
+<tr><th id="27">27</th><td><i> * 2017-07-25  (Vadim Zeitlin)</i></td></tr>
+<tr><th id="28">28</th><td><i> *   - Fix use of SIPHASH_MAIN macro</i></td></tr>
+<tr><th id="29">29</th><td><i> *</i></td></tr>
+<tr><th id="30">30</th><td><i> * 2017-07-05  (Sebastian Pipping)</i></td></tr>
+<tr><th id="31">31</th><td><i> *   - Use _SIP_ULL macro to not require a C++11 compiler if compiled as C++</i></td></tr>
+<tr><th id="32">32</th><td><i> *   - Add const qualifiers at two places</i></td></tr>
+<tr><th id="33">33</th><td><i> *   - Ensure &lt;=80 characters line length (assuming tab width 4)</i></td></tr>
+<tr><th id="34">34</th><td><i> *</i></td></tr>
+<tr><th id="35">35</th><td><i> * 2017-06-23  (Victor Stinner)</i></td></tr>
+<tr><th id="36">36</th><td><i> *   - Address Win64 compile warnings</i></td></tr>
+<tr><th id="37">37</th><td><i> *</i></td></tr>
+<tr><th id="38">38</th><td><i> * 2017-06-18  (Sebastian Pipping)</i></td></tr>
+<tr><th id="39">39</th><td><i> *   - Clarify license note in the header</i></td></tr>
+<tr><th id="40">40</th><td><i> *   - Address C89 issues:</i></td></tr>
+<tr><th id="41">41</th><td><i> *     - Stop using inline keyword (and let compiler decide)</i></td></tr>
+<tr><th id="42">42</th><td><i> *     - Replace _Bool by int</i></td></tr>
+<tr><th id="43">43</th><td><i> *     - Turn macro siphash24 into a function</i></td></tr>
+<tr><th id="44">44</th><td><i> *     - Address invalid conversion (void pointer) by explicit cast</i></td></tr>
+<tr><th id="45">45</th><td><i> *   - Address lack of stdint.h for Visual Studio 2003 to 2008</i></td></tr>
+<tr><th id="46">46</th><td><i> *   - Always expose sip24_valid (for self-tests)</i></td></tr>
+<tr><th id="47">47</th><td><i> *</i></td></tr>
+<tr><th id="48">48</th><td><i> * 2012-11-04 - Born.  (William Ahern)</i></td></tr>
+<tr><th id="49">49</th><td><i> * --------------------------------------------------------------------------</i></td></tr>
+<tr><th id="50">50</th><td><i> * USAGE:</i></td></tr>
+<tr><th id="51">51</th><td><i> *</i></td></tr>
+<tr><th id="52">52</th><td><i> * SipHash-2-4 takes as input two 64-bit words as the key, some number of</i></td></tr>
+<tr><th id="53">53</th><td><i> * message bytes, and outputs a 64-bit word as the message digest. This</i></td></tr>
+<tr><th id="54">54</th><td><i> * implementation employs two data structures: a struct sipkey for</i></td></tr>
+<tr><th id="55">55</th><td><i> * representing the key, and a struct siphash for representing the hash</i></td></tr>
+<tr><th id="56">56</th><td><i> * state.</i></td></tr>
+<tr><th id="57">57</th><td><i> *</i></td></tr>
+<tr><th id="58">58</th><td><i> * For converting a 16-byte unsigned char array to a key, use either the</i></td></tr>
+<tr><th id="59">59</th><td><i> * macro sip_keyof or the routine sip_tokey. The former instantiates a</i></td></tr>
+<tr><th id="60">60</th><td><i> * compound literal key, while the latter requires a key object as a</i></td></tr>
+<tr><th id="61">61</th><td><i> * parameter.</i></td></tr>
+<tr><th id="62">62</th><td><i> *</i></td></tr>
+<tr><th id="63">63</th><td><i> * 	unsigned char secret[16];</i></td></tr>
+<tr><th id="64">64</th><td><i> * 	arc4random_buf(secret, sizeof secret);</i></td></tr>
+<tr><th id="65">65</th><td><i> * 	struct sipkey *key = sip_keyof(secret);</i></td></tr>
+<tr><th id="66">66</th><td><i> *</i></td></tr>
+<tr><th id="67">67</th><td><i> * For hashing a message, use either the convenience macro siphash24 or the</i></td></tr>
+<tr><th id="68">68</th><td><i> * routines sip24_init, sip24_update, and sip24_final.</i></td></tr>
+<tr><th id="69">69</th><td><i> *</i></td></tr>
+<tr><th id="70">70</th><td><i> * 	struct siphash state;</i></td></tr>
+<tr><th id="71">71</th><td><i> * 	void *msg;</i></td></tr>
+<tr><th id="72">72</th><td><i> * 	size_t len;</i></td></tr>
+<tr><th id="73">73</th><td><i> * 	uint64_t hash;</i></td></tr>
+<tr><th id="74">74</th><td><i> *</i></td></tr>
+<tr><th id="75">75</th><td><i> * 	sip24_init(&amp;state, key);</i></td></tr>
+<tr><th id="76">76</th><td><i> * 	sip24_update(&amp;state, msg, len);</i></td></tr>
+<tr><th id="77">77</th><td><i> * 	hash = sip24_final(&amp;state);</i></td></tr>
+<tr><th id="78">78</th><td><i> *</i></td></tr>
+<tr><th id="79">79</th><td><i> * or</i></td></tr>
+<tr><th id="80">80</th><td><i> *</i></td></tr>
+<tr><th id="81">81</th><td><i> * 	hash = siphash24(msg, len, key);</i></td></tr>
+<tr><th id="82">82</th><td><i> *</i></td></tr>
+<tr><th id="83">83</th><td><i> * To convert the 64-bit hash value to a canonical 8-byte little-endian</i></td></tr>
+<tr><th id="84">84</th><td><i> * binary representation, use either the macro sip_binof or the routine</i></td></tr>
+<tr><th id="85">85</th><td><i> * sip_tobin. The former instantiates and returns a compound literal array,</i></td></tr>
+<tr><th id="86">86</th><td><i> * while the latter requires an array object as a parameter.</i></td></tr>
+<tr><th id="87">87</th><td><i> * --------------------------------------------------------------------------</i></td></tr>
+<tr><th id="88">88</th><td><i> * NOTES:</i></td></tr>
+<tr><th id="89">89</th><td><i> *</i></td></tr>
+<tr><th id="90">90</th><td><i> * o Neither sip_keyof, sip_binof, nor siphash24 will work with compilers</i></td></tr>
+<tr><th id="91">91</th><td><i> *   lacking compound literal support. Instead, you must use the lower-level</i></td></tr>
+<tr><th id="92">92</th><td><i> *   interfaces which take as parameters the temporary state objects.</i></td></tr>
+<tr><th id="93">93</th><td><i> *</i></td></tr>
+<tr><th id="94">94</th><td><i> * o Uppercase macros may evaluate parameters more than once. Lowercase</i></td></tr>
+<tr><th id="95">95</th><td><i> *   macros should not exhibit any such side effects.</i></td></tr>
+<tr><th id="96">96</th><td><i> * ==========================================================================</i></td></tr>
+<tr><th id="97">97</th><td><i> */</i></td></tr>
+<tr><th id="98">98</th><td><u>#<span data-ppcond="98">ifndef</span> <span class="macro" data-ref="_M/SIPHASH_H">SIPHASH_H</span></u></td></tr>
+<tr><th id="99">99</th><td><u>#define <dfn class="macro" id="_M/SIPHASH_H" data-ref="_M/SIPHASH_H">SIPHASH_H</dfn></u></td></tr>
+<tr><th id="100">100</th><td></td></tr>
+<tr><th id="101">101</th><td><u>#include &lt;stddef.h&gt; /* size_t */</u></td></tr>
+<tr><th id="102">102</th><td><u>#include &lt;stdint.h&gt; /* uint64_t uint32_t uint8_t */</u></td></tr>
+<tr><th id="103">103</th><td></td></tr>
+<tr><th id="104">104</th><td><i>/*</i></td></tr>
+<tr><th id="105">105</th><td><i> * Workaround to not require a C++11 compiler for using ULL suffix</i></td></tr>
+<tr><th id="106">106</th><td><i> * if this code is included and compiled as C++; related GCC warning is:</i></td></tr>
+<tr><th id="107">107</th><td><i> * warning: use of C++11 long long integer constant [-Wlong-long]</i></td></tr>
+<tr><th id="108">108</th><td><i> */</i></td></tr>
+<tr><th id="109">109</th><td><u>#define <dfn class="macro" id="_M/SIP_ULL" data-ref="_M/SIP_ULL">SIP_ULL</dfn>(high, low) ((((<a class="typedef" href="../../include/x86_64-linux-gnu/bits/stdint-uintn.h.html#uint64_t" title='uint64_t' data-type='__uint64_t' data-ref="uint64_t">uint64_t</a>)high) &lt;&lt; 32) | (low))</u></td></tr>
+<tr><th id="110">110</th><td></td></tr>
+<tr><th id="111">111</th><td><u>#define <dfn class="macro" id="_M/SIP_ROTL" data-ref="_M/SIP_ROTL">SIP_ROTL</dfn>(x, b) (<a class="typedef" href="../../include/x86_64-linux-gnu/bits/stdint-uintn.h.html#uint64_t" title='uint64_t' data-type='__uint64_t' data-ref="uint64_t">uint64_t</a>)(((x) &lt;&lt; (b)) | ((x) &gt;&gt; (64 - (b))))</u></td></tr>
+<tr><th id="112">112</th><td></td></tr>
+<tr><th id="113">113</th><td><u>#define <dfn class="macro" id="_M/SIP_U32TO8_LE" data-ref="_M/SIP_U32TO8_LE">SIP_U32TO8_LE</dfn>(p, v)                                                    \</u></td></tr>
+<tr><th id="114">114</th><td><u>  (p)[0] = (uint8_t)((v) &gt;&gt; 0);                                                \</u></td></tr>
+<tr><th id="115">115</th><td><u>  (p)[1] = (uint8_t)((v) &gt;&gt; 8);                                                \</u></td></tr>
+<tr><th id="116">116</th><td><u>  (p)[2] = (uint8_t)((v) &gt;&gt; 16);                                               \</u></td></tr>
+<tr><th id="117">117</th><td><u>  (p)[3] = (uint8_t)((v) &gt;&gt; 24);</u></td></tr>
+<tr><th id="118">118</th><td></td></tr>
+<tr><th id="119">119</th><td><u>#define <dfn class="macro" id="_M/SIP_U64TO8_LE" data-ref="_M/SIP_U64TO8_LE">SIP_U64TO8_LE</dfn>(p, v)                                                    \</u></td></tr>
+<tr><th id="120">120</th><td><u>  SIP_U32TO8_LE((p) + 0, (uint32_t)((v) &gt;&gt; 0));                                \</u></td></tr>
+<tr><th id="121">121</th><td><u>  SIP_U32TO8_LE((p) + 4, (uint32_t)((v) &gt;&gt; 32));</u></td></tr>
+<tr><th id="122">122</th><td></td></tr>
+<tr><th id="123">123</th><td><u>#define <dfn class="macro" id="_M/SIP_U8TO64_LE" data-ref="_M/SIP_U8TO64_LE">SIP_U8TO64_LE</dfn>(p)                                                       \</u></td></tr>
+<tr><th id="124">124</th><td><u>  (((<a class="typedef" href="../../include/x86_64-linux-gnu/bits/stdint-uintn.h.html#uint64_t" title='uint64_t' data-type='__uint64_t' data-ref="uint64_t">uint64_t</a>)((p)[0]) &lt;&lt; 0) | ((<a class="typedef" href="../../include/x86_64-linux-gnu/bits/stdint-uintn.h.html#uint64_t" title='uint64_t' data-type='__uint64_t' data-ref="uint64_t">uint64_t</a>)((p)[1]) &lt;&lt; 8)                       \</u></td></tr>
+<tr><th id="125">125</th><td><u>   | ((<a class="typedef" href="../../include/x86_64-linux-gnu/bits/stdint-uintn.h.html#uint64_t" title='uint64_t' data-type='__uint64_t' data-ref="uint64_t">uint64_t</a>)((p)[2]) &lt;&lt; 16) | ((<a class="typedef" href="../../include/x86_64-linux-gnu/bits/stdint-uintn.h.html#uint64_t" title='uint64_t' data-type='__uint64_t' data-ref="uint64_t">uint64_t</a>)((p)[3]) &lt;&lt; 24)                   \</u></td></tr>
+<tr><th id="126">126</th><td><u>   | ((<a class="typedef" href="../../include/x86_64-linux-gnu/bits/stdint-uintn.h.html#uint64_t" title='uint64_t' data-type='__uint64_t' data-ref="uint64_t">uint64_t</a>)((p)[4]) &lt;&lt; 32) | ((<a class="typedef" href="../../include/x86_64-linux-gnu/bits/stdint-uintn.h.html#uint64_t" title='uint64_t' data-type='__uint64_t' data-ref="uint64_t">uint64_t</a>)((p)[5]) &lt;&lt; 40)                   \</u></td></tr>
+<tr><th id="127">127</th><td><u>   | ((<a class="typedef" href="../../include/x86_64-linux-gnu/bits/stdint-uintn.h.html#uint64_t" title='uint64_t' data-type='__uint64_t' data-ref="uint64_t">uint64_t</a>)((p)[6]) &lt;&lt; 48) | ((<a class="typedef" href="../../include/x86_64-linux-gnu/bits/stdint-uintn.h.html#uint64_t" title='uint64_t' data-type='__uint64_t' data-ref="uint64_t">uint64_t</a>)((p)[7]) &lt;&lt; 56))</u></td></tr>
+<tr><th id="128">128</th><td></td></tr>
+<tr><th id="129">129</th><td><u>#define <dfn class="macro" id="_M/SIPHASH_INITIALIZER" data-ref="_M/SIPHASH_INITIALIZER">SIPHASH_INITIALIZER</dfn>                                                    \</u></td></tr>
+<tr><th id="130">130</th><td><u>  { 0, 0, 0, 0, {0}, 0, 0 }</u></td></tr>
+<tr><th id="131">131</th><td></td></tr>
+<tr><th id="132">132</th><td><b>struct</b> <dfn class="type def" id="siphash" title='siphash' data-ref="siphash">siphash</dfn> {</td></tr>
+<tr><th id="133">133</th><td>  <a class="typedef" href="../../include/x86_64-linux-gnu/bits/stdint-uintn.h.html#uint64_t" title='uint64_t' data-type='__uint64_t' data-ref="uint64_t">uint64_t</a> <dfn class="decl field" id="siphash::v0" title='siphash::v0' data-ref="siphash::v0">v0</dfn>, <dfn class="decl field" id="siphash::v1" title='siphash::v1' data-ref="siphash::v1">v1</dfn>, <dfn class="decl field" id="siphash::v2" title='siphash::v2' data-ref="siphash::v2">v2</dfn>, <dfn class="decl field" id="siphash::v3" title='siphash::v3' data-ref="siphash::v3">v3</dfn>;</td></tr>
+<tr><th id="134">134</th><td></td></tr>
+<tr><th id="135">135</th><td>  <em>unsigned</em> <em>char</em> <dfn class="decl field" id="siphash::buf" title='siphash::buf' data-ref="siphash::buf">buf</dfn>[<var>8</var>], *<dfn class="decl field" id="siphash::p" title='siphash::p' data-ref="siphash::p">p</dfn>;</td></tr>
+<tr><th id="136">136</th><td>  <a class="typedef" href="../../include/x86_64-linux-gnu/bits/stdint-uintn.h.html#uint64_t" title='uint64_t' data-type='__uint64_t' data-ref="uint64_t">uint64_t</a> <dfn class="decl field" id="siphash::c" title='siphash::c' data-ref="siphash::c">c</dfn>;</td></tr>
+<tr><th id="137">137</th><td>}; <i>/* struct siphash */</i></td></tr>
+<tr><th id="138">138</th><td></td></tr>
+<tr><th id="139">139</th><td><u>#define <dfn class="macro" id="_M/SIP_KEYLEN" data-ref="_M/SIP_KEYLEN">SIP_KEYLEN</dfn> 16</u></td></tr>
+<tr><th id="140">140</th><td></td></tr>
+<tr><th id="141">141</th><td><b>struct</b> <dfn class="type def" id="sipkey" title='sipkey' data-ref="sipkey">sipkey</dfn> {</td></tr>
+<tr><th id="142">142</th><td>  <a class="typedef" href="../../include/x86_64-linux-gnu/bits/stdint-uintn.h.html#uint64_t" title='uint64_t' data-type='__uint64_t' data-ref="uint64_t">uint64_t</a> <dfn class="decl field" id="sipkey::k" title='sipkey::k' data-ref="sipkey::k">k</dfn>[<var>2</var>];</td></tr>
+<tr><th id="143">143</th><td>}; <i>/* struct sipkey */</i></td></tr>
+<tr><th id="144">144</th><td></td></tr>
+<tr><th id="145">145</th><td><u>#define <dfn class="macro" id="_M/sip_keyof" data-ref="_M/sip_keyof">sip_keyof</dfn>(k) sip_tokey(&amp;(struct sipkey){{0}}, (k))</u></td></tr>
+<tr><th id="146">146</th><td></td></tr>
+<tr><th id="147">147</th><td><em>static</em> <b>struct</b> <a class="type" href="#sipkey" title='sipkey' data-ref="sipkey">sipkey</a> *</td></tr>
+<tr><th id="148">148</th><td><dfn class="decl def fn" id="sip_tokey" title='sip_tokey' data-ref="sip_tokey">sip_tokey</dfn>(<b>struct</b> <a class="type" href="#sipkey" title='sipkey' data-ref="sipkey">sipkey</a> *<dfn class="local col6 decl" id="1986key" title='key' data-type='struct sipkey *' data-ref="1986key">key</dfn>, <em>const</em> <em>void</em> *<dfn class="local col7 decl" id="1987src" title='src' data-type='const void *' data-ref="1987src">src</dfn>) {</td></tr>
+<tr><th id="149">149</th><td>  <a class="local col6 ref" href="#1986key" title='key' data-ref="1986key">key</a>-&gt;<a class="ref field" href="#sipkey::k" title='sipkey::k' data-ref="sipkey::k">k</a>[<var>0</var>] = <a class="macro" href="#123" title="(((uint64_t)(((const unsigned char *)src)[0]) &lt;&lt; 0) | ((uint64_t)(((const unsigned char *)src)[1]) &lt;&lt; 8) | ((uint64_t)(((const unsigned char *)src)[2]) &lt;&lt; 16) | ((uint64_t)(((const unsigned char *)src)[3]) &lt;&lt; 24) | ((uint64_t)(((const unsigned char *)src)[4]) &lt;&lt; 32) | ((uint64_t)(((const unsigned char *)src)[5]) &lt;&lt; 40) | ((uint64_t)(((const unsigned char *)src)[6]) &lt;&lt; 48) | ((uint64_t)(((const unsigned char *)src)[7]) &lt;&lt; 56))" data-ref="_M/SIP_U8TO64_LE">SIP_U8TO64_LE</a>((<em>const</em> <em>unsigned</em> <em>char</em> *)<a class="local col7 ref" href="#1987src" title='src' data-ref="1987src">src</a>);</td></tr>
+<tr><th id="150">150</th><td>  <a class="local col6 ref" href="#1986key" title='key' data-ref="1986key">key</a>-&gt;<a class="ref field" href="#sipkey::k" title='sipkey::k' data-ref="sipkey::k">k</a>[<var>1</var>] = <a class="macro" href="#123" title="(((uint64_t)(((const unsigned char *)src + 8)[0]) &lt;&lt; 0) | ((uint64_t)(((const unsigned char *)src + 8)[1]) &lt;&lt; 8) | ((uint64_t)(((const unsigned char *)src + 8)[2]) &lt;&lt; 16) | ((uint64_t)(((const unsigned char *)src + 8)[3]) &lt;&lt; 24) | ((uint64_t)(((const unsigned char *)src + 8)[4]) &lt;&lt; 32) | ((uint64_t)(((const unsigned char *)src + 8)[5]) &lt;&lt; 40) | ((uint64_t)(((const unsigned char *)src + 8)[6]) &lt;&lt; 48) | ((uint64_t)(((const unsigned char *)src + 8)[7]) &lt;&lt; 56))" data-ref="_M/SIP_U8TO64_LE">SIP_U8TO64_LE</a>((<em>const</em> <em>unsigned</em> <em>char</em> *)<a class="local col7 ref" href="#1987src" title='src' data-ref="1987src">src</a> + <var>8</var>);</td></tr>
+<tr><th id="151">151</th><td>  <b>return</b> <a class="local col6 ref" href="#1986key" title='key' data-ref="1986key">key</a>;</td></tr>
+<tr><th id="152">152</th><td>} <i>/* sip_tokey() */</i></td></tr>
+<tr><th id="153">153</th><td></td></tr>
+<tr><th id="154">154</th><td><u>#<span data-ppcond="154">ifdef</span> <span class="macro" data-ref="_M/SIPHASH_TOBIN">SIPHASH_TOBIN</span></u></td></tr>
+<tr><th id="155">155</th><td></td></tr>
+<tr><th id="156">156</th><td><u>#  define sip_binof(v) sip_tobin((unsigned char[8]){0}, (v))</u></td></tr>
+<tr><th id="157">157</th><td></td></tr>
+<tr><th id="158">158</th><td><em>static</em> <em>void</em> *</td></tr>
+<tr><th id="159">159</th><td>sip_tobin(<em>void</em> *dst, uint64_t u64) {</td></tr>
+<tr><th id="160">160</th><td>  SIP_U64TO8_LE((<em>unsigned</em> <em>char</em> *)dst, u64);</td></tr>
+<tr><th id="161">161</th><td>  <b>return</b> dst;</td></tr>
+<tr><th id="162">162</th><td>} <i>/* sip_tobin() */</i></td></tr>
+<tr><th id="163">163</th><td></td></tr>
+<tr><th id="164">164</th><td><u>#<span data-ppcond="154">endif</span> /* SIPHASH_TOBIN */</u></td></tr>
+<tr><th id="165">165</th><td></td></tr>
+<tr><th id="166">166</th><td><em>static</em> <em>void</em></td></tr>
+<tr><th id="167">167</th><td><dfn class="decl def fn" id="sip_round" title='sip_round' data-ref="sip_round">sip_round</dfn>(<b>struct</b> <a class="type" href="#siphash" title='siphash' data-ref="siphash">siphash</a> *<dfn class="local col8 decl" id="1988H" title='H' data-type='struct siphash *' data-ref="1988H">H</dfn>, <em>const</em> <em>int</em> <dfn class="local col9 decl" id="1989rounds" title='rounds' data-type='const int' data-ref="1989rounds">rounds</dfn>) {</td></tr>
+<tr><th id="168">168</th><td>  <em>int</em> <dfn class="local col0 decl" id="1990i" title='i' data-type='int' data-ref="1990i">i</dfn>;</td></tr>
+<tr><th id="169">169</th><td></td></tr>
+<tr><th id="170">170</th><td>  <b>for</b> (<a class="local col0 ref" href="#1990i" title='i' data-ref="1990i">i</a> = <var>0</var>; <a class="local col0 ref" href="#1990i" title='i' data-ref="1990i">i</a> &lt; <a class="local col9 ref" href="#1989rounds" title='rounds' data-ref="1989rounds">rounds</a>; <a class="local col0 ref" href="#1990i" title='i' data-ref="1990i">i</a>++) {</td></tr>
+<tr><th id="171">171</th><td>    <a class="local col8 ref" href="#1988H" title='H' data-ref="1988H">H</a>-&gt;<a class="ref field" href="#siphash::v0" title='siphash::v0' data-ref="siphash::v0">v0</a> += <a class="local col8 ref" href="#1988H" title='H' data-ref="1988H">H</a>-&gt;<a class="ref field" href="#siphash::v1" title='siphash::v1' data-ref="siphash::v1">v1</a>;</td></tr>
+<tr><th id="172">172</th><td>    <a class="local col8 ref" href="#1988H" title='H' data-ref="1988H">H</a>-&gt;<a class="ref field" href="#siphash::v1" title='siphash::v1' data-ref="siphash::v1">v1</a> = <a class="macro" href="#111" title="(uint64_t)(((H-&gt;v1) &lt;&lt; (13)) | ((H-&gt;v1) &gt;&gt; (64 - (13))))" data-ref="_M/SIP_ROTL">SIP_ROTL</a>(<a class="local col8 ref" href="#1988H" title='H' data-ref="1988H">H</a>-&gt;<a class="ref field" href="#siphash::v1" title='siphash::v1' data-ref="siphash::v1">v1</a>, <var>13</var>);</td></tr>
+<tr><th id="173">173</th><td>    <a class="local col8 ref" href="#1988H" title='H' data-ref="1988H">H</a>-&gt;<a class="ref field" href="#siphash::v1" title='siphash::v1' data-ref="siphash::v1">v1</a> ^= <a class="local col8 ref" href="#1988H" title='H' data-ref="1988H">H</a>-&gt;<a class="ref field" href="#siphash::v0" title='siphash::v0' data-ref="siphash::v0">v0</a>;</td></tr>
+<tr><th id="174">174</th><td>    <a class="local col8 ref" href="#1988H" title='H' data-ref="1988H">H</a>-&gt;<a class="ref field" href="#siphash::v0" title='siphash::v0' data-ref="siphash::v0">v0</a> = <a class="macro" href="#111" title="(uint64_t)(((H-&gt;v0) &lt;&lt; (32)) | ((H-&gt;v0) &gt;&gt; (64 - (32))))" data-ref="_M/SIP_ROTL">SIP_ROTL</a>(<a class="local col8 ref" href="#1988H" title='H' data-ref="1988H">H</a>-&gt;<a class="ref field" href="#siphash::v0" title='siphash::v0' data-ref="siphash::v0">v0</a>, <var>32</var>);</td></tr>
+<tr><th id="175">175</th><td></td></tr>
+<tr><th id="176">176</th><td>    <a class="local col8 ref" href="#1988H" title='H' data-ref="1988H">H</a>-&gt;<a class="ref field" href="#siphash::v2" title='siphash::v2' data-ref="siphash::v2">v2</a> += <a class="local col8 ref" href="#1988H" title='H' data-ref="1988H">H</a>-&gt;<a class="ref field" href="#siphash::v3" title='siphash::v3' data-ref="siphash::v3">v3</a>;</td></tr>
+<tr><th id="177">177</th><td>    <a class="local col8 ref" href="#1988H" title='H' data-ref="1988H">H</a>-&gt;<a class="ref field" href="#siphash::v3" title='siphash::v3' data-ref="siphash::v3">v3</a> = <a class="macro" href="#111" title="(uint64_t)(((H-&gt;v3) &lt;&lt; (16)) | ((H-&gt;v3) &gt;&gt; (64 - (16))))" data-ref="_M/SIP_ROTL">SIP_ROTL</a>(<a class="local col8 ref" href="#1988H" title='H' data-ref="1988H">H</a>-&gt;<a class="ref field" href="#siphash::v3" title='siphash::v3' data-ref="siphash::v3">v3</a>, <var>16</var>);</td></tr>
+<tr><th id="178">178</th><td>    <a class="local col8 ref" href="#1988H" title='H' data-ref="1988H">H</a>-&gt;<a class="ref field" href="#siphash::v3" title='siphash::v3' data-ref="siphash::v3">v3</a> ^= <a class="local col8 ref" href="#1988H" title='H' data-ref="1988H">H</a>-&gt;<a class="ref field" href="#siphash::v2" title='siphash::v2' data-ref="siphash::v2">v2</a>;</td></tr>
+<tr><th id="179">179</th><td></td></tr>
+<tr><th id="180">180</th><td>    <a class="local col8 ref" href="#1988H" title='H' data-ref="1988H">H</a>-&gt;<a class="ref field" href="#siphash::v0" title='siphash::v0' data-ref="siphash::v0">v0</a> += <a class="local col8 ref" href="#1988H" title='H' data-ref="1988H">H</a>-&gt;<a class="ref field" href="#siphash::v3" title='siphash::v3' data-ref="siphash::v3">v3</a>;</td></tr>
+<tr><th id="181">181</th><td>    <a class="local col8 ref" href="#1988H" title='H' data-ref="1988H">H</a>-&gt;<a class="ref field" href="#siphash::v3" title='siphash::v3' data-ref="siphash::v3">v3</a> = <a class="macro" href="#111" title="(uint64_t)(((H-&gt;v3) &lt;&lt; (21)) | ((H-&gt;v3) &gt;&gt; (64 - (21))))" data-ref="_M/SIP_ROTL">SIP_ROTL</a>(<a class="local col8 ref" href="#1988H" title='H' data-ref="1988H">H</a>-&gt;<a class="ref field" href="#siphash::v3" title='siphash::v3' data-ref="siphash::v3">v3</a>, <var>21</var>);</td></tr>
+<tr><th id="182">182</th><td>    <a class="local col8 ref" href="#1988H" title='H' data-ref="1988H">H</a>-&gt;<a class="ref field" href="#siphash::v3" title='siphash::v3' data-ref="siphash::v3">v3</a> ^= <a class="local col8 ref" href="#1988H" title='H' data-ref="1988H">H</a>-&gt;<a class="ref field" href="#siphash::v0" title='siphash::v0' data-ref="siphash::v0">v0</a>;</td></tr>
+<tr><th id="183">183</th><td></td></tr>
+<tr><th id="184">184</th><td>    <a class="local col8 ref" href="#1988H" title='H' data-ref="1988H">H</a>-&gt;<a class="ref field" href="#siphash::v2" title='siphash::v2' data-ref="siphash::v2">v2</a> += <a class="local col8 ref" href="#1988H" title='H' data-ref="1988H">H</a>-&gt;<a class="ref field" href="#siphash::v1" title='siphash::v1' data-ref="siphash::v1">v1</a>;</td></tr>
+<tr><th id="185">185</th><td>    <a class="local col8 ref" href="#1988H" title='H' data-ref="1988H">H</a>-&gt;<a class="ref field" href="#siphash::v1" title='siphash::v1' data-ref="siphash::v1">v1</a> = <a class="macro" href="#111" title="(uint64_t)(((H-&gt;v1) &lt;&lt; (17)) | ((H-&gt;v1) &gt;&gt; (64 - (17))))" data-ref="_M/SIP_ROTL">SIP_ROTL</a>(<a class="local col8 ref" href="#1988H" title='H' data-ref="1988H">H</a>-&gt;<a class="ref field" href="#siphash::v1" title='siphash::v1' data-ref="siphash::v1">v1</a>, <var>17</var>);</td></tr>
+<tr><th id="186">186</th><td>    <a class="local col8 ref" href="#1988H" title='H' data-ref="1988H">H</a>-&gt;<a class="ref field" href="#siphash::v1" title='siphash::v1' data-ref="siphash::v1">v1</a> ^= <a class="local col8 ref" href="#1988H" title='H' data-ref="1988H">H</a>-&gt;<a class="ref field" href="#siphash::v2" title='siphash::v2' data-ref="siphash::v2">v2</a>;</td></tr>
+<tr><th id="187">187</th><td>    <a class="local col8 ref" href="#1988H" title='H' data-ref="1988H">H</a>-&gt;<a class="ref field" href="#siphash::v2" title='siphash::v2' data-ref="siphash::v2">v2</a> = <a class="macro" href="#111" title="(uint64_t)(((H-&gt;v2) &lt;&lt; (32)) | ((H-&gt;v2) &gt;&gt; (64 - (32))))" data-ref="_M/SIP_ROTL">SIP_ROTL</a>(<a class="local col8 ref" href="#1988H" title='H' data-ref="1988H">H</a>-&gt;<a class="ref field" href="#siphash::v2" title='siphash::v2' data-ref="siphash::v2">v2</a>, <var>32</var>);</td></tr>
+<tr><th id="188">188</th><td>  }</td></tr>
+<tr><th id="189">189</th><td>} <i>/* sip_round() */</i></td></tr>
+<tr><th id="190">190</th><td></td></tr>
+<tr><th id="191">191</th><td><em>static</em> <b>struct</b> <a class="type" href="#siphash" title='siphash' data-ref="siphash">siphash</a> *</td></tr>
+<tr><th id="192">192</th><td><dfn class="decl def fn" id="sip24_init" title='sip24_init' data-ref="sip24_init">sip24_init</dfn>(<b>struct</b> <a class="type" href="#siphash" title='siphash' data-ref="siphash">siphash</a> *<dfn class="local col1 decl" id="1991H" title='H' data-type='struct siphash *' data-ref="1991H">H</dfn>, <em>const</em> <b>struct</b> <a class="type" href="#sipkey" title='sipkey' data-ref="sipkey">sipkey</a> *<dfn class="local col2 decl" id="1992key" title='key' data-type='const struct sipkey *' data-ref="1992key">key</dfn>) {</td></tr>
+<tr><th id="193">193</th><td>  <a class="local col1 ref" href="#1991H" title='H' data-ref="1991H">H</a>-&gt;<a class="ref field" href="#siphash::v0" title='siphash::v0' data-ref="siphash::v0">v0</a> = <a class="macro" href="#109" title="((((uint64_t)0x736f6d65U) &lt;&lt; 32) | (0x70736575U))" data-ref="_M/SIP_ULL">SIP_ULL</a>(<var>0x736f6d65U</var>, <var>0x70736575U</var>) ^ <a class="local col2 ref" href="#1992key" title='key' data-ref="1992key">key</a>-&gt;<a class="ref field" href="#sipkey::k" title='sipkey::k' data-ref="sipkey::k">k</a>[<var>0</var>];</td></tr>
+<tr><th id="194">194</th><td>  <a class="local col1 ref" href="#1991H" title='H' data-ref="1991H">H</a>-&gt;<a class="ref field" href="#siphash::v1" title='siphash::v1' data-ref="siphash::v1">v1</a> = <a class="macro" href="#109" title="((((uint64_t)0x646f7261U) &lt;&lt; 32) | (0x6e646f6dU))" data-ref="_M/SIP_ULL">SIP_ULL</a>(<var>0x646f7261U</var>, <var>0x6e646f6dU</var>) ^ <a class="local col2 ref" href="#1992key" title='key' data-ref="1992key">key</a>-&gt;<a class="ref field" href="#sipkey::k" title='sipkey::k' data-ref="sipkey::k">k</a>[<var>1</var>];</td></tr>
+<tr><th id="195">195</th><td>  <a class="local col1 ref" href="#1991H" title='H' data-ref="1991H">H</a>-&gt;<a class="ref field" href="#siphash::v2" title='siphash::v2' data-ref="siphash::v2">v2</a> = <a class="macro" href="#109" title="((((uint64_t)0x6c796765U) &lt;&lt; 32) | (0x6e657261U))" data-ref="_M/SIP_ULL">SIP_ULL</a>(<var>0x6c796765U</var>, <var>0x6e657261U</var>) ^ <a class="local col2 ref" href="#1992key" title='key' data-ref="1992key">key</a>-&gt;<a class="ref field" href="#sipkey::k" title='sipkey::k' data-ref="sipkey::k">k</a>[<var>0</var>];</td></tr>
+<tr><th id="196">196</th><td>  <a class="local col1 ref" href="#1991H" title='H' data-ref="1991H">H</a>-&gt;<a class="ref field" href="#siphash::v3" title='siphash::v3' data-ref="siphash::v3">v3</a> = <a class="macro" href="#109" title="((((uint64_t)0x74656462U) &lt;&lt; 32) | (0x79746573U))" data-ref="_M/SIP_ULL">SIP_ULL</a>(<var>0x74656462U</var>, <var>0x79746573U</var>) ^ <a class="local col2 ref" href="#1992key" title='key' data-ref="1992key">key</a>-&gt;<a class="ref field" href="#sipkey::k" title='sipkey::k' data-ref="sipkey::k">k</a>[<var>1</var>];</td></tr>
+<tr><th id="197">197</th><td></td></tr>
+<tr><th id="198">198</th><td>  <a class="local col1 ref" href="#1991H" title='H' data-ref="1991H">H</a>-&gt;<a class="ref field" href="#siphash::p" title='siphash::p' data-ref="siphash::p">p</a> = <a class="local col1 ref" href="#1991H" title='H' data-ref="1991H">H</a>-&gt;<a class="ref field" href="#siphash::buf" title='siphash::buf' data-ref="siphash::buf">buf</a>;</td></tr>
+<tr><th id="199">199</th><td>  <a class="local col1 ref" href="#1991H" title='H' data-ref="1991H">H</a>-&gt;<a class="ref field" href="#siphash::c" title='siphash::c' data-ref="siphash::c">c</a> = <var>0</var>;</td></tr>
+<tr><th id="200">200</th><td></td></tr>
+<tr><th id="201">201</th><td>  <b>return</b> <a class="local col1 ref" href="#1991H" title='H' data-ref="1991H">H</a>;</td></tr>
+<tr><th id="202">202</th><td>} <i>/* sip24_init() */</i></td></tr>
+<tr><th id="203">203</th><td></td></tr>
+<tr><th id="204">204</th><td><u>#define <dfn class="macro" id="_M/sip_endof" data-ref="_M/sip_endof">sip_endof</dfn>(a) (&amp;(a)[sizeof(a) / sizeof *(a)])</u></td></tr>
+<tr><th id="205">205</th><td></td></tr>
+<tr><th id="206">206</th><td><em>static</em> <b>struct</b> <a class="type" href="#siphash" title='siphash' data-ref="siphash">siphash</a> *</td></tr>
+<tr><th id="207">207</th><td><dfn class="decl def fn" id="sip24_update" title='sip24_update' data-ref="sip24_update">sip24_update</dfn>(<b>struct</b> <a class="type" href="#siphash" title='siphash' data-ref="siphash">siphash</a> *<dfn class="local col3 decl" id="1993H" title='H' data-type='struct siphash *' data-ref="1993H">H</dfn>, <em>const</em> <em>void</em> *<dfn class="local col4 decl" id="1994src" title='src' data-type='const void *' data-ref="1994src">src</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col5 decl" id="1995len" title='len' data-type='size_t' data-ref="1995len">len</dfn>) {</td></tr>
+<tr><th id="208">208</th><td>  <em>const</em> <em>unsigned</em> <em>char</em> *<dfn class="local col6 decl" id="1996p" title='p' data-type='const unsigned char *' data-ref="1996p">p</dfn> = (<em>const</em> <em>unsigned</em> <em>char</em> *)<a class="local col4 ref" href="#1994src" title='src' data-ref="1994src">src</a>, *<dfn class="local col7 decl" id="1997pe" title='pe' data-type='const unsigned char *' data-ref="1997pe">pe</dfn> = <a class="local col6 ref" href="#1996p" title='p' data-ref="1996p">p</a> + <a class="local col5 ref" href="#1995len" title='len' data-ref="1995len">len</a>;</td></tr>
+<tr><th id="209">209</th><td>  <a class="typedef" href="../../include/x86_64-linux-gnu/bits/stdint-uintn.h.html#uint64_t" title='uint64_t' data-type='__uint64_t' data-ref="uint64_t">uint64_t</a> <dfn class="local col8 decl" id="1998m" title='m' data-type='uint64_t' data-ref="1998m">m</dfn>;</td></tr>
+<tr><th id="210">210</th><td></td></tr>
+<tr><th id="211">211</th><td>  <b>do</b> {</td></tr>
+<tr><th id="212">212</th><td>    <b>while</b> (<a class="local col6 ref" href="#1996p" title='p' data-ref="1996p">p</a> &lt; <a class="local col7 ref" href="#1997pe" title='pe' data-ref="1997pe">pe</a> &amp;&amp; <a class="local col3 ref" href="#1993H" title='H' data-ref="1993H">H</a>-&gt;<a class="ref field" href="#siphash::p" title='siphash::p' data-ref="siphash::p">p</a> &lt; <a class="macro" href="#204" title="(&amp;(H-&gt;buf)[sizeof(H-&gt;buf) / sizeof *(H-&gt;buf)])" data-ref="_M/sip_endof">sip_endof</a>(<a class="local col3 ref" href="#1993H" title='H' data-ref="1993H">H</a>-&gt;<a class="ref field" href="#siphash::buf" title='siphash::buf' data-ref="siphash::buf">buf</a>))</td></tr>
+<tr><th id="213">213</th><td>      *<a class="local col3 ref" href="#1993H" title='H' data-ref="1993H">H</a>-&gt;<a class="ref field" href="#siphash::p" title='siphash::p' data-ref="siphash::p">p</a>++ = *<a class="local col6 ref" href="#1996p" title='p' data-ref="1996p">p</a>++;</td></tr>
+<tr><th id="214">214</th><td></td></tr>
+<tr><th id="215">215</th><td>    <b>if</b> (<a class="local col3 ref" href="#1993H" title='H' data-ref="1993H">H</a>-&gt;<a class="ref field" href="#siphash::p" title='siphash::p' data-ref="siphash::p">p</a> &lt; <a class="macro" href="#204" title="(&amp;(H-&gt;buf)[sizeof(H-&gt;buf) / sizeof *(H-&gt;buf)])" data-ref="_M/sip_endof">sip_endof</a>(<a class="local col3 ref" href="#1993H" title='H' data-ref="1993H">H</a>-&gt;<a class="ref field" href="#siphash::buf" title='siphash::buf' data-ref="siphash::buf">buf</a>))</td></tr>
+<tr><th id="216">216</th><td>      <b>break</b>;</td></tr>
+<tr><th id="217">217</th><td></td></tr>
+<tr><th id="218">218</th><td>    <a class="local col8 ref" href="#1998m" title='m' data-ref="1998m">m</a> = <a class="macro" href="#123" title="(((uint64_t)((H-&gt;buf)[0]) &lt;&lt; 0) | ((uint64_t)((H-&gt;buf)[1]) &lt;&lt; 8) | ((uint64_t)((H-&gt;buf)[2]) &lt;&lt; 16) | ((uint64_t)((H-&gt;buf)[3]) &lt;&lt; 24) | ((uint64_t)((H-&gt;buf)[4]) &lt;&lt; 32) | ((uint64_t)((H-&gt;buf)[5]) &lt;&lt; 40) | ((uint64_t)((H-&gt;buf)[6]) &lt;&lt; 48) | ((uint64_t)((H-&gt;buf)[7]) &lt;&lt; 56))" data-ref="_M/SIP_U8TO64_LE">SIP_U8TO64_LE</a>(<a class="local col3 ref" href="#1993H" title='H' data-ref="1993H">H</a>-&gt;<a class="ref field" href="#siphash::buf" title='siphash::buf' data-ref="siphash::buf">buf</a>);</td></tr>
+<tr><th id="219">219</th><td>    <a class="local col3 ref" href="#1993H" title='H' data-ref="1993H">H</a>-&gt;<a class="ref field" href="#siphash::v3" title='siphash::v3' data-ref="siphash::v3">v3</a> ^= <a class="local col8 ref" href="#1998m" title='m' data-ref="1998m">m</a>;</td></tr>
+<tr><th id="220">220</th><td>    <a class="ref fn" href="#sip_round" title='sip_round' data-ref="sip_round">sip_round</a>(<a class="local col3 ref" href="#1993H" title='H' data-ref="1993H">H</a>, <span class='inlayHint'>rounds:&nbsp;</span><var>2</var>);</td></tr>
+<tr><th id="221">221</th><td>    <a class="local col3 ref" href="#1993H" title='H' data-ref="1993H">H</a>-&gt;<a class="ref field" href="#siphash::v0" title='siphash::v0' data-ref="siphash::v0">v0</a> ^= <a class="local col8 ref" href="#1998m" title='m' data-ref="1998m">m</a>;</td></tr>
+<tr><th id="222">222</th><td></td></tr>
+<tr><th id="223">223</th><td>    <a class="local col3 ref" href="#1993H" title='H' data-ref="1993H">H</a>-&gt;<a class="ref field" href="#siphash::p" title='siphash::p' data-ref="siphash::p">p</a> = <a class="local col3 ref" href="#1993H" title='H' data-ref="1993H">H</a>-&gt;<a class="ref field" href="#siphash::buf" title='siphash::buf' data-ref="siphash::buf">buf</a>;</td></tr>
+<tr><th id="224">224</th><td>    <a class="local col3 ref" href="#1993H" title='H' data-ref="1993H">H</a>-&gt;<a class="ref field" href="#siphash::c" title='siphash::c' data-ref="siphash::c">c</a> += <var>8</var>;</td></tr>
+<tr><th id="225">225</th><td>  } <b>while</b> (<a class="local col6 ref" href="#1996p" title='p' data-ref="1996p">p</a> &lt; <a class="local col7 ref" href="#1997pe" title='pe' data-ref="1997pe">pe</a>);</td></tr>
+<tr><th id="226">226</th><td></td></tr>
+<tr><th id="227">227</th><td>  <b>return</b> <a class="local col3 ref" href="#1993H" title='H' data-ref="1993H">H</a>;</td></tr>
+<tr><th id="228">228</th><td>} <i>/* sip24_update() */</i></td></tr>
+<tr><th id="229">229</th><td></td></tr>
+<tr><th id="230">230</th><td><em>static</em> <a class="typedef" href="../../include/x86_64-linux-gnu/bits/stdint-uintn.h.html#uint64_t" title='uint64_t' data-type='__uint64_t' data-ref="uint64_t">uint64_t</a></td></tr>
+<tr><th id="231">231</th><td><dfn class="decl def fn" id="sip24_final" title='sip24_final' data-ref="sip24_final">sip24_final</dfn>(<b>struct</b> <a class="type" href="#siphash" title='siphash' data-ref="siphash">siphash</a> *<dfn class="local col9 decl" id="1999H" title='H' data-type='struct siphash *' data-ref="1999H">H</dfn>) {</td></tr>
+<tr><th id="232">232</th><td>  <em>const</em> <em>char</em> <dfn class="local col0 decl" id="2000left" title='left' data-type='const char' data-ref="2000left">left</dfn> = (<em>char</em>)(<a class="local col9 ref" href="#1999H" title='H' data-ref="1999H">H</a>-&gt;<a class="ref field" href="#siphash::p" title='siphash::p' data-ref="siphash::p">p</a> - <a class="local col9 ref" href="#1999H" title='H' data-ref="1999H">H</a>-&gt;<a class="ref field" href="#siphash::buf" title='siphash::buf' data-ref="siphash::buf">buf</a>);</td></tr>
+<tr><th id="233">233</th><td>  <a class="typedef" href="../../include/x86_64-linux-gnu/bits/stdint-uintn.h.html#uint64_t" title='uint64_t' data-type='__uint64_t' data-ref="uint64_t">uint64_t</a> <dfn class="local col1 decl" id="2001b" title='b' data-type='uint64_t' data-ref="2001b">b</dfn> = (<a class="local col9 ref" href="#1999H" title='H' data-ref="1999H">H</a>-&gt;<a class="ref field" href="#siphash::c" title='siphash::c' data-ref="siphash::c">c</a> + <a class="local col0 ref" href="#2000left" title='left' data-ref="2000left">left</a>) &lt;&lt; <var>56</var>;</td></tr>
+<tr><th id="234">234</th><td></td></tr>
+<tr><th id="235">235</th><td>  <b>switch</b> (<a class="local col0 ref" href="#2000left" title='left' data-ref="2000left">left</a>) {</td></tr>
+<tr><th id="236">236</th><td>  <b>case</b> <var>7</var>:</td></tr>
+<tr><th id="237">237</th><td>    <a class="local col1 ref" href="#2001b" title='b' data-ref="2001b">b</a> |= (<a class="typedef" href="../../include/x86_64-linux-gnu/bits/stdint-uintn.h.html#uint64_t" title='uint64_t' data-type='__uint64_t' data-ref="uint64_t">uint64_t</a>)<a class="local col9 ref" href="#1999H" title='H' data-ref="1999H">H</a>-&gt;<a class="ref field" href="#siphash::buf" title='siphash::buf' data-ref="siphash::buf">buf</a>[<var>6</var>] &lt;&lt; <var>48</var>;</td></tr>
+<tr><th id="238">238</th><td>    <i>/* fall through */</i></td></tr>
+<tr><th id="239">239</th><td>  <b>case</b> <var>6</var>:</td></tr>
+<tr><th id="240">240</th><td>    <a class="local col1 ref" href="#2001b" title='b' data-ref="2001b">b</a> |= (<a class="typedef" href="../../include/x86_64-linux-gnu/bits/stdint-uintn.h.html#uint64_t" title='uint64_t' data-type='__uint64_t' data-ref="uint64_t">uint64_t</a>)<a class="local col9 ref" href="#1999H" title='H' data-ref="1999H">H</a>-&gt;<a class="ref field" href="#siphash::buf" title='siphash::buf' data-ref="siphash::buf">buf</a>[<var>5</var>] &lt;&lt; <var>40</var>;</td></tr>
+<tr><th id="241">241</th><td>    <i>/* fall through */</i></td></tr>
+<tr><th id="242">242</th><td>  <b>case</b> <var>5</var>:</td></tr>
+<tr><th id="243">243</th><td>    <a class="local col1 ref" href="#2001b" title='b' data-ref="2001b">b</a> |= (<a class="typedef" href="../../include/x86_64-linux-gnu/bits/stdint-uintn.h.html#uint64_t" title='uint64_t' data-type='__uint64_t' data-ref="uint64_t">uint64_t</a>)<a class="local col9 ref" href="#1999H" title='H' data-ref="1999H">H</a>-&gt;<a class="ref field" href="#siphash::buf" title='siphash::buf' data-ref="siphash::buf">buf</a>[<var>4</var>] &lt;&lt; <var>32</var>;</td></tr>
+<tr><th id="244">244</th><td>    <i>/* fall through */</i></td></tr>
+<tr><th id="245">245</th><td>  <b>case</b> <var>4</var>:</td></tr>
+<tr><th id="246">246</th><td>    <a class="local col1 ref" href="#2001b" title='b' data-ref="2001b">b</a> |= (<a class="typedef" href="../../include/x86_64-linux-gnu/bits/stdint-uintn.h.html#uint64_t" title='uint64_t' data-type='__uint64_t' data-ref="uint64_t">uint64_t</a>)<a class="local col9 ref" href="#1999H" title='H' data-ref="1999H">H</a>-&gt;<a class="ref field" href="#siphash::buf" title='siphash::buf' data-ref="siphash::buf">buf</a>[<var>3</var>] &lt;&lt; <var>24</var>;</td></tr>
+<tr><th id="247">247</th><td>    <i>/* fall through */</i></td></tr>
+<tr><th id="248">248</th><td>  <b>case</b> <var>3</var>:</td></tr>
+<tr><th id="249">249</th><td>    <a class="local col1 ref" href="#2001b" title='b' data-ref="2001b">b</a> |= (<a class="typedef" href="../../include/x86_64-linux-gnu/bits/stdint-uintn.h.html#uint64_t" title='uint64_t' data-type='__uint64_t' data-ref="uint64_t">uint64_t</a>)<a class="local col9 ref" href="#1999H" title='H' data-ref="1999H">H</a>-&gt;<a class="ref field" href="#siphash::buf" title='siphash::buf' data-ref="siphash::buf">buf</a>[<var>2</var>] &lt;&lt; <var>16</var>;</td></tr>
+<tr><th id="250">250</th><td>    <i>/* fall through */</i></td></tr>
+<tr><th id="251">251</th><td>  <b>case</b> <var>2</var>:</td></tr>
+<tr><th id="252">252</th><td>    <a class="local col1 ref" href="#2001b" title='b' data-ref="2001b">b</a> |= (<a class="typedef" href="../../include/x86_64-linux-gnu/bits/stdint-uintn.h.html#uint64_t" title='uint64_t' data-type='__uint64_t' data-ref="uint64_t">uint64_t</a>)<a class="local col9 ref" href="#1999H" title='H' data-ref="1999H">H</a>-&gt;<a class="ref field" href="#siphash::buf" title='siphash::buf' data-ref="siphash::buf">buf</a>[<var>1</var>] &lt;&lt; <var>8</var>;</td></tr>
+<tr><th id="253">253</th><td>    <i>/* fall through */</i></td></tr>
+<tr><th id="254">254</th><td>  <b>case</b> <var>1</var>:</td></tr>
+<tr><th id="255">255</th><td>    <a class="local col1 ref" href="#2001b" title='b' data-ref="2001b">b</a> |= (<a class="typedef" href="../../include/x86_64-linux-gnu/bits/stdint-uintn.h.html#uint64_t" title='uint64_t' data-type='__uint64_t' data-ref="uint64_t">uint64_t</a>)<a class="local col9 ref" href="#1999H" title='H' data-ref="1999H">H</a>-&gt;<a class="ref field" href="#siphash::buf" title='siphash::buf' data-ref="siphash::buf">buf</a>[<var>0</var>] &lt;&lt; <var>0</var>;</td></tr>
+<tr><th id="256">256</th><td>    <i>/* fall through */</i></td></tr>
+<tr><th id="257">257</th><td>  <b>case</b> <var>0</var>:</td></tr>
+<tr><th id="258">258</th><td>    <b>break</b>;</td></tr>
+<tr><th id="259">259</th><td>  }</td></tr>
+<tr><th id="260">260</th><td></td></tr>
+<tr><th id="261">261</th><td>  <a class="local col9 ref" href="#1999H" title='H' data-ref="1999H">H</a>-&gt;<a class="ref field" href="#siphash::v3" title='siphash::v3' data-ref="siphash::v3">v3</a> ^= <a class="local col1 ref" href="#2001b" title='b' data-ref="2001b">b</a>;</td></tr>
+<tr><th id="262">262</th><td>  <a class="ref fn" href="#sip_round" title='sip_round' data-ref="sip_round">sip_round</a>(<a class="local col9 ref" href="#1999H" title='H' data-ref="1999H">H</a>, <span class='inlayHint'>rounds:&nbsp;</span><var>2</var>);</td></tr>
+<tr><th id="263">263</th><td>  <a class="local col9 ref" href="#1999H" title='H' data-ref="1999H">H</a>-&gt;<a class="ref field" href="#siphash::v0" title='siphash::v0' data-ref="siphash::v0">v0</a> ^= <a class="local col1 ref" href="#2001b" title='b' data-ref="2001b">b</a>;</td></tr>
+<tr><th id="264">264</th><td>  <a class="local col9 ref" href="#1999H" title='H' data-ref="1999H">H</a>-&gt;<a class="ref field" href="#siphash::v2" title='siphash::v2' data-ref="siphash::v2">v2</a> ^= <var>0xff</var>;</td></tr>
+<tr><th id="265">265</th><td>  <a class="ref fn" href="#sip_round" title='sip_round' data-ref="sip_round">sip_round</a>(<a class="local col9 ref" href="#1999H" title='H' data-ref="1999H">H</a>, <span class='inlayHint'>rounds:&nbsp;</span><var>4</var>);</td></tr>
+<tr><th id="266">266</th><td></td></tr>
+<tr><th id="267">267</th><td>  <b>return</b> <a class="local col9 ref" href="#1999H" title='H' data-ref="1999H">H</a>-&gt;<a class="ref field" href="#siphash::v0" title='siphash::v0' data-ref="siphash::v0">v0</a> ^ <a class="local col9 ref" href="#1999H" title='H' data-ref="1999H">H</a>-&gt;<a class="ref field" href="#siphash::v1" title='siphash::v1' data-ref="siphash::v1">v1</a> ^ <a class="local col9 ref" href="#1999H" title='H' data-ref="1999H">H</a>-&gt;<a class="ref field" href="#siphash::v2" title='siphash::v2' data-ref="siphash::v2">v2</a> ^ <a class="local col9 ref" href="#1999H" title='H' data-ref="1999H">H</a>-&gt;<a class="ref field" href="#siphash::v3" title='siphash::v3' data-ref="siphash::v3">v3</a>;</td></tr>
+<tr><th id="268">268</th><td>} <i>/* sip24_final() */</i></td></tr>
+<tr><th id="269">269</th><td></td></tr>
+<tr><th id="270">270</th><td><em>static</em> <a class="typedef" href="../../include/x86_64-linux-gnu/bits/stdint-uintn.h.html#uint64_t" title='uint64_t' data-type='__uint64_t' data-ref="uint64_t">uint64_t</a></td></tr>
+<tr><th id="271">271</th><td><dfn class="decl def fn" id="siphash24" title='siphash24' data-ref="siphash24">siphash24</dfn>(<em>const</em> <em>void</em> *<dfn class="local col2 decl" id="2002src" title='src' data-type='const void *' data-ref="2002src">src</dfn>, <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col3 decl" id="2003len" title='len' data-type='size_t' data-ref="2003len">len</dfn>, <em>const</em> <b>struct</b> <a class="type" href="#sipkey" title='sipkey' data-ref="sipkey">sipkey</a> *<dfn class="local col4 decl" id="2004key" title='key' data-type='const struct sipkey *' data-ref="2004key">key</dfn>) {</td></tr>
+<tr><th id="272">272</th><td>  <b>struct</b> <a class="type" href="#siphash" title='siphash' data-ref="siphash">siphash</a> <dfn class="local col5 decl" id="2005state" title='state' data-type='struct siphash' data-ref="2005state">state</dfn> = <a class="macro" href="#129" title="{ 0, 0, 0, 0, {0}, 0, 0 }" data-ref="_M/SIPHASH_INITIALIZER">SIPHASH_INITIALIZER</a>;</td></tr>
+<tr><th id="273">273</th><td>  <b>return</b> <a class="ref fn" href="#sip24_final" title='sip24_final' data-ref="sip24_final">sip24_final</a>(<span class='inlayHint'>H:&nbsp;</span><a class="ref fn" href="#sip24_update" title='sip24_update' data-ref="sip24_update">sip24_update</a>(<span class='inlayHint'>H:&nbsp;</span><a class="ref fn" href="#sip24_init" title='sip24_init' data-ref="sip24_init">sip24_init</a>(<span class='inlayHint'>H:&nbsp;</span>&amp;<a class="local col5 ref" href="#2005state" title='state' data-ref="2005state">state</a>, <a class="local col4 ref" href="#2004key" title='key' data-ref="2004key">key</a>), <a class="local col2 ref" href="#2002src" title='src' data-ref="2002src">src</a>, <a class="local col3 ref" href="#2003len" title='len' data-ref="2003len">len</a>));</td></tr>
+<tr><th id="274">274</th><td>} <i>/* siphash24() */</i></td></tr>
+<tr><th id="275">275</th><td></td></tr>
+<tr><th id="276">276</th><td><i>/*</i></td></tr>
+<tr><th id="277">277</th><td><i> * SipHash-2-4 output with</i></td></tr>
+<tr><th id="278">278</th><td><i> * k = 00 01 02 ...</i></td></tr>
+<tr><th id="279">279</th><td><i> * and</i></td></tr>
+<tr><th id="280">280</th><td><i> * in = (empty string)</i></td></tr>
+<tr><th id="281">281</th><td><i> * in = 00 (1 byte)</i></td></tr>
+<tr><th id="282">282</th><td><i> * in = 00 01 (2 bytes)</i></td></tr>
+<tr><th id="283">283</th><td><i> * in = 00 01 02 (3 bytes)</i></td></tr>
+<tr><th id="284">284</th><td><i> * ...</i></td></tr>
+<tr><th id="285">285</th><td><i> * in = 00 01 02 ... 3e (63 bytes)</i></td></tr>
+<tr><th id="286">286</th><td><i> */</i></td></tr>
+<tr><th id="287">287</th><td><em>static</em> <em>int</em></td></tr>
+<tr><th id="288">288</th><td><dfn class="decl def fn" id="sip24_valid" title='sip24_valid' data-ref="sip24_valid">sip24_valid</dfn>(<em>void</em>) {</td></tr>
+<tr><th id="289">289</th><td>  <i>/* clang-format off */</i></td></tr>
+<tr><th id="290">290</th><td>  <em>static</em> <em>const</em> <em>unsigned</em> <em>char</em> <dfn class="local col6 decl" id="2006vectors" title='vectors' data-type='const unsigned char[64][8]' data-ref="2006vectors">vectors</dfn>[<var>64</var>][<var>8</var>] = {</td></tr>
+<tr><th id="291">291</th><td>    { <var>0x31</var>, <var>0x0e</var>, <var>0x0e</var>, <var>0xdd</var>, <var>0x47</var>, <var>0xdb</var>, <var>0x6f</var>, <var>0x72</var>, },</td></tr>
+<tr><th id="292">292</th><td>    { <var>0xfd</var>, <var>0x67</var>, <var>0xdc</var>, <var>0x93</var>, <var>0xc5</var>, <var>0x39</var>, <var>0xf8</var>, <var>0x74</var>, },</td></tr>
+<tr><th id="293">293</th><td>    { <var>0x5a</var>, <var>0x4f</var>, <var>0xa9</var>, <var>0xd9</var>, <var>0x09</var>, <var>0x80</var>, <var>0x6c</var>, <var>0x0d</var>, },</td></tr>
+<tr><th id="294">294</th><td>    { <var>0x2d</var>, <var>0x7e</var>, <var>0xfb</var>, <var>0xd7</var>, <var>0x96</var>, <var>0x66</var>, <var>0x67</var>, <var>0x85</var>, },</td></tr>
+<tr><th id="295">295</th><td>    { <var>0xb7</var>, <var>0x87</var>, <var>0x71</var>, <var>0x27</var>, <var>0xe0</var>, <var>0x94</var>, <var>0x27</var>, <var>0xcf</var>, },</td></tr>
+<tr><th id="296">296</th><td>    { <var>0x8d</var>, <var>0xa6</var>, <var>0x99</var>, <var>0xcd</var>, <var>0x64</var>, <var>0x55</var>, <var>0x76</var>, <var>0x18</var>, },</td></tr>
+<tr><th id="297">297</th><td>    { <var>0xce</var>, <var>0xe3</var>, <var>0xfe</var>, <var>0x58</var>, <var>0x6e</var>, <var>0x46</var>, <var>0xc9</var>, <var>0xcb</var>, },</td></tr>
+<tr><th id="298">298</th><td>    { <var>0x37</var>, <var>0xd1</var>, <var>0x01</var>, <var>0x8b</var>, <var>0xf5</var>, <var>0x00</var>, <var>0x02</var>, <var>0xab</var>, },</td></tr>
+<tr><th id="299">299</th><td>    { <var>0x62</var>, <var>0x24</var>, <var>0x93</var>, <var>0x9a</var>, <var>0x79</var>, <var>0xf5</var>, <var>0xf5</var>, <var>0x93</var>, },</td></tr>
+<tr><th id="300">300</th><td>    { <var>0xb0</var>, <var>0xe4</var>, <var>0xa9</var>, <var>0x0b</var>, <var>0xdf</var>, <var>0x82</var>, <var>0x00</var>, <var>0x9e</var>, },</td></tr>
+<tr><th id="301">301</th><td>    { <var>0xf3</var>, <var>0xb9</var>, <var>0xdd</var>, <var>0x94</var>, <var>0xc5</var>, <var>0xbb</var>, <var>0x5d</var>, <var>0x7a</var>, },</td></tr>
+<tr><th id="302">302</th><td>    { <var>0xa7</var>, <var>0xad</var>, <var>0x6b</var>, <var>0x22</var>, <var>0x46</var>, <var>0x2f</var>, <var>0xb3</var>, <var>0xf4</var>, },</td></tr>
+<tr><th id="303">303</th><td>    { <var>0xfb</var>, <var>0xe5</var>, <var>0x0e</var>, <var>0x86</var>, <var>0xbc</var>, <var>0x8f</var>, <var>0x1e</var>, <var>0x75</var>, },</td></tr>
+<tr><th id="304">304</th><td>    { <var>0x90</var>, <var>0x3d</var>, <var>0x84</var>, <var>0xc0</var>, <var>0x27</var>, <var>0x56</var>, <var>0xea</var>, <var>0x14</var>, },</td></tr>
+<tr><th id="305">305</th><td>    { <var>0xee</var>, <var>0xf2</var>, <var>0x7a</var>, <var>0x8e</var>, <var>0x90</var>, <var>0xca</var>, <var>0x23</var>, <var>0xf7</var>, },</td></tr>
+<tr><th id="306">306</th><td>    { <var>0xe5</var>, <var>0x45</var>, <var>0xbe</var>, <var>0x49</var>, <var>0x61</var>, <var>0xca</var>, <var>0x29</var>, <var>0xa1</var>, },</td></tr>
+<tr><th id="307">307</th><td>    { <var>0xdb</var>, <var>0x9b</var>, <var>0xc2</var>, <var>0x57</var>, <var>0x7f</var>, <var>0xcc</var>, <var>0x2a</var>, <var>0x3f</var>, },</td></tr>
+<tr><th id="308">308</th><td>    { <var>0x94</var>, <var>0x47</var>, <var>0xbe</var>, <var>0x2c</var>, <var>0xf5</var>, <var>0xe9</var>, <var>0x9a</var>, <var>0x69</var>, },</td></tr>
+<tr><th id="309">309</th><td>    { <var>0x9c</var>, <var>0xd3</var>, <var>0x8d</var>, <var>0x96</var>, <var>0xf0</var>, <var>0xb3</var>, <var>0xc1</var>, <var>0x4b</var>, },</td></tr>
+<tr><th id="310">310</th><td>    { <var>0xbd</var>, <var>0x61</var>, <var>0x79</var>, <var>0xa7</var>, <var>0x1d</var>, <var>0xc9</var>, <var>0x6d</var>, <var>0xbb</var>, },</td></tr>
+<tr><th id="311">311</th><td>    { <var>0x98</var>, <var>0xee</var>, <var>0xa2</var>, <var>0x1a</var>, <var>0xf2</var>, <var>0x5c</var>, <var>0xd6</var>, <var>0xbe</var>, },</td></tr>
+<tr><th id="312">312</th><td>    { <var>0xc7</var>, <var>0x67</var>, <var>0x3b</var>, <var>0x2e</var>, <var>0xb0</var>, <var>0xcb</var>, <var>0xf2</var>, <var>0xd0</var>, },</td></tr>
+<tr><th id="313">313</th><td>    { <var>0x88</var>, <var>0x3e</var>, <var>0xa3</var>, <var>0xe3</var>, <var>0x95</var>, <var>0x67</var>, <var>0x53</var>, <var>0x93</var>, },</td></tr>
+<tr><th id="314">314</th><td>    { <var>0xc8</var>, <var>0xce</var>, <var>0x5c</var>, <var>0xcd</var>, <var>0x8c</var>, <var>0x03</var>, <var>0x0c</var>, <var>0xa8</var>, },</td></tr>
+<tr><th id="315">315</th><td>    { <var>0x94</var>, <var>0xaf</var>, <var>0x49</var>, <var>0xf6</var>, <var>0xc6</var>, <var>0x50</var>, <var>0xad</var>, <var>0xb8</var>, },</td></tr>
+<tr><th id="316">316</th><td>    { <var>0xea</var>, <var>0xb8</var>, <var>0x85</var>, <var>0x8a</var>, <var>0xde</var>, <var>0x92</var>, <var>0xe1</var>, <var>0xbc</var>, },</td></tr>
+<tr><th id="317">317</th><td>    { <var>0xf3</var>, <var>0x15</var>, <var>0xbb</var>, <var>0x5b</var>, <var>0xb8</var>, <var>0x35</var>, <var>0xd8</var>, <var>0x17</var>, },</td></tr>
+<tr><th id="318">318</th><td>    { <var>0xad</var>, <var>0xcf</var>, <var>0x6b</var>, <var>0x07</var>, <var>0x63</var>, <var>0x61</var>, <var>0x2e</var>, <var>0x2f</var>, },</td></tr>
+<tr><th id="319">319</th><td>    { <var>0xa5</var>, <var>0xc9</var>, <var>0x1d</var>, <var>0xa7</var>, <var>0xac</var>, <var>0xaa</var>, <var>0x4d</var>, <var>0xde</var>, },</td></tr>
+<tr><th id="320">320</th><td>    { <var>0x71</var>, <var>0x65</var>, <var>0x95</var>, <var>0x87</var>, <var>0x66</var>, <var>0x50</var>, <var>0xa2</var>, <var>0xa6</var>, },</td></tr>
+<tr><th id="321">321</th><td>    { <var>0x28</var>, <var>0xef</var>, <var>0x49</var>, <var>0x5c</var>, <var>0x53</var>, <var>0xa3</var>, <var>0x87</var>, <var>0xad</var>, },</td></tr>
+<tr><th id="322">322</th><td>    { <var>0x42</var>, <var>0xc3</var>, <var>0x41</var>, <var>0xd8</var>, <var>0xfa</var>, <var>0x92</var>, <var>0xd8</var>, <var>0x32</var>, },</td></tr>
+<tr><th id="323">323</th><td>    { <var>0xce</var>, <var>0x7c</var>, <var>0xf2</var>, <var>0x72</var>, <var>0x2f</var>, <var>0x51</var>, <var>0x27</var>, <var>0x71</var>, },</td></tr>
+<tr><th id="324">324</th><td>    { <var>0xe3</var>, <var>0x78</var>, <var>0x59</var>, <var>0xf9</var>, <var>0x46</var>, <var>0x23</var>, <var>0xf3</var>, <var>0xa7</var>, },</td></tr>
+<tr><th id="325">325</th><td>    { <var>0x38</var>, <var>0x12</var>, <var>0x05</var>, <var>0xbb</var>, <var>0x1a</var>, <var>0xb0</var>, <var>0xe0</var>, <var>0x12</var>, },</td></tr>
+<tr><th id="326">326</th><td>    { <var>0xae</var>, <var>0x97</var>, <var>0xa1</var>, <var>0x0f</var>, <var>0xd4</var>, <var>0x34</var>, <var>0xe0</var>, <var>0x15</var>, },</td></tr>
+<tr><th id="327">327</th><td>    { <var>0xb4</var>, <var>0xa3</var>, <var>0x15</var>, <var>0x08</var>, <var>0xbe</var>, <var>0xff</var>, <var>0x4d</var>, <var>0x31</var>, },</td></tr>
+<tr><th id="328">328</th><td>    { <var>0x81</var>, <var>0x39</var>, <var>0x62</var>, <var>0x29</var>, <var>0xf0</var>, <var>0x90</var>, <var>0x79</var>, <var>0x02</var>, },</td></tr>
+<tr><th id="329">329</th><td>    { <var>0x4d</var>, <var>0x0c</var>, <var>0xf4</var>, <var>0x9e</var>, <var>0xe5</var>, <var>0xd4</var>, <var>0xdc</var>, <var>0xca</var>, },</td></tr>
+<tr><th id="330">330</th><td>    { <var>0x5c</var>, <var>0x73</var>, <var>0x33</var>, <var>0x6a</var>, <var>0x76</var>, <var>0xd8</var>, <var>0xbf</var>, <var>0x9a</var>, },</td></tr>
+<tr><th id="331">331</th><td>    { <var>0xd0</var>, <var>0xa7</var>, <var>0x04</var>, <var>0x53</var>, <var>0x6b</var>, <var>0xa9</var>, <var>0x3e</var>, <var>0x0e</var>, },</td></tr>
+<tr><th id="332">332</th><td>    { <var>0x92</var>, <var>0x59</var>, <var>0x58</var>, <var>0xfc</var>, <var>0xd6</var>, <var>0x42</var>, <var>0x0c</var>, <var>0xad</var>, },</td></tr>
+<tr><th id="333">333</th><td>    { <var>0xa9</var>, <var>0x15</var>, <var>0xc2</var>, <var>0x9b</var>, <var>0xc8</var>, <var>0x06</var>, <var>0x73</var>, <var>0x18</var>, },</td></tr>
+<tr><th id="334">334</th><td>    { <var>0x95</var>, <var>0x2b</var>, <var>0x79</var>, <var>0xf3</var>, <var>0xbc</var>, <var>0x0a</var>, <var>0xa6</var>, <var>0xd4</var>, },</td></tr>
+<tr><th id="335">335</th><td>    { <var>0xf2</var>, <var>0x1d</var>, <var>0xf2</var>, <var>0xe4</var>, <var>0x1d</var>, <var>0x45</var>, <var>0x35</var>, <var>0xf9</var>, },</td></tr>
+<tr><th id="336">336</th><td>    { <var>0x87</var>, <var>0x57</var>, <var>0x75</var>, <var>0x19</var>, <var>0x04</var>, <var>0x8f</var>, <var>0x53</var>, <var>0xa9</var>, },</td></tr>
+<tr><th id="337">337</th><td>    { <var>0x10</var>, <var>0xa5</var>, <var>0x6c</var>, <var>0xf5</var>, <var>0xdf</var>, <var>0xcd</var>, <var>0x9a</var>, <var>0xdb</var>, },</td></tr>
+<tr><th id="338">338</th><td>    { <var>0xeb</var>, <var>0x75</var>, <var>0x09</var>, <var>0x5c</var>, <var>0xcd</var>, <var>0x98</var>, <var>0x6c</var>, <var>0xd0</var>, },</td></tr>
+<tr><th id="339">339</th><td>    { <var>0x51</var>, <var>0xa9</var>, <var>0xcb</var>, <var>0x9e</var>, <var>0xcb</var>, <var>0xa3</var>, <var>0x12</var>, <var>0xe6</var>, },</td></tr>
+<tr><th id="340">340</th><td>    { <var>0x96</var>, <var>0xaf</var>, <var>0xad</var>, <var>0xfc</var>, <var>0x2c</var>, <var>0xe6</var>, <var>0x66</var>, <var>0xc7</var>, },</td></tr>
+<tr><th id="341">341</th><td>    { <var>0x72</var>, <var>0xfe</var>, <var>0x52</var>, <var>0x97</var>, <var>0x5a</var>, <var>0x43</var>, <var>0x64</var>, <var>0xee</var>, },</td></tr>
+<tr><th id="342">342</th><td>    { <var>0x5a</var>, <var>0x16</var>, <var>0x45</var>, <var>0xb2</var>, <var>0x76</var>, <var>0xd5</var>, <var>0x92</var>, <var>0xa1</var>, },</td></tr>
+<tr><th id="343">343</th><td>    { <var>0xb2</var>, <var>0x74</var>, <var>0xcb</var>, <var>0x8e</var>, <var>0xbf</var>, <var>0x87</var>, <var>0x87</var>, <var>0x0a</var>, },</td></tr>
+<tr><th id="344">344</th><td>    { <var>0x6f</var>, <var>0x9b</var>, <var>0xb4</var>, <var>0x20</var>, <var>0x3d</var>, <var>0xe7</var>, <var>0xb3</var>, <var>0x81</var>, },</td></tr>
+<tr><th id="345">345</th><td>    { <var>0xea</var>, <var>0xec</var>, <var>0xb2</var>, <var>0xa3</var>, <var>0x0b</var>, <var>0x22</var>, <var>0xa8</var>, <var>0x7f</var>, },</td></tr>
+<tr><th id="346">346</th><td>    { <var>0x99</var>, <var>0x24</var>, <var>0xa4</var>, <var>0x3c</var>, <var>0xc1</var>, <var>0x31</var>, <var>0x57</var>, <var>0x24</var>, },</td></tr>
+<tr><th id="347">347</th><td>    { <var>0xbd</var>, <var>0x83</var>, <var>0x8d</var>, <var>0x3a</var>, <var>0xaf</var>, <var>0xbf</var>, <var>0x8d</var>, <var>0xb7</var>, },</td></tr>
+<tr><th id="348">348</th><td>    { <var>0x0b</var>, <var>0x1a</var>, <var>0x2a</var>, <var>0x32</var>, <var>0x65</var>, <var>0xd5</var>, <var>0x1a</var>, <var>0xea</var>, },</td></tr>
+<tr><th id="349">349</th><td>    { <var>0x13</var>, <var>0x50</var>, <var>0x79</var>, <var>0xa3</var>, <var>0x23</var>, <var>0x1c</var>, <var>0xe6</var>, <var>0x60</var>, },</td></tr>
+<tr><th id="350">350</th><td>    { <var>0x93</var>, <var>0x2b</var>, <var>0x28</var>, <var>0x46</var>, <var>0xe4</var>, <var>0xd7</var>, <var>0x06</var>, <var>0x66</var>, },</td></tr>
+<tr><th id="351">351</th><td>    { <var>0xe1</var>, <var>0x91</var>, <var>0x5f</var>, <var>0x5c</var>, <var>0xb1</var>, <var>0xec</var>, <var>0xa4</var>, <var>0x6c</var>, },</td></tr>
+<tr><th id="352">352</th><td>    { <var>0xf3</var>, <var>0x25</var>, <var>0x96</var>, <var>0x5c</var>, <var>0xa1</var>, <var>0x6d</var>, <var>0x62</var>, <var>0x9f</var>, },</td></tr>
+<tr><th id="353">353</th><td>    { <var>0x57</var>, <var>0x5f</var>, <var>0xf2</var>, <var>0x8e</var>, <var>0x60</var>, <var>0x38</var>, <var>0x1b</var>, <var>0xe5</var>, },</td></tr>
+<tr><th id="354">354</th><td>    { <var>0x72</var>, <var>0x45</var>, <var>0x06</var>, <var>0xeb</var>, <var>0x4c</var>, <var>0x32</var>, <var>0x8a</var>, <var>0x95</var>, }</td></tr>
+<tr><th id="355">355</th><td>  };</td></tr>
+<tr><th id="356">356</th><td>  <i>/* clang-format on */</i></td></tr>
+<tr><th id="357">357</th><td></td></tr>
+<tr><th id="358">358</th><td>  <em>unsigned</em> <em>char</em> <dfn class="local col7 decl" id="2007in" title='in' data-type='unsigned char[64]' data-ref="2007in">in</dfn>[<var>64</var>];</td></tr>
+<tr><th id="359">359</th><td>  <b>struct</b> <a class="type" href="#sipkey" title='sipkey' data-ref="sipkey">sipkey</a> <dfn class="local col8 decl" id="2008k" title='k' data-type='struct sipkey' data-ref="2008k">k</dfn>;</td></tr>
+<tr><th id="360">360</th><td>  <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col9 decl" id="2009i" title='i' data-type='size_t' data-ref="2009i">i</dfn>;</td></tr>
+<tr><th id="361">361</th><td></td></tr>
+<tr><th id="362">362</th><td>  <a class="ref fn" href="#sip_tokey" title='sip_tokey' data-ref="sip_tokey">sip_tokey</a>(<span class='inlayHint'>key:&nbsp;</span>&amp;<a class="local col8 ref" href="#2008k" title='k' data-ref="2008k">k</a>, <span class='inlayHint'>src:&nbsp;</span><q>"\000\001\002\003\004\005\006\007\010\011"</q></td></tr>
+<tr><th id="363">363</th><td>                <q>"\012\013\014\015\016\017"</q>);</td></tr>
+<tr><th id="364">364</th><td></td></tr>
+<tr><th id="365">365</th><td>  <b>for</b> (<a class="local col9 ref" href="#2009i" title='i' data-ref="2009i">i</a> = <var>0</var>; <a class="local col9 ref" href="#2009i" title='i' data-ref="2009i">i</a> &lt; <b>sizeof</b> <a class="local col7 ref" href="#2007in" title='in' data-ref="2007in">in</a>; ++<a class="local col9 ref" href="#2009i" title='i' data-ref="2009i">i</a>) {</td></tr>
+<tr><th id="366">366</th><td>    <a class="local col7 ref" href="#2007in" title='in' data-ref="2007in">in</a>[<a class="local col9 ref" href="#2009i" title='i' data-ref="2009i">i</a>] = (<em>unsigned</em> <em>char</em>)<a class="local col9 ref" href="#2009i" title='i' data-ref="2009i">i</a>;</td></tr>
+<tr><th id="367">367</th><td></td></tr>
+<tr><th id="368">368</th><td>    <b>if</b> (<a class="ref fn" href="#siphash24" title='siphash24' data-ref="siphash24">siphash24</a>(<span class='inlayHint'>src:&nbsp;</span><a class="local col7 ref" href="#2007in" title='in' data-ref="2007in">in</a>, <span class='inlayHint'>len:&nbsp;</span><a class="local col9 ref" href="#2009i" title='i' data-ref="2009i">i</a>, <span class='inlayHint'>key:&nbsp;</span>&amp;<a class="local col8 ref" href="#2008k" title='k' data-ref="2008k">k</a>) != <a class="macro" href="#123" title="(((uint64_t)((vectors[i])[0]) &lt;&lt; 0) | ((uint64_t)((vectors[i])[1]) &lt;&lt; 8) | ((uint64_t)((vectors[i])[2]) &lt;&lt; 16) | ((uint64_t)((vectors[i])[3]) &lt;&lt; 24) | ((uint64_t)((vectors[i])[4]) &lt;&lt; 32) | ((uint64_t)((vectors[i])[5]) &lt;&lt; 40) | ((uint64_t)((vectors[i])[6]) &lt;&lt; 48) | ((uint64_t)((vectors[i])[7]) &lt;&lt; 56))" data-ref="_M/SIP_U8TO64_LE">SIP_U8TO64_LE</a>(<a class="local col6 ref" href="#2006vectors" title='vectors' data-ref="2006vectors">vectors</a>[<a class="local col9 ref" href="#2009i" title='i' data-ref="2009i">i</a>]))</td></tr>
+<tr><th id="369">369</th><td>      <b>return</b> <var>0</var>;</td></tr>
+<tr><th id="370">370</th><td>  }</td></tr>
+<tr><th id="371">371</th><td></td></tr>
+<tr><th id="372">372</th><td>  <b>return</b> <var>1</var>;</td></tr>
+<tr><th id="373">373</th><td>} <i>/* sip24_valid() */</i></td></tr>
+<tr><th id="374">374</th><td></td></tr>
+<tr><th id="375">375</th><td><u>#<span data-ppcond="375">ifdef</span> <span class="macro" data-ref="_M/SIPHASH_MAIN">SIPHASH_MAIN</span></u></td></tr>
+<tr><th id="376">376</th><td></td></tr>
+<tr><th id="377">377</th><td><u>#  include &lt;stdio.h&gt;</u></td></tr>
+<tr><th id="378">378</th><td></td></tr>
+<tr><th id="379">379</th><td><em>int</em></td></tr>
+<tr><th id="380">380</th><td>main(<em>void</em>) {</td></tr>
+<tr><th id="381">381</th><td>  <em>const</em> <em>int</em> ok = sip24_valid();</td></tr>
+<tr><th id="382">382</th><td></td></tr>
+<tr><th id="383">383</th><td>  <b>if</b> (ok)</td></tr>
+<tr><th id="384">384</th><td>    puts(<q>"OK"</q>);</td></tr>
+<tr><th id="385">385</th><td>  <b>else</b></td></tr>
+<tr><th id="386">386</th><td>    puts(<q>"FAIL"</q>);</td></tr>
+<tr><th id="387">387</th><td></td></tr>
+<tr><th id="388">388</th><td>  <b>return</b> ! ok;</td></tr>
+<tr><th id="389">389</th><td>} <i>/* main() */</i></td></tr>
+<tr><th id="390">390</th><td></td></tr>
+<tr><th id="391">391</th><td><u>#<span data-ppcond="375">endif</span> /* SIPHASH_MAIN */</u></td></tr>
+<tr><th id="392">392</th><td></td></tr>
+<tr><th id="393">393</th><td><u>#<span data-ppcond="98">endif</span> /* SIPHASH_H */</u></td></tr>
+<tr><th id="394">394</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated while processing <a href='xmlparse.c.html'>expat-2.6.2/lib/xmlparse.c</a><br/>Generated on <em>2024-Jun-14</em> from project expat-2.6.2 revision <em>2.6.2</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>

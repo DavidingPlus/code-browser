@@ -1,0 +1,293 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>minicheck.c source code [expat-2.6.2/tests/minicheck.c] - Woboq Code Browser</title>
+<link rel="stylesheet" href="../../../data/qtcreator.css" title="QtCreator"/>
+<link rel="alternate stylesheet" href="../../../data/kdevelop.css" title="KDevelop"/>
+<script type="text/javascript" src="../../../data/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../../data/jquery/jquery-ui.min.js"></script>
+<script>var file = 'expat-2.6.2/tests/minicheck.c'; var root_path = '../..'; var data_path = '../../../data'; var ecma_script_api_version = 2;</script>
+<script src='../../../data/codebrowser.js'></script>
+</head>
+<body><div id='header'><h1 id='breadcrumb'><span>Browse the source code of </span><a href='..'>expat-2.6.2</a>/<a href='./'>tests</a>/<a href='minicheck.c.html'>minicheck.c</a></h1></div>
+<hr/><div id='content'><table class="code">
+<tr><th id="1">1</th><td><i>/* Miniature re-implementation of the "check" library.</i></td></tr>
+<tr><th id="2">2</th><td><i></i></td></tr>
+<tr><th id="3">3</th><td><i>   This is intended to support just enough of check to run the Expat</i></td></tr>
+<tr><th id="4">4</th><td><i>   tests.  This interface is based entirely on the portion of the</i></td></tr>
+<tr><th id="5">5</th><td><i>   check library being used.</i></td></tr>
+<tr><th id="6">6</th><td><i>                            __  __            _</i></td></tr>
+<tr><th id="7">7</th><td><i>                         ___\ \/ /_ __   __ _| |_</i></td></tr>
+<tr><th id="8">8</th><td><i>                        / _ \\  /| '_ \ / _` | __|</i></td></tr>
+<tr><th id="9">9</th><td><i>                       |  __//  \| |_) | (_| | |_</i></td></tr>
+<tr><th id="10">10</th><td><i>                        \___/_/\_\ .__/ \__,_|\__|</i></td></tr>
+<tr><th id="11">11</th><td><i>                                 |_| XML parser</i></td></tr>
+<tr><th id="12">12</th><td><i></i></td></tr>
+<tr><th id="13">13</th><td><i>   Copyright (c) 2004-2006 Fred L. Drake, Jr. &lt;fdrake@users.sourceforge.net&gt;</i></td></tr>
+<tr><th id="14">14</th><td><i>   Copyright (c) 2016-2023 Sebastian Pipping &lt;sebastian@pipping.org&gt;</i></td></tr>
+<tr><th id="15">15</th><td><i>   Copyright (c) 2017      Rhodri James &lt;rhodri@wildebeest.org.uk&gt;</i></td></tr>
+<tr><th id="16">16</th><td><i>   Copyright (c) 2018      Marco Maggi &lt;marco.maggi-ipsu@poste.it&gt;</i></td></tr>
+<tr><th id="17">17</th><td><i>   Copyright (c) 2019      David Loffredo &lt;loffredo@steptools.com&gt;</i></td></tr>
+<tr><th id="18">18</th><td><i>   Copyright (c) 2023-2024 Sony Corporation / Snild Dolkow &lt;snild@sony.com&gt;</i></td></tr>
+<tr><th id="19">19</th><td><i>   Licensed under the MIT license:</i></td></tr>
+<tr><th id="20">20</th><td><i></i></td></tr>
+<tr><th id="21">21</th><td><i>   Permission is  hereby granted,  free of charge,  to any  person obtaining</i></td></tr>
+<tr><th id="22">22</th><td><i>   a  copy  of  this  software   and  associated  documentation  files  (the</i></td></tr>
+<tr><th id="23">23</th><td><i>   "Software"),  to  deal in  the  Software  without restriction,  including</i></td></tr>
+<tr><th id="24">24</th><td><i>   without  limitation the  rights  to use,  copy,  modify, merge,  publish,</i></td></tr>
+<tr><th id="25">25</th><td><i>   distribute, sublicense, and/or sell copies of the Software, and to permit</i></td></tr>
+<tr><th id="26">26</th><td><i>   persons  to whom  the Software  is  furnished to  do so,  subject to  the</i></td></tr>
+<tr><th id="27">27</th><td><i>   following conditions:</i></td></tr>
+<tr><th id="28">28</th><td><i></i></td></tr>
+<tr><th id="29">29</th><td><i>   The above copyright  notice and this permission notice  shall be included</i></td></tr>
+<tr><th id="30">30</th><td><i>   in all copies or substantial portions of the Software.</i></td></tr>
+<tr><th id="31">31</th><td><i></i></td></tr>
+<tr><th id="32">32</th><td><i>   THE  SOFTWARE  IS  PROVIDED  "AS  IS",  WITHOUT  WARRANTY  OF  ANY  KIND,</i></td></tr>
+<tr><th id="33">33</th><td><i>   EXPRESS  OR IMPLIED,  INCLUDING  BUT  NOT LIMITED  TO  THE WARRANTIES  OF</i></td></tr>
+<tr><th id="34">34</th><td><i>   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN</i></td></tr>
+<tr><th id="35">35</th><td><i>   NO EVENT SHALL THE AUTHORS OR  COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,</i></td></tr>
+<tr><th id="36">36</th><td><i>   DAMAGES OR  OTHER LIABILITY, WHETHER  IN AN  ACTION OF CONTRACT,  TORT OR</i></td></tr>
+<tr><th id="37">37</th><td><i>   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE</i></td></tr>
+<tr><th id="38">38</th><td><i>   USE OR OTHER DEALINGS IN THE SOFTWARE.</i></td></tr>
+<tr><th id="39">39</th><td><i>*/</i></td></tr>
+<tr><th id="40">40</th><td></td></tr>
+<tr><th id="41">41</th><td><u>#<span data-ppcond="41">if</span> defined(<span class="macro" data-ref="_M/NDEBUG">NDEBUG</span>)</u></td></tr>
+<tr><th id="42">42</th><td><u>#  undef <span class="macro" data-ref="_M/NDEBUG">NDEBUG</span> /* because test suite relies on assert(...) at the moment */</u></td></tr>
+<tr><th id="43">43</th><td><u>#<span data-ppcond="41">endif</span></u></td></tr>
+<tr><th id="44">44</th><td></td></tr>
+<tr><th id="45">45</th><td><u>#include &lt;stdarg.h&gt;</u></td></tr>
+<tr><th id="46">46</th><td><u>#include <a href="../../include/stdio.h.html">&lt;stdio.h&gt;</a></u></td></tr>
+<tr><th id="47">47</th><td><u>#include <a href="../../include/stdlib.h.html">&lt;stdlib.h&gt;</a></u></td></tr>
+<tr><th id="48">48</th><td><u>#include <a href="../../include/setjmp.h.html">&lt;setjmp.h&gt;</a></u></td></tr>
+<tr><th id="49">49</th><td><u>#include <a href="../../include/assert.h.html">&lt;assert.h&gt;</a></u></td></tr>
+<tr><th id="50">50</th><td><u>#include <a href="../../include/string.h.html">&lt;string.h&gt;</a></u></td></tr>
+<tr><th id="51">51</th><td></td></tr>
+<tr><th id="52">52</th><td><u>#include <a href="../lib/internal.h.html">"internal.h"</a> /* for UNUSED_P only */</u></td></tr>
+<tr><th id="53">53</th><td><u>#include <a href="minicheck.h.html">"minicheck.h"</a></u></td></tr>
+<tr><th id="54">54</th><td></td></tr>
+<tr><th id="55">55</th><td><a class="typedef" href="minicheck.h.html#Suite" title='Suite' data-type='struct Suite' data-ref="Suite">Suite</a> *</td></tr>
+<tr><th id="56">56</th><td><dfn class="decl def fn" id="suite_create" title='suite_create' data-ref="suite_create">suite_create</dfn>(<em>const</em> <em>char</em> *<dfn class="local col7 decl" id="7name" title='name' data-type='const char *' data-ref="7name">name</dfn>) {</td></tr>
+<tr><th id="57">57</th><td>  <a class="typedef" href="minicheck.h.html#Suite" title='Suite' data-type='struct Suite' data-ref="Suite">Suite</a> *<dfn class="local col8 decl" id="8suite" title='suite' data-type='Suite *' data-ref="8suite">suite</dfn> = (<a class="typedef" href="minicheck.h.html#Suite" title='Suite' data-type='struct Suite' data-ref="Suite">Suite</a> *)<a class="ref fn" href="../../include/stdlib.h.html#calloc" title='calloc' data-ref="calloc">calloc</a>(<span class='inlayHint'>nmemb:&nbsp;</span><var>1</var>, <span class='inlayHint'>size:&nbsp;</span><b>sizeof</b>(<a class="typedef" href="minicheck.h.html#Suite" title='Suite' data-type='struct Suite' data-ref="Suite">Suite</a>));</td></tr>
+<tr><th id="58">58</th><td>  <b>if</b> (<a class="local col8 ref" href="#8suite" title='suite' data-ref="8suite">suite</a> != <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>) {</td></tr>
+<tr><th id="59">59</th><td>    <a class="local col8 ref" href="#8suite" title='suite' data-ref="8suite">suite</a>-&gt;<a class="ref field" href="minicheck.h.html#Suite::name" title='Suite::name' data-ref="Suite::name">name</a> = <a class="local col7 ref" href="#7name" title='name' data-ref="7name">name</a>;</td></tr>
+<tr><th id="60">60</th><td>  }</td></tr>
+<tr><th id="61">61</th><td>  <b>return</b> <a class="local col8 ref" href="#8suite" title='suite' data-ref="8suite">suite</a>;</td></tr>
+<tr><th id="62">62</th><td>}</td></tr>
+<tr><th id="63">63</th><td></td></tr>
+<tr><th id="64">64</th><td><a class="typedef" href="minicheck.h.html#TCase" title='TCase' data-type='struct TCase' data-ref="TCase">TCase</a> *</td></tr>
+<tr><th id="65">65</th><td><dfn class="decl def fn" id="tcase_create" title='tcase_create' data-ref="tcase_create">tcase_create</dfn>(<em>const</em> <em>char</em> *<dfn class="local col9 decl" id="9name" title='name' data-type='const char *' data-ref="9name">name</dfn>) {</td></tr>
+<tr><th id="66">66</th><td>  <a class="typedef" href="minicheck.h.html#TCase" title='TCase' data-type='struct TCase' data-ref="TCase">TCase</a> *<dfn class="local col0 decl" id="10tc" title='tc' data-type='TCase *' data-ref="10tc">tc</dfn> = (<a class="typedef" href="minicheck.h.html#TCase" title='TCase' data-type='struct TCase' data-ref="TCase">TCase</a> *)<a class="ref fn" href="../../include/stdlib.h.html#calloc" title='calloc' data-ref="calloc">calloc</a>(<span class='inlayHint'>nmemb:&nbsp;</span><var>1</var>, <span class='inlayHint'>size:&nbsp;</span><b>sizeof</b>(<a class="typedef" href="minicheck.h.html#TCase" title='TCase' data-type='struct TCase' data-ref="TCase">TCase</a>));</td></tr>
+<tr><th id="67">67</th><td>  <b>if</b> (<a class="local col0 ref" href="#10tc" title='tc' data-ref="10tc">tc</a> != <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>) {</td></tr>
+<tr><th id="68">68</th><td>    <a class="local col0 ref" href="#10tc" title='tc' data-ref="10tc">tc</a>-&gt;<a class="ref field" href="minicheck.h.html#TCase::name" title='TCase::name' data-ref="TCase::name">name</a> = <a class="local col9 ref" href="#9name" title='name' data-ref="9name">name</a>;</td></tr>
+<tr><th id="69">69</th><td>  }</td></tr>
+<tr><th id="70">70</th><td>  <b>return</b> <a class="local col0 ref" href="#10tc" title='tc' data-ref="10tc">tc</a>;</td></tr>
+<tr><th id="71">71</th><td>}</td></tr>
+<tr><th id="72">72</th><td></td></tr>
+<tr><th id="73">73</th><td><em>void</em></td></tr>
+<tr><th id="74">74</th><td><dfn class="decl def fn" id="suite_add_tcase" title='suite_add_tcase' data-ref="suite_add_tcase">suite_add_tcase</dfn>(<a class="typedef" href="minicheck.h.html#Suite" title='Suite' data-type='struct Suite' data-ref="Suite">Suite</a> *<dfn class="local col1 decl" id="11suite" title='suite' data-type='Suite *' data-ref="11suite">suite</dfn>, <a class="typedef" href="minicheck.h.html#TCase" title='TCase' data-type='struct TCase' data-ref="TCase">TCase</a> *<dfn class="local col2 decl" id="12tc" title='tc' data-type='TCase *' data-ref="12tc">tc</dfn>) {</td></tr>
+<tr><th id="75">75</th><td>  <a class="macro" href="../../include/assert.h.html#97" title="((suite != ((void*)0)) ? (void) (0) : __assert_fail (&quot;suite != NULL&quot;, &quot;/home/lzx0626/DavidingPlus/libexpat-R_2_6_2/expat/tests/minicheck.c&quot;, 75, __extension__ __PRETTY_FUNCTION__))" data-ref="_M/assert">assert</a>(<a class="local col1 ref" href="#11suite" title='suite' data-ref="11suite">suite</a> != <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>);</td></tr>
+<tr><th id="76">76</th><td>  <a class="macro" href="../../include/assert.h.html#97" title="((tc != ((void*)0)) ? (void) (0) : __assert_fail (&quot;tc != NULL&quot;, &quot;/home/lzx0626/DavidingPlus/libexpat-R_2_6_2/expat/tests/minicheck.c&quot;, 76, __extension__ __PRETTY_FUNCTION__))" data-ref="_M/assert">assert</a>(<a class="local col2 ref" href="#12tc" title='tc' data-ref="12tc">tc</a> != <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>);</td></tr>
+<tr><th id="77">77</th><td>  <a class="macro" href="../../include/assert.h.html#97" title="((tc-&gt;next_tcase == ((void*)0)) ? (void) (0) : __assert_fail (&quot;tc-&gt;next_tcase == NULL&quot;, &quot;/home/lzx0626/DavidingPlus/libexpat-R_2_6_2/expat/tests/minicheck.c&quot;, 77, __extension__ __PRETTY_FUNCTION__))" data-ref="_M/assert">assert</a>(<a class="local col2 ref" href="#12tc" title='tc' data-ref="12tc">tc</a>-&gt;<a class="ref field" href="minicheck.h.html#TCase::next_tcase" title='TCase::next_tcase' data-ref="TCase::next_tcase">next_tcase</a> == <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>);</td></tr>
+<tr><th id="78">78</th><td></td></tr>
+<tr><th id="79">79</th><td>  <a class="local col2 ref" href="#12tc" title='tc' data-ref="12tc">tc</a>-&gt;<a class="ref field" href="minicheck.h.html#TCase::next_tcase" title='TCase::next_tcase' data-ref="TCase::next_tcase">next_tcase</a> = <a class="local col1 ref" href="#11suite" title='suite' data-ref="11suite">suite</a>-&gt;<a class="ref field" href="minicheck.h.html#Suite::tests" title='Suite::tests' data-ref="Suite::tests">tests</a>;</td></tr>
+<tr><th id="80">80</th><td>  <a class="local col1 ref" href="#11suite" title='suite' data-ref="11suite">suite</a>-&gt;<a class="ref field" href="minicheck.h.html#Suite::tests" title='Suite::tests' data-ref="Suite::tests">tests</a> = <a class="local col2 ref" href="#12tc" title='tc' data-ref="12tc">tc</a>;</td></tr>
+<tr><th id="81">81</th><td>}</td></tr>
+<tr><th id="82">82</th><td></td></tr>
+<tr><th id="83">83</th><td><em>void</em></td></tr>
+<tr><th id="84">84</th><td><dfn class="decl def fn" id="tcase_add_checked_fixture" title='tcase_add_checked_fixture' data-ref="tcase_add_checked_fixture">tcase_add_checked_fixture</dfn>(<a class="typedef" href="minicheck.h.html#TCase" title='TCase' data-type='struct TCase' data-ref="TCase">TCase</a> *<dfn class="local col3 decl" id="13tc" title='tc' data-type='TCase *' data-ref="13tc">tc</dfn>, <a class="typedef" href="minicheck.h.html#tcase_setup_function" title='tcase_setup_function' data-type='void (*)(void)' data-ref="tcase_setup_function">tcase_setup_function</a> <dfn class="local col4 decl" id="14setup" title='setup' data-type='tcase_setup_function' data-ref="14setup">setup</dfn>,</td></tr>
+<tr><th id="85">85</th><td>                          <a class="typedef" href="minicheck.h.html#tcase_teardown_function" title='tcase_teardown_function' data-type='void (*)(void)' data-ref="tcase_teardown_function">tcase_teardown_function</a> <dfn class="local col5 decl" id="15teardown" title='teardown' data-type='tcase_teardown_function' data-ref="15teardown">teardown</dfn>) {</td></tr>
+<tr><th id="86">86</th><td>  <a class="macro" href="../../include/assert.h.html#97" title="((tc != ((void*)0)) ? (void) (0) : __assert_fail (&quot;tc != NULL&quot;, &quot;/home/lzx0626/DavidingPlus/libexpat-R_2_6_2/expat/tests/minicheck.c&quot;, 86, __extension__ __PRETTY_FUNCTION__))" data-ref="_M/assert">assert</a>(<a class="local col3 ref" href="#13tc" title='tc' data-ref="13tc">tc</a> != <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>);</td></tr>
+<tr><th id="87">87</th><td>  <a class="local col3 ref" href="#13tc" title='tc' data-ref="13tc">tc</a>-&gt;<a class="ref field" href="minicheck.h.html#TCase::setup" title='TCase::setup' data-ref="TCase::setup">setup</a> = <a class="local col4 ref" href="#14setup" title='setup' data-ref="14setup">setup</a>;</td></tr>
+<tr><th id="88">88</th><td>  <a class="local col3 ref" href="#13tc" title='tc' data-ref="13tc">tc</a>-&gt;<a class="ref field" href="minicheck.h.html#TCase::teardown" title='TCase::teardown' data-ref="TCase::teardown">teardown</a> = <a class="local col5 ref" href="#15teardown" title='teardown' data-ref="15teardown">teardown</a>;</td></tr>
+<tr><th id="89">89</th><td>}</td></tr>
+<tr><th id="90">90</th><td></td></tr>
+<tr><th id="91">91</th><td><em>void</em></td></tr>
+<tr><th id="92">92</th><td><dfn class="decl def fn" id="tcase_add_test" title='tcase_add_test' data-ref="tcase_add_test">tcase_add_test</dfn>(<a class="typedef" href="minicheck.h.html#TCase" title='TCase' data-type='struct TCase' data-ref="TCase">TCase</a> *<dfn class="local col6 decl" id="16tc" title='tc' data-type='TCase *' data-ref="16tc">tc</dfn>, <a class="typedef" href="minicheck.h.html#tcase_test_function" title='tcase_test_function' data-type='void (*)(void)' data-ref="tcase_test_function">tcase_test_function</a> <dfn class="local col7 decl" id="17test" title='test' data-type='tcase_test_function' data-ref="17test">test</dfn>) {</td></tr>
+<tr><th id="93">93</th><td>  <a class="macro" href="../../include/assert.h.html#97" title="((tc != ((void*)0)) ? (void) (0) : __assert_fail (&quot;tc != NULL&quot;, &quot;/home/lzx0626/DavidingPlus/libexpat-R_2_6_2/expat/tests/minicheck.c&quot;, 93, __extension__ __PRETTY_FUNCTION__))" data-ref="_M/assert">assert</a>(<a class="local col6 ref" href="#16tc" title='tc' data-ref="16tc">tc</a> != <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>);</td></tr>
+<tr><th id="94">94</th><td>  <b>if</b> (<a class="local col6 ref" href="#16tc" title='tc' data-ref="16tc">tc</a>-&gt;<a class="ref field" href="minicheck.h.html#TCase::allocated" title='TCase::allocated' data-ref="TCase::allocated">allocated</a> == <a class="local col6 ref" href="#16tc" title='tc' data-ref="16tc">tc</a>-&gt;<a class="ref field" href="minicheck.h.html#TCase::ntests" title='TCase::ntests' data-ref="TCase::ntests">ntests</a>) {</td></tr>
+<tr><th id="95">95</th><td>    <em>int</em> <dfn class="local col8 decl" id="18nalloc" title='nalloc' data-type='int' data-ref="18nalloc">nalloc</dfn> = <a class="local col6 ref" href="#16tc" title='tc' data-ref="16tc">tc</a>-&gt;<a class="ref field" href="minicheck.h.html#TCase::allocated" title='TCase::allocated' data-ref="TCase::allocated">allocated</a> + <var>100</var>;</td></tr>
+<tr><th id="96">96</th><td>    <span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col9 decl" id="19new_size" title='new_size' data-type='size_t' data-ref="19new_size">new_size</dfn> = <b>sizeof</b>(<a class="typedef" href="minicheck.h.html#tcase_test_function" title='tcase_test_function' data-type='void (*)(void)' data-ref="tcase_test_function">tcase_test_function</a>) * <a class="local col8 ref" href="#18nalloc" title='nalloc' data-ref="18nalloc">nalloc</a>;</td></tr>
+<tr><th id="97">97</th><td>    <a class="typedef" href="minicheck.h.html#tcase_test_function" title='tcase_test_function' data-type='void (*)(void)' data-ref="tcase_test_function">tcase_test_function</a> *<em>const</em> <dfn class="local col0 decl" id="20new_tests" title='new_tests' data-type='tcase_test_function *const' data-ref="20new_tests">new_tests</dfn></td></tr>
+<tr><th id="98">98</th><td>        = (<a class="typedef" href="minicheck.h.html#tcase_test_function" title='tcase_test_function' data-type='void (*)(void)' data-ref="tcase_test_function">tcase_test_function</a> *)<a class="ref fn" href="../../include/stdlib.h.html#realloc" title='realloc' data-ref="realloc">realloc</a>(<span class='inlayHint'>ptr:&nbsp;</span><a class="local col6 ref" href="#16tc" title='tc' data-ref="16tc">tc</a>-&gt;<a class="ref field" href="minicheck.h.html#TCase::tests" title='TCase::tests' data-ref="TCase::tests">tests</a>, <span class='inlayHint'>size:&nbsp;</span><a class="local col9 ref" href="#19new_size" title='new_size' data-ref="19new_size">new_size</a>);</td></tr>
+<tr><th id="99">99</th><td>    <a class="macro" href="../../include/assert.h.html#97" title="((new_tests != ((void*)0)) ? (void) (0) : __assert_fail (&quot;new_tests != NULL&quot;, &quot;/home/lzx0626/DavidingPlus/libexpat-R_2_6_2/expat/tests/minicheck.c&quot;, 99, __extension__ __PRETTY_FUNCTION__))" data-ref="_M/assert">assert</a>(<a class="local col0 ref" href="#20new_tests" title='new_tests' data-ref="20new_tests">new_tests</a> != <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>);</td></tr>
+<tr><th id="100">100</th><td>    <a class="local col6 ref" href="#16tc" title='tc' data-ref="16tc">tc</a>-&gt;<a class="ref field" href="minicheck.h.html#TCase::tests" title='TCase::tests' data-ref="TCase::tests">tests</a> = <a class="local col0 ref" href="#20new_tests" title='new_tests' data-ref="20new_tests">new_tests</a>;</td></tr>
+<tr><th id="101">101</th><td>    <a class="local col6 ref" href="#16tc" title='tc' data-ref="16tc">tc</a>-&gt;<a class="ref field" href="minicheck.h.html#TCase::allocated" title='TCase::allocated' data-ref="TCase::allocated">allocated</a> = <a class="local col8 ref" href="#18nalloc" title='nalloc' data-ref="18nalloc">nalloc</a>;</td></tr>
+<tr><th id="102">102</th><td>  }</td></tr>
+<tr><th id="103">103</th><td>  <a class="local col6 ref" href="#16tc" title='tc' data-ref="16tc">tc</a>-&gt;<a class="ref field" href="minicheck.h.html#TCase::tests" title='TCase::tests' data-ref="TCase::tests">tests</a>[<a class="local col6 ref" href="#16tc" title='tc' data-ref="16tc">tc</a>-&gt;<a class="ref field" href="minicheck.h.html#TCase::ntests" title='TCase::ntests' data-ref="TCase::ntests">ntests</a>] = <a class="local col7 ref" href="#17test" title='test' data-ref="17test">test</a>;</td></tr>
+<tr><th id="104">104</th><td>  <a class="local col6 ref" href="#16tc" title='tc' data-ref="16tc">tc</a>-&gt;<a class="ref field" href="minicheck.h.html#TCase::ntests" title='TCase::ntests' data-ref="TCase::ntests">ntests</a>++;</td></tr>
+<tr><th id="105">105</th><td>}</td></tr>
+<tr><th id="106">106</th><td></td></tr>
+<tr><th id="107">107</th><td><em>static</em> <em>void</em></td></tr>
+<tr><th id="108">108</th><td><dfn class="tu decl def fn" id="tcase_free" title='tcase_free' data-type='void tcase_free(TCase * tc)' data-ref="tcase_free">tcase_free</dfn>(<a class="typedef" href="minicheck.h.html#TCase" title='TCase' data-type='struct TCase' data-ref="TCase">TCase</a> *<dfn class="local col1 decl" id="21tc" title='tc' data-type='TCase *' data-ref="21tc">tc</dfn>) {</td></tr>
+<tr><th id="109">109</th><td>  <b>if</b> (! <a class="local col1 ref" href="#21tc" title='tc' data-ref="21tc">tc</a>) {</td></tr>
+<tr><th id="110">110</th><td>    <b>return</b>;</td></tr>
+<tr><th id="111">111</th><td>  }</td></tr>
+<tr><th id="112">112</th><td></td></tr>
+<tr><th id="113">113</th><td>  <a class="ref fn" href="../../include/stdlib.h.html#free" title='free' data-ref="free">free</a>(<span class='inlayHint'>ptr:&nbsp;</span><a class="local col1 ref" href="#21tc" title='tc' data-ref="21tc">tc</a>-&gt;<a class="ref field" href="minicheck.h.html#TCase::tests" title='TCase::tests' data-ref="TCase::tests">tests</a>);</td></tr>
+<tr><th id="114">114</th><td>  <a class="ref fn" href="../../include/stdlib.h.html#free" title='free' data-ref="free">free</a>(<span class='inlayHint'>ptr:&nbsp;</span><a class="local col1 ref" href="#21tc" title='tc' data-ref="21tc">tc</a>);</td></tr>
+<tr><th id="115">115</th><td>}</td></tr>
+<tr><th id="116">116</th><td></td></tr>
+<tr><th id="117">117</th><td><em>static</em> <em>void</em></td></tr>
+<tr><th id="118">118</th><td><dfn class="tu decl def fn" id="suite_free" title='suite_free' data-type='void suite_free(Suite * suite)' data-ref="suite_free">suite_free</dfn>(<a class="typedef" href="minicheck.h.html#Suite" title='Suite' data-type='struct Suite' data-ref="Suite">Suite</a> *<dfn class="local col2 decl" id="22suite" title='suite' data-type='Suite *' data-ref="22suite">suite</dfn>) {</td></tr>
+<tr><th id="119">119</th><td>  <b>if</b> (! <a class="local col2 ref" href="#22suite" title='suite' data-ref="22suite">suite</a>) {</td></tr>
+<tr><th id="120">120</th><td>    <b>return</b>;</td></tr>
+<tr><th id="121">121</th><td>  }</td></tr>
+<tr><th id="122">122</th><td></td></tr>
+<tr><th id="123">123</th><td>  <b>while</b> (<a class="local col2 ref" href="#22suite" title='suite' data-ref="22suite">suite</a>-&gt;<a class="ref field" href="minicheck.h.html#Suite::tests" title='Suite::tests' data-ref="Suite::tests">tests</a> != <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>) {</td></tr>
+<tr><th id="124">124</th><td>    <a class="typedef" href="minicheck.h.html#TCase" title='TCase' data-type='struct TCase' data-ref="TCase">TCase</a> *<dfn class="local col3 decl" id="23next" title='next' data-type='TCase *' data-ref="23next">next</dfn> = <a class="local col2 ref" href="#22suite" title='suite' data-ref="22suite">suite</a>-&gt;<a class="ref field" href="minicheck.h.html#Suite::tests" title='Suite::tests' data-ref="Suite::tests">tests</a>-&gt;<a class="ref field" href="minicheck.h.html#TCase::next_tcase" title='TCase::next_tcase' data-ref="TCase::next_tcase">next_tcase</a>;</td></tr>
+<tr><th id="125">125</th><td>    <a class="tu ref fn" href="#tcase_free" title='tcase_free' data-use='c' data-ref="tcase_free">tcase_free</a>(<span class='inlayHint'>tc:&nbsp;</span><a class="local col2 ref" href="#22suite" title='suite' data-ref="22suite">suite</a>-&gt;<a class="ref field" href="minicheck.h.html#Suite::tests" title='Suite::tests' data-ref="Suite::tests">tests</a>);</td></tr>
+<tr><th id="126">126</th><td>    <a class="local col2 ref" href="#22suite" title='suite' data-ref="22suite">suite</a>-&gt;<a class="ref field" href="minicheck.h.html#Suite::tests" title='Suite::tests' data-ref="Suite::tests">tests</a> = <a class="local col3 ref" href="#23next" title='next' data-ref="23next">next</a>;</td></tr>
+<tr><th id="127">127</th><td>  }</td></tr>
+<tr><th id="128">128</th><td>  <a class="ref fn" href="../../include/stdlib.h.html#free" title='free' data-ref="free">free</a>(<span class='inlayHint'>ptr:&nbsp;</span><a class="local col2 ref" href="#22suite" title='suite' data-ref="22suite">suite</a>);</td></tr>
+<tr><th id="129">129</th><td>}</td></tr>
+<tr><th id="130">130</th><td></td></tr>
+<tr><th id="131">131</th><td><a class="typedef" href="minicheck.h.html#SRunner" title='SRunner' data-type='struct SRunner' data-ref="SRunner">SRunner</a> *</td></tr>
+<tr><th id="132">132</th><td><dfn class="decl def fn" id="srunner_create" title='srunner_create' data-ref="srunner_create">srunner_create</dfn>(<a class="typedef" href="minicheck.h.html#Suite" title='Suite' data-type='struct Suite' data-ref="Suite">Suite</a> *<dfn class="local col4 decl" id="24suite" title='suite' data-type='Suite *' data-ref="24suite">suite</dfn>) {</td></tr>
+<tr><th id="133">133</th><td>  <a class="typedef" href="minicheck.h.html#SRunner" title='SRunner' data-type='struct SRunner' data-ref="SRunner">SRunner</a> *<em>const</em> <dfn class="local col5 decl" id="25runner" title='runner' data-type='SRunner *const' data-ref="25runner">runner</dfn> = (<a class="typedef" href="minicheck.h.html#SRunner" title='SRunner' data-type='struct SRunner' data-ref="SRunner">SRunner</a> *)<a class="ref fn" href="../../include/stdlib.h.html#calloc" title='calloc' data-ref="calloc">calloc</a>(<span class='inlayHint'>nmemb:&nbsp;</span><var>1</var>, <span class='inlayHint'>size:&nbsp;</span><b>sizeof</b>(<a class="typedef" href="minicheck.h.html#SRunner" title='SRunner' data-type='struct SRunner' data-ref="SRunner">SRunner</a>));</td></tr>
+<tr><th id="134">134</th><td>  <b>if</b> (<a class="local col5 ref" href="#25runner" title='runner' data-ref="25runner">runner</a> != <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>) {</td></tr>
+<tr><th id="135">135</th><td>    <a class="local col5 ref" href="#25runner" title='runner' data-ref="25runner">runner</a>-&gt;<a class="ref field" href="minicheck.h.html#SRunner::suite" title='SRunner::suite' data-ref="SRunner::suite">suite</a> = <a class="local col4 ref" href="#24suite" title='suite' data-ref="24suite">suite</a>;</td></tr>
+<tr><th id="136">136</th><td>  }</td></tr>
+<tr><th id="137">137</th><td>  <b>return</b> <a class="local col5 ref" href="#25runner" title='runner' data-ref="25runner">runner</a>;</td></tr>
+<tr><th id="138">138</th><td>}</td></tr>
+<tr><th id="139">139</th><td></td></tr>
+<tr><th id="140">140</th><td><em>static</em> <a class="typedef" href="../../include/setjmp.h.html#jmp_buf" title='jmp_buf' data-type='struct __jmp_buf_tag[1]' data-ref="jmp_buf">jmp_buf</a> <dfn class="tu decl def" id="env" title='env' data-type='jmp_buf' data-ref="env">env</dfn>;</td></tr>
+<tr><th id="141">141</th><td></td></tr>
+<tr><th id="142">142</th><td><u>#define <dfn class="macro" id="_M/SUBTEST_LEN" data-ref="_M/SUBTEST_LEN">SUBTEST_LEN</dfn> (50) // informative, but not too long</u></td></tr>
+<tr><th id="143">143</th><td><em>static</em> <em>char</em> <em>const</em> *<dfn class="tu decl def" id="_check_current_function" title='_check_current_function' data-type='const char *' data-ref="_check_current_function">_check_current_function</dfn> = <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="144">144</th><td><em>static</em> <em>char</em> <dfn class="tu decl def" id="_check_current_subtest" title='_check_current_subtest' data-type='char[50]' data-ref="_check_current_subtest">_check_current_subtest</dfn>[<a class="macro" href="#142" title="(50)" data-ref="_M/SUBTEST_LEN">SUBTEST_LEN</a>];</td></tr>
+<tr><th id="145">145</th><td><em>static</em> <em>int</em> <dfn class="tu decl def" id="_check_current_lineno" title='_check_current_lineno' data-type='int' data-ref="_check_current_lineno">_check_current_lineno</dfn> = -<var>1</var>;</td></tr>
+<tr><th id="146">146</th><td><em>static</em> <em>char</em> <em>const</em> *<dfn class="tu decl def" id="_check_current_filename" title='_check_current_filename' data-type='const char *' data-ref="_check_current_filename">_check_current_filename</dfn> = <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>;</td></tr>
+<tr><th id="147">147</th><td></td></tr>
+<tr><th id="148">148</th><td><em>void</em></td></tr>
+<tr><th id="149">149</th><td><dfn class="decl def fn" id="_check_set_test_info" title='_check_set_test_info' data-ref="_check_set_test_info">_check_set_test_info</dfn>(<em>char</em> <em>const</em> *<dfn class="local col6 decl" id="26function" title='function' data-type='const char *' data-ref="26function">function</dfn>, <em>char</em> <em>const</em> *<dfn class="local col7 decl" id="27filename" title='filename' data-type='const char *' data-ref="27filename">filename</dfn>, <em>int</em> <dfn class="local col8 decl" id="28lineno" title='lineno' data-type='int' data-ref="28lineno">lineno</dfn>) {</td></tr>
+<tr><th id="150">150</th><td>  <a class="tu ref" href="#_check_current_function" title='_check_current_function' data-use='w' data-ref="_check_current_function">_check_current_function</a> = <a class="local col6 ref" href="#26function" title='function' data-ref="26function">function</a>;</td></tr>
+<tr><th id="151">151</th><td>  <a class="ref fn" href="#set_subtest" title='set_subtest' data-ref="set_subtest">set_subtest</a>(<q>"%s"</q>, <q>""</q>);</td></tr>
+<tr><th id="152">152</th><td>  <a class="tu ref" href="#_check_current_lineno" title='_check_current_lineno' data-use='w' data-ref="_check_current_lineno">_check_current_lineno</a> = <a class="local col8 ref" href="#28lineno" title='lineno' data-ref="28lineno">lineno</a>;</td></tr>
+<tr><th id="153">153</th><td>  <a class="tu ref" href="#_check_current_filename" title='_check_current_filename' data-use='w' data-ref="_check_current_filename">_check_current_filename</a> = <a class="local col7 ref" href="#27filename" title='filename' data-ref="27filename">filename</a>;</td></tr>
+<tr><th id="154">154</th><td>}</td></tr>
+<tr><th id="155">155</th><td></td></tr>
+<tr><th id="156">156</th><td><em>void</em></td></tr>
+<tr><th id="157">157</th><td><dfn class="decl def fn" id="set_subtest" title='set_subtest' data-ref="set_subtest">set_subtest</dfn>(<em>char</em> <em>const</em> *<dfn class="local col9 decl" id="29fmt" title='fmt' data-type='const char *' data-ref="29fmt">fmt</dfn>, ...) {</td></tr>
+<tr><th id="158">158</th><td>  <span class='typedef' title='va_list' data-type='__builtin_va_list' data-ref="va_list">va_list</span> <dfn class="local col0 decl" id="30ap" title='ap' data-type='va_list' data-ref="30ap">ap</dfn>;</td></tr>
+<tr><th id="159">159</th><td>  <span class="macro" title="__builtin_va_start(ap, fmt)" data-ref="_M/va_start">va_start</span>(<a class="local col0 ref" href="#30ap" title='ap' data-ref="30ap">ap</a>, <a class="local col9 ref" href="#29fmt" title='fmt' data-ref="29fmt">fmt</a>);</td></tr>
+<tr><th id="160">160</th><td>  <a class="ref fn" href="../../include/stdio.h.html#vsnprintf" title='vsnprintf' data-ref="vsnprintf">vsnprintf</a>(<span class='inlayHint'>s:&nbsp;</span><a class="tu ref" href="#_check_current_subtest" title='_check_current_subtest' data-use='r' data-ref="_check_current_subtest">_check_current_subtest</a>, <a class="macro" href="#142" title="(50)" data-ref="_M/SUBTEST_LEN">SUBTEST_LEN</a>, <span class='inlayHint'>format:&nbsp;</span><a class="local col9 ref" href="#29fmt" title='fmt' data-ref="29fmt">fmt</a>, <span class='inlayHint'>arg:&nbsp;</span><a class="local col0 ref" href="#30ap" title='ap' data-ref="30ap">ap</a>);</td></tr>
+<tr><th id="161">161</th><td>  <span class="macro" title="__builtin_va_end(ap)" data-ref="_M/va_end">va_end</span>(<a class="local col0 ref" href="#30ap" title='ap' data-ref="30ap">ap</a>);</td></tr>
+<tr><th id="162">162</th><td>  <i>// replace line feeds with spaces, for nicer error logs</i></td></tr>
+<tr><th id="163">163</th><td>  <b>for</b> (<span class='typedef' title='size_t' data-type='unsigned long' data-ref="size_t">size_t</span> <dfn class="local col1 decl" id="31i" title='i' data-type='size_t' data-ref="31i">i</dfn> = <var>0</var>; <a class="local col1 ref" href="#31i" title='i' data-ref="31i">i</a> &lt; <a class="macro" href="#142" title="(50)" data-ref="_M/SUBTEST_LEN">SUBTEST_LEN</a>; ++<a class="local col1 ref" href="#31i" title='i' data-ref="31i">i</a>) {</td></tr>
+<tr><th id="164">164</th><td>    <b>if</b> (<a class="tu ref" href="#_check_current_subtest" title='_check_current_subtest' data-use='r' data-ref="_check_current_subtest">_check_current_subtest</a>[<a class="local col1 ref" href="#31i" title='i' data-ref="31i">i</a>] == <kbd>'\n'</kbd>) {</td></tr>
+<tr><th id="165">165</th><td>      <a class="tu ref" href="#_check_current_subtest" title='_check_current_subtest' data-use='w' data-ref="_check_current_subtest">_check_current_subtest</a>[<a class="local col1 ref" href="#31i" title='i' data-ref="31i">i</a>] = <kbd>' '</kbd>;</td></tr>
+<tr><th id="166">166</th><td>    }</td></tr>
+<tr><th id="167">167</th><td>  }</td></tr>
+<tr><th id="168">168</th><td>  <a class="tu ref" href="#_check_current_subtest" title='_check_current_subtest' data-use='w' data-ref="_check_current_subtest">_check_current_subtest</a>[<a class="macro" href="#142" title="(50)" data-ref="_M/SUBTEST_LEN">SUBTEST_LEN</a> - <var>1</var>] = <kbd>'\0'</kbd>; <i>// ensure termination</i></td></tr>
+<tr><th id="169">169</th><td>}</td></tr>
+<tr><th id="170">170</th><td></td></tr>
+<tr><th id="171">171</th><td><em>static</em> <em>void</em></td></tr>
+<tr><th id="172">172</th><td><dfn class="tu decl def fn" id="handle_success" title='handle_success' data-type='void handle_success(int verbosity)' data-ref="handle_success">handle_success</dfn>(<em>int</em> <dfn class="local col2 decl" id="32verbosity" title='verbosity' data-type='int' data-ref="32verbosity">verbosity</dfn>) {</td></tr>
+<tr><th id="173">173</th><td>  <b>if</b> (<a class="local col2 ref" href="#32verbosity" title='verbosity' data-ref="32verbosity">verbosity</a> &gt;= <a class="macro" href="minicheck.h.html#54" title="2" data-ref="_M/CK_VERBOSE">CK_VERBOSE</a>) {</td></tr>
+<tr><th id="174">174</th><td>    <a class="ref fn" href="../../include/stdio.h.html#printf" title='printf' data-ref="printf">printf</a>(<span class='inlayHint'>format:&nbsp;</span><q>"PASS: %s\n"</q>, <a class="tu ref" href="#_check_current_function" title='_check_current_function' data-use='r' data-ref="_check_current_function">_check_current_function</a>);</td></tr>
+<tr><th id="175">175</th><td>  }</td></tr>
+<tr><th id="176">176</th><td>}</td></tr>
+<tr><th id="177">177</th><td></td></tr>
+<tr><th id="178">178</th><td><em>static</em> <em>void</em></td></tr>
+<tr><th id="179">179</th><td><dfn class="tu decl def fn" id="handle_failure" title='handle_failure' data-type='void handle_failure(SRunner * runner, int verbosity, const char * context, const char * phase_info)' data-ref="handle_failure">handle_failure</dfn>(<a class="typedef" href="minicheck.h.html#SRunner" title='SRunner' data-type='struct SRunner' data-ref="SRunner">SRunner</a> *<dfn class="local col3 decl" id="33runner" title='runner' data-type='SRunner *' data-ref="33runner">runner</dfn>, <em>int</em> <dfn class="local col4 decl" id="34verbosity" title='verbosity' data-type='int' data-ref="34verbosity">verbosity</dfn>, <em>const</em> <em>char</em> *<dfn class="local col5 decl" id="35context" title='context' data-type='const char *' data-ref="35context">context</dfn>,</td></tr>
+<tr><th id="180">180</th><td>               <em>const</em> <em>char</em> *<dfn class="local col6 decl" id="36phase_info" title='phase_info' data-type='const char *' data-ref="36phase_info">phase_info</dfn>) {</td></tr>
+<tr><th id="181">181</th><td>  <a class="local col3 ref" href="#33runner" title='runner' data-ref="33runner">runner</a>-&gt;<a class="ref field" href="minicheck.h.html#SRunner::nfailures" title='SRunner::nfailures' data-ref="SRunner::nfailures">nfailures</a>++;</td></tr>
+<tr><th id="182">182</th><td>  <b>if</b> (<a class="local col4 ref" href="#34verbosity" title='verbosity' data-ref="34verbosity">verbosity</a> != <a class="macro" href="minicheck.h.html#52" title="0" data-ref="_M/CK_SILENT">CK_SILENT</a>) {</td></tr>
+<tr><th id="183">183</th><td>    <b>if</b> (<a class="ref fn" href="../../include/string.h.html#strlen" title='strlen' data-ref="strlen">strlen</a>(<span class='inlayHint'>s:&nbsp;</span><a class="tu ref" href="#_check_current_subtest" title='_check_current_subtest' data-use='r' data-ref="_check_current_subtest">_check_current_subtest</a>) != <var>0</var>) {</td></tr>
+<tr><th id="184">184</th><td>      <a class="local col6 ref" href="#36phase_info" title='phase_info' data-ref="36phase_info">phase_info</a> = <a class="tu ref" href="#_check_current_subtest" title='_check_current_subtest' data-use='r' data-ref="_check_current_subtest">_check_current_subtest</a>;</td></tr>
+<tr><th id="185">185</th><td>    }</td></tr>
+<tr><th id="186">186</th><td>    <a class="ref fn" href="../../include/stdio.h.html#printf" title='printf' data-ref="printf">printf</a>(<span class='inlayHint'>format:&nbsp;</span><q>"FAIL [%s]: %s (%s at %s:%d)\n"</q>, <a class="local col5 ref" href="#35context" title='context' data-ref="35context">context</a>, <a class="tu ref" href="#_check_current_function" title='_check_current_function' data-use='r' data-ref="_check_current_function">_check_current_function</a>,</td></tr>
+<tr><th id="187">187</th><td>           <a class="local col6 ref" href="#36phase_info" title='phase_info' data-ref="36phase_info">phase_info</a>, <a class="tu ref" href="#_check_current_filename" title='_check_current_filename' data-use='r' data-ref="_check_current_filename">_check_current_filename</a>, <a class="tu ref" href="#_check_current_lineno" title='_check_current_lineno' data-use='r' data-ref="_check_current_lineno">_check_current_lineno</a>);</td></tr>
+<tr><th id="188">188</th><td>  }</td></tr>
+<tr><th id="189">189</th><td>}</td></tr>
+<tr><th id="190">190</th><td></td></tr>
+<tr><th id="191">191</th><td><em>void</em></td></tr>
+<tr><th id="192">192</th><td><dfn class="decl def fn" id="srunner_run_all" title='srunner_run_all' data-ref="srunner_run_all">srunner_run_all</dfn>(<a class="typedef" href="minicheck.h.html#SRunner" title='SRunner' data-type='struct SRunner' data-ref="SRunner">SRunner</a> *<dfn class="local col7 decl" id="37runner" title='runner' data-type='SRunner *' data-ref="37runner">runner</dfn>, <em>const</em> <em>char</em> *<dfn class="local col8 decl" id="38context" title='context' data-type='const char *' data-ref="38context">context</dfn>, <em>int</em> <dfn class="local col9 decl" id="39verbosity" title='verbosity' data-type='int' data-ref="39verbosity">verbosity</dfn>) {</td></tr>
+<tr><th id="193">193</th><td>  <a class="typedef" href="minicheck.h.html#Suite" title='Suite' data-type='struct Suite' data-ref="Suite">Suite</a> *<dfn class="local col0 decl" id="40suite" title='suite' data-type='Suite *' data-ref="40suite">suite</dfn>;</td></tr>
+<tr><th id="194">194</th><td>  <a class="typedef" href="minicheck.h.html#TCase" title='TCase' data-type='struct TCase' data-ref="TCase">TCase</a> *<em>volatile</em> <dfn class="local col1 decl" id="41tc" title='tc' data-type='TCase *volatile' data-ref="41tc">tc</dfn>;</td></tr>
+<tr><th id="195">195</th><td>  <a class="macro" href="../../include/assert.h.html#97" title="((runner != ((void*)0)) ? (void) (0) : __assert_fail (&quot;runner != NULL&quot;, &quot;/home/lzx0626/DavidingPlus/libexpat-R_2_6_2/expat/tests/minicheck.c&quot;, 195, __extension__ __PRETTY_FUNCTION__))" data-ref="_M/assert">assert</a>(<a class="local col7 ref" href="#37runner" title='runner' data-ref="37runner">runner</a> != <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>);</td></tr>
+<tr><th id="196">196</th><td>  <a class="local col0 ref" href="#40suite" title='suite' data-ref="40suite">suite</a> = <a class="local col7 ref" href="#37runner" title='runner' data-ref="37runner">runner</a>-&gt;<a class="ref field" href="minicheck.h.html#SRunner::suite" title='SRunner::suite' data-ref="SRunner::suite">suite</a>;</td></tr>
+<tr><th id="197">197</th><td>  <a class="local col1 ref" href="#41tc" title='tc' data-ref="41tc">tc</a> = <a class="local col0 ref" href="#40suite" title='suite' data-ref="40suite">suite</a>-&gt;<a class="ref field" href="minicheck.h.html#Suite::tests" title='Suite::tests' data-ref="Suite::tests">tests</a>;</td></tr>
+<tr><th id="198">198</th><td>  <b>while</b> (<a class="local col1 ref" href="#41tc" title='tc' data-ref="41tc">tc</a> != <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>) {</td></tr>
+<tr><th id="199">199</th><td>    <em>volatile</em> <em>int</em> <dfn class="local col2 decl" id="42i" title='i' data-type='volatile int' data-ref="42i">i</dfn>;</td></tr>
+<tr><th id="200">200</th><td>    <b>for</b> (<a class="local col2 ref" href="#42i" title='i' data-ref="42i">i</a> = <var>0</var>; <a class="local col2 ref" href="#42i" title='i' data-ref="42i">i</a> &lt; <a class="local col1 ref" href="#41tc" title='tc' data-ref="41tc">tc</a>-&gt;<a class="ref field" href="minicheck.h.html#TCase::ntests" title='TCase::ntests' data-ref="TCase::ntests">ntests</a>; ++<a class="local col2 ref" href="#42i" title='i' data-ref="42i">i</a>) {</td></tr>
+<tr><th id="201">201</th><td>      <a class="local col7 ref" href="#37runner" title='runner' data-ref="37runner">runner</a>-&gt;<a class="ref field" href="minicheck.h.html#SRunner::nchecks" title='SRunner::nchecks' data-ref="SRunner::nchecks">nchecks</a>++;</td></tr>
+<tr><th id="202">202</th><td>      <a class="ref fn" href="#set_subtest" title='set_subtest' data-ref="set_subtest">set_subtest</a>(<q>"%s"</q>, <q>""</q>);</td></tr>
+<tr><th id="203">203</th><td></td></tr>
+<tr><th id="204">204</th><td>      <b>if</b> (<a class="local col1 ref" href="#41tc" title='tc' data-ref="41tc">tc</a>-&gt;<a class="ref field" href="minicheck.h.html#TCase::setup" title='TCase::setup' data-ref="TCase::setup">setup</a> != <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>) {</td></tr>
+<tr><th id="205">205</th><td>        <i>/* setup */</i></td></tr>
+<tr><th id="206">206</th><td>        <b>if</b> (<a class="macro" href="../../include/setjmp.h.html#62" title="_setjmp (env)" data-ref="_M/setjmp">setjmp</a>(<a class="tu ref" href="#env" title='env' data-use='r' data-ref="env">env</a>)) {</td></tr>
+<tr><th id="207">207</th><td>          <a class="tu ref fn" href="#handle_failure" title='handle_failure' data-use='c' data-ref="handle_failure">handle_failure</a>(<a class="local col7 ref" href="#37runner" title='runner' data-ref="37runner">runner</a>, <a class="local col9 ref" href="#39verbosity" title='verbosity' data-ref="39verbosity">verbosity</a>, <a class="local col8 ref" href="#38context" title='context' data-ref="38context">context</a>, <span class='inlayHint'>phase_info:&nbsp;</span><q>"during setup"</q>);</td></tr>
+<tr><th id="208">208</th><td>          <b>continue</b>;</td></tr>
+<tr><th id="209">209</th><td>        }</td></tr>
+<tr><th id="210">210</th><td>        <a class="local col1 ref" href="#41tc" title='tc' data-ref="41tc">tc</a>-&gt;<a class="ref field" href="minicheck.h.html#TCase::setup" title='TCase::setup' data-ref="TCase::setup">setup</a>();</td></tr>
+<tr><th id="211">211</th><td>      }</td></tr>
+<tr><th id="212">212</th><td>      <i>/* test */</i></td></tr>
+<tr><th id="213">213</th><td>      <b>if</b> (<a class="macro" href="../../include/setjmp.h.html#62" title="_setjmp (env)" data-ref="_M/setjmp">setjmp</a>(<a class="tu ref" href="#env" title='env' data-use='r' data-ref="env">env</a>)) {</td></tr>
+<tr><th id="214">214</th><td>        <a class="tu ref fn" href="#handle_failure" title='handle_failure' data-use='c' data-ref="handle_failure">handle_failure</a>(<a class="local col7 ref" href="#37runner" title='runner' data-ref="37runner">runner</a>, <a class="local col9 ref" href="#39verbosity" title='verbosity' data-ref="39verbosity">verbosity</a>, <a class="local col8 ref" href="#38context" title='context' data-ref="38context">context</a>, <span class='inlayHint'>phase_info:&nbsp;</span><q>"during actual test"</q>);</td></tr>
+<tr><th id="215">215</th><td>        <b>continue</b>;</td></tr>
+<tr><th id="216">216</th><td>      }</td></tr>
+<tr><th id="217">217</th><td>      (<a class="local col1 ref" href="#41tc" title='tc' data-ref="41tc">tc</a>-&gt;<a class="ref field" href="minicheck.h.html#TCase::tests" title='TCase::tests' data-ref="TCase::tests">tests</a>[<a class="local col2 ref" href="#42i" title='i' data-ref="42i">i</a>])();</td></tr>
+<tr><th id="218">218</th><td>      <a class="ref fn" href="#set_subtest" title='set_subtest' data-ref="set_subtest">set_subtest</a>(<q>"%s"</q>, <q>""</q>);</td></tr>
+<tr><th id="219">219</th><td></td></tr>
+<tr><th id="220">220</th><td>      <i>/* teardown */</i></td></tr>
+<tr><th id="221">221</th><td>      <b>if</b> (<a class="local col1 ref" href="#41tc" title='tc' data-ref="41tc">tc</a>-&gt;<a class="ref field" href="minicheck.h.html#TCase::teardown" title='TCase::teardown' data-ref="TCase::teardown">teardown</a> != <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>) {</td></tr>
+<tr><th id="222">222</th><td>        <b>if</b> (<a class="macro" href="../../include/setjmp.h.html#62" title="_setjmp (env)" data-ref="_M/setjmp">setjmp</a>(<a class="tu ref" href="#env" title='env' data-use='r' data-ref="env">env</a>)) {</td></tr>
+<tr><th id="223">223</th><td>          <a class="tu ref fn" href="#handle_failure" title='handle_failure' data-use='c' data-ref="handle_failure">handle_failure</a>(<a class="local col7 ref" href="#37runner" title='runner' data-ref="37runner">runner</a>, <a class="local col9 ref" href="#39verbosity" title='verbosity' data-ref="39verbosity">verbosity</a>, <a class="local col8 ref" href="#38context" title='context' data-ref="38context">context</a>, <span class='inlayHint'>phase_info:&nbsp;</span><q>"during teardown"</q>);</td></tr>
+<tr><th id="224">224</th><td>          <b>continue</b>;</td></tr>
+<tr><th id="225">225</th><td>        }</td></tr>
+<tr><th id="226">226</th><td>        <a class="local col1 ref" href="#41tc" title='tc' data-ref="41tc">tc</a>-&gt;<a class="ref field" href="minicheck.h.html#TCase::teardown" title='TCase::teardown' data-ref="TCase::teardown">teardown</a>();</td></tr>
+<tr><th id="227">227</th><td>      }</td></tr>
+<tr><th id="228">228</th><td></td></tr>
+<tr><th id="229">229</th><td>      <a class="tu ref fn" href="#handle_success" title='handle_success' data-use='c' data-ref="handle_success">handle_success</a>(<a class="local col9 ref" href="#39verbosity" title='verbosity' data-ref="39verbosity">verbosity</a>);</td></tr>
+<tr><th id="230">230</th><td>    }</td></tr>
+<tr><th id="231">231</th><td>    <a class="local col1 ref" href="#41tc" title='tc' data-ref="41tc">tc</a> = <a class="local col1 ref" href="#41tc" title='tc' data-ref="41tc">tc</a>-&gt;<a class="ref field" href="minicheck.h.html#TCase::next_tcase" title='TCase::next_tcase' data-ref="TCase::next_tcase">next_tcase</a>;</td></tr>
+<tr><th id="232">232</th><td>  }</td></tr>
+<tr><th id="233">233</th><td>}</td></tr>
+<tr><th id="234">234</th><td></td></tr>
+<tr><th id="235">235</th><td><em>void</em></td></tr>
+<tr><th id="236">236</th><td><dfn class="decl def fn" id="srunner_summarize" title='srunner_summarize' data-ref="srunner_summarize">srunner_summarize</dfn>(<a class="typedef" href="minicheck.h.html#SRunner" title='SRunner' data-type='struct SRunner' data-ref="SRunner">SRunner</a> *<dfn class="local col3 decl" id="43runner" title='runner' data-type='SRunner *' data-ref="43runner">runner</dfn>, <em>int</em> <dfn class="local col4 decl" id="44verbosity" title='verbosity' data-type='int' data-ref="44verbosity">verbosity</dfn>) {</td></tr>
+<tr><th id="237">237</th><td>  <b>if</b> (<a class="local col4 ref" href="#44verbosity" title='verbosity' data-ref="44verbosity">verbosity</a> != <a class="macro" href="minicheck.h.html#52" title="0" data-ref="_M/CK_SILENT">CK_SILENT</a>) {</td></tr>
+<tr><th id="238">238</th><td>    <em>int</em> <dfn class="local col5 decl" id="45passed" title='passed' data-type='int' data-ref="45passed">passed</dfn> = <a class="local col3 ref" href="#43runner" title='runner' data-ref="43runner">runner</a>-&gt;<a class="ref field" href="minicheck.h.html#SRunner::nchecks" title='SRunner::nchecks' data-ref="SRunner::nchecks">nchecks</a> - <a class="local col3 ref" href="#43runner" title='runner' data-ref="43runner">runner</a>-&gt;<a class="ref field" href="minicheck.h.html#SRunner::nfailures" title='SRunner::nfailures' data-ref="SRunner::nfailures">nfailures</a>;</td></tr>
+<tr><th id="239">239</th><td>    <em>double</em> <dfn class="local col6 decl" id="46percentage" title='percentage' data-type='double' data-ref="46percentage">percentage</dfn> = ((<em>double</em>)<a class="local col5 ref" href="#45passed" title='passed' data-ref="45passed">passed</a>) / <a class="local col3 ref" href="#43runner" title='runner' data-ref="43runner">runner</a>-&gt;<a class="ref field" href="minicheck.h.html#SRunner::nchecks" title='SRunner::nchecks' data-ref="SRunner::nchecks">nchecks</a>;</td></tr>
+<tr><th id="240">240</th><td>    <em>int</em> <dfn class="local col7 decl" id="47display" title='display' data-type='int' data-ref="47display">display</dfn> = (<em>int</em>)(<a class="local col6 ref" href="#46percentage" title='percentage' data-ref="46percentage">percentage</a> * <var>100</var>);</td></tr>
+<tr><th id="241">241</th><td>    <a class="ref fn" href="../../include/stdio.h.html#printf" title='printf' data-ref="printf">printf</a>(<span class='inlayHint'>format:&nbsp;</span><q>"%d%%: Checks: %d, Failed: %d\n"</q>, <a class="local col7 ref" href="#47display" title='display' data-ref="47display">display</a>, <a class="local col3 ref" href="#43runner" title='runner' data-ref="43runner">runner</a>-&gt;<a class="ref field" href="minicheck.h.html#SRunner::nchecks" title='SRunner::nchecks' data-ref="SRunner::nchecks">nchecks</a>,</td></tr>
+<tr><th id="242">242</th><td>           <a class="local col3 ref" href="#43runner" title='runner' data-ref="43runner">runner</a>-&gt;<a class="ref field" href="minicheck.h.html#SRunner::nfailures" title='SRunner::nfailures' data-ref="SRunner::nfailures">nfailures</a>);</td></tr>
+<tr><th id="243">243</th><td>  }</td></tr>
+<tr><th id="244">244</th><td>}</td></tr>
+<tr><th id="245">245</th><td></td></tr>
+<tr><th id="246">246</th><td><em>void</em></td></tr>
+<tr><th id="247">247</th><td><dfn class="decl def fn" id="_fail" title='_fail' data-ref="_fail">_fail</dfn>(<em>const</em> <em>char</em> *<dfn class="local col8 decl" id="48file" title='file' data-type='const char *' data-ref="48file">file</dfn>, <em>int</em> <dfn class="local col9 decl" id="49line" title='line' data-type='int' data-ref="49line">line</dfn>, <em>const</em> <em>char</em> *<dfn class="local col0 decl" id="50msg" title='msg' data-type='const char *' data-ref="50msg">msg</dfn>) {</td></tr>
+<tr><th id="248">248</th><td>  <i>/* Always print the error message so it isn't lost.  In this case,</i></td></tr>
+<tr><th id="249">249</th><td><i>     we have a failure, so there's no reason to be quiet about what</i></td></tr>
+<tr><th id="250">250</th><td><i>     it is.</i></td></tr>
+<tr><th id="251">251</th><td><i>  */</i></td></tr>
+<tr><th id="252">252</th><td>  <a class="tu ref" href="#_check_current_filename" title='_check_current_filename' data-use='w' data-ref="_check_current_filename">_check_current_filename</a> = <a class="local col8 ref" href="#48file" title='file' data-ref="48file">file</a>;</td></tr>
+<tr><th id="253">253</th><td>  <a class="tu ref" href="#_check_current_lineno" title='_check_current_lineno' data-use='w' data-ref="_check_current_lineno">_check_current_lineno</a> = <a class="local col9 ref" href="#49line" title='line' data-ref="49line">line</a>;</td></tr>
+<tr><th id="254">254</th><td>  <b>if</b> (<a class="local col0 ref" href="#50msg" title='msg' data-ref="50msg">msg</a> != <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>) {</td></tr>
+<tr><th id="255">255</th><td>    <em>const</em> <em>int</em> <dfn class="local col1 decl" id="51has_newline" title='has_newline' data-type='const int' data-ref="51has_newline">has_newline</dfn> = (<a class="local col0 ref" href="#50msg" title='msg' data-ref="50msg">msg</a>[<a class="ref fn" href="../../include/string.h.html#strlen" title='strlen' data-ref="strlen">strlen</a>(<span class='inlayHint'>s:&nbsp;</span><a class="local col0 ref" href="#50msg" title='msg' data-ref="50msg">msg</a>) - <var>1</var>] == <kbd>'\n'</kbd>);</td></tr>
+<tr><th id="256">256</th><td>    <a class="ref fn" href="../../include/stdio.h.html#fprintf" title='fprintf' data-ref="fprintf">fprintf</a>(<a class="macro" href="../../include/stdio.h.html#143" title="stderr" data-ref="_M/stderr">stderr</a>, <span class='inlayHint'>format:&nbsp;</span><q>"ERROR: %s%s"</q>, <a class="local col0 ref" href="#50msg" title='msg' data-ref="50msg">msg</a>, <a class="local col1 ref" href="#51has_newline" title='has_newline' data-ref="51has_newline">has_newline</a> ? <q>""</q> : <q>"\n"</q>);</td></tr>
+<tr><th id="257">257</th><td>  }</td></tr>
+<tr><th id="258">258</th><td>  <a class="ref fn" href="../../include/setjmp.h.html#longjmp" title='longjmp' data-ref="longjmp">longjmp</a>(<span class='inlayHint'>env:&nbsp;</span><a class="tu ref" href="#env" title='env' data-use='r' data-ref="env">env</a>, <span class='inlayHint'>val:&nbsp;</span><var>1</var>);</td></tr>
+<tr><th id="259">259</th><td>}</td></tr>
+<tr><th id="260">260</th><td></td></tr>
+<tr><th id="261">261</th><td><em>int</em></td></tr>
+<tr><th id="262">262</th><td><dfn class="decl def fn" id="srunner_ntests_failed" title='srunner_ntests_failed' data-ref="srunner_ntests_failed">srunner_ntests_failed</dfn>(<a class="typedef" href="minicheck.h.html#SRunner" title='SRunner' data-type='struct SRunner' data-ref="SRunner">SRunner</a> *<dfn class="local col2 decl" id="52runner" title='runner' data-type='SRunner *' data-ref="52runner">runner</dfn>) {</td></tr>
+<tr><th id="263">263</th><td>  <a class="macro" href="../../include/assert.h.html#97" title="((runner != ((void*)0)) ? (void) (0) : __assert_fail (&quot;runner != NULL&quot;, &quot;/home/lzx0626/DavidingPlus/libexpat-R_2_6_2/expat/tests/minicheck.c&quot;, 263, __extension__ __PRETTY_FUNCTION__))" data-ref="_M/assert">assert</a>(<a class="local col2 ref" href="#52runner" title='runner' data-ref="52runner">runner</a> != <span class="macro" title="((void*)0)" data-ref="_M/NULL">NULL</span>);</td></tr>
+<tr><th id="264">264</th><td>  <b>return</b> <a class="local col2 ref" href="#52runner" title='runner' data-ref="52runner">runner</a>-&gt;<a class="ref field" href="minicheck.h.html#SRunner::nfailures" title='SRunner::nfailures' data-ref="SRunner::nfailures">nfailures</a>;</td></tr>
+<tr><th id="265">265</th><td>}</td></tr>
+<tr><th id="266">266</th><td></td></tr>
+<tr><th id="267">267</th><td><em>void</em></td></tr>
+<tr><th id="268">268</th><td><dfn class="decl def fn" id="srunner_free" title='srunner_free' data-ref="srunner_free">srunner_free</dfn>(<a class="typedef" href="minicheck.h.html#SRunner" title='SRunner' data-type='struct SRunner' data-ref="SRunner">SRunner</a> *<dfn class="local col3 decl" id="53runner" title='runner' data-type='SRunner *' data-ref="53runner">runner</dfn>) {</td></tr>
+<tr><th id="269">269</th><td>  <b>if</b> (! <a class="local col3 ref" href="#53runner" title='runner' data-ref="53runner">runner</a>) {</td></tr>
+<tr><th id="270">270</th><td>    <b>return</b>;</td></tr>
+<tr><th id="271">271</th><td>  }</td></tr>
+<tr><th id="272">272</th><td></td></tr>
+<tr><th id="273">273</th><td>  <a class="tu ref fn" href="#suite_free" title='suite_free' data-use='c' data-ref="suite_free">suite_free</a>(<span class='inlayHint'>suite:&nbsp;</span><a class="local col3 ref" href="#53runner" title='runner' data-ref="53runner">runner</a>-&gt;<a class="ref field" href="minicheck.h.html#SRunner::suite" title='SRunner::suite' data-ref="SRunner::suite">suite</a>);</td></tr>
+<tr><th id="274">274</th><td>  <a class="ref fn" href="../../include/stdlib.h.html#free" title='free' data-ref="free">free</a>(<span class='inlayHint'>ptr:&nbsp;</span><a class="local col3 ref" href="#53runner" title='runner' data-ref="53runner">runner</a>);</td></tr>
+<tr><th id="275">275</th><td>}</td></tr>
+<tr><th id="276">276</th><td></td></tr>
+</table><hr/><p id='footer'>
+Generated on <em>2024-Jun-14</em> from project expat-2.6.2 revision <em>2.6.2</em><br />Powered by <a href='https://woboq.com'><img alt='Woboq' src='https://code.woboq.org/woboq-16.png' width='41' height='16' /></a> <a href='https://code.woboq.org'>Code Browser</a> 2.1
+<br/>Generator usage only permitted with license.</p>
+</div></body></html>
