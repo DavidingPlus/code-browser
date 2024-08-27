@@ -31,6 +31,7 @@ function createLinkElement(href, text) {
     const link = document.createElement('a');
     link.href = href;
     link.innerHTML = `<i class="fa fa-folder-open"></i> ${text}`;
+    link.target = '_blank';
     return link;
 }
 
