@@ -8,5 +8,5 @@
 
 1. 用到的工具的源项目地址：[https://github.com/KDAB/codebrowser](https://github.com/KDAB/codebrowser)
 
-2. 我自己总结的教程：[https://blog.davidingplus.cn/posts/25ed761b.html](https://blog.davidingplus.cn/posts/25ed761b.html)
+2. 我自己总结的教程：[https://blog.davidingplus.cn/posts/a98e1d5b.html](https://blog.davidingplus.cn/posts/a98e1d5b.html)
 
